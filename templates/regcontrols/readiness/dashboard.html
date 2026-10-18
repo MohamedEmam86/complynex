@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% import 'regcontrols/readiness/_bits.html' as rb with context %}
+{% block title %}{{ _('Inspection readiness') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-2"><h3 class="mb-0">{{ _('Inspection readiness') }}</h3>
+    <div class="d-flex gap-2 no-print">
+      <form method="get"><select name="framework" class="form-select form-select-sm" data-auto-submit><option value="">{{ _('All frameworks') }}</option>{% for f in d.frameworks %}<option value="{{ f.id }}" {{ 'selected' if fw == f.id }}>{{ f.code }}</option>{% endfor %}</select></form>
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('regcontrols.readiness_board', framework=fw) }}">{{ _('Board report') }}</a>
+      <a class="btn btn-sm btn-outline-success" href="{{ url_for('regcontrols.readiness_pack', framework=fw) }}">{{ _('Full evidence pack (ZIP)') }}</a>
+      <button class="btn btn-sm btn-outline-secondary" data-action="print">{{ _('Print') }}</button></div></div>
+  {{ rc.nav('regcontrols.readiness') }}
+  <div class="row g-3 mb-3">
+    <div class="col-md-3"><div class="card h-100"><div class="card-body text-center"><div class="small text-muted">{{ _('Overall readiness (weighted by criticality)') }}</div>
+      <div class="my-2">{{ rb.score_badge(d.overall.score, true) }}</div><div class="fw-bold">{{ rb.band_label(d.overall.score) }}</div>
+      <div class="small text-muted">{{ d.overall.controls }} {{ _('controls') }} · {{ d.overall.failing }} {{ _('failing') }} · {{ d.overall.not_assessed }} {{ _('not assessed') }}</div></div></div></div>
+    <div class="col-md-9"><div class="card h-100"><div class="card-body"><canvas id="trend" height="70"></canvas>{% if not d.trend %}<p class="small text-muted mb-0">{{ _('The trend appears after the first daily snapshots (scheduled run, or the button below).') }}</p>{% endif %}
+      {% if current_user.can_edit('regcontrols') %}<form method="post" action="{{ url_for('regcontrols.readiness_snapshot') }}" class="no-print mt-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-link p-0">{{ _('Save a snapshot now') }}</button></form>{% endif %}</div></div></div>
+  </div>
+  <div class="card mb-3"><div class="card-header"><strong>{{ _('Readiness by area') }}</strong></div><div class="table-responsive"><table class="table table-sm mb-0 small align-middle">
+    <thead><tr><th>{{ _('Area') }}</th><th>{{ _('Score') }}</th><th class="text-end">{{ _('Controls') }}</th><th class="text-end">{{ _('Failing') }}</th><th class="text-end">{{ _('Not assessed') }}</th><th class="no-print"></th></tr></thead><tbody>
+    {% for a, s in d.area_list %}<tr><td><a href="{{ url_for('regcontrols.readiness_area', area=a, framework=fw) }}">{{ rc_label('AREAS', a) }}</a></td>
+      <td>{{ rb.score_badge(s.score) }}</td><td class="text-end">{{ s.controls }}</td><td class="text-end {{ 'text-danger' if s.failing }}">{{ s.failing }}</td><td class="text-end">{{ s.not_assessed }}</td>
+      <td class="no-print"><a href="{{ url_for('regcontrols.readiness_pack', area=a, framework=fw) }}">{{ _('Evidence pack') }}</a></td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="row g-3">
+    <div class="col-lg-6"><div class="card mb-3"><div class="card-header"><strong>{{ _('Top gaps (critical first)') }}</strong></div><table class="table table-sm mb-0 small"><tbody>
+      {% for c in d.gaps %}<tr><td><a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}">{{ c.control_code }}</a> {{ rc_loc(c.title_en, c.title_ar) }}</td><td>{{ rc.crit_badge(c.criticality) }}</td><td>{{ rc.status_badge(c.last_status) }}</td></tr>
+      {% else %}<tr><td class="text-success">{{ _('No gap.') }}</td></tr>{% endfor %}</tbody></table></div>
+      <div class="card"><div class="card-header"><strong>{{ _('Evidence expiring / expired') }}</strong></div><table class="table table-sm mb-0 small"><tbody>
+      {% for e in d.expiring %}<tr><td>{{ e.control_code }}</td><td>{{ e.title }}</td><td>{{ e.valid_to or '-' }}</td><td>{{ rc.evidence_state(e.state) }}</td></tr>{% else %}<tr><td class="text-success">{{ _('None.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    <div class="col-lg-6"><div class="card mb-3"><div class="card-header"><strong>{{ _('Open findings by age') }}</strong> <span class="small text-muted">{{ d.open_findings|length }} {{ _('open') }} · {{ d.repeated|length }} {{ _('repeated violations') }}</span></div>
+      <div class="card-body small d-flex gap-3 flex-wrap">{% for label, n in d.ageing.items() %}<div><div class="text-muted">{{ label }}</div><div class="fs-5 fw-bold">{{ n }}</div></div>{% endfor %}</div>
+      <table class="table table-sm mb-0 small"><tbody>{% for f in d.repeated[:8] %}<tr class="table-danger"><td><a href="{{ url_for('regcontrols.finding_detail', finding_id=f.id) }}">{{ f.reference }}</a></td><td>{{ f.title }}</td><td>{{ _('repeated') }}</td></tr>{% endfor %}</tbody></table></div>
+      <div class="card"><div class="card-header"><strong>{{ _('Top risks (ERM register)') }}</strong></div><table class="table table-sm mb-0 small"><tbody>
+      {% for r in d.risks %}<tr><td>{{ r.risk_id }}</td><td>{{ r.risk_title }}</td><td class="text-end">{{ r.residual_risk_score or r.inherent_risk_score }}</td></tr>{% else %}<tr><td class="text-muted">{{ _('No active risks.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+  </div>
+</div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='vendor/chartjs/chart@3.9.1.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+(function () { var t = {{ d.trend|tojson }}; if (!window.Chart || !t.length) return;
+  new Chart(document.getElementById('trend'), {type: 'line', data: {labels: t.map(function (x) { return x.snapshot_date; }),
+    datasets: [{label: {{ _('Readiness score')|tojson }}, data: t.map(function (x) { return x.score; }), borderColor: '#198754', tension: .2}]},
+    options: {scales: {y: {min: 0, max: 100}}}}); })();
+</script>
+{% endblock %}

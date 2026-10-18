@@ -27550,6 +27550,160 @@ msgstr "التعليق"
 msgid "No action yet."
 msgstr "لا يوجد إجراء بعد."
 
+# --- Inspection readiness ---
+msgid "All areas"
+msgstr "كل المجالات"
+
+msgid "Readiness snapshot saved (%(n)s scores)."
+msgstr "تم حفظ لقطة الجاهزية (%(n)s درجة)."
+
+msgid "Inspection readiness"
+msgstr "الجاهزية للتفتيش"
+
+msgid "Regulatory calendar"
+msgstr "التقويم الرقابي"
+
+msgid "Not assessed"
+msgstr "لم يُقيَّم"
+
+msgid "Ready"
+msgstr "جاهز"
+
+msgid "Partly ready"
+msgstr "جاهز جزئياً"
+
+msgid "Not ready"
+msgstr "غير جاهز"
+
+msgid "Evidence pack (ZIP)"
+msgstr "حزمة الأدلة (ZIP)"
+
+msgid "Back to readiness"
+msgstr "العودة للجاهزية"
+
+msgid "controls"
+msgstr "ضوابط"
+
+msgid "failing"
+msgstr "غير ملتزمة"
+
+msgid "No evidence."
+msgstr "لا توجد أدلة."
+
+msgid "No findings."
+msgstr "لا توجد ملاحظات."
+
+msgid "Compliance readiness — board report"
+msgstr "الجاهزية الرقابية — تقرير مجلس الإدارة"
+
+msgid "Compliance & inspection readiness — report to the board"
+msgstr "الالتزام والجاهزية للتفتيش — تقرير إلى مجلس الإدارة"
+
+msgid "Readiness score"
+msgstr "درجة الجاهزية"
+
+msgid "not assessed"
+msgstr "لم يُقيَّم"
+
+msgid "open findings"
+msgstr "ملاحظات مفتوحة"
+
+msgid "repeated violations"
+msgstr "مخالفات متكررة"
+
+msgid "By area"
+msgstr "حسب المجال"
+
+msgid "Most important gaps"
+msgstr "أهم الفجوات"
+
+msgid "No gap."
+msgstr "لا توجد فجوات."
+
+msgid "Findings ageing"
+msgstr "أعمار الملاحظات"
+
+msgid "Trend"
+msgstr "الاتجاه"
+
+msgid "No snapshot yet."
+msgstr "لا توجد لقطة بعد."
+
+msgid "Score = criticality-weighted average of the latest control results (pass 100, warning 50, fail / not assessed 0; critical 4, high 3, medium 2, low 1)."
+msgstr "الدرجة = متوسط مرجح بالأهمية لآخر نتائج الضوابط (ناجح 100، تحذير 50، فاشل / غير مقيَّم 0؛ حرج 4، عالٍ 3، متوسط 2، منخفض 1)."
+
+msgid "Export (.ics)"
+msgstr "تصدير (.ics)"
+
+msgid "Periodic submissions (regulatory reports), regulatory deadlines and extensions, carbon offsets, evidence expiry, findings and action plans in one list. Reminders go to the owner and the Head of Compliance at the days set in rc.calendar_reminder_days."
+msgstr "التقارير الدورية والمواعيد الرقابية والمهل وتعويضات الكربون وانتهاء الأدلة والملاحظات وخطط التصحيح في قائمة واحدة. تُرسل التذكيرات للمسؤول ورئيس الالتزام في الأيام المحددة في rc.calendar_reminder_days."
+
+msgid "Offsets"
+msgstr "التعويضات"
+
+msgid "Evidence expiry"
+msgstr "انتهاء الدليل"
+
+msgid "Finding due"
+msgstr "استحقاق ملاحظة"
+
+msgid "Action plan due"
+msgstr "استحقاق خطة تصحيح"
+
+msgid "Days"
+msgstr "الأيام"
+
+msgid "Nothing due in this window."
+msgstr "لا شيء مستحق في هذه الفترة."
+
+msgid "All frameworks"
+msgstr "كل الأطر"
+
+msgid "Board report"
+msgstr "تقرير المجلس"
+
+msgid "Full evidence pack (ZIP)"
+msgstr "حزمة الأدلة الكاملة (ZIP)"
+
+msgid "Overall readiness (weighted by criticality)"
+msgstr "الجاهزية الإجمالية (مرجحة بالأهمية)"
+
+msgid "The trend appears after the first daily snapshots (scheduled run, or the button below)."
+msgstr "يظهر الاتجاه بعد أولى اللقطات اليومية (التشغيل المجدول أو الزر أدناه)."
+
+msgid "Save a snapshot now"
+msgstr "حفظ لقطة الآن"
+
+msgid "Readiness by area"
+msgstr "الجاهزية حسب المجال"
+
+msgid "Evidence pack"
+msgstr "حزمة الأدلة"
+
+msgid "Top gaps (critical first)"
+msgstr "أهم الفجوات (الحرجة أولاً)"
+
+msgid "Evidence expiring / expired"
+msgstr "أدلة قاربت على الانتهاء / منتهية"
+
+msgid "Open findings by age"
+msgstr "الملاحظات المفتوحة حسب العمر"
+
+msgid "repeated"
+msgstr "متكررة"
+
+msgid "Top risks (ERM register)"
+msgstr "أهم المخاطر (سجل المخاطر المؤسسية)"
+
+msgid "No active risks."
+msgstr "لا توجد مخاطر فعالة."
+
+msgid "Inspection evidence pack"
+msgstr "حزمة أدلة التفتيش"
+
+msgid "Contents: this index, controls.csv (control list and latest result), run_history.csv (every automated run and manual test), evidence/<control>/ (approved evidence files)."
+msgstr "المحتويات: هذا الفهرس، controls.csv (قائمة الضوابط وآخر نتيجة)، run_history.csv (كل تشغيل آلي واختبار يدوي)، evidence/<control>/ (ملفات الأدلة المعتمدة)."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

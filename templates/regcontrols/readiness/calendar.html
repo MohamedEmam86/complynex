@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('Regulatory calendar') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-2"><h3 class="mb-0">{{ _('Regulatory calendar') }}</h3>
+    <div class="d-flex gap-2 no-print"><form method="get"><select name="days" class="form-select form-select-sm" data-auto-submit>{% for n in [30, 60, 120, 365] %}<option value="{{ n }}" {{ 'selected' if days == n }}>{{ _('Next') }} {{ n }} {{ _('days') }}</option>{% endfor %}</select></form>
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('regcontrols.reg_calendar', days=days, format='ics') }}">{{ _('Export (.ics)') }}</a></div></div>
+  {{ rc.nav('regcontrols.reg_calendar') }}
+  <p class="small text-muted">{{ _('Periodic submissions (regulatory reports), regulatory deadlines and extensions, carbon offsets, evidence expiry, findings and action plans in one list. Reminders go to the owner and the Head of Compliance at the days set in rc.calendar_reminder_days.') }}</p>
+  {% set kinds = {'submission': _('Submission'), 'deadline': _('Deadline'), 'offsets': _('Offsets'), 'evidence': _('Evidence expiry'), 'finding': _('Finding due'), 'action': _('Action plan due')} %}
+  <div class="card"><div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Date') }}</th><th class="text-end">{{ _('Days') }}</th><th>{{ _('Type') }}</th><th>{{ _('Item') }}</th><th>{{ _('Status') }}</th></tr></thead><tbody>
+    {% for i in items %}{% set left = (i.date - today).days %}<tr class="{{ 'table-danger' if left < 0 and i.status not in ('valid',) else ('table-warning' if left <= 14) }}"><td>{{ i.date }}</td><td class="text-end">{{ left }}</td><td>{{ kinds.get(i.kind, i.kind) }}</td><td><a href="{{ i.link }}">{{ i.title }}</a></td><td>{{ i.status }}</td></tr>
+    {% else %}<tr><td colspan="5" class="text-muted text-center py-3">{{ _('Nothing due in this window.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

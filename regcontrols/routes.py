@@ -1054,3 +1054,5 @@ def pack_action(code, action):
     except ValueError as e:
         _flash_error(e)
     return redirect(url_for('regcontrols.packs_list'))
+
+from . import readiness_routes  # noqa: E402,F401 — inspection readiness pages
