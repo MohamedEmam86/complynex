@@ -22,11 +22,12 @@ figure is invented. Use only on demo / test installations. Enables the
 fra_nbfi pack if it is not enabled yet.
 
     python packs/fra_nbfi/scripts/seed_demo_prudential.py                        # data only
-    python packs/fra_nbfi/scripts/seed_demo_prudential.py --with-demo-parameters # also fill unset parameters
+    python packs/fra_nbfi/scripts/seed_demo_prudential.py --with-demo-parameters # --no-demo-parameters keeps parameters empty
 
---with-demo-parameters writes ILLUSTRATIVE values into parameters that are
-still empty, marked needs_review with the note "DEMO VALUE". Never run it on
-a production installation: those numbers are not regulatory values.
+It flags the installation as the fictional demo tenant and fills every empty
+pack parameter with an ILLUSTRATIVE value (packs/fra_nbfi/demo.py, marked
+"DEMO VALUE"); --no-demo-parameters skips that. Never run it on a production
+installation: those numbers are not regulatory values.
 
 Deliberate gaps so every check has something to find: paid-up capital below
 the minimum and not yet registered, an extended capital-increase deadline
@@ -46,16 +47,12 @@ from datetime import date, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 COMPANY = 'Nile Microfinance S.A.E.'
-DEMO_PARAMS = {
-    'capital.min_paid_up': '20000000', 'solvency.max_leverage_ratio': '7', 'branch.min_loan_officers': '3',
-    'branch.manager_vacancy_max_days': '60', 'finance.balance_confirmation_max_age_days': '90',
-    'finance.accrual_tolerance_pct': '5', 'finance.ecl_refresh_months': '12',
-}
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--with-demo-parameters', action='store_true')
+    ap.add_argument('--with-demo-parameters', action='store_true', help='(default; kept for compatibility)')
+    ap.add_argument('--no-demo-parameters', action='store_true', help='leave the regulatory parameters empty')
     args = ap.parse_args()
     from app import create_app
     from database.db import get_db
@@ -70,17 +67,11 @@ def main():
             return 1
         if not packs.is_enabled('fra_nbfi'):
             print('enabling the fra_nbfi pack:', packs.enable('fra_nbfi'))
-        if args.with_demo_parameters:
-            from models.settings import Settings
-            if (Settings.get('rc_licence_type', 'all') or 'all') == 'all':
-                Settings.set('rc_licence_type', 'microfinance', 'Licence type used to select regulatory parameter values')
-            for key, value in DEMO_PARAMS.items():
-                n = db.execute("""UPDATE rc_parameters SET value_text = %s, needs_review = TRUE,
-                                  review_note = 'DEMO VALUE — illustrative only, not a regulatory value'
-                                  WHERE param_key = %s AND value_text IS NULL AND status = 'active'""",
-                               (value, key)).rowcount
-                print(f'  {key}: {"set" if n else "kept existing value"}')
-            db.commit()
+        from packs.fra_nbfi import demo
+        demo.mark_demo_tenant()
+        if not args.no_demo_parameters:
+            filled = demo.apply_demo_parameters(db)
+            print(f"  demo parameter values: {sum(v == 'set' for v in filled.values())} set (marked 'DEMO VALUE')")
         uid = db.execute("SELECT id FROM users ORDER BY id LIMIT 1").fetchone()['id']
         t = date.today()
         d = lambda days: t + timedelta(days=days)  # noqa: E731
