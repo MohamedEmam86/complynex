@@ -17,12 +17,11 @@
 
 """ESG Management module — routes.
 
-First-of-kind in the Egyptian PSP/fintech market: a configurable, weighted
-ESG scoring engine (E/S/G + a Regulatory pillar reflecting CBE/FRA
-supervisory expectations) with every score traceable to the indicator
-weights and raw answers behind it — no hardcoded formulas, so the
-weighting scheme can evolve without a rebuild (the exact gap found in the
-two differently-weighted Integrys workbooks reviewed for this project).
+A configurable, weighted ESG scoring engine (pillars, indicators and weights
+are data, e.g. E/S/G plus a regulatory pillar) with every score traceable to
+the indicator weights and raw answers behind it — no hardcoded formulas, so
+the weighting scheme can evolve without a rebuild. Carbon results are shown
+next to the indicators and disclosure items they feed (carbon/links.py).
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_babel import _
@@ -33,6 +32,7 @@ from models.audit import AuditLog
 from database.db import get_db, query_db, execute_db
 from esg.engine import build_pillar_summary, MATURITY_LABELS, rating_band
 from attachments.service import list_attachments
+from carbon import links as carbon_links
 
 esg_bp = Blueprint('esg', __name__, url_prefix='/esg')
 
@@ -74,7 +74,7 @@ def _pillars_with_indicators(framework_id, period_id):
             resp = responses.get(ind['id'])
             ind_list.append({
                 'id': ind['id'], 'code': ind['code'], 'name': ind['name'],
-                'description': ind['description'], 'weight': ind['weight'],
+                'description': ind['description'], 'weight': ind['weight'], 'carbon_metric': ind.get('carbon_metric'),
                 'score': resp['score'] if resp else None,
                 'evidence_notes': resp['evidence_notes'] if resp else None,
             })
@@ -127,6 +127,29 @@ def _materiality_completion(period_id):
     return {'total': total, 'scored': scored, 'pct': pct}
 
 
+def _carbon_values(period):
+    """Carbon figures of the same reporting period, for users who may see Carbon."""
+    if not period or not current_user.can_view('carbon'):
+        return None
+    return carbon_links.carbon_values(period['id'])
+
+
+def _carbon_summary(period):
+    vals = _carbon_values(period)
+    if vals is None:
+        return None
+    try:
+        from carbon.journey import journey
+        return {'values': vals, 'journey': journey(period['id'])}
+    except Exception:
+        get_db().rollback()
+        return {'values': vals, 'journey': None}
+
+
+def _metric_from_form(value):
+    return value if value in carbon_links.METRICS or value == 'none' else None
+
+
 # ---------------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------------
@@ -153,6 +176,7 @@ def dashboard():
         'esg/dashboard.html', framework=framework, period=period, summary=summary,
         maturity_labels=MATURITY_LABELS,
         disclosure_progress=disclosure_progress, materiality_progress=materiality_progress,
+        carbon=_carbon_summary(period),
     )
 
 
@@ -186,6 +210,12 @@ def scoring(pillar_code):
 
         indicators = query_db("SELECT * FROM esg_indicators WHERE pillar_id = %s", (pillar['id'],)) or []
         for ind in indicators:
+            if f"metric_{ind['id']}" in request.form:   # which carbon figure feeds this indicator (display only)
+                try:
+                    execute_db("UPDATE esg_indicators SET carbon_metric = %s WHERE id = %s",
+                               (_metric_from_form(request.form.get(f"metric_{ind['id']}")), ind['id']))
+                except Exception:
+                    get_db().rollback()
             score_raw = request.form.get(f"score_{ind['id']}")
             notes = request.form.get(f"notes_{ind['id']}") or None
             if score_raw in (None, ''):
@@ -215,6 +245,9 @@ def scoring(pillar_code):
 
     pillars = _pillars_with_indicators(framework['id'], period['id'])
     this_pillar = next((p for p in pillars if p['code'] == pillar_code), None)
+    cvals = _carbon_values(period)
+    for ind in (this_pillar or {}).get('indicators', []):
+        ind['carbon_feed'] = carbon_links.feed(ind, cvals, 'code', 'name', 'description')
     summary = build_pillar_summary(pillars)
     this_pillar_summary = next((p for p in summary['pillars'] if p['code'] == pillar_code), None)
 
@@ -224,6 +257,7 @@ def scoring(pillar_code):
         attach_module='esg', attach_record_type='esg_pillar', attach_record_id=pillar['id'],
         attach_items=list_attachments('esg', 'esg_pillar', pillar['id']),
         attach_can_edit=current_user.can_edit('esg'),
+        carbon_values=cvals, carbon_metrics=carbon_links.METRICS,
     )
 
 
@@ -353,7 +387,10 @@ def disclosures():
         q += " AND d.status = %s"
         params.append(status)
     q += " ORDER BY d.framework, d.ref_code"
-    items = query_db(q, tuple(params)) or []
+    items = [dict(i) for i in (query_db(q, tuple(params)) or [])]
+    cvals = _carbon_values(period)
+    for it in items:
+        it['carbon_feed'] = carbon_links.feed(it, cvals, 'ref_code', 'title', 'requirement')
 
     frameworks = query_db(
         "SELECT DISTINCT framework FROM esg_disclosure_items WHERE reporting_period_id = %s ORDER BY framework",
@@ -368,6 +405,7 @@ def disclosures():
         'esg/disclosures.html', period=period, items=items, current_framework=framework,
         current_status=status, frameworks=[f['framework'] for f in frameworks], users=users,
         completion=_disclosure_completion(period['id']),
+        carbon_values=cvals, carbon_metrics=carbon_links.METRICS,
     )
 
 
@@ -389,6 +427,12 @@ def disclosure_update(item_id):
            updated_by=%s, updated_at=NOW() WHERE id=%s""",
         (status, owner_id, evidence_notes, current_user.id, item_id),
     )
+    if 'carbon_metric' in request.form:   # which carbon figure is shown next to this item (display only)
+        try:
+            execute_db("UPDATE esg_disclosure_items SET carbon_metric = %s WHERE id = %s",
+                       (_metric_from_form(request.form.get('carbon_metric')), item_id))
+        except Exception:
+            get_db().rollback()
     AuditLog.log(current_user.id, 'UPDATE', module='esg', item_id=item_id,
                  details=f"Updated disclosure {item['framework']} {item['ref_code']} -> status={status}")
     flash(_('Disclosure item updated.'), 'success')

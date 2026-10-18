@@ -29,7 +29,7 @@
 <div class="fra-report shadow-sm">
   <div class="rpt-head">
     <h1 class="h3 mb-1">{{ _('Annual Carbon Footprint Report') }}</h1>
-    <div class="text-muted">{{ _('Prepared pursuant to FRA Board Decision No. 36 of 2026') }}</div>
+    <div class="text-muted">{{ _('Prepared pursuant to: %(ref)s', ref=carbon_ref) }}</div>
     <div class="text-muted">{{ _('تقرير البصمة الكربونية السنوي — إعمالاً لقرار مجلس إدارة الهيئة العامة للرقابة المالية رقم ٣٦ لسنة ٢٠٢٦') }}</div>
     <div class="mt-2"><strong>{{ _('Reporting period:') }}</strong> {{ period.label }} ({{ period.start_date }} — {{ period.end_date }})</div>
     <div class="small text-muted">{{ _('Generated:') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</div>
@@ -55,7 +55,7 @@
   </table>
 
   <h2>{{ _('2. Organizational and operational boundary') }}</h2>
-  <p>{{ _('This inventory was prepared following the GHG Protocol Corporate Accounting and Reporting Standard (operational control approach) and the measurement scope required by FRA Decision 36/2026.') }}</p>
+  <p>{{ _('This inventory was prepared following the GHG Protocol Corporate Accounting and Reporting Standard (operational control approach) and the measurement scope required by the FRA carbon-footprint rules (%(ref)s).', ref=carbon_ref) }}</p>
   <ul>
     <li>{{ _('Scope 1 (direct emissions): %(s)s', s=_('INCLUDED') if 'scope1' in enabled else _('EXCLUDED')) }}</li>
     <li>{{ _('Scope 2 (purchased energy): %(s)s', s=_('INCLUDED') if 'scope2' in enabled else _('EXCLUDED')) }}</li>
@@ -64,7 +64,7 @@
         {{ _('Scope 3 (value chain): INCLUDED — assessed categories are listed in the annex. Categories not listed were not assessed in this period.') }}
       {% else %}
         <strong>{{ _('Scope 3 (value chain): EXCLUDED from the reporting boundary for this period.') }}</strong>
-        {{ _('This exclusion is declared explicitly in line with GHG Protocol boundary-setting guidance. FRA Decision 36/2026 requires Scope 1 and Scope 2 only.') }}
+        {{ _('This exclusion is declared explicitly in line with GHG Protocol boundary-setting guidance. The FRA carbon-footprint rules (%(ref)s) require Scope 1 and Scope 2 only.', ref=carbon_ref) }}
       {% endif %}
     </li>
   </ul>
@@ -104,9 +104,9 @@
 
   <h2>{{ _('6. Offset commitment') }}</h2>
   {% if obligation %}
-  <p>{{ _('Pursuant to FRA Decision 36/2026, the company commits to purchasing certified emission-reduction certificates equal to 20%% of the total emissions declared above (%(req)s tCO2e) through the FRA Climate Project Registry within 90 days of report submission (deadline: %(dl)s).', req=obligation.required_tco2e, dl=obligation.deadline_date) }}</p>
+  <p>{{ _('Pursuant to %(ref)s, the company commits to purchasing certified emission-reduction certificates equal to %(p)s per cent of the total emissions declared above (%(req)s tCO2e) through the FRA Climate Project Registry within %(d)s days of report submission (deadline: %(dl)s).', ref=carbon_ref, p=offset_pct, d=offset_days, req=obligation.required_tco2e, dl=obligation.deadline_date) }}</p>
   {% else %}
-  <p>{{ _('Upon submission of this report, the company will purchase certified emission-reduction certificates equal to 20%% of the total declared emissions (%(est)s tCO2e estimated) through the FRA Climate Project Registry within the 90-day statutory window.', est=((totals.total_location_based or 0) * 0.2) | round(3)) }}</p>
+  <p>{{ _('Upon submission of this report, the company will purchase certified emission-reduction certificates equal to %(p)s per cent of the total declared emissions (%(est)s tCO2e estimated) through the FRA Climate Project Registry within %(d)s days.', p=offset_pct, d=offset_days, est=((totals.total_location_based or 0) * (offset_pct|float) / 100) | round(3)) }}</p>
   {% endif %}
 
   <div class="mt-5">

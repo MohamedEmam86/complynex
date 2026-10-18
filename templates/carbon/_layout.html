@@ -1,0 +1,27 @@
+{#- Layout of every Carbon page: hero, one navigation in workflow order, the reporting journey,
+    the "what is this page" panel, then the page body.
+    A page sets cx_active (its endpoint) and cx_period (the period row, if any) and fills
+    the blocks cx_title, cx_icon, cx_lead, cx_about and cx_body. -#}
+{% extends 'base.html' %}
+{% import 'carbon/_ui.html' as cx with context %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
+{% block content %}
+<div class="ecx-page" dir="{{ 'rtl' if get_locale()|string == 'ar' else 'ltr' }}">
+  <div class="ecx-hero ecx-carbon {{ 'ecx-compact' if cx_active != 'carbon.dashboard' }} no-print">
+    <div class="ecx-eyebrow">{{ _('Sustainability') }} · {{ _('Carbon Footprint & Climate') }}</div>
+    <h1><i class="bi {% block cx_icon %}bi-cloud-haze2{% endblock %} me-2"></i>{% block cx_title %}{% endblock %}</h1>
+    <p>{% block cx_lead %}{% endblock %}</p>
+    {% block cx_badge %}{% endblock %}
+  </div>
+  {{ cx.nav(cx_active, cx_period) }}
+  {{ cx.stepper(cx_active, cx_period) }}
+  {% block cx_about %}{% endblock %}
+  {% block cx_body %}{% endblock %}
+</div>
+<script nonce="{{ csp_nonce }}">
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.bootstrap || !bootstrap.Tooltip) { return; }
+  document.querySelectorAll('.ecx-page [data-bs-toggle="tooltip"]').forEach(function (el) { new bootstrap.Tooltip(el); });
+});
+</script>
+{% endblock %}

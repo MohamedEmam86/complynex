@@ -1,19 +1,44 @@
-{% extends 'base.html' %}
-{% import 'carbon/acc/_nav.html' as cn with context %}
+{% extends 'carbon/_layout.html' %}
+{% set cx_active = 'carbon.activity' %}
+{% set cx_period = p %}
 {% block title %}{{ _('Activity data') }} — ComplyNex{% endblock %}
-{% block content %}
-<div class="container-fluid">
-  <h3 class="mb-2">{{ _('Activity data') }} — {{ p.label }} {% if locked %}<span class="badge bg-success fs-6">{{ _('approved & locked') }}</span>{% endif %}</h3>
-  {{ cn.nav('carbon.activity', p) }}
-  <div class="card mb-3"><div class="table-responsive" style="max-height: 520px"><table class="table table-sm table-hover mb-0 small align-middle"><thead><tr><th>{{ _('Month') }}</th><th>{{ _('Scope') }}</th><th>{{ _('Activity') }}</th><th>{{ _('Site') }}</th><th class="text-end">{{ _('Quantity') }}</th><th class="text-end">{{ _('Factor used') }}</th><th class="text-end">{{ _('Share') }}</th><th class="text-end">tCO2e</th><th>{{ _('Evidence') }}</th><th></th></tr></thead><tbody>
-    {% for e in rows %}<tr class="{{ 'table-warning' if not e.evidence or (e.factor_unit and e.unit != e.factor_unit) }}"><td>{{ e.activity_month.strftime('%Y-%m') if e.activity_month else '-' }}</td><td>{{ e.scope }}{% if e.scope == 'scope2' %} <span class="text-muted">{{ e.basis }}</span>{% endif %}{% if e.ghg_category_no %} · {{ e.ghg_category_no }}{% endif %}</td><td>{{ e.activity }}</td><td>{{ e.site_name or '-' }}</td>
-      <td class="text-end">{{ '{:,.2f}'.format(e.quantity|float) }} {{ e.unit }}</td><td class="text-end">{{ e.factor_kgco2e_used if e.factor_kgco2e_used is not none else '-' }} <span class="text-muted">{{ e.factor_source_used or '' }} {{ e.factor_vintage_used or '' }}</span></td>
-      <td class="text-end">{{ e.boundary_share if e.boundary_share is not none else '-' }}</td><td class="text-end">{{ cn.t(e.tco2e) }}</td>
-      <td><a href="{{ url_for('carbon.activity_files', entry_id=e.id) }}">{{ _('Yes') if e.evidence else _('Add') }}</a></td>
+{% block cx_icon %}bi-journal-text{% endblock %}
+{% block cx_title %}{{ _('Step 4 · Activity data') }} — {{ p.label }} {% if locked %}<span class="badge bg-light text-success fs-6">{{ _('approved & locked') }}</span>{% endif %}{% endblock %}
+{% block cx_lead %}{{ _('Record what was consumed — electricity, fuel, travel — month by month and site by site, with the bill or meter reading attached.') }}{% endblock %}
+{% block cx_about %}{{ cx.about(
+    _('Each line is one consumption record (kWh, litres, km…) for one month and one site. The factor version in force that month converts it to tCO2e, and the value used is stored with the entry.'),
+    _('These records are the inventory. A verifier samples them and asks for the invoice or meter reading behind each one; entries without evidence block the review.'),
+    _('The factor, the month, the site, the quantity and unit as shown on the bill, then attach the evidence. Scope 2 with a green contract: add a market-based line too.')) }}{% endblock %}
+{% block cx_body %}
+  {{ cx.boundary_strip(out_count, out_total) }}
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <div class="btn-group btn-group-sm">{% for sc, l in [(None, _('All')), ('scope1', _('Scope 1')), ('scope2', _('Scope 2')), ('scope3', _('Scope 3'))] %}
+      <a class="btn {{ 'btn-dark' if scope == sc else 'btn-outline-secondary' }}" href="{{ url_for('carbon.activity', period=p.id, scope=sc) }}">{{ l }}</a>{% endfor %}</div>
+    {% if cb_can_edit and not locked %}<a class="btn btn-sm btn-success" href="#add"><i class="bi bi-plus-lg"></i> {{ _('Record activity data') }}</a>{% endif %}
+  </div>
+  <div class="card mb-3"><div class="table-responsive" style="max-height: 560px"><table class="table table-sm table-hover mb-0 small align-middle"><thead><tr>
+    <th>{{ _('Month / period') }}</th><th>{{ _('Scope') }}</th><th>{{ _('Activity') }}</th><th>{{ _('Site') }}</th><th class="text-end">{{ _('Quantity') }}</th>
+    <th class="text-end">{{ cx.term('factor', _('Factor used')) }}</th><th class="text-end">{{ cx.term('share', _('Share')) }}</th><th class="text-end">{{ cx.term('tco2e') }}</th><th>{{ _('Evidence') }}</th><th></th></tr></thead><tbody>
+    {% for e in rows %}{% set unit_bad = e.factor_unit and e.unit != e.factor_unit %}{% set no_month = not e.activity_month and e.scope in ('scope1', 'scope2') %}
+    <tr id="e{{ e.id }}" class="{{ 'ecx-row-outside' if not e.in_boundary else ('table-warning' if not e.evidence or unit_bad or no_month) }}">
+      <td>{% if e.activity_month %}{{ e.activity_month.strftime('%Y-%m') }}{% else %}<span title="{{ p.start_date }} – {{ p.end_date }}">{{ _('Whole period') }} {{ p.label }}</span>
+        {% if no_month %}<div><span class="badge bg-warning text-dark">{{ _('no month') }}</span>
+          {% if cb_can_edit and not locked %}<form method="post" class="d-flex gap-1 mt-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="set_month"><input type="hidden" name="entry_id" value="{{ e.id }}">
+            <input type="month" name="activity_month" class="form-control form-control-sm" style="width: 9.5rem" min="{{ p.start_date.strftime('%Y-%m') }}" max="{{ p.end_date.strftime('%Y-%m') }}" required aria-label="{{ _('Activity month') }}"><button class="btn btn-sm btn-outline-primary">{{ _('Set') }}</button></form>{% endif %}</div>{% endif %}{% endif %}</td>
+      <td>{{ cx.scope_tag(e.scope) }}{% if e.scope == 'scope2' %} <span class="text-muted">{{ cx.term(e.basis, _('market') if e.basis == 'market' else _('location')) }}</span>{% endif %}{% if e.ghg_category_no %} <span class="text-muted">· {{ _('Cat.') }} {{ e.ghg_category_no }}</span>{% endif %}</td>
+      <td>{{ e.activity }}</td><td>{{ e.site_name or '-' }}</td>
+      <td class="text-end">{{ '{:,.2f}'.format(e.quantity|float) }} {{ e.unit }}{% if unit_bad %} <span class="badge bg-danger" title="{{ _('The unit differs from the factor unit') }}">{{ e.factor_unit }}?</span>{% endif %}</td>
+      <td class="text-end">{{ e.factor_kgco2e_used if e.factor_kgco2e_used is not none else '-' }} <span class="text-muted">{{ e.factor_source_used or '' }} {{ e.factor_vintage_used or '' }}</span></td>
+      <td class="text-end">{{ e.boundary_share if e.boundary_share is not none else '-' }}</td><td class="text-end">{{ cx.t(e.tco2e) }}</td>
+      <td><a href="{{ url_for('carbon.activity_files', entry_id=e.id) }}">{% if e.evidence %}<i class="bi bi-paperclip"></i> {{ _('Yes') }}{% else %}<span class="text-danger">{{ _('Attach') }}</span>{% endif %}</a></td>
       <td>{% if cb_can_edit and not locked %}<form method="post" data-confirm="{{ _('Delete this entry?') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="entry_id" value="{{ e.id }}"><button class="btn btn-sm btn-link text-danger p-0">{{ _('Delete') }}</button></form>{% endif %}</td></tr>
-    {% else %}<tr><td colspan="10" class="text-muted text-center py-3">{{ _('No activity data for this period.') }}</td></tr>{% endfor %}</tbody></table></div></div>
-  {% if cb_can_edit and not locked %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Record activity data') }}</strong> <span class="small text-muted">{{ _('(the factor version in force in the activity month is applied and stored)') }}</span></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="col-md-4"><label class="form-label mb-0">{{ _('Factor') }}</label><select name="factor_code" class="form-select form-select-sm" required>{% for c, v in codes.items() %}{% set f = v[-1] %}<option value="{{ c }}">{{ f.scope }} · {{ f.activity }} ({{ f.unit }}){% if f.ghg_category_no %} · {{ _('Cat.') }} {{ f.ghg_category_no }}{% endif %}</option>{% endfor %}</select></div>
+    {% else %}<tr><td colspan="10">{{ cx.empty('bi-inbox', _('No activity data for this period.'), _('Head office — January — grid electricity — 18,400 kWh — bill attached')) }}</td></tr>{% endfor %}</tbody>
+    {% if rows %}<tfoot><tr class="table-light"><th colspan="7">{{ _('Total in the reporting boundary') }} ({{ cx.included(enabled) }})</th><th class="text-end">{{ cx.t(in_total) }}</th><th colspan="2"></th></tr>
+      {% if out_count %}<tr><td colspan="7" class="text-muted">{{ _('Recorded outside the boundary (not counted)') }}</td><td class="text-end text-muted">{{ cx.t(out_total) }}</td><td colspan="2"></td></tr>{% endif %}</tfoot>{% endif %}</table></div></div>
+  {% if locked %}<div class="alert alert-success small"><i class="bi bi-lock"></i> {{ _('This period is approved and locked: entries cannot be added, changed or deleted.') }} <a href="{{ url_for('carbon.workflow', period=p.id) }}">{{ _('Review & approval') }}</a></div>{% endif %}
+  {% if cb_can_edit and not locked and not codes %}<div class="ecx-card mb-3">{{ cx.empty('bi-database-exclamation', _('No emission factor is available for the scopes in your boundary.'), none, 'carbon.factor_versions', _('Add emission factors')) }}</div>{% endif %}
+  {% if cb_can_edit and not locked and codes %}<form method="post" class="card" id="add"><div class="card-header"><strong>{{ _('Record activity data') }}</strong> <span class="small text-muted">{{ _('(the factor version in force in the activity month is applied and stored)') }}</span></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-4"><label class="form-label mb-0">{{ _('Factor') }}</label><select name="factor_code" class="form-select form-select-sm" required>{% for c, v in codes.items() %}{% set f = v[-1] %}<option value="{{ c }}">{{ cx.scope_name(f.scope) }} · {{ f.activity }} ({{ f.unit }}){% if f.ghg_category_no %} · {{ _('Cat.') }} {{ f.ghg_category_no }}{% endif %}</option>{% endfor %}</select></div>
     <div class="col-md-2"><label class="form-label mb-0">{{ _('Activity month') }}</label><input type="month" name="activity_month" class="form-control form-control-sm" required></div>
     <div class="col-md-3"><label class="form-label mb-0">{{ _('Site') }}</label><select name="site_id" class="form-select form-select-sm"><option value="">-</option>{% for s in sites if s.is_active %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></div>
     <div class="col-md-2"><label class="form-label mb-0">{{ _('Quantity') }}</label><input name="quantity" class="form-control form-control-sm"></div>
@@ -28,5 +53,4 @@
     <div class="col-md-2 form-check ms-2"><input type="checkbox" name="round_trip" value="1" class="form-check-input" id="rt" checked><label class="form-check-label" for="rt">{{ _('Return trip') }}</label></div>
     <div class="col-md-10"><input name="notes" class="form-control form-control-sm" placeholder="{{ _('Note (meter, invoice no.)') }}"></div>
     <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save and attach evidence') }}</button></div></div></form>{% endif %}
-</div>
 {% endblock %}

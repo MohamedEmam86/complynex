@@ -1,105 +1,87 @@
-{% extends 'base.html' %}
-{% block title %}{{ _('Carbon Settings') }} — ComplyNex{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">
-{% endblock %}
-{% block content %}
-<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+{% extends 'carbon/_layout.html' %}
+{% set cx_active = 'carbon.settings' %}
+{% block title %}{{ _('Scopes & company profile') }} — ComplyNex{% endblock %}
+{% block cx_icon %}bi-sliders{% endblock %}
+{% block cx_title %}{{ _('Step 1 · Scopes in the reporting boundary & company profile') }}{% endblock %}
+{% block cx_lead %}{{ _('Choose which GHG scopes are counted in your totals, and give the company figures used to check which regulatory reporting duties apply.') }}{% endblock %}
+{% block cx_about %}{{ cx.about(
+    _('The single source of truth for the reporting boundary: the scopes switched on here are the only ones counted in every total, report and disclosure.'),
+    _('Entries in a scope that is switched off are kept and listed as "recorded but outside the reporting boundary", so nothing is lost and nothing is counted twice.'),
+    _('Switch on the scopes your reporting framework requires (most require Scope 1 and 2; Scope 3 is best practice), then enter issued capital, net equity and the fiscal year end.')) }}{% endblock %}
+{% block cx_body %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="ecx-card p-4 mb-3">
+      <h5 class="mb-3">{{ cx.term('boundary', _('Reporting boundary (scope selection)')) }}</h5>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        {% for s, label, desc, cnt_key in [
+            ('scope1_enabled', _('Scope 1 — Direct emissions'), _('Fuel combustion, owned vehicles, generators, operations.'), 'scope1'),
+            ('scope2_enabled', _('Scope 2 — Purchased energy'), _('Grid electricity, purchased cooling/heating.'), 'scope2'),
+            ('scope3_enabled', _('Scope 3 — Value chain (optional)'), _('Business travel, commuting, purchased goods & services, waste — 15 GHG Protocol categories.'), 'scope3')] %}
+        <div class="form-check form-switch mb-3 p-3 border rounded {{ 'bg-light' if s != 'scope3_enabled' else '' }}" style="padding-inline-start:3.5rem !important">
+          <input class="form-check-input" type="checkbox" role="switch" id="{{ s }}" name="{{ s }}" {% if cfg[s] %}checked{% endif %}>
+          <label class="form-check-label" for="{{ s }}">
+            <strong>{{ label }}</strong>
+            {% if s != 'scope3_enabled' %}<span class="badge bg-success ms-1">{{ _('Required by most carbon-reporting rules') }}</span>
+            {% else %}<span class="badge bg-info ms-1">{{ _('Best practice') }}</span>{% endif %}
+            <div class="small text-muted">{{ desc }}</div>
+            {% if entry_counts.get(cnt_key) %}
+            <div class="small text-secondary">{{ _('%(n)s existing entries — data is preserved if you disable this scope and returns when re-enabled.', n=entry_counts.get(cnt_key)) }}</div>
+            {% endif %}
+          </label>
+        </div>
+        {% endfor %}
 
-  <div class="ecx-hero ecx-carbon">
-    <div class="ecx-eyebrow">{{ _('Carbon Footprint & Climate') }}</div>
-    <h1><i class="bi bi-sliders me-2"></i>{{ _('Carbon Settings — Reporting Boundary') }}</h1>
-    <p>{{ _("Choose which GHG scopes are inside the reporting boundary. The default (Scope 1 + 2) matches FRA Decision 36/2026 exactly; Scope 3 is international best practice (GHG Protocol / IFRS S2) and can be enabled per engagement.") }}</p>
+        <hr>
+        <h5 class="mb-3">{{ _('Company profile (regulatory applicability)') }}</h5>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">{{ _('Issued capital (EGP)') }}</label>
+            <input type="number" step="any" class="form-control" name="issued_capital_egp" value="{{ cfg.issued_capital_egp or '' }}" placeholder="{{ _('e.g. 250000000') }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">{{ _('Net equity (EGP)') }}</label>
+            <input type="number" step="any" class="form-control" name="net_equity_egp" value="{{ cfg.net_equity_egp or '' }}" placeholder="{{ _('e.g. 180000000') }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">{{ _('Fiscal year end') }}</label>
+            <input type="date" class="form-control" name="fiscal_year_end" value="{{ cfg.fiscal_year_end or '' }}">
+            <div class="form-text">{{ _('The annual carbon report is aligned with your fiscal year end.') }}</div>
+          </div>
+        </div>
+        <button class="btn btn-success mt-3"><i class="bi bi-check2-circle me-1"></i>{{ _('Save Settings') }}</button>
+        <a class="btn btn-outline-secondary mt-3 ms-1" href="{{ url_for('carbon.boundary') }}">{{ _('Consolidation, base year & sites') }} →</a>
+      </form>
+    </div>
   </div>
 
-  <div class="row g-3">
-    <div class="col-lg-7">
-      <div class="ecx-card p-4 mb-3">
-        <h5 class="mb-3">{{ _('Reporting boundary (Scope selection)') }}</h5>
-        <form method="POST">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-          {% for s, label, desc, cnt_key in [
-              ('scope1_enabled', _('Scope 1 — Direct emissions'), _('Fuel combustion, owned vehicles, generators, operations.'), 'scope1'),
-              ('scope2_enabled', _('Scope 2 — Purchased energy'), _('Grid electricity, purchased cooling/heating.'), 'scope2'),
-              ('scope3_enabled', _('Scope 3 — Value chain (optional)'), _('Business travel, commuting, purchased goods & services, waste — 15 GHG Protocol categories.'), 'scope3')] %}
-          <div class="form-check form-switch mb-3 p-3 border rounded {{ 'bg-light' if s != 'scope3_enabled' else '' }}" style="padding-left:3.5rem !important">
-            <input class="form-check-input" type="checkbox" role="switch" id="{{ s }}" name="{{ s }}"
-                   {% if cfg[s] %}checked{% endif %}>
-            <label class="form-check-label" for="{{ s }}">
-              <strong>{{ label }}</strong>
-              {% if s != 'scope3_enabled' %}<span class="badge bg-success ms-1">{{ _('FRA required') }}</span>
-              {% else %}<span class="badge bg-info ms-1">{{ _('Best practice') }}</span>{% endif %}
-              <div class="small text-muted">{{ desc }}</div>
-              {% if entry_counts.get(cnt_key) %}
-              <div class="small text-secondary">{{ _('%(n)s existing entries — data is preserved if you disable this scope and returns when re-enabled.', n=entry_counts.get(cnt_key)) }}</div>
-              {% endif %}
-            </label>
-          </div>
-          {% endfor %}
-
-          <hr>
-          <h5 class="mb-3">{{ _('Company profile (FRA applicability)') }}</h5>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">{{ _('Issued capital (EGP)') }}</label>
-              <input type="number" step="any" class="form-control" name="issued_capital_egp"
-                     value="{{ cfg.issued_capital_egp or '' }}" placeholder="{{ _('e.g. 250000000') }}">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">{{ _('Net equity (EGP)') }}</label>
-              <input type="number" step="any" class="form-control" name="net_equity_egp"
-                     value="{{ cfg.net_equity_egp or '' }}" placeholder="{{ _('e.g. 180000000') }}">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">{{ _('Fiscal year end') }}</label>
-              <input type="date" class="form-control" name="fiscal_year_end"
-                     value="{{ cfg.fiscal_year_end or '' }}">
-              <div class="form-text">{{ _('The annual FRA carbon report aligns with your fiscal year end.') }}</div>
-            </div>
-          </div>
-
-          <button class="btn btn-success mt-3"><i class="bi bi-check2-circle me-1"></i>{{ _('Save Settings') }}</button>
-        </form>
-      </div>
-    </div>
-
-    <div class="col-lg-5">
+  <div class="col-lg-5">
+    <div class="ecx-card p-4 mb-3">
+      <h5 class="mb-1"><i class="bi bi-clipboard-check me-1"></i>{{ _('Regulatory applicability check') }}</h5>
+      <div class="mb-2"><span class="ecx-badge-source">{{ _('FRA framework (Egypt) · content pack') }}</span></div>
       {% if applicability %}
-      <div class="ecx-card p-4 mb-3">
-        <h5 class="mb-3"><i class="bi bi-clipboard-check me-1"></i>{{ _('FRA applicability check') }}</h5>
-        <p class="small text-muted">{{ _('Based on the larger of issued capital / net equity: EGP %(v)s', v='{:,.0f}'.format(applicability.basis_egp)) }}</p>
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ _('ESG disclosure report (FRA 107/2021, ≥ EGP 100m)') }}
-            <span class="badge bg-{{ 'danger' if applicability.esg_107 else 'secondary' }}">{{ _('OBLIGATED') if applicability.esg_107 else _('Not obligated') }}</span>
-          </li>
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ _('TCFD climate disclosures (FRA 108/2021, ≥ EGP 500m)') }}
-            <span class="badge bg-{{ 'danger' if applicability.tcfd_108 else 'secondary' }}">{{ _('OBLIGATED') if applicability.tcfd_108 else _('Not obligated') }}</span>
-          </li>
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ _('Carbon report + 20%% offsets (FRA 36/2026, ≥ EGP 100m)') }}
-            <span class="badge bg-{{ 'danger' if applicability.carbon_36 else 'secondary' }}">{{ _('OBLIGATED') if applicability.carbon_36 else _('Not obligated') }}</span>
-          </li>
-        </ul>
-        {% if applicability.carbon_36 %}
-        <div class="alert alert-warning small mt-3 mb-0">
-          {{ _('This company is obligated under FRA 36/2026: compliance is a condition for keeping the operating license. Keep Scope 1 and Scope 2 enabled.') }}
-        </div>
-        {% endif %}
-      </div>
-      {% else %}
-      <div class="ecx-card p-4 mb-3">
-        <h5>{{ _('FRA applicability check') }}</h5>
-        <p class="text-muted small mb-0">{{ _('Enter issued capital or net equity and save — the system will tell you which FRA obligations apply.') }}</p>
-      </div>
+      <p class="small text-muted">{{ _('Based on the larger of issued capital / net equity: EGP %(v)s', v='{:,.0f}'.format(applicability.basis_egp)) }}</p>
+      <ul class="list-group list-group-flush">
+        {% for k, label, th in [('esg_107', _('ESG disclosure report'), applicability.thresholds.esg), ('tcfd_108', _('TCFD climate disclosures'), applicability.thresholds.tcfd),
+                                ('carbon_36', _('Carbon footprint report and offset obligation'), applicability.thresholds.carbon)] %}
+        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+          <span>{{ label }}<div class="small text-muted">{{ _('from EGP %(v)s', v='{:,.0f}'.format(th|float)) }}</div></span>
+          <span class="badge bg-{{ 'danger' if applicability[k] else 'secondary' }}">{{ _('OBLIGATED') if applicability[k] else _('Not obligated') }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% if applicability.carbon_36 %}
+      <div class="alert alert-warning small mt-3 mb-0">{{ _('The carbon report and offset obligation apply to this company: keep Scope 1 and Scope 2 switched on.') }}</div>
       {% endif %}
-
-      <div class="ecx-card p-4">
-        <h6><i class="bi bi-info-circle me-1"></i>{{ _('Why the default is Scope 1 + 2') }}</h6>
-        <p class="small text-muted mb-0">{{ _('FRA Decision 36/2026 mandates measurement of Scope 1 (direct) and Scope 2 (purchased energy) only. Scope 3 covers 15 value-chain categories that most companies cannot fully source — reporting a partial Scope 3 understates emissions and fails verification. When Scope 3 is disabled, the generated FRA report states the exclusion explicitly (a GHG Protocol boundary statement) instead of staying silent.') }}</p>
-      </div>
+      {% else %}
+      <p class="text-muted small mb-0">{{ _('Enter issued capital or net equity and save: the page then shows which reporting duties apply.') }}</p>
+      {% endif %}
+    </div>
+    <div class="mb-3">{{ cx.legal_table(legal) }}</div>
+    <div class="ecx-card p-4">
+      <h6><i class="bi bi-info-circle me-1"></i>{{ _('Why the default is Scope 1 + 2') }}</h6>
+      <p class="small text-muted mb-0">{{ _('Most carbon-reporting rules require Scope 1 (direct) and Scope 2 (purchased energy). Scope 3 covers 15 value-chain categories that are hard to source completely, and a partial Scope 3 understates emissions. When Scope 3 is switched off, the reports state the exclusion explicitly (a GHG Protocol boundary statement) instead of staying silent.') }}</p>
     </div>
   </div>
 </div>

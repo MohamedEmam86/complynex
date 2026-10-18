@@ -1,24 +1,32 @@
-{% extends 'base.html' %}
-{% import 'carbon/acc/_nav.html' as cn with context %}
+{% extends 'carbon/_layout.html' %}
+{% set cx_active = 'carbon.boundary' %}
 {% block title %}{{ _('Boundary & sites') }} — ComplyNex{% endblock %}
-{% block content %}
-<div class="container-fluid">
-  <h3 class="mb-2">{{ _('Organisational boundary, entities & sites') }}</h3>
-  {{ cn.nav('carbon.boundary') }}
+{% block cx_icon %}bi-diagram-3{% endblock %}
+{% block cx_title %}{{ _('Steps 1–2 · Organisational boundary, entities & sites') }}{% endblock %}
+{% block cx_lead %}{{ _('Decide which parts of the organisation and which scopes your inventory covers. Every later step uses these settings.') }}{% endblock %}
+{% block cx_about %}{{ cx.about(
+    _('The organisational boundary: how group companies are consolidated, the base year you measure reductions against, and the sites (offices, branches, data centres) whose energy and fuel you report.'),
+    _('A verifier checks the boundary first. If a site or company is missing, every total is understated; if the base year is missing, reductions cannot be shown.'),
+    _('1) The consolidation approach and base year. 2) Legal entities, only if you report for a group. 3) Every active site with its city, floor area and staff.')) }}{% endblock %}
+{% block cx_body %}
+  {% set en = carbon_boundary() %}
+  <div class="ecx-boundary"><strong>{{ cx.term('boundary') }}:</strong>
+    {% for sc in ('scope1', 'scope2', 'scope3') %}{% if sc in en %}<span class="ecx-scope-tag {{ sc }}">{{ cx.scope_name(sc) }} ✓</span>{% else %}<span class="ecx-outside">{{ cx.scope_name(sc) }}: {{ _('outside the boundary') }}</span>{% endif %} {% endfor %}
+    <a class="ms-auto btn btn-sm btn-outline-success" href="{{ url_for('carbon.settings') }}">{{ _('Scopes & company profile') }} →</a></div>
   <div class="row g-3"><div class="col-lg-4">
     <form method="post" class="card"><div class="card-header"><strong>{{ _('Boundary & base year') }}</strong></div><div class="card-body small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="approach">
-      <label class="form-label mb-0">{{ _('Consolidation approach (GHG Protocol)') }}</label>
+      <label class="form-label mb-0">{{ cx.term('consolidation', _('Consolidation approach (GHG Protocol)')) }}</label>
       <select name="consolidation_approach" class="form-select form-select-sm mb-2" {{ 'disabled' if not cb_can_edit }}>{% for a, l in [('operational_control', _('Operational control')), ('financial_control', _('Financial control')), ('equity_share', _('Equity share'))] %}<option value="{{ a }}" {{ 'selected' if (cfg.consolidation_approach or 'operational_control') == a }}>{{ l }}</option>{% endfor %}</select>
-      <div class="row g-1"><div class="col-6"><label class="form-label mb-0">{{ _('Base year') }}</label><input name="base_year" type="number" class="form-control form-control-sm" value="{{ cfg.base_year or '' }}"></div>
+      <div class="row g-1"><div class="col-6"><label class="form-label mb-0">{{ cx.term('base_year') }}</label><input name="base_year" type="number" class="form-control form-control-sm" value="{{ cfg.base_year or '' }}"></div>
         <div class="col-6"><label class="form-label mb-0">{{ _('Base-year emissions (tCO2e)') }}</label><input name="base_year_tco2e" class="form-control form-control-sm" value="{{ cfg.base_year_tco2e or '' }}"></div></div>
-      <label class="form-label mb-0 mt-2">{{ _('Recalculation threshold') ~ ' (%)' }}</label><input name="recalculation_threshold_pct" class="form-control form-control-sm" value="{{ cfg.recalculation_threshold_pct or '' }}">
+      <label class="form-label mb-0 mt-2">{{ cx.term('recalc', _('Recalculation threshold') ~ ' (%)') }}</label><input name="recalculation_threshold_pct" class="form-control form-control-sm" value="{{ cfg.recalculation_threshold_pct or '' }}">
       <label class="form-label mb-0 mt-2">{{ _('Base-year recalculation policy') }}</label><textarea name="recalculation_policy" rows="4" class="form-control form-control-sm" placeholder="{{ _('e.g. recalculate when acquisitions, divestments or methodology changes move base-year emissions by more than the threshold') }}">{{ cfg.recalculation_policy or '' }}</textarea>
       {% if cb_can_edit %}<button class="btn btn-sm btn-primary mt-2">{{ _('Save') }}</button>{% endif %}</div></form>
   </div><div class="col-lg-8">
     <div class="card mb-3"><div class="card-header"><strong>{{ _('Legal entities') }}</strong> <span class="small text-muted">{{ _('(share consolidated depends on the approach)') }}</span></div>
       <table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Entity') }}</th><th class="text-end">{{ _('Ownership') ~ ' (%)' }}</th><th>{{ _('Operational control') }}</th><th>{{ _('Financial control') }}</th><th>{{ _('Included') }}</th></tr></thead><tbody>
       {% for e in entities %}<tr><td>{{ rc_loc(e.name, e.name_ar) }}</td><td class="text-end">{{ e.ownership_pct }}</td><td>{{ _('Yes') if e.operational_control else _('No') }}</td><td>{{ _('Yes') if e.financial_control else _('No') }}</td><td>{{ _('Yes') if e.included else _('No') }}</td></tr>
-      {% else %}<tr><td colspan="5" class="text-muted">{{ _('No entity: everything is consolidated in full.') }}</td></tr>{% endfor %}</tbody></table>
+      {% else %}<tr><td colspan="5" class="text-muted">{{ _('No entity: everything is consolidated in full.') }} {{ _('Add entities only if you report for a group of companies.') }}</td></tr>{% endfor %}</tbody></table>
       {% if cb_can_edit %}<form method="post" class="card-body border-top row g-1 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="entity">
         <div class="col-md-3"><input name="name" class="form-control form-control-sm" placeholder="{{ _('Name') }}" required></div>
         <div class="col-md-3"><input name="name_ar" dir="rtl" class="form-control form-control-sm" placeholder="{{ _('Name (Arabic)') }}"></div>
@@ -26,10 +34,10 @@
         {% for k, l in [('operational_control', _('Op. control')), ('financial_control', _('Fin. control')), ('included', _('Included'))] %}<div class="col-auto form-check pt-1 ms-2"><input type="checkbox" name="{{ k }}" value="1" class="form-check-input" id="e_{{ k }}" checked><label class="form-check-label" for="e_{{ k }}">{{ l }}</label></div>{% endfor %}
         <div class="col-auto"><button class="btn btn-sm btn-outline-primary">{{ _('Add') }}</button></div></form>{% endif %}
     </div>
-    <div class="card"><div class="card-header"><strong>{{ _('Sites') }}</strong></div>
+    <div class="card" id="sites"><div class="card-header"><strong>{{ _('Sites') }}</strong> <span class="small text-muted">{{ _('(step 2: every office, branch or data centre whose energy you report)') }}</span></div>
       <table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Site') }}</th><th>{{ _('Entity') }}</th><th>{{ _('Type') }}</th><th>{{ _('City') }}</th><th class="text-end">m²</th><th class="text-end">{{ _('Staff') }}</th><th>{{ _('Active') }}</th></tr></thead><tbody>
       {% for s in sites %}<tr class="{{ 'text-muted' if not s.is_active }}"><td>{{ s.name }}</td><td>{{ s.entity_name or '-' }}</td><td>{{ s.site_type }}</td><td>{{ s.city or '-' }}</td><td class="text-end">{{ s.floor_area_m2 or '-' }}</td><td class="text-end">{{ s.headcount or '-' }}</td><td>{{ _('Yes') if s.is_active else _('No') }}</td></tr>
-      {% else %}<tr><td colspan="7" class="text-muted">{{ _('No sites yet.') }}</td></tr>{% endfor %}</tbody></table>
+      {% else %}<tr><td colspan="7">{{ cx.empty('bi-building', _('No sites yet.'), _('Head office — Cairo — office — 1,200 m² — 85 staff')) }}</td></tr>{% endfor %}</tbody></table>
       {% if cb_can_edit %}<form method="post" class="card-body border-top row g-1 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="site"><input type="hidden" name="_form" value="1">
         <div class="col-md-3"><input name="name" class="form-control form-control-sm" placeholder="{{ _('Name') }}" required></div>
         <div class="col-md-2"><select name="entity_id" class="form-select form-select-sm"><option value="">{{ _('Entity') }}</option>{% for e in entities %}<option value="{{ e.id }}">{{ e.name }}</option>{% endfor %}</select></div>
@@ -40,5 +48,4 @@
         <input type="hidden" name="is_active" value="1"><div class="col-md-1"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Add') }}</button></div></form>{% endif %}
     </div>
   </div></div>
-</div>
 {% endblock %}

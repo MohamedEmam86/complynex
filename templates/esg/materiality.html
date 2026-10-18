@@ -1,20 +1,14 @@
-{% extends 'base.html' %}
+{% extends 'esg/_layout.html' %}
+{% set esg_active = 'esg.materiality' %}
 {% block title %}{{ _('Materiality Assessment') }} — {{ _('ESG Management') }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
-{% block content %}
-<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
-  <div class="ecx-hero ecx-esg">
-    <div class="ecx-eyebrow">{{ _('ESG Management') }}</div>
-    <h1><i class="bi bi-bullseye me-2"></i>{{ _('Materiality Assessment') }}</h1>
-    <p>{{ _('Score each topic on how important it is to stakeholders and how significant its business impact is. Topics in the top-right quadrant are your highest reporting priorities.') }}</p>
-  </div>
-
-  <ul class="nav ecx-nav-pills mb-3">
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.dashboard') }}">{{ _('Dashboard') }}</a></li>
-    <li class="nav-item"><a class="nav-link active ecx-esg" href="{{ url_for('esg.materiality') }}">{{ _('Materiality Assessment') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.disclosures') }}">{{ _('Disclosure Tracker') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.framework_view') }}">{{ _('Framework & Weights') }}</a></li>
-  </ul>
+{% block esg_icon %}bi-bullseye{% endblock %}
+{% block esg_title %}{{ _('Materiality Assessment') }}{% endblock %}
+{% block esg_lead %}{{ _('Score each topic on how important it is to stakeholders and how significant its business impact is. Topics in the top-right quadrant are your highest reporting priorities.') }}{% endblock %}
+{% block esg_about %}{{ cx.about(
+    _('A workshop tool: each sustainability topic is rated on its importance to stakeholders and its impact on the business.'),
+    _('Disclosure standards ask you to report on what is material. The top-right topics of the matrix are your reporting priorities.'),
+    _('For each topic, a 1–5 rating for stakeholder importance and for business impact, ideally agreed in a workshop with management.'), cls='ecx-esg') }}{% endblock %}
+{% block esg_body %}
 
   <div class="row g-3">
     <div class="col-lg-6">
@@ -76,5 +70,4 @@
       </form>
     </div>
   </div>
-</div>
 {% endblock %}

@@ -28182,6 +28182,940 @@ msgstr "يجب أن يكون العنوان بصيغة http(s)://host[:port]"
 msgid "credentials in the URL are not allowed"
 msgstr "لا يُسمح ببيانات الدخول داخل العنوان"
 
+# --- Sustainability UX (esg, carbon) ---
+msgid "Month added; the recorded figure is unchanged."
+msgstr "أُضيف الشهر؛ والرقم المسجل لم يتغير."
+
+msgid "Warning: carbon-reporting rules (for example the FRA framework) require Scope 1 and Scope 2 for obligated companies. Switch them off only if no such rule applies to you."
+msgstr "تحذير: قواعد الإفصاح عن الكربون (مثل إطار الهيئة العامة للرقابة المالية) تشترط النطاقين 1 و2 للشركات الملزمة. لا توقفهما إلا إذا لم تنطبق عليك أي من هذه القواعد."
+
+msgid "the FRA carbon-footprint decision (reference to be recorded in the regulatory parameters)"
+msgstr "قرار الهيئة العامة للرقابة المالية بشأن البصمة الكربونية (يُسجَّل المرجع في المعايير الرقابية)"
+
+msgid "choose a month inside the reporting period"
+msgstr "اختر شهرًا داخل فترة التقرير"
+
+msgid "a different factor version applies to that month — delete the entry and record it again"
+msgstr "ينطبق على ذلك الشهر إصدار مختلف من المعامل — احذف القيد وسجّله من جديد"
+
+msgid "Sustainability"
+msgstr "الاستدامة"
+
+msgid "Carbon reporting"
+msgstr "تقارير الكربون"
+
+msgid "Emission factors"
+msgstr "معاملات الانبعاث"
+
+msgid "Regulator submission & offsets"
+msgstr "التقديم للجهة الرقابية والتعويض"
+
+msgid "Only if you lend or invest (Scope 3, category 15)"
+msgstr "فقط إذا كنت تمنح تمويلًا أو تستثمر (النطاق 3، الفئة 15)"
+
+msgid "Belongs to the FRA regulatory framework (content pack)"
+msgstr "يتبع الإطار الرقابي للهيئة العامة للرقابة المالية (حزمة محتوى)"
+
+msgid "Targets & intensity"
+msgstr "الأهداف والكثافة"
+
+msgid "Entities & sites"
+msgstr "الكيانات والمواقع"
+
+msgid "Activity data (with evidence)"
+msgstr "بيانات الأنشطة (مع المستندات)"
+
+msgid "Data-quality checks"
+msgstr "فحوص جودة البيانات"
+
+msgid "Review & approval (period lock)"
+msgstr "المراجعة والاعتماد (قفل الفترة)"
+
+msgid "Regulator submission & verification"
+msgstr "التقديم للجهة الرقابية والتحقق"
+
+msgid "Offset obligation"
+msgstr "التزام التعويض"
+
+msgid "Not started"
+msgstr "لم يبدأ"
+
+msgid "Blocked"
+msgstr "متوقف"
+
+msgid "Choose the consolidation approach"
+msgstr "اختر منهج التجميع"
+
+msgid "Set the base year"
+msgstr "حدد سنة الأساس"
+
+msgid "Add at least one active site (office, branch, data centre)"
+msgstr "أضف موقعًا نشطًا واحدًا على الأقل (مكتب، فرع، مركز بيانات)"
+
+msgid "No current emission factor for %(s)s"
+msgstr "لا يوجد معامل انبعاث حالي لـ %(s)s"
+
+msgid "No scope is inside the reporting boundary"
+msgstr "لا يوجد نطاق داخل حدود التقرير"
+
+msgid "No reporting period exists yet (periods are created in ESG Management)"
+msgstr "لا توجد فترة تقرير بعد (تُنشأ الفترات في إدارة الاستدامة ESG)"
+
+msgid "Add emission factors first"
+msgstr "أضف معاملات الانبعاث أولًا"
+
+msgid "No activity data recorded for this period"
+msgstr "لا توجد بيانات أنشطة مسجلة لهذه الفترة"
+
+msgid "%(n)s entries without evidence"
+msgstr "%(n)s قيود بدون مستندات"
+
+msgid "%(n)s Scope 1/2 entries without a month"
+msgstr "%(n)s قيود للنطاق 1/2 بدون شهر"
+
+msgid "%(n)s entries recorded outside the reporting boundary (not counted)"
+msgstr "%(n)s قيود مسجلة خارج حدود التقرير (غير محتسبة)"
+
+msgid "Record activity data first"
+msgstr "سجّل بيانات الأنشطة أولًا"
+
+msgid "%(n)s critical data-quality issues"
+msgstr "%(n)s مشكلات حرجة في جودة البيانات"
+
+msgid "%(n)s warnings to explain to the verifier"
+msgstr "%(n)s تنبيهات يجب شرحها للمُحقِّق"
+
+msgid "Waiting for the reviewer"
+msgstr "في انتظار المراجع"
+
+msgid "Waiting for the approver"
+msgstr "في انتظار المعتمد"
+
+msgid "Fix %(n)s critical data-quality issues before submitting"
+msgstr "عالج %(n)s مشكلات حرجة في جودة البيانات قبل التقديم"
+
+msgid "Submit the inventory for review"
+msgstr "قدّم الحصر للمراجعة"
+
+msgid "The inventory must be approved first"
+msgstr "يجب اعتماد الحصر أولًا"
+
+msgid "Export the disclosure (PDF or Excel)"
+msgstr "صدّر الإفصاح (PDF أو Excel)"
+
+msgid "Not required by the configured regulation"
+msgstr "غير مطلوب وفق القواعد الرقابية المُعدّة"
+
+msgid "Enter capital or equity in the company profile to check whether this applies"
+msgstr "أدخل رأس المال أو حقوق الملكية في ملف الشركة لمعرفة ما إذا كان هذا ينطبق"
+
+msgid "Current status: %(s)s"
+msgstr "الحالة الحالية: %(s)s"
+
+msgid "Send the approved report to the verifier"
+msgstr "أرسل التقرير المعتمد إلى المُحقِّق"
+
+msgid "%(n)s tCO2e of certificates still to buy"
+msgstr "%(n)s طن مكافئ CO2 من الشهادات ما زال مطلوب شراؤها"
+
+msgid "Deadline passed — %(n)s tCO2e missing"
+msgstr "انقضى الموعد — ينقص %(n)s طن مكافئ CO2"
+
+msgid "Created automatically when the report is submitted to the regulator"
+msgstr "يُنشأ تلقائيًا عند تقديم التقرير إلى الجهة الرقابية"
+
+msgid "Carbon reporting journey"
+msgstr "مسار تقارير الكربون"
+
+msgid "Next step"
+msgstr "الخطوة التالية"
+
+msgid "steps done"
+msgstr "خطوات مكتملة"
+
+msgid "Do this next"
+msgstr "نفّذ هذه الخطوة"
+
+msgid "All steps of the reporting journey are done for this period."
+msgstr "اكتملت كل خطوات مسار التقرير لهذه الفترة."
+
+msgid "What is this page?"
+msgstr "ما هذه الصفحة؟"
+
+msgid "What it is"
+msgstr "ما هي"
+
+msgid "Why it matters"
+msgstr "لماذا تهم"
+
+msgid "What you need to enter"
+msgstr "ما الذي تحتاج إلى إدخاله"
+
+msgid "Consolidation approach"
+msgstr "منهج التجميع"
+
+msgid "How group companies are counted. Operational or financial control: 100 per cent of what you control. Equity share: your ownership percentage of each entity."
+msgstr "كيفية احتساب شركات المجموعة. السيطرة التشغيلية أو المالية: 100 في المائة مما تسيطر عليه. حصة الملكية: نسبة ملكيتك في كل كيان."
+
+msgid "The reference year that emission reductions are measured against."
+msgstr "السنة المرجعية التي تُقاس عليها تخفيضات الانبعاثات."
+
+msgid "If acquisitions, divestments or method changes move base-year emissions by more than this percentage, the base year is recalculated."
+msgstr "إذا غيّرت الاستحواذات أو التخارجات أو تغييرات المنهجية انبعاثات سنة الأساس بأكثر من هذه النسبة، يُعاد احتساب سنة الأساس."
+
+msgid "Direct emissions from sources you own or control: fuel in generators and vehicles, refrigerant leaks."
+msgstr "الانبعاثات المباشرة من مصادر تملكها أو تسيطر عليها: الوقود في المولدات والمركبات وتسرب غازات التبريد."
+
+msgid "Indirect emissions from the electricity, heat or cooling you buy."
+msgstr "الانبعاثات غير المباشرة من الكهرباء أو التدفئة أو التبريد الذي تشتريه."
+
+msgid "Other indirect emissions in the value chain: business travel, commuting, purchased goods, waste, investments."
+msgstr "الانبعاثات غير المباشرة الأخرى في سلسلة القيمة: سفر العمل، تنقل الموظفين، المشتريات، النفايات، الاستثمارات."
+
+msgid "Location-based"
+msgstr "على أساس الموقع"
+
+msgid "Scope 2 calculated with the average emission factor of the national grid."
+msgstr "النطاق 2 محسوبًا بمتوسط معامل الانبعاث لشبكة الكهرباء الوطنية."
+
+msgid "Market-based"
+msgstr "على أساس السوق"
+
+msgid "Scope 2 calculated with the factor of the electricity you contracted (green tariff, certificates)."
+msgstr "النطاق 2 محسوبًا بمعامل الكهرباء المتعاقد عليها (تعريفة خضراء، شهادات)."
+
+msgid "PCAF"
+msgstr "PCAF"
+
+msgid "Partnership for Carbon Accounting Financials: the global standard for measuring the emissions of loans and investments."
+msgstr "الشراكة من أجل محاسبة الكربون في المؤسسات المالية: المعيار العالمي لقياس انبعاثات التمويل والاستثمارات."
+
+msgid "Attribution factor"
+msgstr "معامل الإسناد"
+
+msgid "The part of a borrower that you finance: outstanding amount divided by the borrower total equity plus debt (or the asset value)."
+msgstr "الجزء الذي تموّله من المقترض: الرصيد القائم مقسومًا على إجمالي حقوق ملكية المقترض وديونه (أو قيمة الأصل)."
+
+msgid "From 1 (reported, verified emissions) to 5 (estimated from sector averages). Lower is better."
+msgstr "من 1 (انبعاثات مُبلغ عنها ومُتحقق منها) إلى 5 (تقدير من متوسطات القطاع). الأقل أفضل."
+
+msgid "Emission factor"
+msgstr "معامل الانبعاث"
+
+msgid "Converts a quantity (kWh, litre, km) into kilograms of CO2-equivalent. Each factor has a source and a year."
+msgstr "يحوّل الكمية (كيلوواط ساعة، لتر، كم) إلى كيلوجرامات من مكافئ ثاني أكسيد الكربون. لكل معامل مصدر وسنة."
+
+msgid "Tonnes of carbon-dioxide equivalent: all greenhouse gases expressed as CO2."
+msgstr "أطنان من مكافئ ثاني أكسيد الكربون: جميع غازات الاحتباس الحراري معبّرًا عنها بثاني أكسيد الكربون."
+
+msgid "Boundary share"
+msgstr "نسبة الإدراج"
+
+msgid "The part of a site consolidated under your approach (1 = all of it)."
+msgstr "الجزء من الموقع الذي يُجمَّع وفق منهجك (1 = الموقع بالكامل)."
+
+msgid "Factor version"
+msgstr "إصدار المعامل"
+
+msgid "A dated value of a factor. A new version never changes figures already recorded."
+msgstr "قيمة مؤرخة للمعامل. الإصدار الجديد لا يغيّر الأرقام المسجلة سابقًا."
+
+msgid "The year the factor value refers to."
+msgstr "السنة التي تشير إليها قيمة المعامل."
+
+msgid "Reporting boundary"
+msgstr "حدود التقرير"
+
+msgid "The scopes counted in your totals. Entries in other scopes are kept but not counted."
+msgstr "النطاقات المحتسبة في الإجماليات. القيود في النطاقات الأخرى محفوظة لكنها غير محتسبة."
+
+msgid "Recorded but outside the reporting boundary: not counted in the totals."
+msgstr "مسجّل لكنه خارج حدود التقرير: غير محتسب في الإجماليات."
+
+msgid "outside boundary"
+msgstr "خارج الحدود"
+
+msgid "includes"
+msgstr "يشمل"
+
+msgid "Totals on this page count only these scopes."
+msgstr "الإجماليات في هذه الصفحة تحتسب هذه النطاقات فقط."
+
+msgid "recorded but outside the reporting boundary"
+msgstr "مسجّل لكنه خارج حدود التقرير"
+
+msgid "%(n)s entries outside the boundary"
+msgstr "%(n)s قيود خارج الحدود"
+
+msgid "not counted"
+msgstr "غير محتسبة"
+
+msgid "Change the scopes"
+msgstr "غيّر النطاقات"
+
+msgid "Legal basis of these rules"
+msgstr "السند القانوني لهذه القواعد"
+
+msgid "no reference recorded"
+msgstr "لا يوجد مرجع مسجل"
+
+msgid "content pack"
+msgstr "حزمة محتوى"
+
+msgid "to be confirmed by Compliance"
+msgstr "تؤكده إدارة الالتزام"
+
+msgid "These values are regulatory parameters, installed by the regulatory content pack and editable under Compliance Controls → Regulatory parameters."
+msgstr "هذه القيم معايير رقابية، تثبّتها حزمة المحتوى الرقابية ويمكن تعديلها من ضوابط الالتزام ← المعايير الرقابية."
+
+msgid "No regulatory pack defines these parameters on this installation: the module uses its built-in defaults. Enable the pack of your regulator, or define the parameters, to record the legal source."
+msgstr "لا تعرّف أي حزمة رقابية هذه المعايير في هذا النظام: تستخدم الوحدة قيمها الافتراضية. فعّل حزمة الجهة الرقابية التابع لها، أو عرّف المعايير، لتسجيل المصدر القانوني."
+
+msgid "Greenhouse-gas inventory"
+msgstr "حصر انبعاثات غازات الاحتباس الحراري"
+
+msgid "Scope 1, 2 and 3 emissions under the GHG Protocol Corporate Standard. Every figure can be traced to the activity, the emission factor and the evidence behind it."
+msgstr "انبعاثات النطاقات 1 و2 و3 وفق المعيار المؤسسي لبروتوكول غازات الاحتباس الحراري. كل رقم يمكن تتبعه إلى النشاط ومعامل الانبعاث والمستند الداعم."
+
+msgid "The overview of your carbon inventory for the selected reporting period: totals by scope, progress against your reduction target, and the setup checklist."
+msgstr "نظرة عامة على حصر الكربون لفترة التقرير المختارة: الإجماليات حسب النطاق، والتقدم نحو هدف التخفيض، وقائمة الإعداد."
+
+msgid "The inventory is only as reliable as each step behind it. The checklist shows, from your data, which steps are done and what is still missing."
+msgstr "الحصر موثوق بقدر كل خطوة وراءه. تُظهر القائمة، من بياناتك، الخطوات المكتملة وما زال ناقصًا."
+
+msgid "Nothing on this page. Follow the checklist: each item opens the page where the data is entered."
+msgstr "لا شيء في هذه الصفحة. اتبع القائمة: كل بند يفتح الصفحة التي تُدخل فيها البيانات."
+
+msgid "Total (location-based)"
+msgstr "الإجمالي (على أساس الموقع)"
+
+msgid "Scope 2 — purchased energy"
+msgstr "النطاق 2 — الطاقة المشتراة"
+
+msgid "Emissions by scope"
+msgstr "الانبعاثات حسب النطاق"
+
+msgid "No activity data in the reporting boundary for this period yet."
+msgstr "لا توجد بيانات أنشطة داخل حدود التقرير لهذه الفترة بعد."
+
+msgid "electricity of the head office for January: 18,400 kWh, with the bill attached"
+msgstr "كهرباء المقر الرئيسي لشهر يناير: 18,400 كيلوواط ساعة، مع إرفاق الفاتورة"
+
+msgid "Each factor carries its source and year. See the"
+msgstr "لكل معامل مصدره وسنته. انظر"
+
+msgid "Reduction target progress"
+msgstr "التقدم نحو هدف التخفيض"
+
+msgid "base year 2024: 1,250 tCO2e, target -30 per cent by 2030"
+msgstr "سنة الأساس 2024: 1,250 طن مكافئ CO2، والهدف خفض 30 في المائة بحلول 2030"
+
+msgid "Set a reduction target"
+msgstr "حدد هدف تخفيض"
+
+msgid "Recent activity"
+msgstr "أحدث الأنشطة"
+
+msgid "in the boundary"
+msgstr "داخل الحدود"
+
+msgid "All activity data"
+msgstr "كل بيانات الأنشطة"
+
+msgid "Setup checklist"
+msgstr "قائمة الإعداد"
+
+msgid "done"
+msgstr "مكتمل"
+
+msgid "Status is calculated from your data, never typed in. Work from top to bottom."
+msgstr "تُحسب الحالة من بياناتك ولا تُكتب يدويًا. اعمل من الأعلى إلى الأسفل."
+
+msgid "Steps 8–9 · Regulator submission, verification & offsets"
+msgstr "الخطوتان 8–9 · التقديم للجهة الرقابية والتحقق والتعويض"
+
+msgid "The annual carbon report, its independent verification, submission to the regulator, and the offset obligation that follows."
+msgstr "تقرير الكربون السنوي، والتحقق المستقل منه، وتقديمه للجهة الرقابية، والتزام التعويض الذي يليه."
+
+msgid "FRA framework (Egypt) · content pack"
+msgstr "إطار الهيئة العامة للرقابة المالية (مصر) · حزمة محتوى"
+
+msgid "The regulator-specific end of the journey, as defined by the FRA carbon-footprint rules: the report goes to an accredited verifier, is certified and submitted, and an offset obligation is then created."
+msgstr "الجزء الخاص بالجهة الرقابية من المسار كما تحدده قواعد الهيئة بشأن البصمة الكربونية: يُرسل التقرير إلى مُحقِّق معتمد، ثم يُعتمد ويُقدَّم، ثم يُنشأ التزام التعويض."
+
+msgid "Where these rules apply, compliance is a licence condition. If they do not apply to you (see the applicability check), steps 8 and 9 are shown as not applicable."
+msgstr "حيث تنطبق هذه القواعد يكون الالتزام بها شرطًا للترخيص. إذا لم تنطبق عليك (انظر فحص الانطباق)، تظهر الخطوتان 8 و9 كغير منطبقتين."
+
+msgid "Move the report status as it progresses, with the verifier name and notes. After submission, log each certificate purchase with its registry reference."
+msgstr "حدّث حالة التقرير مع تقدمه، مع اسم المُحقِّق والملاحظات. بعد التقديم، سجّل كل عملية شراء شهادات مع مرجع السجل."
+
+msgid "Scope 3: recorded but outside the reporting boundary (not declared)"
+msgstr "النطاق 3: مسجّل لكنه خارج حدود التقرير (غير مُعلن)"
+
+msgid "%(p)s per cent of declared emissions, within %(d)s days of submission"
+msgstr "%(p)s في المائة من الانبعاثات المعلنة، خلال %(d)s يومًا من التقديم"
+
+msgid "No offset obligation yet."
+msgstr "لا يوجد التزام تعويض بعد."
+
+msgid "It is created automatically when the report status is moved to Submitted: %(p)s per cent of the declared total, due within %(d)s days. Certificates are bought through the climate-project registry named by the regulator."
+msgstr "يُنشأ تلقائيًا عند نقل حالة التقرير إلى \"تم التقديم\": %(p)s في المائة من الإجمالي المعلن، مستحق خلال %(d)s يومًا. تُشترى الشهادات من سجل المشروعات المناخية الذي تحدده الجهة الرقابية."
+
+msgid "Prepared pursuant to: %(ref)s"
+msgstr "أُعدّ استنادًا إلى: %(ref)s"
+
+msgid "This inventory was prepared following the GHG Protocol Corporate Accounting and Reporting Standard (operational control approach) and the measurement scope required by the FRA carbon-footprint rules (%(ref)s)."
+msgstr "أُعدّ هذا الحصر وفق المعيار المؤسسي للمحاسبة والإبلاغ لبروتوكول غازات الاحتباس الحراري (منهج السيطرة التشغيلية) ونطاق القياس الذي تشترطه قواعد الهيئة العامة للرقابة المالية بشأن البصمة الكربونية (%(ref)s)."
+
+msgid "This exclusion is declared explicitly in line with GHG Protocol boundary-setting guidance. The FRA carbon-footprint rules (%(ref)s) require Scope 1 and Scope 2 only."
+msgstr "يُعلن هذا الاستبعاد صراحةً وفق إرشادات بروتوكول غازات الاحتباس الحراري لتحديد الحدود. تشترط قواعد الهيئة بشأن البصمة الكربونية (%(ref)s) النطاقين 1 و2 فقط."
+
+msgid "Pursuant to %(ref)s, the company commits to purchasing certified emission-reduction certificates equal to %(p)s per cent of the total emissions declared above (%(req)s tCO2e) through the FRA Climate Project Registry within %(d)s days of report submission (deadline: %(dl)s)."
+msgstr "استنادًا إلى %(ref)s، تلتزم الشركة بشراء شهادات خفض انبعاثات معتمدة تعادل %(p)s في المائة من إجمالي الانبعاثات المعلنة أعلاه (%(req)s طن مكافئ CO2) من خلال سجل المشروعات المناخية لدى الهيئة خلال %(d)s يومًا من تقديم التقرير (الموعد النهائي: %(dl)s)."
+
+msgid "Upon submission of this report, the company will purchase certified emission-reduction certificates equal to %(p)s per cent of the total declared emissions (%(est)s tCO2e estimated) through the FRA Climate Project Registry within %(d)s days."
+msgstr "عند تقديم هذا التقرير، ستشتري الشركة شهادات خفض انبعاثات معتمدة تعادل %(p)s في المائة من إجمالي الانبعاثات المعلنة (%(est)s طن مكافئ CO2 تقديريًا) من خلال سجل المشروعات المناخية لدى الهيئة خلال %(d)s يومًا."
+
+msgid "Calculation methodology"
+msgstr "منهجية الاحتساب"
+
+msgid "Scopes & company profile"
+msgstr "النطاقات وملف الشركة"
+
+msgid "Step 1 · Scopes in the reporting boundary & company profile"
+msgstr "الخطوة 1 · النطاقات داخل حدود التقرير وملف الشركة"
+
+msgid "Choose which GHG scopes are counted in your totals, and give the company figures used to check which regulatory reporting duties apply."
+msgstr "اختر نطاقات غازات الاحتباس المحتسبة في الإجماليات، وأدخل بيانات الشركة المستخدمة لمعرفة التزامات الإفصاح الرقابية المنطبقة."
+
+msgid "The single source of truth for the reporting boundary: the scopes switched on here are the only ones counted in every total, report and disclosure."
+msgstr "المصدر الوحيد لحدود التقرير: النطاقات المفعّلة هنا وحدها هي المحتسبة في كل إجمالي وتقرير وإفصاح."
+
+msgid "Entries in a scope that is switched off are kept and listed as \"recorded but outside the reporting boundary\", so nothing is lost and nothing is counted twice."
+msgstr "القيود في نطاق متوقف تبقى محفوظة وتظهر بوصف \"مسجّل لكنه خارج حدود التقرير\"، فلا يضيع شيء ولا يُحتسب شيء مرتين."
+
+msgid "Switch on the scopes your reporting framework requires (most require Scope 1 and 2; Scope 3 is best practice), then enter issued capital, net equity and the fiscal year end."
+msgstr "فعّل النطاقات التي يتطلبها إطار الإفصاح الخاص بك (معظمها يتطلب النطاقين 1 و2؛ النطاق 3 ممارسة فضلى)، ثم أدخل رأس المال المصدر وصافي حقوق الملكية ونهاية السنة المالية."
+
+msgid "Reporting boundary (scope selection)"
+msgstr "حدود التقرير (اختيار النطاقات)"
+
+msgid "Required by most carbon-reporting rules"
+msgstr "تتطلبه معظم قواعد الإفصاح عن الكربون"
+
+msgid "Company profile (regulatory applicability)"
+msgstr "ملف الشركة (انطباق المتطلبات الرقابية)"
+
+msgid "The annual carbon report is aligned with your fiscal year end."
+msgstr "يتوافق تقرير الكربون السنوي مع نهاية سنتك المالية."
+
+msgid "Consolidation, base year & sites"
+msgstr "منهج التجميع وسنة الأساس والمواقع"
+
+msgid "Regulatory applicability check"
+msgstr "فحص انطباق المتطلبات الرقابية"
+
+msgid "ESG disclosure report"
+msgstr "تقرير الإفصاح عن الاستدامة"
+
+msgid "TCFD climate disclosures"
+msgstr "إفصاحات المناخ وفق TCFD"
+
+msgid "Carbon footprint report and offset obligation"
+msgstr "تقرير البصمة الكربونية والتزام التعويض"
+
+msgid "from EGP %(v)s"
+msgstr "من %(v)s جنيه"
+
+msgid "The carbon report and offset obligation apply to this company: keep Scope 1 and Scope 2 switched on."
+msgstr "ينطبق تقرير الكربون والتزام التعويض على هذه الشركة: أبقِ النطاقين 1 و2 مفعّلين."
+
+msgid "Enter issued capital or net equity and save: the page then shows which reporting duties apply."
+msgstr "أدخل رأس المال المصدر أو صافي حقوق الملكية واحفظ: ستعرض الصفحة حينها الالتزامات المنطبقة."
+
+msgid "Most carbon-reporting rules require Scope 1 (direct) and Scope 2 (purchased energy). Scope 3 covers 15 value-chain categories that are hard to source completely, and a partial Scope 3 understates emissions. When Scope 3 is switched off, the reports state the exclusion explicitly (a GHG Protocol boundary statement) instead of staying silent."
+msgstr "تتطلب معظم قواعد الإفصاح عن الكربون النطاق 1 (المباشر) والنطاق 2 (الطاقة المشتراة). يغطي النطاق 3 خمس عشرة فئة في سلسلة القيمة يصعب حصرها بالكامل، والنطاق 3 الجزئي يقلل الانبعاثات المعلنة. عند إيقاف النطاق 3، تذكر التقارير الاستبعاد صراحةً (بيان حدود وفق بروتوكول غازات الاحتباس) بدلًا من إغفاله."
+
+msgid "Reduction targets"
+msgstr "أهداف التخفيض"
+
+msgid "Set a base year and a reduction ambition; progress is tracked automatically from the activity data of each period."
+msgstr "حدد سنة أساس وطموح تخفيض؛ ويُتابع التقدم تلقائيًا من بيانات الأنشطة لكل فترة."
+
+msgid "Your emission-reduction target: the base year, its emissions, and the reduction you commit to by 2030 and 2035."
+msgstr "هدف تخفيض الانبعاثات: سنة الأساس وانبعاثاتها والتخفيض الذي تلتزم به بحلول 2030 و2035."
+
+msgid "A target turns the inventory into a plan. Disclosure standards ask for the target, the base year and the progress made."
+msgstr "الهدف يحوّل الحصر إلى خطة. تطلب معايير الإفصاح الهدف وسنة الأساس والتقدم المحقق."
+
+msgid "The base year and its emissions (from the boundary page or your first approved inventory) and the reduction percentages."
+msgstr "سنة الأساس وانبعاثاتها (من صفحة الحدود أو من أول حصر معتمد) ونسب التخفيض."
+
+msgid "Step 4 · Activity data"
+msgstr "الخطوة 4 · بيانات الأنشطة"
+
+msgid "Record what was consumed — electricity, fuel, travel — month by month and site by site, with the bill or meter reading attached."
+msgstr "سجّل ما تم استهلاكه — كهرباء ووقود وسفر — شهرًا بشهر وموقعًا بموقع، مع إرفاق الفاتورة أو قراءة العداد."
+
+msgid "Each line is one consumption record (kWh, litres, km…) for one month and one site. The factor version in force that month converts it to tCO2e, and the value used is stored with the entry."
+msgstr "كل سطر سجل استهلاك واحد (كيلوواط ساعة، لترات، كم…) لشهر واحد وموقع واحد. يحوّله إصدار المعامل الساري ذلك الشهر إلى طن مكافئ CO2، وتُحفظ القيمة المستخدمة مع القيد."
+
+msgid "These records are the inventory. A verifier samples them and asks for the invoice or meter reading behind each one; entries without evidence block the review."
+msgstr "هذه السجلات هي الحصر. يأخذ المُحقِّق عينة منها ويطلب الفاتورة أو قراءة العداد لكل قيد؛ والقيود بلا مستندات توقف المراجعة."
+
+msgid "The factor, the month, the site, the quantity and unit as shown on the bill, then attach the evidence. Scope 2 with a green contract: add a market-based line too."
+msgstr "المعامل، والشهر، والموقع، والكمية والوحدة كما في الفاتورة، ثم أرفق المستند. للنطاق 2 بعقد كهرباء خضراء: أضف سطرًا على أساس السوق أيضًا."
+
+msgid "Month / period"
+msgstr "الشهر / الفترة"
+
+msgid "Whole period"
+msgstr "الفترة كاملة"
+
+msgid "no month"
+msgstr "بدون شهر"
+
+msgid "Set"
+msgstr "حدد"
+
+msgid "market"
+msgstr "السوق"
+
+msgid "location"
+msgstr "الموقع"
+
+msgid "The unit differs from the factor unit"
+msgstr "الوحدة تختلف عن وحدة المعامل"
+
+msgid "Head office — January — grid electricity — 18,400 kWh — bill attached"
+msgstr "المقر الرئيسي — يناير — كهرباء الشبكة — 18,400 كيلوواط ساعة — الفاتورة مرفقة"
+
+msgid "Total in the reporting boundary"
+msgstr "الإجمالي داخل حدود التقرير"
+
+msgid "Recorded outside the boundary (not counted)"
+msgstr "مسجّل خارج الحدود (غير محتسب)"
+
+msgid "This period is approved and locked: entries cannot be added, changed or deleted."
+msgstr "هذه الفترة معتمدة ومقفلة: لا يمكن إضافة القيود أو تعديلها أو حذفها."
+
+msgid "No emission factor is available for the scopes in your boundary."
+msgstr "لا يتوفر معامل انبعاث للنطاقات داخل حدودك."
+
+msgid "Add emission factors"
+msgstr "أضف معاملات انبعاث"
+
+msgid "Steps 1–2 · Organisational boundary, entities & sites"
+msgstr "الخطوتان 1–2 · الحدود التنظيمية والكيانات والمواقع"
+
+msgid "Decide which parts of the organisation and which scopes your inventory covers. Every later step uses these settings."
+msgstr "حدّد أي أجزاء المنظمة وأي النطاقات يغطيها الحصر. كل الخطوات اللاحقة تعتمد على هذه الإعدادات."
+
+msgid "The organisational boundary: how group companies are consolidated, the base year you measure reductions against, and the sites (offices, branches, data centres) whose energy and fuel you report."
+msgstr "الحدود التنظيمية: كيفية تجميع شركات المجموعة، وسنة الأساس التي تقيس عليها التخفيض، والمواقع (المكاتب والفروع ومراكز البيانات) التي تُبلغ عن طاقتها ووقودها."
+
+msgid "A verifier checks the boundary first. If a site or company is missing, every total is understated; if the base year is missing, reductions cannot be shown."
+msgstr "يبدأ المُحقِّق بفحص الحدود. إذا غاب موقع أو شركة تقل كل الإجماليات، وإذا غابت سنة الأساس لا يمكن إظهار التخفيض."
+
+msgid "1) The consolidation approach and base year. 2) Legal entities, only if you report for a group. 3) Every active site with its city, floor area and staff."
+msgstr "1) منهج التجميع وسنة الأساس. 2) الكيانات القانونية، فقط إذا كنت تُبلغ عن مجموعة. 3) كل موقع نشط مع مدينته ومساحته وعدد العاملين."
+
+msgid "outside the boundary"
+msgstr "خارج الحدود"
+
+msgid "Add entities only if you report for a group of companies."
+msgstr "أضف الكيانات فقط إذا كنت تُبلغ عن مجموعة شركات."
+
+msgid "(step 2: every office, branch or data centre whose energy you report)"
+msgstr "(الخطوة 2: كل مكتب أو فرع أو مركز بيانات تُبلغ عن طاقته)"
+
+msgid "Head office — Cairo — office — 1,200 m² — 85 staff"
+msgstr "المقر الرئيسي — القاهرة — مكتب — 1,200 م² — 85 موظفًا"
+
+msgid "Step 7 · Disclosure"
+msgstr "الخطوة 7 · الإفصاح"
+
+msgid "The bilingual carbon disclosure generated from the inventory, ready as PDF or Excel."
+msgstr "الإفصاح الكربوني ثنائي اللغة المُنشأ من الحصر، جاهز بصيغة PDF أو Excel."
+
+msgid "The report that presents the inventory: boundary and method, gross emissions by scope, offsets shown separately, intensity, factor sources and sign-off."
+msgstr "التقرير الذي يعرض الحصر: الحدود والمنهجية، والانبعاثات الإجمالية حسب النطاق، والتعويضات منفصلة، والكثافة، ومصادر المعاملات، والاعتماد."
+
+msgid "This is what management, the board, investors or a regulator read. It is generated from the data, so it can only be final once the inventory is approved."
+msgstr "هذا ما تقرؤه الإدارة ومجلس الإدارة والمستثمرون أو الجهة الرقابية. يُنشأ من البيانات، لذا لا يكون نهائيًا إلا بعد اعتماد الحصر."
+
+msgid "Nothing: approve the inventory first (step 6), then export the PDF or Excel file."
+msgstr "لا شيء: اعتمد الحصر أولًا (الخطوة 6)، ثم صدّر ملف PDF أو Excel."
+
+msgid "%(s)s is outside the reporting boundary and not included in the totals."
+msgstr "%(s)s خارج حدود التقرير وغير مُدرج في الإجماليات."
+
+msgid "Step 3 · Emission factors"
+msgstr "الخطوة 3 · معاملات الانبعاث"
+
+msgid "The factors that convert each quantity into tCO2e, with their source, year and full version history."
+msgstr "المعاملات التي تحوّل كل كمية إلى طن مكافئ CO2، مع مصدرها وسنتها وسجل إصداراتها كاملًا."
+
+msgid "A library of emission factors. Each factor has a stable code (for example the national grid electricity factor) and dated versions; the current version is used for new entries."
+msgstr "مكتبة معاملات الانبعاث. لكل معامل رمز ثابت (مثل معامل كهرباء الشبكة الوطنية) وإصدارات مؤرخة؛ ويُستخدم الإصدار الحالي للقيود الجديدة."
+
+msgid "A wrong or outdated factor makes every figure wrong. The verifier checks the source and year of each factor, so both are always stored."
+msgstr "المعامل الخاطئ أو القديم يجعل كل رقم خاطئًا. يفحص المُحقِّق مصدر كل معامل وسنته، لذا يُحفظ الاثنان دائمًا."
+
+msgid "Usually nothing: the standard factors are already loaded. Publish a new version when the source updates a value (for example the new yearly grid factor), with its source and the date it applies from."
+msgstr "عادةً لا شيء: المعاملات القياسية محمّلة مسبقًا. انشر إصدارًا جديدًا عندما يحدّث المصدر قيمة (مثل معامل الشبكة السنوي الجديد)، مع مصدره وتاريخ سريانه."
+
+msgid "Current factors"
+msgstr "المعاملات الحالية"
+
+msgid "(the value used for new entries)"
+msgstr "(القيمة المستخدمة للقيود الجديدة)"
+
+msgid "kgCO2e per unit"
+msgstr "كجم مكافئ CO2 لكل وحدة"
+
+msgid "closed"
+msgstr "مغلق"
+
+msgid "No emission factor yet."
+msgstr "لا يوجد معامل انبعاث بعد."
+
+msgid "EG_GRID_ELEC — Scope 2 — grid electricity — kWh — value and source from the national grid publication"
+msgstr "EG_GRID_ELEC — النطاق 2 — كهرباء الشبكة — كيلوواط ساعة — القيمة والمصدر من نشرة الشبكة الوطنية"
+
+msgid "Select a code in the table to see all its versions, or add a new factor below."
+msgstr "اختر رمزًا من الجدول لرؤية كل إصداراته، أو أضف معاملًا جديدًا بالأسفل."
+
+msgid "The documents that prove one activity entry: the invoice, utility bill, meter reading, fuel receipt or travel ticket."
+msgstr "المستندات التي تثبت قيد النشاط: الفاتورة، فاتورة المرافق، قراءة العداد، إيصال الوقود أو تذكرة السفر."
+
+msgid "An entry without evidence is a critical data-quality issue and blocks the review. The verifier samples entries and opens these files."
+msgstr "القيد بلا مستند مشكلة جودة بيانات حرجة توقف المراجعة. يأخذ المُحقِّق عينة من القيود ويفتح هذه الملفات."
+
+msgid "Upload one or more files. Prefer the original PDF or a clear photo; the file name should say what it is (for example \"Jan-2026 electricity bill\")."
+msgstr "ارفع ملفًا أو أكثر. يُفضَّل ملف PDF الأصلي أو صورة واضحة، ويجب أن يوضح اسم الملف محتواه (مثل \"فاتورة كهرباء يناير 2026\")."
+
+msgid "Factor used (kgCO2e per unit)"
+msgstr "المعامل المستخدم (كجم مكافئ CO2 لكل وحدة)"
+
+msgid "Factor source"
+msgstr "مصدر المعامل"
+
+msgid "Factor vintage"
+msgstr "سنة المعامل"
+
+msgid "Gross tCO2e (before the share)"
+msgstr "إجمالي طن مكافئ CO2 (قبل نسبة الإدراج)"
+
+msgid "Calculation helper inputs"
+msgstr "مدخلات أداة الاحتساب"
+
+msgid "Scope 3, category 15"
+msgstr "النطاق 3، الفئة 15"
+
+msgid "Only for organisations that lend or invest: the emissions of borrowers and investees that are attributable to you."
+msgstr "فقط للمؤسسات التي تمنح التمويل أو تستثمر: انبعاثات المقترضين والجهات المستثمر فيها المنسوبة إليك."
+
+msgid "The share of the emissions of your borrowers and investees that you finance, measured with the PCAF standard and reported in Scope 3, category 15."
+msgstr "حصة انبعاثات المقترضين والجهات المستثمر فيها التي تموّلها، مقيسة وفق معيار PCAF ومُبلغ عنها في النطاق 3، الفئة 15."
+
+msgid "For a lender or investor these are usually far larger than its own office emissions. If you do not lend or invest, leave this page empty."
+msgstr "بالنسبة للمُقرض أو المستثمر تكون هذه عادةً أكبر بكثير من انبعاثات مكاتبه. إذا كنت لا تمنح تمويلًا ولا تستثمر، اترك هذه الصفحة فارغة."
+
+msgid "One line per exposure or portfolio segment: the outstanding amount, the borrower equity plus debt (or vehicle value), and either the borrower emissions or its revenue with a sector factor."
+msgstr "سطر لكل تعرض أو شريحة محفظة: الرصيد القائم، وحقوق ملكية المقترض وديونه (أو قيمة المركبة)، وإما انبعاثات المقترض أو إيراداته مع معامل القطاع."
+
+msgid "Scope 3 is outside the reporting boundary: financed emissions are recorded here but not counted in the totals or the disclosure."
+msgstr "النطاق 3 خارج حدود التقرير: الانبعاثات الممولة مسجلة هنا لكنها غير محتسبة في الإجماليات ولا في الإفصاح."
+
+msgid "Leave this empty if you do not lend or invest."
+msgstr "اتركها فارغة إذا كنت لا تمنح تمويلًا ولا تستثمر."
+
+msgid "Micro loans – agriculture — outstanding EGP 40 million — sector factor per EGP million revenue — PCAF score 4"
+msgstr "قروض متناهية الصغر – زراعة — رصيد قائم 40 مليون جنيه — معامل القطاع لكل مليون جنيه إيرادات — درجة PCAF 4"
+
+msgid "Targets, intensity & reduction initiatives"
+msgstr "الأهداف والكثافة ومبادرات التخفيض"
+
+msgid "Emissions per employee, per m² and per revenue, the reduction target and the initiatives that deliver it."
+msgstr "الانبعاثات لكل موظف ولكل م² ولكل إيراد، وهدف التخفيض والمبادرات التي تحققه."
+
+msgid "Intensity ratios (emissions divided by a measure of size), your reduction target and the list of reduction initiatives."
+msgstr "نسب الكثافة (الانبعاثات مقسومة على مقياس للحجم)، وهدف التخفيض، وقائمة مبادرات التخفيض."
+
+msgid "Totals grow with the business; intensity shows whether you are becoming more efficient. Disclosure standards ask for both, plus the actions behind the target."
+msgstr "تزيد الإجماليات مع نمو النشاط؛ وتُظهر الكثافة ما إذا كنت أكثر كفاءة. تطلب معايير الإفصاح الاثنين، مع الإجراءات وراء الهدف."
+
+msgid "The denominators for the period (revenue, employees, floor area, financed portfolio) and each initiative with its expected reduction."
+msgstr "المقامات للفترة (الإيرادات، العاملون، المساحة، المحفظة الممولة) وكل مبادرة مع التخفيض المتوقع."
+
+msgid "No target yet."
+msgstr "لا يوجد هدف بعد."
+
+msgid "Edit the target"
+msgstr "عدّل الهدف"
+
+msgid "LED retrofit in branches — Scope 2 — expected 35 tCO2e a year"
+msgstr "تحديث الإضاءة إلى LED في الفروع — النطاق 2 — متوقع 35 طن مكافئ CO2 سنويًا"
+
+msgid "Step 5 · Data-quality checks"
+msgstr "الخطوة 5 · فحوص جودة البيانات"
+
+msgid "Automatic checks on the activity data before it goes to review."
+msgstr "فحوص تلقائية لبيانات الأنشطة قبل إرسالها للمراجعة."
+
+msgid "A list of problems the system found in the activity data: units that do not match the factor, entries without evidence, missing months, unusual changes against the previous period."
+msgstr "قائمة بالمشكلات التي وجدها النظام في بيانات الأنشطة: وحدات لا تطابق المعامل، قيود بلا مستندات، أشهر ناقصة، تغيرات غير معتادة مقارنة بالفترة السابقة."
+
+msgid "Critical issues block submission for review. Warnings may stay, but the verifier will ask about each one, so explain or fix them."
+msgstr "المشكلات الحرجة توقف التقديم للمراجعة. يمكن أن تبقى التنبيهات، لكن المُحقِّق سيسأل عن كل منها، فاشرحها أو عالجها."
+
+msgid "Nothing here. Use the Fix link on each line to correct the entry on the activity page."
+msgstr "لا شيء هنا. استخدم رابط المعالجة في كل سطر لتصحيح القيد في صفحة الأنشطة."
+
+msgid "Unit does not match the factor"
+msgstr "الوحدة لا تطابق المعامل"
+
+msgid "No evidence attached"
+msgstr "لا يوجد مستند مرفق"
+
+msgid "Negative quantity"
+msgstr "كمية سالبة"
+
+msgid "Months without data"
+msgstr "أشهر بلا بيانات"
+
+msgid "Unusual change against the previous period"
+msgstr "تغير غير معتاد مقارنة بالفترة السابقة"
+
+msgid "Financed-emissions gap"
+msgstr "نقص في بيانات الانبعاثات الممولة"
+
+msgid "Recorded without a month"
+msgstr "مسجل بدون شهر"
+
+msgid "Delete the entry and record it again in the factor unit"
+msgstr "احذف القيد وسجّله من جديد بوحدة المعامل"
+
+msgid "Attach the invoice, meter reading or ticket"
+msgstr "أرفق الفاتورة أو قراءة العداد أو التذكرة"
+
+msgid "Delete the entry and record it again"
+msgstr "احذف القيد وسجّله من جديد"
+
+msgid "Record the missing months"
+msgstr "سجّل الأشهر الناقصة"
+
+msgid "Check the quantity or explain the change to the verifier"
+msgstr "راجع الكمية أو اشرح التغير للمُحقِّق"
+
+msgid "Complete the exposure"
+msgstr "استكمل بيانات التعرض"
+
+msgid "Set the month on the entry"
+msgstr "حدد الشهر في القيد"
+
+msgid "Entries checked"
+msgstr "القيود المفحوصة"
+
+msgid "Critical (block review)"
+msgstr "حرجة (توقف المراجعة)"
+
+msgid "Warnings (explain)"
+msgstr "تنبيهات (تحتاج شرحًا)"
+
+msgid "How to fix"
+msgstr "طريقة المعالجة"
+
+msgid "There is no activity data to check yet."
+msgstr "لا توجد بيانات أنشطة لفحصها بعد."
+
+msgid "No critical issue: the inventory can be submitted for review."
+msgstr "لا توجد مشكلة حرجة: يمكن تقديم الحصر للمراجعة."
+
+msgid "Step 6 · Review & approval"
+msgstr "الخطوة 6 · المراجعة والاعتماد"
+
+msgid "Preparing"
+msgstr "قيد الإعداد"
+
+msgid "In review"
+msgstr "قيد المراجعة"
+
+msgid "Reviewed"
+msgstr "تمت المراجعة"
+
+msgid "Approved & locked"
+msgstr "معتمد ومقفل"
+
+msgid "Preparer, reviewer and approver sign off the inventory; approval locks the period."
+msgstr "يعتمد المُعِد والمراجع والمعتمد الحصر؛ والاعتماد يقفل الفترة."
+
+msgid "The sign-off of the period: the preparer submits, a reviewer checks, an approver approves. Three different people."
+msgstr "اعتماد الفترة: يقدّم المُعِد، ويفحص المراجع، ويعتمد المعتمد. ثلاثة أشخاص مختلفون."
+
+msgid "Segregation of duties and a locked, approved inventory are what an auditor or regulator relies on. After approval no entry can change unless an administrator unlocks it with a reason."
+msgstr "الفصل بين المهام والحصر المعتمد المقفل هما ما يعتمد عليه المراجع أو الجهة الرقابية. بعد الاعتماد لا يتغير أي قيد إلا إذا فتح مسؤول النظام القفل مع ذكر السبب."
+
+msgid "A comment when you return the inventory or unlock it. Submission is possible only when no critical data-quality issue is open."
+msgstr "تعليق عند إعادة الحصر أو فتح القفل. التقديم ممكن فقط عند عدم وجود مشكلة حرجة مفتوحة في جودة البيانات."
+
+msgid "There is no activity data in this period yet: record it before submitting."
+msgstr "لا توجد بيانات أنشطة في هذه الفترة بعد: سجّلها قبل التقديم."
+
+msgid "No action yet. The preparer starts by submitting the inventory for review."
+msgstr "لا توجد إجراءات بعد. يبدأ المُعِد بتقديم الحصر للمراجعة."
+
+msgid "A configurable, weighted ESG scorecard: Environmental, Social and Governance pillars, plus any pillar your framework adds (for example a regulatory pillar). Pillars, indicators and weights are data and can be adapted."
+msgstr "بطاقة أداء ESG قابلة للتهيئة وموزونة: ركائز البيئة والمجتمع والحوكمة، مع أي ركيزة يضيفها إطارك (مثل ركيزة رقابية). الركائز والمؤشرات والأوزان بيانات يمكن تعديلها."
+
+msgid "The ESG scorecard of the current reporting period: the overall score, one score per pillar, the materiality assessment and how ready your disclosures are."
+msgstr "بطاقة أداء ESG لفترة التقرير الحالية: الدرجة الإجمالية، ودرجة لكل ركيزة، وتقييم الأهمية النسبية، ومدى جاهزية الإفصاحات."
+
+msgid "It shows where the organisation stands and what is still missing before reporting. Each number has a different meaning: see How the three numbers differ below."
+msgstr "تُظهر موقف المنظمة وما زال ناقصًا قبل الإفصاح. لكل رقم معنى مختلف: انظر \"الفرق بين الأرقام الثلاثة\" أدناه."
+
+msgid "Nothing here. Score each pillar (Score →), run the materiality assessment and update the disclosure tracker."
+msgstr "لا شيء هنا. قيّم كل ركيزة (تقييم ←)، ونفّذ تقييم الأهمية النسبية، وحدّث متتبع الإفصاحات."
+
+msgid "How the three numbers differ"
+msgstr "الفرق بين الأرقام الثلاثة"
+
+msgid "Overall ESG score (1–5)"
+msgstr "درجة ESG الإجمالية (1–5)"
+
+msgid "how mature the organisation is overall: the weighted average of the pillar scores."
+msgstr "مدى نضج المنظمة إجمالًا: المتوسط الموزون لدرجات الركائز."
+
+msgid "Pillar scores (1–5)"
+msgstr "درجات الركائز (1–5)"
+
+msgid "maturity within one pillar: the weighted average of its answered indicators. Unanswered indicators are left out, not counted as zero."
+msgstr "النضج داخل ركيزة واحدة: المتوسط الموزون لمؤشراتها المُجاب عنها. المؤشرات غير المُجاب عنها تُستبعد ولا تُحتسب صفرًا."
+
+msgid "Disclosure readiness"
+msgstr "جاهزية الإفصاح"
+
+msgid "how complete your reporting is, not how well you perform: the share of applicable disclosure items marked complete (partial counts as half)."
+msgstr "مدى اكتمال إفصاحاتك وليس مستوى أدائك: نسبة بنود الإفصاح المنطبقة المكتملة (الجزئي يُحتسب نصفًا)."
+
+msgid "Carbon reporting (Environmental)"
+msgstr "تقارير الكربون (البيئة)"
+
+msgid "inventory status"
+msgstr "حالة الحصر"
+
+msgid "Carbon results feed the environmental indicators and the emissions items of the disclosure tracker (shown as \"auto-filled from Carbon\")."
+msgstr "تغذّي نتائج الكربون المؤشرات البيئية وبنود الانبعاثات في متتبع الإفصاحات (تظهر بعبارة \"مُعبّأ تلقائيًا من الكربون\")."
+
+msgid "Open the carbon journey"
+msgstr "افتح مسار الكربون"
+
+msgid "framework “ESG scorecard” with pillars E, S and G; reporting period “FY 2026”, 1 January – 31 December"
+msgstr "إطار \"بطاقة أداء ESG\" بركائز E وS وG؛ فترة التقرير \"السنة المالية 2026\"، من 1 يناير إلى 31 ديسمبر"
+
+msgid "Track readiness against each disclosure framework that applies to you (for example GRI, IFRS S1/S2, TCFD or a regulator template): assign an owner, record evidence, and mark progress per item."
+msgstr "تابع الجاهزية مقابل كل إطار إفصاح ينطبق عليك (مثل GRI أو IFRS S1/S2 أو TCFD أو نموذج جهة رقابية): عيّن مسؤولًا، وسجّل المستندات، وحدّد التقدم لكل بند."
+
+msgid "A checklist of the disclosure requirements of each framework that applies to you (for example GRI, IFRS S1/S2, TCFD or a regulator template), with an owner and a status."
+msgstr "قائمة بمتطلبات الإفصاح لكل إطار ينطبق عليك (مثل GRI أو IFRS S1/S2 أو TCFD أو نموذج جهة رقابية)، مع مسؤول وحالة."
+
+msgid "It shows how ready the sustainability report is. Items that Carbon can answer show the carbon value, period and inventory status next to them."
+msgstr "تُظهر مدى جاهزية تقرير الاستدامة. البنود التي يمكن للكربون الإجابة عنها تعرض بجانبها قيمة الكربون والفترة وحالة الحصر."
+
+msgid "For each item: the owner, the status and the evidence or note. Use the carbon value shown when the inventory is approved."
+msgstr "لكل بند: المسؤول والحالة والمستند أو الملاحظة. استخدم قيمة الكربون المعروضة عند اعتماد الحصر."
+
+msgid "Total GHG emissions"
+msgstr "إجمالي انبعاثات غازات الاحتباس"
+
+msgid "Scope 1 emissions"
+msgstr "انبعاثات النطاق 1"
+
+msgid "Scope 2 emissions (location-based)"
+msgstr "انبعاثات النطاق 2 (على أساس الموقع)"
+
+msgid "Scope 3 emissions"
+msgstr "انبعاثات النطاق 3"
+
+msgid "Auto-filled from Carbon"
+msgstr "مُعبّأ تلقائيًا من الكربون"
+
+msgid "outside the reporting boundary"
+msgstr "خارج حدود التقرير"
+
+msgid "not final until the inventory is approved"
+msgstr "غير نهائي حتى اعتماد الحصر"
+
+msgid "Value from Carbon"
+msgstr "القيمة من الكربون"
+
+msgid "Automatic (from the reference)"
+msgstr "تلقائي (من المرجع)"
+
+msgid "No carbon value"
+msgstr "بدون قيمة كربون"
+
+msgid "GRI 305-1 — Direct (Scope 1) GHG emissions — owner: Head of Sustainability"
+msgstr "GRI 305-1 — انبعاثات غازات الاحتباس المباشرة (النطاق 1) — المسؤول: رئيس الاستدامة"
+
+msgid "The structure of the scorecard: pillars, indicators and their weights."
+msgstr "هيكل بطاقة الأداء: الركائز والمؤشرات وأوزانها."
+
+msgid "The weights decide how much each answer moves the overall score. They are data, so they can be adapted to your framework without a code change."
+msgstr "تحدد الأوزان مدى تأثير كل إجابة في الدرجة الإجمالية. وهي بيانات، لذا يمكن تكييفها مع إطارك دون تعديل برمجي."
+
+msgid "Nothing here; an administrator maintains the framework."
+msgstr "لا شيء هنا؛ يتولى مسؤول النظام صيانة الإطار."
+
+msgid "A workshop tool: each sustainability topic is rated on its importance to stakeholders and its impact on the business."
+msgstr "أداة لورشة عمل: يُقيَّم كل موضوع استدامة حسب أهميته لأصحاب المصلحة وأثره على النشاط."
+
+msgid "Disclosure standards ask you to report on what is material. The top-right topics of the matrix are your reporting priorities."
+msgstr "تطلب معايير الإفصاح الإبلاغ عن الموضوعات الجوهرية. موضوعات الربع الأعلى الأيمن في المصفوفة هي أولويات إفصاحك."
+
+msgid "For each topic, a 1–5 rating for stakeholder importance and for business impact, ideally agreed in a workshop with management."
+msgstr "لكل موضوع، تقييم من 1 إلى 5 لأهميته لأصحاب المصلحة ولأثره على النشاط، ويُفضَّل الاتفاق عليه في ورشة عمل مع الإدارة."
+
+msgid "How the ESG scores are calculated, in plain language."
+msgstr "كيف تُحسب درجات ESG، بلغة مبسطة."
+
+msgid "So anyone can explain a score to management, an auditor or a regulator."
+msgstr "حتى يستطيع أي شخص شرح الدرجة للإدارة أو المراجع أو الجهة الرقابية."
+
+msgid "Nothing; this page is a reference."
+msgstr "لا شيء؛ هذه الصفحة مرجعية."
+
+msgid "Unanswered indicators (and unscored pillars) are excluded from both the numerator and denominator — never treated as a zero. This keeps a partially completed assessment honest rather than artificially deflated."
+msgstr "المؤشرات غير المُجاب عنها (والركائز غير المُقيَّمة) تُستبعد من البسط والمقام معًا — ولا تُعامل كصفر أبدًا. وهذا يجعل التقييم غير المكتمل صادقًا بدلًا من أن يكون منخفضًا بشكل مصطنع."
+
+msgid "Pillars beyond E, S and G"
+msgstr "ركائز إضافية بخلاف E وS وG"
+
+msgid "A framework may add its own pillars, for example a regulatory pillar for a supervised institution (AML/CFT programme maturity, licensing standing, regulatory reporting record). Each extra pillar has its own weight, shown on the Framework & Weights page, rather than being buried inside Governance."
+msgstr "قد يضيف الإطار ركائز خاصة به، مثل ركيزة رقابية لمؤسسة خاضعة للرقابة (نضج برنامج مكافحة غسل الأموال وتمويل الإرهاب، وضع الترخيص، سجل الإبلاغ الرقابي). لكل ركيزة إضافية وزنها الخاص، المعروض في صفحة الإطار والأوزان، بدلًا من دمجها في الحوكمة."
+
+msgid "The indicators of one pillar. Each is scored 1–5 for maturity, with evidence or a note."
+msgstr "مؤشرات ركيزة واحدة. يُقيَّم كل منها من 1 إلى 5 للنضج، مع مستند أو ملاحظة."
+
+msgid "The pillar score is the weighted average of these answers. Environmental indicators can show the carbon result they rely on."
+msgstr "درجة الركيزة هي المتوسط الموزون لهذه الإجابات. يمكن أن تعرض المؤشرات البيئية نتيجة الكربون التي تعتمد عليها."
+
+msgid "A 1–5 score per indicator and a short evidence note. Leave an indicator blank to exclude it rather than count it as zero."
+msgstr "درجة من 1 إلى 5 لكل مؤشر وملاحظة قصيرة بالمستند. اترك المؤشر فارغًا لاستبعاده بدلًا من احتسابه صفرًا."
+
+msgid "Scores are your judgement of maturity (1–5). Carbon values shown under an indicator are information to support that judgement; they never change the score automatically."
+msgstr "الدرجات هي تقديرك للنضج (1–5). قيم الكربون المعروضة تحت المؤشر معلومات تدعم هذا التقدير، ولا تغيّر الدرجة تلقائيًا أبدًا."
+
+msgid "From Carbon"
+msgstr "من الكربون"
+
+msgid "Carbon value: automatic"
+msgstr "قيمة الكربون: تلقائي"
+
+msgid "Carbon value"
+msgstr "قيمة الكربون"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

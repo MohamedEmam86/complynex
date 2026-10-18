@@ -1,13 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'carbon/_layout.html' %}
+{% set cx_active = 'carbon.methodology' %}
 {% block title %}{{ _('Methodology') }} — {{ _('Carbon Footprint') }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
-{% block content %}
-<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
-  <div class="ecx-hero ecx-carbon">
-    <div class="ecx-eyebrow">{{ _('Carbon Footprint & Climate') }}</div>
-    <h1><i class="bi bi-journal-richtext me-2"></i>{{ _('Calculation Methodology') }}</h1>
-    <p>{{ _('How every number in this module is produced — in plain language, so anyone on the team can explain a figure without needing a carbon-accounting background.') }}</p>
-  </div>
+{% block cx_icon %}bi-journal-richtext{% endblock %}
+{% block cx_title %}{{ _('Calculation methodology') }}{% endblock %}
+{% block cx_lead %}{{ _('How every number in this module is produced — in plain language, so anyone on the team can explain a figure without needing a carbon-accounting background.') }}{% endblock %}
+{% block cx_body %}
 
   <div class="row g-3">
     <div class="col-lg-7">
@@ -54,5 +51,4 @@
       </div>
     </div>
   </div>
-</div>
 {% endblock %}

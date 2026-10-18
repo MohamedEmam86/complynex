@@ -1,13 +1,14 @@
-{% extends 'base.html' %}
+{% extends 'carbon/_layout.html' %}
+{% set cx_active = 'carbon.targets' %}
 {% block title %}{{ _('Reduction Targets') }} — {{ _('Carbon Footprint') }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
-{% block content %}
-<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
-  <div class="ecx-hero ecx-carbon">
-    <div class="ecx-eyebrow">{{ _('Carbon Footprint & Climate') }}</div>
-    <h1><i class="bi bi-flag me-2"></i>{{ _('Reduction Targets') }}</h1>
-    <p>{{ _('Set a baseline year and a science-aligned reduction ambition, and track progress automatically as new activity is logged each period.') }}</p>
-  </div>
+{% block cx_icon %}bi-flag{% endblock %}
+{% block cx_title %}{{ _('Reduction targets') }}{% endblock %}
+{% block cx_lead %}{{ _('Set a base year and a reduction ambition; progress is tracked automatically from the activity data of each period.') }}{% endblock %}
+{% block cx_about %}{{ cx.about(
+    _('Your emission-reduction target: the base year, its emissions, and the reduction you commit to by 2030 and 2035.'),
+    _('A target turns the inventory into a plan. Disclosure standards ask for the target, the base year and the progress made.'),
+    _('The base year and its emissions (from the boundary page or your first approved inventory) and the reduction percentages.')) }}{% endblock %}
+{% block cx_body %}
 
   <div class="row g-3">
     <div class="col-lg-6">
@@ -68,5 +69,4 @@
       </div>
     </div>
   </div>
-</div>
 {% endblock %}

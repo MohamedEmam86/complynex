@@ -1,23 +1,14 @@
-{% extends 'base.html' %}
+{% extends 'esg/_layout.html' %}
+{% set esg_active = 'esg.dashboard' %}
 {% block title %}{{ _('ESG Management') }} — ComplyNex{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
-{% block content %}
-<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
-
-  <div class="ecx-hero ecx-esg">
-    <div class="ecx-eyebrow">{{ _('ESG Management') }}</div>
-    <h1><i class="bi bi-globe-americas me-2"></i>{{ framework.name if framework else _('ESG Scorecard') }}</h1>
-    <p>{{ _('A configurable, weighted ESG scoring framework built for Egyptian PSPs — Environmental, Social, Governance, plus a fourth Regulatory pillar reflecting CBE/FRA supervisory expectations that generic global frameworks miss.') }}</p>
-    <span class="ecx-pioneer-badge"><i class="bi bi-stars"></i> {{ _('First ESG framework purpose-built for Egyptian fintech') }}</span>
-  </div>
-
-  <ul class="nav ecx-nav-pills mb-3">
-    <li class="nav-item"><a class="nav-link active ecx-esg" href="{{ url_for('esg.dashboard') }}">{{ _('Dashboard') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.materiality') }}">{{ _('Materiality Assessment') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.disclosures') }}">{{ _('Disclosure Tracker') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.framework_view') }}">{{ _('Framework & Weights') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.methodology') }}"><i class="bi bi-info-circle me-1"></i>{{ _('Methodology') }}</a></li>
-  </ul>
+{% block esg_icon %}bi-globe-americas{% endblock %}
+{% block esg_title %}{{ framework.name if framework else _('ESG Scorecard') }}{% endblock %}
+{% block esg_lead %}{{ _('A configurable, weighted ESG scorecard: Environmental, Social and Governance pillars, plus any pillar your framework adds (for example a regulatory pillar). Pillars, indicators and weights are data and can be adapted.') }}{% endblock %}
+{% block esg_about %}{{ cx.about(
+    _('The ESG scorecard of the current reporting period: the overall score, one score per pillar, the materiality assessment and how ready your disclosures are.'),
+    _('It shows where the organisation stands and what is still missing before reporting. Each number has a different meaning: see How the three numbers differ below.'),
+    _('Nothing here. Score each pillar (Score →), run the materiality assessment and update the disclosure tracker.'), cls='ecx-esg') }}{% endblock %}
+{% block esg_body %}
 
   {% if period %}
   <div class="row g-3 mb-3">
@@ -46,11 +37,35 @@
   </div>
   {% endif %}
 
+  <div class="row g-3 mb-3">
+    <div class="col-lg-7">
+      <div class="ecx-methodology-box ecx-esg mt-0 h-100">
+        <strong><i class="bi bi-question-circle me-1"></i>{{ _('How the three numbers differ') }}</strong>
+        <ul class="mb-0 ps-3">
+          <li><b>{{ _('Overall ESG score (1–5)') }}</b> — {{ _('how mature the organisation is overall: the weighted average of the pillar scores.') }}</li>
+          <li><b>{{ _('Pillar scores (1–5)') }}</b> — {{ _('maturity within one pillar: the weighted average of its answered indicators. Unanswered indicators are left out, not counted as zero.') }}</li>
+          <li><b>{{ _('Disclosure readiness') }} (%)</b> — {{ _('how complete your reporting is, not how well you perform: the share of applicable disclosure items marked complete (partial counts as half).') }}</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      {% if carbon %}{% set cv = carbon['values'] %}{% set cj = carbon.journey %}
+      <div class="ecx-card h-100">
+        <h6><span><i class="bi bi-cloud-haze2 me-1"></i>{{ _('Carbon reporting (Environmental)') }}</span>
+          {% if cj %}<span class="ecx-badge-source">{{ cj.done }}/{{ cj.applicable }} {{ _('steps done') }}</span>{% endif %}</h6>
+        {% if cv %}<div class="small">{{ _('Total') }} {{ cv.period.label }}: <strong>{{ cx.t(cv['values'].total) }} tCO2e</strong>
+          ({{ cx.included(cv.enabled) }}) · {{ _('inventory status') }}: {{ {'preparing': _('Preparing'), 'in_review': _('In review'), 'reviewed': _('Reviewed'), 'approved': _('Approved & locked')}.get(cv.status, cv.status) }}</div>{% endif %}
+        {% if cj and cj.next %}<div class="small mt-2">{{ _('Next step') }}: {{ cj.next.n }}. {{ cx.step_title(cj.next.key) }}</div>{% endif %}
+        <p class="small text-muted mt-2 mb-2">{{ _('Carbon results feed the environmental indicators and the emissions items of the disclosure tracker (shown as "auto-filled from Carbon").') }}</p>
+        <a class="btn btn-sm btn-outline-success" href="{{ url_for('carbon.dashboard') }}">{{ _('Open the carbon journey') }} <i class="bi bi-arrow-right"></i></a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
   {% if not summary %}
   <div class="ecx-card">
-    <div class="ecx-empty-state"><i class="bi bi-globe-americas"></i>
-      <div>{{ _('No active framework or reporting period found. Ask an administrator to set one up.') }}</div>
-    </div>
+    {{ cx.empty('bi-globe-americas', _('No active framework or reporting period found. Ask an administrator to set one up.'), _('framework “ESG scorecard” with pillars E, S and G; reporting period “FY 2026”, 1 January – 31 December')) }}
   </div>
   {% else %}
 
@@ -118,5 +133,4 @@
     </div>
   </div>
   {% endif %}
-</div>
 {% endblock %}

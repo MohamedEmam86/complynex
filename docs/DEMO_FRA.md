@@ -83,7 +83,7 @@ FRA-061, FRA-051, FRA-069, FRA-007 and FRA-CF-05.
   to a core check. Disabling the FRA pack hides its pages and controls; the core keeps
   working. — ابنِ إطاراً صغيراً من الواجهة واربطه بفحص أساسي؛ تعطيل حزمة الهيئة يخفي صفحاتها وتبقى النواة تعمل.
 - **Carbon — الكربون:**
-  - Carbon → Carbon accounting → Review & approval: preparer, reviewer and approver must be
+  - Carbon → Review & approval (journey step 6): preparer, reviewer and approver must be
     different people, and approval locks the period.
   - Disclosure → PDF / Excel: offsets are shown separately from gross emissions.
   - المُعِد والمراجع والمعتمد أشخاص مختلفون والاعتماد يقفل الفترة، والإفصاح PDF / Excel مع فصل التعويضات.

@@ -1070,61 +1070,60 @@
           <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
             <i class="bi bi-cloud cnx-nav__icon"></i>
             <span class="cnx-nav__label">{{ _('Carbon Footprint') }}</span>
-            <span class="cnx-nav__count">7</span>
+            <span class="cnx-nav__count">10</span>
             <i class="bi bi-chevron-down cnx-nav__caret"></i>
           </button>
           <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
-            {% if current_user.can_view('carbon') %}
             <li class="cnx-nav__subitem">
               <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.dashboard') }}">
                 <span class="cnx-nav__label">{{ _('Carbon Dashboard') }}</span>
               </a>
             </li>
-            {% endif %}
-            {% if current_user.can_view('carbon') %}
             <li class="cnx-nav__subitem">
-              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.entries_list') }}">
-                <span class="cnx-nav__label">{{ _('Activity Log') }}</span>
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.boundary') }}">
+                <span class="cnx-nav__label">{{ _('Boundary & sites') }}</span>
               </a>
             </li>
-            {% endif %}
-            {% if current_user.can_view('carbon') %}
             <li class="cnx-nav__subitem">
-              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.factors_library') }}">
-                <span class="cnx-nav__label">{{ _('Emission Factors') }}</span>
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.factor_versions') }}">
+                <span class="cnx-nav__label">{{ _('Emission factors') }}</span>
               </a>
             </li>
-            {% endif %}
-            {% if current_user.can_view('carbon') %}
             <li class="cnx-nav__subitem">
-              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.targets') }}">
-                <span class="cnx-nav__label">{{ _('Reduction Targets') }}</span>
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.activity') }}">
+                <span class="cnx-nav__label">{{ _('Activity data') }}</span>
               </a>
             </li>
-            {% endif %}
-            {% if current_user.can_view('carbon') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.quality') }}">
+                <span class="cnx-nav__label">{{ _('Data quality') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.workflow') }}">
+                <span class="cnx-nav__label">{{ _('Review & approval') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.disclosure') }}">
+                <span class="cnx-nav__label">{{ _('Disclosure') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.fra_compliance') }}">
+                <span class="cnx-nav__label">{{ _('Regulator submission & offsets') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.intensity') }}">
+                <span class="cnx-nav__label">{{ _('Targets & intensity') }}</span>
+              </a>
+            </li>
             <li class="cnx-nav__subitem">
               <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.methodology') }}">
                 <span class="cnx-nav__label">{{ _('Methodology') }}</span>
               </a>
             </li>
-            {% endif %}
-            {% if current_user.can_view('carbon') %}
-            <li class="cnx-nav__subitem">
-              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.fra_compliance') }}">
-                <span class="cnx-nav__label">{{ _('FRA Compliance') }}</span>
-              </a>
-            </li>
-            {% endif %}
-            {% if current_user.can_view('carbon') %}
-            {% if current_user.can_edit('carbon') %}
-            <li class="cnx-nav__subitem">
-              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.settings') }}">
-                <span class="cnx-nav__label">{{ _('Carbon Settings') }}</span>
-              </a>
-            </li>
-            {% endif %}
-            {% endif %}
           </ul></div>
         </li>
         {% endif %}

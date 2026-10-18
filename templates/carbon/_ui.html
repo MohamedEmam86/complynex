@@ -1,0 +1,183 @@
+{#- Shared building blocks for every Carbon page (one navigation, the reporting journey,
+    guidance panels, term tooltips, empty states, reporting-boundary marking). -#}
+
+{% macro t(v) -%}{{ '{:,.3f}'.format(v|float) if v is not none else '-' }}{%- endmacro %}
+
+{% macro scope_name(sc) -%}{{ {'scope1': _('Scope 1'), 'scope2': _('Scope 2'), 'scope3': _('Scope 3')}.get(sc, sc) }}{%- endmacro %}
+
+{#- ------------------------------------------------------------------ navigation (workflow order) -#}
+{% macro nav(active, p=None) -%}
+{% set alias = {'carbon.settings': 'carbon.boundary', 'carbon.factors_library': 'carbon.factor_versions', 'carbon.entries_list': 'carbon.activity',
+                'carbon.entry_new': 'carbon.activity', 'carbon.activity_files': 'carbon.activity', 'carbon.targets': 'carbon.intensity',
+                'carbon.fra_report': 'carbon.fra_compliance'} %}
+{% set act = alias.get(active, active) %}
+{% set with_period = ('carbon.activity', 'carbon.financed', 'carbon.quality', 'carbon.workflow', 'carbon.intensity', 'carbon.disclosure') %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 no-print">
+<nav class="ecx-flow-nav" aria-label="{{ _('Carbon reporting') }}">
+  {% for ep, num, label in [('carbon.dashboard', '', _('Overview')), ('carbon.boundary', '1–2', _('Boundary & sites')),
+                            ('carbon.factor_versions', '3', _('Emission factors')), ('carbon.activity', '4', _('Activity data')),
+                            ('carbon.financed', '4+', _('Financed emissions')), ('carbon.quality', '5', _('Data quality')),
+                            ('carbon.workflow', '6', _('Review & approval')), ('carbon.disclosure', '7', _('Disclosure')),
+                            ('carbon.fra_compliance', '8–9', _('Regulator submission & offsets'))] %}
+  <a class="{{ 'active' if act == ep }}" href="{{ url_for(ep, period=p.id) if p and ep in with_period else url_for(ep) }}"
+     {% if ep == 'carbon.financed' %}title="{{ _('Only if you lend or invest (Scope 3, category 15)') }}"{% endif %}>
+    {% if num %}<span class="num" dir="ltr">{{ num }}</span>{% else %}<i class="bi bi-speedometer2"></i>{% endif %}{{ label }}
+    {% if ep == 'carbon.fra_compliance' %}<span class="ecx-pack" title="{{ _('Belongs to the FRA regulatory framework (content pack)') }}">FRA</span>{% endif %}</a>
+  {% endfor %}
+  <span class="sep"></span>
+  <a class="{{ 'active' if act == 'carbon.intensity' }}" href="{{ url_for('carbon.intensity', period=p.id) if p else url_for('carbon.intensity') }}"><i class="bi bi-graph-down-arrow"></i>{{ _('Targets & intensity') }}</a>
+  <a class="{{ 'active' if act == 'carbon.methodology' }}" href="{{ url_for('carbon.methodology') }}"><i class="bi bi-info-circle"></i>{{ _('Methodology') }}</a>
+</nav>
+{% if p and cb_periods %}<form method="get" class="d-flex gap-1 align-items-center small"><label class="text-muted" for="cx-period">{{ _('Period') }}</label>
+  <select id="cx-period" name="period" class="form-select form-select-sm" data-auto-submit>{% for x in cb_periods %}<option value="{{ x.id }}" {{ 'selected' if x.id == p.id }}>{{ x.label }}</option>{% endfor %}</select></form>{% endif %}
+</div>
+{%- endmacro %}
+
+{#- ------------------------------------------------------------------ the reporting journey -#}
+{% macro step_title(key) -%}{{ {'boundary': _('Boundary & base year'), 'sites': _('Entities & sites'), 'factors': _('Emission factors'),
+   'activity': _('Activity data (with evidence)'), 'quality': _('Data-quality checks'), 'review': _('Review & approval (period lock)'),
+   'disclosure': _('Disclosure'), 'regulator': _('Regulator submission & verification'), 'offsets': _('Offset obligation')}.get(key, key) }}{%- endmacro %}
+
+{% macro status_label(st) -%}{{ {'not_started': _('Not started'), 'in_progress': _('In progress'), 'done': _('Done'), 'blocked': _('Blocked'),
+   'not_applicable': _('Not applicable')}.get(st, st) }}{%- endmacro %}
+
+{% macro missing_text(code, v) -%}
+{%- set n = v if v is not none else 0 -%}
+{{- {'no_approach': _('Choose the consolidation approach'), 'no_base_year': _('Set the base year'),
+     'no_sites': _('Add at least one active site (office, branch, data centre)'),
+     'no_factors_scope': _('No current emission factor for %(s)s', s=scope_name(v)),
+     'no_scope': _('No scope is inside the reporting boundary'),
+     'no_period': _('No reporting period exists yet (periods are created in ESG Management)'),
+     'needs_factors': _('Add emission factors first'), 'no_entries': _('No activity data recorded for this period'),
+     'no_evidence': _('%(n)s entries without evidence', n=n), 'no_month': _('%(n)s Scope 1/2 entries without a month', n=n),
+     'outside_boundary': _('%(n)s entries recorded outside the reporting boundary (not counted)', n=n),
+     'needs_entries': _('Record activity data first'), 'critical': _('%(n)s critical data-quality issues', n=n),
+     'warnings': _('%(n)s warnings to explain to the verifier', n=n), 'awaiting_review': _('Waiting for the reviewer'),
+     'awaiting_approval': _('Waiting for the approver'), 'fix_critical': _('Fix %(n)s critical data-quality issues before submitting', n=n),
+     'submit': _('Submit the inventory for review'), 'needs_approval': _('The inventory must be approved first'),
+     'export': _('Export the disclosure (PDF or Excel)'), 'not_required': _('Not required by the configured regulation'),
+     'profile_unknown': _('Enter capital or equity in the company profile to check whether this applies'),
+     'regulator_status': _('Current status: %(s)s', s=_(v) if v else ''), 'start_submission': _('Send the approved report to the verifier'),
+     'offset_remaining': _('%(n)s tCO2e of certificates still to buy', n=n), 'offset_overdue': _('Deadline passed — %(n)s tCO2e missing', n=n),
+     'needs_submission': _('Created automatically when the report is submitted to the regulator')}.get(code, code) -}}
+{%- endmacro %}
+
+{% macro step_url(s, p=None) -%}
+{%- if p and s.endpoint in ('carbon.activity', 'carbon.quality', 'carbon.workflow', 'carbon.disclosure') -%}{{ url_for(s.endpoint, period=p.id) }}
+{%- elif s.key == 'sites' -%}{{ url_for(s.endpoint, _anchor='sites') }}
+{%- else -%}{{ url_for(s.endpoint) }}{%- endif -%}
+{%- endmacro %}
+
+{% macro stepper(active, p=None) -%}
+{% set j = carbon_journey() %}
+{% if j %}
+{% set here = carbon_page_step.get(active) %}
+<div class="ecx-stepper no-print" role="list" aria-label="{{ _('Carbon reporting journey') }}">
+  {% for s in j.steps %}
+  <a role="listitem" class="ecx-step st-{{ s.status }} {{ 'here' if s.key == here }}" href="{{ step_url(s, p) }}"
+     title="{{ status_label(s.status) }}{% for m in s.missing %} · {{ missing_text(m[0], m[1]) }}{% endfor %}">
+    <span class="t"><span class="dot">{% if s.status == 'done' %}<i class="bi bi-check-lg"></i>{% else %}{{ s.n }}{% endif %}</span>{{ step_title(s.key) }}</span>
+    <span class="s">{{ status_label(s.status) }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% if j.next %}<div class="ecx-next no-print"><span><strong>{{ _('Next step') }}:</strong> {{ j.next.n }}. {{ step_title(j.next.key) }}{% if j.next.missing %} — {{ missing_text(j.next.missing[0][0], j.next.missing[0][1]) }}{% endif %}
+  <span class="text-muted">· {{ j.done }}/{{ j.applicable }} {{ _('steps done') }}</span></span>
+  <a class="btn btn-sm btn-success" href="{{ step_url(j.next, p) }}">{{ _('Do this next') }} <i class="bi bi-arrow-right"></i></a></div>
+{% elif j.applicable %}<div class="ecx-next no-print"><span><i class="bi bi-check2-circle text-success"></i> {{ _('All steps of the reporting journey are done for this period.') }}</span></div>{% endif %}
+{% endif %}
+{%- endmacro %}
+
+{% macro checklist(j, p=None) -%}
+<ul class="ecx-checklist">
+  {% for s in j.steps %}
+  <li class="st-{{ s.status }}"><span class="ic"><i class="bi {{ {'done': 'bi-check-circle-fill', 'in_progress': 'bi-circle-half', 'blocked': 'bi-lock', 'not_applicable': 'bi-dash-circle'}.get(s.status, 'bi-circle') }}"></i></span>
+    <div class="flex-grow-1"><div class="d-flex justify-content-between gap-2 flex-wrap"><strong>{{ s.n }}. {{ step_title(s.key) }}</strong>
+      <span class="badge {{ {'done': 'bg-success', 'in_progress': 'bg-warning text-dark', 'blocked': 'bg-light text-muted border', 'not_applicable': 'bg-light text-muted border'}.get(s.status, 'bg-secondary') }}">{{ status_label(s.status) }}</span></div>
+      {% for m in s.missing %}<div class="miss">{{ missing_text(m[0], m[1]) }}</div>{% endfor %}
+      {% if s.status in ('not_started', 'in_progress') %}<a class="small" href="{{ step_url(s, p) }}">{{ _('Open') }} →</a>{% endif %}</div></li>
+  {% endfor %}
+</ul>
+{%- endmacro %}
+
+{#- ------------------------------------------------------------------ guidance -#}
+{% macro about(what, why, enter, open=false, cls='') -%}
+<details class="ecx-about {{ cls }} no-print" {{ 'open' if open }}>
+  <summary><i class="bi bi-lightbulb me-1"></i>{{ _('What is this page?') }}</summary>
+  <div class="body">
+    <div><h4>{{ _('What it is') }}</h4><p>{{ what }}</p></div>
+    <div><h4>{{ _('Why it matters') }}</h4><p>{{ why }}</p></div>
+    <div><h4>{{ _('What you need to enter') }}</h4><p>{{ enter }}</p></div>
+  </div>
+</details>
+{%- endmacro %}
+
+{% macro term(key, label=None) -%}
+{% set d = {
+  'consolidation': (_('Consolidation approach'), _('How group companies are counted. Operational or financial control: 100 per cent of what you control. Equity share: your ownership percentage of each entity.')),
+  'base_year': (_('Base year'), _('The reference year that emission reductions are measured against.')),
+  'recalc': (_('Recalculation threshold'), _('If acquisitions, divestments or method changes move base-year emissions by more than this percentage, the base year is recalculated.')),
+  'scope1': (_('Scope 1'), _('Direct emissions from sources you own or control: fuel in generators and vehicles, refrigerant leaks.')),
+  'scope2': (_('Scope 2'), _('Indirect emissions from the electricity, heat or cooling you buy.')),
+  'scope3': (_('Scope 3'), _('Other indirect emissions in the value chain: business travel, commuting, purchased goods, waste, investments.')),
+  'location': (_('Location-based'), _('Scope 2 calculated with the average emission factor of the national grid.')),
+  'market': (_('Market-based'), _('Scope 2 calculated with the factor of the electricity you contracted (green tariff, certificates).')),
+  'pcaf': (_('PCAF'), _('Partnership for Carbon Accounting Financials: the global standard for measuring the emissions of loans and investments.')),
+  'attribution': (_('Attribution factor'), _('The part of a borrower that you finance: outstanding amount divided by the borrower total equity plus debt (or the asset value).')),
+  'dq_score': (_('PCAF data-quality score'), _('From 1 (reported, verified emissions) to 5 (estimated from sector averages). Lower is better.')),
+  'factor': (_('Emission factor'), _('Converts a quantity (kWh, litre, km) into kilograms of CO2-equivalent. Each factor has a source and a year.')),
+  'tco2e': (_('tCO2e'), _('Tonnes of carbon-dioxide equivalent: all greenhouse gases expressed as CO2.')),
+  'share': (_('Boundary share'), _('The part of a site consolidated under your approach (1 = all of it).')),
+  'version': (_('Factor version'), _('A dated value of a factor. A new version never changes figures already recorded.')),
+  'vintage': (_('Vintage'), _('The year the factor value refers to.')),
+  'boundary': (_('Reporting boundary'), _('The scopes counted in your totals. Entries in other scopes are kept but not counted.')),
+} %}
+{% set x = d.get(key, (key, '')) %}
+<span class="ecx-term" tabindex="0" data-bs-toggle="tooltip" title="{{ x[1] }}">{{ label or x[0] }}<i class="bi bi-info-circle"></i></span>
+{%- endmacro %}
+
+{% macro empty(icon, text, example=None, ep=None, label=None, args={}) -%}
+<div class="ecx-empty-state py-4"><i class="bi {{ icon }}"></i>
+  <div class="fw-semibold mb-1">{{ text }}</div>
+  {% if example %}<div class="small mb-2">{{ _('Example') }}: {{ example }}</div>{% endif %}
+  {% if ep %}<a class="btn btn-sm btn-outline-success" href="{{ url_for(ep, **args) }}">{{ label }} <i class="bi bi-arrow-right"></i></a>{% endif %}
+</div>
+{%- endmacro %}
+
+{#- ------------------------------------------------------------------ reporting boundary -#}
+{% macro scope_tag(sc) -%}
+<span class="ecx-scope-tag {{ sc }}">{{ scope_name(sc) }}</span>{% if sc not in carbon_boundary() %} <span class="ecx-outside" title="{{ _('Recorded but outside the reporting boundary: not counted in the totals.') }}">{{ _('outside boundary') }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro included(enabled=None) -%}
+{%- set en = enabled if enabled is not none else carbon_boundary() -%}
+{{ _('includes') }} {% for sc in en %}{{ scope_name(sc) }}{{ ' + ' if not loop.last }}{% else %}-{% endfor %}
+{%- endmacro %}
+
+{% macro boundary_strip(out_count=0, out_tco2e=None) -%}
+{% set en = carbon_boundary() %}
+<div class="ecx-boundary">
+  <span><i class="bi bi-bounding-box"></i> <strong>{{ term('boundary') }}:</strong> {% for sc in en %}<span class="ecx-scope-tag {{ sc }}">{{ scope_name(sc) }}</span> {% endfor %}</span>
+  <span class="text-muted">{{ _('Totals on this page count only these scopes.') }}</span>
+  {% for sc in ('scope1', 'scope2', 'scope3') if sc not in en %}<span class="ecx-outside">{{ scope_name(sc) }}: {{ _('recorded but outside the reporting boundary') }}</span>{% endfor %}
+  {% if out_count %}<span class="text-muted">· {{ _('%(n)s entries outside the boundary', n=out_count) }}{% if out_tco2e is not none %} ({{ t(out_tco2e) }} tCO2e {{ _('not counted') }}){% endif %}</span>{% endif %}
+  {% if current_user.can_edit('carbon') %}<a class="ms-auto small" href="{{ url_for('carbon.settings') }}">{{ _('Change the scopes') }}</a>{% endif %}
+</div>
+{%- endmacro %}
+
+{#- ------------------------------------------------------------------ legal basis of regulator-specific rules -#}
+{% macro legal_table(legal) -%}
+<div class="ecx-card">
+  <h6><span><i class="bi bi-journal-bookmark me-1"></i>{{ _('Legal basis of these rules') }}</span></h6>
+  {% if legal %}
+  <table class="ecx-table-clean small"><thead><tr><th>{{ _('Rule') }}</th><th>{{ _('Value') }}</th><th>{{ _('Source') }}</th></tr></thead><tbody>
+    {% for r in legal %}<tr><td>{{ (r.description_ar if get_locale()|string == 'ar' and r.description_ar else r.description_en) or r.key }}<div class="text-muted"><code>{{ r.key }}</code></div></td>
+      <td class="text-nowrap">{{ r.value if r.value not in (none, '') else _('not set') }} {{ r.unit or '' }}</td>
+      <td>{{ r.legal_reference or _('no reference recorded') }}{% if r.pack %}<div><span class="ecx-badge-source">{{ _('content pack') }}: {{ r.pack }}</span></div>{% endif %}
+        {% if r.needs_review %}<div><span class="badge bg-warning text-dark">{{ _('to be confirmed by Compliance') }}</span></div>{% endif %}</td></tr>{% endfor %}</tbody></table>
+  <p class="small text-muted mb-0 mt-2">{{ _('These values are regulatory parameters, installed by the regulatory content pack and editable under Compliance Controls → Regulatory parameters.') }}</p>
+  {% else %}
+  <p class="small text-muted mb-0">{{ _('No regulatory pack defines these parameters on this installation: the module uses its built-in defaults. Enable the pack of your regulator, or define the parameters, to record the legal source.') }}</p>
+  {% endif %}
+</div>
+{%- endmacro %}

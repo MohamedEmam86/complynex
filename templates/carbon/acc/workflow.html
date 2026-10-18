@@ -1,15 +1,21 @@
-{% extends 'base.html' %}
-{% import 'carbon/acc/_nav.html' as cn with context %}
+{% extends 'carbon/_layout.html' %}
+{% set cx_active = 'carbon.workflow' %}
+{% set cx_period = p %}
 {% block title %}{{ _('Review & approval') }} — ComplyNex{% endblock %}
-{% block content %}
-<div class="container-fluid">
-  <h3 class="mb-2">{{ _('Review & approval') }} — {{ p.label }} <span class="badge bg-{{ {'approved': 'success', 'reviewed': 'info', 'in_review': 'warning text-dark'}.get(wf.status, 'secondary') }} fs-6">{{ wf.status }}</span></h3>
-  {{ cn.nav('carbon.workflow', p) }}
+{% block cx_icon %}bi-person-check{% endblock %}
+{% block cx_title %}{{ _('Step 6 · Review & approval') }} — {{ p.label }} <span class="badge bg-light text-dark fs-6">{{ {'preparing': _('Preparing'), 'in_review': _('In review'), 'reviewed': _('Reviewed'), 'approved': _('Approved & locked')}.get(wf.status, wf.status) }}</span>{% endblock %}
+{% block cx_lead %}{{ _('Preparer, reviewer and approver sign off the inventory; approval locks the period.') }}{% endblock %}
+{% block cx_about %}{{ cx.about(
+    _('The sign-off of the period: the preparer submits, a reviewer checks, an approver approves. Three different people.'),
+    _('Segregation of duties and a locked, approved inventory are what an auditor or regulator relies on. After approval no entry can change unless an administrator unlocks it with a reason.'),
+    _('A comment when you return the inventory or unlock it. Submission is possible only when no critical data-quality issue is open.')) }}{% endblock %}
+{% block cx_body %}
   <div class="row g-3"><div class="col-lg-5"><div class="card"><div class="card-body small">
     <p>{{ _('Preparer → reviewer → approver, three different people. Approval locks the period: no entry can be added, changed or deleted until an administrator unlocks it with a reason.') }}</p>
     <ol class="mb-3"><li>{{ _('Prepared by') }}: {{ wf.prepared_by or '-' }} {{ wf.prepared_at.strftime('%Y-%m-%d') if wf.prepared_at else '' }}</li>
       <li>{{ _('Reviewed by') }}: {{ wf.reviewed_by or '-' }} {{ wf.reviewed_at.strftime('%Y-%m-%d') if wf.reviewed_at else '' }}</li>
       <li>{{ _('Approved by') }}: {{ wf.approved_by or '-' }} {{ wf.approved_at.strftime('%Y-%m-%d') if wf.approved_at else '' }}</li></ol>
+    {% if not dq.entries %}<div class="alert alert-light border py-1">{{ _('There is no activity data in this period yet: record it before submitting.') }} <a href="{{ url_for('carbon.activity', period=p.id) }}">{{ _('Activity data') }}</a></div>{% endif %}
     {% if critical %}<div class="alert alert-danger py-1">{{ critical }} {{ _('critical data-quality issue(s) — fix them before submitting.') }} <a href="{{ url_for('carbon.quality', period=p.id) }}">{{ _('Details') }}</a></div>{% endif %}
     {% if cb_can_edit %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><textarea name="note" class="form-control form-control-sm mb-2" rows="2" placeholder="{{ _('Comment (required to return or unlock)') }}"></textarea>
       <div class="d-flex flex-wrap gap-2">
@@ -21,6 +27,5 @@
       </div></form>{% endif %}
   </div></div></div>
   <div class="col-lg-7"><div class="card"><div class="card-header"><strong>{{ _('Audit trail') }}</strong></div><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('When') }}</th><th>{{ _('Who') }}</th><th>{{ _('Action') }}</th><th>{{ _('Status') }}</th><th>{{ _('Comment') }}</th></tr></thead><tbody>
-    {% for e in events %}<tr><td>{{ e.at.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ e.user_name }}</td><td>{{ e.action }}</td><td>{{ e.from_status }} → {{ e.to_status }}</td><td>{{ e.note or '' }}</td></tr>{% else %}<tr><td colspan="5" class="text-muted">{{ _('No action yet.') }}</td></tr>{% endfor %}</tbody></table></div></div></div>
-</div>
+    {% for e in events %}<tr><td>{{ e.at.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ e.user_name }}</td><td>{{ e.action }}</td><td>{{ e.from_status }} → {{ e.to_status }}</td><td>{{ e.note or '' }}</td></tr>{% else %}<tr><td colspan="5" class="text-muted">{{ _('No action yet. The preparer starts by submitting the inventory for review.') }}</td></tr>{% endfor %}</tbody></table></div></div></div>
 {% endblock %}
