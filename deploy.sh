@@ -34,7 +34,7 @@ echo "-- changes:"; $G log --oneline "$PREV..$TARGET" | head -30
 MIGR=$($G diff --name-only --diff-filter=A "$PREV" "$TARGET" -- 'database/migrations/*.sql' | sort || true)
 
 echo "-- schema backup"
-sudo -u postgres pg_dump -d complynex_db --schema-only -f "/var/backups/complynex/schema_predeploy_$TS.sql"
+sudo -u postgres pg_dump -d complynex_db --schema-only > "/var/backups/complynex/schema_predeploy_$TS.sql"
 
 $G merge --ff-only --quiet "$TARGET" || { echo "STOP: branch cannot fast-forward from the server version."; exit 1; }
 $G ls-files -z | (cd "$APP" && xargs -0 chown complynex:complynex) || true
