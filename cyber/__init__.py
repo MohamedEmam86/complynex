@@ -22,3 +22,4 @@ cyber_bp = Blueprint('cyber', __name__,
                     url_prefix='/cyber')
 
 from . import routes
+from . import resilience_routes  # noqa: E402,F401 — IT resilience pages

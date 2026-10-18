@@ -1218,6 +1218,11 @@
               <span class="cnx-nav__label">{{ _('Cyber Incident Hub') }}</span>
             </a>
           </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('cyber.res_dashboard') }}">
+              <span class="cnx-nav__label">{{ _('IT resilience (BCP, backups, certificates)') }}</span>
+            </a>
+          </li>
           {% endif %}
           {% if current_user.can_view('pdpl') %}
           <li class="cnx-nav__subitem">

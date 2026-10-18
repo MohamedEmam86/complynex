@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% import 'cyber/resilience/_nav.html' as cn with context %}
+{% block title %}{{ _('Security assessments') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Security assessments') }}</h3>
+    {{ cn.nav('cyber.res_assessments') }}
+    <div class="mb-2 small">{% for t, issue in status.items() %}<span class="badge bg-{{ 'danger' if issue else 'success' }} me-1">{{ t }}: {{ issue or _('current') }}</span>{% endfor %}</div>
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Type') }}</th><th>{{ _('Title') }}</th><th>{{ _('Provider') }}</th><th>{{ _('Performed') }}</th><th>{{ _('Valid until') }}</th><th>{{ _('Open critical / high') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead><tbody>
+        {% for a in rows %}<tr class="{{ 'table-danger' if a.valid_until and a.valid_until < today }}"><td>{{ a.assessment_type }}</td><td><a href="{{ url_for('cyber.res_files', rtype='cy_assessment', rid=a.id) }}">{{ a.title }}</a></td><td>{{ a.provider or '-' }}<div class="text-muted">{{ a.provider_qualification or '' }}</div></td><td>{{ a.performed_on }}</td><td>{{ a.valid_until or '-' }}</td>
+            <td>{% if cy_can_edit %}<form method="post" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="open"><input type="hidden" name="assessment_id" value="{{ a.id }}"><input type="number" min="0" name="critical_open" value="{{ a.critical_open }}" class="form-control form-control-sm" style="width: 64px"><input type="number" min="0" name="high_open" value="{{ a.high_open }}" class="form-control form-control-sm" style="width: 64px"><button class="btn btn-sm btn-outline-secondary">{{ _('Update') }}</button></form>{% else %}{{ a.critical_open }} / {{ a.high_open }}{% endif %}</td>
+            <td>{{ a.status }}</td><td>{% if cy_can_edit and a.status == 'draft' %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="accept"><input type="hidden" name="assessment_id" value="{{ a.id }}"><button class="btn btn-sm btn-outline-success">{{ _('Accept') }}</button></form>{% endif %}</td></tr>
+        {% else %}<tr><td colspan="8" class="text-muted text-center py-3">{{ _('No assessments.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% if cy_can_edit %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Add an assessment') }}</strong></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="add">
+        <div class="col-md-2"><input name="assessment_type" list="atypes" class="form-control form-control-sm" placeholder="{{ _('type') }}" required><datalist id="atypes"><option value="pentest"><option value="malware_test"><option value="vulnerability_scan"><option value="cis_benchmark"></datalist></div>
+        <div class="col-md-4"><input name="title" class="form-control form-control-sm" placeholder="{{ _('Title') }}" required></div>
+        <div class="col-md-3"><input name="provider" class="form-control form-control-sm" placeholder="{{ _('Provider') }}"></div>
+        <div class="col-md-3"><input name="provider_qualification" class="form-control form-control-sm" placeholder="{{ _('Provider accreditation') }}"></div>
+        <div class="col-md-2"><label class="form-label mb-0">{{ _('Performed') }}</label><input type="date" name="performed_on" class="form-control form-control-sm" required></div>
+        <div class="col-md-2"><label class="form-label mb-0">{{ _('Valid until') }}</label><input type="date" name="valid_until" class="form-control form-control-sm"></div>
+        <div class="col-md-2"><label class="form-label mb-0">{{ _('Open critical') }}</label><input type="number" min="0" name="critical_open" class="form-control form-control-sm" value="0"></div>
+        <div class="col-md-2"><label class="form-label mb-0">{{ _('Open high') }}</label><input type="number" min="0" name="high_open" class="form-control form-control-sm" value="0"></div>
+        <div class="col-md-4"><label class="form-label mb-0">{{ _('Scope') }}</label><input name="scope" class="form-control form-control-sm"></div>
+        <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save and attach report') }}</button></div></div></form>{% endif %}
+</div>
+{% endblock %}

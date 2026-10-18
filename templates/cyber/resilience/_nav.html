@@ -1,0 +1,15 @@
+{% macro nav(active) -%}
+<ul class="nav nav-pills mb-3 small flex-wrap no-print">
+    {% for ep, label in [('cyber.dashboard', _('Incidents')), ('cyber.res_dashboard', _('IT resilience')), ('cyber.res_bcp', _('BCP / DR')),
+                         ('cyber.res_backups', _('Backups')), ('cyber.res_integrations', _('Integrations')),
+                         ('cyber.res_assessments', _('Security assessments')), ('cyber.res_assets', _('Security tools & licences')),
+                         ('cyber.res_domains', _('Domains & certificates')), ('cyber.res_maturity', _('Maturity')),
+                         ('cyber.res_it_risks', _('IT risks'))] %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == ep }}" href="{{ url_for(ep) }}">{{ label }}</a></li>
+    {% endfor %}
+</ul>
+{%- endmacro %}
+{% macro state(s) -%}
+{% set m = {'ok': ('success', _('OK')), 'expiring': ('warning text-dark', _('Expiring')), 'expired': ('danger', _('Expired')), 'error': ('danger', _('Error')), 'unchecked': ('secondary', _('Not checked')), 'stale': ('warning text-dark', _('Stale')), 'no_licence': ('danger', _('No licence')), 'inactive': ('secondary', _('Inactive'))} %}
+{% set v = m.get(s, ('secondary', s)) %}<span class="badge bg-{{ v[0] }}">{{ v[1] }}</span>
+{%- endmacro %}

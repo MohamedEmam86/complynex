@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% import 'cyber/resilience/_nav.html' as cn with context %}
+{% block title %}{{ _('Backups') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Off-site backups') }}</h3>
+    {{ cn.nav('cyber.res_backups') }}
+    <p class="small text-muted">{{ _('Last successful off-site backup must be within') }} {{ (days ~ ' ' ~ _('day(s)')) if days is not none else _('— not set (parameter it.offsite_backup_max_age_days)') }}. {{ _('Backup jobs can report each run to POST /api/v1/cyber/backup-status (API key with scope cyber:write).') }}</p>
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('System') }}</th><th>{{ _('Type') }}</th><th>{{ _('Location') }}</th><th>{{ _('Encrypted') }}</th><th>{{ _('Last success') }}</th><th>{{ _('Last run') }}</th><th>{{ _('Restore test') }}</th><th>{{ _('Issues') }}</th><th></th></tr></thead><tbody>
+        {% for b in rows %}<tr class="{{ 'table-danger' if b.issues }}"><td>{{ b.system_name }} <span class="text-muted">{{ b.source }}</span></td><td>{{ b.backup_type }}</td><td>{{ b.location_type }} {{ b.location_detail or '' }}</td><td>{{ _('Yes') if b.encrypted else _('No') }}</td>
+            <td>{{ b.last_success_at.strftime('%Y-%m-%d %H:%M') if b.last_success_at else '-' }}</td><td>{{ b.last_status or '-' }}</td><td>{{ b.last_restore_test or '-' }}</td><td>{% for i in b.issues %}<div>{{ i }}</div>{% else %}-{% endfor %}</td>
+            <td class="text-nowrap">{% if cy_can_edit %}<a href="{{ url_for('cyber.res_backups', edit=b.id) }}">{{ _('Edit') }}</a> · {% endif %}<a href="{{ url_for('cyber.res_files', rtype='cy_backup', rid=b.id) }}">{{ _('Files') }}</a></td></tr>
+        {% else %}<tr><td colspan="9" class="text-danger">{{ _('No backup registered.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% if cy_can_edit %}{% set e = edit or {} %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Edit backup') if edit else _('Register a backup') }}</strong> <span class="small text-muted">{{ _('(same system name = update)') }}</span></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="_form" value="1">
+        <div class="col-md-3"><input name="system_name" class="form-control form-control-sm" placeholder="{{ _('System') }}" value="{{ e.system_name or '' }}" required></div>
+        <div class="col-md-2"><select name="backup_type" class="form-select form-select-sm">{% for v in ['full', 'incremental', 'snapshot', 'replication'] %}<option {{ 'selected' if e.backup_type == v }}>{{ v }}</option>{% endfor %}</select></div>
+        <div class="col-md-2"><select name="location_type" class="form-select form-select-sm">{% for v in ['offsite', 'cloud', 'onsite'] %}<option {{ 'selected' if e.location_type == v }}>{{ v }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><input name="location_detail" class="form-control form-control-sm" placeholder="{{ _('Where (site / provider)') }}" value="{{ e.location_detail or '' }}"></div>
+        <div class="col-md-2 form-check pt-1 ms-2"><input type="checkbox" name="encrypted" value="1" class="form-check-input" id="enc" {{ 'checked' if e.encrypted }}><label class="form-check-label" for="enc">{{ _('Encrypted') }}</label></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('Last successful backup') }}</label><input type="datetime-local" name="last_success_at" class="form-control form-control-sm" value="{{ e.last_success_at.strftime('%Y-%m-%dT%H:%M') if e.last_success_at else '' }}"></div>
+        <div class="col-md-2"><label class="form-label mb-0">{{ _('Last run') }}</label><select name="last_status" class="form-select form-select-sm"><option value="">-</option>{% for v in ['success', 'partial', 'failed'] %}<option {{ 'selected' if e.last_status == v }}>{{ v }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('Last restore test') }}</label><input type="date" name="last_restore_test" class="form-control form-control-sm" value="{{ e.last_restore_test or '' }}"></div>
+        <div class="col-md-2 form-check pt-4 ms-2"><input type="checkbox" name="is_active" value="1" class="form-check-input" id="act" {{ 'checked' if not edit or e.is_active }}><label class="form-check-label" for="act">{{ _('Active') }}</label></div>
+        <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div></div></form>{% endif %}
+</div>
+{% endblock %}

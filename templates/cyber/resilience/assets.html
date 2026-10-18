@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% import 'cyber/resilience/_nav.html' as cn with context %}
+{% block title %}{{ _('Security tools & licences') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Security tools, licences & data residency') }}</h3>
+    {{ cn.nav('cyber.res_assets') }}
+    <p class="small text-muted">{{ _('Licence expiry warning') }}: {{ warn }} {{ _('days (parameter it.licence_expiry_warning_days)') }}</p>
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Type') }}</th><th>{{ _('Product') }}</th><th>{{ _('Licence') }}</th><th>{{ _('Expiry') }}</th><th>{{ _('Licence state') }}</th><th>{{ _('Data residency') }}</th><th></th></tr></thead><tbody>
+        {% for a in rows %}<tr class="{{ 'table-danger' if a.state in ('expired', 'no_licence') }}"><td>{{ a.asset_type }}</td><td>{{ a.product }}<div class="text-muted">{{ a.vendor or '' }} {{ a.coverage_note or '' }}</div></td><td>{{ a.licence_ref or '-' }}</td><td>{{ a.licence_expiry or '-' }}</td><td>{{ cn.state(a.state) }}</td>
+            <td>{% if a.residency %}<span class="text-danger">{{ a.residency }}</span>{% else %}{{ _('in country') }} · {{ _('attested') }} {{ a.residency_attested_on }}{% endif %}</td>
+            <td class="text-nowrap">{% if cy_can_edit %}<a href="{{ url_for('cyber.res_assets', edit=a.id) }}">{{ _('Edit') }}</a> · {% endif %}<a href="{{ url_for('cyber.res_files', rtype='cy_security_asset', rid=a.id) }}">{{ _('Files') }}</a></td></tr>
+        {% else %}<tr><td colspan="7" class="text-muted text-center py-3">{{ _('No security tools registered.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% if cy_can_edit %}{% set e = edit or {} %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Edit tool') if edit else _('Add a security tool') }}</strong></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="_form" value="1">
+        {% if edit %}<input type="hidden" name="asset_id" value="{{ edit.id }}">{% endif %}
+        <div class="col-md-2"><input name="asset_type" list="stypes" class="form-control form-control-sm" placeholder="{{ _('type (waf, epp, edr …)') }}" value="{{ e.asset_type or '' }}" required><datalist id="stypes"><option value="waf"><option value="epp"><option value="edr"><option value="firewall"><option value="siem"><option value="email_security"></datalist></div>
+        <div class="col-md-3"><input name="product" class="form-control form-control-sm" placeholder="{{ _('Product') }}" value="{{ e.product or '' }}" required></div>
+        <div class="col-md-2"><input name="vendor" class="form-control form-control-sm" placeholder="{{ _('Vendor') }}" value="{{ e.vendor or '' }}"></div>
+        <div class="col-md-2"><input name="licence_ref" class="form-control form-control-sm" placeholder="{{ _('Licence ref.') }}" value="{{ e.licence_ref or '' }}"></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('Licence expiry') }}</label><input type="date" name="licence_expiry" class="form-control form-control-sm" value="{{ e.licence_expiry or '' }}"></div>
+        <div class="col-md-4"><input name="coverage_note" class="form-control form-control-sm" placeholder="{{ _('Coverage (e.g. all endpoints / public portal)') }}" value="{{ e.coverage_note or '' }}"></div>
+        <div class="col-md-2"><select name="sends_data_abroad" class="form-select form-select-sm"><option value="">{{ _('Data abroad?') }}</option><option value="0" {{ 'selected' if e.sends_data_abroad is sameas false }}>{{ _('No — stays in country') }}</option><option value="1" {{ 'selected' if e.sends_data_abroad }}>{{ _('Yes — sent abroad') }}</option></select></div>
+        <div class="col-md-2"><input name="data_location" class="form-control form-control-sm" placeholder="{{ _('Data location') }}" value="{{ e.data_location or '' }}"></div>
+        <div class="col-md-2"><input type="date" name="residency_attested_on" class="form-control form-control-sm" title="{{ _('Attested on') }}" value="{{ e.residency_attested_on or '' }}"></div>
+        <div class="col-md-2"><input name="residency_attested_by" class="form-control form-control-sm" placeholder="{{ _('Attested by') }}" value="{{ e.residency_attested_by or '' }}"></div>
+        <div class="col-md-2 form-check ms-2"><input type="checkbox" name="is_active" value="1" class="form-check-input" id="aa" {{ 'checked' if not edit or e.is_active }}><label class="form-check-label" for="aa">{{ _('Active') }}</label></div>
+        <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button> <span class="text-muted">{{ _('Attach the licence certificate and the vendor data-residency attestation in Files.') }}</span></div></div></form>{% endif %}
+</div>
+{% endblock %}
