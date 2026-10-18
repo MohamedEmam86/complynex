@@ -18,6 +18,11 @@
   <table class="table table-sm table-bordered small"><tbody><tr>{% for label, n in d.ageing.items() %}<th>{{ label }}</th>{% endfor %}</tr><tr>{% for label, n in d.ageing.items() %}<td>{{ n }}</td>{% endfor %}</tr></tbody></table>
   <h3 class="h6">5. {{ _('Trend') }}</h3>
   <table class="table table-sm table-bordered small"><tbody>{% for t in d.trend[-8:] %}<tr><td>{{ t.snapshot_date }}</td><td class="text-end">{{ t.score }}</td></tr>{% else %}<tr><td>{{ _('No snapshot yet.') }}</td></tr>{% endfor %}</tbody></table>
+  {% if not pdf and ai_level() >= 2 and ai_enabled() %}<div class="card mt-3 no-print border-info"><div class="card-body small">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-ai-draft="board_summary" data-obj-type="" data-obj-id="" data-target="ai-board-draft"
+      data-labels='{{ {"working": _("Drafting…"), "label": _("AI draft — review required"), "copy": _("Copy"), "failed": _("Draft failed"), "accept": _("Useful"), "reject": _("Not useful"), "thanks": _("Thank you — recorded.")}|tojson|forceescape }}'>{{ _('Draft board summary') }}</button>
+    <div id="ai-board-draft" class="mt-2"></div></div></div>
+  <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/ai_copilot.js') }}"></script>{% endif %}
   <p class="small text-muted mt-4">{{ _('Score = criticality-weighted average of the latest control results (pass 100, warning 50, fail / not assessed 0; critical 4, high 3, medium 2, low 1).') }}</p>
 </div>
 {% endblock %}

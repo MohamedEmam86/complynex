@@ -29,8 +29,8 @@ checks, sweep, pages and JSON API. Remove the package or disable the pack and th
 keeps working unchanged.
 """
 
-from regcontrols.api import (Pack, catalog, install_branch_role, install_integration, install_key_function_type,
-                             register_pack)
+from regcontrols.api import (Pack, catalog, extend_ai_intent, install_ai_playbook_step, install_branch_role,
+                             install_integration, install_key_function_type, register_pack)
 
 from . import library as L
 
@@ -68,6 +68,10 @@ def install(db):
     it_fw = catalog.install_framework(regulator_id=regulator_id, pack_code=L.PACK_CODE, db=db, **L.IT_FRAMEWORK)
     for n, (ref, en, ar) in enumerate(L.IT_REQUIREMENTS, start=1):
         catalog.install_requirement(it_fw, ref, en, ar, area_code='it_cyber', sort_order=n, db=db)
+    for playbook_code, step in L.AI_PLAYBOOK_STEPS:
+        install_ai_playbook_step(playbook_code, step, pack_code=L.PACK_CODE, db=db)
+    for code, ext in L.AI_INTENT_EXTENSIONS:
+        extend_ai_intent(code, db=db, **ext)
     db.commit()
     return {'controls': len(L.CONTROLS), 'parameters': len(L.PARAMETERS)}
 
@@ -82,7 +86,7 @@ PACK = register_pack(Pack(
     description_ar=('متطلبات الهيئة العامة للرقابة المالية للمؤسسات المالية غير المصرفية: 80 متطلبًا وضابطًا '
                     '(رأس المال والترخيص ومنح التمويل والتسعير ومكافحة غسل الأموال والتقارير المالية '
                     'وتكنولوجيا المعلومات والمعالجة) والمعايير الرقابية المستخدمة (تؤكد قيمها إدارة الالتزام).'),
-    version='6',
+    version='7',
     install=install,
     check_modules=['packs.fra_nbfi.lending.checks'],
     blueprints=['packs.fra_nbfi.lending.routes:bp', 'packs.fra_nbfi.lending.api:api_bp'],

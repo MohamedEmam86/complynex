@@ -280,11 +280,11 @@ class User(UserMixin):
 
     def can_view(self, module):
         """Check if user can view a specific module."""
-        return self._get_perm(module) in ['view', 'edit', 'admin']
+        return self._get_perm(module) in ['view', 'use', 'edit', 'admin']
 
     def can_edit(self, module):
         """Check if user can edit a specific module."""
-        return self._get_perm(module) in ['edit', 'admin']
+        return self._get_perm(module) in ['use', 'edit', 'admin']
 
     def can_admin_module(self, module):
         """Module-level administration (e.g. perm_regcontrols = 'admin': approve
@@ -383,7 +383,7 @@ class User(UserMixin):
         # Permissions added after this INSERT was written (perm_ongoing_screening,
         # perm_academy, ...) are persisted here instead of being silently dropped.
         _late = {k: v for k, v in kwargs.items()
-                 if k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols', 'perm_prudential') and v and v != 'none'}
+                 if k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols', 'perm_prudential', 'perm_ai') and v and v != 'none'}
         if _late:
             db.execute('UPDATE users SET ' + ', '.join(f'{k} = %s' for k in _late) + ' WHERE email = %s',
                        (*_late.values(), email))
@@ -498,7 +498,7 @@ class User(UserMixin):
         )
         # Late-added module permissions are not constructor args; load them so
         # can_view()/can_edit() see the stored value instead of defaulting to 'none'.
-        for _k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols', 'perm_prudential'):
+        for _k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols', 'perm_prudential', 'perm_ai'):
             if _k in row.keys():
                 setattr(_u, _k, row[_k] or 'none')
         return _u

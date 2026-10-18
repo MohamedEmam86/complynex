@@ -110,6 +110,7 @@
         </div>
 
         <div class="col-lg-4">
+            {% with obj_type='finding', obj_id=f.id, drafts=['action_plan'] %}{% include 'ai/_nba_card.html' %}{% endwith %}
             <div class="card mb-3">
                 <div class="card-header"><strong>{{ _('Linked controls') }}</strong></div>
                 <ul class="list-group list-group-flush">

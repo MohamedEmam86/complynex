@@ -27704,6 +27704,484 @@ msgstr "حزمة أدلة التفتيش"
 msgid "Contents: this index, controls.csv (control list and latest result), run_history.csv (every automated run and manual test), evidence/<control>/ (approved evidence files)."
 msgstr "المحتويات: هذا الفهرس، controls.csv (قائمة الضوابط وآخر نتيجة)، run_history.csv (كل تشغيل آلي واختبار يدوي)، evidence/<control>/ (ملفات الأدلة المعتمدة)."
 
+# --- Compliance Copilot (ai) ---
+msgid "You do not have permission for the Compliance Copilot."
+msgstr "ليست لديك صلاحية على مساعد الالتزام."
+
+msgid "Proposal rejected; nothing was created."
+msgstr "تم رفض المقترح ولم يُنشأ أي سجل."
+
+msgid "Playbook started: %(n)s task(s) created."
+msgstr "بدأ تنفيذ الدليل الإجرائي: تم إنشاء %(n)s مهمة."
+
+msgid "Describe the situation."
+msgstr "صف الموقف."
+
+msgid "Code and English name are required."
+msgstr "الرمز والاسم بالإنجليزية مطلوبان."
+
+msgid "Choose a routing target."
+msgstr "اختر جهة التوجيه."
+
+msgid "Retention applied: %(n)s prompt(s) purged."
+msgstr "تم تطبيق مدة الاحتفاظ: حُذف %(n)s من النصوص المرسلة للنموذج."
+
+msgid "Submit to Compliance"
+msgstr "إرسال إلى الالتزام"
+
+msgid "Playbooks"
+msgstr "الأدلة الإجرائية"
+
+msgid "Intake catalog"
+msgstr "دليل أنواع الوارد"
+
+msgid "AI log"
+msgstr "سجل الذكاء الاصطناعي"
+
+msgid "AI settings & health"
+msgstr "إعدادات الذكاء الاصطناعي وحالته"
+
+msgid "AI features are switched off for this installation (AI settings)."
+msgstr "خصائص الذكاء الاصطناعي متوقفة في هذا النظام (إعدادات الذكاء الاصطناعي)."
+
+msgid "Rules (no model)"
+msgstr "قواعد (بدون نموذج)"
+
+msgid "Local model"
+msgstr "نموذج محلي"
+
+msgid "model failed — rules used"
+msgstr "تعذّر النموذج — استُخدمت القواعد"
+
+msgid "output repaired"
+msgstr "تم تصحيح المخرجات"
+
+msgid "Working on this server…"
+msgstr "جارٍ العمل على هذا الخادم…"
+
+msgid "Computed by rules"
+msgstr "محسوب بالقواعد"
+
+msgid "Phrased by local model"
+msgstr "صياغة النموذج المحلي"
+
+msgid "Useful"
+msgstr "مفيد"
+
+msgid "Not useful"
+msgstr "غير مفيد"
+
+msgid "Thank you — recorded."
+msgstr "شكراً — تم التسجيل."
+
+msgid "Next best action"
+msgstr "الإجراء التالي المقترح"
+
+msgid "What should I do next?"
+msgstr "ما الخطوة التالية؟"
+
+msgid "Gaps are computed from the record (evidence, overdue actions, approvals, SLA); the Copilot only explains them."
+msgstr "تُحسب الفجوات من السجل نفسه (الأدلة، الإجراءات المتأخرة، الاعتمادات، مهلة الخدمة)، والمساعد يشرحها فقط."
+
+msgid "Drafting…"
+msgstr "جارٍ إعداد المسودة…"
+
+msgid "AI draft — review required"
+msgstr "مسودة ذكاء اصطناعي — تتطلب المراجعة"
+
+msgid "Draft failed"
+msgstr "تعذّر إعداد المسودة"
+
+msgid "Draft action plan"
+msgstr "مسودة خطة العمل"
+
+msgid "Draft STR narrative"
+msgstr "مسودة سرد إخطار الاشتباه"
+
+msgid "Draft board summary"
+msgstr "مسودة ملخص لمجلس الإدارة"
+
+msgid "Paste text, upload a document, forward an alert or e-mail body, or a new regulatory circular. The Copilot proposes what it is and where it goes; nothing is created until you confirm."
+msgstr "الصق نصاً أو ارفع مستنداً أو أعد توجيه تنبيه أو بريد أو منشوراً رقابياً جديداً. يقترح المساعد نوعه وجهته، ولا يُنشأ أي سجل قبل تأكيدك."
+
+msgid "Channel"
+msgstr "القناة"
+
+msgid "Text"
+msgstr "نص"
+
+msgid "E-mail"
+msgstr "بريد إلكتروني"
+
+msgid "Regulatory circular"
+msgstr "منشور رقابي"
+
+msgid "Subject (optional)"
+msgstr "الموضوع (اختياري)"
+
+msgid "Paste the text here (Arabic or English)"
+msgstr "الصق النص هنا (عربي أو إنجليزي)"
+
+msgid "or a document (txt, eml, docx, html; pdf if a reader is installed)"
+msgstr "أو مستند (txt, eml, docx, html؛ وpdf إن توفر قارئ)"
+
+msgid "Analyse"
+msgstr "تحليل"
+
+msgid "Runs on this server only — no external AI service is ever called."
+msgstr "يعمل على هذا الخادم فقط — لا يُستدعى أي خدمة ذكاء اصطناعي خارجية."
+
+msgid "Recent submissions"
+msgstr "أحدث الوارد"
+
+msgid "Proposed"
+msgstr "المقترح"
+
+msgid "Nothing submitted yet."
+msgstr "لا يوجد وارد بعد."
+
+msgid "Review the proposal"
+msgstr "مراجعة المقترح"
+
+msgid "Submitted text"
+msgstr "النص الوارد"
+
+msgid "(text removed after the retention period)"
+msgstr "(حُذف النص بعد انتهاء مدة الاحتفاظ)"
+
+msgid "The analysis failed — try again."
+msgstr "تعذّر التحليل — حاول مرة أخرى."
+
+msgid "Analysing on this server… (a local model on CPU can take a minute)"
+msgstr "جارٍ التحليل على هذا الخادم… (قد يستغرق النموذج المحلي دقيقة)"
+
+msgid "Analyse again"
+msgstr "إعادة التحليل"
+
+msgid "Routed as"
+msgstr "وُجّه بوصفه"
+
+msgid "No record created (guidance / manual triage)."
+msgstr "لم يُنشأ سجل (إرشاد / فرز يدوي)."
+
+msgid "Proposal — review and confirm"
+msgstr "المقترح — راجع وأكّد"
+
+msgid "confidence"
+msgstr "الثقة"
+
+msgid "Not recognised with enough confidence — choose what this is, or reject it for manual handling."
+msgstr "لم يُتعرّف عليه بثقة كافية — اختر نوعه أو ارفضه للمعالجة اليدوية."
+
+msgid "What is it"
+msgstr "ما هو"
+
+msgid "Other candidates"
+msgstr "احتمالات أخرى"
+
+msgid "Goes to"
+msgstr "يُوجّه إلى"
+
+msgid "Manual triage"
+msgstr "فرز يدوي"
+
+msgid "Playbook"
+msgstr "الدليل الإجرائي"
+
+msgid "Why"
+msgstr "السبب"
+
+msgid "Confirm and create"
+msgstr "تأكيد وإنشاء"
+
+msgid "Reject (nothing created)"
+msgstr "رفض (لا يُنشأ شيء)"
+
+msgid "You decide: the Copilot only proposes."
+msgstr "القرار لك: المساعد يقترح فقط."
+
+msgid "Intent"
+msgstr "نوع الوارد"
+
+msgid "new"
+msgstr "جديد"
+
+msgid "Description (helps the model)"
+msgstr "الوصف (يساعد النموذج)"
+
+msgid "Keywords (one per line, AR or EN)"
+msgstr "كلمات مفتاحية (كل سطر كلمة، عربي أو إنجليزي)"
+
+msgid "Examples (one per line)"
+msgstr "أمثلة (كل سطر مثال)"
+
+msgid "Routes to"
+msgstr "يُوجّه إلى"
+
+msgid "Deadline (hours)"
+msgstr "المهلة (بالساعات)"
+
+msgid "Fields to extract (JSON list: key, label_en, label_ar, type, required)"
+msgstr "الحقول المستخرجة (قائمة JSON: key, label_en, label_ar, type, required)"
+
+msgid "Routing parameters (JSON object)"
+msgstr "معاملات التوجيه (كائن JSON)"
+
+msgid "Installed by content pack"
+msgstr "مُثبّت من حزمة محتوى"
+
+msgid "What the Copilot can recognise, which fields it extracts and where each item is routed. This is data — edit it here; content packs may add entries."
+msgstr "ما يتعرف عليه المساعد والحقول التي يستخرجها وجهة توجيه كل نوع. هذه بيانات تُعدّل من هنا، وقد تضيف حزم المحتوى أنواعاً أخرى."
+
+msgid "New intent"
+msgstr "نوع جديد"
+
+msgid "Fields"
+msgstr "الحقول"
+
+msgid "Deadline (h)"
+msgstr "المهلة (ساعة)"
+
+msgid "core"
+msgstr "النواة"
+
+msgid "Every suggestion: input fingerprint, provider, model, prompt version, output, latency and the user decision. Prompts and outputs are removed after the retention period."
+msgstr "كل اقتراح: بصمة المدخلات والمزوّد والنموذج وإصدار التعليمات والمخرجات وزمن الاستجابة وقرار المستخدم. تُحذف النصوص والمخرجات بعد مدة الاحتفاظ."
+
+msgid "Last 30 days"
+msgstr "آخر 30 يوماً"
+
+msgid "Apply retention now"
+msgstr "تطبيق مدة الاحتفاظ الآن"
+
+msgid "Feature"
+msgstr "الخاصية"
+
+msgid "Avg ms"
+msgstr "متوسط م.ث"
+
+msgid "Object"
+msgstr "السجل"
+
+msgid "Prompt"
+msgstr "التعليمات"
+
+msgid "ms"
+msgstr "م.ث"
+
+msgid "Input hash"
+msgstr "بصمة المدخلات"
+
+msgid "No suggestions yet."
+msgstr "لا توجد اقتراحات بعد."
+
+msgid "Suggestion"
+msgstr "اقتراح"
+
+msgid "Prompt and output removed by the retention policy on"
+msgstr "حُذفت التعليمات والمخرجات وفق سياسة الاحتفاظ بتاريخ"
+
+msgid "(no model prompt — rules)"
+msgstr "(لا توجد تعليمات للنموذج — قواعد)"
+
+msgid "Output"
+msgstr "المخرجات"
+
+msgid "Example situations (one per line)"
+msgstr "مواقف مثال (كل سطر موقف)"
+
+msgid "Parameters (JSON list: key, label_en, label_ar, type, required)"
+msgstr "المعاملات (قائمة JSON: key, label_en, label_ar, type, required)"
+
+msgid "Steps"
+msgstr "الخطوات"
+
+msgid "Order"
+msgstr "الترتيب"
+
+msgid "Empty rows are ignored. Deadlines are relative to the start date of each run."
+msgstr "تُتجاهل الصفوف الفارغة. المهل محسوبة من تاريخ بدء كل تنفيذ."
+
+msgid "Event → flow (playbooks)"
+msgstr "الحدث ← المسار (الأدلة الإجرائية)"
+
+msgid "Describe what happened or what is planned. The Copilot selects the matching playbook from the catalog and pre-fills it; on your confirmation the steps become a finding with dated corrective actions."
+msgstr "صف ما حدث أو ما هو مخطط له. يختار المساعد الدليل الإجرائي المناسب من الدليل ويملأ بياناته، وعند تأكيدك تتحول الخطوات إلى ملاحظة بإجراءات تصحيحية مؤرخة."
+
+msgid "Situation"
+msgstr "الموقف"
+
+msgid "e.g. We will open a new branch in Tanta on 1 December"
+msgstr "مثال: سنفتتح فرعاً جديداً في طنطا يوم 1 ديسمبر"
+
+msgid "Find the playbook"
+msgstr "ابحث عن الدليل الإجرائي"
+
+msgid "Selecting the playbook on this server…"
+msgstr "جارٍ اختيار الدليل الإجرائي على هذا الخادم…"
+
+msgid "Proposed playbooks"
+msgstr "الأدلة الإجرائية المقترحة"
+
+msgid "Confirm and create the tasks"
+msgstr "تأكيد وإنشاء المهام"
+
+msgid "No playbook matches this situation. Handle it manually or add a playbook to the catalog."
+msgstr "لا يوجد دليل إجرائي مناسب لهذا الموقف. عالجه يدوياً أو أضف دليلاً إجرائياً."
+
+msgid "Catalog"
+msgstr "الدليل"
+
+msgid "New playbook"
+msgstr "دليل إجرائي جديد"
+
+msgid "Recent runs"
+msgstr "أحدث التنفيذات"
+
+msgid "No runs yet."
+msgstr "لا توجد تنفيذات بعد."
+
+msgid "off"
+msgstr "متوقف"
+
+msgid "ComplyNex never calls an external AI service. A model is optional: it must run on this server or on your private network, and any public address is refused. Without a model every feature still works with deterministic rules."
+msgstr "لا يستدعي ComplyNex أي خدمة ذكاء اصطناعي خارجية. النموذج اختياري، ويجب أن يعمل على هذا الخادم أو على شبكتك الخاصة، ويُرفض أي عنوان عام. بدون نموذج تعمل كل الخصائص بقواعد ثابتة."
+
+msgid "AI features enabled"
+msgstr "تفعيل خصائص الذكاء الاصطناعي"
+
+msgid "Run model calls as background jobs (RQ worker)"
+msgstr "تشغيل طلبات النموذج كمهام خلفية (RQ worker)"
+
+msgid "Rules only (no model) — default"
+msgstr "قواعد فقط (بدون نموذج) — الافتراضي"
+
+msgid "Local inference server (Ollama / llama.cpp)"
+msgstr "خادم استدلال محلي (Ollama / llama.cpp)"
+
+msgid "Server URL (localhost or private network)"
+msgstr "عنوان الخادم (محلي أو شبكة خاصة)"
+
+msgid "API style"
+msgstr "نوع الواجهة"
+
+msgid "llama.cpp server (/v1 compatible)"
+msgstr "خادم llama.cpp (متوافق مع /v1)"
+
+msgid "Model name"
+msgstr "اسم النموذج"
+
+msgid "Timeout (seconds)"
+msgstr "المهلة (بالثواني)"
+
+msgid "Prompt log retention (days)"
+msgstr "مدة الاحتفاظ بسجل التعليمات (بالأيام)"
+
+msgid "Embeddings"
+msgstr "التمثيلات الدلالية"
+
+msgid "Off"
+msgstr "متوقف"
+
+msgid "Reuse the semantic screening service"
+msgstr "استخدام خدمة الفحص الدلالي الحالية"
+
+msgid "Model from a local folder"
+msgstr "نموذج من مجلد محلي"
+
+msgid "Semantic service URL"
+msgstr "عنوان الخدمة الدلالية"
+
+msgid "Local model folder"
+msgstr "مجلد النموذج المحلي"
+
+msgid "Health"
+msgstr "الحالة"
+
+msgid "Active provider"
+msgstr "المزوّد الحالي"
+
+msgid "Generator"
+msgstr "المولّد"
+
+msgid "Job queue"
+msgstr "قائمة المهام"
+
+msgid "Jobs (24 h)"
+msgstr "المهام (24 ساعة)"
+
+msgid "Compliance Copilot"
+msgstr "مساعد الالتزام"
+
+msgid "Use (submit, confirm, drafts)"
+msgstr "استخدام (إرسال، تأكيد، مسودات)"
+
+msgid "Admin (settings, catalogs)"
+msgstr "مدير (الإعدادات، الأدلة)"
+
+msgid "Routed to the compliance team for manual handling."
+msgstr "وُجّه إلى فريق الالتزام للمعالجة اليدوية."
+
+msgid "Continue in the target module."
+msgstr "تابع في الوحدة المعنية."
+
+msgid "Related policies listed; no record created."
+msgstr "عُرضت السياسات ذات الصلة ولم يُنشأ سجل."
+
+msgid "Finding created."
+msgstr "تم إنشاء الملاحظة."
+
+msgid "Evidence recorded; it waits for review by someone other than you."
+msgstr "تم تسجيل الدليل، وينتظر مراجعة شخص آخر غيرك."
+
+msgid "Registered for AML study."
+msgstr "سُجّل لدراسة مكافحة غسل الأموال."
+
+msgid "Complaint registered (statutory deadline set by the complaints module)."
+msgstr "سُجّلت الشكوى (المهلة القانونية تحددها وحدة الشكاوى)."
+
+msgid "Confidential case opened."
+msgstr "تم فتح بلاغ سري."
+
+msgid "Playbook started; the tasks were created."
+msgstr "بدأ تنفيذ الدليل الإجرائي وأُنشئت المهام."
+
+msgid "choose a playbook"
+msgstr "اختر دليلاً إجرائياً"
+
+msgid "unknown routing target"
+msgstr "جهة توجيه غير معروفة"
+
+msgid "paste the text or upload a document"
+msgstr "الصق النص أو ارفع مستنداً"
+
+msgid "choose what this is"
+msgstr "اختر نوع الوارد"
+
+msgid "unknown playbook"
+msgstr "دليل إجرائي غير معروف"
+
+msgid "AI features are disabled for this installation"
+msgstr "خصائص الذكاء الاصطناعي متوقفة في هذا النظام"
+
+msgid "unknown provider"
+msgstr "مزوّد غير معروف"
+
+msgid "unknown embeddings mode"
+msgstr "نوع تمثيلات غير معروف"
+
+msgid "the embeddings model path must be a directory on this server"
+msgstr "يجب أن يكون مسار نموذج التمثيلات مجلداً على هذا الخادم"
+
+msgid "unknown API style"
+msgstr "نوع واجهة غير معروف"
+
+msgid "URL must be http(s)://host[:port]"
+msgstr "يجب أن يكون العنوان بصيغة http(s)://host[:port]"
+
+msgid "credentials in the URL are not allowed"
+msgstr "لا يُسمح ببيانات الدخول داخل العنوان"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

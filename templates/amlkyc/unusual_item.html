@@ -17,6 +17,7 @@
                 <p class="text-muted mt-2 mb-0">{{ _('A decision needs the written analysis and at least one supporting document.') }}</p>
             {% else %}<p class="mb-0">{{ _('Decision') }}: <strong>{{ u.decision or '-' }}</strong> {{ u.str_reference or '' }} {% if u.decision_at %}· {{ u.decision_at.strftime('%Y-%m-%d') }}{% endif %}</p>{% endif %}
         </div></form>
-    </div><div class="col-lg-5">{% include 'partials/attachment_widget.html' %}</div></div>
+    </div><div class="col-lg-5">{% with obj_type='aml_unusual', obj_id=u.id, drafts=['str_narrative'] %}{% include 'ai/_nba_card.html' %}{% endwith %}
+        {% include 'partials/attachment_widget.html' %}</div></div>
 </div>
 {% endblock %}

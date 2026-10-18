@@ -44,6 +44,7 @@ ALLOWED_MODULES = {
     'prudential': 'prudential',
     'cyber': 'cyber',
     'carbon': 'carbon',
+    'ai': 'ai',
 }
 
 

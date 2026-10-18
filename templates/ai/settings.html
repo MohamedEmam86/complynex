@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% import 'ai/_nav.html' as an with context %}
+{% block title %}{{ _('AI settings & health') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+{% macro ok(h) -%}<span class="badge {{ 'bg-success' if h.ok else ('bg-secondary' if h.ok is none else 'bg-danger') }}">{{ _('OK') if h.ok else (_('off') if h.ok is none else _('not available')) }}</span> <span class="text-muted">{{ h.detail }}</span>{%- endmacro %}
+<div class="container-fluid">
+  <h3 class="mb-1">{{ _('AI settings & health') }}</h3>
+  {{ an.nav('ai.settings_page') }}
+  <div class="alert alert-info small">{{ _('ComplyNex never calls an external AI service. A model is optional: it must run on this server or on your private network, and any public address is refused. Without a model every feature still works with deterministic rules.') }}</div>
+  <div class="row g-3"><div class="col-lg-7">
+    <form method="post" class="card"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><div class="card-body small"><div class="row g-2">
+      <div class="col-md-6"><label><input type="checkbox" name="ai.enabled" value="1" {{ 'checked' if cfg['ai.enabled'] }}> {{ _('AI features enabled') }}</label></div>
+      <div class="col-md-6"><label><input type="checkbox" name="ai.async" value="1" {{ 'checked' if cfg['ai.async'] }}> {{ _('Run model calls as background jobs (RQ worker)') }}</label></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Provider') }}</label><select name="ai.provider" class="form-select form-select-sm">
+        <option value="rules_only" {{ 'selected' if cfg['ai.provider'] == 'rules_only' }}>{{ _('Rules only (no model) — default') }}</option>
+        <option value="local_http" {{ 'selected' if cfg['ai.provider'] == 'local_http' }}>{{ _('Local inference server (Ollama / llama.cpp)') }}</option></select></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Server URL (localhost or private network)') }}</label><input name="ai.base_url" dir="ltr" class="form-control form-control-sm" value="{{ cfg['ai.base_url'] }}"></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('API style') }}</label><select name="ai.api_style" class="form-select form-select-sm">
+        <option value="ollama" {{ 'selected' if cfg['ai.api_style'] == 'ollama' }}>Ollama</option><option value="openai_compat" {{ 'selected' if cfg['ai.api_style'] == 'openai_compat' }}>{{ _('llama.cpp server (/v1 compatible)') }}</option></select></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Model name') }}</label><input name="ai.model" dir="ltr" class="form-control form-control-sm" value="{{ cfg['ai.model'] }}" placeholder="qwen2.5:7b-instruct"></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Timeout (seconds)') }}</label><input name="ai.timeout_s" type="number" class="form-control form-control-sm" value="{{ cfg['ai.timeout_s'] }}"></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Prompt log retention (days)') }}</label><input name="ai.log_retention_days" type="number" class="form-control form-control-sm" value="{{ cfg['ai.log_retention_days'] }}"></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Embeddings') }}</label><select name="ai.embeddings" class="form-select form-select-sm">
+        <option value="off" {{ 'selected' if cfg['ai.embeddings'] == 'off' }}>{{ _('Off') }}</option>
+        <option value="semantic_service" {{ 'selected' if cfg['ai.embeddings'] == 'semantic_service' }}>{{ _('Reuse the semantic screening service') }}</option>
+        <option value="local_path" {{ 'selected' if cfg['ai.embeddings'] == 'local_path' }}>{{ _('Model from a local folder') }}</option></select></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Semantic service URL') }}</label><input name="ai.embeddings_url" dir="ltr" class="form-control form-control-sm" value="{{ cfg['ai.embeddings_url'] }}"></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Local model folder') }}</label><input name="ai.embeddings_path" dir="ltr" class="form-control form-control-sm" value="{{ cfg['ai.embeddings_path'] }}"></div>
+    </div></div><div class="card-footer"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div></form>
+  </div><div class="col-lg-5">
+    <div class="card"><div class="card-header"><strong>{{ _('Health') }}</strong></div><div class="card-body small">
+      <p class="mb-1">{{ _('Active provider') }}: {{ an.provider_badge(health.provider) }} <span class="text-muted">{{ health.model }}</span></p>
+      <p class="mb-1">{{ _('Generator') }}: {{ ok(health.generator) }}</p>
+      <p class="mb-1">{{ _('Embeddings') }}: {{ ok(health.embeddings) }}</p>
+      <p class="mb-1">{{ _('Job queue') }}: {{ ok(health.queue) }}</p>
+      <p class="mb-0">{{ _('Jobs (24 h)') }}: {% for j in health.jobs %}{{ j.status }} {{ j.n }}{{ ', ' if not loop.last }}{% else %}-{% endfor %}</p>
+    </div></div>
+  </div></div>
+</div>
+{% endblock %}

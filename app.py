@@ -386,6 +386,12 @@ def create_app(config_name=None):
     import prudential.routes  # noqa: F401 — registers routes on prudential_bp
     app.register_blueprint(prudential_bp)
 
+    # Compliance Copilot (AI intake, playbooks, next-best-action) — local
+    # inference only, rules fallback by default — see ai/ and docs/ai/
+    from ai import ai_bp
+    import ai.routes  # noqa: F401 — registers routes on ai_bp
+    app.register_blueprint(ai_bp)
+
     # Optional content packs (packs/<code>/): their pages exist only while the
     # pack is enabled (Compliance Controls > Content packs). Core never
     # imports a specific pack.

@@ -98,3 +98,35 @@ def install_integration(code, name, **kwargs):
     """Declare an expected external integration (IT resilience > Integrations) if missing."""
     from cyber.resilience import install_integration as _ii
     return _ii(code, name, **kwargs)
+
+
+# ------------------------------------------------------------------ Compliance Copilot catalog (ai/)
+# Packs add intake intents and playbooks as DATA; lazy imports keep the core
+# importable without the AI layer. All helpers are idempotent and keep UI edits.
+
+def install_ai_intent(d, pack_code=None, db=None):
+    """Add an intake intent (Compliance Copilot > Intake catalog) if missing."""
+    from ai import catalog as _ai
+    _ai.ensure_seeded(db, commit=False)
+    return _ai.install_intent(d, pack_code=pack_code, db=db)
+
+
+def extend_ai_intent(code, keywords=(), examples=(), control_codes=(), db=None):
+    """Union-merge keywords / examples / linked controls into an existing intent."""
+    from ai import catalog as _ai
+    _ai.ensure_seeded(db, commit=False)
+    return _ai.extend_intent(code, keywords, examples, control_codes, db=db)
+
+
+def install_ai_playbook(d, pack_code=None, db=None):
+    """Add a playbook (with its steps) if missing."""
+    from ai import catalog as _ai
+    _ai.ensure_seeded(db, commit=False)
+    return _ai.install_playbook(d, pack_code=pack_code, db=db)
+
+
+def install_ai_playbook_step(playbook_code, step, pack_code=None, db=None):
+    """Add one step (e.g. a regulator-specific approval linked to a control) to an existing playbook."""
+    from ai import catalog as _ai
+    _ai.ensure_seeded(db, commit=False)
+    return _ai.install_step(playbook_code, step, pack_code=pack_code, db=db)

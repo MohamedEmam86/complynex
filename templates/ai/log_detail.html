@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% import 'ai/_nav.html' as an with context %}
+{% block title %}{{ _('AI log') }} #{{ s.id }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <h3 class="mb-1">{{ _('Suggestion') }} #{{ s.id }}</h3>
+  {{ an.nav('ai.log_page') }}
+  <div class="card small"><div class="card-body">
+    <p class="mb-1">{{ s.feature }} · {{ s.provider }} {{ s.model or '' }} · {{ s.prompt_version }} · {{ s.status }} · {{ s.latency_ms or 0 }} ms · {{ s.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    <p class="mb-1">{{ _('Decision') }}: {{ s.decision or '-' }} {{ s.decided_at.strftime('%Y-%m-%d %H:%M') if s.decided_at }}</p>
+    <p class="mb-2 font-monospace">{{ _('Input hash') }}: {{ s.input_hash }}</p>
+    {% if s.error %}<div class="alert alert-warning py-1">{{ s.error }}</div>{% endif %}
+    {% if s.purged_at %}<p class="text-muted">{{ _('Prompt and output removed by the retention policy on') }} {{ s.purged_at.strftime('%Y-%m-%d') }}.</p>{% else %}
+    <h6>{{ _('Prompt') }}</h6><pre class="bg-light p-2 border" dir="auto" style="white-space: pre-wrap">{{ s.prompt_text or _('(no model prompt — rules)') }}</pre>
+    <h6>{{ _('Output') }}</h6><pre class="bg-light p-2 border" dir="auto" style="white-space: pre-wrap">{{ s.output|tojson(indent=1) if s.output else '' }}</pre>{% endif %}
+  </div></div>
+</div>
+{% endblock %}

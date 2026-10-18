@@ -782,3 +782,30 @@ PARAMETERS = [
     _p('carbon.report_due_days', None, 'integer', 'days', 'Days after period end to approve the carbon inventory',
        'عدد الأيام بعد نهاية الفترة لاعتماد جرد الانبعاثات', 'FRA carbon-footprint decision (to confirm)'),
 ]
+
+
+# ------------------------------------------------------------------ Compliance Copilot additions (data only)
+# Extra playbook steps linked to FRA controls, and FRA vocabulary for generic
+# intake intents. Installed through regcontrols.api; UI edits are kept.
+# TODO(compliance-review): confirm step wording and deadlines with the FRA rules.
+AI_PLAYBOOK_STEPS = [
+    ('new_branch', {'step_key': 'fra_manager_noobjection', 'seq': 25, 'step_type': 'approval', 'control_code': 'FRA-007',
+                    'title_en': 'FRA no-objection for the branch manager', 'title_ar': 'عدم ممانعة الهيئة على مدير الفرع',
+                    'owner_role': 'compliance_head', 'due_days': 30}),
+    ('new_branch', {'step_key': 'fra_branch_staffing', 'seq': 35, 'step_type': 'control', 'control_code': 'FRA-008',
+                    'title_en': 'Branch staffing meets the FRA minimum roles', 'title_ar': 'استيفاء العمالة الدنيا المطلوبة للفرع',
+                    'owner_role': 'hr_head', 'due_days': 30}),
+    ('new_branch', {'step_key': 'fra_branch_address', 'seq': 45, 'step_type': 'control', 'control_code': 'FRA-005',
+                    'title_en': 'Register the branch address with the FRA', 'title_ar': 'تسجيل عنوان الفرع لدى الهيئة',
+                    'owner_role': 'compliance_head', 'due_days': 30}),
+    ('key_function_change', {'step_key': 'fra_kf_noobjection', 'seq': 15, 'step_type': 'control', 'control_code': 'FRA-006',
+                             'title_en': 'FRA notification / no-objection for the key function', 'title_ar': 'إخطار الهيئة / عدم الممانعة على الوظيفة الرئيسية',
+                             'owner_role': 'compliance_head', 'due_days': 7}),
+    ('new_product', {'step_key': 'fra_pricing_disclosure', 'seq': 35, 'step_type': 'control', 'control_code': 'FRA-019',
+                     'title_en': 'FRA responsible-pricing disclosure for the product', 'title_ar': 'الإفصاح عن التسعير المسؤول للمنتج لدى الهيئة',
+                     'owner_role': 'compliance_head', 'due_days': 21}),
+]
+AI_INTENT_EXTENSIONS = [
+    ('freeze_order', {'keywords': ['EMLCU', 'MLCU', 'وحدة مكافحة غسل الأموال', 'وحدة مكافحة غسل الأموال وتمويل الإرهاب'],
+                      'control_codes': ['FRA-032', 'FRA-068']}),
+]

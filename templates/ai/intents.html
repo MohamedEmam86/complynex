@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% import 'ai/_nav.html' as an with context %}
+{% block title %}{{ _('Intake catalog') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <h3 class="mb-1">{{ _('Intake catalog') }}</h3>
+  <p class="small text-muted mb-2">{{ _('What the Copilot can recognise, which fields it extracts and where each item is routed. This is data — edit it here; content packs may add entries.') }}</p>
+  {{ an.nav('ai.intents') }}
+  {% if ai_level() >= 3 %}<a class="btn btn-sm btn-outline-primary mb-2" href="{{ url_for('ai.intent_edit', code='new') }}">{{ _('New intent') }}</a>{% endif %}
+  <div class="card"><div class="table-responsive"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Code') }}</th><th>{{ _('Name') }}</th><th>{{ _('Routes to') }}</th><th>{{ _('Fields') }}</th><th>{{ _('Controls') }}</th><th>{{ _('Priority') }}</th><th>{{ _('Deadline (h)') }}</th><th>{{ _('Source') }}</th><th>{{ _('Active') }}</th></tr></thead><tbody>
+  {% for r in rows %}<tr class="{{ 'text-muted' if not r.is_active }}"><td><a href="{{ url_for('ai.intent_edit', code=r.code) }}">{{ r.code }}</a></td><td>{{ an.label(r, lang) }}</td>
+    <td>{{ (handlers[r.handler].label_ar if lang == 'ar' else handlers[r.handler].label_en) if r.handler in handlers else r.handler }}</td>
+    <td>{{ r.fields|map(attribute='key')|join(', ') }}</td><td>{{ (r.control_codes or [])|join(', ') }}</td><td>{{ r.priority }}</td><td>{{ r.deadline_hours or '-' }}</td><td>{{ r.pack_code or _('core') }}</td><td>{{ '✓' if r.is_active }}</td></tr>{% endfor %}
+  </tbody></table></div></div>
+</div>
+{% endblock %}
