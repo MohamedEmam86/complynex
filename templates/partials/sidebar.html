@@ -685,7 +685,7 @@
         <i class="bi bi-chevron-down cnx-nav__caret"></i>
       </button>
       <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
-        {% for ep, en, ar in pm.items %}
+        {% for ep, en, ar in pm.links %}
           <li class="cnx-nav__subitem">
             <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for(ep) }}">
               <span class="cnx-nav__label">{{ rc_loc(en, ar) }}</span>

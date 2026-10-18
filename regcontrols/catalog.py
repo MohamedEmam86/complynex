@@ -303,3 +303,18 @@ def install_parameter(p, pack_code=None, framework_id=None, db=None):
                     r['effective_from'], f'Installed by pack {pack_code}' if pack_code else 'Installed',
                     datetime.now(), r['id']))
     return r['id'] if r else None
+
+
+def install_regulatory_report(code, name, frequency, *, due_day=None, due_month=None, description=None,
+                              regulator_id=None, submission_method=None, responsible_department=None, db=None):
+    """Add a periodic submission to the existing regulatory calendar (Regulatory
+    Reports module) unless a report with this code exists. Returns its id."""
+    db = db or get_db()
+    r = db.execute("SELECT id FROM regulatory_reports WHERE report_code = %s", (code,)).fetchone()
+    if r:
+        return r['id']
+    return db.execute("""INSERT INTO regulatory_reports (report_code, report_name, regulator_id, frequency, due_day,
+                         due_month, description, submission_method, responsible_department, is_active)
+                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,TRUE) RETURNING id""",
+                      (code, name, regulator_id, frequency, due_day, due_month, description, submission_method,
+                       responsible_department)).fetchone()['id']

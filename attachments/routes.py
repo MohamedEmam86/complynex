@@ -44,6 +44,13 @@ ALLOWED_MODULES = {
 }
 
 
+def register_module(module, perm_module=None):
+    """Let another module or a content pack use the attachment widget for its
+    records. perm_module is the permission module checked on upload/download
+    (defaults to `module`)."""
+    ALLOWED_MODULES[module] = perm_module or module
+
+
 def _check_module(module):
     if module not in ALLOWED_MODULES:
         abort(400, description="Unknown module for attachments")

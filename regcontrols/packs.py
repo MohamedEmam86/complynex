@@ -189,10 +189,15 @@ def register_blueprints(app):
                 logger.exception('regcontrols: could not load blueprint %s of pack %s', spec, pack.code)
                 continue
 
-            def _guard(code=pack.code):
-                if not is_enabled(code):
-                    abort(404)
-            bp.before_request(_guard)
+            if not getattr(bp, '_rc_pack_guarded', False):   # create_app() may run more than once per process
+                def _guard(code=pack.code):
+                    if not is_enabled(code):
+                        abort(404)
+                bp.before_request(_guard)
+                bp._rc_pack_guarded = True
+            if getattr(bp, 'csrf_exempt', False):     # API-key authenticated blueprints
+                from extensions import csrf
+                csrf.exempt(bp)
             app.register_blueprint(bp)
 
 
@@ -203,7 +208,7 @@ def menus(user):
         items = [(ep, en, ar) for ep, en, ar, perm in p.menu if not perm or user.can_view(perm)]
         if items:
             out.append({'title_en': p.menu_title_en or p.name_en, 'title_ar': p.menu_title_ar or p.name_ar,
-                        'icon': p.menu_icon, 'items': items, 'code': p.code})
+                        'icon': p.menu_icon, 'links': items, 'code': p.code})
     return out
 
 

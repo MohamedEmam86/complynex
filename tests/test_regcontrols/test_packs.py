@@ -26,8 +26,8 @@ def test_menus_only_for_enabled_packs_and_permitted_items(monkeypatch):
     try:
         monkeypatch.setattr(packs, 'enabled_packs', lambda db=None: [p])
         m = packs.menus(FakeUser(set()))
-        assert [i[0] for i in m[0]['items']] == ['demo.b']
-        assert [i[0] for i in packs.menus(FakeUser({'demo_mod'}))[0]['items']] == ['demo.a', 'demo.b']
+        assert [i[0] for i in m[0]['links']] == ['demo.b']
+        assert [i[0] for i in packs.menus(FakeUser({'demo_mod'}))[0]['links']] == ['demo.a', 'demo.b']
         monkeypatch.setattr(packs, 'enabled_packs', lambda db=None: [])
         assert packs.menus(FakeUser({'demo_mod'})) == []
     finally:
@@ -45,3 +45,19 @@ def test_core_never_imports_a_pack():
         if 'packs.fra_nbfi' in text or 'fra_nbfi' in text or 'FRA-' in text:
             offenders.append(os.path.basename(path))
     assert offenders == []
+
+
+def test_core_app_files_do_not_mention_pack_modules():
+    """Shared core files must stay pack-agnostic (packs plug in through the registry)."""
+    import os
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    files = ['app.py', 'models/user.py', 'admin/routes.py', 'attachments/routes.py', 'api/routes.py',
+             'templates/partials/sidebar.html', 'templates/admin/users/add.html', 'templates/admin/users/edit.html',
+             'database/migrations/20261018_regcontrols.sql']
+    hits = []
+    for f in files:
+        text = open(os.path.join(root, f), encoding='utf-8').read().lower()
+        for word in ('fra_nbfi', "'lending'", 'perm_lending', 'lending.', 'microfinance'):
+            if word in text:
+                hits.append((f, word))
+    assert hits == []
