@@ -41,7 +41,7 @@ $G ls-files -z | (cd "$APP" && xargs -0 chown complynex:complynex) || true
 
 for m in $MIGR; do
   echo "-- migration $m"
-  if ! sudo -u postgres psql -d complynex_db -v ON_ERROR_STOP=1 -q -f "$APP/$m"; then
+  if ! sudo -u postgres psql -d complynex_db -v ON_ERROR_STOP=1 -q < "$APP/$m"; then
     echo "MIGRATION FAILED — rolling code back to $PREV"; $G reset --hard --quiet "$PREV"; restart || true; exit 1
   fi
 done
