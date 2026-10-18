@@ -21,12 +21,14 @@ microfinance company ("Nile Microfinance S.A.E."). Every name, reference and
 figure is invented. Use only on demo / test installations. Enables the
 fra_nbfi pack if it is not enabled yet.
 
-    python packs/fra_nbfi/scripts/seed_demo_lending.py                        # data only
-    python packs/fra_nbfi/scripts/seed_demo_lending.py --with-demo-parameters # also fill unset lending parameters
+    python packs/fra_nbfi/scripts/seed_demo_lending.py                        # data + demo parameter values
+    python packs/fra_nbfi/scripts/seed_demo_lending.py --no-demo-parameters   # keep parameters empty
 
---with-demo-parameters writes ILLUSTRATIVE values into lending parameters that
-are still empty, marked needs_review with the note "DEMO VALUE". Never run it
-on a production installation: those numbers are not regulatory values.
+The script flags the installation as the fictional demo tenant and fills every
+pack parameter that is still empty with an ILLUSTRATIVE value (marked
+needs_review, note "DEMO VALUE"; see packs/fra_nbfi/demo.py), so no control shows
+"error" in a demo. --no-demo-parameters leaves them empty. Never run it on a
+production installation: those numbers are not regulatory values.
 
 The data contains deliberate breaches so every lending check has something
 to find: unsigned contracts, missing GPS / receipt / credit study, copied
@@ -43,15 +45,6 @@ from datetime import date, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-DEMO_PARAMS = {
-    'lending.max_client_monthly_revenue': '50000', 'lending.max_project_size': '500000',
-    'lending.gps_mandatory_min_amount': '30000', 'lending.followup_visit_days': '30',
-    'portfolio.par30_threshold_pct': '5', 'lending.min_cost_lines': '3', 'lending.max_dsr_pct': '50',
-    'lending.admin_fee_cap_pct': '3', 'lending.admin_fee_tiers': '[{"max_amount": 20000, "cap_pct": 3}, {"max_amount": null, "cap_pct": 2}]',
-    'lending.late_penalty_rate_pct': '2', 'lending.late_penalty_cap_pct': '10', 'lending.transfer_fee_cap': '100',
-    'lending.rescheduling_fee_cap': '250', 'lending.prepay_new_loan_window_days': '30',
-    'aml.unusual_txn_study_sla_days': '15',
-}
 
 FIRST = ['Ahmed', 'Mona', 'Karim', 'Sara', 'Hassan', 'Nour', 'Omar', 'Laila', 'Youssef', 'Heba', 'Tarek', 'Dina',
          'Mahmoud', 'Rania', 'Sherif', 'Yasmin', 'Adel', 'Salma', 'Walid', 'Hala']
@@ -153,7 +146,8 @@ def build(today):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--with-demo-parameters', action='store_true')
+    ap.add_argument('--with-demo-parameters', action='store_true', help='(default; kept for compatibility)')
+    ap.add_argument('--no-demo-parameters', action='store_true', help='leave the regulatory parameters empty')
     args = ap.parse_args()
     from app import create_app
     from database.db import get_db
@@ -171,18 +165,12 @@ def main():
                       VALUES ('NM-MICRO', 'Micro-enterprise loan (demo)', 'تمويل مشروع متناهي الصغر (تجريبي)',
                               'microfinance', '{national_id}') ON CONFLICT (code) DO NOTHING""")
         db.commit()
-        if args.with_demo_parameters:
-            from models.settings import Settings
-            if (Settings.get('rc_licence_type', 'all') or 'all') == 'all':
-                Settings.set('rc_licence_type', 'microfinance', 'Licence type used to select regulatory parameter values')
-                print('  licence type set to microfinance (demo)')
-            for key, value in DEMO_PARAMS.items():
-                n = db.execute("""UPDATE rc_parameters SET value_text = %s, needs_review = TRUE,
-                                  review_note = 'DEMO VALUE — illustrative only, not a regulatory value'
-                                  WHERE param_key = %s AND value_text IS NULL AND status = 'active'""",
-                               (value, key)).rowcount
-                print(f'  {key}: {"set" if n else "kept existing value"}')
-            db.commit()
+        from packs.fra_nbfi import demo
+        demo.mark_demo_tenant()
+        if not args.no_demo_parameters:
+            filled = demo.apply_demo_parameters(db)
+            print(f"  demo parameter values: {sum(v == 'set' for v in filled.values())} set "
+                  f"(marked needs_review, 'DEMO VALUE')")
         for kind, rows in build(date.today()).items():
             b = importer.import_rows(kind, rows, source='demo')
             print(f'{kind}: {b["rows_ok"]} ok, {b["rows_failed"]} failed {b["errors"][:3] if b["errors"] else ""}')
