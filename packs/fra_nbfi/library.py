@@ -67,6 +67,7 @@ AREAS = {
                             'المحاسبة والقوائم المالية والأطراف ذات العلاقة'),
     'it_cyber': ('IT, cyber & continuity', 'تكنولوجيا المعلومات والأمن السيبراني واستمرارية الأعمال'),
     'remediation': ('Remediation of findings', 'معالجة الملاحظات'),
+    'climate': ('Climate & carbon footprint', 'المناخ والبصمة الكربونية'),
 }
 
 # Roles the core does not ship (the core has compliance_head, cfo, it_head, ciso,
@@ -170,6 +171,12 @@ CHECK_KEYS = {
     'FRA-076': 'core.cyber.maturity',
     'FRA-077': 'core.cyber.maturity',
     'FRA-078': 'core.risk.register_fresh',
+    # Climate (carbon module).
+    'FRA-CF-01': 'core.carbon.inventory_approved',
+    'FRA-CF-02': 'core.carbon.data_quality',
+    'FRA-CF-03': 'core.carbon.factors_current',
+    'FRA-CF-04': 'core.carbon.verification',
+    'FRA-CF-05': 'core.carbon.offsets',
 }
 
 # Settings for the generic checks above (rc_controls.check_config, editable on
@@ -233,6 +240,9 @@ CHECK_CONFIG = {
     'FRA-076': {'frameworks': ['FRA-ITGOV'], 'max_age_months': 12},
     'FRA-077': {'frameworks': ['FRA-ITGOV'], 'max_age_months': 12},
     'FRA-078': {'categories': ['TEC'], 'max_age_param': 'it.risk_register_max_age_days'},
+    'FRA-CF-01': {'due_days_param': 'carbon.report_due_days'},
+    'FRA-CF-03': {'max_age_years': 3},
+    'FRA-CF-04': {'statuses': ['Certified', 'Submitted']},
 }
 
 # External integrations the FRA expects (declared, status "not connected"
@@ -616,6 +626,28 @@ CONTROLS = [
        'verification re-test, recurrence detection (same control failing again), board reporting.',
        'regcontrols', 'compliance_head', 'weekly', 'critical',
        ['rc.finding_overdue_grace_days']),
+    # ---------------------------------------------------------------- climate (carbon footprint)
+    # Beyond the inspection findings: the FRA carbon-footprint obligations the existing carbon
+    # module already implements. TODO(compliance-review): confirm against the FRA decision text.
+    _c('FRA-CF-01', 'climate', 'W', 'Annual carbon inventory prepared, reviewed and approved on time',
+       'إعداد ومراجعة واعتماد جرد الانبعاثات السنوي في الموعد',
+       'Preparer, reviewer and approver are different people; the approved period is locked; approval within the '
+       'reporting deadline.', 'carbon', 'compliance_head', 'annual', 'high', ['carbon.report_due_days']),
+    _c('FRA-CF-02', 'climate', 'A', 'Carbon activity data complete, consistent and evidenced',
+       'اكتمال واتساق بيانات الأنشطة الكربونية وتأييدها بالمستندات',
+       'No missing months, outliers explained, units consistent with factors, every entry supported by evidence.',
+       'carbon', 'compliance_head', 'monthly', 'high', ['carbon.outlier_pct']),
+    _c('FRA-CF-03', 'climate', 'A', 'Emission factors sourced and current', 'مصادر معاملات الانبعاث موثقة وحديثة',
+       'Every figure traceable to a versioned factor with source and vintage.', 'carbon', 'compliance_head',
+       'annual', 'medium'),
+    _c('FRA-CF-04', 'climate', 'W', 'Carbon report verified by an accredited verifier', 'التحقق من تقرير الكربون من جهة معتمدة',
+       'The annual report is certified by an independent verifier before submission.', 'carbon', 'compliance_head',
+       'annual', 'high'),
+    _c('FRA-CF-05', 'climate', 'W/A', 'Carbon offset obligation fulfilled within the deadline',
+       'الوفاء بالتزام تعويض الانبعاثات في الموعد',
+       'Offset certificates for the required share of emissions purchased and retired before the deadline; offsets '
+       'reported separately from gross emissions.', 'carbon', 'compliance_head', 'monthly', 'high',
+       ['carbon.offset_pct', 'carbon.offset_deadline_days']),
 ]
 
 
@@ -733,4 +765,20 @@ PARAMETERS = [
        'الحد الأدنى لمسؤولي الائتمان بكل فرع', 'FRA decrees on branches'),
     _p('branch.manager_vacancy_max_days', None, 'integer', 'days', 'Days a branch-manager post may stay vacant',
        'عدد الأيام التي يمكن أن يظل فيها منصب مدير الفرع شاغرًا', 'FRA decrees on branches'),
+    # carbon footprint — values the carbon module used before they became parameters.
+    # TODO(compliance-review): confirm each against the FRA carbon-footprint decision.
+    _p('carbon.offset_pct', '20', 'percent', '%', 'Share of declared emissions to offset',
+       'نسبة الانبعاثات المعلنة الواجب تعويضها', 'FRA carbon-footprint decision (to confirm)'),
+    _p('carbon.offset_deadline_days', '90', 'integer', 'days', 'Days after report submission to buy the offsets',
+       'عدد الأيام بعد تقديم التقرير لشراء شهادات التعويض', 'FRA carbon-footprint decision (to confirm)'),
+    _p('carbon.report_threshold_egp', '100000000', 'amount', 'EGP', 'Capital / equity from which the carbon report applies',
+       'رأس المال / حقوق الملكية التي يسري عندها تقرير الكربون', 'FRA carbon-footprint decision (to confirm)'),
+    _p('carbon.esg_report_threshold_egp', '100000000', 'amount', 'EGP', 'Capital / equity from which the ESG report applies',
+       'رأس المال / حقوق الملكية التي يسري عندها تقرير الاستدامة', 'FRA ESG decisions (to confirm)'),
+    _p('carbon.tcfd_threshold_egp', '500000000', 'amount', 'EGP', 'Capital / equity from which TCFD disclosure applies',
+       'رأس المال / حقوق الملكية التي يسري عندها إفصاح TCFD', 'FRA ESG decisions (to confirm)'),
+    _p('carbon.outlier_pct', '50', 'percent', '%', 'Change vs previous period flagged as an outlier',
+       'نسبة التغير عن الفترة السابقة التي تُعد قيمة شاذة', 'Internal data-quality rule', needs_review=False),
+    _p('carbon.report_due_days', None, 'integer', 'days', 'Days after period end to approve the carbon inventory',
+       'عدد الأيام بعد نهاية الفترة لاعتماد جرد الانبعاثات', 'FRA carbon-footprint decision (to confirm)'),
 ]

@@ -82,7 +82,7 @@ PACK = register_pack(Pack(
     description_ar=('متطلبات الهيئة العامة للرقابة المالية للمؤسسات المالية غير المصرفية: 80 متطلبًا وضابطًا '
                     '(رأس المال والترخيص ومنح التمويل والتسعير ومكافحة غسل الأموال والتقارير المالية '
                     'وتكنولوجيا المعلومات والمعالجة) والمعايير الرقابية المستخدمة (تؤكد قيمها إدارة الالتزام).'),
-    version='5',
+    version='6',
     install=install,
     check_modules=['packs.fra_nbfi.lending.checks'],
     blueprints=['packs.fra_nbfi.lending.routes:bp', 'packs.fra_nbfi.lending.api:api_bp'],

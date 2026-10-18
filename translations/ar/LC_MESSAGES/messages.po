@@ -26967,6 +26967,589 @@ msgstr "0 لا يوجد · 1 مبدئي · 2 قابل للتكرار · 3 محد
 msgid "IT resilience (BCP, backups, certificates)"
 msgstr "مرونة تكنولوجيا المعلومات (الاستمرارية، النسخ، الشهادات)"
 
+# --- Carbon accounting ---
+msgid "factor code is required"
+msgstr "رمز المعامل مطلوب"
+
+msgid "New factor version published; earlier entries keep the version they used."
+msgstr "تم نشر إصدار جديد للمعامل؛ تحتفظ القيود السابقة بالإصدار الذي استخدمته."
+
+msgid "No reporting period exists yet."
+msgstr "لا توجد فترة تقرير بعد."
+
+msgid "Recorded %(t)s tCO2e. Attach the evidence (invoice, meter reading, ticket)."
+msgstr "تم تسجيل %(t)s طن مكافئ CO2. أرفق المستند (فاتورة، قراءة عداد، تذكرة)."
+
+msgid "Exposure saved: %(t)s tCO2e financed (PCAF score %(s)s)."
+msgstr "تم حفظ التعرض: %(t)s طن مكافئ CO2 ممولة (درجة PCAF %(s)s)."
+
+msgid "Inventory status: %(s)s."
+msgstr "حالة الجرد: %(s)s."
+
+msgid "This reporting period is approved and locked."
+msgstr "فترة التقرير هذه معتمدة ومقفلة."
+
+msgid "Report marked as submitted. Offset obligation created: %(req)s tCO2e (%(pct)s%%) due within %(days)s days."
+msgstr "تم تسجيل تقديم التقرير. أُنشئ التزام التعويض: %(req)s طن مكافئ CO2 (%(pct)s%%) خلال %(days)s يوماً."
+
+msgid "choose a consolidation approach"
+msgstr "اختر أسلوب التجميع"
+
+msgid "value, effective date and source are required"
+msgstr "القيمة وتاريخ السريان والمصدر مطلوبة"
+
+msgid "a new factor needs scope, activity and unit"
+msgstr "يحتاج المعامل الجديد إلى النطاق والنشاط والوحدة"
+
+msgid "the new version must start after the existing versions"
+msgstr "يجب أن يبدأ الإصدار الجديد بعد الإصدارات الحالية"
+
+msgid "this reporting period is approved and locked"
+msgstr "فترة التقرير هذه معتمدة ومقفلة"
+
+msgid "only an administrator can unlock an approved inventory"
+msgstr "يمكن لمسؤول النظام فقط فتح جرد معتمد"
+
+msgid "give the reason"
+msgstr "اذكر السبب"
+
+msgid "no factor version applies to that date"
+msgstr "لا يوجد إصدار معامل ينطبق على هذا التاريخ"
+
+msgid "quantity is required"
+msgstr "الكمية مطلوبة"
+
+msgid "entry not found"
+msgstr "القيد غير موجود"
+
+msgid "choose a PCAF method"
+msgstr "اختر طريقة PCAF"
+
+msgid "only an inventory under review can be returned"
+msgstr "لا يمكن إرجاع إلا جرد قيد المراجعة"
+
+msgid "only an approved inventory can be unlocked"
+msgstr "لا يمكن فتح إلا جرد معتمد"
+
+msgid "fix the critical data-quality issues before submitting"
+msgstr "عالج مشكلات جودة البيانات الحرجة قبل التقديم"
+
+msgid "the reviewer must be different from the preparer"
+msgstr "يجب أن يختلف المراجع عن المُعِد"
+
+msgid "the approver must be different from the preparer and the reviewer"
+msgstr "يجب أن يختلف المعتمد عن المُعِد والمراجع"
+
+msgid "Carbon accounting"
+msgstr "محاسبة الكربون"
+
+msgid "Boundary & sites"
+msgstr "الحدود والمواقع"
+
+msgid "Factor versions"
+msgstr "إصدارات المعاملات"
+
+msgid "Activity data"
+msgstr "بيانات الأنشطة"
+
+msgid "Financed emissions"
+msgstr "الانبعاثات الممولة"
+
+msgid "Data quality"
+msgstr "جودة البيانات"
+
+msgid "Review & approval"
+msgstr "المراجعة والاعتماد"
+
+msgid "Intensity & initiatives"
+msgstr "الكثافة والمبادرات"
+
+msgid "FRA compliance"
+msgstr "الالتزام بمتطلبات الهيئة"
+
+msgid "approved & locked"
+msgstr "معتمد ومقفل"
+
+msgid "Factor used"
+msgstr "المعامل المستخدم"
+
+msgid "Share"
+msgstr "الحصة"
+
+msgid "No activity data for this period."
+msgstr "لا توجد بيانات أنشطة لهذه الفترة."
+
+msgid "Record activity data"
+msgstr "تسجيل بيانات نشاط"
+
+msgid "(the factor version in force in the activity month is applied and stored)"
+msgstr "(يُطبَّق إصدار المعامل الساري في شهر النشاط ويُحفظ)"
+
+msgid "Activity month"
+msgstr "شهر النشاط"
+
+msgid "factor unit"
+msgstr "وحدة المعامل"
+
+msgid "Scope 2 basis"
+msgstr "أساس النطاق 2"
+
+msgid "Location-based (grid)"
+msgstr "على أساس الموقع (الشبكة)"
+
+msgid "Market-based (contract)"
+msgstr "على أساس السوق (تعاقدي)"
+
+msgid "Contractual instrument"
+msgstr "الأداة التعاقدية"
+
+msgid "e.g. I-REC, green tariff, PPA"
+msgstr "مثال: I-REC، تعريفة خضراء، عقد شراء طاقة"
+
+msgid "Instrument ref."
+msgstr "مرجع الأداة"
+
+msgid "Calculation helper"
+msgstr "أداة مساعدة للحساب"
+
+msgid "None (enter quantity)"
+msgstr "لا شيء (أدخل الكمية)"
+
+msgid "Employee commuting (Cat. 7)"
+msgstr "تنقل الموظفين (الفئة 7)"
+
+msgid "Business travel (Cat. 6)"
+msgstr "سفر العمل (الفئة 6)"
+
+msgid "Scope 2: record consumption once with the grid factor (location-based). If a contractual instrument covers it, add a market-based entry for the same site and month with the instrument factor; uncovered months fall back to the grid factor in the market-based total."
+msgstr "النطاق 2: سجّل الاستهلاك مرة واحدة بمعامل الشبكة (على أساس الموقع). إذا غطته أداة تعاقدية، أضف قيداً على أساس السوق لنفس الموقع والشهر بمعامل الأداة؛ الأشهر غير المغطاة تُحسب بمعامل الشبكة في إجمالي أساس السوق."
+
+msgid "Commuting: employees × days per year × one-way km × 2 = passenger-km. Travel: trips × distance km × travellers (× 2 for return)."
+msgstr "التنقل: عدد الموظفين × أيام السنة × كم الذهاب × 2 = راكب-كم. السفر: الرحلات × المسافة كم × المسافرون (× 2 للعودة)."
+
+msgid "Days per year"
+msgstr "أيام في السنة"
+
+msgid "One-way km"
+msgstr "كم في اتجاه واحد"
+
+msgid "Trips"
+msgstr "الرحلات"
+
+msgid "Distance km"
+msgstr "المسافة كم"
+
+msgid "Travellers"
+msgstr "المسافرون"
+
+msgid "Return trip"
+msgstr "ذهاب وعودة"
+
+msgid "Note (meter, invoice no.)"
+msgstr "ملاحظة (العداد، رقم الفاتورة)"
+
+msgid "Save and attach evidence"
+msgstr "حفظ وإرفاق المستند"
+
+msgid "Organisational boundary, entities & sites"
+msgstr "الحدود التنظيمية والكيانات والمواقع"
+
+msgid "Boundary & base year"
+msgstr "الحدود وسنة الأساس"
+
+msgid "Consolidation approach (GHG Protocol)"
+msgstr "أسلوب التجميع (بروتوكول غازات الاحتباس)"
+
+msgid "Operational control"
+msgstr "السيطرة التشغيلية"
+
+msgid "Financial control"
+msgstr "السيطرة المالية"
+
+msgid "Equity share"
+msgstr "حصة الملكية"
+
+msgid "Base year"
+msgstr "سنة الأساس"
+
+msgid "Base-year emissions (tCO2e)"
+msgstr "انبعاثات سنة الأساس (طن مكافئ CO2)"
+
+msgid "Recalculation threshold"
+msgstr "حد إعادة الاحتساب"
+
+msgid "Base-year recalculation policy"
+msgstr "سياسة إعادة احتساب سنة الأساس"
+
+msgid "e.g. recalculate when acquisitions, divestments or methodology changes move base-year emissions by more than the threshold"
+msgstr "مثال: إعادة الاحتساب عند الاستحواذ أو التخارج أو تغيير المنهجية بما يغير انبعاثات سنة الأساس بأكثر من الحد"
+
+msgid "Legal entities"
+msgstr "الكيانات القانونية"
+
+msgid "(share consolidated depends on the approach)"
+msgstr "(الحصة المجمعة تعتمد على الأسلوب)"
+
+msgid "Included"
+msgstr "مُدرج"
+
+msgid "No entity: everything is consolidated in full."
+msgstr "لا توجد كيانات: يُجمَّع كل شيء بالكامل."
+
+msgid "Op. control"
+msgstr "سيطرة تشغيلية"
+
+msgid "Fin. control"
+msgstr "سيطرة مالية"
+
+msgid "Sites"
+msgstr "المواقع"
+
+msgid "No sites yet."
+msgstr "لا توجد مواقع بعد."
+
+msgid "Office"
+msgstr "مكتب"
+
+msgid "Data centre"
+msgstr "مركز بيانات"
+
+msgid "Warehouse"
+msgstr "مستودع"
+
+msgid "Carbon footprint disclosure"
+msgstr "الإفصاح عن البصمة الكربونية"
+
+msgid "Draft — the inventory is not approved yet."
+msgstr "مسودة — لم يُعتمد الجرد بعد."
+
+msgid "Annual carbon footprint disclosure"
+msgstr "الإفصاح السنوي عن البصمة الكربونية"
+
+msgid "Reporting period"
+msgstr "فترة التقرير"
+
+msgid "Boundary and methodology"
+msgstr "الحدود والمنهجية"
+
+msgid "Calculated under the GHG Protocol Corporate Standard (Scope 2 guidance: location- and market-based), with Scope 3 Category 15 under the PCAF Global Standard. Consolidation approach"
+msgstr "محسوبة وفق المعيار المؤسسي لبروتوكول غازات الاحتباس الحراري (إرشادات النطاق 2: أساس الموقع والسوق)، والفئة 15 من النطاق 3 وفق معيار PCAF العالمي. أسلوب التجميع"
+
+msgid "Scopes reported"
+msgstr "النطاقات المفصح عنها"
+
+msgid "Recalculation policy"
+msgstr "سياسة إعادة الاحتساب"
+
+msgid "Entities and sites"
+msgstr "الكيانات والمواقع"
+
+msgid "ownership"
+msgstr "الملكية"
+
+msgid "included"
+msgstr "مُدرج"
+
+msgid "excluded"
+msgstr "مستبعد"
+
+msgid "staff"
+msgstr "موظف"
+
+msgid "Gross emissions (tCO2e)"
+msgstr "إجمالي الانبعاثات (طن مكافئ CO2)"
+
+msgid "Scope 1 — direct"
+msgstr "النطاق 1 — مباشرة"
+
+msgid "Scope 2 — location-based"
+msgstr "النطاق 2 — أساس الموقع"
+
+msgid "Scope 2 — market-based"
+msgstr "النطاق 2 — أساس السوق"
+
+msgid "Scope 3 — value chain"
+msgstr "النطاق 3 — سلسلة القيمة"
+
+msgid "Total gross, location-based"
+msgstr "الإجمالي، أساس الموقع"
+
+msgid "Total gross, market-based"
+msgstr "الإجمالي، أساس السوق"
+
+msgid "Scope 3 category"
+msgstr "فئة النطاق 3"
+
+msgid "PCAF data-quality score"
+msgstr "درجة جودة بيانات PCAF"
+
+msgid "Offsets (reported separately — not deducted from gross emissions)"
+msgstr "التعويضات (يُفصح عنها منفصلة — لا تُخصم من إجمالي الانبعاثات)"
+
+msgid "Registry ref."
+msgstr "مرجع السجل"
+
+msgid "Retired on"
+msgstr "تاريخ الإلغاء"
+
+msgid "None for this period."
+msgstr "لا يوجد لهذه الفترة."
+
+msgid "Total offsets"
+msgstr "إجمالي التعويضات"
+
+msgid "Intensity"
+msgstr "الكثافة"
+
+msgid "tCO2e per employee"
+msgstr "طن مكافئ CO2 لكل موظف"
+
+msgid "tCO2e per m²"
+msgstr "طن مكافئ CO2 لكل م²"
+
+msgid "tCO2e per EGP million revenue"
+msgstr "طن مكافئ CO2 لكل مليون جنيه إيرادات"
+
+msgid "Financed tCO2e per EGP million financed"
+msgstr "طن مكافئ CO2 ممول لكل مليون جنيه تمويل"
+
+msgid "Denominators not entered."
+msgstr "لم تُدخل المقامات."
+
+msgid "Emission-factor sources used"
+msgstr "مصادر معاملات الانبعاث المستخدمة"
+
+msgid "Vintage"
+msgstr "سنة الإصدار"
+
+msgid "Data quality and sign-off"
+msgstr "جودة البيانات والاعتماد"
+
+msgid "critical and"
+msgstr "حرجة و"
+
+msgid "warning issue(s) open."
+msgstr "تحذير مفتوح."
+
+msgid "By"
+msgstr "بواسطة"
+
+msgid "On"
+msgstr "بتاريخ"
+
+msgid "Not yet signed off."
+msgstr "لم يُعتمد بعد."
+
+msgid "TODO(compliance-review): align headings and wording with the FRA carbon-footprint disclosure template before submission."
+msgstr "TODO(compliance-review): مواءمة العناوين والصياغة مع نموذج الهيئة للإفصاح عن البصمة الكربونية قبل التقديم."
+
+msgid "Versioned emission-factor library"
+msgstr "مكتبة معاملات الانبعاث بالإصدارات"
+
+msgid "Each factor has a stable code and dated versions. An entry uses the version in force in its activity month and stores the value, source and vintage it used — a new version never changes a recorded figure. Example: the national grid electricity factor gets one version per year."
+msgstr "لكل معامل رمز ثابت وإصدارات مؤرخة. يستخدم القيد الإصدار الساري في شهر النشاط ويحفظ القيمة والمصدر وسنة الإصدار — الإصدار الجديد لا يغير رقماً مسجلاً. مثال: معامل كهرباء الشبكة القومية له إصدار لكل سنة."
+
+msgid "No factors yet."
+msgstr "لا توجد معاملات بعد."
+
+msgid "open"
+msgstr "مفتوح"
+
+msgid "Publish a new version"
+msgstr "نشر إصدار جديد"
+
+msgid "Add a factor"
+msgstr "إضافة معامل"
+
+msgid "Factor code"
+msgstr "رمز المعامل"
+
+msgid "unit"
+msgstr "الوحدة"
+
+msgid "Version label"
+msgstr "تسمية الإصدار"
+
+msgid "Source link"
+msgstr "رابط المصدر"
+
+msgid "Cat. no"
+msgstr "رقم الفئة"
+
+msgid "Publish"
+msgstr "نشر"
+
+msgid "Back to activity data"
+msgstr "العودة لبيانات الأنشطة"
+
+msgid "Financed emissions — Scope 3 Category 15 (PCAF)"
+msgstr "الانبعاثات الممولة — النطاق 3 الفئة 15 (PCAF)"
+
+msgid "Financed emissions (tCO2e)"
+msgstr "الانبعاثات الممولة (طن مكافئ CO2)"
+
+msgid "Weighted data-quality score (1 best – 5)"
+msgstr "درجة جودة البيانات المرجحة (1 الأفضل – 5)"
+
+msgid "Exposures"
+msgstr "التعرضات"
+
+msgid "Outstanding covered"
+msgstr "الأرصدة المغطاة"
+
+msgid "Attribution factor = outstanding ÷ borrower equity + debt (business loans) or ÷ vehicle value at origination (motor-vehicle loans). Financed emissions = attribution × borrower emissions. Score 1–2 reported emissions, 3 physical activity data, 4 revenue × sector factor, 5 outstanding × sector factor."
+msgstr "معامل الإسناد = الرصيد ÷ حقوق ملكية وديون المقترض (قروض الأعمال) أو ÷ قيمة المركبة عند المنح (قروض المركبات). الانبعاثات الممولة = معامل الإسناد × انبعاثات المقترض. الدرجة 1–2 انبعاثات مفصح عنها، 3 بيانات نشاط فعلية، 4 الإيرادات × معامل القطاع، 5 الرصيد × معامل القطاع."
+
+msgid "Borrower / segment"
+msgstr "المقترض / الشريحة"
+
+msgid "Asset class"
+msgstr "فئة الأصل"
+
+msgid "Attribution"
+msgstr "الإسناد"
+
+msgid "No exposures recorded."
+msgstr "لا توجد تعرضات مسجلة."
+
+msgid "Add an exposure or portfolio segment"
+msgstr "إضافة تعرض أو شريحة محفظة"
+
+msgid "Borrower or segment (e.g. micro loans – agriculture)"
+msgstr "المقترض أو الشريحة (مثال: قروض متناهية الصغر – زراعة)"
+
+msgid "Business loans"
+msgstr "قروض الأعمال"
+
+msgid "Motor-vehicle loans"
+msgstr "قروض المركبات"
+
+msgid "Leasing"
+msgstr "التأجير التمويلي"
+
+msgid "Consumer loans"
+msgstr "قروض استهلاكية"
+
+msgid "Sector"
+msgstr "القطاع"
+
+msgid "Equity + debt / vehicle value (EGP)"
+msgstr "حقوق الملكية + الديون / قيمة المركبة (جنيه)"
+
+msgid "Borrower tCO2e"
+msgstr "انبعاثات المقترض"
+
+msgid "Borrower revenue (EGP)"
+msgstr "إيرادات المقترض (جنيه)"
+
+msgid "Sector factor"
+msgstr "معامل القطاع"
+
+msgid "Sector factors: kgCO2e per EGP million (revenue or outstanding) in the factor library, Category 15."
+msgstr "معاملات القطاع: كجم مكافئ CO2 لكل مليون جنيه (إيرادات أو رصيد) في مكتبة المعاملات، الفئة 15."
+
+msgid "Intensity, targets & reduction initiatives"
+msgstr "الكثافة والأهداف ومبادرات الخفض"
+
+msgid "Denominators"
+msgstr "المقامات"
+
+msgid "Revenue (EGP)"
+msgstr "الإيرادات (جنيه)"
+
+msgid "Floor area (m²)"
+msgstr "المساحة (م²)"
+
+msgid "Financed portfolio (EGP)"
+msgstr "المحفظة الممولة (جنيه)"
+
+msgid "from sites/exposures"
+msgstr "من المواقع/التعرضات"
+
+msgid "Target progress (operational: Scope 1 + 2)"
+msgstr "التقدم نحو الهدف (التشغيلي: النطاق 1 + 2)"
+
+msgid "path walked"
+msgstr "المسار المقطوع"
+
+msgid "Set a baseline and target"
+msgstr "حدد خط الأساس والهدف"
+
+msgid "Reduction initiatives"
+msgstr "مبادرات الخفض"
+
+msgid "planned / in progress"
+msgstr "مخطط / قيد التنفيذ"
+
+msgid "Initiative"
+msgstr "المبادرة"
+
+msgid "Target date"
+msgstr "التاريخ المستهدف"
+
+msgid "Expected"
+msgstr "المتوقع"
+
+msgid "Achieved"
+msgstr "المحقق"
+
+msgid "No initiative yet."
+msgstr "لا توجد مبادرات بعد."
+
+msgid "e.g. LED retrofit in branches"
+msgstr "مثال: استبدال الإضاءة بـ LED في الفروع"
+
+msgid "Data-quality controls"
+msgstr "ضوابط جودة البيانات"
+
+msgid "Critical issues (unit mismatch, entry without evidence, negative quantity) block submission for review. Warnings (missing months, outliers vs the previous period, PCAF gaps) must be explained to the verifier."
+msgstr "المشكلات الحرجة (عدم تطابق الوحدة، قيد بلا مستند، كمية سالبة) تمنع التقديم للمراجعة. التحذيرات (أشهر ناقصة، قيم شاذة مقارنة بالفترة السابقة، فجوات PCAF) يجب شرحها لجهة التحقق."
+
+msgid "No data-quality issue in"
+msgstr "لا توجد مشكلات جودة بيانات في"
+
+msgid "entries."
+msgstr "قيد."
+
+msgid "Preparer → reviewer → approver, three different people. Approval locks the period: no entry can be added, changed or deleted until an administrator unlocks it with a reason."
+msgstr "مُعِد ← مراجع ← معتمد، ثلاثة أشخاص مختلفين. الاعتماد يقفل الفترة: لا يمكن إضافة أو تعديل أو حذف قيد حتى يفتحها مسؤول النظام مع ذكر السبب."
+
+msgid "Approved by"
+msgstr "اعتمده"
+
+msgid "critical data-quality issue(s) — fix them before submitting."
+msgstr "مشكلة جودة بيانات حرجة — عالجها قبل التقديم."
+
+msgid "Comment (required to return or unlock)"
+msgstr "تعليق (مطلوب للإرجاع أو الفتح)"
+
+msgid "Submit for review"
+msgstr "تقديم للمراجعة"
+
+msgid "Mark as reviewed"
+msgstr "تمت المراجعة"
+
+msgid "Approve and lock"
+msgstr "اعتماد وإقفال"
+
+msgid "Return to preparer"
+msgstr "إرجاع للمُعِد"
+
+msgid "Unlock (admin)"
+msgstr "فتح (مسؤول النظام)"
+
+msgid "Audit trail"
+msgstr "سجل التدقيق"
+
+msgid "Who"
+msgstr "من"
+
+msgid "Comment"
+msgstr "التعليق"
+
+msgid "No action yet."
+msgstr "لا يوجد إجراء بعد."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

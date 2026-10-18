@@ -135,6 +135,8 @@ The IT / cyber / business-continuity checks (`cyber/checks.py`: `core.cyber.*`,
 `core.risk.register_fresh`) read the IT-resilience registers of the cyber module; backup
 jobs and integrations can report through `POST /api/v1/cyber/backup-status` and
 `POST /api/v1/cyber/integration-exchange` (API key scope `cyber:write`).
+The carbon checks (`carbon/checks.py`: `core.carbon.*`) read the carbon inventory:
+approval workflow, data quality, evidence, verification, offsets and factor currency.
 
 Key prefixes: `core.` for checks shipped with the core (`regcontrols/builtin_checks.py`,
 always loaded), `<pack_code>.` for a pack's checks (loaded only while the pack is enabled).

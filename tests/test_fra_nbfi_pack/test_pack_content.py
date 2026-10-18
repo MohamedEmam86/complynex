@@ -24,7 +24,7 @@ def test_every_control_map_id_is_in_the_pack():
     ids.update(re.findall(r'\| (OBS-\d{2}) \|', text))
     seeded = {c['code'] for c in L.CONTROLS}
     assert ids - seeded == set()
-    assert len(ids) == 80 and len(seeded) == 80
+    assert len(ids) == 80 and len(seeded) == 85   # + FRA-CF-01..05 (carbon footprint)
 
 
 def test_controls_use_core_or_pack_vocabulary():

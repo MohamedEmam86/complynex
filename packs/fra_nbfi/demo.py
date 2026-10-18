@@ -47,6 +47,7 @@ DEMO_PARAMETERS = {
     'finance.balance_confirmation_max_age_days': '90', 'finance.accrual_tolerance_pct': '5',
     'finance.ecl_refresh_months': '12', 'it.dr_test_max_age_months': '12', 'it.offsite_backup_max_age_days': '7',
     'it.risk_register_max_age_days': '180',
+    'carbon.report_due_days': '120',
 }
 
 

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}{{ e.activity }} — ComplyNex{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <h3 class="mb-1">{{ e.activity }} <span class="small text-muted">{{ e.scope }} · {{ '{:,.3f}'.format(e.tco2e|float) }} tCO2e</span></h3>
+  <p class="small"><a href="{{ url_for('carbon.activity', period=e.reporting_period_id) }}">{{ _('Back to activity data') }}</a></p>
+  <div class="row"><div class="col-lg-6"><div class="card mb-3"><table class="table table-sm mb-0 small">
+    {% for k in ['activity_month', 'quantity', 'unit', 'factor_code', 'factor_kgco2e_used', 'factor_source_used', 'factor_vintage_used', 'boundary_share', 'gross_tco2e', 'basis', 'instrument_type', 'instrument_ref', 'helper_inputs', 'notes'] if e[k] not in (none, '') %}<tr><th style="width: 40%">{{ k }}</th><td>{{ e[k] }}</td></tr>{% endfor %}</table></div></div>
+    <div class="col-lg-6">{% include 'partials/attachment_widget.html' %}</div></div>
+</div>
+{% endblock %}

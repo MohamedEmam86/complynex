@@ -1,0 +1,8 @@
+<!doctype html><html lang="{{ get_locale() }}" dir="{{ 'rtl' if get_locale()|string == 'ar' else 'ltr' }}"><head><meta charset="utf-8"><title>{% block title %}{% endblock %}</title>
+<style>
+body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10pt; color: #222; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 8pt; } th, td { border: 1px solid #bbb; padding: 3pt 5pt; text-align: start; vertical-align: top; }
+.text-end { text-align: end; } .text-muted { color: #777; } .small { font-size: 9pt; } h2 { font-size: 14pt; } h3 { font-size: 11pt; margin-top: 12pt; }
+.no-print, .nav { display: none; } .d-flex { display: flex; justify-content: space-between; } .table-light { background: #f3f3f3; }
+@page { size: A4; margin: 1.5cm; }
+</style></head><body>{% block content %}{% endblock %}</body></html>
