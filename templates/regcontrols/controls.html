@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('FRA Control Library') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('FRA Control Library') }}</h3>
+    {{ rc.nav('regcontrols.controls') }}
+
+    <form method="get" class="row g-2 mb-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small mb-0">{{ _('Area') }}</label>
+            <select name="area" class="form-select form-select-sm" data-auto-submit>
+                <option value="">{{ _('All') }}</option>
+                {% for code in rc_vocab.AREAS %}<option value="{{ code }}" {{ 'selected' if f_area == code }}>{{ rc_label('AREAS', code) }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-0">{{ _('Type') }}</label>
+            <select name="type" class="form-select form-select-sm" data-auto-submit>
+                <option value="">{{ _('All') }}</option>
+                {% for code in rc_vocab.CONTROL_TYPES %}<option value="{{ code }}" {{ 'selected' if f_type == code }}>{{ rc_label('CONTROL_TYPES', code) }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-0">{{ _('Last result') }}</label>
+            <select name="status" class="form-select form-select-sm" data-auto-submit>
+                <option value="">{{ _('All') }}</option>
+                {% for s, l in [('pass', _('Pass')), ('warning', _('Warning')), ('fail', _('Fail')), ('error', _('Error')), ('no_check', _('No check')), ('not_applicable', _('Not applicable')), ('not_run', _('Not run yet'))] %}
+                <option value="{{ s }}" {{ 'selected' if f_status == s }}>{{ l }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-0">{{ _('Search') }}</label>
+            <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="{{ _('Code or title') }}">
+        </div>
+        <div class="col-auto"><button class="btn btn-sm btn-outline-primary">{{ _('Filter') }}</button></div>
+        {% if f_area or f_type or f_status or q %}<div class="col-auto"><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('regcontrols.controls') }}">{{ _('Clear filters') }}</a></div>{% endif %}
+    </form>
+
+    <div class="card">
+        <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0 align-middle">
+            <thead><tr>
+                <th>{{ _('Code') }}</th><th>{{ _('Control') }}</th><th>{{ _('Area') }}</th><th>{{ _('Type') }}</th>
+                <th>{{ _('Frequency') }}</th><th>{{ _('Criticality') }}</th><th>{{ _('Owner') }}</th>
+                <th>{{ _('Monitoring') }}</th><th>{{ _('Last result') }}</th><th>{{ _('Open findings') }}</th>
+            </tr></thead>
+            <tbody>
+            {% for c in controls %}
+            <tr class="{{ 'text-muted' if not c.is_active }}">
+                <td class="text-nowrap"><a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}"><strong>{{ c.control_code }}</strong></a></td>
+                <td>{{ rc_loc(c.title_en, c.title_ar) }}</td>
+                <td class="small">{{ rc_label('AREAS', c.area) }}</td>
+                <td class="small">{{ rc_label('CONTROL_TYPES', c.control_type) }} <span class="text-muted">({{ c.type_codes }})</span></td>
+                <td class="small">{{ rc_label('FREQUENCIES', c.frequency) }}</td>
+                <td>{{ rc.crit_badge(c.criticality) }}</td>
+                <td class="small">{{ c.owner_name or rc_label('OWNER_ROLES', c.owner_role) }}</td>
+                <td class="small">{% if c.control_code in checks %}<i class="bi bi-cpu text-primary"></i> {{ _('Automated') }}{% elif c.control_type == 'evidence' %}<i class="bi bi-file-earmark-check"></i> {{ _('Evidence') }}{% else %}<span class="text-muted">{{ _('Manual / pending module') }}</span>{% endif %}</td>
+                <td>{{ rc.status_badge(c.last_status) }}{% if c.last_run_at %}<div class="small text-muted">{{ c.last_run_at.strftime('%Y-%m-%d') }}</div>{% endif %}</td>
+                <td class="text-center">{% if c.open_findings %}<span class="badge bg-danger">{{ c.open_findings }}</span>{% else %}-{% endif %}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="10" class="text-center text-muted py-4">{{ _('No controls match.') }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

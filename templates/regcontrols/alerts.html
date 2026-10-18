@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('Control Alerts') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Control Alerts') }}</h3>
+    {{ rc.nav('regcontrols.alerts') }}
+    <form method="get" class="mb-3"><select name="status" class="form-select form-select-sm w-auto" data-auto-submit>
+        {% for s, l in [('live', _('Open and acknowledged')), ('resolved', _('Resolved'))] %}<option value="{{ s }}" {{ 'selected' if f_status == s }}>{{ l }}</option>{% endfor %}
+    </select></form>
+    <div class="card"><div class="table-responsive">
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead><tr><th>{{ _('Raised') }}</th><th>{{ _('Type') }}</th><th>{{ _('Alert') }}</th><th>{{ _('Severity') }}</th><th>{{ _('Owner') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+            <tbody>
+            {% for a in alerts %}
+            <tr>
+                <td class="small text-nowrap">{{ a.raised_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td class="small">{{ rc.alert_type(a.alert_type) }}</td>
+                <td>
+                    {% if a.finding_id %}<a href="{{ url_for('regcontrols.finding_detail', finding_id=a.finding_id) }}">{{ a.title }}</a>
+                    {% elif a.evidence_id %}<a href="{{ url_for('regcontrols.evidence_detail', evidence_id=a.evidence_id) }}">{{ a.title }}</a>
+                    {% elif a.control_id %}<a href="{{ url_for('regcontrols.control_detail', control_id=a.control_id) }}">{{ a.title }}</a>
+                    {% else %}{{ a.title }}{% endif %}
+                    {% if a.message %}<div class="small text-muted">{{ a.message }}</div>{% endif %}
+                    {% if a.escalated_at %}<div class="small text-danger"><i class="bi bi-arrow-up-circle"></i> {{ _('Escalated on') }} {{ a.escalated_at.strftime('%Y-%m-%d') }}</div>{% endif %}
+                    {% if a.case_id %}<div class="small"><a href="{{ url_for('cases.case_detail', case_id=a.case_id) }}">{{ _('Case') }} #{{ a.case_id }}</a></div>{% endif %}
+                </td>
+                <td>{{ rc.crit_badge(a.severity) }}</td>
+                <td class="small">{{ a.owner_name or _('Head of Compliance') }}</td>
+                <td>{{ rc.alert_status(a.status) }}</td>
+                <td class="text-nowrap">
+                    {% if rc_can_edit and a.status != 'resolved' %}
+                    {% if a.status == 'open' %}
+                    <form method="post" action="{{ url_for('regcontrols.alert_ack', alert_id=a.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-secondary">{{ _('Acknowledge') }}</button></form>
+                    {% endif %}
+                    <form method="post" action="{{ url_for('regcontrols.alert_resolve', alert_id=a.id) }}" class="d-inline-flex gap-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input name="note" class="form-control form-control-sm" placeholder="{{ _('Resolution note') }}" required>
+                        <button class="btn btn-sm btn-outline-success">{{ _('Resolve') }}</button></form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-center text-muted py-4">{{ _('No alerts.') }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div></div>
+    <p class="small text-muted mt-2">{{ _('Alerts that pass their control on the next run close automatically. Open alerts are escalated to the Head of Compliance after the number of days set in parameter rc.escalation_days.') }}</p>
+</div>
+{% endblock %}

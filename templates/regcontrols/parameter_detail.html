@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ p.param_key }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+        <div><h3 class="mb-1"><code>{{ p.param_key }}</code></h3>
+            <div class="text-muted small">{{ rc_loc(p.description_en, p.description_ar) }} · {{ rc_label('LICENCE_TYPES', p.licence_type) }}</div></div>
+        {% if rc_can_admin %}
+        <div class="d-flex gap-2">
+            {% if current %}<a class="btn btn-sm btn-primary" href="{{ url_for('regcontrols.parameter_change', param_id=current.id) }}">{{ _('Propose a change') }}</a>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {{ rc.nav('regcontrols.parameters') }}
+
+    {% if current %}
+    <div class="card mb-3 {{ 'border-warning' if current.needs_review }}"><div class="card-body">
+        <div class="row">
+            <div class="col-md-3"><div class="small text-muted">{{ _('Value in force today') }}</div>
+                <div class="fs-4">{% if current.value_text is not none %}{{ current.value_text }} <span class="fs-6">{{ current.unit or '' }}</span>{% else %}<span class="badge bg-danger">{{ _('not set') }}</span>{% endif %}</div></div>
+            <div class="col-md-3"><div class="small text-muted">{{ _('Effective') }}</div><div>{{ current.effective_from }} → {{ current.effective_to or _('open-ended') }}</div></div>
+            <div class="col-md-6"><div class="small text-muted">{{ _('Legal reference') }}</div><div>{{ current.legal_reference or '-' }}</div></div>
+        </div>
+        {% if current.needs_review %}<div class="alert alert-warning small mt-3 mb-0"><strong>{{ _('Needs review') }}:</strong> {{ current.review_note or '' }}</div>{% endif %}
+    </div></div>
+    {% else %}
+    <div class="alert alert-secondary">{{ _('No version of this parameter is in force today.') }}</div>
+    {% endif %}
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Versions') }}</strong></div>
+                <table class="table table-sm mb-0 small">
+                    <thead><tr><th>{{ _('Value') }}</th><th>{{ _('From') }}</th><th>{{ _('To') }}</th><th>{{ _('Status') }}</th></tr></thead>
+                    <tbody>{% for v in versions|reverse %}
+                    <tr class="{{ 'table-success' if current and v.id == current.id }}"><td>{{ v.value_text if v.value_text is not none else '-' }} {{ v.unit or '' }}</td><td>{{ v.effective_from }}</td><td>{{ v.effective_to or '-' }}</td><td>{{ v.status }}</td></tr>
+                    {% endfor %}</tbody>
+                </table>
+            </div>
+            <div class="card"><div class="card-header"><strong>{{ _('Used by controls') }}</strong></div>
+                <ul class="list-group list-group-flush small">{% for c in used_by %}
+                    <li class="list-group-item"><a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}">{{ c.control_code }}</a> {{ rc_loc(c.title_en, c.title_ar) }}</li>
+                {% else %}<li class="list-group-item text-muted">{{ _('None.') }}</li>{% endfor %}</ul>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card"><div class="card-header"><strong>{{ _('Change history') }}</strong></div>
+                <ul class="list-group list-group-flush small">{% for h in history %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between"><strong>{{ h.change_type }}</strong>
+                            <span class="badge bg-{{ 'success' if h.status == 'approved' else ('danger' if h.status == 'rejected' else 'warning text-dark') }}">{{ {'approved': _('Approved'), 'rejected': _('Rejected'), 'pending': _('Pending')}[h.status] }}</span></div>
+                        <div>{{ h.old_value if h.old_value is not none else '-' }} → <strong>{{ h.new_value if h.new_value is not none else '-' }}</strong>{% if h.effective_from %} · {{ _('from') }} {{ h.effective_from }}{% endif %}</div>
+                        <div class="text-muted">{{ h.reason }}</div>
+                        <div class="text-muted">{{ _('Requested by') }} {{ h.requested_by_name or _('System') }} · {{ h.requested_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% if h.decided_at %} · {{ _('Decided by') }} {{ h.decided_by_name or _('System') }} · {{ h.decided_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}</div>
+                        {% if h.decision_comment %}<div class="fst-italic">{{ h.decision_comment }}</div>{% endif %}
+                    </li>
+                {% else %}<li class="list-group-item text-muted">{{ _('No changes recorded.') }}</li>{% endfor %}</ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

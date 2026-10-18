@@ -23127,6 +23127,881 @@ msgstr "فشل تنزيل المرفق."
 
 # ============================================
 # WHISTLEBLOWING FORM TRANSLATIONS
+
+# --- regcontrols (FRA regulatory control framework) ---
+msgid "Admin (approve parameters, edit library)"
+msgstr "مسؤول (اعتماد المعايير وتعديل المكتبة)"
+
+msgid "Regulatory Compliance (FRA)"
+msgstr "الالتزام الرقابي (الهيئة العامة للرقابة المالية)"
+
+msgid "Compliance Dashboard"
+msgstr "لوحة الالتزام"
+
+msgid "FRA Control Library"
+msgstr "مكتبة ضوابط الهيئة"
+
+msgid "Findings & Corrective Actions"
+msgstr "الملاحظات والإجراءات التصحيحية"
+
+msgid "Control Alerts"
+msgstr "تنبيهات الضوابط"
+
+msgid "Regulatory Parameters"
+msgstr "المعايير الرقابية"
+
+msgid "Pass"
+msgstr "ناجح"
+
+msgid "Fail"
+msgstr "فاشل"
+
+msgid "No check"
+msgstr "لا يوجد فحص"
+
+msgid "Not applicable"
+msgstr "لا ينطبق"
+
+msgid "Not run yet"
+msgstr "لم يُشغَّل بعد"
+
+msgid "Action plan"
+msgstr "خطة عمل"
+
+msgid "In progress"
+msgstr "قيد التنفيذ"
+
+msgid "Pending verification"
+msgstr "بانتظار التحقق"
+
+msgid "Reopened"
+msgstr "أعيد فتحها"
+
+msgid "Expiring soon"
+msgstr "قارب على الانتهاء"
+
+msgid "Expired"
+msgstr "منتهي الصلاحية"
+
+msgid "Pending review"
+msgstr "بانتظار المراجعة"
+
+msgid "Regulator (FRA)"
+msgstr "الجهة الرقابية (الهيئة)"
+
+msgid "Internal audit"
+msgstr "المراجعة الداخلية"
+
+msgid "Self-identified"
+msgstr "مكتشفة ذاتيًا"
+
+msgid "External audit"
+msgstr "المراجعة الخارجية"
+
+msgid "Control failure"
+msgstr "فشل ضابط رقابي"
+
+msgid "Control failed"
+msgstr "فشل الضابط"
+
+msgid "Evidence expiring"
+msgstr "دليل قارب على الانتهاء"
+
+msgid "Evidence expired"
+msgstr "دليل منتهي الصلاحية"
+
+msgid "Finding overdue"
+msgstr "ملاحظة متأخرة"
+
+msgid "Repeated violation"
+msgstr "مخالفة متكررة"
+
+msgid "Controls"
+msgstr "الضوابط"
+
+msgid "Parameters"
+msgstr "المعايير"
+
+msgid "Scheduled"
+msgstr "مجدول"
+
+msgid "Verification"
+msgstr "التحقق"
+
+msgid "API"
+msgstr "واجهة برمجية"
+
+msgid "Event"
+msgstr "واقعة"
+
+msgid "Open and acknowledged"
+msgstr "المفتوحة والمستلمة"
+
+msgid "Raised"
+msgstr "تاريخ الإصدار"
+
+msgid "Escalated on"
+msgstr "تم التصعيد في"
+
+msgid "Head of Compliance"
+msgstr "رئيس إدارة الالتزام"
+
+msgid "Acknowledge"
+msgstr "تأكيد الاستلام"
+
+msgid "Resolution note"
+msgstr "ملاحظة المعالجة"
+
+msgid "No alerts."
+msgstr "لا توجد تنبيهات."
+
+msgid "Alerts that pass their control on the next run close automatically. Open alerts are escalated to the Head of Compliance after the number of days set in parameter rc.escalation_days."
+msgstr "تُغلق التنبيهات تلقائيًا عند نجاح الضابط في التشغيل التالي. وتُصعَّد التنبيهات المفتوحة إلى رئيس إدارة الالتزام بعد عدد الأيام المحدد في المعيار rc.escalation_days."
+
+msgid "Run now"
+msgstr "تشغيل الآن"
+
+msgid "Add evidence"
+msgstr "إضافة دليل"
+
+msgid "Raise finding"
+msgstr "تسجيل ملاحظة"
+
+msgid "Requirement and expected system behaviour"
+msgstr "المتطلب والسلوك المتوقع من النظام"
+
+msgid "Test procedure"
+msgstr "إجراء الاختبار"
+
+msgid "Run history"
+msgstr "سجل التشغيل"
+
+msgid "Affected"
+msgstr "المتأثر"
+
+msgid "Trigger"
+msgstr "سبب التشغيل"
+
+msgid "This control has not been run yet."
+msgstr "لم يتم تشغيل هذا الضابط بعد."
+
+msgid "Warning window"
+msgstr "فترة التنبيه"
+
+msgid "no expiry"
+msgstr "بدون انتهاء"
+
+msgid "No evidence recorded yet."
+msgstr "لم يتم تسجيل أي دليل بعد."
+
+msgid "Findings linked to this control"
+msgstr "الملاحظات المرتبطة بهذا الضابط"
+
+msgid "Repeated"
+msgstr "متكررة"
+
+msgid "No findings linked."
+msgstr "لا توجد ملاحظات مرتبطة."
+
+msgid "Owner role"
+msgstr "دور المسؤول"
+
+msgid "Not assigned — alerts go to the Head of Compliance"
+msgstr "غير محدد — تُرسل التنبيهات إلى رئيس إدارة الالتزام"
+
+msgid "Linked module"
+msgstr "الوحدة المرتبطة"
+
+msgid "Licence types"
+msgstr "أنواع التراخيص"
+
+msgid "Not applicable to your licence"
+msgstr "لا ينطبق على ترخيصكم"
+
+msgid "Automated check"
+msgstr "الفحص الآلي"
+
+msgid "Generic evidence check"
+msgstr "فحص الأدلة العام"
+
+msgid "None yet — will be added by the owning module"
+msgstr "لا يوجد بعد — ستضيفه الوحدة المختصة"
+
+msgid "Last run"
+msgstr "آخر تشغيل"
+
+msgid "Next scheduled run"
+msgstr "التشغيل المجدول التالي"
+
+msgid "Auto-open case on failure"
+msgstr "فتح حالة تلقائيًا عند الفشل"
+
+msgid "ERM control"
+msgstr "ضابط إدارة المخاطر"
+
+msgid "Regulatory parameters used"
+msgstr "المعايير الرقابية المستخدمة"
+
+msgid "not set"
+msgstr "غير محدد"
+
+msgid "Needs review"
+msgstr "يحتاج مراجعة"
+
+msgid "Not defined"
+msgstr "غير معرَّف"
+
+msgid "None."
+msgstr "لا يوجد."
+
+msgid "Edit control"
+msgstr "تعديل الضابط"
+
+msgid "Title (English)"
+msgstr "العنوان (بالإنجليزية)"
+
+msgid "Title (Arabic)"
+msgstr "العنوان (بالعربية)"
+
+msgid "Requirement (English)"
+msgstr "المتطلب (بالإنجليزية)"
+
+msgid "Requirement (Arabic)"
+msgstr "المتطلب (بالعربية)"
+
+msgid "Test procedure (English)"
+msgstr "إجراء الاختبار (بالإنجليزية)"
+
+msgid "Test procedure (Arabic)"
+msgstr "إجراء الاختبار (بالعربية)"
+
+msgid "Criticality"
+msgstr "درجة الأهمية"
+
+msgid "Owner (receives alerts)"
+msgstr "المسؤول (يستلم التنبيهات)"
+
+msgid "Not assigned"
+msgstr "غير محدد"
+
+msgid "Linked parameters (comma separated keys)"
+msgstr "المعايير المرتبطة (مفاتيح مفصولة بفواصل)"
+
+msgid "Linked ERM control (Risk Management)"
+msgstr "ضابط إدارة المخاطر المرتبط"
+
+msgid "Applies to licence types"
+msgstr "ينطبق على أنواع التراخيص"
+
+msgid "Open a case when this control fails"
+msgstr "فتح حالة عند فشل هذا الضابط"
+
+msgid "Last result"
+msgstr "آخر نتيجة"
+
+msgid "Search"
+msgstr "بحث"
+
+msgid "Code or title"
+msgstr "الرمز أو العنوان"
+
+msgid "Monitoring"
+msgstr "المتابعة"
+
+msgid "Open findings"
+msgstr "الملاحظات المفتوحة"
+
+msgid "Automated"
+msgstr "آلي"
+
+msgid "Manual / pending module"
+msgstr "يدوي / بانتظار الوحدة"
+
+msgid "No controls match."
+msgstr "لا توجد ضوابط مطابقة."
+
+msgid "Licence type"
+msgstr "نوع الترخيص"
+
+msgid "Run due controls now"
+msgstr "تشغيل الضوابط المستحقة الآن"
+
+msgid "%(n)s regulatory parameter(s) still need Compliance review."
+msgstr "%(n)s معيار رقابي ما زال يحتاج مراجعة إدارة الالتزام."
+
+msgid "%(n)s parameter change(s) waiting for approval."
+msgstr "%(n)s تعديل على المعايير بانتظار الاعتماد."
+
+msgid "Open parameters"
+msgstr "فتح المعايير"
+
+msgid "Passing"
+msgstr "ناجحة"
+
+msgid "Failing"
+msgstr "فاشلة"
+
+msgid "Warnings"
+msgstr "تحذيرات"
+
+msgid "Check errors"
+msgstr "أخطاء الفحص"
+
+msgid "Not monitored yet"
+msgstr "غير مراقبة بعد"
+
+msgid "Open alerts"
+msgstr "التنبيهات المفتوحة"
+
+msgid "Controls by area"
+msgstr "الضوابط حسب المجال"
+
+msgid "Open findings by age (days)"
+msgstr "الملاحظات المفتوحة حسب العمر (بالأيام)"
+
+msgid "All findings"
+msgstr "جميع الملاحظات"
+
+msgid "Repeated violations"
+msgstr "المخالفات المتكررة"
+
+msgid "Overdue findings"
+msgstr "الملاحظات المتأخرة"
+
+msgid "Evidence waiting for review"
+msgstr "أدلة بانتظار المراجعة"
+
+msgid "Failing controls"
+msgstr "الضوابط الفاشلة"
+
+msgid "No failing controls."
+msgstr "لا توجد ضوابط فاشلة."
+
+msgid "Evidence expiring or expired"
+msgstr "أدلة قاربت على الانتهاء أو منتهية"
+
+msgid "Nothing expiring in the warning window."
+msgstr "لا يوجد ما ينتهي خلال فترة التنبيه."
+
+msgid "Reference number"
+msgstr "الرقم المرجعي"
+
+msgid "Valid from"
+msgstr "صالح من"
+
+msgid "Valid to (expiry)"
+msgstr "صالح حتى (الانتهاء)"
+
+msgid "Submitted by"
+msgstr "مقدم من"
+
+msgid "Reviewed by"
+msgstr "تمت المراجعة بواسطة"
+
+msgid "Review comment"
+msgstr "تعليق المراجعة"
+
+msgid "You submitted this evidence. Another user must review it."
+msgstr "أنت من قدّم هذا الدليل. يجب أن يراجعه مستخدم آخر."
+
+msgid "Comment (required when rejecting)"
+msgstr "تعليق (إلزامي عند الرفض)"
+
+msgid "No file attached — the original is held elsewhere (state where in the comment)"
+msgstr "لا يوجد ملف مرفق — الأصل محفوظ في مكان آخر (اذكر المكان في التعليق)"
+
+msgid "e.g. Board minutes approving the AML policy"
+msgstr "مثال: محضر مجلس الإدارة باعتماد سياسة مكافحة غسل الأموال"
+
+msgid "Leave empty only if the evidence never expires."
+msgstr "اتركه فارغًا فقط إذا كان الدليل لا تنتهي صلاحيته."
+
+msgid "Company / unit"
+msgstr "الشركة / الوحدة"
+
+msgid "After saving you can attach the file. A different user must then approve it."
+msgstr "بعد الحفظ يمكنك إرفاق الملف، ثم يجب أن يعتمده مستخدم آخر."
+
+msgid "State"
+msgstr "الحالة"
+
+msgid "To add evidence, open the control and choose \"Add evidence\"."
+msgstr "لإضافة دليل، افتح الضابط واختر \"إضافة دليل\"."
+
+msgid "Valid to"
+msgstr "صالح حتى"
+
+msgid "Identified on"
+msgstr "تاريخ الرصد"
+
+msgid "Due date"
+msgstr "تاريخ الاستحقاق"
+
+msgid "Edit finding"
+msgstr "تعديل الملاحظة"
+
+msgid "Source reference"
+msgstr "مرجع المصدر"
+
+msgid "Corrective action plan"
+msgstr "خطة الإجراءات التصحيحية"
+
+msgid "Cancelled"
+msgstr "ملغى"
+
+msgid "Note"
+msgstr "ملاحظة"
+
+msgid "Attach evidence"
+msgstr "إرفاق دليل"
+
+msgid "No corrective actions yet."
+msgstr "لا توجد إجراءات تصحيحية بعد."
+
+msgid "New corrective action"
+msgstr "إجراء تصحيحي جديد"
+
+msgid "run"
+msgstr "تشغيل"
+
+msgid "Linked controls"
+msgstr "الضوابط المرتبطة"
+
+msgid "Unlink this control?"
+msgstr "إلغاء ربط هذا الضابط؟"
+
+msgid "No controls linked — verification and repeat detection need at least one."
+msgstr "لا توجد ضوابط مرتبطة — يحتاج التحقق ورصد التكرار إلى ضابط واحد على الأقل."
+
+msgid "When every corrective action is done, send the finding for verification."
+msgstr "عند الانتهاء من جميع الإجراءات التصحيحية، أرسل الملاحظة للتحقق."
+
+msgid "Request verification"
+msgstr "طلب التحقق"
+
+msgid "Verification re-runs every linked control. The finding closes only if they all pass."
+msgstr "يعيد التحقق تشغيل كل الضوابط المرتبطة، ولا تُغلق الملاحظة إلا إذا نجحت جميعها."
+
+msgid "Only for controls without an automated check: how was the fix verified?"
+msgstr "للضوابط التي ليس لها فحص آلي فقط: كيف تم التحقق من المعالجة؟"
+
+msgid "Verify now"
+msgstr "تحقق الآن"
+
+msgid "Close without remediation"
+msgstr "إغلاق بدون معالجة"
+
+msgid "Close this finding without remediation?"
+msgstr "إغلاق هذه الملاحظة بدون معالجة؟"
+
+msgid "Risk accepted"
+msgstr "قبول المخاطر"
+
+msgid "Justification (required)"
+msgstr "المبرر (إلزامي)"
+
+msgid "New finding"
+msgstr "ملاحظة جديدة"
+
+msgid "e.g. inspection letter number"
+msgstr "مثال: رقم خطاب التفتيش"
+
+msgid "Needed for verification and repeat detection."
+msgstr "مطلوب للتحقق ورصد التكرار."
+
+msgid "Import CSV"
+msgstr "استيراد ملف CSV"
+
+msgid "Import all open internal-audit findings that are not yet in this tracker?"
+msgstr "استيراد جميع ملاحظات المراجعة الداخلية المفتوحة غير المسجلة في هذا المتتبع؟"
+
+msgid "Import from Internal Audit"
+msgstr "استيراد من المراجعة الداخلية"
+
+msgid "All open"
+msgstr "جميع المفتوحة"
+
+msgid "Repeated violations only"
+msgstr "المخالفات المتكررة فقط"
+
+msgid "Import findings"
+msgstr "استيراد الملاحظات"
+
+msgid "Import findings (CSV)"
+msgstr "استيراد الملاحظات (CSV)"
+
+msgid "Use one row per finding. Required column: title. Separate several control codes with a semicolon."
+msgstr "استخدم صفًا واحدًا لكل ملاحظة. العمود الإلزامي: title. افصل بين رموز الضوابط بفاصلة منقوطة."
+
+msgid "Download template"
+msgstr "تحميل النموذج"
+
+msgid "Import"
+msgstr "استيراد"
+
+msgid "Nothing is imported if any row has an error. Rows already imported (same source and reference) are skipped."
+msgstr "لا يتم استيراد أي شيء إذا كان في أي صف خطأ. ويتم تخطي الصفوف المستوردة سابقًا (نفس المصدر والمرجع)."
+
+msgid "The file was not imported. Fix these rows and upload again:"
+msgstr "لم يتم استيراد الملف. صحح هذه الصفوف ثم أعد الرفع:"
+
+msgid "Line"
+msgstr "السطر"
+
+msgid "Propose a change"
+msgstr "اقتراح تعديل"
+
+msgid "Value in force today"
+msgstr "القيمة السارية اليوم"
+
+msgid "open-ended"
+msgstr "مفتوح المدة"
+
+msgid "Legal reference"
+msgstr "المرجع القانوني"
+
+msgid "No version of this parameter is in force today."
+msgstr "لا يوجد إصدار سارٍ من هذا المعيار اليوم."
+
+msgid "To"
+msgstr "إلى"
+
+msgid "Used by controls"
+msgstr "تستخدمه الضوابط"
+
+msgid "Change history"
+msgstr "سجل التعديلات"
+
+msgid "from"
+msgstr "من"
+
+msgid "Requested by"
+msgstr "مقدم الطلب"
+
+msgid "No changes recorded."
+msgstr "لا توجد تعديلات مسجلة."
+
+msgid "Parameter change"
+msgstr "تعديل معيار"
+
+msgid "New parameter"
+msgstr "معيار جديد"
+
+msgid "Your change is saved as a request. It takes effect only after a different administrator approves it."
+msgstr "يُحفظ التعديل كطلب، ولا يسري إلا بعد اعتماده من مسؤول آخر."
+
+msgid "Type of change"
+msgstr "نوع التعديل"
+
+msgid "Correct the current version (same effective date)"
+msgstr "تصحيح الإصدار الحالي (نفس تاريخ السريان)"
+
+msgid "New value from a new effective date"
+msgstr "قيمة جديدة من تاريخ سريان جديد"
+
+msgid "Confirm review only (no value change)"
+msgstr "تأكيد المراجعة فقط (بدون تغيير القيمة)"
+
+msgid "Retire this version"
+msgstr "إيقاف هذا الإصدار"
+
+msgid "Lower case, dots and underscores. Checks refer to this key."
+msgstr "حروف إنجليزية صغيرة ونقاط وشرطات سفلية. تستخدم الفحوصات هذا المفتاح."
+
+msgid "Leave empty if not known yet."
+msgstr "اتركه فارغًا إذا لم تكن القيمة معروفة بعد."
+
+msgid "Value type"
+msgstr "نوع القيمة"
+
+msgid "Effective from"
+msgstr "ساري من"
+
+msgid "Only used for a new version."
+msgstr "يُستخدم للإصدار الجديد فقط."
+
+msgid "Effective to"
+msgstr "ساري حتى"
+
+msgid "e.g. FRA Board Decree no. / year, article"
+msgstr "مثال: قرار مجلس إدارة الهيئة رقم / سنة، المادة"
+
+msgid "Description (English)"
+msgstr "الوصف (بالإنجليزية)"
+
+msgid "Description (Arabic)"
+msgstr "الوصف (بالعربية)"
+
+msgid "Still needs Compliance review"
+msgstr "ما زال يحتاج مراجعة إدارة الالتزام"
+
+msgid "Review note"
+msgstr "ملاحظة المراجعة"
+
+msgid "Reason for the change"
+msgstr "سبب التعديل"
+
+msgid "Submit for approval"
+msgstr "إرسال للاعتماد"
+
+msgid "Every regulatory limit used by the controls is read from this list. Changes need a reason and are applied only after a second administrator approves them. Values marked \"Needs review\" must be confirmed by Compliance against the current FRA decree."
+msgstr "تُقرأ كل الحدود الرقابية التي تستخدمها الضوابط من هذه القائمة. يتطلب كل تعديل سببًا ولا يُطبق إلا بعد اعتماد مسؤول ثانٍ. ويجب أن تؤكد إدارة الالتزام القيم المميزة بـ \"يحتاج مراجعة\" مقابل قرار الهيئة الساري."
+
+msgid "Changes waiting for approval"
+msgstr "تعديلات بانتظار الاعتماد"
+
+msgid "Licence"
+msgstr "الترخيص"
+
+msgid "Change"
+msgstr "التعديل"
+
+msgid "Old value"
+msgstr "القيمة السابقة"
+
+msgid "New value"
+msgstr "القيمة الجديدة"
+
+msgid "Reason for rejection"
+msgstr "سبب الرفض"
+
+msgid "Waiting for another approver"
+msgstr "بانتظار معتمد آخر"
+
+msgid "Search key or description"
+msgstr "ابحث بالمفتاح أو الوصف"
+
+msgid "All licence types"
+msgstr "جميع أنواع التراخيص"
+
+msgid "Needs review only"
+msgstr "التي تحتاج مراجعة فقط"
+
+msgid "not in force"
+msgstr "غير سارٍ"
+
+msgid "No parameters match."
+msgstr "لا توجد معايير مطابقة."
+
+msgid "Our FRA licence type"
+msgstr "نوع ترخيصنا من الهيئة"
+
+msgid "Selects which licence-specific parameter values the checks use."
+msgstr "يحدد قيم المعايير الخاصة بالترخيص التي تستخدمها الفحوصات."
+
+msgid "Head(s) of Compliance — receive escalations"
+msgstr "رئيس/رؤساء إدارة الالتزام — يستلمون التصعيدات"
+
+msgid "If none is selected, every administrator and compliance officer is notified."
+msgstr "إذا لم يتم اختيار أحد، يتم إخطار جميع مسؤولي النظام ومسؤولي الالتزام."
+
+msgid "Save settings"
+msgstr "حفظ الإعدادات"
+
+msgid "Control run"
+msgstr "تشغيل الضابط"
+
+msgid "Run by"
+msgstr "شغّله"
+
+msgid "Check"
+msgstr "الفحص"
+
+msgid "Affected records"
+msgstr "السجلات المتأثرة"
+
+msgid "Verification of"
+msgstr "تحقق من"
+
+msgid "first 500 shown"
+msgstr "يتم عرض أول 500"
+
+msgid "You do not have permission for this Regulatory Compliance action."
+msgstr "ليست لديك صلاحية لتنفيذ هذا الإجراء في الالتزام الرقابي."
+
+msgid "Scheduled run queued. Results appear as each control finishes."
+msgstr "تمت جدولة التشغيل. ستظهر النتائج عند انتهاء كل ضابط."
+
+msgid "Due controls run: %(n)s."
+msgstr "تم تشغيل الضوابط المستحقة: %(n)s."
+
+msgid "Control run finished: %(status)s"
+msgstr "انتهى تشغيل الضابط: %(status)s"
+
+msgid "Control run queued. Refresh in a moment to see the result."
+msgstr "تمت جدولة تشغيل الضابط. حدّث الصفحة بعد قليل لرؤية النتيجة."
+
+msgid "Invalid frequency or criticality."
+msgstr "الدورية أو درجة الأهمية غير صحيحة."
+
+msgid "Control updated."
+msgstr "تم تحديث الضابط."
+
+msgid "Evidence recorded. Attach the supporting file below, then ask a reviewer to approve it."
+msgstr "تم تسجيل الدليل. أرفق الملف المؤيد أدناه ثم اطلب من مراجع اعتماده."
+
+msgid "No file is attached. Attach the evidence file, or tick the box to confirm it is held elsewhere."
+msgstr "لا يوجد ملف مرفق. أرفق ملف الدليل أو حدد الخانة لتأكيد أنه محفوظ في مكان آخر."
+
+msgid "Evidence review saved."
+msgstr "تم حفظ مراجعة الدليل."
+
+msgid "Finding recorded. Add the corrective action plan next."
+msgstr "تم تسجيل الملاحظة. أضف خطة الإجراءات التصحيحية."
+
+msgid "Invalid severity."
+msgstr "درجة الخطورة غير صحيحة."
+
+msgid "Finding updated."
+msgstr "تم تحديث الملاحظة."
+
+msgid "Controls linked."
+msgstr "تم ربط الضوابط."
+
+msgid "Corrective action added."
+msgstr "تمت إضافة الإجراء التصحيحي."
+
+msgid "Action updated."
+msgstr "تم تحديث الإجراء."
+
+msgid "Sent for verification."
+msgstr "تم الإرسال للتحقق."
+
+msgid "All linked controls passed. The finding is closed."
+msgstr "نجحت جميع الضوابط المرتبطة. تم إغلاق الملاحظة."
+
+msgid "Closed on manual verification."
+msgstr "تم الإغلاق بناءً على تحقق يدوي."
+
+msgid "The linked controls have no automated or evidence check. Enter how you verified the fix and verify again."
+msgstr "الضوابط المرتبطة ليس لها فحص آلي أو فحص أدلة. اكتب كيف تحققت من المعالجة ثم أعد التحقق."
+
+msgid "A linked control still fails. The finding stays open."
+msgstr "ما زال أحد الضوابط المرتبطة فاشلًا. تظل الملاحظة مفتوحة."
+
+msgid "Re-test inconclusive (warnings). Resolve them and verify again."
+msgstr "نتيجة إعادة الاختبار غير حاسمة (تحذيرات). عالجها ثم أعد التحقق."
+
+msgid "Finding closed."
+msgstr "تم إغلاق الملاحظة."
+
+msgid "Choose a CSV file."
+msgstr "اختر ملف CSV."
+
+msgid "The file is larger than 2 MB."
+msgstr "حجم الملف أكبر من 2 ميجابايت."
+
+msgid "The file must be UTF-8 encoded CSV."
+msgstr "يجب أن يكون الملف CSV بترميز UTF-8."
+
+msgid "%(c)s finding(s) imported, %(s)s already existed."
+msgstr "تم استيراد %(c)s ملاحظة، و%(s)s كانت موجودة مسبقًا."
+
+msgid "%(n)s internal-audit finding(s) imported."
+msgstr "تم استيراد %(n)s ملاحظة من المراجعة الداخلية."
+
+msgid "Enter a short resolution note."
+msgstr "اكتب ملاحظة معالجة مختصرة."
+
+msgid "Change submitted. A second administrator must approve it before it takes effect."
+msgstr "تم إرسال التعديل. يجب أن يعتمده مسؤول ثانٍ قبل أن يسري."
+
+msgid "Change approved and applied."
+msgstr "تم اعتماد التعديل وتطبيقه."
+
+msgid "Change rejected."
+msgstr "تم رفض التعديل."
+
+msgid "Settings saved."
+msgstr "تم حفظ الإعدادات."
+
+msgid "a comment is required when rejecting a change"
+msgstr "التعليق إلزامي عند رفض التعديل"
+
+msgid "a comment is required when rejecting evidence"
+msgstr "التعليق إلزامي عند رفض الدليل"
+
+msgid "a justification is required"
+msgstr "المبرر إلزامي"
+
+msgid "a parameter change must be approved by a different user (four-eyes rule)"
+msgstr "يجب أن يعتمد تعديل المعيار مستخدم آخر (مبدأ العينين الأربع)"
+
+msgid "a reason is required for every parameter change"
+msgstr "يجب ذكر سبب لكل تعديل على المعايير"
+
+msgid "action description is required"
+msgstr "وصف الإجراء إلزامي"
+
+msgid "action not found"
+msgstr "الإجراء غير موجود"
+
+msgid "add at least one corrective action before asking for verification"
+msgstr "أضف إجراءً تصحيحيًا واحدًا على الأقل قبل طلب التحقق"
+
+msgid "all corrective actions must be done (or cancelled) first"
+msgstr "يجب إنجاز (أو إلغاء) جميع الإجراءات التصحيحية أولًا"
+
+msgid "change not found or already decided"
+msgstr "التعديل غير موجود أو تم البت فيه"
+
+msgid "change not found"
+msgstr "التعديل غير موجود"
+
+msgid "control not found"
+msgstr "الضابط غير موجود"
+
+msgid "decision must be approved or rejected"
+msgstr "يجب أن يكون القرار اعتمادًا أو رفضًا"
+
+msgid "effective from date is required"
+msgstr "تاريخ السريان إلزامي"
+
+msgid "effective to must not be before effective from"
+msgstr "لا يجوز أن يسبق تاريخ نهاية السريان تاريخ بدايته"
+
+msgid "evidence must be reviewed by someone other than the person who submitted it"
+msgstr "يجب أن يراجع الدليل شخص غير من قدّمه"
+
+msgid "evidence not found"
+msgstr "الدليل غير موجود"
+
+msgid "finding is already closed"
+msgstr "الملاحظة مغلقة بالفعل"
+
+msgid "finding not found"
+msgstr "الملاحظة غير موجودة"
+
+msgid "only pending evidence can be reviewed"
+msgstr "يمكن مراجعة الأدلة المعلقة فقط"
+
+msgid "parameter key is required"
+msgstr "مفتاح المعيار إلزامي"
+
+msgid "the finding owner cannot verify their own remediation"
+msgstr "لا يجوز لمسؤول الملاحظة التحقق من معالجته بنفسه"
+
+msgid "this change has already been decided"
+msgstr "تم البت في هذا التعديل بالفعل"
+
+msgid "this change needs an existing parameter version"
+msgstr "هذا التعديل يتطلب إصدارًا قائمًا من المعيار"
+
+msgid "title is required"
+msgstr "العنوان إلزامي"
+
+msgid "unknown action status"
+msgstr "حالة الإجراء غير معروفة"
+
+msgid "unknown closure type"
+msgstr "نوع الإغلاق غير معروف"
+
+msgid "valid to must not be before valid from"
+msgstr "لا يجوز أن يسبق تاريخ نهاية الصلاحية تاريخ بدايتها"
+
+msgid "invalid parameter key"
+msgstr "مفتاح المعيار غير صحيح"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

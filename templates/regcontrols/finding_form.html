@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('New finding') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-3">{{ _('New finding') }}</h3>
+    <form method="post" class="card"><div class="card-body">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+            <div class="col-md-8"><label class="form-label">{{ _('Title') }} *</label>
+                <input name="title" class="form-control" required maxlength="400" value="{{ form.get('title', '') }}"></div>
+            <div class="col-md-4"><label class="form-label">{{ _('Source') }}</label>
+                <select name="source" class="form-select">{% for s in sources %}<option value="{{ s }}" {{ 'selected' if form.get('source', 'regulator') == s }}>{{ rc.source_label(s) }}</option>{% endfor %}</select></div>
+            <div class="col-md-4"><label class="form-label">{{ _('Source reference') }}</label>
+                <input name="source_ref" class="form-control" maxlength="200" value="{{ form.get('source_ref', '') }}" placeholder="{{ _('e.g. inspection letter number') }}"></div>
+            <div class="col-md-4"><label class="form-label">{{ _('Linked controls') }}</label>
+                <input name="control_codes" class="form-control" value="{{ form.get('control_codes', '') }}" placeholder="FRA-035; FRA-036">
+                <div class="form-text">{{ _('Needed for verification and repeat detection.') }}</div></div>
+            <div class="col-md-2"><label class="form-label">{{ _('Severity') }}</label>
+                <select name="severity" class="form-select">{% for s in severities %}<option value="{{ s }}" {{ 'selected' if form.get('severity', 'medium') == s }}>{{ rc_label('CRITICALITY', s) }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><label class="form-label">{{ _('Area') }}</label>
+                <select name="area" class="form-select"><option value="">-</option>{% for k in rc_vocab.AREAS %}<option value="{{ k }}" {{ 'selected' if form.get('area') == k }}>{{ rc_label('AREAS', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Identified on') }}</label><input type="date" name="identified_date" class="form-control" value="{{ form.get('identified_date', today) }}"></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Due date') }}</label><input type="date" name="due_date" class="form-control" value="{{ form.get('due_date', '') }}"></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Owner') }}</label>
+                <select name="owner_user_id" class="form-select"><option value="">-</option>{% for u in users %}<option value="{{ u.id }}" {{ 'selected' if form.get('owner_user_id')|string == u.id|string }}>{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}</select></div>
+            {% if units %}
+            <div class="col-md-3"><label class="form-label">{{ _('Company / unit') }}</label>
+                <select name="org_unit_id" class="form-select"><option value="">-</option>{% for u in units %}<option value="{{ u.id }}">{{ '— ' * (u.depth or 0) }}{{ rc_loc(u.name_en, u.name_ar) }}</option>{% endfor %}</select></div>
+            {% endif %}
+            <div class="col-12"><label class="form-label">{{ _('Description') }}</label><textarea name="description" class="form-control" rows="4">{{ form.get('description', '') }}</textarea></div>
+        </div>
+    </div>
+    <div class="card-footer d-flex gap-2"><button class="btn btn-primary">{{ _('Save') }}</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('regcontrols.findings') }}">{{ _('Cancel') }}</a></div>
+    </form>
+</div>
+{% endblock %}

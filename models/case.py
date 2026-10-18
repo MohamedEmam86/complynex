@@ -88,6 +88,7 @@ class Case:
         'WHISTLEBLOWING': {'SUBMITTED': 'OPEN', 'UNDER_REVIEW': 'IN_PROGRESS', 'INVESTIGATING': 'IN_PROGRESS', 'RESOLVED': 'RESOLVED'},
         'CONSUMER_COMPLAINT': {'NEW': 'OPEN', 'IN_PROGRESS': 'IN_PROGRESS', 'RESOLVED': 'RESOLVED', 'CLOSED': 'CLOSED'},
         'CYBER_INCIDENT': {'NEW': 'OPEN', 'IN_PROGRESS': 'IN_PROGRESS', 'RESOLVED': 'RESOLVED', 'CLOSED': 'CLOSED'},
+        'REG_CONTROL': {'open': 'OPEN', 'acknowledged': 'IN_PROGRESS', 'resolved': 'RESOLVED'},
     }
 
     @staticmethod
@@ -216,4 +217,29 @@ class Case:
             opened_at=opened_at,
             due_date=due_date,
             resolved_at=None if status not in ('RESOLVED', 'CLOSED') else None,
+        )
+
+    @staticmethod
+    def _sync_reg_control(db, alert_id):
+        """A failed FRA control (regcontrols rc_alerts row) worked as a case."""
+        row = db.execute("""
+            SELECT a.*, c.control_code, c.title_en
+            FROM rc_alerts a LEFT JOIN rc_controls c ON c.id = a.control_id WHERE a.id = %s
+        """, (alert_id,)).fetchone()
+        if not row:
+            return None
+        alert = dict(row)
+        status = Case.STATUS_MAP['REG_CONTROL'].get(alert.get('status'), 'OPEN')
+        opened_at = alert.get('raised_at') or datetime.now()
+        return _upsert(
+            db, 'REG_CONTROL', 'rc_alerts', alert_id,
+            reference=alert.get('control_code'),
+            title=alert.get('title'),
+            status=status,
+            priority=(alert.get('severity') or 'high').upper(),
+            party_id=None,  # control failures are about the institution, not one customer
+            assigned_to=alert.get('owner_user_id'),
+            opened_at=opened_at,
+            due_date=opened_at + timedelta(days=_get_sla_days(db, 'REG_CONTROL')),
+            resolved_at=alert.get('resolved_at'),
         )

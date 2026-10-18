@@ -40,6 +40,7 @@ ALLOWED_MODULES = {
     'governance': 'governance',
     'internal_audit': 'internal_audit',
     'aml': 'aml',
+    'regcontrols': 'regcontrols',
 }
 
 

@@ -106,7 +106,7 @@
 
                     <h5 class="card-title mt-4 mb-3">{{ _('Module Permissions') }}</h5>
                     <div class="row g-3 mb-4">
-                        {% for module in [('governance', 'Corporate Governance'), ('aml', 'AML/CFT'), ('policies', 'Policies'), ('reports', 'Regulatory Reports'), ('pdpl', 'Data Protection'), ('training', 'Training'), ('screening', 'Sanction Screening'), ('ongoing_screening', 'Ongoing Screening'), ('config', 'System Configuration'), ('cyber', 'Cyber Incidents Hub'), ('phishing', 'Phishing Awareness'), ('ghe', 'GHE Declarations'), ('coi', 'COI Declarations'), ('cobec', 'Code of Ethics'), ('merchant_kyc', 'Merchant KYC'), ('tm', 'Transaction Monitoring'), ('whistleblowing', 'Whistleblowing'), ('consumer_protection', 'Consumer Protection'), ('ekyc', 'eKYC'), ('risk_management', 'Risk Management'), ('internal_audit', 'Internal Audit'), ('esg', 'ESG Management'), ('carbon', 'Carbon Footprint'), ('academy', 'Integrys Academy (learners)')] %}
+                        {% for module in [('governance', 'Corporate Governance'), ('aml', 'AML/CFT'), ('policies', 'Policies'), ('reports', 'Regulatory Reports'), ('pdpl', 'Data Protection'), ('training', 'Training'), ('screening', 'Sanction Screening'), ('ongoing_screening', 'Ongoing Screening'), ('config', 'System Configuration'), ('cyber', 'Cyber Incidents Hub'), ('phishing', 'Phishing Awareness'), ('ghe', 'GHE Declarations'), ('coi', 'COI Declarations'), ('cobec', 'Code of Ethics'), ('merchant_kyc', 'Merchant KYC'), ('tm', 'Transaction Monitoring'), ('whistleblowing', 'Whistleblowing'), ('consumer_protection', 'Consumer Protection'), ('ekyc', 'eKYC'), ('risk_management', 'Risk Management'), ('internal_audit', 'Internal Audit'), ('esg', 'ESG Management'), ('carbon', 'Carbon Footprint'), ('academy', 'Integrys Academy (learners)'), ('regcontrols', 'Regulatory Compliance (FRA)')] %}
                         <div class="col-md-4">
                             <div class="card bg-light border-0">
                                 <div class="card-body p-2">
@@ -115,6 +115,9 @@
                                         <option value="none" selected>{{ _('None') }}</option>
                                         <option value="view">{{ _('View Only') }}</option>
                                         <option value="edit">{{ _('View &amp; Edit') }}</option>
+                                        {% if module[0] == 'regcontrols' %}
+                                        <option value="admin">{{ _('Admin (approve parameters, edit library)') }}</option>
+                                        {% endif %}
                                     </select>
                                 </div>
                             </div>

@@ -623,6 +623,49 @@
     </li>
     {% endif %}
 
+    {# ======== Regulatory Compliance (FRA) — 6 links ======== #}
+    {% if current_user.can_view('regcontrols') %}
+    <li class="cnx-nav__item" data-area="regcontrols">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-shield-check cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Regulatory Compliance (FRA)') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('regcontrols.dashboard') }}">
+              <span class="cnx-nav__label">{{ _('Compliance Dashboard') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('regcontrols.controls') }}">
+              <span class="cnx-nav__label">{{ _('FRA Control Library') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('regcontrols.findings') }}">
+              <span class="cnx-nav__label">{{ _('Findings & Corrective Actions') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('regcontrols.evidence_list') }}">
+              <span class="cnx-nav__label">{{ _('Evidence') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('regcontrols.alerts') }}">
+              <span class="cnx-nav__label">{{ _('Control Alerts') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('regcontrols.parameters') }}">
+              <span class="cnx-nav__label">{{ _('Regulatory Parameters') }}</span>
+            </a>
+          </li>
+      </ul></div>
+    </li>
+    {% endif %}
+
     {# ======== Risk & Audit — 15 links ======== #}
     {% if (current_user.can_view('risk_management')) or (current_user.can_view('internal_audit')) %}
     <li class="cnx-nav__item" data-area="risk">

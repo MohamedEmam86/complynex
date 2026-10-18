@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ item.title }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{{ item.title }} {{ rc.evidence_state(item.state) }}</h3>
+    <p class="text-muted"><a href="{{ url_for('regcontrols.control_detail', control_id=item.control_id) }}">{{ item.control_code }} — {{ rc_loc(item.control_title_en, item.control_title_ar) }}</a></p>
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card"><div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-4">{{ _('Reference number') }}</dt><dd class="col-8">{{ item.reference_no or '-' }}</dd>
+                    <dt class="col-4">{{ _('Valid from') }}</dt><dd class="col-8">{{ item.valid_from or '-' }}</dd>
+                    <dt class="col-4">{{ _('Valid to (expiry)') }}</dt><dd class="col-8">{{ item.valid_to or _('no expiry') }}</dd>
+                    <dt class="col-4">{{ _('Submitted by') }}</dt><dd class="col-8">{{ item.submitted_by_name or _('System') }} · {{ item.submitted_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                    <dt class="col-4">{{ _('Reviewed by') }}</dt><dd class="col-8">{{ item.reviewed_by_name or '-' }}{% if item.reviewed_at %} · {{ item.reviewed_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}</dd>
+                    <dt class="col-4">{{ _('Review comment') }}</dt><dd class="col-8">{{ item.review_comment or '-' }}</dd>
+                    <dt class="col-4">{{ _('Description') }}</dt><dd class="col-8">{{ item.description or '-' }}</dd>
+                </dl>
+            </div></div>
+            {% include 'partials/attachment_widget.html' %}
+        </div>
+        <div class="col-lg-5">
+            {% if rc_can_edit and item.status == 'pending' %}
+            <div class="card"><div class="card-header"><strong>{{ _('Review') }}</strong></div><div class="card-body">
+                {% if item.submitted_by == current_user.id %}
+                <p class="small text-muted mb-0">{{ _('You submitted this evidence. Another user must review it.') }}</p>
+                {% else %}
+                <form method="post" action="{{ url_for('regcontrols.evidence_review', evidence_id=item.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <textarea name="comment" class="form-control mb-2" rows="2" placeholder="{{ _('Comment (required when rejecting)') }}"></textarea>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="no_file_ok" id="no_file_ok">
+                        <label class="form-check-label small" for="no_file_ok">{{ _('No file attached — the original is held elsewhere (state where in the comment)') }}</label></div>
+                    <button name="decision" value="approved" class="btn btn-success btn-sm">{{ _('Approve') }}</button>
+                    <button name="decision" value="rejected" class="btn btn-outline-danger btn-sm">{{ _('Reject') }}</button>
+                </form>
+                {% endif %}
+            </div></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

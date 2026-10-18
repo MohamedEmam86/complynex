@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Import findings') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-3">{{ _('Import findings (CSV)') }}</h3>
+    <div class="card mb-3"><div class="card-body">
+        <p class="small">{{ _('Use one row per finding. Required column: title. Separate several control codes with a semicolon.') }}</p>
+        <p class="small mb-2"><code>{{ columns|join(', ') }}</code></p>
+        <a class="btn btn-sm btn-outline-secondary mb-3" href="{{ url_for('regcontrols.findings_import_template') }}"><i class="bi bi-download me-1"></i>{{ _('Download template') }}</a>
+        <form method="post" enctype="multipart/form-data" class="d-flex gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="file" name="file" accept=".csv,text/csv" class="form-control" required>
+            <button class="btn btn-primary">{{ _('Import') }}</button>
+        </form>
+        <p class="small text-muted mt-2 mb-0">{{ _('Nothing is imported if any row has an error. Rows already imported (same source and reference) are skipped.') }}</p>
+    </div></div>
+    {% if errors %}
+    <div class="alert alert-danger">
+        <strong>{{ _('The file was not imported. Fix these rows and upload again:') }}</strong>
+        <ul class="mb-0 small">{% for line, msg in errors %}<li>{{ _('Line') }} {{ line }}: {{ msg }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -369,6 +369,12 @@ def create_app(config_name=None):
     import cases.routes  # noqa: F401 — registers routes on cases_bp
     app.register_blueprint(cases_bp)
 
+    # FRA regulatory control framework (parameters, control library, engine,
+    # evidence, findings & corrective actions) — see regcontrols/
+    from regcontrols import regcontrols_bp
+    import regcontrols.routes  # noqa: F401 — registers routes on regcontrols_bp
+    app.register_blueprint(regcontrols_bp)
+
 
     # Phishing Awareness Module
     from phishing import phishing_bp

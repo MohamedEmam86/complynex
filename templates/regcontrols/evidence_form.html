@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Add evidence') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{{ _('Add evidence') }}</h3>
+    <p class="text-muted"><a href="{{ url_for('regcontrols.control_detail', control_id=control.id) }}">{{ control.control_code }} — {{ rc_loc(control.title_en, control.title_ar) }}</a></p>
+    <form method="post" class="card"><div class="card-body">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+            <div class="col-md-8"><label class="form-label">{{ _('Title') }} *</label>
+                <input name="title" class="form-control" required maxlength="300" placeholder="{{ _('e.g. Board minutes approving the AML policy') }}"></div>
+            <div class="col-md-4"><label class="form-label">{{ _('Reference number') }}</label>
+                <input name="reference_no" class="form-control" maxlength="120"></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Valid from') }}</label><input type="date" name="valid_from" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Valid to (expiry)') }}</label><input type="date" name="valid_to" class="form-control">
+                <div class="form-text">{{ _('Leave empty only if the evidence never expires.') }}</div></div>
+            {% if units %}
+            <div class="col-md-6"><label class="form-label">{{ _('Company / unit') }}</label>
+                <select name="org_unit_id" class="form-select"><option value="">-</option>{% for u in units %}<option value="{{ u.id }}">{{ '— ' * (u.depth or 0) }}{{ rc_loc(u.name_en, u.name_ar) }}</option>{% endfor %}</select></div>
+            {% endif %}
+            <div class="col-12"><label class="form-label">{{ _('Description') }}</label><textarea name="description" rows="3" class="form-control"></textarea></div>
+        </div>
+        <p class="small text-muted mt-3 mb-0">{{ _('After saving you can attach the file. A different user must then approve it.') }}</p>
+    </div>
+    <div class="card-footer d-flex gap-2"><button class="btn btn-primary">{{ _('Save') }}</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('regcontrols.control_detail', control_id=control.id) }}">{{ _('Cancel') }}</a></div>
+    </form>
+</div>
+{% endblock %}

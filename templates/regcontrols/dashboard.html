@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('Regulatory Compliance (FRA)') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+        <h3 class="mb-0"><i class="bi bi-shield-check me-2"></i>{{ _('Regulatory Compliance (FRA)') }}</h3>
+        <div class="d-flex gap-2">
+            <span class="badge bg-light text-dark border align-self-center">{{ _('Licence type') }}: {{ rc_label('LICENCE_TYPES', licence_type) }}</span>
+            {% if rc_can_admin %}
+            <form method="post" action="{{ url_for('regcontrols.run_due') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-sm btn-primary"><i class="bi bi-play-circle me-1"></i>{{ _('Run due controls now') }}</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {{ rc.nav('regcontrols.dashboard') }}
+
+    {% if review_params or pending_params %}
+    <div class="alert alert-warning small">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        {% if review_params %}{{ _('%(n)s regulatory parameter(s) still need Compliance review.', n=review_params) }}{% endif %}
+        {% if pending_params %}{{ _('%(n)s parameter change(s) waiting for approval.', n=pending_params) }}{% endif %}
+        <a href="{{ url_for('regcontrols.parameters', review='1') }}">{{ _('Open parameters') }}</a>
+    </div>
+    {% endif %}
+
+    <div class="row g-3 mb-4">
+        {% for key, label, cls in [('pass', _('Passing'), 'success'), ('fail', _('Failing'), 'danger'),
+                                   ('warning', _('Warnings'), 'warning'), ('error', _('Check errors'), 'dark'),
+                                   ('not_run', _('Not monitored yet'), 'secondary')] %}
+        <div class="col-6 col-md">
+            <a class="text-decoration-none" href="{{ url_for('regcontrols.controls', status=key) }}">
+            <div class="card text-center h-100 border-{{ cls }}"><div class="card-body py-3">
+                <h2 class="mb-0 text-{{ cls }}">{{ status_counts.get(key, 0) }}</h2>
+                <p class="text-muted small mb-0">{{ label }}</p>
+            </div></div></a>
+        </div>
+        {% endfor %}
+        <div class="col-6 col-md">
+            <a class="text-decoration-none" href="{{ url_for('regcontrols.alerts') }}">
+            <div class="card text-center h-100"><div class="card-body py-3">
+                <h2 class="mb-0">{{ open_alerts }}</h2><p class="text-muted small mb-0">{{ _('Open alerts') }}</p>
+            </div></div></a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header"><strong>{{ _('Controls by area') }}</strong></div>
+                <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead><tr><th>{{ _('Area') }}</th><th class="text-center">{{ _('Total') }}</th>
+                        <th class="text-center text-success">{{ _('Pass') }}</th><th class="text-center text-warning">{{ _('Warning') }}</th>
+                        <th class="text-center text-danger">{{ _('Fail') }}</th><th class="text-center text-muted">{{ _('Other') }}</th></tr></thead>
+                    <tbody>
+                    {% for code in rc_vocab.AREAS %}{% set a = by_area.get(code) %}{% if a %}
+                    <tr>
+                        <td><a href="{{ url_for('regcontrols.controls', area=code) }}">{{ rc_label('AREAS', code) }}</a></td>
+                        <td class="text-center">{{ a.total }}</td><td class="text-center">{{ a.pass }}</td>
+                        <td class="text-center">{{ a.warning }}</td><td class="text-center fw-bold {{ 'text-danger' if a.fail }}">{{ a.fail }}</td>
+                        <td class="text-center text-muted">{{ a.other }}</td>
+                    </tr>
+                    {% endif %}{% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between">
+                    <strong>{{ _('Open findings by age (days)') }}</strong>
+                    <a class="small" href="{{ url_for('regcontrols.findings', status='open') }}">{{ _('All findings') }}</a>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        {% for bucket, n in ageing.items() %}
+                        <div class="col"><div class="fs-4 {{ 'text-danger' if bucket == '90+' and n }}">{{ n }}</div><div class="small text-muted">{{ bucket }}</div></div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex justify-content-between small"><span>{{ _('Repeated violations') }}</span>
+                        <a class="fw-bold {{ 'text-danger' if repeated }}" href="{{ url_for('regcontrols.findings', repeated=1) }}">{{ repeated|length }}</a></div>
+                    <div class="d-flex justify-content-between small"><span>{{ _('Overdue findings') }}</span>
+                        <span class="fw-bold {{ 'text-danger' if overdue }}">{{ overdue|length }}</span></div>
+                    <div class="d-flex justify-content-between small"><span>{{ _('Evidence waiting for review') }}</span>
+                        <a href="{{ url_for('regcontrols.evidence_list', state='pending') }}">{{ pending_review|length }}</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><strong>{{ _('Failing controls') }}</strong></div>
+                <ul class="list-group list-group-flush">
+                    {% for c in failing %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}"><strong>{{ c.control_code }}</strong> {{ rc_loc(c.title_en, c.title_ar) }}</a>
+                        <span>{{ rc.crit_badge(c.criticality) }} {{ rc.status_badge(c.last_status) }}</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted small">{{ _('No failing controls.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><strong>{{ _('Evidence expiring or expired') }}</strong></div>
+                <ul class="list-group list-group-flush">
+                    {% for e in expiring %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('regcontrols.evidence_detail', evidence_id=e.id) }}"><strong>{{ e.control_code }}</strong> {{ e.title }}</a>
+                        <span class="small">{{ e.valid_to or '-' }} {{ rc.evidence_state(e.state) }}</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted small">{{ _('Nothing expiring in the warning window.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

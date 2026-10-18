@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('Control run') }} #{{ run.id }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{{ _('Control run') }} #{{ run.id }} {{ rc.status_badge(run.status) }}</h3>
+    <p class="text-muted"><a href="{{ url_for('regcontrols.control_detail', control_id=run.control_id) }}">{{ run.control_code }} — {{ rc_loc(run.title_en, run.title_ar) }}</a></p>
+    <div class="row g-3">
+        <div class="col-lg-4"><div class="card"><div class="card-body small">
+            <dl class="row mb-0">
+                <dt class="col-5">{{ _('Started') }}</dt><dd class="col-7">{{ run.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</dd>
+                <dt class="col-5">{{ _('Duration') }}</dt><dd class="col-7">{{ run.duration_ms or 0 }} ms</dd>
+                <dt class="col-5">{{ _('Trigger') }}</dt><dd class="col-7">{{ rc.trigger_label(run.triggered_by) }}</dd>
+                <dt class="col-5">{{ _('Run by') }}</dt><dd class="col-7">{{ run.run_by_name or _('System') }}</dd>
+                <dt class="col-5">{{ _('Check') }}</dt><dd class="col-7">{{ run.check_name or '-' }}</dd>
+                <dt class="col-5">{{ _('Affected records') }}</dt><dd class="col-7">{{ run.affected_count }}</dd>
+                {% if run.finding_id %}<dt class="col-5">{{ _('Verification of') }}</dt><dd class="col-7"><a href="{{ url_for('regcontrols.finding_detail', finding_id=run.finding_id) }}">#{{ run.finding_id }}</a></dd>{% endif %}
+            </dl>
+        </div></div></div>
+        <div class="col-lg-8">
+            <div class="card mb-3"><div class="card-body">
+                <h6>{{ _('Summary') }}</h6><p>{{ run.summary or '-' }}</p>
+                {% if run.details %}
+                <h6>{{ _('Details') }}</h6>
+                <table class="table table-sm small mb-0">{% for k, v in run.details.items() %}<tr><th class="w-25">{{ k }}</th><td>{{ v }}</td></tr>{% endfor %}</table>
+                {% endif %}
+            </div></div>
+            <div class="card">
+                <div class="card-header"><strong>{{ _('Affected records') }}</strong>{% if run.details.get('affected_truncated') %} <span class="small text-muted">({{ _('first 500 shown') }})</span>{% endif %}</div>
+                <div class="table-responsive">
+                <table class="table table-sm mb-0 small">
+                    {% set cols = (run.affected_records[0].keys()|list) if run.affected_records else [] %}
+                    <thead><tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+                    <tbody>
+                    {% for a in run.affected_records %}<tr>{% for c in cols %}<td>{{ a.get(c) }}</td>{% endfor %}</tr>
+                    {% else %}<tr><td class="text-muted">{{ _('None.') }}</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

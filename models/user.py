@@ -265,11 +265,17 @@ class User(UserMixin):
 
     def can_view(self, module):
         """Check if user can view a specific module."""
-        return self._get_perm(module) in ['view', 'edit']
+        return self._get_perm(module) in ['view', 'edit', 'admin']
 
     def can_edit(self, module):
         """Check if user can edit a specific module."""
-        return self._get_perm(module) == 'edit'
+        return self._get_perm(module) in ['edit', 'admin']
+
+    def can_admin_module(self, module):
+        """Module-level administration (e.g. perm_regcontrols = 'admin': approve
+        regulatory parameters, edit the control library). Only modules that
+        offer an 'admin' level grant it; site admins always have it."""
+        return self.is_admin() or getattr(self, f'perm_{module}', 'none') == 'admin'
     
     def has_permission(self, module, level='view'):
         """Convenience wrapper for permission checks."""
@@ -362,7 +368,7 @@ class User(UserMixin):
         # Permissions added after this INSERT was written (perm_ongoing_screening,
         # perm_academy, ...) are persisted here instead of being silently dropped.
         _late = {k: v for k, v in kwargs.items()
-                 if k in ('perm_ongoing_screening', 'perm_academy') and v and v != 'none'}
+                 if k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols') and v and v != 'none'}
         if _late:
             db.execute('UPDATE users SET ' + ', '.join(f'{k} = %s' for k in _late) + ' WHERE email = %s',
                        (*_late.values(), email))
@@ -477,7 +483,7 @@ class User(UserMixin):
         )
         # Late-added module permissions are not constructor args; load them so
         # can_view()/can_edit() see the stored value instead of defaulting to 'none'.
-        for _k in ('perm_ongoing_screening', 'perm_academy'):
+        for _k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols'):
             if _k in row.keys():
                 setattr(_u, _k, row[_k] or 'none')
         return _u

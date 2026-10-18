@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Parameter change') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{% if p %}{{ _('Propose a change') }}: <code>{{ p.param_key }}</code>{% else %}{{ _('New parameter') }}{% endif %}</h3>
+    <p class="small text-muted">{{ _('Your change is saved as a request. It takes effect only after a different administrator approves it.') }}</p>
+    <form method="post" class="card"><div class="card-body">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+            {% if p %}
+            <div class="col-md-6"><label class="form-label">{{ _('Type of change') }}</label>
+                <select name="change_type" class="form-select">
+                    <option value="update">{{ _('Correct the current version (same effective date)') }}</option>
+                    <option value="new_version">{{ _('New value from a new effective date') }}</option>
+                    <option value="review">{{ _('Confirm review only (no value change)') }}</option>
+                    <option value="retire">{{ _('Retire this version') }}</option>
+                </select></div>
+            {% else %}
+            <input type="hidden" name="change_type" value="create">
+            <div class="col-md-5"><label class="form-label">{{ _('Key') }} *</label>
+                <input name="param_key" class="form-control" required pattern="[a-z0-9_.]+" value="{{ form.get('param_key', '') }}" placeholder="lending.admin_fee_cap_pct">
+                <div class="form-text">{{ _('Lower case, dots and underscores. Checks refer to this key.') }}</div></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Licence type') }}</label>
+                <select name="licence_type" class="form-select">{% for k in rc_vocab.LICENCE_TYPES %}<option value="{{ k }}" {{ 'selected' if form.get('licence_type') == k }}>{{ rc_label('LICENCE_TYPES', k) }}</option>{% endfor %}</select></div>
+            {% endif %}
+            <div class="col-md-3"><label class="form-label">{{ _('Value') }}</label>
+                <input name="value_text" class="form-control" value="{{ form.get('value_text') if form.get('value_text') is not none else '' }}">
+                <div class="form-text">{{ _('Leave empty if not known yet.') }}</div></div>
+            <div class="col-md-2"><label class="form-label">{{ _('Value type') }}</label>
+                <select name="value_type" class="form-select">{% for t in value_types %}<option value="{{ t }}" {{ 'selected' if form.get('value_type', 'number') == t }}>{{ t }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><label class="form-label">{{ _('Unit') }}</label><input name="unit" class="form-control" value="{{ form.get('unit') or '' }}"></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Effective from') }}</label><input type="date" name="effective_from" class="form-control" value="{{ form.get('effective_from') or '' }}">
+                {% if p %}<div class="form-text">{{ _('Only used for a new version.') }}</div>{% endif %}</div>
+            <div class="col-md-3"><label class="form-label">{{ _('Effective to') }}</label><input type="date" name="effective_to" class="form-control" value="{{ form.get('effective_to') or '' }}"></div>
+            <div class="col-md-12"><label class="form-label">{{ _('Legal reference') }}</label><input name="legal_reference" class="form-control" value="{{ form.get('legal_reference') or '' }}" placeholder="{{ _('e.g. FRA Board Decree no. / year, article') }}"></div>
+            <div class="col-md-6"><label class="form-label">{{ _('Description (English)') }}</label><input name="description_en" class="form-control" value="{{ form.get('description_en') or '' }}"></div>
+            <div class="col-md-6"><label class="form-label">{{ _('Description (Arabic)') }}</label><input name="description_ar" dir="rtl" class="form-control" value="{{ form.get('description_ar') or '' }}"></div>
+            <div class="col-md-3"><div class="form-check mt-2"><input type="checkbox" class="form-check-input" name="needs_review" id="needs_review" {{ 'checked' if form.get('needs_review') }}>
+                <label class="form-check-label" for="needs_review">{{ _('Still needs Compliance review') }}</label></div></div>
+            <div class="col-md-9"><label class="form-label">{{ _('Review note') }}</label><input name="review_note" class="form-control" value="{{ form.get('review_note') or '' }}"></div>
+            <div class="col-12"><label class="form-label">{{ _('Reason for the change') }} *</label><textarea name="reason" class="form-control" rows="2" required></textarea></div>
+        </div>
+    </div>
+    <div class="card-footer d-flex gap-2"><button class="btn btn-primary">{{ _('Submit for approval') }}</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('regcontrols.parameters') }}">{{ _('Cancel') }}</a></div>
+    </form>
+</div>
+{% endblock %}

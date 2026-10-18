@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ control.control_code }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+        <div>
+            <h3 class="mb-1">{{ control.control_code }} — {{ rc_loc(control.title_en, control.title_ar) }}</h3>
+            <div class="small text-muted">{{ rc_label('AREAS', control.area) }} · {{ rc_label('CONTROL_TYPES', control.control_type) }} ({{ control.type_codes }})
+                {% if not control.is_active %}· <span class="badge bg-secondary">{{ _('Inactive') }}</span>{% endif %}</div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            {{ rc.crit_badge(control.criticality) }} {{ rc.status_badge(control.last_status) }}
+            {% if rc_can_edit %}
+            <form method="post" action="{{ url_for('regcontrols.control_run', control_id=control.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="inline" value="1">
+                <button class="btn btn-sm btn-primary"><i class="bi bi-play-circle me-1"></i>{{ _('Run now') }}</button>
+            </form>
+            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('regcontrols.evidence_new', control_id=control.id) }}"><i class="bi bi-file-earmark-plus me-1"></i>{{ _('Add evidence') }}</a>
+            <a class="btn btn-sm btn-outline-danger" href="{{ url_for('regcontrols.finding_new', control=control.control_code) }}"><i class="bi bi-flag me-1"></i>{{ _('Raise finding') }}</a>
+            {% endif %}
+            {% if rc_can_admin %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('regcontrols.control_edit', control_id=control.id) }}"><i class="bi bi-pencil"></i> {{ _('Edit') }}</a>{% endif %}
+        </div>
+    </div>
+    {{ rc.nav('regcontrols.controls') }}
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card mb-3"><div class="card-body">
+                <h6>{{ _('Requirement and expected system behaviour') }}</h6>
+                <p>{{ rc_loc(control.requirement_en, control.requirement_ar) or '-' }}</p>
+                <h6>{{ _('Test procedure') }}</h6>
+                <p class="mb-0">{{ rc_loc(control.test_procedure_en, control.test_procedure_ar) or '-' }}</p>
+            </div></div>
+
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Run history') }}</strong></div>
+                <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead><tr><th>{{ _('Started') }}</th><th>{{ _('Result') }}</th><th>{{ _('Summary') }}</th><th>{{ _('Affected') }}</th><th>{{ _('Trigger') }}</th><th></th></tr></thead>
+                    <tbody>
+                    {% for r in runs %}
+                    <tr>
+                        <td class="small text-nowrap">{{ r.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ rc.status_badge(r.status) }}</td>
+                        <td class="small">{{ r.summary or '' }}</td>
+                        <td class="text-center">{{ r.affected_count or '-' }}</td>
+                        <td class="small">{{ rc.trigger_label(r.triggered_by) }}{% if r.run_by_name %} · {{ r.run_by_name }}{% endif %}</td>
+                        <td><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('regcontrols.run_detail', run_id=r.id) }}">{{ _('View') }}</a></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-muted small text-center py-3">{{ _('This control has not been run yet.') }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between"><strong>{{ _('Evidence') }}</strong>
+                    <span class="small text-muted">{{ _('Warning window') }}: {{ warn_days }} {{ _('days') }}</span></div>
+                <ul class="list-group list-group-flush">
+                    {% for e in evidence %}
+                    {% set st = rc_evidence_state(e, warn_days) %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div><a href="{{ url_for('regcontrols.evidence_detail', evidence_id=e.id) }}">{{ e.title }}</a>
+                            <div class="small text-muted">{{ _('Valid') }}: {{ e.valid_from or '-' }} → {{ e.valid_to or _('no expiry') }} · {{ e.submitted_by_name or _('System') }}</div></div>
+                        {{ rc.evidence_state(st) }}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted small">{{ _('No evidence recorded yet.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Findings linked to this control') }}</strong></div>
+                <ul class="list-group list-group-flush">
+                    {% for f in findings %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('regcontrols.finding_detail', finding_id=f.id) }}">{{ f.reference }} — {{ f.title }}</a>
+                        <span>{% if f.is_repeated %}<span class="badge bg-danger">{{ _('Repeated') }}</span>{% endif %} {{ rc.finding_status(f.status) }}</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted small">{{ _('No findings linked.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card mb-3"><div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-5">{{ _('Frequency') }}</dt><dd class="col-7">{{ rc_label('FREQUENCIES', control.frequency) }}</dd>
+                    <dt class="col-5">{{ _('Owner role') }}</dt><dd class="col-7">{{ rc_label('OWNER_ROLES', control.owner_role) }}</dd>
+                    <dt class="col-5">{{ _('Owner') }}</dt><dd class="col-7">{{ (owner.first_name ~ ' ' ~ owner.last_name) if owner else _('Not assigned — alerts go to the Head of Compliance') }}</dd>
+                    <dt class="col-5">{{ _('Linked module') }}</dt><dd class="col-7">{{ control.linked_module or '-' }}</dd>
+                    <dt class="col-5">{{ _('Licence types') }}</dt><dd class="col-7">{% for l in control.licence_types %}{{ rc_label('LICENCE_TYPES', l) }}{{ ', ' if not loop.last }}{% endfor %}
+                        {% if licence_type != 'all' and 'all' not in control.licence_types and licence_type not in control.licence_types %}<span class="badge bg-light text-dark border">{{ _('Not applicable to your licence') }}</span>{% endif %}</dd>
+                    <dt class="col-5">{{ _('Automated check') }}</dt><dd class="col-7">{% if check %}{{ check.name }} <span class="text-muted">({{ check.module }})</span>{% elif control.control_type == 'evidence' %}{{ _('Generic evidence check') }}{% else %}<span class="text-muted">{{ _('None yet — will be added by the owning module') }}</span>{% endif %}</dd>
+                    <dt class="col-5">{{ _('Last run') }}</dt><dd class="col-7">{{ control.last_run_at.strftime('%Y-%m-%d %H:%M') if control.last_run_at else '-' }}</dd>
+                    <dt class="col-5">{{ _('Next scheduled run') }}</dt><dd class="col-7">{{ control.next_run_due.strftime('%Y-%m-%d %H:%M') if control.next_run_due else '-' }}</dd>
+                    <dt class="col-5">{{ _('Auto-open case on failure') }}</dt><dd class="col-7">{{ _('Yes') if control.auto_create_case else _('No') }}</dd>
+                    {% if erm %}<dt class="col-5">{{ _('ERM control') }}</dt><dd class="col-7">{{ erm.control_code }} — {{ erm.control_name }}</dd>{% endif %}
+                </dl>
+            </div></div>
+
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Regulatory parameters used') }}</strong></div>
+                <ul class="list-group list-group-flush small">
+                    {% for lp in linked_params %}
+                    <li class="list-group-item">
+                        <code>{{ lp.key }}</code>
+                        {% if lp.rec %}
+                        = <strong>{{ lp.rec.value_text if lp.rec.value_text is not none else _('not set') }}</strong> {{ lp.rec.unit or '' }}
+                        {% if lp.rec.needs_review %}<span class="badge bg-warning text-dark">{{ _('Needs review') }}</span>{% endif %}
+                        <a class="ms-1" href="{{ url_for('regcontrols.parameter_detail', param_id=lp.rec.id) }}"><i class="bi bi-box-arrow-up-right"></i></a>
+                        {% else %}<span class="badge bg-danger">{{ _('Not defined') }}</span>{% endif %}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('None.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Alerts') }}</strong></div>
+                <ul class="list-group list-group-flush small">
+                    {% for a in alerts %}
+                    <li class="list-group-item d-flex justify-content-between"><span>{{ rc.alert_type(a.alert_type) }} · {{ a.raised_at.strftime('%Y-%m-%d') }}{% if a.escalated_at %} · <span class="text-danger">{{ _('Escalated') }}</span>{% endif %}</span>{{ rc.alert_status(a.status) }}</li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('No alerts.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
