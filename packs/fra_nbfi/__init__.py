@@ -23,8 +23,9 @@ factoring).
 The first example pack on top of the generic regcontrols core. It installs
 DATA only through the core's catalog API (regulator, framework,
 requirements, controls, areas, licence types, owner roles, parameters);
-sector logic that has no generic home (e.g. lending-conduct checks) lives
-inside this package too. Remove the package or disable the pack and the core
+sector logic that has no generic home lives inside this package too:
+lending/ — the Lending Conduct & Portfolio module (FRA-004, 009–026) with its
+checks, sweep, pages and JSON API. Remove the package or disable the pack and the core
 keeps working unchanged.
 """
 
@@ -50,6 +51,13 @@ def install(db):
         catalog.install_control(c, pack_code=L.PACK_CODE, requirement_ids=[req_id], db=db)
     for p in L.PARAMETERS:
         catalog.install_parameter(p, pack_code=L.PACK_CODE, framework_id=fw_id, db=db)
+    # FRA-019: responsible-pricing disclosure in the regulatory calendar.
+    # TODO(compliance-review): confirm frequency and due day with the FRA decree.
+    catalog.install_regulatory_report(
+        'FRA-RPD', 'FRA responsible-pricing disclosure', 'quarterly', due_day=15, regulator_id=regulator_id,
+        description='Responsible-pricing disclosure forms for financing products (FRA-019). '
+                    'Data: Lending > Pricing disclosure.',
+        submission_method='FRA portal / letter', responsible_department='Compliance', db=db)
     db.commit()
     return {'controls': len(L.CONTROLS), 'parameters': len(L.PARAMETERS)}
 
@@ -64,6 +72,23 @@ PACK = register_pack(Pack(
     description_ar=('متطلبات الهيئة العامة للرقابة المالية للمؤسسات المالية غير المصرفية: 80 متطلبًا وضابطًا '
                     '(رأس المال والترخيص ومنح التمويل والتسعير ومكافحة غسل الأموال والتقارير المالية '
                     'وتكنولوجيا المعلومات والمعالجة) والمعايير الرقابية المستخدمة (تؤكد قيمها إدارة الالتزام).'),
-    version='1',
+    version='2',
     install=install,
+    check_modules=['packs.fra_nbfi.lending.checks'],
+    blueprints=['packs.fra_nbfi.lending.routes:bp', 'packs.fra_nbfi.lending.api:api_bp'],
+    menu_title_en='Lending Conduct & Portfolio', menu_title_ar='سلوكيات التمويل والمحفظة', menu_icon='bi-cash-coin',
+    menu=[('lending.dashboard', 'Portfolio', 'المحفظة', 'lending'),
+          ('lending.loans', 'Loans', 'التمويلات', 'lending'),
+          ('lending.fees', 'Pricing & fees', 'التسعير والرسوم', 'lending'),
+          ('lending.qa', 'Credit-study QA', 'جودة الدراسات الائتمانية', 'lending'),
+          ('lending.disclosure', 'Pricing disclosure', 'الإفصاح عن التسعير', 'lending'),
+          ('lending.import_data', 'Import data', 'استيراد البيانات', 'lending')],
+    permissions=[('lending', 'Lending Conduct & Portfolio (FRA NBFI pack)',
+                  'سلوكيات التمويل والمحفظة (حزمة الهيئة)', ('none', 'view', 'edit'))],
 ))
+
+# The lending module attaches files (documents, signed consents) through the
+# shared attachments widget.
+from attachments.routes import register_module as _register_attachments  # noqa: E402
+
+_register_attachments('lending')

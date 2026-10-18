@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% import 'fra_nbfi/lending/_nav.html' as ln with context %}
+{% block title %}{{ b.loan.loan_ref }} - ComplyNex CMS{% endblock %}
+{% block content %}
+{% set L = b.loan %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+        <div><h3 class="mb-1">{{ L.loan_ref }} <span class="badge bg-secondary fs-6">{{ L.status }}</span></h3>
+            <div class="small text-muted">{{ b.client.client_ref }} · {{ b.client.full_name }} · {{ L.product_code or '-' }} · {{ _('Branch') }} {{ L.branch_code or '-' }} · {{ _('Officer') }} {{ L.officer_code or '-' }}</div></div>
+        <div>{% if gaps %}<span class="badge bg-danger fs-6">{{ gaps|length }} {{ _('file gap(s)') }}</span>{% else %}<span class="badge bg-success fs-6">{{ _('File complete') }}</span>{% endif %}</div>
+    </div>
+    {{ ln.nav('lending.loans') }}
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card mb-3"><div class="card-body">
+                <dl class="row small mb-0">
+                    <dt class="col-sm-3">{{ _('Amount') }}</dt><dd class="col-sm-3">EGP {{ '{:,.2f}'.format(L.amount) }}</dd>
+                    <dt class="col-sm-3">{{ _('Tenor') }}</dt><dd class="col-sm-3">{{ L.tenor_months or '-' }} {{ _('months') }}</dd>
+                    <dt class="col-sm-3">{{ _('Interest rate') }}</dt><dd class="col-sm-3">{{ L.interest_rate_pct if L.interest_rate_pct is not none else '-' }}</dd>
+                    <dt class="col-sm-3">APR</dt><dd class="col-sm-3">{{ L.apr_pct if L.apr_pct is not none else '-' }}</dd>
+                    <dt class="col-sm-3">{{ _('Admin fee') }}</dt><dd class="col-sm-3">EGP {{ '{:,.2f}'.format(L.admin_fee_amount) }}
+                        {% if fees.admin %}<span class="badge bg-danger">{{ _('over by') }} {{ fees.admin[0] }}</span>{% endif %}</dd>
+                    <dt class="col-sm-3">{{ _('Outstanding') }}</dt><dd class="col-sm-3">EGP {{ '{:,.2f}'.format(L.outstanding_principal) }}</dd>
+                    <dt class="col-sm-3">{{ _('Disbursed on') }}</dt><dd class="col-sm-3">{{ L.disbursement_date or '-' }}</dd>
+                    <dt class="col-sm-3">{{ _('Days past due') }}</dt><dd class="col-sm-3">{{ L.days_past_due }}</dd>
+                    <dt class="col-sm-3">GPS</dt><dd class="col-sm-9">{{ (L.gps_lat ~ ', ' ~ L.gps_lng) if L.gps_lat is not none else '-' }}
+                        {% if gps_min is not none %}<span class="text-muted">({{ _('mandatory above EGP') }} {{ gps_min }})</span>{% endif %}</dd>
+                    <dt class="col-sm-3">{{ _('Client revenue / project size') }}</dt><dd class="col-sm-9">{{ b.client.monthly_revenue or '-' }} / {{ b.client.project_size or '-' }}
+                        {% for f, v, c in elig %}<span class="badge bg-danger ms-1">{{ f }} &gt; {{ c }}</span>{% endfor %}</dd>
+                </dl>
+            </div></div>
+
+            <div class="card mb-3 {{ 'border-danger' if gaps }}"><div class="card-header"><strong>{{ _('Origination file') }}</strong></div>
+                <ul class="list-group list-group-flush small">{% for code, key, msg in gaps %}
+                    <li class="list-group-item text-danger"><strong>{{ code }}</strong> · {{ msg }}</li>
+                {% else %}<li class="list-group-item text-success">{{ _('All required items are on file.') }}</li>{% endfor %}</ul>
+            </div>
+
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Documents') }}</strong></div>
+                <ul class="list-group list-group-flush small">{% for d in b.documents %}
+                    <li class="list-group-item d-flex justify-content-between"><span><strong>{{ d.doc_type }}</strong> · {{ d.received_date or '-' }} {{ d.reference_no or '' }}
+                        {% for file in doc_files.get(d.id, []) %} · <a href="{{ url_for('attachments.download', attachment_id=file.id) }}"><i class="bi bi-paperclip"></i> {{ file.filename }}</a>{% endfor %}</span>
+                        {% if ln_can_edit %}<form method="post" action="{{ url_for('attachments.upload') }}" enctype="multipart/form-data" class="d-flex gap-1">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="module" value="lending"><input type="hidden" name="record_type" value="ln_document"><input type="hidden" name="record_id" value="{{ d.id }}">
+                            <input type="file" name="file" class="form-control form-control-sm" required><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-paperclip"></i></button></form>{% endif %}</li>
+                {% else %}<li class="list-group-item text-muted">{{ _('No documents recorded.') }}</li>{% endfor %}</ul>
+                {% if ln_can_edit %}<div class="card-body border-top"><form method="post" action="{{ url_for('lending.loan_record', loan_id=L.id) }}" class="row g-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="kind" value="documents">
+                    <div class="col-md-4"><select name="doc_type" class="form-select form-select-sm">{% for t in DOC_TYPES %}<option value="{{ t }}">{{ t }}</option>{% endfor %}</select></div>
+                    <div class="col-md-3"><input type="date" name="received_date" class="form-control form-control-sm" value="{{ today }}"></div>
+                    <div class="col-md-3"><input name="reference_no" class="form-control form-control-sm" placeholder="{{ _('Reference') }}"></div>
+                    <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div></form></div>{% endif %}
+            </div>
+
+            {% set C = b.contract or {} %}
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Contract') }}</strong> <span class="small text-muted">FRA-009</span></div><div class="card-body small">
+                <p class="mb-2">{{ _('Lender signature') }}: {{ ('✔ ' ~ C.lender_signed_at) if C.signed_by_lender else '✘' }} · {{ _('Client signature') }}: {{ ('✔ ' ~ C.client_signed_at) if C.signed_by_client else '✘' }} · {{ _('Penalty clause') }}: {{ C.penalty_clause_rate_pct or '-' }}% / {{ _('cap') }} {{ C.penalty_clause_cap_pct or '-' }}%</p>
+                {% if ln_can_edit %}<form method="post" action="{{ url_for('lending.loan_record', loan_id=L.id) }}" class="row g-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="kind" value="contracts">
+                    <div class="col-md-3"><input name="contract_no" class="form-control form-control-sm" placeholder="{{ _('Contract no.') }}" value="{{ C.contract_no or '' }}"></div>
+                    <div class="col-md-3"><input type="date" name="contract_date" class="form-control form-control-sm" value="{{ C.contract_date or '' }}"></div>
+                    <div class="col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="signed_by_lender" id="sl" {{ 'checked' if C.signed_by_lender }}><label class="form-check-label" for="sl">{{ _('Lender signed') }}</label></div><input type="date" name="lender_signed_at" class="form-control form-control-sm" value="{{ C.lender_signed_at or '' }}"></div>
+                    <div class="col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="signed_by_client" id="sc" {{ 'checked' if C.signed_by_client }}><label class="form-check-label" for="sc">{{ _('Client signed') }}</label></div><input type="date" name="client_signed_at" class="form-control form-control-sm" value="{{ C.client_signed_at or '' }}"></div>
+                    <div class="col-md-3"><input name="penalty_clause_rate_pct" class="form-control form-control-sm" placeholder="{{ _('Penalty rate') }}" value="{{ C.penalty_clause_rate_pct or '' }}"></div>
+                    <div class="col-md-3"><input name="penalty_clause_cap_pct" class="form-control form-control-sm" placeholder="{{ _('Penalty cap') }}" value="{{ C.penalty_clause_cap_pct or '' }}"></div>
+                    <div class="col-md-2"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div></form>{% endif %}
+            </div></div>
+
+            {% set S = b.study or {} %}
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Credit study') }}</strong> <span class="small text-muted">FRA-015 / FRA-016</span></div><div class="card-body small">
+                {% if b.study %}<p class="mb-1">{{ _('Revenue') }} {{ S.monthly_revenue }} · {{ _('Costs') }} {{ S.monthly_costs_total }} · {{ _('Household') }} {{ S.household_expenses }} · {{ _('Other debt service') }} {{ S.other_debt_service }} · {{ _('Net income') }} {{ S.net_income }} · DSR {{ S.dsr_pct }}%</p>
+                <p class="text-muted mb-2">{{ _('Cost lines') }}: {% for c in S.cost_lines %}{{ c.label }} {{ c.amount }}{{ '; ' if not loop.last }}{% else %}-{% endfor %}</p>{% endif %}
+                {% for q in b.qa_flags %}<div class="alert alert-{{ 'warning' if q.status == 'open' else ('danger' if q.status == 'confirmed' else 'light') }} py-1 px-2 mb-1">QA · {{ q.flag_type }} · {{ q.detail }} · {{ q.status }}</div>{% endfor %}
+                {% if ln_can_edit %}<details><summary>{{ _('Record / update the credit study') }}</summary>
+                <form method="post" action="{{ url_for('lending.loan_record', loan_id=L.id) }}" class="row g-2 mt-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="kind" value="credit_studies">
+                    {% for f, l in [('monthly_revenue', _('Monthly revenue')), ('monthly_costs_total', _('Monthly costs')), ('household_expenses', _('Household expenses')), ('other_debt_service', _('Other debt service')), ('net_income', _('Net income')), ('dsr_pct', 'DSR (%)')] %}
+                    <div class="col-md-4"><label class="form-label small mb-0">{{ l }}</label><input name="{{ f }}" class="form-control form-control-sm" value="{{ S[f] if S[f] is defined and S[f] is not none else '' }}"></div>{% endfor %}
+                    <div class="col-md-4"><label class="form-label small mb-0">{{ _('Study date') }}</label><input type="date" name="study_date" class="form-control form-control-sm" value="{{ S.study_date or '' }}"></div>
+                    <div class="col-md-4"><label class="form-label small mb-0">{{ _('Officer') }}</label><input name="officer_code" class="form-control form-control-sm" value="{{ S.officer_code or L.officer_code or '' }}"></div>
+                    <div class="col-12"><label class="form-label small mb-0">{{ _('Cost lines — one per line as "label: amount"') }}</label><textarea name="cost_lines" rows="3" class="form-control form-control-sm">{% for c in S.cost_lines or [] %}{{ c.label }}: {{ c.amount }}
+{% endfor %}</textarea></div>
+                    <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div></form></details>{% endif %}
+            </div></div>
+
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Instalments') }}</strong></div><div class="table-responsive" style="max-height: 320px">
+                <table class="table table-sm mb-0 small"><thead><tr><th>#</th><th>{{ _('Due') }}</th><th class="text-end">{{ _('Principal') }}</th><th class="text-end">{{ _('Interest') }}</th><th class="text-end">{{ _('Paid') }}</th><th>{{ _('Paid on') }}</th><th class="text-end">{{ _('Penalty') }}</th><th>{{ _('Status') }}</th></tr></thead><tbody>
+                {% for i in b.instalments %}<tr><td>{{ i.seq }}</td><td>{{ i.due_date }}</td><td class="text-end">{{ i.principal_due }}</td><td class="text-end">{{ i.interest_due }}</td><td class="text-end">{{ i.paid_amount }}</td><td>{{ i.paid_date or '-' }}</td><td class="text-end">{{ i.penalty_charged }}</td><td>{{ i.status }}</td></tr>
+                {% else %}<tr><td colspan="8" class="text-muted">{{ _('No schedule imported.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+        </div>
+
+        <div class="col-lg-4">
+            {% if L.status in ('application', 'approved') %}
+            <div class="card mb-3 {{ 'border-danger' if blockers else 'border-success' }}"><div class="card-header"><strong>{{ _('Disbursement') }}</strong></div><div class="card-body small">
+                {% if blockers %}<p class="text-danger mb-2">{{ _('Cannot be marked disbursed until:') }}</p><ul class="mb-2">{% for x in blockers %}<li>{{ x }}</li>{% endfor %}</ul>
+                <p class="text-muted">{{ _('Complete the file, or request an exception approved by a second person.') }}</p>{% endif %}
+                {% if ln_can_edit %}<form method="post" action="{{ url_for('lending.loan_disburse', loan_id=L.id) }}" class="d-flex gap-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="date" name="disbursement_date" class="form-control form-control-sm" value="{{ today }}">
+                    <button class="btn btn-sm btn-success" {{ 'disabled' if blockers }}>{{ _('Mark disbursed') }}</button></form>{% endif %}
+            </div></div>
+            {% endif %}
+
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Exceptions') }}</strong></div>
+                <ul class="list-group list-group-flush small">{% for e in b.exceptions %}
+                    <li class="list-group-item"><strong>{{ e.exception_type }}</strong> · {{ e.status }} · {{ e.requested_by_name }}<div>{{ e.reason }}</div>
+                        {% if e.status == 'pending' and ln_can_edit and e.requested_by != current_user.id %}
+                        <form method="post" action="{{ url_for('lending.exception_decide', exception_id=e.id, decision='approve') }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-success">{{ _('Approve') }}</button></form>
+                        <form method="post" action="{{ url_for('lending.exception_decide', exception_id=e.id, decision='reject') }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">{{ _('Reject') }}</button></form>{% endif %}</li>
+                {% else %}<li class="list-group-item text-muted">{{ _('None.') }}</li>{% endfor %}</ul>
+                {% if ln_can_edit and L.status in ('application', 'approved') %}<div class="card-body border-top"><form method="post" action="{{ url_for('lending.loan_exception', loan_id=L.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="exception_type" class="form-select form-select-sm mb-1"><option value="file_incomplete">{{ _('Incomplete file') }}</option><option value="eligibility">{{ _('Eligibility (licence ceiling)') }}</option></select>
+                    <textarea name="reason" class="form-control form-control-sm mb-1" rows="2" placeholder="{{ _('Reason (required)') }}" required></textarea>
+                    <button class="btn btn-sm btn-outline-primary">{{ _('Request exception') }}</button></form></div>{% endif %}
+            </div>
+
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Follow-up visits') }}</strong></div>
+                <ul class="list-group list-group-flush small">{% for v in b.visits %}<li class="list-group-item">{{ _('Planned') }} {{ v.planned_date or '-' }} · {{ _('Done') }} {{ v.visit_date or '—' }} · {{ v.outcome or '' }}</li>
+                {% else %}<li class="list-group-item text-muted">{{ _('No visits recorded.') }}</li>{% endfor %}</ul>
+                {% if ln_can_edit %}<div class="card-body border-top"><form method="post" action="{{ url_for('lending.loan_record', loan_id=L.id) }}" class="row g-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="kind" value="visits">
+                    <div class="col-6"><label class="small">{{ _('Planned') }}</label><input type="date" name="planned_date" class="form-control form-control-sm"></div>
+                    <div class="col-6"><label class="small">{{ _('Done on') }}</label><input type="date" name="visit_date" class="form-control form-control-sm"></div>
+                    <div class="col-8"><input name="outcome" class="form-control form-control-sm" placeholder="{{ _('Outcome') }}"></div>
+                    <div class="col-4"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div></form></div>{% endif %}
+            </div>
+
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Early repayment') }}</strong> <span class="small text-muted">FRA-021–024</span></div>
+                <ul class="list-group list-group-flush small">{% for e in b.early_repayments %}<li class="list-group-item"><a href="{{ url_for('lending.er_detail', er_id=e.id) }}">#{{ e.id }}</a> · {{ e.request_date }} · {{ e.status }}</li>
+                {% else %}<li class="list-group-item text-muted">{{ _('None.') }}</li>{% endfor %}</ul>
+                {% if ln_can_edit and L.status == 'disbursed' %}<div class="card-body border-top"><form method="post" action="{{ url_for('lending.er_new', loan_id=L.id) }}" class="row g-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="col-6"><input name="settlement_amount" class="form-control form-control-sm" placeholder="{{ _('Settlement amount') }}" required></div>
+                    <div class="col-6"><input name="prepayment_fee" class="form-control form-control-sm" placeholder="{{ _('Early-repayment fee') }}"></div>
+                    <div class="col-12"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Start early repayment') }}</button></div></form></div>{% endif %}
+            </div>
+
+            {% if b.reschedulings or b.transfers %}
+            <div class="card"><div class="card-header"><strong>{{ _('Reschedulings & transfers') }}</strong></div><ul class="list-group list-group-flush small">
+                {% for r in b.reschedulings %}<li class="list-group-item">{{ _('Rescheduling') }} {{ r.resched_date }} · {{ _('fee') }} {{ r.fee_amount }}</li>{% endfor %}
+                {% for t in b.transfers %}<li class="list-group-item">{{ _('Transfer') }} {{ t.transfer_date }} · {{ _('fee') }} {{ t.fee_amount }}</li>{% endfor %}</ul></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

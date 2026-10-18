@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% import 'fra_nbfi/lending/_nav.html' as ln with context %}
+{% block title %}{{ _('Products') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Products') }}</h3>
+    {{ ln.nav('lending.products') }}
+    <p class="small text-muted">{{ _('Required documents per product are checked before a loan can be disbursed (in addition to the contract, receipt acknowledgement and credit study required for every loan).') }}</p>
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small">
+        <thead><tr><th>{{ _('Code') }}</th><th>{{ _('Name') }}</th><th>{{ _('Licence') }}</th><th>{{ _('Required documents') }}</th></tr></thead><tbody>
+        {% for p in products %}<tr><td>{{ p.code }}</td><td>{{ rc_loc(p.name_en, p.name_ar) }}</td><td>{{ rc_label('LICENCE_TYPES', p.licence_type) }}</td><td>{{ p.required_docs|join(', ') }}</td></tr>
+        {% else %}<tr><td colspan="4" class="text-muted">{{ _('No products yet.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% if ln_can_edit %}
+    <form method="post" class="card"><div class="card-header"><strong>{{ _('Add or update a product') }}</strong></div><div class="card-body row g-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-2"><input name="code" class="form-control form-control-sm" placeholder="{{ _('Code') }}" required></div>
+        <div class="col-md-3"><input name="name_en" class="form-control form-control-sm" placeholder="{{ _('Name (English)') }}" required></div>
+        <div class="col-md-3"><input name="name_ar" dir="rtl" class="form-control form-control-sm" placeholder="{{ _('Name (Arabic)') }}"></div>
+        <div class="col-md-4"><select name="licence_type" class="form-select form-select-sm"><option value="microfinance">{{ rc_label('LICENCE_TYPES', 'microfinance') }}</option><option value="consumer_finance">{{ rc_label('LICENCE_TYPES', 'consumer_finance') }}</option></select></div>
+        <div class="col-12">{% for t in DOC_TYPES %}<div class="form-check form-check-inline small"><input class="form-check-input" type="checkbox" name="required_docs" value="{{ t }}" id="d_{{ t }}"><label class="form-check-label" for="d_{{ t }}">{{ t }}</label></div>{% endfor %}</div>
+        <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div>
+    </div></form>
+    {% endif %}
+</div>
+{% endblock %}

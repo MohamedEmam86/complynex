@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% import 'fra_nbfi/lending/_nav.html' as ln with context %}
+{% block title %}{{ _('Pricing disclosure') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Responsible-pricing disclosure') }} <span class="small text-muted">FRA-019</span></h3>
+    {{ ln.nav('lending.disclosure') }}
+    <form method="get" class="row g-2 mb-3 align-items-end">
+        <div class="col-auto"><label class="form-label small mb-0">{{ _('From') }}</label><input type="date" name="start" value="{{ start }}" class="form-control form-control-sm"></div>
+        <div class="col-auto"><label class="form-label small mb-0">{{ _('To') }}</label><input type="date" name="end" value="{{ end }}" class="form-control form-control-sm"></div>
+        <div class="col-auto"><button class="btn btn-sm btn-outline-primary">{{ _('Show') }}</button></div>
+        <div class="col-auto"><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('lending.disclosure', start=start, end=end, export='csv') }}"><i class="bi bi-download me-1"></i>{{ _('Export CSV') }}</a></div>
+    </form>
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small">
+        <thead><tr><th>{{ _('Product') }}</th><th class="text-end">{{ _('Loans') }}</th><th class="text-end">{{ _('Amount') }}</th><th class="text-end">{{ _('Rate avg / min / max') }}</th><th class="text-end">{{ _('APR avg / max') }}</th><th class="text-end">{{ _('Admin fee avg / max') ~ ' (%)' }}</th><th class="text-end">{{ _('Penalty rate / cap') }}</th></tr></thead><tbody>
+        {% for r in rows %}<tr><td>{{ r.product_code }} {{ rc_loc(r.name_en, r.name_ar) or '' }}</td><td class="text-end">{{ r.loans }}</td><td class="text-end">{{ '{:,.0f}'.format(r.total_amount or 0) }}</td>
+            <td class="text-end">{{ r.avg_rate }} / {{ r.min_rate }} / {{ r.max_rate }}</td><td class="text-end">{{ r.avg_apr }} / {{ r.max_apr }}</td><td class="text-end">{{ r.avg_admin_fee_pct }} / {{ r.max_admin_fee_pct }}</td><td class="text-end">{{ r.penalty_rate or '-' }} / {{ r.penalty_cap or '-' }}</td></tr>
+        {% else %}<tr><td colspan="7" class="text-muted">{{ _('No loans disbursed in this period.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    <div class="card"><div class="card-header d-flex justify-content-between"><strong>{{ _('Submissions in the regulatory calendar') }}</strong>
+        {% if report %}<a class="small" href="{{ url_for('reporting.manage_report', id=report.id) }}">{{ _('Open FRA-RPD in Regulatory Reports') }}</a>{% endif %}</div>
+        <ul class="list-group list-group-flush small">{% for s in submissions %}<li class="list-group-item d-flex justify-content-between"><span>{{ _('Due') }} {{ s.due_date }} · {{ s.reporting_period_start or '' }} → {{ s.reporting_period_end or '' }}</span><span class="badge bg-{{ 'success' if s.status == 'submitted' else ('danger' if s.due_date < today else 'secondary') }}">{{ s.status }}</span></li>
+        {% else %}<li class="list-group-item text-muted">{{ _('No submissions scheduled yet. Open FRA-RPD in Regulatory Reports and generate the schedule.') }}</li>{% endfor %}</ul></div>
+</div>
+{% endblock %}

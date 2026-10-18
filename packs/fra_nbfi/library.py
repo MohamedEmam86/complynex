@@ -88,6 +88,25 @@ LICENCE_TYPES = {
 # checks (registered by its check modules) start with 'fra_nbfi.'.
 CHECK_KEYS = {
     'FRA-079': 'core.findings_not_repeated',
+    'FRA-004': 'fra_nbfi.lending.eligibility',
+    'FRA-009': 'fra_nbfi.lending.contracts_signed',
+    'FRA-010': 'fra_nbfi.lending.followup',
+    'FRA-011': 'fra_nbfi.lending.par_threshold',
+    'FRA-012': 'fra_nbfi.lending.par_remediation',
+    'FRA-013': 'fra_nbfi.lending.gps_recorded',
+    'FRA-014': 'fra_nbfi.lending.receipt_ack',
+    'FRA-015': 'fra_nbfi.lending.credit_study',
+    'FRA-016': 'fra_nbfi.lending.study_quality',
+    'FRA-017': 'fra_nbfi.lending.admin_fee_cap',
+    'FRA-018': 'fra_nbfi.lending.admin_fee_tiers',
+    'FRA-019': 'fra_nbfi.lending.pricing_disclosure',
+    'FRA-020': 'fra_nbfi.lending.late_penalties',
+    'FRA-021': 'fra_nbfi.lending.er_disclosure',
+    'FRA-022': 'fra_nbfi.lending.er_consent',
+    'FRA-023': 'fra_nbfi.lending.refinance',
+    'FRA-024': 'fra_nbfi.lending.er_ack',
+    'FRA-025': 'fra_nbfi.lending.transfer_fees',
+    'FRA-026': 'fra_nbfi.lending.rescheduling_fees',
 }
 
 _LENDING = ['microfinance', 'consumer_finance']
