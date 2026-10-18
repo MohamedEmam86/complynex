@@ -22,7 +22,7 @@ them through rc_controls.check_key. Pack-specific checks live in the pack.
 
 from datetime import date
 
-from .engine import register_check
+from .engine import register_check, register_sweep
 from . import logic
 
 
@@ -46,3 +46,10 @@ def findings_not_repeated(ctx):
         return ctx.warn(f'{len(overdue)} finding(s) past their due date', [rec(r) for r in overdue],
                         open=len(rows))
     return ctx.ok(f'{len(rows)} open finding(s), none overdue or repeated', open=len(rows))
+
+
+@register_sweep()
+def readiness_sweep():
+    """Daily readiness snapshot (trend) and regulatory-calendar reminders. Idempotent per day."""
+    from . import readiness
+    return {'snapshots': readiness.snapshot(), **readiness.calendar_sweep()}

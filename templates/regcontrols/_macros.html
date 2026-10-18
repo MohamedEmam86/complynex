@@ -41,7 +41,8 @@
 
 {% macro nav(active) -%}
 <ul class="nav nav-pills mb-3 small flex-wrap no-print">
-    {% for ep, label in [('regcontrols.dashboard', _('Dashboard')), ('regcontrols.controls', _('Controls')),
+    {% for ep, label in [('regcontrols.dashboard', _('Dashboard')), ('regcontrols.readiness', _('Inspection readiness')),
+                         ('regcontrols.reg_calendar', _('Regulatory calendar')), ('regcontrols.controls', _('Controls')),
                          ('regcontrols.findings', _('Findings')), ('regcontrols.evidence_list', _('Evidence')),
                          ('regcontrols.alerts', _('Alerts')), ('regcontrols.parameters', _('Parameters')),
                          ('regcontrols.library_home', _('Library')), ('regcontrols.packs_list', _('Content packs'))] %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% import 'regcontrols/readiness/_bits.html' as rb with context %}
+{% block title %}{{ rc_label('AREAS', area) }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-2"><h3 class="mb-0">{{ rc_label('AREAS', area) }} {{ rb.score_badge(s.score) }}</h3>
+    <div class="no-print d-flex gap-2"><a class="btn btn-sm btn-outline-success" href="{{ url_for('regcontrols.readiness_pack', area=area, framework=fw) }}">{{ _('Evidence pack (ZIP)') }}</a><button class="btn btn-sm btn-outline-secondary" data-action="print">{{ _('Print') }}</button></div></div>
+  <p class="small"><a href="{{ url_for('regcontrols.readiness', framework=fw) }}">{{ _('Back to readiness') }}</a> · {{ rb.band_label(s.score) }} · {{ s.controls }} {{ _('controls') }} · {{ s.failing }} {{ _('failing') }}</p>
+  <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Control') }}</th><th>{{ _('Criticality') }}</th><th>{{ _('Last result') }}</th><th>{{ _('Last run') }}</th><th>{{ _('Summary') }}</th></tr></thead><tbody>
+    {% for c in controls %}<tr class="{{ 'table-danger' if c.last_status in ('fail', 'error') }}"><td><a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}">{{ c.control_code }}</a> {{ rc_loc(c.title_en, c.title_ar) }}</td><td>{{ rc.crit_badge(c.criticality) }}</td><td>{{ rc.status_badge(c.last_status) }}</td><td>{{ c.last_run_at.strftime('%Y-%m-%d') if c.last_run_at else '-' }}</td><td>{{ (c.last_summary or '')|truncate(120) }}</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="row g-3"><div class="col-lg-6"><div class="card"><div class="card-header"><strong>{{ _('Evidence') }}</strong></div><table class="table table-sm mb-0 small"><tbody>
+    {% for e in evidence %}<tr><td>{{ e.control_code }}</td><td><a href="{{ url_for('regcontrols.evidence_detail', evidence_id=e.id) }}">{{ e.title }}</a></td><td>{{ e.valid_to or '-' }}</td><td>{{ rc.evidence_state(e.state) }}</td></tr>{% else %}<tr><td class="text-muted">{{ _('No evidence.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="col-lg-6"><div class="card"><div class="card-header"><strong>{{ _('Findings') }}</strong></div><table class="table table-sm mb-0 small"><tbody>
+    {% for f in findings %}<tr class="{{ 'table-danger' if f.is_repeated }}"><td><a href="{{ url_for('regcontrols.finding_detail', finding_id=f.id) }}">{{ f.reference }}</a></td><td>{{ f.title }}</td><td>{{ rc.finding_status(f.status) }}</td></tr>{% else %}<tr><td class="text-muted">{{ _('No findings.') }}</td></tr>{% endfor %}</tbody></table></div></div></div>
+</div>
+{% endblock %}
