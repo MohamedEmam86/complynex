@@ -1,0 +1,14 @@
+{% macro nav(active) -%}
+<ul class="nav nav-pills mb-3 small flex-wrap no-print">
+  {% for ep, label, lvl in [('ai.home', _('Submit to Compliance'), 1), ('ai.playbooks_home', _('Playbooks'), 1), ('ai.intents', _('Intake catalog'), 1),
+                            ('ai.log_page', _('AI log'), 1), ('ai.settings_page', _('AI settings & health'), 3)] if ai_level() >= lvl %}
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == ep }}" href="{{ url_for(ep) }}">{{ label }}</a></li>
+  {% endfor %}
+</ul>
+{% if not ai_cfg['ai.enabled'] %}<div class="alert alert-secondary small">{{ _('AI features are switched off for this installation (AI settings).') }}</div>{% endif %}
+{%- endmacro %}
+{% macro provider_badge(p, status=None) -%}
+<span class="badge {{ 'bg-secondary' if p == 'rules_only' else 'bg-info text-dark' }}">{{ _('Rules (no model)') if p == 'rules_only' else (_('Local model') ~ ' · ' ~ p) }}</span>
+{% if status == 'fallback' %}<span class="badge bg-warning text-dark">{{ _('model failed — rules used') }}</span>{% elif status == 'repaired' %}<span class="badge bg-light text-dark border">{{ _('output repaired') }}</span>{% endif %}
+{%- endmacro %}
+{% macro label(row, lang) -%}{{ row.name_ar if lang == 'ar' and row.name_ar else row.name_en }}{%- endmacro %}

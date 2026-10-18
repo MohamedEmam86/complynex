@@ -623,6 +623,44 @@
     </li>
     {% endif %}
 
+    {# ======== Compliance Copilot — local AI intake & routing (ai) ======== #}
+    {% if ai_level() >= 1 %}
+    <li class="cnx-nav__item" data-area="ai">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-stars cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Compliance Copilot') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+          {% if ai_level() >= 1 %}<li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('ai.home') }}">
+              <span class="cnx-nav__label">{{ _('Submit to Compliance') }}</span>
+            </a>
+          </li>{% endif %}
+          {% if ai_level() >= 1 %}<li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('ai.playbooks_home') }}">
+              <span class="cnx-nav__label">{{ _('Playbooks') }}</span>
+            </a>
+          </li>{% endif %}
+          {% if ai_level() >= 1 %}<li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('ai.intents') }}">
+              <span class="cnx-nav__label">{{ _('Intake catalog') }}</span>
+            </a>
+          </li>{% endif %}
+          {% if ai_level() >= 1 %}<li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('ai.log_page') }}">
+              <span class="cnx-nav__label">{{ _('AI log') }}</span>
+            </a>
+          </li>{% endif %}
+          {% if ai_level() >= 3 %}<li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('ai.settings_page') }}">
+              <span class="cnx-nav__label">{{ _('AI settings & health') }}</span>
+            </a>
+          </li>{% endif %}
+      </ul></div>
+    </li>
+    {% endif %}
+
     {# ======== Compliance Controls — generic control framework (regcontrols) ======== #}
     {% if current_user.can_view('regcontrols') %}
     <li class="cnx-nav__item" data-area="regcontrols">

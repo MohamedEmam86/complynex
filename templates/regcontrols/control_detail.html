@@ -90,6 +90,7 @@
         </div>
 
         <div class="col-lg-5">
+            {% with obj_type='control', obj_id=control.id, drafts=['action_plan'] %}{% include 'ai/_nba_card.html' %}{% endwith %}
             <div class="card mb-3"><div class="card-body">
                 <dl class="row mb-0 small">
                     <dt class="col-5">{{ _('Frequency') }}</dt><dd class="col-7">{{ rc_label('FREQUENCIES', control.frequency) }}</dd>

@@ -1,0 +1,555 @@
+{
+ "note": "Synthetic, fictional texts only (no real persons or companies). Labels: intent = expected intake intent (null = unrelated); playbook = expected first playbook.",
+ "intake": [
+  {
+   "id": "i001",
+   "lang": "en",
+   "text": "Freeze order No. 21 of 2026 received from the money-laundering combating unit: freeze all funds of Tarek Nabil Hassan immediately.",
+   "intent": "freeze_order"
+  },
+  {
+   "id": "i002",
+   "lang": "en",
+   "text": "URGENT asset freeze notice: the competent authority requests freezing the accounts and wallets of Delta Trading Co. within 24 hours. Ref FZ-2026-118.",
+   "intent": "freeze_order"
+  },
+  {
+   "id": "i003",
+   "lang": "ar",
+   "text": "أمر تجميد رقم 33 لسنة 2026 بتجميد جميع أموال وحسابات السيد سامح فؤاد عبد الله فوراً وإفادتنا خلال 24 ساعة.",
+   "intent": "freeze_order"
+  },
+  {
+   "id": "i004",
+   "lang": "ar",
+   "text": "إخطار من وحدة مكافحة غسل الأموال بتجميد الأصول الخاصة بشركة النور للتوريدات وعدم السماح بأي عمليات.",
+   "intent": "freeze_order"
+  },
+  {
+   "id": "i005",
+   "lang": "en",
+   "text": "Please block and freeze the e-wallet of Hany Lotfy as per the attached court order No. 4 of 2026.",
+   "intent": "freeze_order"
+  },
+  {
+   "id": "i006",
+   "lang": "ar",
+   "text": "مطلوب التحفظ على أموال العميل منى رشاد وتجميد المحفظة الإلكترونية الخاصة بها بناء على قرار النيابة.",
+   "intent": "freeze_order"
+  },
+  {
+   "id": "i007",
+   "lang": "en",
+   "text": "Unfreeze / lifting notice: the freeze order No. 9 of 2026 on Wael Kamal is lifted; please release the funds.",
+   "intent": "freeze_order"
+  },
+  {
+   "id": "i008",
+   "lang": "en",
+   "text": "Complaint: my name is Rania Said, mobile 01122334455. My transfer of 3,000 EGP failed but the money was deducted from my wallet.",
+   "intent": "customer_complaint"
+  },
+  {
+   "id": "i009",
+   "lang": "en",
+   "text": "Customer complaint received via call center: merchant refused to refund a duplicate charge; customer is very unhappy and wants escalation.",
+   "intent": "customer_complaint"
+  },
+  {
+   "id": "i010",
+   "lang": "ar",
+   "text": "شكوى من العميل أحمد مختار: تم خصم مبلغ من بطاقتي مرتين ولم يرد أحد على اتصالاتي منذ أسبوع.",
+   "intent": "customer_complaint"
+  },
+  {
+   "id": "i011",
+   "lang": "ar",
+   "text": "العميلة تشتكي من رسوم غير مبررة على المحفظة وتطلب استرداد المبلغ.",
+   "intent": "customer_complaint"
+  },
+  {
+   "id": "i012",
+   "lang": "en",
+   "text": "I am complaining about the delay in receiving my refund. It has been 20 days. Customer ID 4471.",
+   "intent": "customer_complaint"
+  },
+  {
+   "id": "i013",
+   "lang": "ar",
+   "text": "تظلم من عميل بسبب رفض عملية الدفع عند التاجر رغم وجود رصيد كاف.",
+   "intent": "customer_complaint"
+  },
+  {
+   "id": "i014",
+   "lang": "en",
+   "text": "A customer emailed to dispute a POS transaction of 1,250 EGP he says he never made.",
+   "intent": "customer_complaint"
+  },
+  {
+   "id": "i015",
+   "lang": "en",
+   "text": "I want to report anonymously that a manager in operations approves vendor invoices for a company owned by his brother.",
+   "intent": "whistleblowing_report"
+  },
+  {
+   "id": "i016",
+   "lang": "en",
+   "text": "Whistleblower report: staff in the Giza office are being pressured to backdate KYC documents. Please keep my identity confidential.",
+   "intent": "whistleblowing_report"
+  },
+  {
+   "id": "i017",
+   "lang": "ar",
+   "text": "بلاغ سري: أحد الموظفين يتلقى رشاوى من تجار مقابل تسريع إجراءات التعاقد، أرجو عدم ذكر اسمي.",
+   "intent": "whistleblowing_report"
+  },
+  {
+   "id": "i018",
+   "lang": "ar",
+   "text": "أود الإبلاغ عن مخالفة داخلية: مدير الفرع يطلب من الموظفين تجاوز إجراءات التحقق من الهوية.",
+   "intent": "whistleblowing_report"
+  },
+  {
+   "id": "i019",
+   "lang": "en",
+   "text": "Speak-up concern: my supervisor shares customer data with an outside party. I fear retaliation.",
+   "intent": "whistleblowing_report"
+  },
+  {
+   "id": "i020",
+   "lang": "ar",
+   "text": "شكوى داخلية بشأن تضارب مصالح: موظف المشتريات يتعامل مع مورد يملكه أحد أقاربه.",
+   "intent": "whistleblowing_report"
+  },
+  {
+   "id": "i021",
+   "lang": "en",
+   "text": "Circular No. 12 of 2026 issued by the regulator on strong customer authentication for card-not-present payments, effective 1 January 2027.",
+   "intent": "regulatory_circular"
+  },
+  {
+   "id": "i022",
+   "lang": "en",
+   "text": "New regulatory instructions: all payment service providers must report fraud incidents within 72 hours starting 1 March 2027.",
+   "intent": "regulatory_circular"
+  },
+  {
+   "id": "i023",
+   "lang": "ar",
+   "text": "منشور دوري رقم 5 لسنة 2026 بشأن ضوابط فتح المحافظ الإلكترونية، ويعمل به اعتبارا من 1 ديسمبر 2026.",
+   "intent": "regulatory_circular"
+  },
+  {
+   "id": "i024",
+   "lang": "ar",
+   "text": "صدر قرار مجلس إدارة الهيئة رقم 140 لسنة 2026 بتعديل حدود المعاملات اليومية للمحافظ.",
+   "intent": "regulatory_circular"
+  },
+  {
+   "id": "i025",
+   "lang": "en",
+   "text": "The central bank published updated instructions on outsourcing of cloud services by licensed institutions.",
+   "intent": "regulatory_circular"
+  },
+  {
+   "id": "i026",
+   "lang": "ar",
+   "text": "تعليمات رقابية جديدة بشأن الإفصاح عن الرسوم والعمولات للعملاء تسري من أول العام القادم.",
+   "intent": "regulatory_circular"
+  },
+  {
+   "id": "i027",
+   "lang": "en",
+   "text": "Amendment to the executive regulations of the AML law published in the official gazette today.",
+   "intent": "regulatory_circular"
+  },
+  {
+   "id": "i028",
+   "lang": "en",
+   "text": "Attached is the signed penetration test report for 2026, valid until 30 September 2027, as evidence for the cyber control.",
+   "intent": "evidence_document"
+  },
+  {
+   "id": "i029",
+   "lang": "en",
+   "text": "Evidence upload: board minutes approving the annual compliance plan, meeting of 12 October 2026.",
+   "intent": "evidence_document"
+  },
+  {
+   "id": "i030",
+   "lang": "ar",
+   "text": "مرفق شهادة التدريب على مكافحة غسل الأموال للعاملين كدليل على تنفيذ الضابط.",
+   "intent": "evidence_document"
+  },
+  {
+   "id": "i031",
+   "lang": "ar",
+   "text": "دليل: تقرير اختبار خطة استمرارية الأعمال بتاريخ 2026-09-15.",
+   "intent": "evidence_document"
+  },
+  {
+   "id": "i032",
+   "lang": "en",
+   "text": "Here is the renewed insurance policy certificate, valid from 1 November 2026 to 31 October 2027.",
+   "intent": "evidence_document"
+  },
+  {
+   "id": "i033",
+   "lang": "en",
+   "text": "Backup restore test log for Q3 attached for the evidence library.",
+   "intent": "evidence_document"
+  },
+  {
+   "id": "i034",
+   "lang": "en",
+   "text": "Merchant onboarding: attached commercial register and tax card for Sunrise Pharmacy, please review the KYB file.",
+   "intent": "kyc_document"
+  },
+  {
+   "id": "i035",
+   "lang": "ar",
+   "text": "مستندات اعرف عميلك: صورة بطاقة الرقم القومي وإيصال مرافق للعميل الجديد.",
+   "intent": "kyc_document"
+  },
+  {
+   "id": "i036",
+   "lang": "en",
+   "text": "Updated KYC documents for customer 88213: new national ID copy and proof of address.",
+   "intent": "kyc_document"
+  },
+  {
+   "id": "i037",
+   "lang": "ar",
+   "text": "سجل تجاري وبطاقة ضريبية محدثة للتاجر لاستكمال ملف التعرف على العميل.",
+   "intent": "kyc_document"
+  },
+  {
+   "id": "i038",
+   "lang": "en",
+   "text": "Please verify the beneficial owner declaration submitted by the new corporate merchant.",
+   "intent": "kyc_document"
+  },
+  {
+   "id": "i039",
+   "lang": "ar",
+   "text": "إقرار المستفيد الحقيقي وعقد التأسيس الخاص بالشركة التاجرة.",
+   "intent": "kyc_document"
+  },
+  {
+   "id": "i040",
+   "lang": "en",
+   "text": "Alert: customer received 35 incoming transfers from different wallets within 2 days and cashed out everything.",
+   "intent": "suspicious_activity"
+  },
+  {
+   "id": "i041",
+   "lang": "en",
+   "text": "Transaction monitoring alert: structuring pattern, nine cash-in operations just below the threshold in one day.",
+   "intent": "suspicious_activity"
+  },
+  {
+   "id": "i042",
+   "lang": "ar",
+   "text": "اشتباه: العميل يقوم بعمليات إيداع نقدي متكررة بمبالغ أقل من الحد ثم يحولها لحساب في الخارج.",
+   "intent": "suspicious_activity"
+  },
+  {
+   "id": "i043",
+   "lang": "ar",
+   "text": "تنبيه من نظام المراقبة: نشاط غير معتاد لا يتناسب مع طبيعة نشاط التاجر.",
+   "intent": "suspicious_activity"
+  },
+  {
+   "id": "i044",
+   "lang": "en",
+   "text": "The merchant volume jumped 20x this month with many cards from abroad; looks unusual and possibly money laundering.",
+   "intent": "suspicious_activity"
+  },
+  {
+   "id": "i045",
+   "lang": "ar",
+   "text": "معاملات مشبوهة على محفظة طالب جامعي بمبالغ كبيرة لا تتناسب مع دخله.",
+   "intent": "suspicious_activity"
+  },
+  {
+   "id": "i046",
+   "lang": "en",
+   "text": "Possible mule account: several new wallets opened with the same device and funded by the same sender.",
+   "intent": "suspicious_activity"
+  },
+  {
+   "id": "i047",
+   "lang": "en",
+   "text": "During the on-site inspection the regulator noted that 14 merchant files lacked updated commercial registers. Finding ref INS-2026-07.",
+   "intent": "regulator_finding"
+  },
+  {
+   "id": "i048",
+   "lang": "ar",
+   "text": "ملاحظات التفتيش: لاحظ فريق الجهة الرقابية عدم تحديث سياسة مكافحة غسل الأموال منذ عامين.",
+   "intent": "regulator_finding"
+  },
+  {
+   "id": "i049",
+   "lang": "en",
+   "text": "Inspection report observation: the transaction monitoring scenarios were not tuned in the last 12 months.",
+   "intent": "regulator_finding"
+  },
+  {
+   "id": "i050",
+   "lang": "ar",
+   "text": "خطاب من الجهة الرقابية يتضمن مخالفة بشأن التأخر في إرسال التقارير الدورية ومطلوب الرد خلال 15 يوما.",
+   "intent": "regulator_finding"
+  },
+  {
+   "id": "i051",
+   "lang": "en",
+   "text": "The examiners found that the complaints register was incomplete; a remediation plan is required within 30 days.",
+   "intent": "regulator_finding"
+  },
+  {
+   "id": "i052",
+   "lang": "ar",
+   "text": "ملاحظة تفتيشية: عدم وجود فصل كاف بين المهام في إدارة العمليات.",
+   "intent": "regulator_finding"
+  },
+  {
+   "id": "i053",
+   "lang": "en",
+   "text": "We plan to open a new branch in Mansoura in December.",
+   "intent": "business_change",
+   "playbook": "new_branch"
+  },
+  {
+   "id": "i054",
+   "lang": "ar",
+   "text": "نخطط لافتتاح فرع جديد في أسيوط خلال الربع القادم.",
+   "intent": "business_change",
+   "playbook": "new_branch"
+  },
+  {
+   "id": "i055",
+   "lang": "en",
+   "text": "Marketing wants to launch a new buy-now-pay-later product next quarter.",
+   "intent": "business_change",
+   "playbook": "new_product"
+  },
+  {
+   "id": "i056",
+   "lang": "ar",
+   "text": "إطلاق خدمة جديدة لتحصيل الفواتير عبر المحفظة الشهر القادم.",
+   "intent": "business_change",
+   "playbook": "new_product"
+  },
+  {
+   "id": "i057",
+   "lang": "en",
+   "text": "Our head of compliance resigned; a new compliance head will be appointed next week.",
+   "intent": "business_change",
+   "playbook": "key_function_change"
+  },
+  {
+   "id": "i058",
+   "lang": "ar",
+   "text": "تغيير المدير المالي وتعيين مدير مالي جديد اعتبارا من الشهر القادم.",
+   "intent": "business_change",
+   "playbook": "key_function_change"
+  },
+  {
+   "id": "i059",
+   "lang": "en",
+   "text": "We are moving our card processing to an external cloud provider (outsourcing) next year.",
+   "intent": "business_change",
+   "playbook": "outsourcing"
+  },
+  {
+   "id": "i060",
+   "lang": "ar",
+   "text": "التعاقد مع شركة خارجية لإسناد خدمة مركز الاتصال.",
+   "intent": "business_change",
+   "playbook": "outsourcing"
+  },
+  {
+   "id": "i061",
+   "lang": "en",
+   "text": "What does our policy say about accepting gifts from vendors?",
+   "intent": "policy_question"
+  },
+  {
+   "id": "i062",
+   "lang": "ar",
+   "text": "ما هي سياسة الشركة بخصوص قبول الهدايا من العملاء؟",
+   "intent": "policy_question"
+  },
+  {
+   "id": "i063",
+   "lang": "en",
+   "text": "Which policy covers the retention period for customer records?",
+   "intent": "policy_question"
+  },
+  {
+   "id": "i064",
+   "lang": "ar",
+   "text": "هل يوجد إجراء معتمد للتعامل مع الأشخاص المعرضين سياسيا؟",
+   "intent": "policy_question"
+  },
+  {
+   "id": "i065",
+   "lang": "en",
+   "text": "Question: are employees allowed to trade in shares of our partner banks? What is the rule?",
+   "intent": "policy_question"
+  },
+  {
+   "id": "i066",
+   "lang": "ar",
+   "text": "استفسار عن الحد الأقصى لصلاحيات اعتماد المصروفات حسب اللائحة.",
+   "intent": "policy_question"
+  },
+  {
+   "id": "i067",
+   "lang": "en",
+   "text": "Lunch on Thursday at 1 pm? Let me know.",
+   "intent": null
+  },
+  {
+   "id": "i068",
+   "lang": "ar",
+   "text": "تهنئة بمناسبة العيد لجميع الزملاء.",
+   "intent": null
+  },
+  {
+   "id": "i069",
+   "lang": "en",
+   "text": "The printer on the third floor is out of toner.",
+   "intent": null
+  },
+  {
+   "id": "i070",
+   "lang": "ar",
+   "text": "برجاء حجز قاعة الاجتماعات يوم الأحد.",
+   "intent": null
+  }
+ ],
+ "playbooks": [
+  {
+   "id": "p001",
+   "lang": "en",
+   "text": "We will open a new office in Tanta on 1 December 2026.",
+   "playbook": "new_branch"
+  },
+  {
+   "id": "p002",
+   "lang": "ar",
+   "text": "افتتاح فرع جديد في الإسكندرية بداية العام.",
+   "playbook": "new_branch"
+  },
+  {
+   "id": "p003",
+   "lang": "en",
+   "text": "Board approved expansion with two new branches in Upper Egypt.",
+   "playbook": "new_branch"
+  },
+  {
+   "id": "p004",
+   "lang": "ar",
+   "text": "نقل مقر الفرع إلى عنوان جديد في المعادي.",
+   "playbook": "new_branch"
+  },
+  {
+   "id": "p005",
+   "lang": "en",
+   "text": "Launch of a new prepaid card product for students.",
+   "playbook": "new_product"
+  },
+  {
+   "id": "p006",
+   "lang": "ar",
+   "text": "طرح منتج تمويل استهلاكي جديد للعملاء.",
+   "playbook": "new_product"
+  },
+  {
+   "id": "p007",
+   "lang": "en",
+   "text": "We are adding QR payments as a new service for merchants.",
+   "playbook": "new_product"
+  },
+  {
+   "id": "p008",
+   "lang": "ar",
+   "text": "خدمة جديدة للتحويلات الدولية عبر التطبيق.",
+   "playbook": "new_product"
+  },
+  {
+   "id": "p009",
+   "lang": "en",
+   "text": "A new regulation on e-KYC was issued and applies from next quarter.",
+   "playbook": "new_regulation"
+  },
+  {
+   "id": "p010",
+   "lang": "ar",
+   "text": "صدور تعليمات رقابية جديدة بشأن مكافحة الاحتيال الإلكتروني.",
+   "playbook": "new_regulation"
+  },
+  {
+   "id": "p011",
+   "lang": "en",
+   "text": "Circular No. 3 of 2027 amends the reporting requirements for suspicious transactions.",
+   "playbook": "new_regulation"
+  },
+  {
+   "id": "p012",
+   "lang": "ar",
+   "text": "تعديل اللائحة التنفيذية لقانون حماية البيانات الشخصية.",
+   "playbook": "new_regulation"
+  },
+  {
+   "id": "p013",
+   "lang": "en",
+   "text": "The MLRO is leaving and we need to appoint a replacement.",
+   "playbook": "key_function_change"
+  },
+  {
+   "id": "p014",
+   "lang": "ar",
+   "text": "استقالة مسؤول الالتزام وتعيين بديل مؤقت.",
+   "playbook": "key_function_change"
+  },
+  {
+   "id": "p015",
+   "lang": "en",
+   "text": "New CEO appointment effective next month.",
+   "playbook": "key_function_change"
+  },
+  {
+   "id": "p016",
+   "lang": "ar",
+   "text": "تعيين رئيس جديد لإدارة المخاطر.",
+   "playbook": "key_function_change"
+  },
+  {
+   "id": "p017",
+   "lang": "en",
+   "text": "We will outsource KYC document verification to a third-party vendor.",
+   "playbook": "outsourcing"
+  },
+  {
+   "id": "p018",
+   "lang": "ar",
+   "text": "إسناد خدمات تكنولوجيا المعلومات لمورد خارجي واستضافة الأنظمة سحابيا.",
+   "playbook": "outsourcing"
+  },
+  {
+   "id": "p019",
+   "lang": "en",
+   "text": "Signing a contract with an external provider for data-center hosting.",
+   "playbook": "outsourcing"
+  },
+  {
+   "id": "p020",
+   "lang": "ar",
+   "text": "التعاقد مع شركة لتحصيل المديونيات نيابة عنا.",
+   "playbook": "outsourcing"
+  }
+ ]
+}

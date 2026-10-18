@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% import 'ai/_nav.html' as an with context %}
+{% block title %}{{ _('Review the proposal') }} #{{ it.id }} - ComplyNex CMS{% endblock %}
+{% block content %}
+{% set decided = it.status in ('confirmed', 'rejected') %}
+{% set fin = it.final or {} %}
+<div class="container-fluid">
+  <h3 class="mb-1">{{ _('Submission') }} #{{ it.id }} <span class="badge bg-secondary fs-6">{{ it.status }}</span></h3>
+  {{ an.nav('ai.home') }}
+  <div class="row g-3"><div class="col-lg-5">
+    <div class="card mb-3"><div class="card-header"><strong>{{ it.subject or _('Submitted text') }}</strong> <span class="small text-muted">{{ it.channel }} · {{ it.created_at.strftime('%Y-%m-%d %H:%M') }}</span></div>
+      <div class="card-body small" dir="auto" style="white-space: pre-wrap; max-height: 460px; overflow: auto">{{ it.body or _('(text removed after the retention period)') }}</div>
+      {% if files %}<div class="card-footer small">{% for f in files %}<a href="{{ url_for('attachments.download', attachment_id=f.id) }}">{{ f.filename }}</a> {% endfor %}</div>{% endif %}</div>
+  </div><div class="col-lg-7">
+    {% if not prop and it.status == 'new' %}
+      <div class="card"><div class="card-body small" data-ai-job-reload="{{ job_id or '' }}" data-fail-text="{{ _('The analysis failed — try again.') }}">
+        <div class="spinner-border spinner-border-sm me-2"></div>{{ _('Analysing on this server… (a local model on CPU can take a minute)') }}</div></div>
+      {% if not job_id %}<form method="post" class="mt-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="repropose"><button class="btn btn-sm btn-outline-primary">{{ _('Analyse again') }}</button></form>{% endif %}
+    {% elif decided %}
+      <div class="card"><div class="card-body small">
+        <p>{{ _('Decision') }}: <strong>{{ it.status }}</strong> {{ it.decided_at.strftime('%Y-%m-%d %H:%M') if it.decided_at }}</p>
+        {% if it.status == 'confirmed' %}<p class="mb-1">{{ _('Routed as') }}: <strong>{{ fin.intent }}</strong></p>
+          <ul class="mb-0">{% for r in it.created_refs %}<li>{% if r.url %}<a href="{{ r.url }}">{{ r.type }} · {{ r.label }}</a>{% else %}{{ r.type }} · {{ r.label }}{% endif %}</li>{% else %}<li class="text-muted">{{ _('No record created (guidance / manual triage).') }}</li>{% endfor %}</ul>{% endif %}
+      </div></div>
+    {% else %}
+      <form method="post" class="card"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="card-header d-flex justify-content-between align-items-center"><strong>{{ _('Proposal — review and confirm') }}</strong>
+          <span>{{ an.provider_badge(prop.provider, prop.status) }} {% if prop.confidence is not none %}<span class="badge bg-light text-dark border">{{ _('confidence') }} {{ '%.0f'|format((prop.confidence or 0) * 100) }}%</span>{% endif %}</span></div>
+        <div class="card-body small">
+          {% if not prop.intent %}<div class="alert alert-warning py-1">{{ _('Not recognised with enough confidence — choose what this is, or reject it for manual handling.') }}</div>{% endif %}
+          <div class="row g-2">
+            <div class="col-md-6"><label class="form-label mb-0">{{ _('What is it') }}</label>
+              <select name="intent" class="form-select form-select-sm" data-auto-submit-get="intent">{% for i in intents %}<option value="{{ i.code }}" {{ 'selected' if chosen and chosen.code == i.code }}>{{ an.label(i, lang) }}</option>{% endfor %}</select>
+              {% if prop.alternatives %}<div class="text-muted mt-1">{{ _('Other candidates') }}: {% for a in prop.alternatives[:3] %}<a href="{{ url_for('ai.intake_review', item_id=it.id, intent=a.code) }}">{{ a.code }}</a> {% endfor %}</div>{% endif %}</div>
+            <div class="col-md-6"><label class="form-label mb-0">{{ _('Goes to') }}</label>
+              <div class="form-control form-control-sm bg-light">{{ (handlers[chosen.handler].label_ar if lang == 'ar' else handlers[chosen.handler].label_en) if chosen and chosen.handler in handlers else _('Manual triage') }}</div></div>
+            <div class="col-12"><label class="form-label mb-0">{{ _('Summary') }}</label><input name="summary" class="form-control form-control-sm" dir="auto" value="{{ prop.summary or '' }}"></div>
+            {% if chosen %}
+            {% for f in chosen.fields %}<div class="col-md-6"><label class="form-label mb-0">{{ f.label_ar if lang == 'ar' and f.label_ar else f.label_en }}{% if f.required %} *{% endif %}</label>
+              {% if f.type in ('list', 'longtext') %}<textarea name="f_{{ f.key }}" rows="2" dir="auto" class="form-control form-control-sm {{ 'border-success' if pf.get(f.key) }}">{{ pf.get(f.key) or '' }}</textarea>
+              {% else %}<input name="f_{{ f.key }}" type="{{ 'date' if f.type == 'date' else 'text' }}" dir="auto" class="form-control form-control-sm {{ 'border-success' if pf.get(f.key) }}" value="{{ pf.get(f.key) or '' }}">{% endif %}</div>{% endfor %}
+            <div class="col-md-3"><label class="form-label mb-0">{{ _('Priority') }}</label><select name="priority" class="form-select form-select-sm">{% for p in ['critical', 'high', 'medium', 'low'] %}<option {{ 'selected' if (prop.priority if prop.intent == chosen.code else chosen.priority) == p }}>{{ p }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><label class="form-label mb-0">{{ _('Deadline') }}</label><input type="date" name="deadline" class="form-control form-control-sm" value="{{ prop.deadline if prop.intent == chosen.code and prop.deadline else '' }}"></div>
+            <div class="col-md-3"><label class="form-label mb-0">{{ _('Owner role') }}</label><input name="owner_role" class="form-control form-control-sm" value="{{ chosen.owner_role or '' }}"></div>
+            <div class="col-md-3"><label class="form-label mb-0">{{ _('Linked controls') }}</label><input name="control_codes" class="form-control form-control-sm" value="{{ (prop.control_codes if prop.intent == chosen.code else chosen.control_codes)|join(', ') }}"></div>
+            {% if prop.requirements and prop.intent == chosen.code %}<div class="col-12 text-muted">{{ _('Requirements') }}: {% for q in prop.requirements %}{{ q.framework }} {{ q.ref_code }}{{ ', ' if not loop.last }}{% endfor %}</div>{% endif %}
+            {% if chosen.handler == 'playbook' %}
+              <div class="col-12"><label class="form-label mb-0">{{ _('Playbook') }}</label><select name="playbook_code" class="form-select form-select-sm">
+                {% for p in playbooks %}<option value="{{ p.code }}" {{ 'selected' if prop.playbook_code == p.code }}>{{ an.label(p, lang) }}{% for c in prop.playbooks or [] if c.code == p.code %} — {{ '%.0f'|format(c.confidence * 100) }}%{% endfor %}</option>{% endfor %}</select></div>
+              {% for p in playbooks if p.code == prop.playbook_code %}{% for x in p.parameters %}<div class="col-md-6"><label class="form-label mb-0">{{ x.label_ar if lang == 'ar' and x.label_ar else x.label_en }}{% if x.required %} *{% endif %}</label>
+                <input name="pp_{{ x.key }}" type="{{ 'date' if x.type == 'date' else 'text' }}" class="form-control form-control-sm" value="{{ (prop.playbook_params or {}).get(x.key, '') }}"></div>{% endfor %}{% endfor %}
+            {% endif %}{% endif %}
+          </div>
+          {% if prop.why and prop.why.keywords %}<p class="text-muted mt-2 mb-0">{{ _('Why') }}: {{ prop.why.keywords|join(', ') }}</p>{% endif %}
+        </div>
+        {% if ai_level() >= 2 %}<div class="card-footer d-flex gap-2 flex-wrap"><button class="btn btn-sm btn-success" name="action" value="confirm">{{ _('Confirm and create') }}</button>
+          <button class="btn btn-sm btn-outline-secondary" name="action" value="reject">{{ _('Reject (nothing created)') }}</button>
+          <button class="btn btn-sm btn-outline-primary" name="action" value="repropose">{{ _('Analyse again') }}</button>
+          <span class="small text-muted align-self-center">{{ _('You decide: the Copilot only proposes.') }}</span></div>{% endif %}
+      </form>
+    {% endif %}
+  </div></div>
+</div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/ai_copilot.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+document.querySelectorAll('[data-auto-submit-get]').forEach(function (s) {
+  s.addEventListener('change', function () { var u = new URL(window.location.href); u.searchParams.set(s.getAttribute('data-auto-submit-get'), s.value); u.searchParams.delete('job'); window.location.href = u.toString(); });
+});
+</script>
+{% endblock %}

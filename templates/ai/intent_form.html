@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% import 'ai/_nav.html' as an with context %}
+{% block title %}{{ _('Intent') }} {{ code }} - ComplyNex CMS{% endblock %}
+{% block content %}
+{% set ro = ai_level() < 3 %}{% set r = row or {} %}
+<div class="container-fluid">
+  <h3 class="mb-1">{{ _('Intent') }} · {{ code if code != 'new' else _('new') }}</h3>
+  {{ an.nav('ai.intents') }}
+  <form method="post" class="card"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><fieldset {{ 'disabled' if ro }}><div class="card-body small"><div class="row g-2">
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Code') }}</label><input name="code" class="form-control form-control-sm" value="{{ code if code != 'new' else '' }}" {{ 'readonly' if code != 'new' }} pattern="[a-z0-9_]+"></div>
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Name (English)') }}</label><input name="name_en" class="form-control form-control-sm" value="{{ r.name_en or '' }}"></div>
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Name (Arabic)') }}</label><input name="name_ar" dir="rtl" class="form-control form-control-sm" value="{{ r.name_ar or '' }}"></div>
+    <div class="col-md-3 pt-4"><label><input type="checkbox" name="is_active" value="1" {{ 'checked' if r.is_active is not defined or r.is_active }}> {{ _('Active') }}</label></div>
+    <div class="col-12"><label class="form-label mb-0">{{ _('Description (helps the model)') }}</label><input name="description" class="form-control form-control-sm" value="{{ r.description or '' }}"></div>
+    <div class="col-md-6"><label class="form-label mb-0">{{ _('Keywords (one per line, AR or EN)') }}</label><textarea name="keywords" rows="6" dir="auto" class="form-control form-control-sm">{{ (r.keywords or [])|join('\n') }}</textarea></div>
+    <div class="col-md-6"><label class="form-label mb-0">{{ _('Examples (one per line)') }}</label><textarea name="examples" rows="6" dir="auto" class="form-control form-control-sm">{{ (r.examples or [])|join('\n') }}</textarea></div>
+    <div class="col-md-4"><label class="form-label mb-0">{{ _('Routes to') }}</label><select name="handler" class="form-select form-select-sm">{% for k, h in handlers.items() %}<option value="{{ k }}" {{ 'selected' if r.handler == k }}>{{ h.label_ar if lang == 'ar' else h.label_en }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Priority') }}</label><select name="priority" class="form-select form-select-sm">{% for p in priorities %}<option {{ 'selected' if (r.priority or 'medium') == p }}>{{ p }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Deadline (hours)') }}</label><input name="deadline_hours" type="number" class="form-control form-control-sm" value="{{ r.deadline_hours or '' }}"></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Owner role') }}</label><input name="owner_role" class="form-control form-control-sm" value="{{ r.owner_role or '' }}"></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Linked controls') }}</label><input name="control_codes" class="form-control form-control-sm" value="{{ (r.control_codes or [])|join(', ') }}"></div>
+    <div class="col-md-8"><label class="form-label mb-0">{{ _('Fields to extract (JSON list: key, label_en, label_ar, type, required)') }}</label><textarea name="fields" rows="8" dir="ltr" class="form-control form-control-sm font-monospace">{{ (r.fields or [])|tojson(indent=1) }}</textarea></div>
+    <div class="col-md-4"><label class="form-label mb-0">{{ _('Routing parameters (JSON object)') }}</label><textarea name="handler_params" rows="8" dir="ltr" class="form-control form-control-sm font-monospace">{{ (r.handler_params or {})|tojson(indent=1) }}</textarea></div>
+  </div>{% if r.pack_code %}<p class="text-muted mt-2 mb-0">{{ _('Installed by content pack') }}: {{ r.pack_code }}.</p>{% endif %}</div>
+  {% if not ro %}<div class="card-footer"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div>{% endif %}</fieldset></form>
+</div>
+{% endblock %}

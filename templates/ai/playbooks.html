@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% import 'ai/_nav.html' as an with context %}
+{% block title %}{{ _('Playbooks') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+{% set res = job.result if job and job.status == 'done' else None %}
+{% set by = {} %}{% for p in playbooks %}{% set _x = by.update({p.code: p}) %}{% endfor %}
+<div class="container-fluid">
+  <h3 class="mb-1">{{ _('Event → flow (playbooks)') }}</h3>
+  <p class="small text-muted mb-2">{{ _('Describe what happened or what is planned. The Copilot selects the matching playbook from the catalog and pre-fills it; on your confirmation the steps become a finding with dated corrective actions.') }}</p>
+  {{ an.nav('ai.playbooks_home') }}
+  <div class="row g-3"><div class="col-lg-6">
+    {% if ai_level() >= 2 %}<form method="post" class="card mb-3"><div class="card-body small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label mb-0">{{ _('Situation') }}</label>
+      <textarea name="situation" rows="4" class="form-control form-control-sm" dir="auto" placeholder="{{ _('e.g. We will open a new branch in Tanta on 1 December') }}"></textarea>
+      <button class="btn btn-primary btn-sm mt-2">{{ _('Find the playbook') }}</button></div></form>{% endif %}
+
+    {% if job_id and not res %}
+      <div class="card mb-3"><div class="card-body small">{% if job and job.status == 'failed' %}<span class="text-danger">{{ _('The analysis failed — try again.') }} ({{ job.error }})</span>
+        {% else %}<div data-ai-job-reload="{{ job_id }}" data-fail-text="{{ _('The analysis failed — try again.') }}"><div class="spinner-border spinner-border-sm me-2"></div>{{ _('Selecting the playbook on this server…') }}</div>{% endif %}</div></div>
+    {% elif res %}
+      <div class="card mb-3 border-primary"><div class="card-header d-flex justify-content-between"><strong>{{ _('Proposed playbooks') }}</strong>{{ an.provider_badge(res.provider, res.status) }}</div>
+      <div class="card-body small">
+        {% for c in res.playbooks if c.code in by %}{% set p = by[c.code] %}
+          <form method="post" class="border rounded p-2 mb-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="run"><input type="hidden" name="playbook_code" value="{{ p.code }}">
+            <input type="hidden" name="suggestion_id" value="{{ res.suggestion_id or '' }}"><input type="hidden" name="proposed" value="{{ res.playbooks[0].code }}">
+            <div class="d-flex justify-content-between"><strong>{{ an.label(p, lang) }}</strong><span class="badge bg-light text-dark border">{{ '%.0f'|format(c.confidence * 100) }}%</span></div>
+            <div class="row g-2 mt-1">{% for x in p.parameters %}<div class="col-md-6"><label class="form-label mb-0">{{ x.label_ar if lang == 'ar' and x.label_ar else x.label_en }}{% if x.required %} *{% endif %}</label>
+              <input name="p_{{ x.key }}" type="{{ 'date' if x.type == 'date' else 'text' }}" dir="auto" class="form-control form-control-sm {{ 'border-success' if c.params.get(x.key) }}" value="{{ c.params.get(x.key, '') }}"></div>{% endfor %}</div>
+            <ol class="mt-2 mb-2 ps-3">{% for s in p.steps if s.is_active %}<li>{{ s.title_ar if lang == 'ar' and s.title_ar else s.title_en }} <span class="text-muted">· {{ s.step_type }}{% if s.control_code %} · {{ s.control_code }}{% endif %} · {{ s.owner_role or '-' }} · +{{ s.due_days }} {{ _('days') }}</span></li>{% endfor %}</ol>
+            {% if ai_level() >= 2 %}<button class="btn btn-sm btn-success">{{ _('Confirm and create the tasks') }}</button>{% endif %}
+          </form>
+        {% else %}<p class="text-muted mb-0">{{ _('No playbook matches this situation. Handle it manually or add a playbook to the catalog.') }}</p>{% endfor %}
+        <p class="text-muted mb-0">{{ _('You decide: the Copilot only proposes.') }}</p>
+      </div></div>
+    {% endif %}
+  </div><div class="col-lg-6">
+    <div class="card mb-3"><div class="card-header d-flex justify-content-between"><strong>{{ _('Catalog') }}</strong>{% if ai_level() >= 3 %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('ai.playbook_edit', code='new') }}">{{ _('New playbook') }}</a>{% endif %}</div>
+      <div class="table-responsive"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Code') }}</th><th>{{ _('Name') }}</th><th>{{ _('Steps') }}</th><th>{{ _('Source') }}</th></tr></thead><tbody>
+      {% for p in playbooks %}<tr><td><a href="{{ url_for('ai.playbook_edit', code=p.code) }}">{{ p.code }}</a></td><td>{{ an.label(p, lang) }}</td><td>{{ p.steps|length }}</td><td>{{ p.pack_code or _('core') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    <div class="card"><div class="card-header"><strong>{{ _('Recent runs') }}</strong></div><div class="table-responsive"><table class="table table-sm mb-0 small">
+      <thead><tr><th>{{ _('When') }}</th><th>{{ _('Playbook') }}</th><th>{{ _('Title') }}</th><th>{{ _('Finding') }}</th></tr></thead><tbody>
+      {% for r in runs %}<tr><td>{{ r.created_at.strftime('%Y-%m-%d') }}</td><td>{{ r.playbook_code }}</td><td>{{ r.title }}</td>
+        <td>{% if r.finding_id %}<a href="{{ url_for('regcontrols.finding_detail', finding_id=r.finding_id) }}">{{ r.reference or r.finding_id }}</a> {{ r.finding_status or '' }}{% endif %}</td></tr>
+      {% else %}<tr><td colspan="4" class="text-muted">{{ _('No runs yet.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+  </div></div>
+</div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/ai_copilot.js') }}"></script>
+{% endblock %}

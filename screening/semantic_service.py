@@ -106,6 +106,24 @@ def create_service_app():
             logger.exception("Semantic search failed")
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/embed', methods=['POST'])
+    def embed():
+        """Text embeddings for the Compliance Copilot (ai/ local_embeddings
+        provider) — reuses the already-loaded multilingual model, so no
+        second model is held in memory. Read-only: the index is untouched."""
+        if not matcher.enabled or matcher.model is None:
+            return jsonify({'error': 'semantic matcher not enabled/loaded'}), 503
+        data = request.get_json(silent=True) or {}
+        texts = [str(t)[:2000] for t in (data.get('texts') or []) if t is not None][:256]
+        if not texts:
+            return jsonify({'error': 'texts (list of strings) is required'}), 400
+        try:
+            vecs = matcher.model.encode(texts, normalize_embeddings=True, batch_size=32)
+            return jsonify({'vectors': [[round(float(x), 6) for x in v] for v in vecs]})
+        except Exception as e:
+            logger.exception("embed failed")
+            return jsonify({'error': str(e)}), 500
+
     @app.route('/add_delta', methods=['POST'])
     def add_delta():
         """

@@ -1,0 +1,17 @@
+{#- Next-best-action card. Include with: obj_type, obj_id and optionally drafts = ['action_plan', 'str_narrative'] -#}
+{% if ai_level() >= 2 and ai_enabled() %}
+{% set _nid = 'ai-nba-' ~ obj_type ~ '-' ~ obj_id %}
+<div class="card mb-3 border-info no-print" data-ai-nba="{{ url_for('ai.api_nba', obj_type=obj_type, obj_id=obj_id) }}"
+     data-labels='{{ {"working": _("Working on this server…"), "rules": _("Computed by rules"), "ai": _("Phrased by local model"), "fallback": _("model failed — rules used"), "accept": _("Useful"), "reject": _("Not useful"), "thanks": _("Thank you — recorded.")}|tojson|forceescape }}'>
+  <div class="card-header d-flex justify-content-between align-items-center"><strong>{{ _('Next best action') }}</strong>
+    <button type="button" class="btn btn-sm btn-outline-info" data-ai-nba-run>{{ _('What should I do next?') }}</button></div>
+  <div class="card-body small" data-ai-nba-body><span class="text-muted">{{ _('Gaps are computed from the record (evidence, overdue actions, approvals, SLA); the Copilot only explains them.') }}</span></div>
+  <div class="card-footer small text-muted" data-ai-nba-foot></div>
+  {% if drafts %}<div class="card-footer small">
+    {% for k in drafts %}<button type="button" class="btn btn-sm btn-outline-secondary me-1" data-ai-draft="{{ k }}" data-obj-type="{{ obj_type }}" data-obj-id="{{ obj_id }}" data-target="{{ _nid }}-draft"
+      data-labels='{{ {"working": _("Drafting…"), "label": _("AI draft — review required"), "copy": _("Copy"), "failed": _("Draft failed"), "accept": _("Useful"), "reject": _("Not useful"), "thanks": _("Thank you — recorded.")}|tojson|forceescape }}'>
+      {{ {'action_plan': _('Draft action plan'), 'str_narrative': _('Draft STR narrative'), 'board_summary': _('Draft board summary')}[k] }}</button>{% endfor %}
+    <div id="{{ _nid }}-draft" class="mt-2"></div></div>{% endif %}
+</div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/ai_copilot.js') }}"></script>
+{% endif %}

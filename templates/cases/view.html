@@ -30,6 +30,8 @@
         {% endif %}
     </div>
 
+    {% with obj_type='case', obj_id=case.id, drafts=['action_plan'] %}{% include 'ai/_nba_card.html' %}{% endwith %}
+
     {% if party %}
     <div class="card shadow-sm">
         <div class="card-header">{{ _('Associated Party') }}</div>
