@@ -26507,6 +26507,466 @@ msgstr "السجل غير موجود"
 msgid "senior approval must be given by a manager or compliance officer"
 msgstr "يجب أن تُمنح موافقة الإدارة العليا من مدير أو مسؤول التزام"
 
+# --- IT resilience ---
+msgid "dates must be YYYY-MM-DD"
+msgstr "يجب أن تكون التواريخ بصيغة YYYY-MM-DD"
+
+msgid "not a number"
+msgstr "ليس رقماً"
+
+msgid "test date and result are required"
+msgstr "تاريخ الاختبار والنتيجة مطلوبان"
+
+msgid "system name is required"
+msgstr "اسم النظام مطلوب"
+
+msgid "last success must be an ISO date-time"
+msgstr "يجب أن يكون آخر نجاح تاريخاً ووقتاً بصيغة ISO"
+
+msgid "status must be success, failed or partial"
+msgstr "يجب أن تكون الحالة نجاح أو فشل أو جزئي"
+
+msgid "unknown integration code"
+msgstr "رمز ربط غير معروف"
+
+msgid "type, title and date are required"
+msgstr "النوع والعنوان والتاريخ مطلوبة"
+
+msgid "assessment not found"
+msgstr "التقييم غير موجود"
+
+msgid "attach the report before accepting it"
+msgstr "أرفق التقرير قبل قبوله"
+
+msgid "type and product are required"
+msgstr "النوع والمنتج مطلوبان"
+
+msgid "enter a domain name, e.g. portal.example.com"
+msgstr "أدخل اسم نطاق، مثال portal.example.com"
+
+msgid "domain not found"
+msgstr "النطاق غير موجود"
+
+msgid "this framework has no requirements yet"
+msgstr "لا توجد متطلبات في هذا الإطار بعد"
+
+msgid "a final assessment cannot be changed"
+msgstr "لا يمكن تعديل تقييم نهائي"
+
+msgid "rate every requirement before finalising"
+msgstr "قيّم كل المتطلبات قبل الاعتماد النهائي"
+
+msgid "DR test recorded. Attach the test report."
+msgstr "تم تسجيل اختبار التعافي. أرفق تقرير الاختبار."
+
+msgid "Assessment accepted."
+msgstr "تم قبول التقييم."
+
+msgid "Saved. Attach the report, then accept it."
+msgstr "تم الحفظ. أرفق التقرير ثم اقبله."
+
+msgid "Certificate valid until %(d)s."
+msgstr "الشهادة سارية حتى %(d)s."
+
+msgid "Domain added and checked."
+msgstr "تمت إضافة النطاق وفحصه."
+
+msgid "IT resilience"
+msgstr "مرونة تكنولوجيا المعلومات"
+
+msgid "Incidents"
+msgstr "الحوادث"
+
+msgid "BCP / DR"
+msgstr "استمرارية الأعمال / التعافي"
+
+msgid "Backups"
+msgstr "النسخ الاحتياطية"
+
+msgid "Security assessments"
+msgstr "التقييمات الأمنية"
+
+msgid "Security tools & licences"
+msgstr "الأدوات الأمنية والتراخيص"
+
+msgid "Domains & certificates"
+msgstr "النطاقات والشهادات"
+
+msgid "Maturity"
+msgstr "النضج"
+
+msgid "IT risks"
+msgstr "مخاطر تكنولوجيا المعلومات"
+
+msgid "Expiring"
+msgstr "قارب على الانتهاء"
+
+msgid "Not checked"
+msgstr "لم يُفحص"
+
+msgid "Stale"
+msgstr "قديم"
+
+msgid "No licence"
+msgstr "بدون ترخيص"
+
+msgid "Valid until"
+msgstr "سارٍ حتى"
+
+msgid "Open critical / high"
+msgstr "المفتوح حرج / عالٍ"
+
+msgid "No assessments."
+msgstr "لا توجد تقييمات."
+
+msgid "Add an assessment"
+msgstr "إضافة تقييم"
+
+msgid "type"
+msgstr "النوع"
+
+msgid "Provider accreditation"
+msgstr "اعتماد الجهة المنفذة"
+
+msgid "Open critical"
+msgstr "حرجة مفتوحة"
+
+msgid "Open high"
+msgstr "عالية مفتوحة"
+
+msgid "Save and attach report"
+msgstr "حفظ وإرفاق التقرير"
+
+msgid "Security tools, licences & data residency"
+msgstr "الأدوات الأمنية والتراخيص وتوطين البيانات"
+
+msgid "Licence expiry warning"
+msgstr "تنبيه انتهاء الترخيص"
+
+msgid "days (parameter it.licence_expiry_warning_days)"
+msgstr "يوماً (المعامل it.licence_expiry_warning_days)"
+
+msgid "Licence state"
+msgstr "حالة الترخيص"
+
+msgid "Data residency"
+msgstr "توطين البيانات"
+
+msgid "in country"
+msgstr "داخل البلد"
+
+msgid "attested"
+msgstr "تم الإقرار"
+
+msgid "No security tools registered."
+msgstr "لا توجد أدوات أمنية مسجلة."
+
+msgid "Edit tool"
+msgstr "تعديل الأداة"
+
+msgid "Add a security tool"
+msgstr "إضافة أداة أمنية"
+
+msgid "type (waf, epp, edr …)"
+msgstr "النوع (waf، epp، edr …)"
+
+msgid "Vendor"
+msgstr "المورد"
+
+msgid "Licence ref."
+msgstr "مرجع الترخيص"
+
+msgid "Licence expiry"
+msgstr "انتهاء الترخيص"
+
+msgid "Coverage (e.g. all endpoints / public portal)"
+msgstr "النطاق (مثال: كل الأجهزة / البوابة العامة)"
+
+msgid "Data abroad?"
+msgstr "بيانات خارج البلد؟"
+
+msgid "No — stays in country"
+msgstr "لا — تبقى داخل البلد"
+
+msgid "Yes — sent abroad"
+msgstr "نعم — تُرسل للخارج"
+
+msgid "Data location"
+msgstr "موقع البيانات"
+
+msgid "Attested on"
+msgstr "تاريخ الإقرار"
+
+msgid "Attested by"
+msgstr "المُقِر"
+
+msgid "Attach the licence certificate and the vendor data-residency attestation in Files."
+msgstr "أرفق شهادة الترخيص وإقرار المورد بتوطين البيانات في الملفات."
+
+msgid "Off-site backups"
+msgstr "النسخ الاحتياطية خارج الموقع"
+
+msgid "Last successful off-site backup must be within"
+msgstr "يجب أن يكون آخر نسخ احتياطي ناجح خارج الموقع خلال"
+
+msgid "day(s)"
+msgstr "يوم"
+
+msgid "— not set (parameter it.offsite_backup_max_age_days)"
+msgstr "— غير محدد (المعامل it.offsite_backup_max_age_days)"
+
+msgid "Backup jobs can report each run to POST /api/v1/cyber/backup-status (API key with scope cyber:write)."
+msgstr "يمكن لمهام النسخ الاحتياطي إرسال نتيجة كل تشغيل إلى POST /api/v1/cyber/backup-status (مفتاح API بصلاحية cyber:write)."
+
+msgid "Encrypted"
+msgstr "مشفر"
+
+msgid "Last success"
+msgstr "آخر نجاح"
+
+msgid "Restore test"
+msgstr "اختبار الاسترجاع"
+
+msgid "No backup registered."
+msgstr "لا يوجد نسخ احتياطي مسجل."
+
+msgid "Edit backup"
+msgstr "تعديل النسخ الاحتياطي"
+
+msgid "Register a backup"
+msgstr "تسجيل نسخ احتياطي"
+
+msgid "(same system name = update)"
+msgstr "(نفس اسم النظام = تحديث)"
+
+msgid "Where (site / provider)"
+msgstr "المكان (الموقع / المزود)"
+
+msgid "Last successful backup"
+msgstr "آخر نسخ احتياطي ناجح"
+
+msgid "Last restore test"
+msgstr "آخر اختبار استرجاع"
+
+msgid "Business continuity & disaster recovery"
+msgstr "استمرارية الأعمال والتعافي من الكوارث"
+
+msgid "DR test required at least every"
+msgstr "اختبار التعافي مطلوب على الأقل كل"
+
+msgid "— not set (parameter it.dr_test_max_age_months)"
+msgstr "— غير محدد (المعامل it.dr_test_max_age_months)"
+
+msgid "Site"
+msgstr "الموقع"
+
+msgid "RTO / RPO (h)"
+msgstr "RTO / RPO (ساعة)"
+
+msgid "Last test"
+msgstr "آخر اختبار"
+
+msgid "No site registered."
+msgstr "لا يوجد موقع مسجل."
+
+msgid "Add a site"
+msgstr "إضافة موقع"
+
+msgid "DR site"
+msgstr "موقع التعافي"
+
+msgid "Backup site"
+msgstr "موقع النسخ الاحتياطي"
+
+msgid "Cloud"
+msgstr "سحابي"
+
+msgid "Primary"
+msgstr "رئيسي"
+
+msgid "RTO (hours)"
+msgstr "RTO (ساعات)"
+
+msgid "RPO (hours)"
+msgstr "RPO (ساعات)"
+
+msgid "RTO / RPO achieved"
+msgstr "RTO / RPO المحقق"
+
+msgid "No DR test recorded."
+msgstr "لا يوجد اختبار تعافٍ مسجل."
+
+msgid "Record a DR test"
+msgstr "تسجيل اختبار تعافٍ"
+
+msgid "RTO achieved (h)"
+msgstr "RTO المحقق (ساعة)"
+
+msgid "Scope (systems switched over)"
+msgstr "النطاق (الأنظمة التي تم تحويلها)"
+
+msgid "Issues found (a partial/failed test opens a finding)"
+msgstr "المشكلات المكتشفة (الاختبار الجزئي/الفاشل يفتح ملاحظة)"
+
+msgid "IT, cyber & business continuity"
+msgstr "تكنولوجيا المعلومات والأمن السيبراني واستمرارية الأعمال"
+
+msgid "BCP / DR readiness"
+msgstr "جاهزية الاستمرارية / التعافي"
+
+msgid "Backups with issues"
+msgstr "نسخ احتياطية بها مشكلات"
+
+msgid "Integrations not live"
+msgstr "ربط غير فعال"
+
+msgid "Certificates needing attention"
+msgstr "شهادات تحتاج متابعة"
+
+msgid "Licences expired / expiring"
+msgstr "تراخيص منتهية / قاربت على الانتهاء"
+
+msgid "IT risks not reviewed"
+msgstr "مخاطر تقنية لم تُراجع"
+
+msgid "Latest maturity self-assessments"
+msgstr "أحدث تقييمات النضج الذاتية"
+
+msgid "avg"
+msgstr "المتوسط"
+
+msgid "None yet."
+msgstr "لا يوجد بعد."
+
+msgid "Domains & TLS certificates"
+msgstr "النطاقات وشهادات TLS"
+
+msgid "Each active domain is checked automatically (real TLS connection, every 12 hours via the scheduled run). Warning"
+msgstr "يُفحص كل نطاق فعال تلقائياً (اتصال TLS حقيقي كل 12 ساعة عبر التشغيل المجدول). التنبيه"
+
+msgid "days before expiry (parameter it.ssl_expiry_warning_days)."
+msgstr "يوماً قبل الانتهاء (المعامل it.ssl_expiry_warning_days)."
+
+msgid "Domain"
+msgstr "النطاق"
+
+msgid "Issuer"
+msgstr "جهة الإصدار"
+
+msgid "Last checked"
+msgstr "آخر فحص"
+
+msgid "Check now"
+msgstr "افحص الآن"
+
+msgid "No domain declared."
+msgstr "لا يوجد نطاق معلن."
+
+msgid "Add and check"
+msgstr "إضافة وفحص"
+
+msgid "External integrations"
+msgstr "الربط مع الجهات الخارجية"
+
+msgid "Links the regulation expects (e.g. a freeze-order / sanctions feed from the financial-intelligence unit). Systems can report each exchange to POST /api/v1/cyber/integration-exchange."
+msgstr "روابط تتطلبها اللوائح (مثل قوائم أوامر التجميد / العقوبات من وحدة التحريات المالية). يمكن للأنظمة إرسال كل تبادل إلى POST /api/v1/cyber/integration-exchange."
+
+msgid "Integration"
+msgstr "الربط"
+
+msgid "Record successful exchange"
+msgstr "تسجيل تبادل ناجح"
+
+msgid "No integration registered."
+msgstr "لا يوجد ربط مسجل."
+
+msgid "Add or change an integration"
+msgstr "إضافة أو تعديل ربط"
+
+msgid "Not connected"
+msgstr "غير متصل"
+
+msgid "Testing"
+msgstr "تحت الاختبار"
+
+msgid "Live"
+msgstr "فعال"
+
+msgid "Down"
+msgstr "متوقف"
+
+msgid "IT risks in the ERM register"
+msgstr "مخاطر تكنولوجيا المعلومات في سجل المخاطر المؤسسية"
+
+msgid "IT risks live in the enterprise risk register (Risk Management), category"
+msgstr "مخاطر تكنولوجيا المعلومات مسجلة في سجل المخاطر المؤسسية (إدارة المخاطر)، الفئة"
+
+msgid "Review age limit"
+msgstr "حد عمر المراجعة"
+
+msgid "not set (parameter it.risk_register_max_age_days)"
+msgstr "غير محدد (المعامل it.risk_register_max_age_days)"
+
+msgid "Inherent / residual"
+msgstr "الكامن / المتبقي"
+
+msgid "Last review"
+msgstr "آخر مراجعة"
+
+msgid "Freshness"
+msgstr "الحداثة"
+
+msgid "No risk in these categories."
+msgstr "لا توجد مخاطر في هذه الفئات."
+
+msgid "Maturity self-assessment"
+msgstr "تقييم النضج الذاتي"
+
+msgid "Framework maturity self-assessment"
+msgstr "التقييم الذاتي لنضج الإطار"
+
+msgid "Pick any framework of the control library (IT governance, IT risk, cybersecurity — from a content pack or built on Compliance Controls → Frameworks) and rate each requirement 0–5 against a target."
+msgstr "اختر أي إطار من مكتبة الضوابط (حوكمة تكنولوجيا المعلومات، مخاطرها، الأمن السيبراني — من حزمة محتوى أو مبني من الضوابط الرقابية ← الأطر) وقيّم كل متطلب من 0 إلى 5 مقابل هدف."
+
+msgid "Assessed"
+msgstr "تاريخ التقييم"
+
+msgid "Average"
+msgstr "المتوسط"
+
+msgid "Start a self-assessment"
+msgstr "بدء تقييم ذاتي"
+
+msgid "(the previous ratings are carried over)"
+msgstr "(تُنقل التقييمات السابقة)"
+
+msgid "Start"
+msgstr "بدء"
+
+msgid "average"
+msgstr "المتوسط"
+
+msgid "below target"
+msgstr "أقل من الهدف"
+
+msgid "Current (0-5)"
+msgstr "الحالي (0-5)"
+
+msgid "Target (0-5)"
+msgstr "المستهدف (0-5)"
+
+msgid "Evidence / note"
+msgstr "الدليل / ملاحظة"
+
+msgid "Save and finalise"
+msgstr "حفظ واعتماد نهائي"
+
+msgid "0 none · 1 initial · 2 repeatable · 3 defined · 4 managed · 5 optimised"
+msgstr "0 لا يوجد · 1 مبدئي · 2 قابل للتكرار · 3 محدد · 4 مُدار · 5 مُحسَّن"
+
+msgid "IT resilience (BCP, backups, certificates)"
+msgstr "مرونة تكنولوجيا المعلومات (الاستمرارية، النسخ، الشهادات)"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

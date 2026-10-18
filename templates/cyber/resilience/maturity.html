@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% import 'cyber/resilience/_nav.html' as cn with context %}
+{% block title %}{{ _('Maturity self-assessment') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Framework maturity self-assessment') }}</h3>
+    {{ cn.nav('cyber.res_maturity') }}
+    <p class="small text-muted">{{ _('Pick any framework of the control library (IT governance, IT risk, cybersecurity — from a content pack or built on Compliance Controls → Frameworks) and rate each requirement 0–5 against a target.') }}</p>
+    <div class="card mb-3"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Framework') }}</th><th>{{ _('Title') }}</th><th>{{ _('Assessed') }}</th><th>{{ _('Status') }}</th><th class="text-end">{{ _('Average') }}</th></tr></thead><tbody>
+        {% for m in rows %}<tr><td>{{ m.framework_code }}</td><td><a href="{{ url_for('cyber.res_maturity_detail', assessment_id=m.id) }}">{{ m.title }}</a></td><td>{{ m.assessed_on }}</td><td>{{ m.status }}</td><td class="text-end">{{ m.avg_current or '-' }}</td></tr>
+        {% else %}<tr><td colspan="5" class="text-muted">{{ _('None yet.') }}</td></tr>{% endfor %}</tbody></table></div>
+    {% if cy_can_edit %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Start a self-assessment') }}</strong> <span class="small text-muted">{{ _('(the previous ratings are carried over)') }}</span></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-5"><select name="framework_id" class="form-select form-select-sm">{% for f in frameworks %}<option value="{{ f.id }}">{{ f.code }} · {{ rc_loc(f.name_en, f.name_ar) }} ({{ f.n }})</option>{% endfor %}</select></div>
+        <div class="col-md-5"><input name="title" class="form-control form-control-sm" placeholder="{{ _('Title') }}"></div>
+        <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">{{ _('Start') }}</button></div></div></form>{% endif %}
+</div>
+{% endblock %}

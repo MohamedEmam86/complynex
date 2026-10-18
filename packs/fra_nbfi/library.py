@@ -156,6 +156,20 @@ CHECK_KEYS = {
     'FRA-063': 'core.finance.related_parties',
     'FRA-064': 'core.finance.study',
     'FRA-066': 'core.finance.study',
+    # IT, cyber & business continuity — generic core checks (cyber/).
+    'FRA-051': 'core.cyber.offsite_backup',
+    'FRA-067': 'core.cyber.dr_readiness',
+    'FRA-068': 'core.cyber.integration',
+    'FRA-069': 'core.cyber.assessment',
+    'FRA-070': 'core.cyber.security_assets',
+    'FRA-071': 'core.cyber.data_residency',
+    'FRA-072': 'core.cyber.tls_certificates',
+    'FRA-073': 'core.cyber.assessment',
+    'FRA-074': 'core.policies.board_approval',
+    'FRA-075': 'core.cyber.maturity',
+    'FRA-076': 'core.cyber.maturity',
+    'FRA-077': 'core.cyber.maturity',
+    'FRA-078': 'core.risk.register_fresh',
 }
 
 # Settings for the generic checks above (rc_controls.check_config, editable on
@@ -206,7 +220,51 @@ CHECK_CONFIG = {
     'FRA-063': {'item_types': ['loan_from', 'loan_to', 'current_account', 'dues', 'other']},
     'FRA-064': {'study_type': 'deferred_tax'},
     'FRA-066': {'study_type': 'ecl'},
+    'FRA-051': {'max_age_param': 'it.offsite_backup_max_age_days'},
+    'FRA-067': {'max_age_param': 'it.dr_test_max_age_months'},
+    'FRA-068': {'codes': ['emlcu_freeze_orders'], 'max_age_hours': 24},
+    'FRA-069': {'types': ['pentest', 'malware_test'], 'max_open_critical': 0},
+    'FRA-070': {'types': ['waf']},
+    'FRA-071': {'types': ['epp', 'edr']},
+    'FRA-072': {'warn_param': 'it.ssl_expiry_warning_days'},
+    'FRA-073': {'types': ['cis_benchmark'], 'max_open_critical': None},
+    'FRA-074': {'name_contains': ['information security', 'cyber', 'أمن المعلومات']},
+    'FRA-075': {'frameworks': ['FRA-ITGOV'], 'max_age_months': 12},
+    'FRA-076': {'frameworks': ['FRA-ITGOV'], 'max_age_months': 12},
+    'FRA-077': {'frameworks': ['FRA-ITGOV'], 'max_age_months': 12},
+    'FRA-078': {'categories': ['TEC'], 'max_age_param': 'it.risk_register_max_age_days'},
 }
+
+# External integrations the FRA expects (declared, status "not connected"
+# until the installation records exchanges).
+# TODO(compliance-review): confirm the EMLCU freeze-order exchange channel.
+INTEGRATIONS = [
+    {'code': 'emlcu_freeze_orders', 'name': 'EMLCU freeze-order list / notices',
+     'counterparty': 'Egyptian Money Laundering and Terrorist Financing Combating Unit (EMLCU)',
+     'purpose': 'Receive freeze orders and screen collection counterparties against them (FRA-068)',
+     'integration_type': 'portal'},
+]
+
+# Outline framework for the IT governance / IT risk / cybersecurity
+# self-assessment (FRA-075..077). Headings only, to be aligned with the FRA
+# IT requirements. TODO(compliance-review): replace with the FRA text.
+IT_FRAMEWORK = {
+    'code': 'FRA-ITGOV', 'name_en': 'IT governance, IT risk & cybersecurity (outline)',
+    'name_ar': 'حوكمة تكنولوجيا المعلومات ومخاطرها والأمن السيبراني (إطار مبدئي)', 'jurisdiction': 'EG',
+    'version': 'outline-1',
+    'description': 'Headings for the maturity self-assessment; align with the FRA IT requirements before use.',
+}
+IT_REQUIREMENTS = [
+    ('ITG-1', 'IT strategy, governance committee and reporting to the board', 'استراتيجية وحوكمة تكنولوجيا المعلومات ورفع التقارير للمجلس'),
+    ('ITG-2', 'IT policies approved and reviewed', 'اعتماد سياسات تكنولوجيا المعلومات ومراجعتها'),
+    ('ITR-1', 'IT risk identification, assessment and register', 'تحديد وتقييم مخاطر تكنولوجيا المعلومات وتسجيلها'),
+    ('ITR-2', 'Third-party / outsourcing risk management', 'إدارة مخاطر الأطراف الخارجية والإسناد'),
+    ('CYB-1', 'Identity and access management', 'إدارة الهوية والصلاحيات'),
+    ('CYB-2', 'Vulnerability and patch management, penetration testing', 'إدارة الثغرات والتحديثات واختبارات الاختراق'),
+    ('CYB-3', 'Security monitoring and incident response', 'المراقبة الأمنية والاستجابة للحوادث'),
+    ('CYB-4', 'Data protection, encryption and data residency', 'حماية البيانات والتشفير وتوطين البيانات'),
+    ('BCM-1', 'Backup, disaster recovery and continuity testing', 'النسخ الاحتياطي والتعافي من الكوارث واختبار الاستمرارية'),
+]
 
 # Key functions and branch roles the FRA expects (vocabulary rows in the
 # prudential registers; editable afterwards).

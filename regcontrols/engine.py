@@ -62,6 +62,7 @@ CORE_CHECK_MODULES = [
     'regcontrols.builtin_checks',
     'amlkyc.checks',
     'prudential.checks',
+    'cyber.checks',
 ]
 
 _MISSING = object()

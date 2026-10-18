@@ -29,7 +29,8 @@ checks, sweep, pages and JSON API. Remove the package or disable the pack and th
 keeps working unchanged.
 """
 
-from regcontrols.api import Pack, catalog, install_branch_role, install_key_function_type, register_pack
+from regcontrols.api import (Pack, catalog, install_branch_role, install_integration, install_key_function_type,
+                             register_pack)
 
 from . import library as L
 
@@ -62,6 +63,11 @@ def install(db):
         install_key_function_type(pack_code=L.PACK_CODE, db=db, **f)
     for r in L.BRANCH_ROLES:
         install_branch_role(pack_code=L.PACK_CODE, db=db, **r)
+    for i in L.INTEGRATIONS:
+        install_integration(pack_code=L.PACK_CODE, db=db, **i)
+    it_fw = catalog.install_framework(regulator_id=regulator_id, pack_code=L.PACK_CODE, db=db, **L.IT_FRAMEWORK)
+    for n, (ref, en, ar) in enumerate(L.IT_REQUIREMENTS, start=1):
+        catalog.install_requirement(it_fw, ref, en, ar, area_code='it_cyber', sort_order=n, db=db)
     db.commit()
     return {'controls': len(L.CONTROLS), 'parameters': len(L.PARAMETERS)}
 
@@ -76,7 +82,7 @@ PACK = register_pack(Pack(
     description_ar=('متطلبات الهيئة العامة للرقابة المالية للمؤسسات المالية غير المصرفية: 80 متطلبًا وضابطًا '
                     '(رأس المال والترخيص ومنح التمويل والتسعير ومكافحة غسل الأموال والتقارير المالية '
                     'وتكنولوجيا المعلومات والمعالجة) والمعايير الرقابية المستخدمة (تؤكد قيمها إدارة الالتزام).'),
-    version='4',
+    version='5',
     install=install,
     check_modules=['packs.fra_nbfi.lending.checks'],
     blueprints=['packs.fra_nbfi.lending.routes:bp', 'packs.fra_nbfi.lending.api:api_bp'],

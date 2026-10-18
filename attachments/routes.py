@@ -42,6 +42,7 @@ ALLOWED_MODULES = {
     'aml': 'aml',
     'regcontrols': 'regcontrols',
     'prudential': 'prudential',
+    'cyber': 'cyber',
 }
 
 

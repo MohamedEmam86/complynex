@@ -41,6 +41,7 @@ from regcontrols.api import (
     register_expected_source,             # declare a detector whose events must all be on that register
     install_key_function_type,            # pack vocabulary for Prudential > Key functions
     install_branch_role,                  # pack vocabulary for Prudential > Branches (minimum staffing)
+    install_integration,                  # declare an expected external integration (IT resilience)
     ParameterNotFound, ParameterNotSet,
 )
 ```
@@ -130,6 +131,10 @@ module docstring. The prudential / governance / financial-reporting checks
 (`prudential/checks.py`: `core.prudential.*`, `core.governance.*`, `core.finance.*`)
 work the same way. Finance figures reach them through `prudential/providers.py`, so a
 future ERP / finance module can feed the same checks by registering a provider.
+The IT / cyber / business-continuity checks (`cyber/checks.py`: `core.cyber.*`,
+`core.risk.register_fresh`) read the IT-resilience registers of the cyber module; backup
+jobs and integrations can report through `POST /api/v1/cyber/backup-status` and
+`POST /api/v1/cyber/integration-exchange` (API key scope `cyber:write`).
 
 Key prefixes: `core.` for checks shipped with the core (`regcontrols/builtin_checks.py`,
 always loaded), `<pack_code>.` for a pack's checks (loaded only while the pack is enabled).

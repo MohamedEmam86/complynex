@@ -92,3 +92,9 @@ def install_branch_role(code, name_en, name_ar=None, **kwargs):
     """Add a required branch role (Prudential > Branches) if missing."""
     from prudential.service import install_branch_role as _ibr
     return _ibr(code, name_en, name_ar, **kwargs)
+
+
+def install_integration(code, name, **kwargs):
+    """Declare an expected external integration (IT resilience > Integrations) if missing."""
+    from cyber.resilience import install_integration as _ii
+    return _ii(code, name, **kwargs)

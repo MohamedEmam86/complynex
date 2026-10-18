@@ -344,6 +344,41 @@ def _superadmin_session():
     return None
 
 
+@api_v1_bp.route('/cyber/backup-status', methods=['POST'])
+@require_api_key('cyber:write')
+def cyber_backup_status():
+    """A backup job reports one run: {"system_name", "status": success|failed|partial,
+    "finished_at" (ISO, optional), "message", "location_type", "encrypted"}."""
+    data, err = _require_json('system_name', 'status')
+    if err:
+        return err
+    from cyber import resilience
+    try:
+        fin = data.get('finished_at')
+        fin = datetime.fromisoformat(str(fin).replace('Z', '')) if fin else None
+        extra = {k: data[k] for k in ('location_type', 'location_detail', 'encrypted', 'backup_type') if k in data}
+        bid = resilience.record_backup_run(str(data['system_name'])[:200], data['status'], fin, data.get('message'),
+                                           **extra)
+        return _ok({'id': bid, 'system_name': data['system_name'], 'status': data['status']}, 201)
+    except (resilience.ResilienceError, ValueError) as e:
+        return _err(str(e), 400)
+
+
+@api_v1_bp.route('/cyber/integration-exchange', methods=['POST'])
+@require_api_key('cyber:write')
+def cyber_integration_exchange():
+    """An integration reports one exchange: {"code", "ok": true|false}."""
+    data, err = _require_json('code')
+    if err:
+        return err
+    from cyber import resilience
+    try:
+        resilience.record_integration_exchange(str(data['code']), bool(data.get('ok', True)))
+        return _ok({'code': data['code'], 'ok': bool(data.get('ok', True))})
+    except resilience.ResilienceError as e:
+        return _err(str(e), 404)
+
+
 @api_v1_bp.route('/keys', methods=['POST'])
 def create_api_key():
     guard = _superadmin_session()

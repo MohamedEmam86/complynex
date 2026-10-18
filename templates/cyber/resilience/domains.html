@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% import 'cyber/resilience/_nav.html' as cn with context %}
+{% block title %}{{ _('Domains & certificates') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Domains & TLS certificates') }}</h3>
+    {{ cn.nav('cyber.res_domains') }}
+    <p class="small text-muted">{{ _('Each active domain is checked automatically (real TLS connection, every 12 hours via the scheduled run). Warning') }} {{ warn }} {{ _('days before expiry (parameter it.ssl_expiry_warning_days).') }}</p>
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Domain') }}</th><th>{{ _('State') }}</th><th>{{ _('Expires') }}</th><th>{{ _('Issuer') }}</th><th>{{ _('Last checked') }}</th><th>{{ _('Error') }}</th><th></th></tr></thead><tbody>
+        {% for d in rows %}<tr class="{{ 'text-muted' if not d.is_active else ('table-danger' if d.state in ('expired', 'error') else ('table-warning' if d.state in ('expiring', 'stale', 'unchecked'))) }}"><td>{{ d.domain }}{% if d.port != 443 %}:{{ d.port }}{% endif %}</td><td>{{ cn.state(d.state) }}</td>
+            <td>{{ d.cert_not_after.strftime('%Y-%m-%d') if d.cert_not_after else '-' }}</td><td>{{ (d.cert_issuer or '-')|truncate(60) }}</td><td>{{ d.last_checked_at.strftime('%Y-%m-%d %H:%M') if d.last_checked_at else '-' }}</td><td>{{ d.last_error or '' }}</td>
+            <td class="text-nowrap">{% if cy_can_edit %}<form method="post" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="check"><input type="hidden" name="domain_id" value="{{ d.id }}"><button class="btn btn-sm btn-outline-primary">{{ _('Check now') }}</button></form>
+                <form method="post" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="domain_id" value="{{ d.id }}"><button class="btn btn-sm btn-link">{{ _('Disable') if d.is_active else _('Enable') }}</button></form>{% endif %}</td></tr>
+        {% else %}<tr><td colspan="7" class="text-muted text-center py-3">{{ _('No domain declared.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% if cy_can_edit %}<form method="post" class="card"><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="add">
+        <div class="col-md-6"><input name="domain" class="form-control form-control-sm" placeholder="portal.example.com" required></div>
+        <div class="col-md-2"><input type="number" name="port" class="form-control form-control-sm" value="443"></div>
+        <div class="col-md-4"><button class="btn btn-sm btn-primary">{{ _('Add and check') }}</button></div></div></form>{% endif %}
+</div>
+{% endblock %}

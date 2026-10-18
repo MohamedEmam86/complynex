@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% import 'cyber/resilience/_nav.html' as cn with context %}
+{% block title %}{{ _('Integrations') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('External integrations') }}</h3>
+    {{ cn.nav('cyber.res_integrations') }}
+    <p class="small text-muted">{{ _('Links the regulation expects (e.g. a freeze-order / sanctions feed from the financial-intelligence unit). Systems can report each exchange to POST /api/v1/cyber/integration-exchange.') }}</p>
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Code') }}</th><th>{{ _('Integration') }}</th><th>{{ _('Counterparty') }}</th><th>{{ _('Type') }}</th><th>{{ _('Status') }}</th><th>{{ _('Last success') }}</th><th>{{ _('Issue') }}</th><th></th></tr></thead><tbody>
+        {% for i in rows %}<tr class="{{ 'table-danger' if i.issue }}"><td><code>{{ i.code }}</code></td><td>{{ i.name }}<div class="text-muted">{{ i.purpose or '' }}</div></td><td>{{ i.counterparty or '-' }}</td><td>{{ i.integration_type }}</td><td>{{ i.status }}</td>
+            <td>{{ i.last_success_at.strftime('%Y-%m-%d %H:%M') if i.last_success_at else '-' }}</td><td>{{ i.issue or '-' }}</td>
+            <td class="text-nowrap">{% if cy_can_edit %}<form method="post" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="exchange"><input type="hidden" name="code" value="{{ i.code }}"><input type="hidden" name="ok" value="1"><button class="btn btn-sm btn-link p-0">{{ _('Record successful exchange') }}</button></form> · <a href="{{ url_for('cyber.res_integrations', edit=i.code) }}">{{ _('Edit') }}</a> · {% endif %}<a href="{{ url_for('cyber.res_files', rtype='cy_integration', rid=i.id) }}">{{ _('Files') }}</a></td></tr>
+        {% else %}<tr><td colspan="8" class="text-muted">{{ _('No integration registered.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% if cy_can_edit %}{% set e = edit or {} %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Add or change an integration') }}</strong> <span class="small text-muted">{{ _('(same code = update)') }}</span></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-2"><input name="code" class="form-control form-control-sm" placeholder="{{ _('code') }}" value="{{ e.code or '' }}" required></div>
+        <div class="col-md-4"><input name="name" class="form-control form-control-sm" placeholder="{{ _('Name') }}" value="{{ e.name or '' }}" required></div>
+        <div class="col-md-3"><input name="counterparty" class="form-control form-control-sm" placeholder="{{ _('Counterparty') }}" value="{{ e.counterparty or '' }}"></div>
+        <div class="col-md-1"><select name="integration_type" class="form-select form-select-sm">{% for v in ['api', 'sftp', 'portal', 'email', 'manual'] %}<option {{ 'selected' if e.integration_type == v }}>{{ v }}</option>{% endfor %}</select></div>
+        <div class="col-md-2"><select name="status" class="form-select form-select-sm">{% for v, l in [('not_connected', _('Not connected')), ('testing', _('Testing')), ('live', _('Live')), ('down', _('Down'))] %}<option value="{{ v }}" {{ 'selected' if e.status == v }}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="col-md-10"><input name="purpose" class="form-control form-control-sm" placeholder="{{ _('Purpose') }}" value="{{ e.purpose or '' }}"></div>
+        <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">{{ _('Save') }}</button></div></div></form>{% endif %}
+</div>
+{% endblock %}

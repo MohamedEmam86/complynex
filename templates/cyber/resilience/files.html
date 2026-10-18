@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% import 'cyber/resilience/_nav.html' as cn with context %}
+{% block title %}{{ label }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{{ label }}</h3>
+    <p class="small"><a href="{{ url_for(back) }}">{{ _('Back') }}</a></p>
+    {{ cn.nav(back) }}
+    <div class="row"><div class="col-lg-6"><div class="card mb-3"><table class="table table-sm mb-0 small">{% for k, v in rec.items() if v not in (none, '', [], {}) and k not in ('created_by', 'updated_by') %}<tr><th style="width: 40%">{{ k }}</th><td>{{ v }}</td></tr>{% endfor %}</table></div></div>
+        <div class="col-lg-6">{% include 'partials/attachment_widget.html' %}</div></div>
+</div>
+{% endblock %}
