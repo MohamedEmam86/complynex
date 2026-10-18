@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Audit coverage') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Internal-audit coverage of controls') }} {{ cov.year }}</h3>
+    {{ aa.nav('amlkyc.audit_coverage') }}
+    <p class="small">{{ cov.covered|length }} / {{ cov.controls|length }} {{ _('controls covered by the audit plan') }}. {% if cov.gaps %}<span class="text-danger">{{ cov.gaps|length }} {{ _('critical/high controls not covered') }}</span>{% endif %}</p>
+    {% set area_names = {} %}{% for a in cov.areas %}{% set _ = area_names.update({a.id: a.auditable_area}) %}{% endfor %}
+    <div class="card"><div class="table-responsive" style="max-height: 600px"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Control') }}</th><th>{{ _('Criticality') }}</th><th>{{ _('Covered') }}</th><th>{{ _('Auditable areas') }}</th><th></th></tr></thead><tbody>
+        {% for c in cov.controls %}{% set gap = c in cov.gaps %}
+        <tr class="{{ 'table-danger' if gap }}"><td>{{ c.control_code }} · {{ rc_loc(c, 'title') }}</td><td>{{ c.criticality }}</td><td>{{ _('Yes') if c.id in cov.covered else _('No') }}</td>
+            <td>{% for uid in cov.mapping.get(c.id, []) %}<span class="badge bg-light text-dark border">{{ area_names.get(uid, uid) }}</span> {% endfor %}</td>
+            <td>{% if current_user.can_edit('internal_audit') and cov.areas %}<form method="post" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="control_id" value="{{ c.id }}">
+                <select name="universe_id" class="form-select form-select-sm">{% for a in cov.areas %}<option value="{{ a.id }}">{{ a.auditable_area }}</option>{% endfor %}</select>
+                <button class="btn btn-sm btn-outline-primary" name="action" value="link">{{ _('Link') }}</button><button class="btn btn-sm btn-outline-secondary" name="action" value="unlink">{{ _('Unlink') }}</button></form>{% endif %}</td></tr>
+        {% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

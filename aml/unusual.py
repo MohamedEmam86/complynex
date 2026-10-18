@@ -51,6 +51,11 @@ def register_candidate(*, source_module, detection_rule, description, source_tab
     db.execute("UPDATE aml_unusual_transactions SET reference = %s WHERE id = %s",
                (f'UTR-{datetime.now().year}-{uid:05d}', uid))
     db.commit()
+    try:
+        from models.case import Case
+        Case.sync_from_source('UNUSUAL_TXN', uid)
+    except Exception:
+        db.rollback()
     return uid, True
 
 

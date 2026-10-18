@@ -416,7 +416,7 @@ def refinance_hits(db=None):
     loans = _rows(db, "SELECT * FROM ln_loans")
     hits = logic.costlier_refinance(ers, loans, window)
     if hits:
-        from aml.unusual import register_candidate
+        from regcontrols.api import register_unusual_candidate as register_candidate
         clients = {c['id']: c for c in _rows(db, "SELECT * FROM ln_clients WHERE id = ANY(%s)",
                                                (list({h['client_id'] for h in hits}),))}
         by_id = {l['id']: l for l in loans}

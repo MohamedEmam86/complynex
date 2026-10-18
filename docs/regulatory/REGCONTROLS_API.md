@@ -37,6 +37,8 @@ from regcontrols.api import (
     raise_finding, raise_alert,           # findings / alerts
     run_control,
     Pack, register_pack, catalog,         # writing a content pack
+    register_unusual_candidate,           # put a detected event on the AML unusual-transactions register
+    register_expected_source,             # declare a detector whose events must all be on that register
     ParameterNotFound, ParameterNotSet,
 )
 ```
@@ -115,6 +117,14 @@ def fee_cap(ctx):
                         affected=[{'table': '...', 'id': r['id'], 'label': r['ref']} for r in rows])
     return ctx.ok('All within the cap')
 ```
+
+**Check settings (`rc_controls.check_config`)** — one generic check can serve many
+frameworks; each control tunes it with a JSON object (edited on the control page,
+read as `ctx.config`). Example: `core.kyc.fields` with
+`{"subjects": ["aml_customer"], "fields": ["gender"]}`. The AML/KYC core checks
+(`amlkyc/checks.py`, keys `core.aml.*`, `core.kyc.*`, `core.screening.*`,
+`core.audit.*`, `core.policies.*`, `core.training.*`) list their settings in the
+module docstring.
 
 Key prefixes: `core.` for checks shipped with the core (`regcontrols/builtin_checks.py`,
 always loaded), `<pack_code>.` for a pack's checks (loaded only while the pack is enabled).

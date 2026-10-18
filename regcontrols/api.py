@@ -61,3 +61,20 @@ def raise_finding(title, **kwargs):
 def raise_alert(alert_type, title, message=None, **kwargs):
     """Open or refresh a live alert and notify its owner. Returns its id."""
     return _alerts.raise_alert(alert_type, title, message, **kwargs)
+
+
+# ---- AML hooks for packs (the AML core modules stay unaware of any pack) ----
+
+def register_unusual_candidate(**kwargs):
+    """Put a detected event on the AML unusual-transactions register (and its
+    case). Returns (id, created). See aml.unusual.register_candidate."""
+    from aml.unusual import register_candidate
+    return register_candidate(**kwargs)
+
+
+def register_expected_source(name, fn):
+    """Declare a detector whose events must all be on the unusual-transactions
+    register: fn(db) -> [(source_table, source_record_id, label)]. The core
+    check core.aml.unusual_register reconciles them."""
+    from amlkyc.service import register_expected_source as _reg
+    return _reg(name, fn)

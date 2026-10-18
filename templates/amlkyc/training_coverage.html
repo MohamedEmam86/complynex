@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Training coverage') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('AML training coverage') }}</h3>
+    {{ aa.nav('amlkyc.training_coverage') }}
+    <p class="small">{{ _('Overall') }}: <strong class="{{ 'text-danger' if target is not none and overall < target }}">{{ overall }}%</strong> · {{ _('target') }}: {{ (target ~ '%') if target is not none else _('not set (parameter training.aml_coverage_target_pct)') }} · {{ _('course category') }}: {{ category or _('all') }}</p>
+    <div class="card"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Department') }}</th><th class="text-end">{{ _('Trained') }}</th><th class="text-end">{{ _('Staff') }}</th><th class="text-end">{{ _('Coverage') }}</th></tr></thead><tbody>
+        {% for g, v in cov %}<tr class="{{ 'table-danger' if target is not none and v[2] < target }}"><td>{{ g }}</td><td class="text-end">{{ v[0] }}</td><td class="text-end">{{ v[1] }}</td><td class="text-end">{{ v[2] }}%</td></tr>
+        {% else %}<tr><td colspan="4" class="text-muted">{{ _('No staff.') }}</td></tr>{% endfor %}</tbody></table></div>
+</div>
+{% endblock %}

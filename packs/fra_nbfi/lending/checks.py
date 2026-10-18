@@ -31,7 +31,7 @@ part of the FRA pack.
 
 from datetime import date
 
-from regcontrols.api import raise_finding, register_check, register_sweep
+from regcontrols.api import raise_finding, register_check, register_expected_source, register_sweep
 
 from . import logic, service
 
@@ -334,3 +334,19 @@ def lending_sweep():
                                        f'origination tightening) and re-measure monthly.'))
             opened += 1
     return {'qa_open': qa_open, 'refinance_hits': len(hits), 'par_breaches': opened}
+
+
+def _refinance_expected(db):
+    """Every prepayment-to-costlier-loan hit must be on the AML register (FRA-035)."""
+    from regcontrols.api import get_param
+    window = get_param('lending.prepay_new_loan_window_days', default=None)
+    if window is None:
+        return []
+    ers = [dict(r) for r in db.execute("SELECT * FROM ln_early_repayments WHERE status = 'executed'").fetchall()]
+    loans = [dict(r) for r in db.execute("SELECT * FROM ln_loans").fetchall()] if ers else []
+    refs = {l['id']: l['loan_ref'] for l in loans}
+    return [('ln_early_repayments', h['early_repayment_id'], f"lending refinance {refs.get(h['new_loan_id'], '')}")
+            for h in logic.costlier_refinance(ers, loans, window)]
+
+
+register_expected_source('fra_nbfi.lending.refinance', _refinance_expected)

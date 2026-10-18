@@ -60,6 +60,7 @@ logger = logging.getLogger(__name__)
 # Generic checks shipped with the core. Packs declare theirs in Pack.check_modules.
 CORE_CHECK_MODULES = [
     'regcontrols.builtin_checks',
+    'amlkyc.checks',
 ]
 
 _MISSING = object()
@@ -177,6 +178,13 @@ class CheckContext:
     licence_type: str = 'all'
     org_unit_id: int = None
     db: object = None
+
+    @property
+    def config(self):
+        """The control's check_config (JSON set by a pack or in the UI), so one
+        check can serve controls of different frameworks with different settings."""
+        cfg = self.control.get('check_config') or {}
+        return cfg if isinstance(cfg, dict) else {}
 
     def param(self, key, default=_MISSING):
         """Typed regulatory parameter for this run's licence and date."""

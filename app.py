@@ -375,6 +375,12 @@ def create_app(config_name=None):
     import regcontrols.routes  # noqa: F401 — registers routes on regcontrols_bp
     app.register_blueprint(regcontrols_bp)
 
+    # AML/CFT & KYC assurance (key roles, annual report, monitoring programme,
+    # screening QA, unusual-transactions register, KYC files, risk model) — see amlkyc/
+    from amlkyc import amlkyc_bp
+    import amlkyc.routes  # noqa: F401 — registers routes on amlkyc_bp
+    app.register_blueprint(amlkyc_bp)
+
     # Optional content packs (packs/<code>/): their pages exist only while the
     # pack is enabled (Compliance Controls > Content packs). Core never
     # imports a specific pack.

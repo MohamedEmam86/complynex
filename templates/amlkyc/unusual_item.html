@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ u.reference }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{{ u.reference }} <span class="badge bg-secondary fs-6">{{ u.status }}</span></h3>
+    <p class="small text-muted">{{ u.source_module }} · {{ u.detection_rule }} · {{ _('detected') }} {{ u.detected_at.strftime('%Y-%m-%d') }} · {{ _('study due') }} {{ u.study_due_date or '-' }}</p>
+    {{ aa.nav('amlkyc.unusual') }}
+    <div class="row g-3"><div class="col-lg-7">
+        <div class="card mb-3"><div class="card-body small"><p><strong>{{ u.subject_name or '' }}</strong> {{ u.subject_ref or '' }}{% if u.amount %} · EGP {{ u.amount }}{% endif %}</p><p class="mb-0">{{ u.description or '' }}</p></div></div>
+        <form method="post" class="card"><div class="card-header"><strong>{{ _('Study and decision') }}</strong></div><div class="card-body small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% set closed = u.status in ('str_filed', 'no_str', 'dismissed') %}
+            <textarea name="analysis" rows="6" class="form-control mb-2" placeholder="{{ _('Analysis: facts checked, customer profile, conclusion') }}" {{ 'disabled' if closed or not aa_can_edit }}>{{ u.analysis or '' }}</textarea>
+            {% if not closed and aa_can_edit %}<div class="row g-2"><div class="col-md-4"><select name="decision" class="form-select form-select-sm"><option value="">{{ _('Save analysis only') }}</option><option value="str">{{ _('Decision: file an STR') }}</option><option value="no_str">{{ _('Decision: no STR') }}</option></select></div>
+                <div class="col-md-4"><input name="str_reference" class="form-control form-control-sm" placeholder="{{ _('STR reference (if filed)') }}"></div>
+                <div class="col-md-4"><button class="btn btn-sm btn-primary w-100">{{ _('Save') }}</button></div></div>
+                <p class="text-muted mt-2 mb-0">{{ _('A decision needs the written analysis and at least one supporting document.') }}</p>
+            {% else %}<p class="mb-0">{{ _('Decision') }}: <strong>{{ u.decision or '-' }}</strong> {{ u.str_reference or '' }} {% if u.decision_at %}· {{ u.decision_at.strftime('%Y-%m-%d') }}{% endif %}</p>{% endif %}
+        </div></form>
+    </div><div class="col-lg-5">{% include 'partials/attachment_widget.html' %}</div></div>
+</div>
+{% endblock %}

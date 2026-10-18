@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Customer risk model') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Customer risk model') }}</h3>
+    {{ aa.nav('amlkyc.risk_model') }}
+    {% if gaps %}<div class="alert alert-warning small">{{ _('No active factor for') }}: {{ gaps|join(', ') }}. {{ _('A risk-based model should cover every category.') }}</div>{% endif %}
+    <div class="row g-3"><div class="col-lg-8">
+        <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Key') }}</th><th>{{ _('Category') }}</th><th>{{ _('Label') }}</th><th>{{ _('Reads field') }}</th><th class="text-end">{{ _('Weight') }}</th><th>{{ _('Scoring') }}</th><th>{{ _('Active') }}</th></tr></thead><tbody>
+            {% for f in factors %}<tr class="{{ 'text-muted' if not f.is_active }}"><td><code>{{ f.factor_key }}</code></td><td>{{ f.category }}</td><td>{{ f.label_ar if get_locale() == 'ar' and f.label_ar else f.label_en }}</td><td><code>{{ f.field_key }}</code></td><td class="text-end">{{ f.weight }}</td><td><code>{{ f.scoring|tojson }}</code></td><td>{{ _('Yes') if f.is_active else _('No') }}</td></tr>{% endfor %}</tbody></table></div></div>
+        {% if aa_can_edit %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Add or change a factor') }}</strong> <span class="small text-muted">{{ _('(same key = update)') }}</span></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="factor">
+            <div class="col-md-3"><input name="factor_key" class="form-control form-control-sm" placeholder="{{ _('key') }}" required></div>
+            <div class="col-md-3"><select name="category" class="form-select form-select-sm">{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><input name="label_en" class="form-control form-control-sm" placeholder="{{ _('Label (English)') }}" required></div>
+            <div class="col-md-3"><input name="label_ar" class="form-control form-control-sm" placeholder="{{ _('Label (Arabic)') }}" dir="rtl"></div>
+            <div class="col-md-3"><input name="field_key" class="form-control form-control-sm" placeholder="{{ _('field it reads') }}" required></div>
+            <div class="col-md-2"><input type="number" step="0.1" name="weight" class="form-control form-control-sm" value="1"></div>
+            <div class="col-md-5"><input name="scoring" class="form-control form-control-sm" placeholder='{"HIGH": 80, "*": 20}'></div>
+            <div class="col-md-1 form-check pt-1"><input type="checkbox" name="is_active" value="1" class="form-check-input" checked id="fa"><label class="form-check-label" for="fa">{{ _('Active') }}</label></div>
+            <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">{{ _('Save') }}</button></div></div></form>{% endif %}
+    </div><div class="col-lg-4">
+        <form method="post" class="card"><div class="card-header"><strong>{{ _('Risk bands') }}</strong></div><div class="card-body small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="band">
+            {% for b in bands %}<div class="mb-2"><label class="form-label mb-0">{{ b.label_ar if get_locale() == 'ar' and b.label_ar else (b.label_en or b.band) }}</label>
+                <div class="input-group input-group-sm"><span class="input-group-text">{{ _('from score') }}</span><input type="number" step="0.1" name="min_{{ b.band }}" class="form-control" value="{{ b.min_score }}" {{ 'disabled' if not aa_can_edit }}></div>
+                <input name="param_{{ b.band }}" class="form-control form-control-sm mt-1" value="{{ b.refresh_param_key or '' }}" placeholder="{{ _('refresh-cycle parameter key') }}" {{ 'disabled' if not aa_can_edit }}></div>{% endfor %}
+            <p class="text-muted">{{ _('The refresh cycle (months) of each band is a regulatory parameter, set on Compliance Controls → Parameters.') }}</p>
+            {% if aa_can_edit %}<button class="btn btn-sm btn-primary">{{ _('Save bands') }}</button>{% endif %}</div></form>
+    </div></div>
+</div>
+{% endblock %}

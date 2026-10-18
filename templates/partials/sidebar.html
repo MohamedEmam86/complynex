@@ -676,6 +676,59 @@
     </li>
     {% endif %}
 
+    {# ======== AML & KYC Assurance (amlkyc) ======== #}
+    {% if current_user.can_view('aml') %}
+    <li class="cnx-nav__item" data-area="amlkyc">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-person-check cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('AML & KYC Assurance') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('amlkyc.dashboard') }}">
+              <span class="cnx-nav__label">{{ _('AML assurance overview') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('amlkyc.roles') }}">
+              <span class="cnx-nav__label">{{ _('Key AML roles') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('amlkyc.annual_reports') }}">
+              <span class="cnx-nav__label">{{ _('AML annual report') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('amlkyc.monitoring') }}">
+              <span class="cnx-nav__label">{{ _('Monitoring programme') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('amlkyc.screening') }}">
+              <span class="cnx-nav__label">{{ _('Screening assurance') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('amlkyc.unusual') }}">
+              <span class="cnx-nav__label">{{ _('Unusual transactions') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('amlkyc.kyc_home') }}">
+              <span class="cnx-nav__label">{{ _('KYC files') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('amlkyc.risk_model') }}">
+              <span class="cnx-nav__label">{{ _('Customer risk model') }}</span>
+            </a>
+          </li>
+      </ul></div>
+    </li>
+    {% endif %}
+
     {# ======== Enabled content packs (generic: menus come from each pack's manifest) ======== #}
     {% for pm in rc_pack_menus() %}
     <li class="cnx-nav__item" data-area="pack-{{ pm.code }}">
