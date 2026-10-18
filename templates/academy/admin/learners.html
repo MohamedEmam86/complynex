@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Academy learners') }}{% endblock %}
+{% block content %}
+{% set page_title = _('Learners database') %}
+{% include 'academy/admin/_nav.html' %}
+
+{% macro sort_link(key, label) -%}
+  {% set cur = args.get('sort', 'registered') %}
+  {% set nd = 'asc' if (cur == key and args.get('dir') != 'asc') else 'desc' %}
+  {% set q = args.to_dict() %}{% do q.update({'sort': key, 'dir': nd, 'page': 1}) %}
+  <a href="{{ url_for('academy_admin.learners', **q) }}" class="text-decoration-none text-reset">{{ label }}
+  {%- if cur == key %} <i class="bi bi-caret-{{ 'up' if args.get('dir') == 'asc' else 'down' }}-fill"></i>{% endif %}</a>
+{%- endmacro %}
+
+<form class="card card-body py-2 mb-3" method="get">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-3"><label class="form-label small mb-0">{{ _('Search') }}</label>
+      <input name="q" class="form-control form-control-sm" value="{{ args.get('q','') }}" placeholder="{{ _('name, email, company, title') }}"></div>
+    <div class="col-md-2"><label class="form-label small mb-0">{{ _('Status') }}</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="">{{ _('All') }}</option>
+        {% for s, l in [('active', _('Verified')), ('pending', _('Awaiting verification')), ('suspended', _('Suspended'))] %}
+        <option value="{{ s }}" {{ 'selected' if args.get('status') == s }}>{{ l }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-2"><label class="form-label small mb-0">{{ _('Course') }}</label>
+      <select name="course" class="form-select form-select-sm"><option value="">{{ _('Any') }}</option>
+        {% for c in courses %}<option value="{{ c.id }}" {{ 'selected' if args.get('course') == c.id|string }}>{{ c.title_en }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-2"><label class="form-label small mb-0">{{ _('Outcome') }}</label>
+      <select name="outcome" class="form-select form-select-sm"><option value="">{{ _('Any') }}</option>
+        <option value="passed" {{ 'selected' if args.get('outcome') == 'passed' }}>{{ _('Passed a course') }}</option>
+        <option value="not_passed" {{ 'selected' if args.get('outcome') == 'not_passed' }}>{{ _('Not passed yet') }}</option></select></div>
+    <div class="col-md-1"><label class="form-label small mb-0">{{ _('From') }}</label><input type="date" name="from" class="form-control form-control-sm" value="{{ args.get('from','') }}"></div>
+    <div class="col-md-1"><label class="form-label small mb-0">{{ _('To') }}</label><input type="date" name="to" class="form-control form-control-sm" value="{{ args.get('to','') }}"></div>
+    <div class="col-md-1">
+      <div class="form-check small"><input class="form-check-input" type="checkbox" name="marketing" value="1" id="fm" {{ 'checked' if args.get('marketing') == '1' }}><label class="form-check-label" for="fm">{{ _('Opt-in') }}</label></div>
+      <div class="form-check small"><input class="form-check-input" type="checkbox" name="free" value="1" id="ff" {{ 'checked' if args.get('free') == '1' }}><label class="form-check-label" for="ff">{{ _('Free-mail') }}</label></div>
+    </div>
+  </div>
+  <div class="d-flex justify-content-between mt-2 flex-wrap gap-2">
+    <div><button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> {{ _('Apply') }}</button>
+      <a href="{{ url_for('academy_admin.learners') }}" class="btn btn-sm btn-outline-secondary">{{ _('Reset') }}</a></div>
+    <div>
+      {% set qa = args.to_dict() %}{% do qa.update({'export': 'all'}) %}
+      {% set qm = args.to_dict() %}{% do qm.update({'export': 'marketing'}) %}
+      <a class="btn btn-sm btn-outline-success" href="{{ url_for('academy_admin.learners', **qa) }}"><i class="bi bi-download"></i> {{ _('Export (filtered, full)') }}</a>
+      <a class="btn btn-sm btn-success" href="{{ url_for('academy_admin.learners', **qm) }}" title="{{ _('Only verified learners who opted in to marketing') }}"><i class="bi bi-envelope-check"></i> {{ _('Marketing list (opt-in only)') }}</a>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-header bg-light d-flex justify-content-between"><strong>{{ total }} {{ _('learners') }}</strong>
+    <span class="small text-muted">{{ _('Page') }} {{ page }} / {{ pages }}</span></div>
+  <div class="table-responsive">
+  <table class="table table-sm table-hover mb-0 align-middle">
+    <thead class="table-light"><tr>
+      <th>{{ sort_link('name', _('Name')) }}</th><th>{{ sort_link('company', _('Company')) }}</th><th>{{ _('Job title') }}</th>
+      <th>{{ sort_link('domain', _('Email')) }}</th><th>{{ sort_link('status', _('Status')) }}</th>
+      <th class="text-end">{{ sort_link('courses', _('Courses')) }}</th><th class="text-end">{{ sort_link('best', _('Best')) }}</th>
+      <th class="text-end">{{ sort_link('certs', _('Certs')) }}</th><th>{{ _('Opt-in') }}</th>
+      <th>{{ sort_link('registered', _('Registered')) }}</th><th>{{ sort_link('activity', _('Last active')) }}</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr class="cursor-pointer" data-href="{{ url_for('academy_admin.learner', lid=r.id) }}">
+      <td><a href="{{ url_for('academy_admin.learner', lid=r.id) }}">{{ r.full_name }}</a></td>
+      <td>{{ r.company or '—' }}</td><td class="small">{{ r.job_title or '' }}</td>
+      <td class="small">{{ r.email }}{% if r.free_provider %} <span class="badge bg-warning text-dark">{{ _('free-mail') }}</span>{% endif %}</td>
+      <td><span class="badge bg-{{ {'active':'success','pending':'secondary','suspended':'danger'}.get(r.status,'light') }}">{{ {'active': _('verified'), 'pending': _('pending'), 'suspended': _('suspended')}.get(r.status, r.status) }}</span></td>
+      <td class="text-end">{{ r.courses }}</td><td class="text-end">{{ (r.best_score ~ '%') if r.best_score is not none else '—' }}</td>
+      <td class="text-end">{{ r.certs }}</td>
+      <td>{% if r.consent_marketing %}<i class="bi bi-check-circle-fill text-success"></i>{% endif %}</td>
+      <td class="small text-nowrap">{{ r.created_at.strftime('%d %b %Y') }}</td>
+      <td class="small text-nowrap">{{ r.last_activity_at.strftime('%d %b %Y') if r.last_activity_at else '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="11" class="text-center text-muted py-4">{{ _('No learners match these filters.') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% if pages > 1 %}
+  <div class="card-footer d-flex justify-content-center gap-1">
+    {% for p in range(1, pages + 1) if p == 1 or p == pages or (p - page)|abs <= 2 %}
+      {% set qp = args.to_dict() %}{% do qp.update({'page': p}) %}
+      <a class="btn btn-sm {{ 'btn-primary' if p == page else 'btn-outline-secondary' }}" href="{{ url_for('academy_admin.learners', **qp) }}">{{ p }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

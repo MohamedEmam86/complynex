@@ -1,0 +1,26 @@
+{% macro empty_state(title, description, icon="inbox", action_url=None, action_text=None) %}
+<div class="empty-state text-center p-5 bg-white rounded shadow-sm my-4 border">
+    <div class="empty-state-icon mb-3">
+        <i class="bi bi-{{ icon }} text-muted opacity-50" style="font-size: 3.5rem;"></i>
+    </div>
+    <h4 class="empty-state-title fw-bold text-dark mb-2">{{ title }}</h4>
+    <p class="empty-state-description text-secondary mb-4">{{ description }}</p>
+    {% if action_url and action_text %}
+    <a href="{{ action_url }}" class="btn btn-primary px-4 py-2">
+        <i class="bi bi-plus-lg me-2"></i>{{ action_text }}
+    </a>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro priority_badge(priority) %}
+    {% if priority|upper == 'HIGH' or priority|upper == 'CRITICAL' %}
+        <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>{{ priority|upper }}</span>
+    {% elif priority|upper == 'MEDIUM' %}
+        <span class="badge bg-warning text-dark"><i class="bi bi-dash-circle me-1"></i>{{ priority|upper }}</span>
+    {% elif priority|upper == 'LOW' %}
+        <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i>{{ priority|upper }}</span>
+    {% else %}
+        <span class="badge bg-secondary">{{ priority|upper }}</span>
+    {% endif %}
+{% endmacro %}

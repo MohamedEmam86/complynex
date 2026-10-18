@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ _('Board & Committee Meetings') }}</h1>
+        <a href="{{ url_for('governance.schedule_meeting') }}" class="btn btn-primary">
+            <i class="fas fa-calendar-plus"></i> {{ _('Schedule Meeting') }}
+        </a>
+    </div>
+
+    <!-- Upcoming Meetings -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-primary text-white">
+            <h6 class="m-0 font-weight-bold">{{ _('Upcoming Meetings') }}</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>{{ _('Date') }}</th>
+                            <th>{{ _('Type') }}</th>
+                            <th>{{ _('Reference') }}</th>
+                            <th>{{ _('Location') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for meeting in upcoming %}
+                        <tr>
+                            <td>{{ meeting.meeting_date }} {{ meeting.meeting_time or '' }}</td>
+                            <td>{{ meeting.meeting_type }}</td>
+                            <td>{{ meeting.meeting_reference or '-' }}</td>
+                            <td>{{ meeting.location or '-' }}</td>
+                            <td><span class="badge bg-warning text-dark">{{ meeting.status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('governance.record_attendance', id=meeting.id) }}"
+                                    class="btn btn-sm btn-outline-info" title="{{ _('Attendance') }}">
+                                    <i class="fas fa-user-check"></i>
+                                </a>
+                                <a href="{{ url_for('governance.send_meeting_invite', id=meeting.id) }}"
+                                    class="btn btn-sm btn-outline-primary" title="{{ _('Send Invites') }}">
+                                    <i class="fas fa-paper-plane"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-secondary" title="{{ _('Agenda') }}">
+                                    <i class="fas fa-file-alt"></i>
+                                </button>
+                                <a href="{{ url_for('governance.edit_meeting', id=meeting.id) }}"
+                                    class="btn btn-sm btn-outline-info" title="{{ _('Edit Meeting') }}">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('governance.delete_meeting', id=meeting.id) }}"
+                                    class="btn btn-sm btn-outline-danger" title="{{ _('Cancel Meeting') }}"
+                                    data-confirm="{{ _('Are you sure you want to cancel this meeting?') }}">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not upcoming %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">{{ _('No upcoming meetings scheduled.')
+                                }}</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Past Meetings -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-secondary text-white">
+            <h6 class="m-0 font-weight-bold">{{ _('Past Meetings') }}</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>{{ _('Date') }}</th>
+                            <th>{{ _('Type') }}</th>
+                            <th>{{ _('Reference') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for meeting in past %}
+                        <tr>
+                            <td>{{ meeting.meeting_date }}</td>
+                            <td>{{ meeting.meeting_type }}</td>
+                            <td>{{ meeting.meeting_reference or '-' }}</td>
+                            <td><span class="badge bg-success">{{ meeting.status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('governance.meeting_summary', id=meeting.id) }}"
+                                    class="btn btn-sm btn-outline-primary" title="{{ _('View Summary') }}">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-secondary" title="{{ _('Minutes') }}">
+                                    <i class="fas fa-file-pdf"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" title="{{ _('Decisions') }}">
+                                    <i class="fas fa-tasks"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

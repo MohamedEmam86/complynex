@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}New Transaction{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white"><h5 class="mb-0"><i class="fas fa-plus"></i> {{ _('New Transaction') }}</h5></div>
+        <div class="card-body">
+          <form method="POST">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label class="form-label fw-bold">{{ _('Customer *') }}</label>
+                <select name="customer_id" class="form-select" required>
+                  <option value="">{{ _('Select customer...') }}</option>
+                  {% for c in customers %}
+                  <option value="{{ c.id }}">{{ c.customer_reference }} — {{ c.full_name or c.company_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ _('Transaction Date *') }}</label>
+                <input type="datetime-local" name="transaction_date" class="form-control" required value="{{ now }}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ _('Type *') }}</label>
+                <select name="transaction_type" class="form-select" required>
+                  {% for t in ['CREDIT','DEBIT','TRANSFER_IN','TRANSFER_OUT','CASH_DEPOSIT','CASH_WITHDRAWAL','PAYMENT','REFUND'] %}
+                  <option value="{{ t }}">{{ t }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ _('Amount *') }}</label>
+                <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ _('Currency') }}</label>
+                <select name="currency" class="form-select">
+                  {% for c in ['EGP','USD','EUR','SAR','AED'] %}
+                  <option value="{{ c }}">{{ c }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ _('Counterparty Name') }}</label>
+                <input type="text" name="counterparty_name" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ _('Counterparty Account') }}</label>
+                <input type="text" name="counterparty_account" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ _('Counterparty Country') }}</label>
+                <input type="text" name="counterparty_country" class="form-control" placeholder="{{ _('e.g. Iran, Egypt...') }}">
+              </div>
+              <div class="col-md-12">
+                <label class="form-label fw-bold">{{ _('Purpose of Transaction') }}</label>
+                <textarea name="purpose_of_transaction" class="form-control" rows="2"></textarea>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label fw-bold">{{ _('Remittance Information') }}</label>
+                <input type="text" name="remittance_information" class="form-control">
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <a href="{{ url_for('aml.transaction_list') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+              <button type="submit" class="btn btn-success px-5"><i class="fas fa-save"></i> {{ _('Save & Evaluate') }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

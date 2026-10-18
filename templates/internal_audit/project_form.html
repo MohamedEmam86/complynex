@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('New Audit Engagement') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('New Audit Engagement') }}</h3>
+    <div class="card"><div class="card-body">
+        <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="form-label">{{ _('Audit Name') }}</label>
+                <input type="text" name="audit_name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ _('Scope') }}</label>
+                <textarea name="audit_scope" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Annual Plan (optional)') }}</label>
+                    <select name="plan_id" class="form-select">
+                        <option value="">-</option>
+                        {% for p in plans %}<option value="{{ p.id }}">{{ p.plan_year }} - {{ p.plan_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Auditable Area') }}</label>
+                    <select name="auditable_area_id" class="form-select">
+                        <option value="">-</option>
+                        {% for a in areas %}<option value="{{ a.id }}" {% if preselected_area_id and a.id == preselected_area_id %}selected{% endif %}>{{ a.auditable_area }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Type') }}</label>
+                    <select name="audit_type" class="form-select">
+                        {% for t in ['INTERNAL', 'EXTERNAL', 'REGULATORY', 'SPECIAL'] %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Lead Auditor') }}</label>
+                    <select name="lead_auditor_id" class="form-select" required>
+                        {% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Planned Start') }}</label>
+                    <input type="date" name="planned_start_date" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Planned End') }}</label>
+                    <input type="date" name="planned_end_date" class="form-control">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">{{ _('Create') }}</button>
+            <a href="{{ url_for('internal_audit.projects') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+        </form>
+    </div></div>
+</div>
+{% endblock %}

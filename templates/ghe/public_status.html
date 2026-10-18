@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Declaration Status - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+</head>
+
+<body class="complynex-public">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <!-- Brand Header -->
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        class="logo">
+                    <h1><i class="bi bi-search"></i> {{ _('Declaration Status') }}</h1>
+                    <p>{{ _('Track your GHE declaration') }}</p>
+                </div>
+
+                <!-- Status Card -->
+                <div class="complynex-form-card">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    {% if declaration %}
+                    <!-- Status Overview -->
+                    <div class="text-center mb-4">
+                        <h4 class="mb-2">{{ declaration.declaration_number }}</h4>
+                        <p class="text-muted">{{ _('Tracking ID:') }} <strong>{{ declaration.tracking_id }}</strong></p>
+
+                        {% if declaration.status == 'approved' %}
+                        <span class="badge-complynex-approved">
+                            <i class="bi bi-check-circle"></i>
+                            {% if declaration.auto_approved %}Auto-{% endif %}Approved
+                        </span>
+                        {% elif declaration.status == 'rejected' %}
+                        <span class="badge-complynex-rejected">
+                            <i class="bi bi-x-circle"></i> {{ _('Rejected') }}
+                        </span>
+                        {% elif declaration.status == 'info_requested' %}
+                        <span class="badge-complynex-pending">
+                            <i class="bi bi-question-circle"></i> {{ _('Information Requested') }}
+                        </span>
+                        {% elif declaration.status == 'manager_review' %}
+                        <span class="badge-complynex-pending">
+                            <i class="bi bi-hourglass-split"></i> {{ _('Awaiting Manager Review') }}
+                        </span>
+                        {% elif declaration.status == 'compliance_review' %}
+                        <span class="badge-complynex-pending">
+                            <i class="bi bi-hourglass-split"></i> {{ _('Awaiting Compliance Review') }}
+                        </span>
+                        {% else %}
+                        <span class="badge-complynex-pending">
+                            <i class="bi bi-clock"></i> {{ _('Pending') }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Information Requested -->
+                    {% if declaration.needs_more_info %}
+                    <div class="complynex-info-box mb-4"
+                        style="background: #FFF3CD; border-color: #FFECB5; display: block;">
+                        <h5><i class="bi bi-exclamation-triangle text-warning"></i> {{ _('Action Required') }}</h5>
+                        <p><strong>{{ _('The reviewer has requested more information:') }}</strong></p>
+                        <div class="bg-white p-3 rounded border mb-3">
+                            {{ declaration.info_request_message }}
+                        </div>
+
+                        <form method="POST"
+                            action="{{ url_for('public_ghe.respond_to_info_request', tracking_id=declaration.tracking_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="mb-3">
+                                <label class="form-label">{{ _('Your Response') }} <span class="text-danger">*</span></label>
+                                <textarea name="response" class="form-control" rows="4" required
+                                    placeholder="{{ _('Provide the requested information here...') }}"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-complynex">
+                                <i class="bi bi-send"></i> {{ _('Submit Response') }}
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+
+                    <!-- Declaration Details -->
+                    <div class="card complynex-card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-file-text"></i> {{ _('Declaration Details') }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless mb-0">
+                                <tr>
+                                    <td width="30%"><strong>{{ _('Submitted By:') }}</strong></td>
+                                    <td>{{ declaration.submitter_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>{{ _('Email:') }}</strong></td>
+                                    <td>{{ declaration.submitter_email }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>{{ _('Department:') }}</strong></td>
+                                    <td>{{ declaration.submitter_department or 'Not specified' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>{{ _('Type:') }}</strong></td>
+                                    <td>
+                                        <span class="badge" style="background: var(--complynex-red);">{{
+                                            declaration.ghe_type }}</span>
+                                        - {{ declaration.direction }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>{{ _('Event Date:') }}</strong></td>
+                                    <td>{{ declaration.event_date }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>{{ _('Value:') }}</strong></td>
+                                    <td class="fw-bold">{{ "{:,.2f}".format(declaration.estimated_value_egp) }} EGP</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>{{ _('Description:') }}</strong></td>
+                                    <td>{{ declaration.description }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>{{ _('Provider/Recipient:') }}</strong></td>
+                                    <td>
+                                        {{ declaration.provider_recipient_name }}
+                                        {% if declaration.provider_recipient_company %}
+                                        ({{ declaration.provider_recipient_company }})
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if declaration.is_government_official %}
+                                <tr class="table-danger">
+                                    <td><strong>{{ _('Government Official:') }}</strong></td>
+                                    <td>Yes - {{ declaration.government_official_details }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Approval History -->
+                    <div class="card complynex-card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-clock-history"></i> {{ _('History') }}</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if history %}
+                            <div class="complynex-timeline">
+                                {% for item in history %}
+                                <div
+                                    class="complynex-timeline-item {% if 'Approved' in item.action %}success{% elif 'Rejected' in item.action %}danger{% elif 'Information' in item.action %}warning{% endif %}">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>{{ item.action }}</strong>
+                                        <small class="text-muted">{{ item.action_date }}</small>
+                                    </div>
+                                    <div class="text-muted">by {{ item.action_by_name }}</div>
+                                    {% if item.comments %}
+                                    <div class="mt-1 fst-italic text-secondary">"{{ item.comments }}"</div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center mb-0">{{ _('No history available yet') }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <!-- Not Found -->
+                    <div class="text-center py-5">
+                        <i class="bi bi-search" style="font-size: 60px; color: #dee2e6;"></i>
+                        <h4 class="mt-3">{{ _('Declaration Not Found') }}</h4>
+                        <p class="text-muted">{{ _('No declaration found with tracking ID:') }} <strong>{{ tracking_id }}</strong>
+                        </p>
+                        <a href="{{ url_for('public_ghe.status_lookup') }}" class="btn btn-complynex mt-3">
+                            <i class="bi bi-arrow-left"></i> {{ _('Try Again') }}
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('public_ghe.public_submit') }}" class="btn btn-complynex-outline">
+                            <i class="bi bi-plus-circle"></i> {{ _('Submit New Declaration') }}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="complynex-footer">
+                    <p>{{ _('© 2026 ComplyNex. All rights reserved. |') }} <a href="tel:16233">16233</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+</body>
+
+</html>

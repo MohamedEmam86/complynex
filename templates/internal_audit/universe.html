@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Audit Universe') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">{{ _('Audit Universe') }}</h3>
+            <p class="text-muted mb-0 small">{{ _('The risk-based inventory of auditable areas that drives annual audit planning.') }}</p>
+        </div>
+        {% if current_user.can_edit('internal_audit') %}
+        <a href="{{ url_for('internal_audit.universe_new') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>{{ _('Add Auditable Area') }}</a>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead><tr>
+                    <th>{{ _('Area') }}</th><th>{{ _('Department') }}</th>
+                    <th>{{ _('Manual Risk Level') }}</th><th>{{ _('Derived Risk Score') }}</th>
+                    <th>{{ _('Linked Risks') }}</th>
+                    <th>{{ _('Last Audit') }}</th><th>{{ _('Next Due') }}</th>
+                    <th class="text-end">{{ _('Actions') }}</th>
+                </tr></thead>
+                <tbody>
+                {% for a in areas %}
+                    {% set risks_for_area = linked_risks.get(a.id, []) %}
+                    <tr>
+                        <td>
+                            <strong>{{ a.auditable_area }}</strong>
+                            {% if a.area_description %}<div class="small text-muted">{{ a.area_description }}</div>{% endif %}
+                        </td>
+                        <td>{{ departments_by_id.get(a.department_id).name if departments_by_id.get(a.department_id) else '-' }}</td>
+                        <td>
+                            <span class="badge {{ 'bg-danger' if a.risk_level == 'CRITICAL' else ('bg-warning text-dark' if a.risk_level == 'HIGH' else ('bg-info text-dark' if a.risk_level == 'MEDIUM' else 'bg-secondary')) }}">{{ a.risk_level }}</span>
+                        </td>
+                        <td>{{ derived_scores.get(a.id) or _('No linked risks') }}</td>
+                        <td>
+                            {% if risks_for_area %}
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for r in risks_for_area %}
+                                <a href="{{ url_for('risk_management.register_detail', risk_pk=r.id) }}" class="badge bg-light text-dark border" title="{{ r.risk_title }}">{{ r.risk_id }}</a>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted small">{{ _('None') }}</span>
+                            {% endif %}
+                            {% if current_user.can_edit('internal_audit') %}
+                            <button type="button" class="btn btn-sm btn-link p-0 small" data-bs-toggle="modal" data-bs-target="#linkRiskModal{{ a.id }}">{{ _('+ Link risk') }}</button>
+                            {% endif %}
+                        </td>
+                        <td>{{ a.last_audit_date or '-' }}</td>
+                        <td>{{ a.next_audit_due or '-' }}</td>
+                        <td class="text-end">
+                            {% if current_user.can_edit('internal_audit') %}
+                            <a href="{{ url_for('internal_audit.projects_new', auditable_area_id=a.id) }}" class="btn btn-sm btn-outline-primary">{{ _('Start Engagement') }}</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <div class="modal fade" id="linkRiskModal{{ a.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form method="post" action="{{ url_for('internal_audit.universe_link_risk', universe_id=a.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">{{ _('Link Risk to') }} {{ a.auditable_area }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <label class="form-label">{{ _('Risk') }}</label>
+                                        <select name="risk_pk" class="form-select" required>
+                                            {% for r in all_risks %}<option value="{{ r.id }}">{{ r.risk_id }} - {{ r.risk_title }}</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                                        <button type="submit" class="btn btn-primary">{{ _('Link') }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">{{ _('No auditable areas defined yet.') }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Log Activity') }} — {{ _('Carbon Footprint') }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+  <div class="ecx-hero ecx-carbon">
+    <div class="ecx-eyebrow">{{ _('Carbon Footprint & Climate') }}</div>
+    <h1><i class="bi bi-plus-circle me-2"></i>{{ _('Log an Activity') }}</h1>
+    <p>{{ _('Select the emission factor that matches the activity, enter the quantity, and the tCO2e is calculated automatically — nothing is typed in by hand.') }}</p>
+  </div>
+
+  {% if not period %}
+  <div class="alert alert-warning">{{ _('No open reporting period exists yet. Ask an administrator to create one before logging activity.') }}</div>
+  {% else %}
+  <div class="row">
+    <div class="col-lg-8">
+      <form method="POST" enctype="multipart/form-data" class="ecx-card">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ _('Emission Factor / Activity') }}</label>
+          <select name="factor_id" id="factor_id" class="form-select" required>
+            <option value="">{{ _('— select an activity —') }}</option>
+            {% set ns = namespace(scope='') %}
+            {% for f in factors %}
+              {% if f.scope != ns.scope %}
+                {% if ns.scope %}</optgroup>{% endif %}
+                <optgroup label="{{ 'Scope 1 — Direct' if f.scope=='scope1' else ('Scope 2 — Purchased Energy' if f.scope=='scope2' else 'Scope 3 — Value Chain') }}">
+                {% set ns.scope = f.scope %}
+              {% endif %}
+              <option value="{{ f.id }}" data-factor="{{ f.factor_kgco2e }}" data-unit="{{ f.unit }}" data-source="{{ f.source }}" data-vintage="{{ f.vintage_year }}" data-scope="{{ f.scope }}">
+                {{ f.activity }}{% if f.ghg_category_no %} ({{ _('Cat.') }} {{ f.ghg_category_no }}){% endif %} — {{ f.factor_kgco2e }} kgCO2e/{{ f.unit }}
+              </option>
+            {% endfor %}
+            {% if factors %}</optgroup>{% endif %}
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label class="form-label fw-semibold">{{ _('Quantity') }}</label>
+            <input type="number" step="any" min="0" name="quantity" id="quantity" class="form-control" required>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label fw-semibold">{{ _('Unit') }}</label>
+            <input type="text" id="unit_display" class="form-control" disabled placeholder="—">
+          </div>
+        </div>
+
+        <div class="mb-3" id="basis_row" style="display:none;">
+          <label class="form-label fw-semibold">{{ _('Scope 2 Reporting Basis') }}</label>
+          <select name="basis" class="form-select">
+            <option value="location">{{ _('Location-based (grid average)') }}</option>
+            <option value="market">{{ _('Market-based (PPA / REC / green tariff)') }}</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ _('Notes') }}</label>
+          <textarea name="notes" class="form-control" rows="2" placeholder="{{ _('e.g. site, meter reading period, invoice reference') }}"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{{ _('Supporting Evidence (invoice, meter reading, receipt)') }}</label>
+          <input type="file" name="evidence" class="form-control">
+        </div>
+
+        <div id="ecx_calc_preview" class="ecx-methodology-box" style="display:none;">
+          <strong><i class="bi bi-calculator me-1"></i>{{ _('Calculated Result') }}</strong>
+          <span id="ecx_calc_text"></span>
+        </div>
+
+        <button type="submit" class="btn btn-mt-carbon mt-3" style="background:var(--ecx-carbon-1); color:#fff; border:none; padding:9px 22px; border-radius:8px; font-weight:700;">
+          <i class="bi bi-check2-circle me-1"></i>{{ _('Save Activity') }}
+        </button>
+        <a href="{{ url_for('carbon.entries_list') }}" class="btn btn-outline-secondary mt-3">{{ _('Cancel') }}</a>
+      </form>
+    </div>
+    <div class="col-lg-4">
+      <div class="ecx-card">
+        <h6><i class="bi bi-info-circle me-1"></i>{{ _('Why we ask this') }}</h6>
+        <p class="small text-muted">{{ _('Choosing the right factor matters more than the number you type — the emission factor already encodes the fuel/energy type, its source, and the year it applies to. Every factor is versioned, so past entries never silently change when a newer factor is added.') }}</p>
+        <a href="{{ url_for('carbon.factors_library') }}" class="small">{{ _('Browse the full factor library →') }}</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+<script nonce="{{ csp_nonce }}">
+/* was onchange=/oninput= attributes — refused by CSP, so the emission preview
+   never updated when you changed the factor or the quantity */
+document.addEventListener('DOMContentLoaded', function () {
+  var f = document.getElementById('factor_id');
+  var q = document.getElementById('quantity');
+  if (f) f.addEventListener('change', ecxUpdateFactorInfo);
+  if (q) q.addEventListener('input', ecxUpdateFactorInfo);
+});
+function ecxUpdateFactorInfo() {
+  const sel = document.getElementById('factor_id');
+  const opt = sel.options[sel.selectedIndex];
+  const unitDisplay = document.getElementById('unit_display');
+  const basisRow = document.getElementById('basis_row');
+  const preview = document.getElementById('ecx_calc_preview');
+  const previewText = document.getElementById('ecx_calc_text');
+  if (!opt || !opt.value) { unitDisplay.value=''; preview.style.display='none'; basisRow.style.display='none'; return; }
+  const factor = parseFloat(opt.dataset.factor);
+  const unit = opt.dataset.unit;
+  const scope = opt.dataset.scope;
+  unitDisplay.value = unit;
+  basisRow.style.display = (scope === 'scope2') ? 'block' : 'none';
+  const qty = parseFloat(document.getElementById('quantity').value);
+  if (!isNaN(qty) && qty >= 0) {
+    const tco2e = (qty * factor) / 1000;
+    previewText.innerHTML = `${qty} ${unit} × ${factor} kgCO2e/${unit} ÷ 1000 = <strong>${tco2e.toFixed(4)} tCO2e</strong> <span class="ecx-badge-source ms-1">${opt.dataset.source} ${opt.dataset.vintage}</span>`;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

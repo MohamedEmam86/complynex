@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('AML/CFT Dashboard') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('AML/CFT Dashboard') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('aml.customer_list') }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-database me-1"></i>{{ _('Customers Database') }}</a>
+                <a href="#" class="btn btn-sm btn-outline-secondary">{{ _('Export SARs') }}</a>
+                <a href="{{ url_for('aml.create_customer') }}" class="btn btn-sm btn-outline-primary">{{ _('New Customer
+                    Onboarding') }}</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- AML Stats Cards -->
+    <div class="row row-cols-1 row-cols-md-4 g-4 mb-4">
+        <div class="col">
+            <div class="card h-100 border-primary shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">{{ _('Total Customers') }}</h6>
+                    <h2 class="card-title mb-0">{{ total_customers }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 border-warning shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">{{ _('High Risk Customers') }}</h6>
+                    <h2 class="card-title mb-0">{{ high_risk }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 border-danger shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">{{ _('Pending SARs') }}</h6>
+                    <h2 class="card-title mb-0">{{ pending_sar }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 border-info shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">{{ _('TM Alerts (24h)') }}</h6>
+                    <h2 class="card-title mb-0">{{ alerts_24h }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">{{ _('Recent Alerts') }}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ _('Ref') }}</th>
+                                    <th>{{ _('Customer') }}</th>
+                                    <th>{{ _('Rule') }}</th>
+                                    <th>{{ _('Severity') }}</th>
+                                    <th>{{ _('Status') }}</th>
+                                    <th>{{ _('Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">{{ _('No active alerts') }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">{{ _('Quick Actions') }}</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{{ url_for('aml.screening') }}"
+                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        {{ _('PEP/Sanctions Screening') }}
+                        <i class="bi bi-shield-check text-primary"></i>
+                    </a>
+                    <a href="{{ url_for('aml.ubo_verification') }}"
+                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        {{ _('UBO Verification') }}
+                        <i class="bi bi-people text-info"></i>
+                    </a>
+                    <a href="{{ url_for('aml.create_sar') }}"
+                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-danger fw-bold">
+                        {{ _('File New SAR') }}
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

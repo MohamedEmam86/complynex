@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _("Consumer Protection Dashboard") }}{% endblock %}
+
+{% block content %}
+{% from 'macros.html' import priority_badge %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ _("Consumer Protection Dashboard") }}</h1>
+        <a href="{{ url_for('consumer_protection.complaints_list') }}"
+            class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-list fa-sm text-white-50 mr-2"></i>{{ _("View All Complaints") }}
+        </a>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+
+        <!-- Open Complaints -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                {{ _("Open Complaints") }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_open }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-folder-open fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overdue Complaints -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                {{ _("Overdue (Deadline Passed)") }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ overdue }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+
+        <!-- Recent Complaints -->
+        <div class="col-xl-12 col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ _("Recent Complaints") }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>{{ _("PIN") }}</th>
+                                    <th>{{ _("Date") }}</th>
+                                    <th>{{ _("Category") }}</th>
+                                    <th>{{ _("Priority") }}</th>
+                                    <th>{{ _("Customer") }}</th>
+                                    <th>{{ _("Status") }}</th>
+                                    <th>{{ _("Deadline") }}</th>
+                                    <th>{{ _("Action") }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for complaint in recent_complaints %}
+                                <tr>
+                                    <td>{{ complaint.complaint_pin }}</td>
+                                    <td>{{ complaint.created_at.strftime('%Y-%m-%d') if complaint.created_at is not
+                                        string else complaint.created_at[:10] }}</td>
+                                    <td>{{ _(complaint.complaint_category) }}</td>
+                                    <td>
+                                        {% if complaint.days_remaining_to_deadline < 3 %}
+                                            {{ priority_badge('HIGH') }}
+                                        {% elif complaint.days_remaining_to_deadline < 10 %}
+                                            {{ priority_badge('MEDIUM') }}
+                                        {% else %}
+                                            {{ priority_badge('LOW') }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ complaint.customer_name }}</td>
+                                    <td>
+                                        {% if complaint.status == 'NEW' %}
+                                        <span class="badge bg-primary">{{ _("New") }}</span>
+                                        {% elif complaint.status == 'IN_PROGRESS' %}
+                                        <span class="badge bg-info text-dark">{{ _("In Progress") }}</span>
+                                        {% elif complaint.status == 'RESOLVED' %}
+                                        <span class="badge bg-success">{{ _("Resolved") }}</span>
+                                        {% elif complaint.status == 'CLOSED' %}
+                                        <span class="badge bg-secondary">{{ _("Closed") }}</span>
+                                        {% else %}
+                                        <span class="badge bg-light text-dark">{{ complaint.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ complaint.statutory_deadline_date }}
+                                        {% if complaint.days_remaining_to_deadline < 0 %} <span
+                                            class="text-danger font-weight-bold">({{ _("Overdue") }})</span>
+                                            {% else %}
+                                            <small class="text-muted">({{ complaint.days_remaining_to_deadline }} {{
+                                                _("days") }})</small>
+                                            {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('consumer_protection.view_complaint', id=complaint.id) }}"
+                                            class="btn btn-info btn-sm">
+                                            {{ _("View") }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center">{{ _("No complaints found.") }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

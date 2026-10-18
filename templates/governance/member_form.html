@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Edit') if member else _('Add') }} {{ _('Board Member') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Edit') if member else _('Add') }} {{ _('Board Member') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('governance.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Dashboard') }}
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Member Name (English)') }} <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="member_name"
+                                value="{{ member.member_name if member else '' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Member Name (Arabic)') }}</label>
+                            <input type="text" class="form-control" name="member_name_arabic"
+                                value="{{ member.member_name_arabic if member else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Role') }} <span class="text-danger">*</span></label>
+                            <select class="form-select" name="role" required>
+                                <option value="">-- {{ _('Select Role') }} --</option>
+                                {% for role in roles %}
+                                <option value="{{ role.role_name }}" {{ 'selected' if member and
+                                    member.role==role.role_name else '' }}>
+                                    {{ role.role_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text small">
+                                <a href="{{ url_for('governance.manage_roles') }}" class="text-decoration-none"><i
+                                        class="bi bi-plus"></i> {{ _('Manage Roles') }}</a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3 pt-4">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="is_independent" id="isIndependent"
+                                    {{ 'checked' if member and member.is_independent else '' }}>
+                                <label class="form-check-label" for="isIndependent">{{ _('Independent') }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="is_executive" id="isExecutive"
+                                    {{ 'checked' if member and member.is_executive else '' }}>
+                                <label class="form-check-label" for="isExecutive">{{ _('Executive') }}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Appointment Date') }}</label>
+                            <input type="date" class="form-control" name="appointment_date"
+                                value="{{ member.appointment_date if member else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Term End Date') }}</label>
+                            <input type="date" class="form-control" name="term_end_date"
+                                value="{{ member.term_end_date if member else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Email') }}</label>
+                            <input type="email" class="form-control" name="email"
+                                value="{{ member.email if member else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Phone') }}</label>
+                            <input type="text" class="form-control" name="phone"
+                                value="{{ member.phone if member else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Expertise Areas') }}</label>
+                        <input type="text" class="form-control" name="expertise_areas"
+                            value="{{ member.expertise_areas if member else '' }}"
+                            placeholder="{{ _('e.g. Finance, Law, Technology') }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Bio') }}</label>
+                        <textarea class="form-control" name="bio" rows="3">{{ member.bio if member else '' }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Status') }}</label>
+                            <select class="form-select" name="status">
+                                <option value="ACTIVE" {{ 'selected' if not member or member.status=='ACTIVE' else ''
+                                    }}>
+                                    {{ _('Active') }}</option>
+                                <option value="INACTIVE" {{ 'selected' if member and member.status=='INACTIVE' else ''
+                                    }}>
+                                    {{ _('Inactive') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Support Documents (Passport/ID/CV)') }}</label>
+                            <input type="file" class="form-control" name="document_file">
+                            {% if member and member.document_path %}
+                            <div class="form-text">
+                                <a href="{{ url_for('governance.member_document', id=member.id) }}" target="_blank">{{ _('View current document') }}</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('governance.dashboard') }}" class="btn btn-light me-md-2">{{ _('Cancel') }}</a>
+                        <button type="submit" class="btn btn-primary">{{ _('Save Member') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

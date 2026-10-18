@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h1 class="h3 mb-0"><i class="fas fa-shield-alt me-2 text-primary"></i>{{ _('Whistleblowing
+                        Management Dashboard') }}</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="text-white-50">{{ _('Total Cases') }}</h6>
+                    <h2 class="mb-0">{{ stats.total_cases }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="text-dark-50">{{ _('Pending Review') }}</h6>
+                    <h2 class="mb-0">{{ stats.pending_cases }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-info text-white">
+                <div class="card-body">
+                    <h6 class="text-white-50">{{ _('Under Investigation') }}</h6>
+                    <h2 class="mb-0">{{ stats.investigating_cases }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-body">
+                    <h6 class="text-white-50">{{ _('Resolved') }}</h6>
+                    <h2 class="mb-0">{{ stats.resolved_cases }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cases Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{{ _('Recent Cases') }}</h5>
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-filter me-1"></i>{{ _('Filter')
+                    }}</button>
+                <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-download me-1"></i>{{ _('Export')
+                    }}</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>{{ _('Case #') }}</th>
+                        <th>{{ _('Type') }}</th>
+                        <th>{{ _('Submitted') }}</th>
+                        <th>{{ _('Anonymity') }}</th>
+                        <th>{{ _('Severity') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in cases %}
+                    <tr>
+                        <td><span class="fw-bold">{{ case.case_number }}</span></td>
+                        <td>{{ case.incident_type }}</td>
+                        <td>{{ case.submitted_at }}</td>
+                        <td>
+                            {% if case.is_anonymous %}
+                            <span class="badge bg-secondary"><i class="fas fa-user-secret me-1"></i>{{ _('Anonymous')
+                                }}</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark"><i class="fas fa-user me-1"></i>{{ _('Named')
+                                }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span
+                                class="badge bg-{{ 'danger' if case.severity == 'CRITICAL' else 'warning' if case.severity == 'HIGH' else 'info' }}">
+                                {{ _(case.severity) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span
+                                class="badge rounded-pill bg-{{ 'primary' if case.status == 'SUBMITTED' else 'info' if case.status == 'UNDER_REVIEW' else 'success' if case.status == 'RESOLVED' else 'secondary' }}">
+                                {{ _(case.status) }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-inline-flex gap-1">
+                                <a href="{{ url_for('whistleblowing.view_case', case_id=case.id) }}"
+                                    class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li><h6 class="dropdown-header">{{ _('Quick Actions') }}</h6></li>
+                                        <li>
+                                            <form action="{{ url_for('whistleblowing.quick_status', case_id=case.id) }}" method="POST" class="d-inline">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="status" value="UNDER_REVIEW">
+                                                <button type="submit" class="dropdown-item"><i class="fas fa-search me-2 text-info"></i>{{ _('Investigate') }}</button>
+                                            </form>
+                                        </li>
+                                        <li>
+                                            <form action="{{ url_for('whistleblowing.quick_status', case_id=case.id) }}" method="POST" class="d-inline">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="status" value="RESOLVED">
+                                                <button type="submit" class="dropdown-item"><i class="fas fa-check-circle me-2 text-success"></i>{{ _('Resolve') }}</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Verify Case PIN - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% if session.get('dir') == 'rtl' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+    <style>
+        .pin-input-container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .pin-field {
+            letter-spacing: 0.5rem;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body class="complynex-public">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-6">
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        class="logo">
+                    <h1><i class="bi bi-shield-lock"></i> {{ _('Identity Verification') }}</h1>
+                    <p>{{ _('Enter your 4-digit Case PIN to continue') }}</p>
+                </div>
+
+                <div class="complynex-form-card">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="text-center mb-4">
+                        <h5 class="mb-1">{{ employee_name }}</h5>
+                        <p class="text-muted small">{{ email }}</p>
+                    </div>
+
+                    <form method="POST" class="pin-input-container">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-4">
+                            <label for="pin" class="form-label text-center d-block">{{ _('4-Digit Security PIN')
+                                }}</label>
+                            <input type="password" name="pin" id="pin" class="form-control pin-field" maxlength="4"
+                                pattern="\d{4}" inputmode="numeric" autocomplete="one-time-code" required autofocus>
+                            <div class="form-text text-center mt-2">
+                                {{ _('Check your original submission confirmation or contact compliance if you forgot
+                                your PIN.') }}
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-complynex btn-lg">
+                                <i class="bi bi-unlock"></i> {{ _('Verify & Continue') }}
+                            </button>
+                            <a href="{{ url_for('portal.status') }}" class="btn btn-link">{{ _('Cancel') }}</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

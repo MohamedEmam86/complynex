@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Data Breaches - PDPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Data Breaches') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('dp.report_breach') }}" class="btn btn-sm btn-danger">
+                <i class="bi bi-exclamation-triangle"></i> {{ _('Report New Breach') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>{{ _('Ref Number') }}</th>
+                            <th>{{ _('Discovery Date') }}</th>
+                            <th>{{ _('Type') }}</th>
+                            <th>{{ _('Severity') }}</th>
+                            <th>{{ _('PDPC Notified') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for breach in breaches %}
+                        <tr>
+                            <td><code>{{ breach.breach_number }}</code></td>
+                            <td>{{ breach.discovery_date }}</td>
+                            <td>{{ breach.breach_type }}</td>
+                            <td>
+                                <span
+                                    class="badge {% if breach.severity == 'CRITICAL' %}bg-dark{% elif breach.severity == 'HIGH' %}bg-danger{% elif breach.severity == 'MEDIUM' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                    {{ breach.severity or 'PENDING' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if breach.pdpc_notification_required %}
+                                {% if breach.pdpc_notified %}
+                                <span class="text-success small"><i class="bi bi-check-all"></i> {{ _('Yes') }}</span>
+                                {% else %}
+                                <div class="progress mb-1" style="height: 6px;" title="{{ _('72-Hour Deadline Countdown') }}">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" role="progressbar" style="width: 85%"></div>
+                                </div>
+                                <span class="text-danger small fw-bold"><i class="bi bi-clock-history"></i> {{ _('Pending Deadline') }}</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted small">{{ _('Not Required') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if breach.status == 'CLOSED' %}bg-success{% else %}bg-primary{% endif %}">
+                                    {{ breach.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('dp.breach_detail', id=breach.id) }}"
+                                    class="btn btn-sm btn-outline-primary">{{ _('Investigate') }}</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">{{ _('No data breaches reported') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

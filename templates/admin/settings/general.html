@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('General Settings') }} - {{ company_name }} CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-gear me-2"></i>{{ _('General & Organization Settings') }}</h1>
+    <a href="{{ url_for('admin.settings') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> {{ _('Back to Settings') }}
+    </a>
+</div>
+
+<form method="POST" action="{{ url_for('admin.settings_general') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-building me-2 text-secondary"></i>{{ _('Organization Info') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Company Name') }}</label>
+                        <input type="text" name="company_name" class="form-control"
+                            value="{{ settings.get('company_name', 'ComplyNex') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Registration Number') }}</label>
+                        <input type="text" name="registration_number" class="form-control"
+                            value="{{ settings.get('registration_number', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Regulator') }}</label>
+                        <input type="text" name="regulator_name" class="form-control"
+                            value="{{ settings.get('regulator_name', 'Central Bank of Egypt') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Contact Email') }}</label>
+                        <input type="email" name="contact_email" class="form-control"
+                            value="{{ settings.get('contact_email', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Contact Phone') }}</label>
+                        <input type="text" name="contact_phone" class="form-control"
+                            value="{{ settings.get('contact_phone', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Registered Address') }}</label>
+                        <textarea name="address" class="form-control" rows="2">{{ settings.get('address', '') }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-gift me-2 text-primary"></i>{{ _('GHE Disposal Thresholds') }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-4">{{ _('Define the limits for Gifts, Hospitality, and Entertainment (GHE) approvals.') }}</p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Auto-Approval Threshold (EGP)') }}</label>
+                        <input type="number" name="ghe_auto_approve_threshold" class="form-control"
+                            value="{{ settings.get('ghe_auto_approve_threshold', '500') }}" required>
+                        <div class="form-text text-success">{{ _('Declarations below this value are automatically approved (unless involves a Gov Official).') }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Manager Approval Limit (EGP)') }}</label>
+                        <input type="number" name="ghe_manager_approval_threshold" class="form-control"
+                            value="{{ settings.get('ghe_manager_approval_threshold', '2000') }}" required>
+                        <div class="form-text text-warning">{{ _('Declarations above this value ARE ESCALATED to Compliance. Items below this are handled by Managers.') }}</div>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 small border-0 mt-3">
+                        <i class="bi bi-info-circle me-1"></i> <strong>{{ _('Note:') }}</strong>
+                        {{ _('All declarations involving Government Officials are automatically escalated to Compliance review regardless of these thresholds.') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-shield-check me-2 text-info"></i>{{ _('Board Independence Policy') }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-4">{{ _('These thresholds drive the Corporate Governance module\'s Independence Declaration criteria. Adjust them to match whichever regulator(s) your board reports to.') }}</p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Maximum Board Tenure (years)') }}</label>
+                        <input type="number" min="1" name="governance_independence_tenure_years" class="form-control"
+                            value="{{ settings.get('governance_independence_tenure_years', '9') }}" required>
+                        <div class="form-text">{{ _('A member serving longer than this is no longer considered independent.') }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Maximum Shareholding (%%)') }}</label>
+                        <input type="number" min="0" max="100" step="0.1" name="governance_independence_shareholding_pct" class="form-control"
+                            value="{{ settings.get('governance_independence_shareholding_pct', '5') }}" required>
+                        <div class="form-text">{{ _('A member holding more than this share of voting shares is no longer considered independent.') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-end mt-2 mb-5">
+        <button type="submit" class="btn btn-primary px-5 py-2 shadow-sm">
+            <i class="bi bi-check2-circle me-1"></i> {{ _('Save Changes') }}
+        </button>
+    </div>
+</form>
+{% endblock %}

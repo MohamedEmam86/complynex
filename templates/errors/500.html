@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('500 - Server Error') }}{% endblock %}
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="py-5">
+        <h1 class="display-1 fw-bold text-danger">500</h1>
+        <h2 class="mb-3">{{ _('Something Went Wrong') }}</h2>
+        <p class="text-muted mb-4">{{ _('An unexpected error occurred. Our team has been notified.') }}</p>
+        <a href="/" class="btn btn-primary"><i class="bi bi-house me-2"></i>{{ _('Back to Dashboard') }}</a>
+    </div>
+</div>
+{% endblock %}

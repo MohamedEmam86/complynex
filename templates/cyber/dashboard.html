@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Cybersecurity Response Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Cybersecurity Incident Management') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('cyber.report_incident') }}" class="btn btn-sm btn-danger pulse-button">
+                <i class="bi bi-shield-slash"></i> {{ _('Report New Incident') }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Banner for Critical Incidents -->
+    {% if high_critical > 0 %}
+    <div class="alert alert-danger d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-octagon-fill me-2 fs-4"></i>
+        <div>
+            <strong>{{ _('CRITICAL ALERT:') }}</strong> There are {{ high_critical }} active High/Critical priority incidents
+            requiring immediate attention.
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-danger text-white shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase mb-2" style="font-size: 0.7rem;">{{ _('Active Incidents') }}</h6>
+                    <h2 class="mb-0">{{ total_active }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase mb-2" style="font-size: 0.7rem;">{{ _('CBE Notifications Due') }}</h6>
+                    <h2 class="mb-0">{{ high_critical }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase mb-2" style="font-size: 0.7rem;">{{ _('MTTR (Last 30d)') }}</h6>
+                    <h2 class="mb-0">4.2h</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">{{ _('Active Incident Response Queue') }}</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('Ref') }}</th>
+                            <th>{{ _('Incident Type') }}</th>
+                            <th>{{ _('Severity') }}</th>
+                            <th>{{ _('Discovery') }}</th>
+                            <th>{{ _('CBE Notif') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inc in active_incidents %}
+                        <tr>
+                            <td><code>{{ inc.incident_number }}</code></td>
+                            <td>{{ inc.incident_type }}</td>
+                            <td>
+                                <span
+                                    class="badge {% if inc.severity == 'CRITICAL' %}bg-danger{% elif inc.severity == 'HIGH' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                    {{ inc.severity }}
+                                </span>
+                            </td>
+                            <td>{{ inc.discovery_date }}</td>
+                            <td>
+                                {% if inc.cbe_notification_required %}
+                                <span class="badge bg-dark">{{ _('REQUIRED') }}</span>
+                                {% else %}
+                                <span class="text-muted small">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ inc.status }}</span>
+                            </td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-outline-danger">{{ _('Response Hub') }}</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">{{ _('No active incidents reported') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pulse-button {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        }
+    }
+</style>
+{% endblock %}

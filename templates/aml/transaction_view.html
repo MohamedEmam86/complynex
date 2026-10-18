@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Transaction {{ tx.transaction_reference }}{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-between mb-3">
+    <h4><i class="fas fa-exchange-alt"></i> {{ tx.transaction_reference }}</h4>
+    <a href="{{ url_for('aml.transaction_list') }}" class="btn btn-outline-secondary btn-sm">{{ _('← Back') }}</a>
+  </div>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><strong>{{ _('Transaction Details') }}</strong></div>
+        <div class="card-body">
+          <table class="table table-sm">
+            <tr><th>{{ _('Reference') }}</th><td><code>{{ tx.transaction_reference }}</code></td></tr>
+            <tr><th>{{ _('Customer') }}</th><td><a href="{{ url_for('aml.view_customer', id=tx.customer_id) }}">{{ tx.full_name or tx.company_name }}</a> ({{ tx.customer_reference }})</td></tr>
+            <tr><th>{{ _('Date') }}</th><td>{{ tx.transaction_date[:16] }}</td></tr>
+            <tr><th>{{ _('Type') }}</th><td><span class="badge bg-secondary">{{ tx.transaction_type }}</span></td></tr>
+            <tr><th>{{ _('Amount') }}</th><td><strong>{{ "{:,.2f}".format(tx.amount) }} {{ tx.currency }}</strong></td></tr>
+            <tr><th>{{ _('Counterparty') }}</th><td>{{ tx.counterparty_name or '-' }}</td></tr>
+            <tr><th>{{ _('Account') }}</th><td>{{ tx.counterparty_account or '-' }}</td></tr>
+            <tr><th>{{ _('Country') }}</th><td>{{ tx.counterparty_country or '-' }}</td></tr>
+            <tr><th>{{ _('Purpose') }}</th><td>{{ tx.purpose_of_transaction or '-' }}</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><strong>{{ _('Monitoring Status') }}</strong></div>
+        <div class="card-body">
+          <table class="table table-sm">
+            <tr><th>{{ _('Alert Raised') }}</th><td>{% if tx.alert_raised %}<span class="badge bg-danger">{{ _('YES') }}</span>{% else %}<span class="badge bg-success">{{ _('No') }}</span>{% endif %}</td></tr>
+            <tr><th>{{ _('Rule Triggered') }}</th><td>{{ tx.rule_triggered or '-' }}</td></tr>
+            <tr><th>{{ _('Alert Status') }}</th><td>{{ tx.alert_status or '-' }}</td></tr>
+            <tr><th>{{ _('Risk Score') }}</th><td>{{ tx.risk_score }}</td></tr>
+            <tr><th>{{ _('PEP Involvement') }}</th><td>{% if tx.pep_involvement %}<span class="badge bg-warning">{{ _('YES') }} — {{ tx.pep_name }}</span>{% else %}{{ _('No') }}{% endif %}</td></tr>
+            <tr><th>{{ _('Sanctions Hit') }}</th><td>{% if tx.sanctions_hit %}<span class="badge bg-danger">{{ _('YES') }} — {{ tx.sanctions_list }}</span>{% else %}{{ _('No') }}{% endif %}</td></tr>
+            <tr><th>{{ _('SAR Filed') }}</th><td>{% if tx.sar_filed %}<span class="badge bg-danger">{{ _('YES') }}</span>{% else %}{{ _('No') }}{% endif %}</td></tr>
+          </table>
+        </div>
+      </div>
+      {% if alerts %}
+      <div class="card shadow-sm mt-3">
+        <div class="card-header"><strong>{{ _('Related Alerts') }}</strong></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0">
+            <thead class="table-light"><tr><th>{{ _('Ref') }}</th><th>{{ _('Rule') }}</th><th>{{ _('Status') }}</th></tr></thead>
+            <tbody>
+              {% for a in alerts %}
+              <tr><td><a href="{{ url_for('aml.view_alert', alert_id=a.id) }}"><code>{{ a.alert_reference }}</code></a></td><td>{{ a.rule_name }}</td><td><span class="badge bg-secondary">{{ a.status }}</span></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

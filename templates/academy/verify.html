@@ -1,0 +1,40 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('Verify a certificate', 'التحقق من شهادة') }}{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow">
+  <h1>{{ t('Verify a certificate', 'التحقق من شهادة') }}</h1>
+  <form method="post" action="{{ url_for('academy.verify_lookup') }}" class="ia-row ia-row--tight">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input name="number" placeholder="IA-2026-XXXXXX" dir="ltr" value="{{ number or '' }}" required maxlength="20">
+    <button class="ia-btn">{{ t('Check', 'تحقق') }}</button>
+  </form>
+
+  {% if looked_up %}
+    {% if not cert %}
+      <div class="ia-verdict ia-verdict--bad"><b>{{ t('Not found', 'غير موجودة') }}</b>
+        <p>{{ t('No certificate with this number exists in the Integrys Academy register.', 'لا توجد شهادة بهذا الرقم في سجل أكاديمية إنتيجريس.') }}</p></div>
+    {% elif cert.status == 'revoked' %}
+      <div class="ia-verdict ia-verdict--bad"><b>{{ t('Revoked', 'ملغاة') }}</b>
+        <p>{{ t('This certificate was issued but has been revoked.', 'تم إصدار هذه الشهادة ثم إلغاؤها.') }}</p></div>
+    {% elif cert.status == 'redacted' %}
+      <div class="ia-verdict ia-verdict--warn"><b>{{ t('Issued — holder details removed', 'صادرة — تم حذف بيانات الحامل') }}</b>
+        <p>{{ t('This number was issued for', 'صدر هذا الرقم عن دورة') }} “{{ cert.course_title }}” {{ t('on', 'بتاريخ') }} {{ cert.issued_at.strftime('%d %B %Y') }}.
+           {{ t('The holder has since exercised their right to erasure.', 'وقد مارس الحامل حقه في حذف بياناته لاحقًا.') }}</p></div>
+    {% else %}
+      <div class="ia-verdict {% if expired %}ia-verdict--warn{% else %}ia-verdict--ok{% endif %}">
+        <b>{% if expired %}{{ t('Genuine — expired', 'أصلية — منتهية الصلاحية') }}{% else %}{{ t('Genuine and valid', 'أصلية وسارية') }}{% endif %}</b>
+        <dl>
+          <dt>{{ t('Holder', 'الحامل') }}</dt><dd dir="ltr">{{ cert.holder_name }}</dd>
+          <dt>{{ t('Course', 'الدورة') }}</dt><dd>{{ cert.course_title }}</dd>
+          <dt>{{ t('Completed', 'تاريخ الإتمام') }}</dt><dd>{{ cert.issued_at.strftime('%d %B %Y') }}</dd>
+          <dt>{{ t('Score', 'الدرجة') }}</dt><dd>{{ cert.score }}%</dd>
+          <dt>{{ t('Valid until', 'صالحة حتى') }}</dt><dd>{{ cert.expires_at.strftime('%d %B %Y') if cert.expires_at else '—' }}</dd>
+          <dt>{{ t('Number', 'الرقم') }}</dt><dd dir="ltr">{{ cert.cert_number }}</dd>
+          <dt>{{ t('Integrity hash', 'بصمة السلامة') }}</dt><dd dir="ltr"><code>{{ cert.sha256[:16] }}</code></dd>
+        </dl>
+        <p class="ia-small">{{ t('Issued by Integrys Consulting, training delivered on ComplyNex. A certificate of completion — not a professional accreditation.', 'صادرة عن إنتيجريس للاستشارات، والتدريب مقدّم على منصة ComplyNex. شهادة إتمام — وليست اعتمادًا مهنيًا.') }}</p>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

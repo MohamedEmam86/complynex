@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Reduction Targets') }} — {{ _('Carbon Footprint') }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+  <div class="ecx-hero ecx-carbon">
+    <div class="ecx-eyebrow">{{ _('Carbon Footprint & Climate') }}</div>
+    <h1><i class="bi bi-flag me-2"></i>{{ _('Reduction Targets') }}</h1>
+    <p>{{ _('Set a baseline year and a science-aligned reduction ambition, and track progress automatically as new activity is logged each period.') }}</p>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="ecx-card">
+        <h6><i class="bi bi-sliders me-1"></i>{{ _('Target Settings') }}</h6>
+        <form method="POST">
+          <div class="row">
+            <div class="col-6 mb-3">
+              <label class="form-label small fw-semibold">{{ _('Baseline Year') }}</label>
+              <input type="number" name="baseline_year" class="form-control" value="{{ target.baseline_year if target else '' }}" {{ 'disabled' if not current_user.can_edit('carbon') }} required>
+            </div>
+            <div class="col-6 mb-3">
+              <label class="form-label small fw-semibold">{{ _('Baseline tCO2e') }}</label>
+              <input type="number" step="any" name="baseline_tco2e" class="form-control" value="{{ target.baseline_tco2e if target else '' }}" {{ 'disabled' if not current_user.can_edit('carbon') }} required>
+            </div>
+            <div class="col-6 mb-3">
+              <label class="form-label small fw-semibold">{{ _('Reduction by 2030 (%%)') }}</label>
+              <input type="number" step="any" name="target_2030_pct" class="form-control" value="{{ target.target_2030_pct if target else 50 }}" {{ 'disabled' if not current_user.can_edit('carbon') }}>
+            </div>
+            <div class="col-6 mb-3">
+              <label class="form-label small fw-semibold">{{ _('Reduction by 2035 (%%)') }}</label>
+              <input type="number" step="any" name="target_2035_pct" class="form-control" value="{{ target.target_2035_pct if target else 70 }}" {{ 'disabled' if not current_user.can_edit('carbon') }}>
+            </div>
+          </div>
+          <div class="form-check mb-3">
+            <input type="checkbox" name="sbti_aligned" class="form-check-input" id="sbti" {{ 'checked' if target and target.sbti_aligned }} {{ 'disabled' if not current_user.can_edit('carbon') }}>
+            <label class="form-check-label small" for="sbti">{{ _('Aligned with Science Based Targets initiative (SBTi) methodology') }}</label>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">{{ _('Notes') }}</label>
+            <textarea name="notes" class="form-control" rows="2" {{ 'disabled' if not current_user.can_edit('carbon') }}>{{ target.notes if target else '' }}</textarea>
+          </div>
+          {% if current_user.can_edit('carbon') %}
+          <button class="btn" style="background:var(--ecx-carbon-1); color:#fff; font-weight:700;">{{ _('Save Target') }}</button>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="ecx-card">
+        <h6><i class="bi bi-graph-down-arrow me-1"></i>{{ _('Progress This Period') }}</h6>
+        {% if progress %}
+        <div class="ecx-stat">
+          <div class="n">{{ progress.pct_of_path_walked }}%</div>
+          <div class="l">{{ _('of the way to the 2030 target') }}</div>
+        </div>
+        <div class="progress mt-2" style="height:12px; border-radius:999px;">
+          <div class="progress-bar" style="width:{{ [progress.pct_of_path_walked, 100]|min if progress.pct_of_path_walked and progress.pct_of_path_walked > 0 else 0 }}%; background:var(--ecx-carbon-2);"></div>
+        </div>
+        <table class="ecx-table-clean mt-3">
+          <tr><td>{{ _('Baseline') }} ({{ progress.baseline_year }})</td><td class="fw-semibold">{{ progress.baseline_tco2e }} t</td></tr>
+          <tr><td>{{ _('Current') }}</td><td class="fw-semibold">{{ progress.current_tco2e }} t</td></tr>
+          <tr><td>{{ _('2030 Target') }}</td><td class="fw-semibold">{{ progress.target_tco2e }} t</td></tr>
+        </table>
+        {% else %}
+        <div class="ecx-empty-state"><i class="bi bi-flag"></i><div>{{ _('Set a baseline to see progress tracking.') }}</div></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

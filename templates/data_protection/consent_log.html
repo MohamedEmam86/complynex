@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Consent Log - PDPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Consent Management Log') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('dp.purpose_list') }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-gear"></i> {{ _('Manage Purposes') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('Data Subject ID') }}</th>
+                            <th>{{ _('Purpose') }}</th>
+                            <th>{{ _('Consent Given') }}</th>
+                            <th>{{ _('Date') }}</th>
+                            <th>{{ _('Method') }}</th>
+                            <th>{{ _('Status') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for con in consents %}
+                        <tr>
+                            <td><code>{{ con.data_subject_id }}</code></td>
+                            <td>{{ con.purpose_name }}</td>
+                            <td>
+                                {% if con.consent_given %}
+                                <span class="text-success"><i class="bi bi-check-circle"></i> {{ _('Yes') }}</span>
+                                {% else %}
+                                <span class="text-danger"><i class="bi bi-x-circle"></i> No</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ con.consent_date }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ con.consent_method }}</span></td>
+                            <td>
+                                {% if con.withdrawn %}
+                                <span class="badge bg-danger">{{ _('WITHDRAWN') }}</span>
+                                {% else %}
+                                <span class="badge bg-success">{{ _('ACTIVE') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">{{ _('No consent records found') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

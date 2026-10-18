@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% macro who(first, last, email) %}{% if first or last %}{{ (first ~ ' ' ~ last)|trim }}{% if email %}<span class="text-muted small"> · {{ email }}</span>{% endif %}{% else %}<span class="text-muted">{{ _('System') }}</span>{% endif %}{% endmacro %}
+{% block title %}{{ _('Whitelist Case') }} — {{ e.name }}{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb"><ol class="breadcrumb small">
+  <li class="breadcrumb-item"><a href="{{ url_for('screening.dashboard') }}">{{ _('Screening') }}</a></li>
+  <li class="breadcrumb-item"><a href="{{ url_for('screening.manage_whitelist') }}">{{ _('Whitelist') }}</a></li>
+  <li class="breadcrumb-item active">{{ e.name }}</li>
+</ol></nav>
+
+<div class="d-flex justify-content-between align-items-start pb-2 mb-3 border-bottom">
+  <div>
+    <h1 class="h3 mb-1">{{ e.name }}</h1>
+    <div class="text-muted small">
+      <code>{{ e.normalized_name }}</code> · {{ e.entity_type or _('Individual') }}
+      · {{ _('Case') }} #{{ e.id }}
+    </div>
+  </div>
+  <div class="text-end">
+    <span class="badge fs-6 bg-{{ 'success' if e.status=='Active' else ('danger' if e.status in ['Confirmed Match','Revoked'] else 'warning text-dark') }}">
+      {{ e.status or 'Active' }}</span>
+    <div class="small text-muted mt-1">
+      {% if e.screening_frequency and e.screening_frequency != 'manual' %}
+        {{ _('Re-screened') }} {{ _(e.screening_frequency) }}
+        {% if e.next_screening_at %}· {{ _('next') }} {{ e.next_screening_at.strftime('%d %b %Y') }}{% endif %}
+      {% else %}{{ _('Not on a screening cycle') }}{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if e.status == 'Confirmed Match' %}
+<div class="alert alert-danger"><i class="bi bi-exclamation-octagon-fill me-2"></i>
+  <strong>{{ _('Confirmed true match.') }}</strong>
+  {{ _('This name no longer suppresses anything and will raise an alert on the next screening. An STR should be raised if not already done.') }}</div>
+{% elif e.status == 'Requires Review' %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill me-2"></i>
+  <strong>{{ _('Awaiting review.') }}</strong>
+  {{ _('While in this state the entry suppresses nothing — screening runs normally for this name.') }}</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-7">
+
+    <div class="card mb-3">
+      <div class="card-header bg-light d-flex justify-content-between">
+        <strong><i class="bi bi-list-check me-1"></i>{{ _('Cleared matches') }}</strong>
+        <span class="badge bg-secondary">{{ cleared|length }}</span>
+      </div>
+      <div class="card-body pb-0">
+        <p class="small text-muted">
+          {{ _('These are the listings reviewed and accepted as not being this person. Anything appearing outside this set in a later screening is raised as a finding below.') }}
+        </p>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light"><tr>
+            <th>{{ _('Listing') }}</th><th>{{ _('Source') }}</th>
+            <th>{{ _('Score') }}</th><th>{{ _('Cleared') }}</th><th>{{ _('State') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for m in cleared %}
+            <tr class="{% if not m.is_active %}opacity-50{% endif %}">
+              <td class="small">{{ (m.entity_name or '—')[:44] }}</td>
+              <td><span class="badge bg-light text-dark">{{ m.entity_source or '—' }}</span></td>
+              <td>{% if m.match_score %}<span class="badge bg-dark">{{ '%.0f'|format(m.match_score) }}%</span>{% else %}—{% endif %}</td>
+              <td class="small text-muted">{{ m.cleared_at.strftime('%d %b %Y') }}</td>
+              <td>{% if m.is_active %}<span class="badge bg-success">{{ _('Suppressed') }}</span>
+                  {% else %}<span class="badge bg-secondary">{{ _('No longer') }}</span>{% endif %}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="text-muted small py-4 text-center">
+              {{ _('No match set recorded — this entry pre-dates match-set clearance and needs re-adjudication.') }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-light d-flex justify-content-between">
+        <strong><i class="bi bi-binoculars me-1"></i>{{ _('Ongoing screening findings') }}</strong>
+        <span class="badge bg-{{ 'danger' if findings|selectattr('status','equalto','open')|list|length else 'secondary' }}">
+          {{ findings|selectattr('status','equalto','open')|list|length }} {{ _('open') }}</span>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for f in findings %}
+        <div class="list-group-item {% if f.status == 'open' %}list-group-item-warning{% endif %}">
+          <div class="d-flex justify-content-between">
+            <div>
+              {% if f.finding_type == 'new_entity' %}<span class="badge bg-danger">{{ _('New match appeared') }}</span>
+              {% elif f.finding_type == 'entity_changed' %}<span class="badge bg-warning text-dark">{{ _('Listing amended') }}</span>
+              {% else %}<span class="badge bg-info">{{ _('De-listed') }}</span>{% endif %}
+              <strong class="ms-1">{{ (f.entity_name or '')[:40] }}</strong>
+              {% if f.match_score %}<span class="badge bg-dark ms-1">{{ '%.0f'|format(f.match_score) }}%</span>{% endif %}
+            </div>
+            <span class="text-muted small">{{ f.created_at.strftime('%d %b %Y') }}</span>
+          </div>
+          <div class="small text-muted mt-1">
+            {{ _('Found by the') }} {{ f.run_type }} {{ _('run of') }} {{ f.started_at.strftime('%d %b %H:%M') }}
+            {% if f.status != 'open' %}
+              · {{ _('Reviewed by') }} {{ who(f.first_name, f.last_name, none) }}
+              {% if f.reviewed_at %}{{ _('on') }} {{ f.reviewed_at.strftime('%d %b %Y') }}{% endif %}
+              <span class="badge bg-{{ 'danger' if f.status=='escalated' else 'success' }}">{{ f.status }}</span>
+            {% else %}
+              · <a href="{{ url_for('screening.ongoing_screening_dashboard') }}">{{ _('review in the findings queue') }}</a>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div class="list-group-item text-muted small">
+          {{ _('Nothing found since this name was cleared.') }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+
+    <div class="card mb-3">
+      <div class="card-header bg-light"><strong><i class="bi bi-person-badge me-1"></i>{{ _('Record') }}</strong></div>
+      <div class="card-body small">
+        <dl class="row mb-0">
+          <dt class="col-5">{{ _('Added by') }}</dt>
+          <dd class="col-7">{{ who(e.first_name, e.last_name, e.email) }}</dd>
+          <dt class="col-5">{{ _('Added at') }}</dt><dd class="col-7">{{ e.added_at or '—' }}</dd>
+          <dt class="col-5">{{ _('Reason given') }}</dt><dd class="col-7">{{ e.reason or '—' }}</dd>
+          <dt class="col-5">{{ _('Original match') }}</dt><dd class="col-7">{{ e.original_match_name or '—' }}</dd>
+          <dt class="col-5">{{ _('Original score') }}</dt>
+          <dd class="col-7">{% if e.original_match_score %}{{ '%.0f'|format(e.original_match_score) }}%{% else %}—{% endif %}</dd>
+          <dt class="col-5">{{ _('List source') }}</dt><dd class="col-7">{{ e.original_list_source or '—' }}</dd>
+          <dt class="col-5">{{ _('Last screened') }}</dt>
+          <dd class="col-7">{{ e.last_screened_at.strftime('%d %b %Y %H:%M') if e.last_screened_at else _('Never') }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    {% if can_edit %}
+    <div class="card mb-3 border-primary">
+      <div class="card-header bg-primary bg-opacity-10"><strong>{{ _('Record a decision') }}</strong></div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('screening.whitelist_decide', id=e.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <label class="form-label small fw-bold">{{ _('Justification') }} <span class="text-danger">*</span></label>
+          <textarea name="reason" class="form-control form-control-sm mb-1" rows="3" required
+                    placeholder="{{ _('e.g. Date of birth and national ID both differ from the listed individual; documents on file.') }}"></textarea>
+          <div class="form-text mb-3">{{ _('Kept permanently against your name. A decision without a reason is refused.') }}</div>
+
+          <label class="form-label small">{{ _('Re-screening frequency') }}</label>
+          <select name="screening_frequency" class="form-select form-select-sm mb-3">
+            {% for f in ['daily','weekly','monthly','quarterly','yearly','manual'] %}
+            <option value="{{ f }}" {% if e.screening_frequency == f %}selected{% endif %}>{{ _(f|capitalize) }}</option>
+            {% endfor %}
+          </select>
+
+          <button name="decision" value="confirm_false_positive" class="btn btn-success w-100 mb-2">
+            <i class="bi bi-check-circle"></i> {{ _('Still a false positive — keep whitelisted') }}
+            <div class="small opacity-75">{{ _('Continues to be monitored') }}</div>
+          </button>
+
+          <button name="decision" value="confirm_true_match" class="btn btn-danger w-100 mb-2"
+                  data-confirm="{{ _('Record this as a CONFIRMED sanctions match? It will stop suppressing alerts immediately and must be reported.') }}">
+            <i class="bi bi-exclamation-octagon"></i> {{ _('Confirmed true match — stop suppressing') }}
+            <div class="small opacity-75">{{ _('Escalates; an STR should follow') }}</div>
+          </button>
+
+          <button name="decision" value="hold" class="btn btn-outline-warning w-100 mb-2">
+            <i class="bi bi-pause-circle"></i> {{ _('Hold for investigation') }}
+          </button>
+
+          <button name="decision" value="reopen" class="btn btn-outline-secondary w-100 btn-sm">
+            <i class="bi bi-arrow-counterclockwise"></i> {{ _('Reopen for review') }}
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header bg-light d-flex justify-content-between">
+        <strong><i class="bi bi-clock-history me-1"></i>{{ _('Full history') }}</strong>
+        <span class="badge bg-secondary">{{ history|length }}</span>
+      </div>
+      <div class="list-group list-group-flush" style="max-height:420px;overflow-y:auto">
+        {% for h in history %}
+        <div class="list-group-item small py-2">
+          <div class="d-flex justify-content-between">
+            <strong>{{ h.action|replace('_',' ')|title }}</strong>
+            <span class="text-muted">{{ h.performed_at.strftime('%d %b %Y %H:%M') }}</span>
+          </div>
+          <div class="text-muted">
+            {{ _('by') }} {{ who(h.first_name, h.last_name, h.email) }}
+          </div>
+          {% if h.previous_status or h.new_status %}
+          <div class="mt-1">
+            <span class="badge bg-light text-dark">{{ h.previous_status or '—' }}</span>
+            <i class="bi bi-arrow-right"></i>
+            <span class="badge bg-secondary">{{ h.new_status or '—' }}</span>
+          </div>
+          {% endif %}
+          {% if h.reason %}<div class="mt-1 fst-italic">"{{ h.reason }}"</div>{% endif %}
+        </div>
+        {% else %}
+        <div class="list-group-item text-muted small">{{ _('No recorded actions yet.') }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

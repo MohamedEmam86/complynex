@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Organisation') }} - {{ company_name }} CMS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div>
+    <h1 class="h2"><i class="bi bi-diagram-3 me-2"></i>{{ _('Organisational Hierarchy') }}</h1>
+    <p class="text-muted small mb-0">{{ _('Group, companies, business units and departments. Document applicability and user visibility are both driven from this tree.') }}</p>
+  </div>
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newUnitModal">
+    <i class="bi bi-plus-lg"></i> {{ _('New Unit') }}
+  </button>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>{{ _('Unit') }}</th><th>{{ _('Type') }}</th><th>{{ _('Code') }}</th>
+          <th>{{ _('Legal entity') }}</th><th class="text-center">{{ _('Users') }}</th>
+          <th>{{ _('Status') }}</th><th class="text-end">{{ _('Actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in units %}
+        <tr class="{% if not u.is_active %}opacity-50{% endif %}">
+          <td style="padding-inline-start: {{ 12 + u.depth * 26 }}px;">
+            {% if u.depth %}<span class="text-muted me-1">└</span>{% endif %}
+            <i class="{{ u.type_icon }} me-1 text-primary"></i>
+            <strong>{{ u.name_en }}</strong>
+            {% if u.name_ar %}<span class="text-muted small ms-1">{{ u.name_ar }}</span>{% endif %}
+          </td>
+          <td><span class="badge bg-light text-dark">{{ u.type_name }}</span></td>
+          <td><code class="small">{{ u.code }}</code></td>
+          <td>{% if u.is_legal_entity %}<i class="bi bi-check-circle-fill text-success"></i>
+              {{ u.country or '' }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td class="text-center">{% if u.user_count %}<span class="badge bg-secondary">{{ u.user_count }}</span>{% else %}<span class="text-muted">0</span>{% endif %}</td>
+          <td>{% if u.is_active %}<span class="badge bg-success">{{ _('Active') }}</span>
+              {% else %}<span class="badge bg-secondary">{{ _('Inactive') }}</span>{% endif %}</td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <button type="button" class="btn btn-outline-primary js-edit-unit"
+                      data-id="{{ u.id }}" data-code="{{ u.code }}" data-name="{{ u.name_en }}"
+                      data-namear="{{ u.name_ar or '' }}" data-type="{{ u.unit_type_id }}"
+                      data-parent="{{ u.parent_id or '' }}" data-legal="{{ 1 if u.is_legal_entity else 0 }}"
+                      data-country="{{ u.country or '' }}" title="{{ _('Edit') }}">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <form method="POST" action="{{ url_for('admin.org_unit_update', unit_id=u.id) }}"
+                    data-confirm="{% if u.is_active %}{{ _('Deactivate this unit? Its history is kept.') }}{% else %}{{ _('Reactivate this unit?') }}{% endif %}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="{{ 'deactivate' if u.is_active else 'reactivate' }}">
+                <button type="submit" class="btn btn-outline-{{ 'secondary' if u.is_active else 'success' }}">
+                  <i class="bi bi-{{ 'archive' if u.is_active else 'arrow-counterclockwise' }}"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="newUnitModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('admin.org_unit_create') }}" id="unitForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title" id="unitModalTitle">{{ _('New Unit') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-8"><label class="form-label">{{ _('Name (English)') }} <span class="text-danger">*</span></label>
+              <input name="name_en" id="f_name_en" class="form-control" required></div>
+            <div class="col-4"><label class="form-label">{{ _('Code') }} <span class="text-danger">*</span></label>
+              <input name="code" id="f_code" class="form-control text-uppercase" required></div>
+            <div class="col-12"><label class="form-label">{{ _('Name (Arabic)') }}</label>
+              <input name="name_ar" id="f_name_ar" class="form-control" dir="rtl"></div>
+            <div class="col-6"><label class="form-label">{{ _('Type') }} <span class="text-danger">*</span></label>
+              <select name="unit_type_id" id="f_type" class="form-select" required>
+                {% for t in unit_types %}<option value="{{ t.id }}">{{ t.name_en }}</option>{% endfor %}
+              </select></div>
+            <div class="col-6"><label class="form-label">{{ _('Parent') }}</label>
+              <select name="parent_id" id="f_parent" class="form-select">
+                <option value="">{{ _('— none (root) —') }}</option>
+                {% for u in units %}{% if u.is_active %}
+                <option value="{{ u.id }}">{{ '　' * u.depth }}{{ u.name_en }}</option>{% endif %}{% endfor %}
+              </select></div>
+            <div class="col-6 d-flex align-items-end">
+              <div class="form-check"><input type="checkbox" name="is_legal_entity" id="f_legal" class="form-check-input">
+                <label class="form-check-label" for="f_legal">{{ _('Separate legal entity') }}</label></div></div>
+            <div class="col-6"><label class="form-label">{{ _('Country') }}</label>
+              <input name="country" id="f_country" class="form-control" maxlength="2" placeholder="EG"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+          <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var modalEl = document.getElementById('newUnitModal');
+  var modal = new bootstrap.Modal(modalEl);
+  var form = document.getElementById('unitForm');
+  var createAction = form.getAttribute('action');
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.js-edit-unit');
+    if (!b) return;
+    // Same modal for create and edit: one form to keep in step, and the edit
+    // route lives at a different URL so the action is swapped rather than a
+    // hidden id being posted.
+    form.setAttribute('action',
+      '{{ url_for("admin.org_unit_update", unit_id=987654321) }}'.replace('987654321', b.dataset.id));
+    document.getElementById('unitModalTitle').textContent = '{{ _("Edit Unit") }}';
+    document.getElementById('f_name_en').value  = b.dataset.name;
+    document.getElementById('f_name_ar').value  = b.dataset.namear;
+    document.getElementById('f_code').value     = b.dataset.code;
+    document.getElementById('f_type').value     = b.dataset.type;
+    document.getElementById('f_parent').value   = b.dataset.parent;
+    document.getElementById('f_country').value  = b.dataset.country;
+    document.getElementById('f_legal').checked  = b.dataset.legal === '1';
+    modal.show();
+  });
+
+  modalEl.addEventListener('hidden.bs.modal', function () {
+    form.setAttribute('action', createAction);
+    document.getElementById('unitModalTitle').textContent = '{{ _("New Unit") }}';
+    form.reset();
+  });
+}());
+</script>
+{% endblock %}

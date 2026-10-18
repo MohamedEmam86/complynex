@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Data Subject Requests{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Data Subject Requests (DSR)') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('dp.create_dsr') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-shield-check"></i> {{ _('Register New Request') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('Number') }}</th>
+                            <th>{{ _('Subject Name') }}</th>
+                            <th>{{ _('Request Type') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Due Date') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dsr in dsrs %}
+                        <tr>
+                            <td><code>{{ dsr.request_number }}</code></td>
+                            <td>{{ dsr.data_subject_name }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ dsr.request_type }}</span></td>
+                            <td>
+                                <span
+                                    class="badge {% if dsr.status == 'NEW' %}bg-primary{% elif dsr.status == 'OVERDUE' %}bg-danger{% else %}bg-info{% endif %}">
+                                    {{ dsr.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="{% if dsr.status == 'OVERDUE' %}text-danger font-weight-bold{% endif %}">
+                                    {{ dsr.due_date }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('dp.dsr_detail', id=dsr.id) }}"
+                                    class="btn btn-sm btn-outline-primary">{{ _('View / Respond') }}</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">{{ _('No pending data subject requests') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

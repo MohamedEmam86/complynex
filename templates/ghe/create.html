@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('GHE Declaration Submission') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 fw-bold mb-1"><i class="bi bi-shield-check text-primary me-2"></i>{{ _('GHE Disclosure
+                        Form') }}</h1>
+                    <p class="text-muted small">{{ _('Gifts, Hospitality & Entertainment Declaration for CBE
+                        Compliance.') }}</p>
+                </div>
+                <a href="{{ url_for('ghe.my_declarations') }}" class="btn btn-light rounded-pill px-4 shadow-sm">{{
+                    _('Back to History') }}</a>
+            </div>
+
+            <!-- Approval Threshold Info -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-success bg-opacity-10 h-100">
+                        <div class="card-body py-3">
+                            <h6 class="fw-bold mb-1" style="color:#198754 !important"><i class="bi bi-lightning-auto me-1"></i>{{
+                                _('Auto-Approval') }}</h6>
+                            <p class="small mb-0 text-muted">{{ _('Below 500 EGP per event') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-primary bg-opacity-10 h-100">
+                        <div class="card-body py-3">
+                            <h6 class="fw-bold mb-1" style="color:#0d6efd !important"><i class="bi bi-person-check me-1"></i>{{
+                                _('Management Review') }}</h6>
+                            <p class="small mb-0 text-muted">{{ _('500 - 2,000 EGP per event') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-danger bg-opacity-10 h-100">
+                        <div class="card-body py-3">
+                            <h6 class="fw-bold mb-1" style="color:#dc3545 !important"><i class="bi bi-shield-lock me-1"></i>{{ _('Compliance
+                                Review') }}</h6>
+                            <p class="small mb-0 text-muted">{{ _('Over 2,000 EGP or Gov Official') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-lg overflow-hidden rounded-4">
+                <div class="card-body p-0">
+                    <form method="POST" action="{{ url_for('ghe.create_declaration') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row g-0">
+                            <!-- Main Section -->
+                            <div class="col-md-7 p-4 p-lg-5">
+                                <h5 class="fw-bold mb-4 d-flex align-items-center">
+                                    <span
+                                        class="bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center"
+                                        style="width: 32px; height: 32px; font-size: 0.9rem;">1</span>
+                                    {{ _('Event Details') }}
+                                </h5>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">{{ _('GHE Type') }} <span
+                                                class="text-danger">*</span></label>
+                                        <select
+                                            class="form-select rounded-3 shadow-none border-primary border-opacity-10"
+                                            name="ghe_type" required>
+                                            <option value="">{{ _('-- Select Type --') }}</option>
+                                            <option value="Gift">{{ _('Gift') }}</option>
+                                            <option value="Hospitality">{{ _('Hospitality') }}</option>
+                                            <option value="Entertainment">{{ _('Entertainment') }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">{{ _('Direction') }} <span
+                                                class="text-danger">*</span></label>
+                                        <select
+                                            class="form-select rounded-3 shadow-none border-primary border-opacity-10"
+                                            name="direction" required>
+                                            <option value="">{{ _('-- Selection --') }}</option>
+                                            <option value="Given">{{ _('Given (by me)') }}</option>
+                                            <option value="Received">{{ _('Received (by me)') }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">{{ _('Event Date') }} <span
+                                                class="text-danger">*</span></label>
+                                        <input type="date"
+                                            class="form-control rounded-3 shadow-none border-primary border-opacity-10"
+                                            name="event_date" required max="{{ today }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">{{ _('Est. Value (EGP)') }} <span
+                                                class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span
+                                                class="input-group-text bg-light border-primary border-opacity-10 text-muted">EGP</span>
+                                            <input type="number"
+                                                class="form-control rounded-end-3 shadow-none border-primary border-opacity-10"
+                                                name="estimated_value_egp" id="estimated_value_egp" step="0.01"
+                                                required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Provider / Recipient Name') }} <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text"
+                                        class="form-control rounded-3 shadow-none border-primary border-opacity-10"
+                                        name="provider_recipient_name" required
+                                        placeholder="{{ _('Full Name or Entity') }}">
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Business Purpose') }}</label>
+                                    <textarea
+                                        class="form-control rounded-3 shadow-none border-primary border-opacity-10"
+                                        name="business_purpose" rows="2"
+                                        placeholder="{{ _('Why was this GHE provided/received?') }}"></textarea>
+                                </div>
+
+                                <div class="mb-0">
+                                    <label class="form-label fw-semibold">{{ _('Detailed Description') }} <span
+                                            class="text-danger">*</span></label>
+                                    <textarea
+                                        class="form-control rounded-3 shadow-none border-primary border-opacity-10"
+                                        name="description" rows="4" required
+                                        placeholder="{{ _('Describe what exactly was provided/received...') }}"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Context & Submission -->
+                            <div class="col-md-5 bg-light p-4 p-lg-5 border-start">
+                                <h5 class="fw-bold mb-4 d-flex align-items-center">
+                                    <span
+                                        class="bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center"
+                                        style="width: 32px; height: 32px; font-size: 0.9rem;">2</span>
+                                    {{ _('Lifecycle & Governance') }}
+                                </h5>
+
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-body p-4">
+                                        <div class="form-check form-switch custom-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="is_government_official"
+                                                name="is_government_official" value="1">
+                                            <label class="form-check-label fw-bold ms-2" for="is_government_official">{{
+                                                _('Government Official Involved') }}</label>
+                                        </div>
+                                        <div id="gov_official_details_section" style="display: none;">
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold text-danger">{{ _('Official
+                                                    Name & Entity *') }}</label>
+                                                <textarea
+                                                    class="form-control form-control-sm border-danger border-opacity-25 shadow-none"
+                                                    name="government_official_details" id="government_official_details"
+                                                    rows="2"
+                                                    placeholder="{{ _('Name and agency of the official...') }}"></textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold text-danger">{{ _('Official
+                                                    Position *') }}</label>
+                                                <input type="text"
+                                                    class="form-control form-control-sm border-danger border-opacity-25 shadow-none"
+                                                    name="government_official_position"
+                                                    id="government_official_position"
+                                                    placeholder="{{ _('e.g., Director, Head of Dept...') }}">
+                                            </div>
+                                            <div class="form-text extra-small text-danger mt-1">
+                                                <i class="bi bi-exclamation-octagon me-1"></i>{{ _('Mandatory for ABAC /
+                                                CBE compliance.') }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Proof of Value (Optional)') }}</label>
+                                    <div
+                                        class="file-upload-wrapper bg-white p-4 rounded-3 text-center border-2 border-dashed border-primary border-opacity-25">
+                                        <i class="bi bi-cloud-arrow-up fs-2 text-primary opacity-50 mb-2"></i>
+                                        <input type="file" name="attachment"
+                                            class="form-control form-control-sm border-0 shadow-none"
+                                            accept=".pdf,.png,.jpg">
+                                        <p class="extra-small text-muted mt-2 mb-0">{{ _('PDF, JPG or PNG (Max 5MB)') }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="card bg-primary bg-opacity-10 border-0 mb-4 rounded-3">
+                                    <div class="card-body p-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="declaration_statement"
+                                                required>
+                                            <label class="form-check-label extra-small fw-semibold text-primary"
+                                                for="declaration_statement">
+                                                {{ _('I declare that this GHE is not intended to influence any business
+                                                outcome and complies with ComplyNex Anti-Corruption policy.') }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">
+                                        <i class="bi bi-send-check me-2"></i> {{ _('Submit Disclosure') }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-switch .form-check-input {
+        width: 3rem;
+        height: 1.5rem;
+    }
+
+    .extra-small {
+        font-size: 0.75rem;
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+    }
+
+    .card {
+        border-radius: 1rem;
+    }
+</style>
+
+<script nonce="{{ csp_nonce }}">
+    document.getElementById('is_government_official').addEventListener('change', function () {
+        const section = document.getElementById('gov_official_details_section');
+        const field = document.getElementById('government_official_details');
+        if (this.checked) {
+            section.style.display = 'block';
+            field.required = true;
+        } else {
+            section.style.display = 'none';
+            field.required = false;
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}{{ risk.risk_id }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3><i class="bi bi-shield-exclamation me-2"></i>{{ risk.risk_id }} - {{ risk.risk_title }}</h3>
+        <div>
+            {% if current_user.can_edit('risk_management') %}
+            <a href="{{ url_for('risk_management.register_edit', risk_pk=risk.id) }}" class="btn btn-outline-primary btn-sm">{{ _('Re-score') }}</a>
+            <a href="{{ url_for('risk_management.register_link_source', risk_pk=risk.id) }}" class="btn btn-outline-secondary btn-sm">{{ _('Link Source') }}</a>
+            <a href="{{ url_for('risk_management.treatment_new', risk_pk=risk.id) }}" class="btn btn-outline-success btn-sm">{{ _('Propose Treatment') }}</a>
+            {% if risk.status not in ['CLOSED', 'ACCEPTED'] %}
+            <form method="post" action="{{ url_for('risk_management.register_close', risk_pk=risk.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="status" class="form-select form-select-sm d-inline-block w-auto">
+                    <option value="CLOSED">{{ _('CLOSED') }}</option>
+                    <option value="ACCEPTED">{{ _('ACCEPTED') }}</option>
+                </select>
+                <button type="submit" class="btn btn-outline-danger btn-sm">{{ _('Change Status') }}</button>
+            </form>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <p>{{ risk.risk_description or _('No description provided.') }}</p>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">{{ _('Category') }}</dt><dd class="col-sm-9">{{ category.category_name if category else '-' }}</dd>
+                        <dt class="col-sm-3">{{ _('Department') }}</dt><dd class="col-sm-9">{{ department.name if department else '-' }}</dd>
+                        <dt class="col-sm-3">{{ _('Owner') }}</dt><dd class="col-sm-9">{{ owner.first_name ~ ' ' ~ owner.last_name if owner else '-' }}</dd>
+                        <dt class="col-sm-3">{{ _('Status') }}</dt><dd class="col-sm-9"><span class="badge bg-secondary">{{ risk.status }}</span></dd>
+                        <dt class="col-sm-3">{{ _('Risk Response') }}</dt><dd class="col-sm-9">{{ risk.risk_response or '-' }}</dd>
+                        <dt class="col-sm-3">{{ _('Existing Controls') }}</dt><dd class="col-sm-9">{{ risk.existing_controls or '-' }}</dd>
+                        <dt class="col-sm-3">{{ _('Review Frequency') }}</dt><dd class="col-sm-9">{{ risk.review_frequency or '-' }}</dd>
+                        <dt class="col-sm-3">{{ _('Next Review') }}</dt><dd class="col-sm-9">{{ risk.next_review_date or '-' }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Score History') }}</strong></div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>{{ _('Date') }}</th><th>{{ _('Inherent') }}</th><th>{{ _('Residual') }}</th><th>{{ _('Control Eff.') }}</th><th>{{ _('Reason') }}</th></tr></thead>
+                        <tbody>
+                        {% for h in history %}
+                            <tr><td>{{ h.recorded_at }}</td><td>{{ h.inherent_risk_score }}</td><td>{{ h.residual_risk_score or '-' }}</td><td>{{ h.control_effectiveness or '-' }}</td><td>{{ h.change_reason or '-' }}</td></tr>
+                        {% else %}
+                            <tr><td colspan="5" class="text-center text-muted">{{ _('No history yet.') }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Linked Controls') }}</strong></div>
+                <ul class="list-group list-group-flush">
+                    {% for c in controls %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <a href="{{ url_for('risk_management.controls_detail', control_id=c.id) }}">{{ c.control_code }} - {{ c.control_name }}</a>
+                        <span class="badge bg-info">{{ c.reliance_level }}</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('No controls linked yet.') }}</li>
+                    {% endfor %}
+                </ul>
+                {% if current_user.can_edit('risk_management') %}
+                <div class="card-body py-2">
+                    <a href="{{ url_for('risk_management.controls_list') }}" class="small">{{ _('Link a control from the Control Library →') }}</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Scoring') }}</strong></div>
+                <div class="card-body">
+                    <p class="mb-1 d-flex justify-content-between align-items-center">
+                        <span>{{ _('Inherent') }}: <strong>{{ risk.likelihood }} x {{ risk.impact }} = {{ risk.inherent_risk_score }}</strong></span>
+                        {% if inherent_band %}<span class="badge" style="background-color: {{ inherent_band.color_hex }};">{{ inherent_band.band_name }}</span>{% endif %}
+                    </p>
+                    <p class="mb-1 d-flex justify-content-between align-items-center">
+                        <span>{{ _('Residual') }}: <strong>{{ (risk.residual_likelihood or '-') ~ ' x ' ~ (risk.residual_impact or '-') ~ ' = ' ~ (risk.residual_risk_score or '-') }}</strong></span>
+                        {% if residual_band %}<span class="badge" style="background-color: {{ residual_band.color_hex }};">{{ residual_band.band_name }}</span>{% endif %}
+                    </p>
+                    {% if risk.control_effectiveness %}
+                    <p class="mb-1">{{ _('Control Effectiveness') }}: <span class="badge bg-secondary">{{ risk.control_effectiveness }}</span></p>
+                    {% endif %}
+                    <p class="mb-0">{{ _('Appetite Aligned') }}:
+                        {% if risk.risk_appetite_aligned is none %}<span class="text-muted">{{ _('N/A') }}</span>
+                        {% elif risk.risk_appetite_aligned %}<span class="badge bg-success">{{ _('Yes') }}</span>
+                        {% else %}<span class="badge bg-danger">{{ _('Breach') }}</span>{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Treatments') }}</strong></div>
+                <ul class="list-group list-group-flush">
+                    {% for t in treatments %}
+                    <li class="list-group-item">
+                        <a href="{{ url_for('risk_management.treatment_detail', treatment_id=t.id) }}">{{ t.treatment_description[:60] }}</a>
+                        <span class="badge bg-secondary float-end">{{ t.status }}</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('No treatments proposed yet.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Source Links') }}</strong></div>
+                <ul class="list-group list-group-flush">
+                    {% for l in links %}
+                    <li class="list-group-item small">{{ l.source_module }} / {{ l.source_table }}#{{ l.source_record_id }} <span class="badge bg-info">{{ l.link_type }}</span></li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('No linked source records.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><strong>{{ _('KRIs') }}</strong></div>
+                <ul class="list-group list-group-flush">
+                    {% for k in kris %}
+                    {% set kri_status = kri_latest_status.get(k.id) %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('risk_management.kris_dashboard') }}">{{ k.kri_name }}</a>
+                        {% if kri_status %}
+                        <span class="badge {{ 'bg-danger' if kri_status == 'RED' else ('bg-warning text-dark' if kri_status == 'AMBER' else 'bg-success') }}">{{ kri_status }}</span>
+                        {% else %}
+                        <span class="text-muted small">{{ _('No measurements') }}</span>
+                        {% endif %}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('No KRIs linked.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

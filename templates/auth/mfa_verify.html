@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Two-Factor Verification - ComplyNex CMS') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #F8F8F8; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .card { border: none; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,.10); max-width: 420px; width: 100%; }
+        .card-header { background: linear-gradient(135deg, #1a3c5e 0%, #2d6a9f 100%); border-radius: 16px 16px 0 0; color: #fff; padding: 2rem; text-align: center; }
+        .otp-input { letter-spacing: .4em; font-size: 1.6rem; text-align: center; font-weight: 700; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-shield-lock fs-1 mb-2 d-block"></i>
+        <h4 class="mb-0">{{ _('Two-Factor Authentication') }}</h4>
+        <small class="opacity-75">{{ _('Enter the 6-digit code from your authenticator app') }}</small>
+    </div>
+    <div class="card-body p-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for cat, msg in messages %}
+            <div class="alert alert-{{ 'danger' if cat == 'danger' else 'info' }} alert-dismissible">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+          {% endfor %}
+        {% endwith %}
+
+        <form method="POST" id="totpForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="use_backup" id="useBackup" value="0">
+            <div class="mb-4">
+                <input type="text" name="code" id="codeInput" class="form-control otp-input"
+                       maxlength="8" placeholder="000000" autocomplete="one-time-code"
+                       inputmode="numeric" autofocus required>
+            </div>
+            <div class="d-grid mb-3">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-circle me-2"></i>{{ _('Verify') }}
+                </button>
+            </div>
+        </form>
+
+        <hr>
+        <p class="text-center text-muted small mb-2">{{ _('Lost access to your app?') }}</p>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="use_backup" value="1">
+            <div class="mb-3">
+                <input type="text" name="code" class="form-control text-center"
+                       placeholder="{{ _('Enter backup code (e.g. A1B2C3D4)') }}"
+                       style="letter-spacing:.15em" autocomplete="off">
+            </div>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-outline-secondary">
+                    <i class="bi bi-key me-2"></i>{{ _('Use backup code') }}
+                </button>
+            </div>
+        </form>
+
+        <div class="text-center mt-3">
+            <a href="{{ url_for('auth.login') }}" class="text-muted small">
+                <i class="bi bi-arrow-left me-1"></i>{{ _('Back to login') }}
+            </a>
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

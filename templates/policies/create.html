@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+
+{% block title %}New Policy - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">{{ _('Draft New Policy') }}</h1>
+                    <p class="text-muted small">{{ _('Initialize a new compliance policy or procedure document.') }}</p>
+                </div>
+                <a href="{{ url_for('policies.list_policies') }}" class="btn btn-light rounded-pill px-4">{{ _('Cancel')
+                    }}</a>
+            </div>
+
+            <div class="card border-0 shadow-lg overflow-hidden rounded-4">
+                <div class="card-body p-0">
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row g-0">
+                            <!-- Left: Main Form -->
+                            <div class="col-md-7 p-4 p-lg-5">
+                                <h5 class="fw-bold mb-4 d-flex align-items-center">
+                                    <span
+                                        class="bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center"
+                                        style="width: 32px; height: 32px; font-size: 0.9rem;">1</span>
+                                    {{ _('Core Information') }}
+                                </h5>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Policy Title') }} <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" name="policy_name"
+                                        class="form-control rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                        required placeholder="{{ _('e.g. Anti-Bribery and Corruption Policy') }}">
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">{{ _('Taxonomy Category') }} <span
+                                                class="text-danger">*</span></label>
+                                        <select name="category_id"
+                                            class="form-select rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                            required>
+                                            <option value="">{{ _('-- Select Category --') }}</option>
+                                            {% for category in categories %}
+                                            <option value="{{ category.id }}">{{ category.name_en if
+                                                current_user.language == 'en' else category.name_ar }}</option>
+                                            {% endfor %}
+                                        </select>
+
+                <!-- Phase 3: document type drives the approval chain -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Document Type') }} <span class="text-danger">*</span></label>
+                        <select name="document_type_id" id="documentTypeSel" class="form-select" required>
+                            <option value="">{{ _('— select —') }}</option>
+                            {% for t in document_types %}
+                            <option value="{{ t.id }}" data-approval="{{ 1 if t.requires_approval else 0 }}"
+                                    data-months="{{ t.default_review_months }}">{{ t.name_en }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text" id="docTypeHint">
+                            {{ _('The approval workflow for this type is applied automatically.') }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Owning Unit') }}</label>
+                        <select name="org_unit_id" class="form-select">
+                            <option value="">{{ _('— none —') }}</option>
+                            {% for u in org_units %}
+                            <option value="{{ u.id }}">{{ '　' * u.depth }}{{ u.name_en }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">{{ _('Used to resolve “head of unit” approval stages.') }}</div>
+                    </div>
+                </div>
+
+                <div class="card border-primary mb-3">
+                    <div class="card-header bg-light py-2">
+                        <strong><i class="bi bi-diagram-3 me-1"></i>{{ _('Applies To') }}</strong>
+                        <span class="text-muted small ms-2">{{ _('Leave empty to apply to the owning unit only.') }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small">{{ _('Units (and everything below them)') }}</label>
+                                <select name="applicability" class="form-select" multiple size="7">
+                                    {% for u in org_units %}
+                                    <option value="unit:{{ u.id }}">{{ '　' * u.depth }}{{ u.name_en }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">{{ _('Ctrl/Cmd-click for several.') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">{{ _('Cross-company targeting') }}</label>
+                                <select name="applicability" class="form-select" multiple size="3">
+                                    {% for u in org_units %}{% if u.depth > 1 %}
+                                    <option value="code:{{ u.code }}">{{ _('Every unit coded') }} {{ u.code }}</option>
+                                    {% endif %}{% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    {{ _('e.g. every Compliance department in every company.') }}</div>
+                                <label class="form-label small mt-2">{{ _('Exclude') }}</label>
+                                <select name="applicability_exclude" class="form-select" multiple size="3">
+                                    {% for u in org_units %}
+                                    <option value="{{ u.id }}">{{ '　' * u.depth }}{{ u.name_en }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">{{ _('Exclusions always win over inclusions.') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">{{ _('Policy Numbering') }}</label>
+                                        <input type="text" name="policy_number"
+                                            class="form-control rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                            placeholder="{{ _('Leave for auto-gen') }}">
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Responsible Function') }} <span
+                                            class="text-danger">*</span></label>
+
+                                    {% if departments %}
+                                    <select name="department_id"
+                                        class="form-select rounded-3 py-2 shadow-none border-primary border-opacity-10">
+                                        {% if current_user.is_admin() %}
+                                        <option value="">{{ _('Global / All Functions') }}</option>
+                                        {% endif %}
+                                        {% for dept in departments %}
+                                        <option value="{{ dept.id }}" {% if current_user.department_id==dept.id
+                                            %}selected{% endif %}>
+                                            {{ dept.name }} ({{ dept.code }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">
+                                        {% if current_user.is_admin() %}
+                                        {{ _('Select "Global" for company-wide policies, or a specific function.') }}
+                                        {% else %}
+                                        {{ _('Select the function this policy belongs to.') }}
+                                        {% endif %}
+                                    </div>
+                                    {% else %}
+                                    <!-- Fallback if no departments found/passed -->
+                                    <input type="text" name="owner_function"
+                                        class="form-control rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                        placeholder="{{ _('e.g. Compliance') }}" value="{{ current_user.department }}">
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Owner Function') }}</label>
+                                    <select name="owner_function"
+                                        class="form-select rounded-3 py-2 shadow-none border-primary border-opacity-10">
+                                        <option value="">{{ _('-- Select Owner Function --') }}</option>
+                                        {% for dept in departments %}
+                                        <option value="{{ dept.name }} ({{ dept.code }})">
+                                            {{ dept.name }} ({{ dept.code }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">{{ _('The specific function responsible for this policy') }}</div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Visibility & Access') }} <span
+                                            class="text-danger">*</span></label>
+                                    <div class="d-flex gap-4 mt-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="is_public"
+                                                id="vis_public" value="1" checked>
+                                            <label class="form-check-label" for="vis_public">
+                                                <i class="bi bi-globe me-1"></i> {{ _('Public (All Employees)') }}
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="is_public"
+                                                id="vis_internal" value="0">
+                                            <label class="form-check-label" for="vis_internal">
+                                                <i class="bi bi-lock-fill me-1"></i> {{ _('Internal (Function Only)') }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Brief Summary') }}</label>
+                                    <textarea name="description"
+                                        class="form-control rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                        rows="3"
+                                        placeholder="{{ _('High-level purpose of this document...') }}"></textarea>
+                                </div>
+
+                                <div class="mb-0">
+                                    <label class="form-label fw-semibold">{{ _('Draft Content') }}</label>
+                                    <textarea name="content"
+                                        class="form-control rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                        rows="12"
+                                        placeholder="{{ _('Paste markdown or plain text content here...') }}"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Right: Metadata -->
+                            <div class="col-md-5 bg-light p-4 p-lg-5 border-start">
+                                <h5 class="fw-bold mb-4 d-flex align-items-center">
+                                    <span
+                                        class="bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center"
+                                        style="width: 32px; height: 32px; font-size: 0.9rem;">2</span>
+                                    {{ _('Lifecycle & Compliance') }}
+                                </h5>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Version Identifier') }}</label>
+                                    <input type="text" name="version_number"
+                                        class="form-control rounded-3 border-0 shadow-sm" value="1.0" required>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">{{ _('Effective Date') }}</label>
+                                        <input type="date" name="effective_date" class="form-control border-0 shadow-sm"
+                                            required>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">{{ _('Next Review') }}</label>
+                                        <input type="date" name="next_review_date"
+                                            class="form-control border-0 shadow-sm">
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Regulatory Reference') }}</label>
+                                    <input type="text" name="regulatory_reference"
+                                        class="form-control border-0 shadow-sm"
+                                        placeholder="{{ _('e.g. CBE Circular No. 5') }}">
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="form-check form-switch custom-switch">
+                                        <input class="form-check-input" type="checkbox" id="is_mandatory"
+                                            name="is_mandatory">
+                                        <label class="form-check-label fw-bold ms-2" for="is_mandatory">{{ _('Mandatory
+                                            Acknowledgment') }}</label>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">{{ _('If enabled, this policy will be flagged
+                                        as mandatory and tracked in the Acknowledgment Dashboard.') }}</small>
+                                </div>
+
+
+
+                                <div class="mb-5">
+                                    <label class="form-label fw-semibold">{{ _('Document Attachment (PDF)') }}</label>
+                                    <div
+                                        class="file-upload-wrapper bg-white p-4 rounded-3 text-center border-2 border-dashed border-primary border-opacity-25">
+                                        <i class="bi bi-cloud-arrow-up display-6 text-primary mb-3"></i>
+                                        <input type="file" name="attachment"
+                                            class="form-control form-control-sm border-0 shadow-none" accept=".pdf">
+                                    </div>
+                                </div>
+
+                                <div class="d-grid mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">
+                                        {{ _('Create Draft Policy') }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-switch .form-check-input {
+        width: 3rem;
+        height: 1.5rem;
+    }
+
+    .file-upload-wrapper:hover {
+        background-color: rgba(13, 110, 253, 0.02) !important;
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+    }
+</style>
+{% endblock %}
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var sel = document.getElementById('documentTypeSel');
+  if (!sel) return;
+  sel.addEventListener('change', function () {
+    var o = sel.options[sel.selectedIndex];
+    var hint = document.getElementById('docTypeHint');
+    if (!o || !o.value) return;
+    hint.textContent = (o.dataset.approval === '1')
+      ? '{{ _("This type requires approval. The chain is applied on save.") }}'
+      : '{{ _("This type does not require approval — it becomes active immediately.") }}';
+  });
+}());
+</script>
+{% endblock %}

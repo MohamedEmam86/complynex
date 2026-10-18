@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Declaration Campaigns') }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div><h1 class="h2"><i class="bi bi-clipboard-check me-2"></i>{{ _('Annual Declarations') }}</h1>
+    <p class="text-muted small mb-0">{{ _('Gifts & Hospitality, Conflict of Interest and Code of Ethics campaigns.') }}</p></div>
+  <div class="btn-group">
+    <a href="{{ url_for('declarations.bulk_reminders') }}" class="btn btn-warning">
+      <i class="bi bi-envelope-paper-fill"></i> {{ _('Send Reminders') }}</a>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newCampaign">
+      <i class="bi bi-plus-lg"></i> {{ _('New Campaign') }}</button>
+  </div>
+</div>
+
+{% if not delivery.email %}
+<div class="alert alert-warning d-flex"><i class="bi bi-envelope-slash me-2 fs-5"></i>
+  <div><strong>{{ _('Reminders are in-app only.') }}</strong><br>
+    <span class="small">{{ delivery.note }}</span></div></div>
+{% endif %}
+
+<div class="row g-3">
+{% for c in campaigns %}
+  <div class="col-md-6 col-xl-4">
+    <div class="card h-100">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong>{{ c.name }}</strong>
+        <span class="badge bg-{{ 'success' if c.status=='open' else ('secondary' if c.status=='closed' else 'warning text-dark') }}">{{ c.status }}</span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-2">
+          {{ modules[c.module].label }} · {{ c.cycle_year }}
+          {% if c.scope_name %}· {{ c.scope_name }}{% endif %}</p>
+        <div class="progress mb-2" style="height:20px">
+          <div class="progress-bar bg-success" style="width: {{ c.stats.completion_pct }}%">
+            {{ c.stats.completion_pct }}%</div>
+        </div>
+        <div class="d-flex justify-content-between small">
+          <span><span class="badge bg-success">{{ c.stats.submitted }}</span> {{ _('submitted') }}</span>
+          <span><span class="badge bg-secondary">{{ c.stats.pending }}</span> {{ _('pending') }}</span>
+          <span><span class="badge bg-danger">{{ c.stats.overdue }}</span> {{ _('overdue') }}</span>
+        </div>
+      </div>
+      <div class="card-footer bg-white">
+        <a href="{{ url_for('declarations.detail', campaign_id=c.id) }}" class="btn btn-sm btn-outline-primary w-100">
+          {{ _('Open') }} <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div class="col-12"><div class="card"><div class="card-body text-center text-muted py-5">
+    <i class="bi bi-clipboard fs-1 opacity-25"></i><br>{{ _('No campaigns yet.') }}</div></div></div>
+{% endfor %}
+</div>
+
+<div class="modal fade" id="newCampaign" tabindex="-1"><div class="modal-dialog">
+  <form method="POST" action="{{ url_for('declarations.create') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">{{ _('New Declaration Campaign') }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><div class="row g-3">
+        <div class="col-6"><label class="form-label">{{ _('Declaration') }}</label>
+          <select name="module" class="form-select" required>
+            {% for k, v in modules.items() %}<option value="{{ k }}">{{ v.label }}</option>{% endfor %}
+          </select></div>
+        <div class="col-6"><label class="form-label">{{ _('Cycle year') }}</label>
+          <input type="number" name="cycle_year" class="form-control" value="2026" required></div>
+        <div class="col-12"><label class="form-label">{{ _('Campaign name') }}</label>
+          <input name="name" class="form-control" placeholder="{{ _('e.g. COI Declaration 2026') }}" required></div>
+        <div class="col-6"><label class="form-label">{{ _('Due date') }}</label>
+          <input type="date" name="due_at" class="form-control" required></div>
+        <div class="col-6"><label class="form-label">{{ _('Applies to') }}</label>
+          <select name="org_scope_unit_id" class="form-select">
+            <option value="">{{ _('Everyone') }}</option>
+            {% for u in org_units %}<option value="{{ u.id }}">{{ '　' * u.depth }}{{ u.name_en }}</option>{% endfor %}
+          </select></div>
+        <div class="col-12"><div class="form-check">
+          <input type="checkbox" name="include_descendants" id="incd" class="form-check-input" checked>
+          <label class="form-check-label" for="incd">{{ _('Include all units below the one selected') }}</label>
+        </div></div>
+      </div></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+        <button class="btn btn-primary">{{ _('Create') }}</button></div>
+    </div>
+  </form>
+</div></div>
+{% endblock %}

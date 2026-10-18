@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Ongoing Screening') }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div>
+    <h1 class="h2"><i class="bi bi-arrow-repeat me-2"></i>{{ _('Ongoing Sanctions Screening') }}</h1>
+    <p class="text-muted small mb-0">
+      {{ _('Whitelisted names are re-screened on a cycle. A name cleared today can become a genuine match later because the person was listed — not because the name changed. That is what this catches.') }}
+    </p>
+  </div>
+  {% if can_edit %}
+  <form method="POST" action="{{ url_for('screening.ongoing_screening_run') }}"
+        data-confirm="{{ _('Re-screen every monitored name now?') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-primary"><i class="bi bi-play-fill"></i> {{ _('Run now') }}</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="row g-3 mb-3">
+  {# Each card links to the list it counts — a number you cannot open is just a nag. #}
+  {% for label, val, cls, hint, filt in [
+      (_('Monitored names'), summary.monitored, 'primary', _('cleared against a match set'), 'monitored'),
+      (_('Matches cleared'), summary.cleared_matches, 'info', _('listings accepted as false positives'), 'monitored'),
+      (_('Due now'), summary.due_now, 'warning', _('past their next screening date'), 'due'),
+      (_('Needs review'), summary.quarantined, 'danger', _('quarantined, not suppressing'), 'review'),
+      (_('Legacy entries'), summary.legacy, 'secondary', _('name-scoped, excluded from runs'), 'legacy') ] %}
+  <div class="col">
+    <a href="{{ url_for('screening.manage_whitelist', filter=filt) }}"
+       class="card text-center h-100 text-decoration-none cnx-stat-card">
+      <div class="card-body py-3">
+        <div class="h3 mb-0 text-{{ cls }}">{{ val or 0 }}</div>
+        <div class="small text-body">{{ label }}</div>
+        <div class="text-muted" style="font-size:11px">{{ hint }}</div>
+        <div class="mt-1 small text-{{ cls }}">
+          {{ _('Review') }} <i class="bi bi-arrow-right-short"></i>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+{% if summary.legacy %}
+<div class="alert alert-warning d-flex"><i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+  <div><strong>{{ summary.legacy }} {{ _('legacy entries are excluded from routine runs.') }}</strong><br>
+  <span class="small">{{ _('They were cleared before the matched listings were recorded, so there is no baseline to compare against — every match would look new. They need a one-off re-adjudication: open each, re-screen, and clear it against its current match set.') }}</span>
+  <div class="mt-2">
+    <a href="{{ url_for('screening.manage_whitelist', filter='legacy') }}" class="btn btn-sm btn-warning">
+      <i class="bi bi-list-check"></i> {{ _('Review legacy entries') }}</a>
+  </div></div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header bg-light"><strong>{{ _('Screening frequency') }}</strong></div>
+      <div class="card-body">
+        {% set unconfigured = config|rejectattr('is_configured')|list|length %}
+        {% if unconfigured == config|length %}
+        <div class="alert alert-danger small py-2">
+          <i class="bi bi-exclamation-octagon-fill me-1"></i>
+          <strong>{{ _('Nothing is configured.') }}</strong>
+          {{ _('No cadence has been set, so ongoing screening will not run. A compliance manager decides these — the system does not assume them.') }}
+        </div>
+        {% elif unconfigured %}
+        <div class="alert alert-warning small py-2">
+          {{ unconfigured }} {{ _('band(s) still have no cadence set.') }}
+        </div>
+        {% endif %}
+
+        <p class="small text-muted">
+          {{ _('A name is re-screened at the cadence of its risk band. Which band a case falls into is decided by the criteria you define below — not by any default.') }}
+        </p>
+
+        <form method="POST" action="{{ url_for('screening.ongoing_screening_config') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% for c in config %}
+          <div class="mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <label class="form-label small mb-0 flex-grow-1">
+                {% if c.risk_band %}<span class="badge bg-secondary">{{ c.risk_band }}</span>
+                {% else %}<em>{{ _('Default') }}</em>{% endif %}
+                {% if not c.is_configured %}
+                  <span class="badge bg-danger ms-1">{{ _('not set') }}</span>{% endif %}
+              </label>
+              <select name="freq_{{ c.id }}" class="form-select form-select-sm" style="width:130px"
+                      {% if not can_edit %}disabled{% endif %}>
+                <option value="">{{ _('— choose —') }}</option>
+                {% for f in frequencies %}
+                <option value="{{ f }}" {% if c.frequency == f %}selected{% endif %}>{{ _(f|capitalize) }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% if c.is_configured %}
+            <div class="text-muted" style="font-size:11px">
+              {{ _('Set by') }} {{ c.configured_by_name or _('unknown') }}
+              {% if c.configured_at %}· {{ c.configured_at.strftime('%d %b %Y') }}{% endif %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+
+          {% if can_edit %}
+          <label class="form-label small fw-bold mt-2">{{ _('Why these cadences?') }} <span class="text-danger">*</span></label>
+          <textarea name="rationale" class="form-control form-control-sm" rows="2" required
+                    placeholder="{{ _('e.g. Aligned to the CBE-approved AML risk methodology approved by the Compliance Committee on ...') }}">{{ config[0].rationale or '' if config }}</textarea>
+          <div class="form-text">{{ _('Recorded against your name. An auditor will ask who set these and on what basis.') }}</div>
+          <button class="btn btn-sm btn-primary w-100 mt-2">{{ _('Save cadences') }}</button>
+          {% else %}
+          <div class="alert alert-secondary small mt-2 mb-0">
+            <i class="bi bi-lock me-1"></i>{{ _('You have view-only access to ongoing screening.') }}
+          </div>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong>{{ _('Risk band criteria') }}</strong>
+        {% if can_edit %}
+        <a href="{{ url_for('screening.risk_criteria') }}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-sliders"></i> {{ _('Define') }}</a>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% if criteria_count %}
+          <p class="small mb-1">{{ criteria_count }} {{ _('criteria defined across the bands.') }}</p>
+          <p class="small text-muted mb-0">{{ _('These decide which band a case falls into, and therefore how often it is re-screened.') }}</p>
+        {% else %}
+          <div class="alert alert-warning small py-2 mb-0">
+            <i class="bi bi-question-circle me-1"></i>
+            <strong>{{ _('No criteria defined.') }}</strong>
+            {{ _('Nothing decides whether a case is CRITICAL or LOW, so every case falls to the default cadence. Define them so the classification is yours and defensible, rather than an assumption baked into the tool.') }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-light"><strong>{{ _('Recent runs') }}</strong></div>
+      <div class="list-group list-group-flush">
+        {% for r in runs %}
+        <div class="list-group-item small py-2">
+          <div class="d-flex justify-content-between">
+            <span><span class="badge bg-light text-dark">{{ r.run_type }}</span>
+              {{ r.names_screened }} {{ _('names') }}</span>
+            <span class="text-muted">{{ r.started_at.strftime('%d %b %H:%M') }}</span>
+          </div>
+          <div class="mt-1">
+            {% if r.new_matches %}<span class="badge bg-danger">{{ r.new_matches }} {{ _('new') }}</span>{% endif %}
+            {% if r.changed_listings %}<span class="badge bg-warning text-dark">{{ r.changed_listings }} {{ _('changed') }}</span>{% endif %}
+            {% if r.delisted %}<span class="badge bg-info">{{ r.delisted }} {{ _('de-listed') }}</span>{% endif %}
+            {% if not (r.new_matches or r.changed_listings or r.delisted) %}
+              <span class="text-success">{{ _('nothing new') }}</span>{% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div class="list-group-item text-muted small">{{ _('No runs yet.') }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong>{{ _('Open findings') }}</strong>
+        <span class="badge bg-danger">{{ findings|length }}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light"><tr>
+            <th>{{ _('Screened name') }}</th><th>{{ _('Finding') }}</th>
+            <th>{{ _('Listing') }}</th><th>{{ _('Score') }}</th>
+            <th>{{ _('Found') }}</th><th class="text-end">{{ _('Action') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for f in findings %}
+            <tr class="{% if f.finding_type == 'new_entity' %}table-danger{% elif f.finding_type == 'entity_changed' %}table-warning{% endif %}">
+              <td><strong>{{ f.screened_name }}</strong></td>
+              <td>
+                {% if f.finding_type == 'new_entity' %}
+                  <span class="badge bg-danger">{{ _('New match') }}</span>
+                  <div class="text-muted" style="font-size:11px">{{ _('outside the cleared set') }}</div>
+                {% elif f.finding_type == 'entity_changed' %}
+                  <span class="badge bg-warning text-dark">{{ _('Listing amended') }}</span>
+                  <div class="text-muted" style="font-size:11px">{{ _('basis of clearance moved') }}</div>
+                {% else %}
+                  <span class="badge bg-info">{{ _('De-listed') }}</span>
+                {% endif %}
+              </td>
+              <td class="small">{{ (f.entity_name or '—')[:40] }}
+                {% if f.entity_source %}<div class="text-muted" style="font-size:11px">{{ f.entity_source }}</div>{% endif %}</td>
+              <td>{% if f.match_score %}<span class="badge bg-dark">{{ '%.0f'|format(f.match_score) }}%</span>{% else %}—{% endif %}</td>
+              <td class="small text-muted">{{ f.created_at.strftime('%d %b') }}</td>
+              <td class="text-end">
+                {% if can_edit %}
+                <button class="btn btn-sm btn-outline-primary js-review"
+                        data-id="{{ f.id }}" data-name="{{ f.screened_name }}"
+                        data-entity="{{ f.entity_name or '' }}" data-type="{{ f.finding_type }}">
+                  {{ _('Review') }}</button>
+                {% else %}<span class="text-muted small">{{ _('View only') }}</span>{% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-5">
+              <i class="bi bi-check-circle fs-1 opacity-25"></i><br>
+              {{ _('Nothing outstanding — no new matches or amended listings.') }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="reviewModal" tabindex="-1"><div class="modal-dialog">
+  <form method="POST" id="reviewForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">{{ _('Review finding') }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p class="mb-1"><strong id="rvName"></strong></p>
+        <p class="text-muted small" id="rvEntity"></p>
+        <div class="alert alert-warning small" id="rvWarn"></div>
+        <label class="form-label">{{ _('Reason') }} <span class="text-danger">*</span></label>
+        <textarea name="reason" class="form-control" rows="3" required
+                  placeholder="{{ _('e.g. Different date of birth and national ID; not the listed individual.') }}"></textarea>
+        <div class="form-text">{{ _('Recorded permanently in the whitelist audit trail.') }}</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+        <button type="submit" name="action" value="escalate" class="btn btn-danger">
+          <i class="bi bi-exclamation-triangle"></i> {{ _('Escalate — possible true match') }}</button>
+        <button type="submit" name="action" value="accept" class="btn btn-success">
+          <i class="bi bi-check-lg"></i> {{ _('Accept as false positive') }}</button>
+      </div>
+    </div>
+  </form>
+</div></div>
+{% endblock %}
+
+<style>
+.cnx-stat-card { transition: transform .12s ease, box-shadow .12s ease; }
+.cnx-stat-card:hover { transform: translateY(-2px); box-shadow: 0 .4rem .9rem rgba(0,0,0,.10); }
+</style>
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var el = document.getElementById('reviewModal');
+  if (!el) return;
+  var modal = new bootstrap.Modal(el);
+  var form = document.getElementById('reviewForm');
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.js-review');
+    if (!b) return;
+    form.action = '{{ url_for("screening.ongoing_finding_action", finding_id=987654321) }}'
+                    .replace('987654321', b.dataset.id);
+    document.getElementById('rvName').textContent = b.dataset.name;
+    document.getElementById('rvEntity').textContent = b.dataset.entity;
+    document.getElementById('rvWarn').textContent =
+      b.dataset.type === 'new_entity'
+        ? '{{ _("This listing was not in the cleared set. Accepting adds it, so it will stay silent in future runs.") }}'
+        : '{{ _("This listing has been amended since it was cleared. Accepting re-baselines it against the current version.") }}';
+    form.reset();
+    modal.show();
+  });
+}());
+</script>
+{% endblock %}

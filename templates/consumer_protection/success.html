@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _("Complaint Submitted Successfully") }}{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="card shadow-lg border-0 rounded-lg mx-auto" style="max-width: 600px;">
+        <div class="card-body p-5">
+            <div class="mb-4">
+                <i class="fas fa-check-circle text-success fa-5x"></i>
+            </div>
+            <h2 class="text-success mb-3">{{ _("Complaint Submitted Successfully") }}</h2>
+            <p class="lead text-muted">{{ _("Your complaint has been registered with the Consumer Protection Unit.") }}
+            </p>
+
+            <div class="row mt-4">
+                <div class="col-6">
+                    <div class="p-3 bg-light rounded shadow-sm">
+                        <small class="text-muted d-block">{{ _("Reference Number") }}</small>
+                        <span class="h4 font-weight-bold">CP-{{ complaint_ref }}</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 bg-light rounded shadow-sm">
+                        <small class="text-muted d-block">{{ _("Tracking PIN") }}</small>
+                        <span class="h4 font-weight-bold text-primary">{{ pin }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-4">
+                <p class="small mb-0">{{ _("Please save these details. You will need both the Reference Number and PIN
+                    to track your complaint.") }}</p>
+            </div>
+
+            <div class="mt-4">
+                <a href="{{ url_for('consumer_protection.track_case') }}" class="btn btn-primary btn-lg px-5 shadow-sm">
+                    <i class="fas fa-search mr-2"></i>{{ _("Track Status") }}
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-link text-muted mt-3 d-block">
+                    {{ _("Return to Home") }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    // Optional: Copy to clipboard functionality
+    document.querySelector('.tracking-pin').addEventListener('click', function () {
+        const pin = this.innerText;
+        navigator.clipboard.writeText(pin).then(() => {
+            alert('{{ _("PIN copied to clipboard!") }}');
+        });
+    });
+</script>
+{% endblock %}

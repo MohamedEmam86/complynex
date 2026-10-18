@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Academy certificates') }}{% endblock %}
+{% block content %}
+{% set page_title = _('Certificate register') %}
+{% include 'academy/admin/_nav.html' %}
+<form class="d-flex gap-2 mb-3" method="get">
+  <input name="q" class="form-control form-control-sm" style="max-width:320px" value="{{ q }}" placeholder="{{ _('number, holder, company') }}">
+  <button class="btn btn-sm btn-primary">{{ _('Search') }}</button>
+</form>
+<div class="card"><div class="table-responsive">
+<table class="table table-sm table-hover mb-0 align-middle">
+  <thead class="table-light"><tr><th>{{ _('Number') }}</th><th>{{ _('Holder') }}</th><th>{{ _('Company') }}</th><th>{{ _('Course') }}</th><th>{{ _('Score') }}</th>
+    <th>{{ _('Issued') }}</th><th>{{ _('Expires') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+  <tbody>
+  {% for c in rows %}
+  <tr>
+    <td><code>{{ c.cert_number }}</code></td>
+    <td>{% if c.learner_id %}<a href="{{ url_for('academy_admin.learner', lid=c.learner_id) }}">{{ c.holder_name or _('[redacted]') }}</a>{% else %}{{ c.holder_name or _('[redacted]') }}{% endif %}</td>
+    <td class="small">{{ c.company or '' }}</td><td class="small">{{ c.course_title }}</td><td>{{ c.score }}%</td>
+    <td class="small text-nowrap">{{ c.issued_at.strftime('%d %b %Y') }}</td>
+    <td class="small text-nowrap">{% if c.expires_at %}{{ c.expires_at.strftime('%d %b %Y') }}{% if c.expires_at < now %} <span class="badge bg-secondary">{{ _('expired') }}</span>{% endif %}{% else %}—{% endif %}</td>
+    <td><span class="badge bg-{{ {'valid':'success','revoked':'danger','redacted':'dark'}.get(c.status) }}">{{ c.status }}</span>
+      {% if c.status_reason %}<div class="small text-muted">{{ c.status_reason }}</div>{% endif %}</td>
+    <td class="text-nowrap">
+      <a class="btn btn-sm btn-outline-secondary" target="_blank" href="https://academy.integrysconsult.com/academy/verify/{{ c.cert_number }}" title="{{ _('Public verification page') }}"><i class="bi bi-patch-check"></i></a>
+      {% if c.status != 'redacted' %}<a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ url_for('academy_admin.certificate_pdf', cert_id=c.id) }}">PDF</a>{% endif %}
+      {% if c.status == 'valid' and current_user.can_edit('academy') %}
+      <form method="post" action="{{ url_for('academy_admin.certificate_revoke', cert_id=c.id) }}" class="d-inline-flex gap-1 mt-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="reason" class="form-control form-control-sm" placeholder="{{ _('revoke reason') }}" required style="width:130px">
+        <button class="btn btn-sm btn-outline-danger">{{ _('Revoke') }}</button></form>
+      {% endif %}</td>
+  </tr>
+  {% else %}<tr><td colspan="9" class="text-center text-muted py-4">{{ _('No certificates issued yet.') }}</td></tr>{% endfor %}
+  </tbody></table></div></div>
+{% endblock %}

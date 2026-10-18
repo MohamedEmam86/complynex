@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}{{ campaign.name }} — Phishing — {{ super() }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="{{ url_for('phishing.dashboard') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+      <div>
+        <h1 class="h3 mb-1">{{ campaign.name }}</h1>
+        <div class="d-flex gap-2 align-items-center">
+          {% if campaign.status == 'sent' %}<span class="badge bg-success">{{ _('Sent') }}</span>
+          {% elif campaign.status == 'archived' %}<span class="badge bg-secondary">{{ _('Archived') }}</span>
+          {% else %}<span class="badge bg-warning text-dark">{{ _('Draft') }}</span>{% endif %}
+          {% if campaign.sent_at %}<small class="text-muted">Sent {{ campaign.sent_at.strftime('%d %b %Y %H:%M') }}</small>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      {% if campaign.status != 'sent' and current_user.can_edit('phishing') %}
+      <a href="{{ url_for('phishing.manage_recipients', campaign_id=campaign.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-person-plus me-1"></i> {{ _('Add Recipients') }}</a>
+      <form method="POST" action="{{ url_for('phishing.send_campaign', campaign_id=campaign.id) }}"
+            data-confirm="Send phishing simulation to {{ recipients|length }} recipients?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-danger btn-sm" {% if not recipients %}disabled{% endif %}><i class="bi bi-send me-1"></i> {{ _('Send Campaign') }}</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% set total = stats.total or 0 %}
+  {% set clicked = stats.clicked or 0 %}
+  {% set submitted = stats.submitted or 0 %}
+  {% set click_rate = ((clicked / total * 100) | round(1)) if total else 0 %}
+  {% set submit_rate = ((submitted / total * 100) | round(1)) if total else 0 %}
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm text-center"><div class="card-body">
+        <div class="fs-2 fw-bold text-secondary">{{ total }}</div><div class="text-muted small">{{ _('Recipients') }}</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm text-center"><div class="card-body">
+        <div class="fs-2 fw-bold text-warning">{{ clicked }}</div><div class="text-muted small">Clicked ({{ click_rate }}%)</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm text-center"><div class="card-body">
+        <div class="fs-2 fw-bold text-danger">{{ submitted }}</div><div class="text-muted small">Submitted ({{ submit_rate }}%)</div>
+      </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm text-center"><div class="card-body">
+        <div class="fs-2 fw-bold {% if click_rate >= 30 %}text-danger{% elif click_rate >= 10 %}text-warning{% else %}text-success{% endif %}">{{ click_rate }}%</div>
+        <div class="text-muted small">{{ _('Click Rate') }}</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-bottom d-flex justify-content-between">
+          <h6 class="mb-0 fw-bold">{{ _('Recipients') }}</h6>
+          {% if campaign.status != 'sent' and current_user.can_edit('phishing') %}
+          <a href="{{ url_for('phishing.manage_recipients', campaign_id=campaign.id) }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-plus"></i> {{ _('Add') }}</a>
+          {% endif %}
+        </div>
+        <div class="card-body p-0">
+          {% if recipients %}
+          <div class="table-responsive" style="max-height:400px;overflow-y:auto;">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light sticky-top">
+                <tr><th>{{ _('Name') }}</th><th>{{ _('Email') }}</th><th class="text-center">{{ _('Sent') }}</th><th class="text-center">{{ _('Clicked') }}</th><th class="text-center">{{ _('Submitted') }}</th></tr>
+              </thead>
+              <tbody>
+                {% for r in recipients %}
+                <tr class="{% if r.submitted_at %}table-danger{% elif r.clicked_at %}table-warning{% endif %}">
+                  <td>{{ r.recipient_name }}</td>
+                  <td class="text-muted small">{{ r.recipient_email }}</td>
+                  <td class="text-center">{% if r.sent_at %}<i class="bi bi-check text-success"></i>{% else %}—{% endif %}</td>
+                  <td class="text-center">{% if r.clicked_at %}<i class="bi bi-exclamation-circle text-warning"></i>{% else %}—{% endif %}</td>
+                  <td class="text-center">{% if r.submitted_at %}<i class="bi bi-exclamation-triangle-fill text-danger"></i>{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-4 text-muted"><i class="bi bi-people fs-2 mb-2 d-block opacity-25"></i>{{ _('No recipients yet.') }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-bottom"><h6 class="mb-0 fw-bold">{{ _('Live Event Log') }}</h6></div>
+        <div class="card-body p-0" style="max-height:400px;overflow-y:auto;">
+          {% if events %}
+          <ul class="list-group list-group-flush">
+            {% for e in events %}
+            <li class="list-group-item py-2 px-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  {% if e.event_type == 'submit' %}<span class="badge bg-danger me-1">{{ _('SUBMITTED') }}</span>
+                  {% else %}<span class="badge bg-warning text-dark me-1">{{ _('CLICKED') }}</span>{% endif %}
+                  <span class="small fw-semibold">{{ e.recipient_name }}</span>
+                  <div class="text-muted" style="font-size:0.7rem;">{{ e.recipient_email }}</div>
+                  {% if e.event_type == 'submit' and e.extra_data %}
+                  {% set data = e.extra_data | from_json %}
+                  <div class="text-danger" style="font-size:0.7rem;">Email: {{ data.get('email', '—') }}</div>
+                  {% endif %}
+                </div>
+                <div class="text-muted text-end" style="font-size:0.65rem;white-space:nowrap;">
+                  {{ e.created_at.strftime('%H:%M:%S') }}<br>{{ e.created_at.strftime('%d %b') }}
+                </div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <div class="text-center py-4 text-muted"><i class="bi bi-clock-history fs-2 mb-2 d-block opacity-25"></i>{{ _('No events yet.') }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if campaign.status != 'sent' and current_user.can_edit('phishing') %}
+      <div class="card border-danger border-opacity-25 shadow-sm mt-3">
+        <div class="card-body">
+          <h6 class="text-danger mb-2">{{ _('Danger Zone') }}</h6>
+          <form method="POST" action="{{ url_for('phishing.delete_campaign', campaign_id=campaign.id) }}"
+                data-confirm="Permanently delete this campaign?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i> {{ _('Delete Campaign') }}</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+{% if campaign.status == 'sent' %}
+<script nonce="{{ csp_nonce }}">setTimeout(() => location.reload(), 30000);</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Score') }}: {{ pillar.name }} — {{ _('ESG Management') }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+  <div class="ecx-hero ecx-esg">
+    <div class="ecx-eyebrow">{{ _('ESG Management') }} · {{ framework.name }}</div>
+    <h1><i class="bi bi-clipboard2-pulse me-2"></i>{{ pillar.name }} ({{ pillar.code }})</h1>
+    <p>{{ _('Score each indicator 1-5 based on current maturity. Leave an indicator blank to exclude it from the pillar score rather than counting it as zero.') }}</p>
+  </div>
+
+  <ul class="nav ecx-nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.dashboard') }}">{{ _('Dashboard') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.materiality') }}">{{ _('Materiality Assessment') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.disclosures') }}">{{ _('Disclosure Tracker') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.framework_view') }}">{{ _('Framework & Weights') }}</a></li>
+  </ul>
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <form method="POST" class="ecx-card">
+        {% for ind in pillar.indicators %}
+        <div class="ecx-slider-row">
+          <div style="flex:1;">
+            <div class="fw-semibold small">{{ ind.name }} <span class="text-muted">({{ (ind.weight*100)|round(0)|int }}% {{ _('of pillar') }})</span></div>
+            {% if ind.description %}<div class="text-muted small">{{ ind.description }}</div>{% endif %}
+            <input type="text" name="notes_{{ ind.id }}" class="form-control form-control-sm mt-1" placeholder="{{ _('Evidence / notes (optional)') }}" value="{{ ind.evidence_notes or '' }}" {{ 'disabled' if not current_user.can_edit('esg') }}>
+          </div>
+          <div style="min-width:230px;">
+            <select name="score_{{ ind.id }}" class="form-select form-select-sm" {{ 'disabled' if not current_user.can_edit('esg') }}>
+              <option value="">{{ _('— not scored —') }}</option>
+              {% for v in range(1,6) %}
+              <option value="{{ v }}" {{ 'selected' if ind.score == v }}>{{ v }} — {{ maturity_labels[v] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        {% endfor %}
+        {% if current_user.can_edit('esg') %}
+        <button class="btn mt-3" style="background:var(--ecx-esg-1); color:#fff; font-weight:700;"><i class="bi bi-check2-circle me-1"></i>{{ _('Save Scores') }}</button>
+        {% endif %}
+      </form>
+    </div>
+    <div class="col-lg-4">
+      <div class="ecx-card">
+        <h6><i class="bi bi-speedometer2 me-1"></i>{{ _('Pillar Summary') }}</h6>
+        {% if pillar_summary %}
+        <div class="ecx-stat">
+          <div class="n">{{ pillar_summary.score if pillar_summary.score is not none else '—' }}<span style="font-size:14px;">/5</span></div>
+          <div class="l">{{ pillar_summary.completeness_pct }}% {{ _('answered') }}</div>
+        </div>
+        {% if pillar_summary.rating %}
+        <div class="text-center"><span class="ecx-rating-pill" style="background:{{ pillar_summary.rating[1] }};">{{ pillar_summary.rating[0] }}</span></div>
+        {% endif %}
+        {% endif %}
+        <div class="ecx-methodology-box ecx-esg mt-3">
+          {{ _('Scores save immediately per indicator. The pillar and overall ESG score recompute live from these answers — nothing is cached separately.') }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include 'partials/attachment_widget.html' %}
+</div>
+{% endblock %}

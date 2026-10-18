@@ -1,0 +1,279 @@
+/* ==========================================================================
+   ComplyNex sidebar
+
+   Three levels, all collapsible:
+     L1  Area     Governance & Conduct
+     L2    Module   Gifts & Hospitality
+     L3      Page     My Gift Declarations
+
+   Depth is signalled by indentation, type weight and colour — not by boxes or
+   dividers. A guide rail on each open branch keeps the eye anchored, which is
+   what stops a deep tree reading as a flat pile.
+
+   RTL is handled with logical properties, so Arabic comes from the same rules
+   rather than a mirrored override.
+   ========================================================================== */
+
+.cnx-sidebar {
+  --w: 274px;
+  --w-min: 72px;
+
+  --bg: #0f1729;
+  --bg-raised: #16203a;
+  --hover: rgba(255, 255, 255, .055);
+  --active: rgba(64, 140, 255, .15);
+
+  --fg-1: #e8edf6;   /* area labels */
+  --fg-2: #aab6ca;   /* module labels */
+  --fg-3: #8794aa;   /* page links */
+  --fg-mute: #66748c;
+  --accent: #4d92ff;
+  --rail: rgba(255, 255, 255, .1);
+  --line: rgba(255, 255, 255, .07);
+
+  width: var(--w);
+  min-width: var(--w);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-inline-end: 1px solid var(--line);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  transition: width .18s ease, min-width .18s ease;
+}
+
+/* ---------------------------------------------------------------- brand */
+.cnx-sidebar__brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 15px 14px; min-height: 58px;
+  border-bottom: 1px solid var(--line);
+}
+.cnx-brand-link {
+  display: flex; align-items: center; gap: 10px; flex: 1;
+  color: var(--fg-1); text-decoration: none;
+  font-weight: 650; letter-spacing: .2px;
+  overflow: hidden; white-space: nowrap;
+}
+.cnx-brand-link i { color: var(--accent); font-size: 19px; flex: none; }
+.cnx-collapse-btn {
+  background: none; border: 0; color: var(--fg-mute);
+  padding: 4px; border-radius: 6px; cursor: pointer; line-height: 1; flex: none;
+}
+.cnx-collapse-btn:hover { background: var(--hover); color: var(--fg-1); }
+[dir="rtl"] .cnx-collapse-btn i { transform: scaleX(-1); }
+
+/* ---------------------------------------------------------------- search */
+.cnx-search { position: relative; display: flex; align-items: center; margin: 12px 12px 8px; }
+.cnx-search > i {
+  position: absolute; inset-inline-start: 11px;
+  color: var(--fg-mute); font-size: 14px; pointer-events: none;
+}
+.cnx-search input {
+  width: 100%; background: rgba(255, 255, 255, .045);
+  border: 1px solid var(--line); border-radius: 9px;
+  color: var(--fg-1); padding: 8px 34px; font-size: 13.5px; outline: none;
+}
+.cnx-search input::placeholder { color: var(--fg-mute); }
+.cnx-search input:focus { border-color: var(--accent); background: rgba(255, 255, 255, .075); }
+.cnx-kbd {
+  position: absolute; inset-inline-end: 9px;
+  background: rgba(255, 255, 255, .08); border-radius: 4px;
+  padding: 1px 6px; font-size: 11px; color: var(--fg-mute); pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- tools */
+.cnx-navtools { display: flex; gap: 6px; padding: 0 12px 10px; }
+.cnx-navtool {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  background: rgba(255, 255, 255, .035); border: 1px solid var(--line);
+  border-radius: 7px; color: var(--fg-mute);
+  font-size: 11.5px; padding: 5px 6px; cursor: pointer; white-space: nowrap;
+}
+.cnx-navtool:hover { background: var(--hover); color: var(--fg-1); }
+.cnx-navtool i { font-size: 12px; }
+
+/* ---------------------------------------------------------------- scroll */
+.cnx-nav-scroll {
+  flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 14px;
+  scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .13) transparent;
+}
+.cnx-nav-scroll::-webkit-scrollbar { width: 6px; }
+.cnx-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .13); border-radius: 4px; }
+
+.cnx-nav { list-style: none; margin: 0; padding: 0 8px; }
+.cnx-nav li { list-style: none; }
+.cnx-nav__sub { list-style: none; margin: 0; padding: 0; }
+
+/* ---------------------------------------------------------------- rows */
+.cnx-nav__toggle,
+.cnx-nav__link {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  border: 0; background: none; border-radius: 8px;
+  text-decoration: none; text-align: start; cursor: pointer;
+  line-height: 1.3; position: relative;
+}
+
+/* L1 — area */
+.cnx-nav > .cnx-nav__item > .cnx-nav__toggle {
+  padding: 10px 11px; color: var(--fg-1);
+  font-size: 13.8px; font-weight: 600; letter-spacing: .1px;
+}
+.cnx-nav > .cnx-nav__item > .cnx-nav__toggle:hover { background: var(--hover); }
+.cnx-nav > .cnx-nav__item.is-open > .cnx-nav__toggle { background: var(--bg-raised); }
+
+/* L2 — module */
+.cnx-nav__toggle--module {
+  padding: 8px 11px 8px 34px;
+  color: var(--fg-2); font-size: 13px; font-weight: 500;
+}
+[dir="rtl"] .cnx-nav__toggle--module { padding: 8px 34px 8px 11px; }
+.cnx-nav__toggle--module:hover { background: var(--hover); color: var(--fg-1); }
+.cnx-nav__item--module.is-open > .cnx-nav__toggle--module { color: var(--fg-1); }
+
+/* L3 — page */
+.cnx-nav__link--l3 {
+  padding: 6px 11px 6px 56px;
+  color: var(--fg-3); font-size: 12.8px;
+}
+[dir="rtl"] .cnx-nav__link--l3 { padding: 6px 56px 6px 11px; }
+/* pages that sit directly under an area (no module layer) */
+.cnx-nav__link--l2 {
+  padding: 7px 11px 7px 34px;
+  color: var(--fg-2); font-size: 13px;
+}
+[dir="rtl"] .cnx-nav__link--l2 { padding: 7px 34px 7px 11px; }
+.cnx-nav__link:hover { background: var(--hover); color: var(--fg-1); }
+
+.cnx-nav__icon { font-size: 15px; width: 18px; flex: none; text-align: center; }
+.cnx-nav__toggle--module .cnx-nav__icon { font-size: 13px; width: 16px; }
+.cnx-nav__label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* item count on module rows — tells you how much is behind a row before you
+   open it, which is the whole reason the tree feels navigable */
+.cnx-nav__count {
+  font-size: 10.5px; color: var(--fg-mute);
+  background: rgba(255, 255, 255, .06);
+  border-radius: 9px; padding: 1px 6px; flex: none; min-width: 20px;
+  text-align: center;
+}
+.cnx-nav__caret { font-size: 10px; color: var(--fg-mute); flex: none; transition: transform .16s ease; }
+.cnx-nav__item.is-open > .cnx-nav__toggle > .cnx-nav__caret { transform: rotate(180deg); }
+
+/* ---------------------------------------------------------------- panels
+   grid-template-rows animates from nothing to content height without a
+   hard-coded max-height, which matters because groups run from 2 to 10 items. */
+.cnx-nav__panel {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows .18s ease;
+}
+.cnx-nav__panel > * { overflow: hidden; }
+.cnx-nav__item.is-open > .cnx-nav__panel { grid-template-rows: 1fr; }
+
+/* guide rail down each open branch */
+.cnx-nav > .cnx-nav__item.is-open > .cnx-nav__panel > .cnx-nav__sub {
+  position: relative; padding: 3px 0 5px;
+}
+.cnx-nav > .cnx-nav__item.is-open > .cnx-nav__panel > .cnx-nav__sub::before {
+  content: ''; position: absolute; top: 4px; bottom: 6px;
+  inset-inline-start: 19px; width: 1px; background: var(--rail);
+}
+.cnx-nav__item--module.is-open > .cnx-nav__panel > .cnx-nav__sub {
+  position: relative; padding-bottom: 3px;
+}
+.cnx-nav__item--module.is-open > .cnx-nav__panel > .cnx-nav__sub::before {
+  content: ''; position: absolute; top: 2px; bottom: 3px;
+  inset-inline-start: 41px; width: 1px; background: var(--rail);
+}
+
+/* ---------------------------------------------------------------- active */
+.cnx-nav__link.is-active { background: var(--active); color: #fff; font-weight: 600; }
+.cnx-nav__link.is-active::before {
+  content: ''; position: absolute; inset-inline-start: 0; top: 50%;
+  transform: translateY(-50%); width: 3px; height: 16px;
+  border-radius: 0 3px 3px 0; background: var(--accent);
+}
+[dir="rtl"] .cnx-nav__link.is-active::before { border-radius: 3px 0 0 3px; }
+.cnx-nav__item.has-active > .cnx-nav__toggle { color: #fff; }
+.cnx-nav__item.has-active > .cnx-nav__toggle .cnx-nav__icon { color: var(--accent); }
+
+/* ---------------------------------------------------------------- search state */
+.cnx-nav.is-searching .cnx-nav__panel { grid-template-rows: 1fr; }
+.cnx-nav.is-searching .cnx-nav__caret,
+.cnx-nav.is-searching .cnx-nav__count { display: none; }
+.is-hidden { display: none !important; }
+.cnx-nav__noresult { padding: 16px 12px; color: var(--fg-mute); font-size: 13px; text-align: center; }
+
+/* ---------------------------------------------------------------- footer */
+.cnx-sidebar__foot { border-top: 1px solid var(--line); padding: 10px 12px; }
+.cnx-user { display: flex; align-items: center; gap: 10px; overflow: hidden; }
+.cnx-user__avatar {
+  width: 31px; height: 31px; border-radius: 50%;
+  background: var(--accent); color: #fff; display: grid; place-items: center;
+  font-weight: 650; font-size: 13px; flex: none; text-transform: uppercase;
+}
+.cnx-user__meta { display: flex; flex-direction: column; overflow: hidden; }
+.cnx-user__name {
+  color: var(--fg-1); font-size: 13px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cnx-user__role { color: var(--fg-mute); font-size: 11.5px; text-transform: capitalize; }
+
+/* ---------------------------------------------------------------- collapsed */
+.cnx-sidebar.is-collapsed { width: var(--w-min); min-width: var(--w-min); }
+.cnx-sidebar.is-collapsed .cnx-brand-text,
+.cnx-sidebar.is-collapsed .cnx-nav__label,
+.cnx-sidebar.is-collapsed .cnx-nav__caret,
+.cnx-sidebar.is-collapsed .cnx-nav__count,
+.cnx-sidebar.is-collapsed .cnx-search,
+.cnx-sidebar.is-collapsed .cnx-navtools,
+.cnx-sidebar.is-collapsed .cnx-nav__panel,
+.cnx-sidebar.is-collapsed .cnx-user__meta { display: none; }
+.cnx-sidebar.is-collapsed .cnx-nav > .cnx-nav__item > .cnx-nav__toggle {
+  justify-content: center; padding: 11px;
+}
+
+/* ---------------------------------------------------------------- mobile */
+@media (max-width: 991.98px) {
+  .cnx-sidebar {
+    position: fixed; inset-block: 0; inset-inline-start: 0; z-index: 1045;
+    transform: translateX(-100%); transition: transform .2s ease;
+  }
+  [dir="rtl"] .cnx-sidebar { transform: translateX(100%); }
+  .cnx-sidebar.is-open { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cnx-sidebar, .cnx-nav__panel, .cnx-nav__caret { transition: none; }
+}
+
+/* ---------------------------------------------------------------- mobile drawer
+   The sidebar is parked off-screen below 992px. Without a toggle bound to
+   .is-open it was unreachable on a phone — main.js targets '.sidebar' and
+   toggles '.show', neither of which this component uses. */
+.cnx-backdrop {
+  position: fixed; inset: 0; z-index: 1040;
+  background: rgba(4, 9, 20, .55);
+  -webkit-backdrop-filter: blur(1px); backdrop-filter: blur(1px);
+}
+.cnx-backdrop[hidden] { display: none; }
+body.cnx-noscroll { overflow: hidden; }
+
+/* Injected only where the page has no #sidebarToggle of its own — i.e. the
+   Employee Portal, whose hamburger drives its own top nav. */
+.cnx-mobile-toggle {
+  display: none;
+  position: fixed; bottom: 18px; inset-inline-start: 18px; z-index: 1046;
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 0; background: var(--accent, #4d92ff); color: #fff;
+  font-size: 21px; line-height: 1; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
+}
+@media (max-width: 991.98px) {
+  .cnx-mobile-toggle { display: grid; place-items: center; }
+  /* the sidebar must not reserve layout width while it is a drawer */
+  .sidebar-container { width: 0 !important; min-width: 0 !important; }
+  .cnx-sidebar { box-shadow: 6px 0 26px rgba(0, 0, 0, .4); }
+}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3"><i class="fas fa-list me-2"></i>{{ _('My Reported Cases') }}</h1>
+            <p class="text-muted">{{ _('Below are the cases you have submitted using your account.') }}</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>{{ _('Case #') }}</th>
+                        <th>{{ _('Title') }}</th>
+                        <th>{{ _('Submitted') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Latest Update') }}</th>
+                        <th>{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in cases %}
+                    <tr>
+                        <td><span class="fw-bold">{{ case.case_number }}</span></td>
+                        <td>{{ case.title }}</td>
+                        <td>{{ case.submitted_at }}</td>
+                        <td>
+                            <span
+                                class="badge rounded-pill bg-{{ 'primary' if case.status == 'SUBMITTED' else 'info' if case.status == 'UNDER_REVIEW' else 'success' if case.status == 'RESOLVED' else 'secondary' }}">
+                                {{ _(case.status) }}
+                            </span>
+                        </td>
+                        <td>{{ case.updated_at }}</td>
+                        <td>
+                            <a href="{{ url_for('whistleblowing.view_case', case_id=case.id) }}"
+                                class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>{{ _('View Status') }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                                <p>{{ _("You haven't submitted any named reports yet.") }}</p>
+                                <a href="{{ url_for('whistleblowing.submit_case') }}" class="btn btn-primary btn-sm">{{
+                                    _('Submit a Report') }}</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

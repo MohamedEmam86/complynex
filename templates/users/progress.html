@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block title %}User Progress - {{ user.get_full_name() }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Progress: {{ user.get_full_name() }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('users.list_users') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Users') }}
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- User Info Card -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title text-muted mb-3">{{ _('Employee Details') }}</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">{{ _('Email') }}</dt>
+                    <dd class="col-sm-8">{{ user.email }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Role') }}</dt>
+                    <dd class="col-sm-8 text-capitalize">{{ user.role }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Dept') }}</dt>
+                    <dd class="col-sm-8">{{ user.department or '-' }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Joined') }}</dt>
+                    <dd class="col-sm-8">{{ (user.created_at|string)[:10] if user.created_at else '-' }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Last Login') }}</dt>
+                    <dd class="col-sm-8">{{ (user.last_login|string)[:16] if user.last_login else 'Never' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title text-muted mb-3">{{ _('Compliance Overview') }}</h5>
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="display-6 fw-bold text-primary">{{ coi_submissions|length }}</div>
+                        <div class="small text-muted">{{ _('COI Declarations') }}</div>
+                    </div>
+                    <div class="col-3">
+                        <div class="display-6 fw-bold text-info">{{ cobec_submissions|length }}</div>
+                        <div class="small text-muted">{{ _('COBEC Declarations') }}</div>
+                    </div>
+                    <div class="col-3">
+                        <div class="display-6 fw-bold text-success">{{ training_enrollments|length }}</div>
+                        <div class="small text-muted">{{ _('Training Courses') }}</div>
+                    </div>
+                    <div class="col-3">
+                        <div class="display-6 fw-bold text-secondary">{{ policy_acknowledgments|length }}</div>
+                        <div class="small text-muted">{{ _('Policies Ack.') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for detailed history -->
+<ul class="nav nav-tabs mb-3" id="progressTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="coi-tab" data-bs-toggle="tab" data-bs-target="#coi" type="button">{{ _('COI
+            History') }}</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="training-tab" data-bs-toggle="tab" data-bs-target="#training"
+            type="button">{{ _('Training') }}</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="policies-tab" data-bs-toggle="tab" data-bs-target="#policies"
+            type="button">{{ _('Policies') }}</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="progressTabsContent">
+    <!-- COI Tab -->
+    <div class="tab-pane fade show active" id="coi" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>{{ _('Date') }}</th>
+                            <th>{{ _('Campaign') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Risk Assessment') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in coi_submissions %}
+                        <tr>
+                            <td>{{ (sub.created_at|string)[:10] }}</td>
+                            <td>{{ sub.campaign_name }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if sub.status == 'approved' else 'warning' }}">
+                                    {{ sub.status }}
+                                </span>
+                            </td>
+                            <td>{{ sub.admin_risk_assessment or '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-3 text-muted">{{ _('No COI declarations found.') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Tab -->
+    <div class="tab-pane fade" id="training" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>{{ _('Enrolled Date') }}</th>
+                            <th>{{ _('Course') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Score') }}</th>
+                            <th>{{ _('Completion Date') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enr in training_enrollments %}
+                        <tr>
+                            <td>{{ (enr.enrolled_date|string)[:10] }}</td>
+                            <td>{{ enr.course_name }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if enr.status == 'completed' else 'secondary' }}">
+                                    {{ enr.status }}
+                                </span>
+                            </td>
+                            <td>{{ enr.score if enr.score is not none else '-' }}%</td>
+                            <td>{{ (enr.completion_date|string)[:10] if enr.completion_date else '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3 text-muted">{{ _('No training enrollments found.') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Policies Tab -->
+    <div class="tab-pane fade" id="policies" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>{{ _('Date Acknowledged') }}</th>
+                            <th>{{ _('Policy Number') }}</th>
+                            <th>{{ _('Policy Name') }}</th>
+                            <th>{{ _('Version') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ack in policy_acknowledgments %}
+                        <tr>
+                            <td>{{ (ack.acknowledgment_date|string)[:16] }}</td>
+                            <td>{{ ack.policy_number }}</td>
+                            <td>{{ ack.policy_name }}</td>
+                            <td>{{ ack.policy_version }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-3 text-muted">{{ _('No policy acknowledgments found.') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

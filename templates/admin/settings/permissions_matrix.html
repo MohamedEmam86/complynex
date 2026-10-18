@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Permissions Matrix') }} - {{ company_name }} CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-shield-lock me-2"></i>{{ _('Roles & Permissions Matrix') }}</h1>
+    <a href="{{ url_for('admin.settings') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> {{ _('Back to Settings') }}
+    </a>
+</div>
+
+<p class="text-muted small">{{ _('Read-only overview of every user\'s per-module access. Edit an individual user\'s permissions from their user profile.') }}</p>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th style="position:sticky;left:0;background:inherit;">{{ _('User') }}</th>
+                <th>{{ _('Role') }}</th>
+                {% for m in modules %}
+                <th class="text-center small">{{ m }}</th>
+                {% endfor %}
+                <th class="text-end">{{ _('Edit') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td style="position:sticky;left:0;background:inherit;">
+                    <div class="fw-bold">{{ u.first_name }} {{ u.last_name }}</div>
+                    <div class="text-muted small">{{ u.email }}</div>
+                </td>
+                <td><span class="badge bg-secondary">{{ u.role }}</span></td>
+                {% for m in modules %}
+                <td class="text-center">
+                    {% if u.is_admin() %}
+                    <i class="bi bi-check-circle-fill text-success" title="{{ _('Admin — full access') }}"></i>
+                    {% elif u.can_edit(m) %}
+                    <i class="bi bi-pencil-fill text-primary" title="{{ _('Edit') }}"></i>
+                    {% elif u.can_view(m) %}
+                    <i class="bi bi-eye-fill text-info" title="{{ _('View') }}"></i>
+                    {% else %}
+                    <i class="bi bi-dash text-muted"></i>
+                    {% endif %}
+                </td>
+                {% endfor %}
+                <td class="text-end">
+                    <a href="{{ url_for('admin.edit_user', id=u.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="{{ modules | length + 3 }}" class="text-center py-4 text-muted">{{ _('No users found.') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="small text-muted mt-2">
+    <i class="bi bi-check-circle-fill text-success"></i> {{ _('Admin (full access)') }} &nbsp;
+    <i class="bi bi-pencil-fill text-primary"></i> {{ _('Edit') }} &nbsp;
+    <i class="bi bi-eye-fill text-info"></i> {{ _('View only') }} &nbsp;
+    <i class="bi bi-dash text-muted"></i> {{ _('No access') }}
+</div>
+{% endblock %}

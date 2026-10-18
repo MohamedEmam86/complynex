@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 text-gray-800">{{ _('Data Update Audit Log') }}</h1>
+            <p class="text-muted mb-0">{{ _('Track all data update operations with comprehensive audit trails.') }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('screening.data_sources') }}" class="btn btn-outline-primary btn-sm me-2">
+                <i class="fas fa-database me-1"></i>{{ _('Data Sources') }}
+            </a>
+            <a href="{{ url_for('screening.manage_urls') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-link me-1"></i>{{ _('URL Management') }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-body py-3">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label small fw-bold">{{ _('Status') }}</label>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">{{ _('All Statuses') }}</option>
+                        <option value="COMPLETED" {{ 'selected' if status_filter=='COMPLETED' }}>{{ _('Completed') }}</option>
+                        <option value="IN_PROGRESS" {{ 'selected' if status_filter=='IN_PROGRESS' }}>{{ _('In Progress') }}
+                        </option>
+                        <option value="FAILED" {{ 'selected' if status_filter=='FAILED' }}>{{ _('Failed') }}</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fas fa-filter me-1"></i>{{ _('Filter') }}
+                    </button>
+                    <a href="{{ url_for('screening.audit_log') }}" class="btn btn-sm btn-outline-secondary">{{ _('Clear') }}</a>
+                </div>
+                <div class="col-auto ms-auto">
+                    <span class="text-muted small">{{ total_count }} total records</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Audit Log Table -->
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-clipboard-list me-2"></i>{{ _('Update History') }}
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if records and records|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:5%">ID</th>
+                            <th style="width:12%">{{ _('Type') }}</th>
+                            <th style="width:12%">{{ _('Initiated By') }}</th>
+                            <th style="width:8%">{{ _('Sources') }}</th>
+                            <th style="width:8%">{{ _('Added') }}</th>
+                            <th style="width:8%">{{ _('Updated') }}</th>
+                            <th style="width:8%">{{ _('Unchanged') }}</th>
+                            <th style="width:7%">{{ _('Errors') }}</th>
+                            <th style="width:10%">{{ _('Status') }}</th>
+                            <th style="width:12%">{{ _('Started') }}</th>
+                            <th style="width:10%">{{ _('Duration') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr>
+                            <td>{{ record.id }}</td>
+                            <td>
+                                {% if record.update_type == 'FULL_UPDATE' %}
+                                <span class="badge bg-primary">{{ _('Full Update') }}</span>
+                                {% elif record.update_type == 'INCREMENTAL' %}
+                                <span class="badge bg-info">{{ _('Incremental') }}</span>
+                                {% elif record.update_type == 'SINGLE_SOURCE' %}
+                                <span class="badge bg-secondary">{{ _('Single Source') }}</span>
+                                {% else %}
+                                <span class="badge bg-dark">{{ record.update_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ record.initiated_by_user or ('User #' ~ record.initiated_by) }}</small>
+                            </td>
+                            <td class="text-center">{{ record.total_sources or 0 }}</td>
+                            <td class="text-center">
+                                {% if record.records_added %}
+                                <span class="text-success fw-bold">+{{ record.records_added }}</span>
+                                {% else %}0{% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if record.records_updated %}
+                                <span class="text-info fw-bold">{{ record.records_updated }}</span>
+                                {% else %}0{% endif %}
+                            </td>
+                            <td class="text-center">{{ record.records_unchanged or 0 }}</td>
+                            <td class="text-center">
+                                {% if record.errors_count %}
+                                <span class="text-danger fw-bold">{{ record.errors_count }}</span>
+                                {% else %}
+                                <span class="text-success">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.status == 'COMPLETED' %}
+                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>{{ _('Completed') }}</span>
+                                {% elif record.status == 'IN_PROGRESS' %}
+                                <span class="badge bg-warning text-dark"><i class="fas fa-spinner fa-spin me-1"></i>{{ _('In
+                                    Progress') }}</span>
+                                {% elif record.status == 'FAILED' %}
+                                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>{{ _('Failed') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ record.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ record.started_at }}</small></td>
+                            <td>
+                                {% if record.duration_seconds %}
+                                {% if record.duration_seconds < 60 %} {{ record.duration_seconds }}s {% else %} {{
+                                    (record.duration_seconds / 60)|round(1) }} min {% endif %} {% else %} <span
+                                    class="text-muted">—</span>
+                                    {% endif %}
+                            </td>
+                        </tr>
+                        {% if record.error_message %}
+                        <tr>
+                            <td colspan="11" class="bg-danger bg-opacity-10">
+                                <small class="text-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    <strong>{{ _('Error:') }}</strong> {{ record.error_message }}
+                                </small>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+            <nav class="mt-4 mb-5 pb-4">
+                <ul class="pagination pagination-sm justify-content-center">
+                    <li class="page-item {{ 'disabled' if page <= 1 }}">
+                        <a class="page-link" href="?page={{ page - 1 }}&status={{ status_filter }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% for p in range(1, total_pages + 1) %}
+                    {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %} <li
+                        class="page-item {{ 'active' if p == page }}">
+                        <a class="page-link" href="?page={{ p }}&status={{ status_filter }}">{{ p }}</a>
+                        </li>
+                        {% elif p == 2 and page > 4 %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% elif p == total_pages - 1 and page < total_pages - 3 %} <li class="page-item disabled"><span
+                                class="page-link">…</span></li>
+                            {% endif %}
+                            {% endfor %}
+                            <li class="page-item {{ 'disabled' if page >= total_pages }}">
+                                <a class="page-link" href="?page={{ page + 1 }}&status={{ status_filter }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">{{ _('No Audit Records') }}</h5>
+                <p class="text-muted">{{ _('Data update audit records will appear here once updates are performed using the
+                    enhanced updater.') }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

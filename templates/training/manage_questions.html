@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Questions: {{ course.course_name }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <nav aria-label="{{ _('breadcrumb') }}">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('training.list_courses') }}">{{ _('Training') }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ course.course_code }}</li>
+            </ol>
+        </nav>
+        <h1 class="h2">Manage Quiz: {{ course.course_name }}</h1>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
+            <i class="bi bi-plus-lg"></i> {{ _('Add Question') }}
+        </button>
+    </div>
+</div>
+
+<div class="alert alert-info border-0 shadow-sm mb-4">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    {{ _('Total Questions:') }} <strong>{{ questions|length }}</strong>{{ _('.
+    Total Points:') }} <strong>{{ questions|sum(attribute='points') }}</strong>{{ _('.
+    Passing Score:') }} <strong>{{ course.passing_score }}%</strong>.
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4" style="width: 5%">#</th>
+                        <th style="width: 50%">{{ _('Question') }}</th>
+                        <th style="width: 30%">{{ _('Options') }}</th>
+                        <th style="width: 5%">{{ _('Points') }}</th>
+                        <th class="text-end pe-4">{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in questions %}
+                    <tr>
+                        <td class="ps-4">{{ loop.index }}</td>
+                        <td>{{ q.question_text }}</td>
+                        <td>
+                            <ul class="list-unstyled mb-0 small text-muted">
+                                {% for opt in q.options %}
+                                <li
+                                    class="{{ 'text-success fw-bold' if loop.index0|string == q.correct_answer|string else '' }}">
+                                    {{ loop.index0 }}: {{ opt }}
+                                    {% if loop.index0|string == q.correct_answer|string %}<i
+                                        class="bi bi-check-circle-fill ms-1"></i>{% endif %}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td>{{ q.points }}</td>
+                        <td class="text-end pe-4">
+                            <form method="POST"
+                                action="{{ url_for('training.delete_question', course_id=course.id, question_id=q.id) }}"
+                                data-confirm="Are you sure you want to delete this question?">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-question-circle fs-1 d-block mb-2"></i>
+                            {{ _('No questions added yet.') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Question Modal -->
+<div class="modal fade" id="addQuestionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('Add New Question') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
+            </div>
+            <form method="POST" action="{{ url_for('training.save_question', course_id=course.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3" id="langTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="en-tab" data-bs-toggle="tab" data-bs-target="#en"
+                                type="button" role="tab">{{ _('English') }}</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ar-tab" data-bs-toggle="tab" data-bs-target="#ar" type="button"
+                                role="tab">{{ _('Arabic') }}</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="langTabContent">
+                        <!-- English Tab -->
+                        <div class="tab-pane fade show active" id="en" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="question_text" class="form-label">{{ _('Question Text (English)') }}</label>
+                                <textarea class="form-control" id="question_text" name="question_text" rows="2"
+                                    required></textarea>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ _('Option 0 (En)') }}</label>
+                                    <div class="input-group">
+                                        <div class="input-group-text">
+                                            <input class="form-check-input mt-0" type="radio" name="correct_answer"
+                                                value="0" required checked>
+                                        </div>
+                                        <input type="text" class="form-control" name="option_0" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ _('Option 1 (En)') }}</label>
+                                    <div class="input-group">
+                                        <div class="input-group-text">
+                                            <input class="form-check-input mt-0" type="radio" name="correct_answer"
+                                                value="1">
+                                        </div>
+                                        <input type="text" class="form-control" name="option_1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ _('Option 2 (En - Optional)') }}</label>
+                                    <div class="input-group">
+                                        <div class="input-group-text">
+                                            <input class="form-check-input mt-0" type="radio" name="correct_answer"
+                                                value="2">
+                                        </div>
+                                        <input type="text" class="form-control" name="option_2">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ _('Option 3 (En - Optional)') }}</label>
+                                    <div class="input-group">
+                                        <div class="input-group-text">
+                                            <input class="form-check-input mt-0" type="radio" name="correct_answer"
+                                                value="3">
+                                        </div>
+                                        <input type="text" class="form-control" name="option_3">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Arabic Tab -->
+                        <div class="tab-pane fade" id="ar" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="question_text_ar" class="form-label" dir="rtl">نص السؤال (بالعربية)</label>
+                                <textarea class="form-control" id="question_text_ar" name="question_text_ar" rows="2"
+                                    dir="rtl"></textarea>
+                            </div>
+
+                            <div class="row g-3" dir="rtl">
+                                <div class="col-md-6">
+                                    <label class="form-label">الخيار 1</label>
+                                    <input type="text" class="form-control" name="option_ar_0" dir="rtl">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">الخيار 2</label>
+                                    <input type="text" class="form-control" name="option_ar_1" dir="rtl">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">الخيار 3 (اختياري)</label>
+                                    <input type="text" class="form-control" name="option_ar_2" dir="rtl">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">الخيار 4 (اختياري)</label>
+                                    <input type="text" class="form-control" name="option_ar_3" dir="rtl">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 border-top pt-3">
+                        <label for="points" class="form-label">{{ _('Points') }}</label>
+                        <input type="number" class="form-control" id="points" name="points" value="10" min="1"
+                            max="100">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('Save Question') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

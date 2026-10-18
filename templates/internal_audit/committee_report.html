@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Audit Committee Report') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('Audit Committee Report') }}</h3>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <pre class="mb-0" style="white-space: pre-wrap;">{{ report.report_text }}</pre>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3"><div class="card text-center"><div class="card-body"><h4>{{ report.open_findings_count }}</h4><p class="text-muted mb-0 small">{{ _('Open Findings') }}</p></div></div></div>
+                <div class="col-md-3"><div class="card text-center border-danger"><div class="card-body"><h4 class="text-danger">{{ report.overdue_count }}</h4><p class="text-muted mb-0 small">{{ _('Overdue') }}</p></div></div></div>
+                <div class="col-md-3"><div class="card text-center"><div class="card-body"><h4>{{ report.closed_count }}</h4><p class="text-muted mb-0 small">{{ _('Closed to Date') }}</p></div></div></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            {% if current_user.can_edit('internal_audit') %}
+            <div class="card">
+                <div class="card-header"><strong>{{ _('Attach to Board Meeting') }}</strong></div>
+                <div class="card-body">
+                    {% if meetings %}
+                    {% for m in meetings %}
+                    <form method="post" action="{{ url_for('internal_audit.committee_report_attach', meeting_id=m.id) }}" class="mb-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small">{{ m.meeting_type }} - {{ m.meeting_date }}</span>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">{{ _('Attach') }}</button>
+                        </div>
+                    </form>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted small">{{ _('No upcoming board meetings scheduled.') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ---- Editable narrative sections (added 2026-07-24) ------------------ #}
+{% if can_edit_report %}
+<div class="text-end mb-3 no-print">
+    <a href="{{ url_for('internal_audit.committee_report_edit') }}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-pencil-square me-1"></i>{{ _('Edit Report Narrative') }}
+    </a>
+</div>
+{% endif %}
+{% if narrative %}
+{% for key, label, value in narrative %}
+{% if value %}
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white"><strong>{{ label }}</strong></div>
+    <div class="card-body"><p class="mb-0" style="white-space: pre-wrap;">{{ value }}</p></div>
+</div>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% endblock %}

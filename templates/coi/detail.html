@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Declaration Details - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Declaration Details') }}</h1>
+    <div>
+        <button data-action="print" class="btn btn-outline-info me-2">
+            <i class="bi bi-printer"></i> {{ _('Print Form') }}
+        </button>
+        {% if current_user.is_manager() or current_user.is_compliance_officer() %}
+        {% if declaration.status in ['under_review', 'escalated'] %}
+        <a href="{{ url_for('coi.review_declaration', id=declaration.id) }}" class="btn btn-primary">{{ _('Review') }}</a>
+        {% endif %}
+        <a href="{{ url_for('coi.pending_review') }}" class="btn btn-outline-secondary">{{ _('Back to Reviews') }}</a>
+        {% else %}
+        <a href="{{ url_for('coi.my_declarations') }}" class="btn btn-outline-secondary">{{ _('Back') }}</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ _('Declaration Data') }}</h5>
+                <span class="badge bg-{{ 'success' if declaration.status == 'approved' 
+                                 else 'warning' if declaration.status in ['under_review', 'escalated']
+                                 else 'danger' if declaration.status == 'requires_clarification'
+                                 else 'secondary' }}">
+                    {{ declaration.status|replace('_', ' ')|title }}
+                </span>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">{{ _('Employee') }}</dt>
+                    <dd class="col-sm-8">{{ declaration.employee_name }}</dd>
+
+                    <dt class="col-sm-4">{{ _('department') }}</dt>
+                    <dd class="col-sm-8">{{ declaration.department }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Submission Date') }}</dt>
+                    <dd class="col-sm-8">{{ declaration.declaration_date }}</dd>
+
+                    {% if current_user.is_manager() or current_user.is_compliance_officer() %}
+                    <dt class="col-sm-4 text-primary">{{ _('Case PIN') }}</dt>
+                    <dd class="col-sm-8"><strong>{{ declaration.pin_code }}</strong></dd>
+                    {% endif %}
+                </dl>
+
+                <hr>
+
+                <h6>{{ _('Disclosures') }}</h6>
+
+                <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_financial_interests else '' }}">
+                    <strong>{{ _('1. Financial Interests:') }}</strong>
+                    <span class="badge bg-{{ 'danger' if declaration.has_financial_interests else 'success' }}">
+                        {{ 'Yes' if declaration.has_financial_interests else 'No' }}
+                    </span>
+                    {% if declaration.has_financial_interests %}
+                    <p class="mt-2 text-dark">{{ declaration.financial_interests_details }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_family_in_competitor else '' }}">
+                    <strong>{{ _('2. Family in Competitor:') }}</strong>
+                    <span class="badge bg-{{ 'danger' if declaration.has_family_in_competitor else 'success' }}">
+                        {{ 'Yes' if declaration.has_family_in_competitor else 'No' }}
+                    </span>
+                    {% if declaration.has_family_in_competitor %}
+                    <p class="mt-2 text-dark">{{ declaration.family_competitor_details }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_family_in_supplier else '' }}">
+                    <strong>{{ _('3. Family in Supplier:') }}</strong>
+                    <span class="badge bg-{{ 'danger' if declaration.has_family_in_supplier else 'success' }}">
+                        {{ 'Yes' if declaration.has_family_in_supplier else 'No' }}
+                    </span>
+                    {% if declaration.has_family_in_supplier %}
+                    <p class="mt-2 text-dark">{{ declaration.family_supplier_details }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_outside_employment else '' }}">
+                    <strong>{{ _('4. Outside Employment:') }}</strong>
+                    <span class="badge bg-{{ 'danger' if declaration.has_outside_employment else 'success' }}">
+                        {{ 'Yes' if declaration.has_outside_employment else 'No' }}
+                    </span>
+                    {% if declaration.has_outside_employment %}
+                    <p class="mt-2 text-dark">{{ declaration.outside_employment_details }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_received_gifts else '' }}">
+                    <strong>{{ _('5. Gifts Received:') }}</strong>
+                    <span class="badge bg-{{ 'danger' if declaration.has_received_gifts else 'success' }}">
+                        {{ 'Yes' if declaration.has_received_gifts else 'No' }}
+                    </span>
+                    {% if declaration.has_received_gifts %}
+                    <p class="mt-2 text-dark">{{ declaration.gifts_details }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_other_conflicts else '' }}">
+                    <strong>{{ _('6. Other Conflicts:') }}</strong>
+                    <span class="badge bg-{{ 'danger' if declaration.has_other_conflicts else 'success' }}">
+                        {{ 'Yes' if declaration.has_other_conflicts else 'No' }}
+                    </span>
+                    {% if declaration.has_other_conflicts %}
+                    <p class="mt-2 text-dark">{{ declaration.other_conflicts_details }}</p>
+                    {% endif %}
+                </div>
+
+                <hr>
+                <div class="text-muted small">
+                    <p class="mb-1"><strong>{{ _('Digital Signature:') }}</strong> {{ declaration.digital_signature }}</p>
+                    <p class="mb-0"><strong>{{ _('Agreed to Statement:') }}</strong> {{ _('Yes') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Review Info -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ _('Review Status') }}</h5>
+            </div>
+            <div class="card-body">
+                {% if declaration.status == 'pending' %}
+                <p class="text-muted">{{ _('Awaiting review initiation.') }}</p>
+                {% elif declaration.status == 'approved' %}
+                <div class="text-success text-center mb-3">
+                    <i class="bi bi-check-circle-fill display-4"></i>
+                    <h5>{{ _('Approved') }}</h5>
+                </div>
+                <p><strong>{{ _('Approved By:') }}</strong> {{ _('Owner/Manager (Auto or Manual)') }}</p>
+                <p><strong>{{ _('Date:') }}</strong> {{ declaration.review_date if declaration.review_date else
+                    declaration.updated_at }}</p>
+                {% if declaration.review_comments %}
+                <p><strong>{{ _('Comments:') }}</strong><br>{{ declaration.review_comments }}</p>
+                {% endif %}
+                {% else %}
+                <p><strong>{{ _('Current Status:') }}</strong> {{ declaration.status|replace('_', ' ')|title }}</p>
+                {% if declaration.review_comments %}
+                <div class="alert alert-warning">
+                    <strong>{{ _('Reviewer Comments:') }}</strong><br>
+                    {{ declaration.review_comments }}
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('FRA Governance Report') }} {{ year }} — ComplyNex{% endblock %}
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+  .frg-report { max-width: 950px; margin: 0 auto; background: #fff; padding: 2.5rem; }
+  .frg-report h2 { color: #7a4b00; border-bottom: 2px solid #7a4b00; padding-bottom: .3rem; margin-top: 1.6rem; }
+  .frg-report .rpt-head { text-align: center; border-bottom: 3px double #7a4b00; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .frg-sig { border-top: 1px solid #999; margin-top: 4rem; padding-top: .3rem; width: 260px; display: inline-block; }
+  @media print {
+    .sidebar, .sidebar-container, nav, .navbar, .no-print, .site-footer, .btn { display: none !important; }
+    .main-content, .frg-report { margin: 0 !important; padding: 0.5cm !important; width: 100% !important; max-width: 100% !important; }
+    body { background: #fff !important; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+<div class="no-print d-flex justify-content-between align-items-center mb-3">
+  <a href="{{ url_for('governance.dashboard') }}" class="btn btn-secondary btn-sm">&larr; {{ _('Back') }}</a>
+  <form method="GET" class="d-inline-flex align-items-center">
+    <label class="me-2 small text-muted mb-0">{{ _('Report Year') }}</label>
+    <select name="year" class="form-select form-select-sm me-2" data-auto-submit style="width:auto;">
+      {% for y in years_available %}
+      <option value="{{ y }}" {{ 'selected' if y == year }}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <button class="btn btn-success btn-sm" data-action="print"><i class="bi bi-printer me-1"></i>{{ _('Print / Save as PDF') }}</button>
+</div>
+
+<div class="frg-report shadow-sm">
+  <div class="rpt-head">
+    <h1 class="h3 mb-1">{{ company_name }}</h1>
+    <h3>{{ _('Governance Report to the Financial Regulatory Authority (FRA)') }}</h3>
+    <div class="text-muted">{{ _('تقرير الحوكمة المقدم للهيئة العامة للرقابة المالية') }}</div>
+    <div class="mt-2"><strong>{{ _('Reporting Year:') }}</strong> {{ year }}</div>
+    <div class="small text-muted">{{ _('Generated:') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+    {% if not fra_regulator %}
+    <div class="alert alert-warning mt-3 mb-0 py-2 small no-print">
+      {{ _('No regulator record named "Financial Regulatory Authority" was found — showing all tracked compliance requirements below. Add/rename the FRA regulator record under Governance settings to scope this report correctly.') }}
+    </div>
+    {% endif %}
+  </div>
+
+  <h2>{{ _('1. Purpose and Scope') }}</h2>
+  <p>{{ _('This report summarizes the corporate governance arrangements maintained by %(c)s that are relevant to the Financial Regulatory Authority\'s oversight of regulated non-bank financial activities, for the reporting year %(y)s.', c=company_name, y=year) }}</p>
+
+  <h2>{{ _('2. Board and Committee Structure') }}</h2>
+  <table class="table table-bordered table-sm">
+    <tbody>
+      <tr><th style="width:40%">{{ _('Board Members') }}</th><td>{{ board_members|length }}</td></tr>
+      <tr><th>{{ _('Committees') }}</th><td>{{ committees|length }}</td></tr>
+      <tr><th>{{ _('Board Meetings Held in') }} {{ year }}</th><td>{{ meetings_count }}</td></tr>
+    </tbody>
+  </table>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light"><tr><th>{{ _('Committee') }}</th><th>{{ _('Type') }}</th><th>{{ _('Meeting Frequency') }}</th></tr></thead>
+    <tbody>
+      {% for c in committees %}
+      <tr><td>{{ c.committee_name }}</td><td>{{ c.committee_type }}</td><td>{{ c.meeting_frequency or '-' }}</td></tr>
+      {% else %}
+      <tr><td colspan="3" class="text-center text-muted">{{ _('No committees recorded.') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('3. FRA Compliance Requirements') }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Area') }}</th><th>{{ _('Requirement') }}</th><th>{{ _('Status') }}</th><th>{{ _('Last Reviewed') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for c in compliance %}
+      <tr>
+        <td>{{ c.compliance_area }}</td>
+        <td>{{ c.requirement_code or '-' }}</td>
+        <td>
+          <span class="badge {{ 'bg-success' if c.compliance_status == 'COMPLIANT' else ('bg-danger' if c.compliance_status == 'NON_COMPLIANT' else 'bg-warning text-dark') }}">
+            {{ c.compliance_status }}
+          </span>
+        </td>
+        <td>{{ c.last_audit_date or '-' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="text-center text-muted">{{ _('No FRA-linked compliance requirements tracked yet. Link requirements to the FRA regulator record under Governance &rarr; Compliance Tracker.') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('4. Declaration') }}</h2>
+  <p>{{ _('The Board of %(c)s confirms that the governance arrangements described in this report were in effect during the %(y)s reporting year and remain subject to ongoing review.', c=company_name, y=year) }}</p>
+
+  <div class="mt-5">
+    <div class="row">
+      <div class="col-6"><span class="frg-sig">{{ _('Chairman of the Board') }}</span></div>
+      <div class="col-6"><span class="frg-sig">{{ _('Chief Compliance Officer') }}</span></div>
+    </div>
+  </div>
+</div>
+
+{% include 'partials/attachment_widget.html' %}
+</div>
+{% endblock %}

@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+
+{% block title %}Merchant KYC - {{ merchant.merchant_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+
+        .sidebar,
+        .navbar,
+        .no-print,
+        .btn-toolbar,
+        nav[aria-label="breadcrumb"] {
+            display: none !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .container {
+            max-width: 100% !important;
+        }
+
+        body {
+            font-size: 12pt;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="{{ _('breadcrumb') }}" class="no-print">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('merchant_kyc.merchant_list') }}">{{ _('Merchant KYC') }}</a></li>
+            <li class="breadcrumb-item active">{{ merchant.merchant_name }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+        <h2>{{ merchant.merchant_name }}</h2>
+        <div class="btn-toolbar">
+            <button class="btn btn-sm btn-outline-secondary me-2" data-action="print">
+                <i class="bi bi-printer"></i> {{ _('Print KYC') }}
+            </button>
+            <a href="{{ url_for('merchant_kyc.edit_merchant', id=merchant.id) }}"
+                class="btn btn-sm btn-outline-primary me-2">
+                <i class="bi bi-pencil"></i> {{ _('Edit') }}
+            </a>
+            {% if merchant.kyc_status in ('SUBMITTED', 'UNDER_REVIEW') %}
+            <form method="POST" action="{{ url_for('merchant_kyc.approve_merchant', id=merchant.id) }}"
+                class="d-inline me-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-circle"></i> {{ _('Approve') }}</button>
+            </form>
+            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                <i class="bi bi-x-circle"></i> {{ _('Reject') }}
+            </button>
+            {% endif %}
+            {% if merchant.kyc_status not in ('APPROVED',) %}
+            <form method="POST" action="{{ url_for('merchant_kyc.send_kyc_link', id=merchant.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-info text-white">
+                    <i class="bi bi-send"></i> {% if merchant.kyc_sent_at %}Resend KYC Form{% else %}Send KYC Form{%
+                    endif %}
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Status Banner -->
+    <div
+        class="alert {% if merchant.kyc_status == 'APPROVED' %}alert-success{% elif merchant.kyc_status == 'REJECTED' %}alert-danger{% elif merchant.kyc_status == 'SUBMITTED' %}alert-info{% else %}alert-warning{% endif %} py-2 mb-3">
+        <strong>{{ _('KYC Status:') }}</strong> {{ merchant.kyc_status }}
+        {% if merchant.kyc_rejection_reason %}
+        <br><small><strong>{{ _('Rejection Reason:') }}</strong> {{ merchant.kyc_rejection_reason }}</small>
+        {% endif %}
+    </div>
+
+    <!-- KYC Onboarding Form Link (Always Visible) -->
+    {% if merchant.kyc_token %}
+    <div class="card border-info mb-4 no-print">
+        <div class="card-header bg-info text-white d-flex align-items-center">
+            <i class="bi bi-link-45deg me-2 fs-5"></i>
+            <h6 class="mb-0 flex-grow-1">{{ _('Merchant KYC Onboarding Form Link') }}</h6>
+            {% if merchant.kyc_sent_at %}
+            <small class="ms-2"><i class="bi bi-clock me-1"></i>Sent: {{ merchant.kyc_sent_at }}</small>
+            {% endif %}
+        </div>
+        <div class="card-body py-2">
+            <p class="text-muted mb-2" style="font-size:0.85rem">
+                {{ _('Share this link with the merchant to complete their KYC onboarding form. The link is permanent and can
+                be re-used.') }}
+            </p>
+            <div class="input-group">
+                <input type="text" class="form-control form-control-sm bg-light" readonly id="kycFormLink"
+                    value="{{ url_for('merchant_kyc.public_kyc_form', token=merchant.kyc_token, _external=True) }}">
+                <button class="btn btn-outline-primary btn-sm" type="button" data-onclick-fn="copyKycLink" id="copyLinkBtn"
+                    title="{{ _('Copy link to clipboard') }}">
+                    <i class="bi bi-clipboard me-1"></i>{{ _('Copy') }}
+                </button>
+                <a href="{{ url_for('merchant_kyc.public_kyc_form', token=merchant.kyc_token, _external=True) }}"
+                    target="_blank" class="btn btn-outline-success btn-sm" title="{{ _('Open form in new tab') }}">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>{{ _('Open') }}
+                </a>
+            </div>
+        </div>
+    </div>
+    <script nonce="{{ csp_nonce }}">
+        document.getElementById('runScreeningBtn').addEventListener('click', function () {
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Screening...';
+            this.closest('form').submit();
+        });
+
+        function copyKycLink() {
+            var linkInput = document.getElementById('kycFormLink');
+            navigator.clipboard.writeText(linkInput.value).then(function () {
+                var btn = document.getElementById('copyLinkBtn');
+                btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Copied!';
+                btn.classList.replace('btn-outline-primary', 'btn-success');
+                setTimeout(function () {
+                    btn.innerHTML = '<i class="bi bi-clipboard me-1"></i>Copy';
+                    btn.classList.replace('btn-success', 'btn-outline-primary');
+                }, 2000);
+            });
+        }
+    </script>
+    {% endif %}
+
+    <!-- Sanctions Screening Status -->
+    <div class="card border-0 shadow-sm mb-4 no-print">
+        <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between">
+            <h6 class="mb-0"><i class="bi bi-shield-exclamation me-2"></i>{{ _('Sanctions Screening') }}</h6>
+            <div>
+                {% if merchant.screening_status == 'Pending Review' %}
+                <a href="{{ url_for('screening.screening_queue') }}" class="btn btn-sm btn-warning me-1">
+                    <i class="bi bi-inbox"></i> {{ _('View Queue') }}
+                </a>
+                {% endif %}
+                <form method="POST" action="{{ url_for('merchant_kyc.run_screening', id=merchant.id) }}"
+                    class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-danger" id="runScreeningBtn">
+                        <i class="bi bi-search"></i>
+                        {% if merchant.last_screening_date %}Re-Run Screening{% else %}Run Sanctions Screening{% endif
+                        %}
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <small class="text-muted d-block">{{ _('Screening Status') }}</small>
+                    {% set ss = merchant.screening_status or 'Not Screened' %}
+                    <span
+                        class="badge fs-6 {% if ss == 'Clear' %}bg-success{% elif ss == 'Pending Review' %}bg-warning text-dark{% elif ss == 'Blocked' %}bg-danger{% elif ss == 'PEP' %}bg-info{% elif ss == 'Whitelisted' %}bg-primary{% else %}bg-secondary{% endif %}">
+                        {{ ss }}
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">{{ _('Risk Rating') }}</small>
+                    {% set rr = merchant.risk_rating or 'Not Assessed' %}
+                    <span
+                        class="badge fs-6 {% if rr == 'High' %}bg-danger{% elif rr == 'Medium' %}bg-warning text-dark{% elif rr == 'Low' %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ rr }}
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">{{ _('Last Screened') }}</small>
+                    <strong>{{ merchant.last_screening_date or 'Never' }}</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">{{ _('Internal Ref') }}</small>
+                    <strong>{{ merchant.internal_reference_number or 'Not assigned' }}</strong>
+                </div>
+            </div>
+            {% if merchant.pep_status %}
+            <div class="alert alert-warning mt-3 mb-0 py-2">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <strong>{{ _('PEP Alert:') }}</strong> {{ _('This entity has been flagged as a Politically Exposed Person. Enhanced Due
+                Diligence required.') }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+
+        <!-- Business Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-building"></i> {{ _('Business Information') }}</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted" style="width:40%">{{ _('Merchant Name') }}</td>
+                            <td class="fw-bold">{{ merchant.merchant_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Trade Name') }}</td>
+                            <td>{{ merchant.trade_name or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('CR Number') }}</td>
+                            <td><code>{{ merchant.cr_number or 'N/A' }}</code></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Tax ID') }}</td>
+                            <td>{{ merchant.tax_id or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Business Type') }}</td>
+                            <td>{{ merchant.business_type or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Industry') }}</td>
+                            <td>{{ merchant.industry or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Website') }}</td>
+                            <td>{{ merchant.website or 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-person-lines-fill"></i> {{ _('Contact Information') }}</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted" style="width:40%">{{ _('Contact Person') }}</td>
+                            <td>{{ merchant.contact_person or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Email') }}</td>
+                            <td>{{ merchant.contact_email or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Phone') }}</td>
+                            <td>{{ merchant.contact_phone or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Address') }}</td>
+                            <td>{{ merchant.address or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('City') }}</td>
+                            <td>{{ merchant.city or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Country') }}</td>
+                            <td>{{ merchant.country or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('GPS Location') }}</td>
+                            <td>
+                                {% if merchant.gps_latitude and merchant.gps_longitude %}
+                                    <span class="badge bg-success text-white"><i class="bi bi-geo-alt-fill me-1"></i> {{ _('Captured') }}</span>
+                                    <br>
+                                    <small class="text-muted">{{ merchant.gps_latitude }}, {{ merchant.gps_longitude }} (±{{ merchant.gps_accuracy }}m)</small>
+                                    <br>
+                                    <a href="https://www.google.com/maps/search/?api=1&query={{ merchant.gps_latitude }},{{ merchant.gps_longitude }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                        <i class="bi bi-map me-1"></i> {{ _('Open in Maps') }}
+                                    </a>
+                                {% else %}
+                                    <span class="badge bg-secondary text-white">{{ _('Not Provided') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Beneficial Ownership -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-people"></i> {{ _('Beneficial Ownership (UBO)') }}</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted" style="width:40%">{{ _('UBO Name') }}</td>
+                            <td>{{ merchant.ubo_name or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Nationality') }}</td>
+                            <td>{{ merchant.ubo_nationality or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('ID Type') }}</td>
+                            <td>{{ merchant.ubo_id_type or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('ID Number') }}</td>
+                            <td>{{ merchant.ubo_id_number or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Date of Birth') }}</td>
+                            <td>{{ merchant.ubo_dob or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Ownership %%') }}</td>
+                            <td>{{ merchant.ownership_percentage or 'N/A' }}%</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banking & Risk -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0"><i class="bi bi-bank"></i> {{ _('Banking & Risk Assessment') }}</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted" style="width:40%">{{ _('Bank Name') }}</td>
+                            <td>{{ merchant.bank_name or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Account Number') }}</td>
+                            <td>{{ merchant.bank_account_number or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('IBAN') }}</td>
+                            <td>{{ merchant.iban or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Risk Level') }}</td>
+                            <td>
+                                <span
+                                    class="badge {% if merchant.risk_level == 'HIGH' or merchant.risk_level == 'CRITICAL' %}bg-danger{% elif merchant.risk_level == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                    {{ merchant.risk_level }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('Sanctions Checked') }}</td>
+                            <td>{{ '✅ Yes' if merchant.sanctions_checked else '❌ No' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">{{ _('PEP Checked') }}</td>
+                            <td>{{ '✅ Yes' if merchant.pep_checked else '❌ No' }}</td>
+                        </tr>
+                    </table>
+                    {% if merchant.risk_notes %}
+                    <div class="mt-2 p-2 bg-light rounded"><small class="text-muted">{{ _('Notes:') }}</small><br>{{
+                        merchant.risk_notes }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attached Documents -->
+    {% if documents %}
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h6 class="mb-0"><i class="bi bi-paperclip"></i> Attached Documents ({{ documents|length }})</h6>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{{ _('Document') }}</th>
+                        <th>{{ _('Type') }}</th>
+                        <th>{{ _('Size') }}</th>
+                        <th>{{ _('Uploaded') }}</th>
+                        <th>By</th>
+                        <th class="no-print" style="width:100px">{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td><i class="bi bi-file-earmark-text"></i> {{ doc.original_filename }}</td>
+                        <td><span class="badge bg-info text-dark">{{ doc.doc_type or 'Other' }}</span></td>
+                        <td>{{ (doc.file_size / 1024)|round(1) }} KB</td>
+                        <td>{{ doc.uploaded_at }}</td>
+                        <td>{{ doc.uploaded_by or 'N/A' }}</td>
+                        <td class="no-print">
+                            <a href="{{ url_for('merchant_kyc.download_document', doc_id=doc.id) }}"
+                                class="btn btn-sm btn-outline-primary" title="{{ _('Download') }}"><i
+                                    class="bi bi-download"></i></a>
+                            <form method="POST" action="{{ url_for('merchant_kyc.delete_document', doc_id=doc.id) }}"
+                                class="d-inline" data-confirm="Delete this document?">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-outline-danger" title="{{ _('Delete') }}"><i
+                                        class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('merchant_kyc.reject_merchant', id=merchant.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">{{ _('Reject Merchant KYC') }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-bold">{{ _('Rejection Reason') }}</label>
+                    <textarea name="rejection_reason" class="form-control" rows="3" required
+                        placeholder="{{ _('Provide a reason for rejection...') }}"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-danger">{{ _('Confirm Rejection') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

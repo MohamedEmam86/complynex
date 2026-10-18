@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Mitigation Plan Detail - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<nav aria-label="{{ _('breadcrumb') }}" class="mt-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">{{ _('Dashboard') }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('coi.pending_review') }}">{{ _('COI Reviews') }}</a></li>
+        {% if declaration %}<li class="breadcrumb-item"><a href="{{ url_for('coi.review_declaration', id=declaration.id) }}">{{ _('Review') }}</a></li>{% endif %}
+        <li class="breadcrumb-item active">{{ _('Mitigation Plan') }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ _('Mitigation Plan Details') }}</h5>
+                <span
+                    class="badge {% if plan.status == 'active' %}bg-primary{% elif plan.status == 'implemented' %}bg-success{% elif plan.status == 'closed' %}bg-secondary{% else %}bg-info{% endif %} px-3">
+                    {{ plan.status|upper }}
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <div class="row mb-4">
+                    <div class="col-sm-6">
+                        <label class="text-muted small text-uppercase fw-bold">{{ _('Mitigation Strategy') }}</label>
+                        <p class="fs-5 fw-bold text-primary">{{ plan.mitigation_strategy }}</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small text-uppercase fw-bold">{{ _('Target Implementation Date') }}</label>
+                        <p class="fs-5">{{ plan.target_date }}</p>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-muted small text-uppercase fw-bold">{{ _('Plan & Controls') }}</label>
+                    <div class="p-3 bg-light border rounded mt-1">
+                        {% for line in plan.plan_details.split('\n') %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-6">
+                        <label class="text-muted small text-uppercase fw-bold">{{ _('Assigned Owner') }}</label>
+                        <p class="mb-0">{{ plan.assignee_name or 'N/A' }}</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small text-uppercase fw-bold">{{ _('Created On') }}</label>
+                        <p class="mb-0">{{ plan.created_at }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if plan.status != 'closed' %}
+        <div class="card shadow-sm border-info mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-pencil-square me-2"></i>{{ _('Update Plan Status') }}</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">{{ _('New Status') }}</label>
+                            <select class="form-select" name="status" required>
+                                <option value="active" {% if plan.status=='active' %}selected{% endif %}>{{ _('Active / In
+                                    Progress') }}</option>
+                                <option value="implemented" {% if plan.status=='implemented' %}selected{% endif %}>
+                                    {{ _('Implemented (Requires Verification)') }}</option>
+                                <option value="monitoring" {% if plan.status=='monitoring' %}selected{% endif %}>{{ _('Ongoing
+                                    Monitoring') }}</option>
+                                <option value="closed" {% if plan.status=='closed' %}selected{% endif %}>{{ _('Closed /
+                                    Resolved') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold">{{ _('Progress / Status Comments') }}</label>
+                            <textarea class="form-control" name="comments" rows="3"
+                                placeholder="{{ _('Add details about the status change...') }}"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <button type="submit" class="btn btn-info text-white px-4">{{ _('Update Status') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">{{ _('Conflict Context') }}</h6>
+            </div>
+            <div class="card-body small">
+                <p class="mb-2"><strong>{{ _('Employee:') }}</strong> {{ declaration.employee_name if declaration else _('Linked declaration no longer exists') }}</p>
+                <p class="mb-2"><strong>{{ _('Declaration ID:') }}</strong> {{ ('#' ~ declaration.id) if declaration else '-' }}</p>
+                <p class="mb-0 text-muted">{{ _('A mitigation plan is required because a potential conflict was disclosed by
+                    the employee and flagged during compliance review.') }}</p>
+                <hr>
+                <a href="{{ url_for('coi.view_declaration', id=declaration.id) }}"
+                    class="btn btn-sm btn-outline-secondary w-100">
+                    <i class="bi bi-file-earmark-text"></i> {{ _('View Full Declaration') }}
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">{{ _('History & Lifecycle') }}</h6>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush small">
+                    {% for event in plan.get_history() %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>
+                                {% if event.action == 'created' %}Created{% endif %}
+                                {% if event.action == 'status_change' %}Status Change{% endif %}
+                                {% if event.action == 'closed' %}Closed{% endif %}
+                                {% if event.action == 'comment' %}Comment{% endif %}
+                            </strong>
+                            <span class="text-muted">{{ event.action_date }}</span>
+                        </div>
+                        <div class="text-muted mb-1">by {{ event.action_by_name or 'System' }}</div>
+
+                        {% if event.action == 'status_change' %}
+                        <div>
+                            <span class="badge bg-secondary">{{ event.old_status }}</span>
+                            <i class="bi bi-arrow-right mx-1"></i>
+                            <span class="badge bg-primary">{{ event.new_status }}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if event.comments %}
+                        <div class="mt-1 fst-italic text-muted">"{{ event.comments }}"</div>
+                        {% endif %}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted text-center py-3">{{ _('No history recorded yet.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        {% if plan.reviewer_comments %}
+        <div class="card shadow-sm border-warning">
+            <div class="card-header bg-warning py-2">
+                <h6 class="mb-0 small"><i class="bi bi-chat-dots me-2"></i>{{ _('Latest Reviewer Comments') }}</h6>
+            </div>
+            <div class="card-body small">
+                {{ plan.reviewer_comments }}
+                <div class="text-muted mt-2 x-small">Last updated: {{ plan.updated_at }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

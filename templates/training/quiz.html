@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Quiz: {{ course.course_name }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center pt-5">
+    <div class="col-12 col-md-8">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('training.view_course', id=course.id) }}" class="btn btn-link text-muted p-0 me-3">
+                <i class="bi bi-arrow-left fs-4"></i>
+            </a>
+            <div>
+                <h1 class="h3 fw-bold mb-0">{{ _('Knowledge Assessment') }}</h1>
+                <p class="text-muted mb-0">{{ course.course_name }} ({{ course.course_code }})</p>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-lg">
+            <div class="card-header bg-white py-3 sticky-top">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                    <span class="fw-bold">Total: {{ questions|length }} Questions</span>
+                    <span class="badge bg-primary px-3 py-2">Passing Core: {{ course.passing_score }}%</span>
+                </div>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {% for q in questions %}
+                    <div class="mb-5">
+                        <h5 class="fw-bold mb-3 d-flex">
+                            <span class="me-2 text-primary">{{ loop.index }}.</span>
+                            <span>
+                                {% if session.get('lang') == 'ar' and q.question_text_ar %}
+                                {{ q.question_text_ar }}
+                                {% else %}
+                                {{ q.question_text }}
+                                {% endif %}
+                            </span>
+                        </h5>
+
+                        <div class="ps-4">
+                            {% set current_options = q.options %}
+                            {% if session.get('lang') == 'ar' and q.options_ar %}
+                            {% set current_options = q.options_ar %}
+                            {% endif %}
+
+                            {% if current_options %}
+                            {% for option in current_options %}
+                            <div class="form-check mb-3 custom-option p-3 rounded border">
+                                <input class="form-check-input ms-0 me-3" type="radio" name="q_{{ q.id }}"
+                                    id="q_{{ q.id }}_{{ loop.index0 }}" value="{{ loop.index0 }}" required>
+                                <label class="form-check-input-label d-block w-100" for="q_{{ q.id }}_{{ loop.index0 }}"
+                                    style="cursor: pointer;">
+                                    {{ option }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <textarea class="form-control" name="q_{{ q.id }}" rows="3"
+                                placeholder="{{ _('Type your answer here...') }}" required></textarea>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="mt-5 text-center bg-light p-4 rounded border border-dashed">
+                        <h6 class="fw-bold">{{ _('Ready to submit?') }}</h6>
+                        <p class="text-muted small">{{ _('Please review all your answers. Once submitted, your score will be recorded.') }}</p>
+                        <button type="submit" class="btn btn-primary btn-lg px-5 shadow">
+                            {{ _('Submit Quiz Answers') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-option:hover {
+        background-color: rgba(13, 110, 253, 0.03);
+        border-color: #0d6efd !important;
+    }
+
+    .form-check-input {
+        float: none;
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+    }
+</style>
+
+<script nonce="{{ csp_nonce }}">
+    // Simple visual feedback when clicking anywhere on the custom option div
+    document.querySelectorAll('.custom-option').forEach(option => {
+        option.addEventListener('click', () => {
+            const radio = option.querySelector('input[type="radio"]');
+            radio.checked = true;
+
+            // Remove selection from siblings
+            option.parentNode.querySelectorAll('.custom-option').forEach(s => s.classList.remove('bg-primary-soft', 'border-primary'));
+            option.classList.add('bg-primary-soft', 'border-primary');
+        });
+    });
+</script>
+{% endblock %}

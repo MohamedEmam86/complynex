@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Report Cyber Incident{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-shield-exclamation text-danger"></i> {{ _('Cyber Emergency Response Team
+                        (CERT) Reporting') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning py-2 mb-4">
+                        <small><i class="bi bi-info-circle"></i> {{ _('High/Critical incidents trigger immediate escalation to
+                            the CBE SOC per Circular Dec 2023.') }}</small>
+                    </div>
+
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Incident Type') }}</label>
+                                <select class="form-select" name="incident_type" required>
+                                    <option value="MALWARE">{{ _('Malware Infection') }}</option>
+                                    <option value="RANSOMWARE">{{ _('Ransomware') }}</option>
+                                    <option value="PHISHING">{{ _('Phishing Campaign') }}</option>
+                                    <option value="UNAUTHORIZED_ACCESS">{{ _('Unauthorized Access') }}</option>
+                                    <option value="DATA_BREACH">{{ _('Data Breach') }}</option>
+                                    <option value="DDOS">{{ _('DDoS Attack') }}</option>
+                                    <option value="SYSTEM_OUTAGE">{{ _('System Outage (Suspicious)') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Initial Severity') }}</label>
+                                <select class="form-select" name="severity" required>
+                                    <option value="LOW">{{ _('Low - No data impact') }}</option>
+                                    <option value="MEDIUM">{{ _('Medium - Limited impact') }}</option>
+                                    <option value="HIGH">{{ _('High - Significant operational impact') }}</option>
+                                    <option value="CRITICAL">{{ _('Critical - System-wide / Data Loss') }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Incident Description & Impact') }}</label>
+                            <textarea class="form-control" name="description" rows="6"
+                                placeholder="{{ _('Describe the incident, affected systems, and any observed indicators of compromise (IoCs).') }}"
+                                required></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end pt-3 border-top">
+                            <a href="{{ url_for('cyber.dashboard') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+                            <button type="submit" class="btn btn-dark">
+                                <i class="bi bi-broadcast"></i> {{ _('BROADCAST ALERT') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

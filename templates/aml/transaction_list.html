@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Transactions') }}{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-between mb-4">
+    <h2><i class="fas fa-exchange-alt text-primary"></i> {{ _('Transactions') }}</h2>
+    <div>
+      <a href="{{ url_for('aml.tm_dashboard') }}" class="btn btn-outline-secondary me-2">{{ _('TM Dashboard') }}</a>
+      <a href="{{ url_for('aml.upload_transactions') }}" class="btn btn-outline-primary me-2">
+        <i class="fas fa-upload"></i> {{ _('Bulk Upload') }}
+      </a>
+      <a href="{{ url_for('aml.create_transaction') }}" class="btn btn-success"><i class="fas fa-plus"></i> {{ _('New Transaction') }}</a>
+    </div>
+  </div>
+
+  <form method="GET" class="row g-2 mb-3">
+    <div class="col-auto">
+      <select name="type" class="form-select form-select-sm">
+        <option value="">{{ _('All Types') }}</option>
+        {% for t in ['CREDIT','DEBIT','TRANSFER_IN','TRANSFER_OUT','CASH_DEPOSIT','CASH_WITHDRAWAL','PAYMENT','REFUND'] %}
+        <option value="{{ t }}" {% if filters.get('type')==t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <select name="alert_only" class="form-select form-select-sm">
+        <option value="">{{ _('All Transactions') }}</option>
+        <option value="1" {% if filters.get('alert_only') %}selected{% endif %}>{{ _('Flagged Only') }}</option>
+      </select>
+    </div>
+    <div class="col-auto"><button class="btn btn-primary btn-sm">{{ _('Filter') }}</button></div>
+    <div class="col-auto"><a href="{{ url_for('aml.transaction_list') }}" class="btn btn-outline-secondary btn-sm">{{ _('Reset') }}</a></div>
+  </form>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0 small">
+        <thead class="table-dark">
+          <tr><th>{{ _('Reference') }}</th><th>{{ _('Customer') }}</th><th>{{ _('Date') }}</th><th>{{ _('Type') }}</th><th>{{ _('Amount') }}</th><th>{{ _('Counterparty') }}</th><th>{{ _('Country') }}</th><th>{{ _('Alert') }}</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for t in transactions %}
+          <tr class="{% if t.alert_raised %}table-warning{% endif %}">
+            <td><code>{{ t.transaction_reference }}</code></td>
+            <td>{{ t.full_name or t.company_name or '-' }}<br><small class="text-muted">{{ t.customer_reference }}</small></td>
+            <td>{{ t.transaction_date[:10] }}</td>
+            <td><span class="badge bg-secondary">{{ t.transaction_type }}</span></td>
+            <td><strong>{{ "{:,.2f}".format(t.amount) }}</strong> {{ t.currency }}</td>
+            <td>{{ t.counterparty_name or '-' }}</td>
+            <td>{{ t.counterparty_country or '-' }}</td>
+            <td>
+              {% if t.alert_raised %}
+              <span class="badge bg-danger">{{ t.rule_triggered }}</span>
+              {% else %}
+              <span class="badge bg-success">{{ _('Clear') }}</span>
+              {% endif %}
+            </td>
+            <td><a href="{{ url_for('aml.view_transaction', tx_id=t.id) }}" class="btn btn-sm btn-outline-primary">{{ _('View') }}</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted py-4">{{ _('No transactions found') }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if total_pages > 1 %}
+  <nav class="mt-3"><ul class="pagination pagination-sm flex-wrap">
+    <li class="page-item {% if page == 1 %}disabled{% endif %}">
+      <a class="page-link" href="?page={{ page-1 }}">&laquo; {{ _('Prev') }}</a>
+    </li>
+    {% set show_pages = [] %}
+    {% for p in range(1, total_pages+1) %}
+      {% if p <= 2 or p >= total_pages-1 or (p >= page-2 and p <= page+2) %}
+        {% if show_pages.append(p) %}{% endif %}
+      {% endif %}
+    {% endfor %}
+    {% set ns = namespace(prev=0) %}
+    {% for p in show_pages %}
+      {% if ns.prev > 0 and p - ns.prev > 1 %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+      <li class="page-item {% if p==page %}active{% endif %}">
+        <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+      </li>
+      {% set ns.prev = p %}
+    {% endfor %}
+    <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+      <a class="page-link" href="?page={{ page+1 }}">{{ _('Next') }} &raquo;</a>
+    </li>
+  </ul></nav>
+  {% endif %}
+</div>
+{% endblock %}

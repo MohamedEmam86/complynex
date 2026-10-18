@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Submission Successful - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% if session.get('dir') == 'rtl' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+    <style>
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .success-icon i {
+            font-size: 3rem;
+            color: white;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 20px rgba(40, 167, 69, 0);
+            }
+        }
+
+        .tracking-id {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #0d6efd;
+            letter-spacing: 3px;
+        }
+    </style>
+</head>
+
+<body class="complynex-public">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-6 col-md-8">
+                <!-- Brand Header -->
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        class="logo">
+                </div>
+
+                <!-- Success Card -->
+                <div class="complynex-form-card text-center">
+                    <div class="success-icon">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+
+                    <h2 class="mb-3">{{ _('Submission Successful!') }}</h2>
+
+                    <p class="text-muted mb-4">
+                        {{ _('Your') }}
+                        {% if declaration_type == 'coi' %}
+                        {{ _('COI Declaration') }}
+                        {% elif declaration_type == 'cobec' %}
+                        {{ _('COBEC Declaration') }}
+                        {% elif declaration_type == 'coi-adhoc' %}
+                        {{ _('Ad-hoc COI Disclosure') }}
+                        {% elif declaration_type == 'ghe' %}
+                        {{ _('GHE Submission') }}
+                        {% else %}
+                        {{ _('submission') }}
+                        {% endif %}
+                        {{ _('has been received and is now being processed.') }}
+                    </p>
+
+                    <div class="mb-4">
+                        <small class="text-muted d-block mb-2">
+                            {% if declaration_type in ['coi', 'coi-adhoc'] %}
+                            {{ _('Your Case PIN') }}
+                            {% else %}
+                            {{ _('Your Tracking ID') }}
+                            {% endif %}
+                        </small>
+                        <div class="tracking-id">{{ tracking_id }}</div>
+                        <small class="text-muted">{{ _('Save this code for your records and secure follow-ups')
+                            }}</small>
+                    </div>
+
+                    <div class="complynex-info-box text-start mb-4">
+                        <h6><i class="bi bi-info-circle"></i> {{ _('What Happens Next?') }}</h6>
+                        <ul class="mb-0">
+                            {% if declaration_type in ['coi', 'cobec'] %}
+                            <li>{{ _('Your declaration will be reviewed by the Compliance team') }}</li>
+                            <li>{{ _('If additional information is needed, you will be contacted') }}</li>
+                            <li>{{ _('You will receive confirmation once your declaration is approved') }}</li>
+                            {% elif declaration_type == 'coi-adhoc' %}
+                            <li>{{ _('Your disclosure will be reviewed by your manager and Compliance') }}</li>
+                            <li>{{ _('You may be contacted to discuss mitigation strategies') }}</li>
+                            <li>{{ _('Keep records of any updates to this conflict') }}</li>
+                            {% elif declaration_type == 'ghe' %}
+                            <li>{{ _('Your submission will be evaluated based on value and type') }}</li>
+                            <li>{{ _('Approvals may be required from your manager or Compliance') }}</li>
+                            <li>{{ _('You will receive notification of the approval status') }}</li>
+                            {% else %}
+                            <li>{{ _('Your submission is being reviewed') }}</li>
+                            <li>{{ _('You will be contacted if any follow-up is needed') }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('portal.dashboard') }}" class="btn btn-complynex">
+                            <i class="bi bi-house"></i> {{ _('Back to Portal') }}
+                        </a>
+                        <a href="{{ url_for('portal.status') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-search"></i> {{ _('Check Submission Status') }}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="complynex-footer">
+                    <p>{{ _('&copy; 2026 ComplyNex. All rights reserved. &nbsp;|&nbsp; Powered by Mohamed Emam &nbsp;|&nbsp;') }} <a href="mailto:info@complynex.online">{{ _('info@complynex.online') }}</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+</body>
+
+</html>

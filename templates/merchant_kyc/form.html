@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if merchant else 'New' }} Merchant KYC{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="{{ _('breadcrumb') }}">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('merchant_kyc.merchant_list') }}">{{ _('Merchant KYC') }}</a></li>
+            <li class="breadcrumb-item active">{{ 'Edit' if merchant else 'New Merchant' }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ 'Edit Merchant KYC' if merchant else 'New Merchant KYC Onboarding' }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <h6 class="text-primary mb-3"><i class="bi bi-building"></i> {{ _('Business Information') }}</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">{{ _('Merchant / Company Name *') }}</label>
+                                <input type="text" name="merchant_name" class="form-control"
+                                    value="{{ (merchant.merchant_name or '') if merchant else '' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">{{ _('Trade Name') }}</label>
+                                <input type="text" name="trade_name" class="form-control"
+                                    value="{{ (merchant.trade_name or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Commercial Registration (CR) Number') }}</label>
+                                <input type="text" name="cr_number" class="form-control"
+                                    value="{{ (merchant.cr_number or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Tax ID') }}</label>
+                                <input type="text" name="tax_id" class="form-control"
+                                    value="{{ (merchant.tax_id or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Business Type') }}</label>
+                                <select class="form-select" name="business_type">
+                                    <option value="">{{ _('Select...') }}</option>
+                                    <option value="SOLE_PROPRIETORSHIP" {% if merchant and
+                                        merchant.business_type=='SOLE_PROPRIETORSHIP' %}selected{% endif %}>{{ _('Sole
+                                        Proprietorship') }}</option>
+                                    <option value="PARTNERSHIP" {% if merchant and merchant.business_type=='PARTNERSHIP'
+                                        %}selected{% endif %}>{{ _('Partnership') }}</option>
+                                    <option value="LLC" {% if merchant and merchant.business_type=='LLC' %}selected{%
+                                        endif %}>{{ _('LLC') }}</option>
+                                    <option value="JOINT_STOCK" {% if merchant and merchant.business_type=='JOINT_STOCK'
+                                        %}selected{% endif %}>{{ _('Joint Stock Company') }}</option>
+                                    <option value="OTHER" {% if merchant and merchant.business_type=='OTHER'
+                                        %}selected{% endif %}>{{ _('Other') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">{{ _('Industry / Sector') }}</label>
+                                <input type="text" name="industry" class="form-control"
+                                    value="{{ (merchant.industry or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">{{ _('Website') }}</label>
+                                <input type="url" name="website" class="form-control"
+                                    value="{{ (merchant.website or '') if merchant else '' }}">
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+                        <h6 class="text-primary mb-3"><i class="bi bi-person-lines-fill"></i> {{ _('Contact Information') }}</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Contact Person') }}</label>
+                                <input type="text" name="contact_person" class="form-control"
+                                    value="{{ (merchant.contact_person or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Email') }}</label>
+                                <input type="email" name="contact_email" class="form-control"
+                                    value="{{ (merchant.contact_email or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Phone') }}</label>
+                                <input type="text" name="contact_phone" class="form-control"
+                                    value="{{ (merchant.contact_phone or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">{{ _('Address') }}</label>
+                                <textarea name="address" class="form-control"
+                                    rows="2">{{ (merchant.address or '') if merchant else '' }}</textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">{{ _('City') }}</label>
+                                <input type="text" name="city" class="form-control"
+                                    value="{{ (merchant.city or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">{{ _('Country') }}</label>
+                                <input type="text" name="country" class="form-control"
+                                    value="{{ merchant.country if merchant else 'Egypt' }}">
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+                        <h6 class="text-primary mb-3"><i class="bi bi-people"></i> {{ _('Beneficial Ownership (UBO)') }}</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">{{ _('UBO Full Name') }}</label>
+                                <input type="text" name="ubo_name" class="form-control"
+                                    value="{{ (merchant.ubo_name or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">{{ _('UBO Nationality') }}</label>
+                                <input type="text" name="ubo_nationality" class="form-control"
+                                    value="{{ (merchant.ubo_nationality or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('ID Type') }}</label>
+                                <select class="form-select" name="ubo_id_type">
+                                    <option value="">{{ _('Select...') }}</option>
+                                    <option value="NATIONAL_ID" {% if merchant and merchant.ubo_id_type=='NATIONAL_ID'
+                                        %}selected{% endif %}>{{ _('National ID') }}</option>
+                                    <option value="PASSPORT" {% if merchant and merchant.ubo_id_type=='PASSPORT'
+                                        %}selected{% endif %}>{{ _('Passport') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('ID Number') }}</label>
+                                <input type="text" name="ubo_id_number" class="form-control"
+                                    value="{{ (merchant.ubo_id_number or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Date of Birth') }}</label>
+                                <input type="date" name="ubo_dob" class="form-control"
+                                    value="{{ (merchant.ubo_dob or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Ownership %%') }}</label>
+                                <input type="number" name="ownership_percentage" class="form-control" min="0" max="100"
+                                    value="{{ (merchant.ownership_percentage or '') if merchant else '' }}">
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+                        <h6 class="text-primary mb-3"><i class="bi bi-bank"></i> {{ _('Banking Details') }}</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Bank Name') }}</label>
+                                <input type="text" name="bank_name" class="form-control"
+                                    value="{{ (merchant.bank_name or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Account Number') }}</label>
+                                <input type="text" name="bank_account_number" class="form-control"
+                                    value="{{ (merchant.bank_account_number or '') if merchant else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('IBAN') }}</label>
+                                <input type="text" name="iban" class="form-control"
+                                    value="{{ (merchant.iban or '') if merchant else '' }}">
+                            </div>
+                        </div>
+
+                        {% if merchant %}
+                        <hr class="my-3">
+                        <h6 class="text-danger mb-3"><i class="bi bi-shield-check"></i> {{ _('KYC Status & Risk') }}</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('KYC Status') }}</label>
+                                <select class="form-select border-danger" name="kyc_status">
+                                    <option value="PENDING" {% if merchant.kyc_status=='PENDING' %}selected{% endif %}>
+                                        {{ _('Pending') }}</option>
+                                    <option value="SENT" {% if merchant.kyc_status=='SENT' %}selected{% endif %}>{{ _('Sent') }}
+                                    </option>
+                                    <option value="SUBMITTED" {% if merchant.kyc_status=='SUBMITTED' %}selected{% endif
+                                        %}>{{ _('Submitted') }}</option>
+                                    <option value="UNDER_REVIEW" {% if merchant.kyc_status=='UNDER_REVIEW' %}selected{%
+                                        endif %}>{{ _('Under Review') }}</option>
+                                    <option value="APPROVED" {% if merchant.kyc_status=='APPROVED' %}selected{% endif
+                                        %}>{{ _('Approved') }}</option>
+                                    <option value="REJECTED" {% if merchant.kyc_status=='REJECTED' %}selected{% endif
+                                        %}>{{ _('Rejected') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">{{ _('Risk Level') }}</label>
+                                <select class="form-select" name="risk_level">
+                                    <option value="LOW" {% if merchant.risk_level=='LOW' %}selected{% endif %}>{{ _('Low') }}
+                                    </option>
+                                    <option value="MEDIUM" {% if merchant.risk_level=='MEDIUM' %}selected{% endif %}>
+                                        {{ _('Medium') }}</option>
+                                    <option value="HIGH" {% if merchant.risk_level=='HIGH' %}selected{% endif %}>{{ _('High') }}
+                                    </option>
+                                    <option value="CRITICAL" {% if merchant.risk_level=='CRITICAL' %}selected{% endif
+                                        %}>{{ _('Critical') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">{{ _('Risk Notes') }}</label>
+                                <textarea name="risk_notes" class="form-control"
+                                    rows="2">{{ (merchant.risk_notes or '') if merchant else '' }}</textarea>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <hr class="my-3">
+                        <h6 class="text-primary mb-3"><i class="bi bi-paperclip"></i> {{ _('Document Attachments') }}</h6>
+                        <p class="text-muted small">{{ _('Upload supporting documents: CR copy, Tax Card, ID copies, bank
+                            letter, etc. (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX — max 10MB each)') }}</p>
+
+                        {% if merchant and documents %}
+                        <div class="table-responsive mb-3">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>{{ _('Document') }}</th>
+                                        <th>{{ _('Type') }}</th>
+                                        <th>{{ _('Size') }}</th>
+                                        <th>{{ _('Uploaded') }}</th>
+                                        <th style="width:100px">{{ _('Actions') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for doc in documents %}
+                                    <tr>
+                                        <td><i class="bi bi-file-earmark"></i> {{ doc.original_filename }}</td>
+                                        <td>{{ doc.doc_type or 'N/A' }}</td>
+                                        <td>{{ (doc.file_size / 1024)|round(1) }} KB</td>
+                                        <td>{{ doc.uploaded_at }}</td>
+                                        <td>
+                                            <a href="{{ url_for('merchant_kyc.download_document', doc_id=doc.id) }}"
+                                                class="btn btn-sm btn-outline-primary" title="{{ _('Download') }}"><i
+                                                    class="bi bi-download"></i></a>
+                                            <form method="POST"
+                                                action="{{ url_for('merchant_kyc.delete_document', doc_id=doc.id) }}"
+                                                class="d-inline" data-confirm="Delete this document?">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button class="btn btn-sm btn-outline-danger" title="{{ _('Delete') }}"><i
+                                                        class="bi bi-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+
+                        <div id="doc-upload-rows">
+                            <div class="row mb-2 doc-row">
+                                <div class="col-md-4">
+                                    <select name="doc_types" class="form-select form-select-sm">
+                                        <option value="Commercial Registration">{{ _('Commercial Registration (CR)') }}</option>
+                                        <option value="Tax Card">{{ _('Tax Card') }}</option>
+                                        <option value="National ID">{{ _('National ID / Passport') }}</option>
+                                        <option value="Bank Letter">{{ _('Bank Letter') }}</option>
+                                        <option value="Board Resolution">{{ _('Board Resolution') }}</option>
+                                        <option value="Power of Attorney">{{ _('Power of Attorney') }}</option>
+                                        <option value="Other">{{ _('Other') }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <input type="file" name="documents" class="form-control form-control-sm"
+                                        accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1" data-onclick-fn="addDocRow"><i
+                                class="bi bi-plus-circle"></i> {{ _('Add Another Document') }}</button>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{{ url_for('merchant_kyc.merchant_list') }}"
+                                class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+                            <button type="submit" class="btn btn-primary">
+                                {{ 'Update Merchant' if merchant else 'Create Merchant' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    function addDocRow() {
+        const container = document.getElementById('doc-upload-rows');
+        const row = document.querySelector('.doc-row').cloneNode(true);
+        row.querySelector('input[type=file]').value = '';
+        container.appendChild(row);
+    }
+</script>
+{% endblock %}

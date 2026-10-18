@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="{{ get_locale() }}" dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ _('Independence Declaration') }} - {{ declaration.member_name }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <!-- Added 2026-07-24 for the optional evidence-attachment widget (partials/attachment_widget.html) -->
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #0056b3;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            background: #f8f9fa;
+            padding: 10px;
+            border-left: 5px solid #0056b3;
+            margin-bottom: 15px;
+        }
+
+        .check-item {
+            margin-bottom: 10px;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .check-item:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: green;
+            font-weight: bold;
+        }
+
+        .check-item.failed:before {
+            content: "✗";
+            color: red;
+        }
+
+        .footer {
+            margin-top: 50px;
+            font-size: 0.8em;
+            color: #666;
+            text-align: center;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .sign-area {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .sign-line {
+            border-top: 1px solid #333;
+            width: 250px;
+            text-align: center;
+            padding-top: 5px;
+        }
+
+        @media print {
+            .btn-print {
+                display: none;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        .btn-print {
+            background: #0056b3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            float: right;
+        }
+    </style>
+</head>
+
+<body>
+    <button class="btn-print" data-action="print">{{ _('Print Declaration') }}</button>
+    <div class="header">
+        <h1>ComplyNex</h1>
+        <h3>{{ _('Independence Declaration Confirmation') }}</h3>
+    </div>
+
+    <p>{{ _('I,') }} <strong>{{ declaration.member_name }}</strong>, {{ _('hereby confirm the following as of') }} <strong>{{
+            declaration.declaration_date }}</strong>:</p>
+
+    <div class="section">
+        <div class="section-title">{{ _('Confirmation Items') }}</div>
+
+        <div class="check-item {{ 'failed' if not declaration.no_material_interest }}">
+            {{ _('I do not hold more than 5%% of the voting shares of the company.') }}
+        </div>
+
+        <div class="check-item {{ 'failed' if not declaration.no_employment_5years }}">
+            {{ _('I have not been employed by the company or its affiliates in the last 5 years.') }}
+        </div>
+
+        <div class="check-item {{ 'failed' if not declaration.no_relative_employment }}">
+            {{ _('No first-degree relative is currently a senior executive of the company.') }}
+        </div>
+
+        <div class="check-item {{ 'failed' if not declaration.no_professional_relationship }}">
+            {{ _('I have no material professional relationship (auditor, consultant) with the company.') }}
+        </div>
+
+        <div class="check-item {{ 'failed' if not declaration.no_significant_business }}">
+            {{ _('I do not have significant business dealings with the company.') }}
+        </div>
+
+        <div class="check-item {{ 'failed' if not declaration.served_less_than_9years }}">
+            {{ _('I have served on the board for less than 9 consecutive years.') }}
+        </div>
+    </div>
+
+    {% if declaration.explanation %}
+    <div class="section">
+        <div class="section-title">{{ _('Explanation / Exceptions Provided') }}</div>
+        <p style="white-space: pre-wrap;">{{ declaration.explanation }}</p>
+    </div>
+    {% endif %}
+
+    <div class="section" style="margin-top: 40px;">
+        <p>{{ _('Status:') }} <strong>{{ _('INDEPENDENT') if declaration.is_independent else _('NOT INDEPENDENT') }}</strong></p>
+    </div>
+
+    <div class="sign-area">
+        <div class="sign-line">
+            <small>{{ _('Member Signature') }}</small><br>
+            <strong>{{ declaration.member_name }}</strong>
+        </div>
+        <div class="sign-line">
+            <small>{{ _('Date') }}</small>
+        </div>
+    </div>
+
+    {% include 'partials/attachment_widget.html' %}
+
+    <div class="footer">
+        <p>{{ _('This is a formal electronic declaration stored in the ComplyNex Governance System.') }}</p>
+    </div>
+<script src="{{ url_for('static', filename='js/csp_helpers.js') }}"></script>
+</body>
+
+</html>

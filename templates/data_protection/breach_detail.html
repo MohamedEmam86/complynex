@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Breach Investigation - {{ breach.breach_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Breach Investigation: {{ breach.breach_number }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('dp.breach_list') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> {{ _('Back to List') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- left Column: Breach Info & Investigation -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ _('Incident Overview') }}</h5>
+                    <span
+                        class="badge {% if breach.severity == 'CRITICAL' %}bg-dark{% elif breach.severity == 'HIGH' %}bg-danger{% else %}bg-warning{% endif %}">
+                        Severity: {{ breach.severity }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-4 text-muted small">{{ _('Breach Type:') }}</div>
+                        <div class="col-md-8 fw-bold">{{ breach.breach_type }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 text-muted small">{{ _('Discovery Date:') }}</div>
+                        <div class="col-md-8">{{ breach.discovery_date }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 text-muted small">{{ _('Individuals Affected:') }}</div>
+                        <div class="col-md-8">{{ breach.affected_individuals_count }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 text-muted small">{{ _('Sensitive Data:') }}</div>
+                        <div class="col-md-8">
+                            {% if breach.includes_sensitive_data %}
+                            <span class="text-danger fw-bold"><i class="bi bi-shield-lock"></i> {{ _('Yes') }}</span>
+                            {% else %}
+                            <span class="text-success">No</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <h6 class="text-muted small uppercase">{{ _('Initial Description') }}</h6>
+                        <p class="bg-light p-3 border rounded">{{ breach.breach_description }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Investigation Findings -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">{{ _('Investigation & Findings') }}</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('dp.breach_detail', id=breach.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Current Status') }}</label>
+                            <select name="status" class="form-select">
+                                <option value="NEW" {% if breach.status=='NEW' %}selected{% endif %}>{{ _('New Report') }}</option>
+                                <option value="INVESTIGATING" {% if breach.status=='INVESTIGATING' %}selected{% endif
+                                    %}>{{ _('Investigating') }}</option>
+                                <option value="CONTAINED" {% if breach.status=='CONTAINED' %}selected{% endif %}>
+                                    {{ _('Contained') }}</option>
+                                <option value="REMEDIATING" {% if breach.status=='REMEDIATING' %}selected{% endif %}>
+                                    {{ _('Remediating') }}</option>
+                                <option value="CLOSED" {% if breach.status=='CLOSED' %}selected{% endif %}>{{ _('Closed /
+                                    Resolved') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Investigation Findings') }}</label>
+                            <textarea name="findings" class="form-control" rows="5"
+                                placeholder="{{ _('Detail the technical investigation, affected data types, and confirmed impact...') }}">{{ breach.investigation_findings or '' }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Root Cause Analysis') }}</label>
+                            <textarea name="root_cause" class="form-control" rows="3"
+                                placeholder="{{ _('Identify the primary failure (Human error, system vulnerability, etc.)') }}">{{ breach.root_cause or '' }}</textarea>
+                        </div>
+
+                        {% if current_user.has_permission('pdpl', 'edit') %}
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">{{ _('Update Investigation') }}</button>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Compliance & Notifications -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">{{ _('Regulatory Compliance') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="small text-muted">{{ _('PDPC Notification Required?') }}</label>
+                        <div>
+                            {% if breach.pdpc_notification_required %}
+                            <span class="badge bg-danger">{{ _('REQUIRED') }}</span>
+                            <div class="text-danger small mt-1">{{ _('Must notify within 72h of discovery.') }}</div>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ _('NOT REQUIRED') }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small text-muted">{{ _('Individuals Notification?') }}</label>
+                        <div>
+                            {% if breach.severity in ['HIGH', 'CRITICAL'] %}
+                            <span class="badge bg-warning text-dark">{{ _('RECOMMENDED') }}</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark border">{{ _('OPTIONAL') }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-sm btn-outline-danger" disabled>{{ _('Generate PDPC Notice (PDF)') }}</button>
+                        <button class="btn btn-sm btn-outline-secondary" disabled>{{ _('Email Affected Individuals') }}</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{{ _('Remediation Log') }}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush small">
+                        {% for rem in remediations %}
+                        <li class="list-group-item">
+                            <div class="fw-bold">{{ rem.action_description }}</div>
+                            <div class="text-muted">Owner: {{ rem.owner_name }} | Due: {{ rem.target_date }}</div>
+                            <span
+                                class="badge {% if rem.status == 'COMPLETED' %}bg-success{% else %}bg-warning{% endif %}">{{
+                                rem.status }}</span>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-center text-muted py-3">{{ _('No remediation actions logged.') }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

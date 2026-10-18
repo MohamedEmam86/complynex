@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Approvals - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-clipboard-check"></i> {{ _('Pending Approvals') }}</h1>
+</div>
+
+{% if not declarations %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-check-circle display-1 text-success d-block mb-3"></i>
+        <h5 class="text-muted">{{ _('All caught up!') }}</h5>
+        <p class="text-muted">{{ _('No declarations are waiting for your approval.') }}</p>
+        <a href="{{ url_for('ghe.list_declarations') }}" class="btn btn-outline-primary">
+            {{ _('View All Declarations') }}
+        </a>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    {{ _('You have') }} <strong>{{ declarations|length }}</strong> {{ _('declaration(s) awaiting your approval.') }}
+</div>
+
+<div class="row">
+    {% for declaration in declarations %}
+    <div class="col-md-6 mb-4">
+        <div
+            class="card h-100 {% if declaration.is_government_official %}border-danger{% else %}border-primary{% endif %}">
+            <div
+                class="card-header d-flex justify-content-between align-items-center 
+                        {% if declaration.is_government_official %}bg-danger text-white{% else %}bg-primary text-white{% endif %}">
+                <span>
+                    <strong>{{ declaration.declaration_number }}</strong>
+                    {% if declaration.is_government_official %}
+                    <span class="badge bg-warning text-dark ms-2">
+                        <i class="bi bi-star-fill"></i> {{ _('Gov Official') }}
+                    </span>
+                    {% endif %}
+                </span>
+                {% if declaration.status == 'manager_review' %}
+                <span class="badge bg-info">{{ _('Manager Review') }}</span>
+                {% else %}
+                <span class="badge bg-secondary">{{ _('Compliance Review') }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td><strong>{{ _('Employee:') }}</strong></td>
+                        <td>{{ declaration.employee_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>{{ _('Type:') }}</strong></td>
+                        <td>
+                            {% if declaration.ghe_type == 'Gift' %}
+                            <span class="badge bg-primary">{{ _('Gift') }}</span>
+                            {% elif declaration.ghe_type == 'Hospitality' %}
+                            <span class="badge bg-info">{{ _('Hospitality') }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ _('Entertainment') }}</span>
+                            {% endif %}
+                            {{ declaration.direction }}
+                        </td>
+                    </tr>
+                    <tr class="table-warning">
+                        <td><strong>{{ _('Value:') }}</strong></td>
+                        <td class="fw-bold">{{ "{:,.2f}".format(declaration.estimated_value_egp) }} EGP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>{{ _('Provider/Recipient:') }}</strong></td>
+                        <td>{{ declaration.provider_recipient_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>{{ _('Date:') }}</strong></td>
+                        <td>{{ declaration.declaration_date }}</td>
+                    </tr>
+                </table>
+
+                <p class="text-muted small mb-3">
+                    {{ declaration.description[:100] }}{% if declaration.description|length > 100 %}...{% endif %}
+                </p>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('ghe.view_declaration', id=declaration.id) }}"
+                        class="btn btn-outline-primary flex-fill">
+                        <i class="bi bi-eye"></i> {{ _('View Details') }}
+                    </a>
+                    <form method="POST" action="{{ url_for('ghe.approve_declaration', id=declaration.id) }}"
+                        class="flex-fill">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check"></i> {{ _('Approve') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

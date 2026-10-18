@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Identity Verification') }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px;">
+    <div class="card mt-4">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
+            <h4 class="mt-3">
+                {% if session.locale == 'ar' %}حدث خطأ أثناء المعالجة{% else %}Something went wrong{% endif %}
+            </h4>
+            <p class="text-muted">
+                {% if session.locale == 'ar' %}
+                يرجى التواصل مع الفريق الذي أرسل لك هذا الرابط للمتابعة.
+                {% else %}
+                Please contact the organization that sent you this link to follow up.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

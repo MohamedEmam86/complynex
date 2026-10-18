@@ -1,0 +1,279 @@
+@import url('../vendor/fonts/cairo-tajawal/cairo-tajawal.css');
+
+/*
+ * RTL (Right-to-Left) Styles for Arabic Language
+ * ComplyNex CMS - Whistleblowing & Consumer Protection Forms
+ */
+
+/* Apply RTL to HTML when Arabic is active */
+html[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] body {
+    text-align: right;
+    font-family: 'Cairo', 'Tajawal', 'Almarai', 'IBM Plex Sans Arabic', Arial, sans-serif;
+}
+
+/* Form Elements RTL */
+html[dir="rtl"] .form-control,
+html[dir="rtl"] .form-select,
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select {
+    text-align: right;
+    direction: rtl;
+}
+
+html[dir="rtl"] label {
+    text-align: right;
+    display: block;
+}
+
+/* Required Asterisk Position */
+html[dir="rtl"] .text-danger,
+html[dir="rtl"] label .text-danger {
+    margin-right: 0;
+    margin-left: 5px;
+}
+
+/* Bootstrap Grid RTL Fixes */
+html[dir="rtl"] .row {
+    direction: rtl;
+}
+
+html[dir="rtl"] .col,
+html[dir="rtl"] [class*="col-"] {
+    float: right;
+}
+
+/* Alert RTL */
+html[dir="rtl"] .alert {
+    text-align: right;
+}
+
+html[dir="rtl"] .alert-dismissible .btn-close {
+    left: 0;
+    right: auto;
+}
+
+/* Buttons RTL */
+html[dir="rtl"] .btn {
+    direction: rtl;
+}
+
+html[dir="rtl"] .btn i {
+    margin-right: 0;
+    margin-left: 8px;
+}
+
+/* Card RTL */
+html[dir="rtl"] .card-header,
+html[dir="rtl"] .card-body,
+html[dir="rtl"] .card-footer {
+    text-align: right;
+}
+
+/* List RTL */
+html[dir="rtl"] ul,
+html[dir="rtl"] ol {
+    padding-right: 40px;
+    padding-left: 0;
+}
+
+html[dir="rtl"] li {
+    text-align: right;
+}
+
+/* Flexbox RTL */
+html[dir="rtl"] .d-flex {
+    direction: rtl;
+}
+
+html[dir="rtl"] .me-2,
+html[dir="rtl"] .me-3 {
+    margin-right: 0 !important;
+    margin-left: 0.5rem !important;
+}
+
+html[dir="rtl"] .ms-2,
+html[dir="rtl"] .ms-3 {
+    margin-left: 0 !important;
+    margin-right: 0.5rem !important;
+}
+
+/* Icons RTL Spacing */
+html[dir="rtl"] .fa,
+html[dir="rtl"] .fas,
+html[dir="rtl"] .far {
+    margin-left: 8px;
+    margin-right: 0;
+}
+
+/* Breadcrumb RTL */
+html[dir="rtl"] .breadcrumb-item+.breadcrumb-item::before {
+    content: "←";
+    padding-right: 0;
+    padding-left: 0.5rem;
+}
+
+/* Table RTL */
+html[dir="rtl"] table {
+    text-align: right;
+}
+
+html[dir="rtl"] th,
+html[dir="rtl"] td {
+    text-align: right;
+}
+
+/* Modal RTL */
+html[dir="rtl"] .modal-header,
+html[dir="rtl"] .modal-body,
+html[dir="rtl"] .modal-footer {
+    text-align: right;
+}
+
+html[dir="rtl"] .modal-header .btn-close {
+    margin: 0;
+    margin-left: auto;
+}
+
+/* Dropdown RTL */
+html[dir="rtl"] .dropdown-menu {
+    text-align: right;
+    right: 0;
+    left: auto;
+}
+
+/* File Upload RTL */
+html[dir="rtl"] .custom-file-label {
+    text-align: right;
+}
+
+html[dir="rtl"] .custom-file-label::after {
+    right: auto;
+    left: 0;
+}
+
+/* Checkbox/Radio RTL */
+html[dir="rtl"] .form-check {
+    padding-right: 1.25rem;
+    padding-left: 0;
+}
+
+html[dir="rtl"] .form-check-input {
+    float: right;
+    margin-right: -1.25rem;
+    margin-left: 0;
+}
+
+/* Tooltips RTL */
+html[dir="rtl"] .tooltip {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Progress Bar RTL */
+html[dir="rtl"] .progress-bar {
+    direction: ltr;
+    /* Keep progress direction LTR */
+}
+
+/* Specific Form Adjustments */
+html[dir="rtl"] .whistleblowing-form,
+html[dir="rtl"] .consumer-protection-form {
+    direction: rtl;
+}
+
+html[dir="rtl"] .tracking-code {
+    direction: ltr;
+    /* Keep tracking codes LTR for readability */
+    font-family: 'Courier New', monospace;
+}
+
+/* Success Modal RTL */
+html[dir="rtl"] .success-modal .tracking-code-display {
+    direction: ltr;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 2rem;
+    letter-spacing: 0.2em;
+}
+
+/* Privacy Tips RTL */
+html[dir="rtl"] .privacy-tips .icon {
+    margin-left: 15px;
+    margin-right: 0;
+}
+
+/* Responsive RTL Adjustments */
+@media (max-width: 768px) {
+
+    html[dir="rtl"] .col-md-6,
+    html[dir="rtl"] .col-md-12 {
+        text-align: right;
+    }
+}
+
+/* Specific CMS Layout RTL Fixes */
+html[dir="rtl"] .sidebar {
+    left: auto;
+    right: 0;
+    border-right: none;
+    border-left: 1px solid #e9ecef;
+    background-color: #ffffff !important;
+    width: var(--sidebar-width) !important;
+    z-index: 1050;
+}
+
+html[dir="rtl"] .sidebar-container {
+    order: 2;
+    /* Move to the right in flex layout */
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+}
+
+html[dir="rtl"] .main-wrapper {
+    order: 1;
+    /* Move to the left in flex layout */
+}
+
+@media (max-width: 991.98px) {
+    html[dir="rtl"] .sidebar {
+        transform: translateX(100%);
+    }
+
+    html[dir="rtl"] .sidebar.show {
+        transform: translateX(0);
+    }
+}
+
+/* Base Layout Flip */
+html[dir="rtl"] .app-wrapper {
+    flex-direction: row-reverse;
+    /* Force sidebar to the right and content left */
+}
+
+
+/* Arabic Font Optimization */
+
+html[dir="rtl"] {
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+}
+
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3,
+html[dir="rtl"] h4,
+html[dir="rtl"] h5,
+html[dir="rtl"] h6 {
+    font-family: 'Cairo', sans-serif;
+    font-weight: 600;
+}
+
+html[dir="rtl"] .btn {
+    font-family: 'Cairo', sans-serif;
+    font-weight: 500;
+}

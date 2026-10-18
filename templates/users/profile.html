@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="page-header">
+            <h1>{{ _('Profile Settings') }}</h1>
+            <p class="text-muted">{{ _('Manage your personal information and account security') }}</p>
+        </div>
+
+        <div class="row">
+            <!-- Profile Info & Avatar -->
+            <div class="col-md-4">
+                <div class="card content-card mb-4 text-center">
+                    <div class="card-body">
+                        <div class="position-relative d-inline-block mb-3">
+                            <div class="user-avatar mx-auto" style="width: 100px; height: 100px; font-size: 2.5rem;">
+                                {% if current_user.profile_picture %}
+                                <img src="{{ url_for('users.download_avatar', user_id=current_user.id) }}" alt="{{ _('Profile') }}"
+                                    class="rounded-circle w-100 h-100" style="object-fit: cover;">
+                                {% else %}
+                                {{ current_user.get_initials() }}
+                                {% endif %}
+                            </div>
+                            <button class="btn btn-sm btn-primary position-absolute bottom-0 end-0 rounded-circle"
+                                data-bs-toggle="modal" data-bs-target="#uploadModal">
+                                <i class="bi bi-camera"></i>
+                            </button>
+                        </div>
+                        <h5 class="fw-bold mb-1">{{ current_user.get_full_name() }}</h5>
+                        <p class="text-muted small mb-3">{{ current_user.email }}</p>
+                        <span class="badge bg-primary-soft text-primary px-3 rounded-pill">{{ current_user.role | title
+                            }}</span>
+                    </div>
+                </div>
+
+                <div class="card content-card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3 border-bottom pb-2">{{ _('Employment Details') }}</h6>
+                        <div class="mb-2">
+                            <small class="text-muted text-uppercase fw-bold">ID No.</small>
+                            <div>{{ current_user.employee_id or 'N/A' }}</div>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted text-uppercase fw-bold">{{ _('Department') }}</small>
+                            <div>{{ current_user.department or 'N/A' }}</div>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted text-uppercase fw-bold">{{ _('Title') }}</small>
+                            <div>{{ current_user.job_title or 'N/A' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tabs -->
+            <div class="col-md-8">
+                <div class="card content-card">
+                    <div class="card-header">
+                        <nav>
+                            <div class="nav nav-tabs card-header-tabs" id="nav-tab" role="tablist">
+                                <button class="nav-link active" id="nav-info-tab" data-bs-toggle="tab"
+                                    data-bs-target="#nav-info" type="button" role="tab">{{ _('Personal Info') }}</button>
+                                <button class="nav-link" id="nav-security-tab" data-bs-toggle="tab"
+                                    data-bs-target="#nav-security" type="button" role="tab">{{ _('Security (Password)') }}</button>
+                            </div>
+                        </nav>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="nav-tabContent">
+                            <!-- Info Tab -->
+                            <div class="tab-pane fade show active" id="nav-info" role="tabpanel">
+                                <form method="POST" action="{{ url_for('users.update_profile') }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">{{ _('First Name') }}</label>
+                                            <input type="text" name="first_name" class="form-control"
+                                                value="{{ current_user.first_name }}" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">{{ _('Last Name') }}</label>
+                                            <input type="text" name="last_name" class="form-control"
+                                                value="{{ current_user.last_name }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ _('Email Address') }}</label>
+                                        <input type="email" class="form-control" value="{{ current_user.email }}"
+                                            disabled>
+                                        <div class="form-text">{{ _('Email address changes require administrative approval.') }}
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <button type="submit" class="btn btn-primary px-4">{{ _('Save Changes') }}</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Security Tab -->
+                            <div class="tab-pane fade" id="nav-security" role="tabpanel">
+                                <form method="POST" action="{{ url_for('users.change_password') }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ _('Current Password') }}</label>
+                                        <input type="password" name="current_password" class="form-control" required>
+                                    </div>
+                                    <hr>
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ _('New Password') }}</label>
+                                        <input type="password" name="new_password" class="form-control" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ _('Confirm New Password') }}</label>
+                                        <input type="password" name="confirm_password" class="form-control" required>
+                                    </div>
+                                    <div class="text-end">
+                                        <button type="submit" class="btn btn-primary px-4">{{ _('Update Password') }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Picture Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('Update Profile Picture') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('users.upload_avatar') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">{{ _('Upload a clean professional photo (Max 2MB). Recommended square
+                        aspect ratio.') }}</p>
+                    <input type="file" name="avatar" class="form-control" accept="image/*" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('Upload Now') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft {
+        background-color: rgba(230, 57, 70, 0.1);
+    }
+</style>
+{% endblock %}

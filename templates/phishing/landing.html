@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ _('Carrefour – استلم كوبونك الآن') }}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;direction:rtl}
+    .wrapper{max-width:520px;margin:30px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.13)}
+    .header{background:#e62429;padding:20px 24px;text-align:center}
+    .header .brand-name{color:#fff;font-size:28px;font-weight:bold;letter-spacing:2px}
+    .body{padding:28px 32px 24px}
+    .body h2{color:#e62429;font-size:20px;margin-bottom:10px}
+    .body p{color:#444;font-size:14px;line-height:1.7;margin-bottom:20px}
+    .coupon-box{border:2px dashed #e62429;border-radius:8px;padding:16px 20px;text-align:center;margin-bottom:24px;background:#fff8f8}
+    .coupon-box .amount{font-size:40px;font-weight:bold;color:#e62429}
+    .coupon-box .label{font-size:13px;color:#666}
+    label{display:block;font-size:13px;color:#333;margin-bottom:5px;font-weight:bold}
+    input[type=email],input[type=text]{width:100%;padding:11px 14px;border:1px solid #ccc;border-radius:6px;font-size:14px;margin-bottom:16px;text-align:right;direction:rtl}
+    input:focus{outline:none;border-color:#e62429}
+    .btn-submit{width:100%;background:#e62429;color:#fff;border:none;border-radius:6px;font-size:17px;font-weight:bold;padding:13px;cursor:pointer}
+    .btn-submit:hover{background:#c0181d}
+    .terms{text-align:center;color:#aaa;font-size:11px;margin-top:14px;line-height:1.5}
+    .footer{background:#2c2c2c;padding:16px;text-align:center;color:#aaa;font-size:11px}
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="brand-name">كارفـور</div>
+    <div style="color:#ffcccc;font-size:12px;margin-top:4px;">{{ _('My Club — عروض حصرية') }}</div>
+  </div>
+  <div class="body">
+    <h2>استلم كوبونك الخاص الآن</h2>
+    <p>تم اختيارك للحصول على كوبون خصم حصري من ماي كلوب × كارفور. أدخل بياناتك أدناه لاستلام الكوبون على بريدك الإلكتروني فوراً.</p>
+    <div class="coupon-box">
+      <div class="amount">1000 ج.م</div>
+      <div class="label">خصم فوري على مشترياتك القادمة</div>
+    </div>
+    <form action="{{ url_for('phishing.track_submit') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="token" value="{{ token }}">
+      <label for="email">البريد الإلكتروني</label>
+      <input type="email" id="email" name="email" placeholder="{{ _('example@company.com') }}" required>
+      <label for="card">رقم بطاقة ماي كلوب (اختياري)</label>
+      <input type="text" id="card" name="card" placeholder="{{ _('XXXX-XXXX-XXXX') }}">
+      <button type="submit" class="btn-submit">استلم الكوبون الآن ←</button>
+    </form>
+    <p class="terms">يسري هذا العرض حتى 30 يونيو 2026 · تطبّق الشروط والأحكام<br>كارفور مصر — ماجد الفطيم</p>
+  </div>
+  <div class="footer">جميع الحقوق محفوظة كارفور ماجد الفطيم © 2026</div>
+</div>
+</body>
+</html>

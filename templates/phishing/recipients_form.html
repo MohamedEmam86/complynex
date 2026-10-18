@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Add Recipients — {{ super() }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="d-flex align-items-center mb-4">
+        <a href="{{ url_for('phishing.campaign_detail', campaign_id=campaign.id) }}" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+        <div>
+          <h1 class="h3 mb-0">{{ _('Add Recipients') }}</h1>
+          <small class="text-muted">Campaign: {{ campaign.name }}</small>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">{{ _('Bulk Recipients') }} <span class="text-danger">*</span></label>
+              <textarea name="bulk_recipients" class="form-control font-monospace" rows="12" required
+                        placeholder="{{ _('One per line:&#10;&#10;Mohamed, mohamed.emam@complynex.online&#10;Jahongir, js@example.com&#10;sarah.ahmed@complynex.online') }}"></textarea>
+              <div class="form-text">{{ _('Format:') }} <code>{{ _('Name, email@domain.com') }}</code> {{ _('or just') }} <code>{{ _('email@domain.com') }}</code>{{ _('. Duplicates are skipped.') }}</div>
+            </div>
+            <div class="alert alert-info py-2">
+              <i class="bi bi-info-circle me-1"></i> {{ _('You can copy-paste the employee list directly from Excel.') }}
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-danger"><i class="bi bi-person-plus me-1"></i> {{ _('Add Recipients') }}</button>
+              <a href="{{ url_for('phishing.campaign_detail', campaign_id=campaign.id) }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Alert {{ alert.alert_reference }}{% endblock %}
+{% block extra_css %}
+<style>
+.severity-HIGH{background:#f8d7da;color:#842029;padding:3px 10px;border-radius:4px;font-weight:600;}
+.severity-MEDIUM{background:#fff3cd;color:#664d03;padding:3px 10px;border-radius:4px;font-weight:600;}
+.severity-LOW{background:#d1ecf1;color:#0c5460;padding:3px 10px;border-radius:4px;font-weight:600;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-between mb-3">
+    <h4><i class="fas fa-exclamation-triangle text-warning"></i> Alert: {{ alert.alert_reference }}</h4>
+    <a href="{{ url_for('aml.alert_list') }}" class="btn btn-outline-secondary btn-sm">{{ _('← Back to Alerts') }}</a>
+  </div>
+
+  <div class="row g-3">
+    <!-- Alert Details -->
+    <div class="col-md-8">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-warning bg-opacity-10"><strong>{{ _('Alert Details') }}</strong></div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>{{ _('Rule:') }}</strong> {{ alert.rule_name }} ({{ alert.rule_code }})</p>
+              <p><strong>{{ _('Severity:') }}</strong> <span class="severity-{{ alert.alert_severity }}">{{ alert.alert_severity }}</span></p>
+              <p><strong>{{ _('Status:') }}</strong> <span class="badge bg-secondary fs-6">{{ alert.status }}</span></p>
+              <p><strong>{{ _('Date:') }}</strong> {{ alert.alert_date[:16] if alert.alert_date else '-' }}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>{{ _('Customer:') }}</strong> <a href="{{ url_for('aml.view_customer', id=alert.cust_id) }}">{{ alert.full_name or alert.company_name }}</a></p>
+              <p><strong>{{ _('Reference:') }}</strong> {{ alert.customer_reference }}</p>
+              <p><strong>{{ _('Risk Level:') }}</strong> {{ alert.risk_classification }}</p>
+            </div>
+          </div>
+          <div class="alert alert-warning mt-2">
+            <strong>{{ _('Detection:') }}</strong> {{ alert.alert_description }}
+          </div>
+          <p class="text-muted small"><strong>{{ _('Rule Description:') }}</strong> {{ alert.rule_description }}</p>
+        </div>
+      </div>
+
+      <!-- Triggered Transactions -->
+      {% if transactions %}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header"><strong>{{ _('Triggered Transactions') }}</strong></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0">
+            <thead class="table-light"><tr><th>{{ _('Reference') }}</th><th>{{ _('Date') }}</th><th>{{ _('Type') }}</th><th>{{ _('Amount') }}</th><th>{{ _('Counterparty') }}</th><th>{{ _('Country') }}</th></tr></thead>
+            <tbody>
+              {% for t in transactions %}
+              <tr>
+                <td><code>{{ t.transaction_reference }}</code></td>
+                <td>{{ t.transaction_date[:10] }}</td>
+                <td>{{ t.transaction_type }}</td>
+                <td><strong>{{ "{:,.2f}".format(t.amount) }} {{ t.currency }}</strong></td>
+                <td>{{ t.counterparty_name or '-' }}</td>
+                <td>{{ t.counterparty_country or '-' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Recent Customer Transactions -->
+      <div class="card shadow-sm">
+        <div class="card-header"><strong>{{ _('Recent Customer Transactions') }}</strong></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0">
+            <thead class="table-light"><tr><th>{{ _('Date') }}</th><th>{{ _('Type') }}</th><th>{{ _('Amount') }}</th><th>{{ _('Counterparty') }}</th><th>{{ _('Alert') }}</th></tr></thead>
+            <tbody>
+              {% for t in recent_txs %}
+              <tr class="{% if t.alert_raised %}table-warning{% endif %}">
+                <td>{{ t.transaction_date[:10] }}</td>
+                <td>{{ t.transaction_type }}</td>
+                <td>{{ "{:,.2f}".format(t.amount) }} {{ t.currency }}</td>
+                <td>{{ t.counterparty_name or '-' }}</td>
+                <td>{% if t.alert_raised %}<span class="badge bg-danger">{{ t.rule_triggered }}</span>{% else %}-{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Panel -->
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white"><strong>{{ _('Take Action') }}</strong></div>
+        <div class="card-body">
+          <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+              <label class="form-label fw-bold">{{ _('Assign To') }}</label>
+              <select name="assigned_to" class="form-select form-select-sm">
+                <option value="">{{ _('-- Keep Current --') }}</option>
+                {% for u in compliance_users %}
+                <option value="{{ u.id }}" {% if alert.assigned_to==u.id %}selected{% endif %}>{{ u.first_name }} {{ u.last_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">{{ _('Investigation Notes') }}</label>
+              <textarea name="notes" class="form-control form-control-sm" rows="4" placeholder="{{ _('Add your findings...') }}">{{ alert.investigation_notes or '' }}</textarea>
+            </div>
+            <div class="d-grid gap-2">
+              <button name="action" value="assign" class="btn btn-outline-primary btn-sm">{{ _('Assign') }}</button>
+              <button name="action" value="investigate" class="btn btn-outline-info btn-sm">{{ _('Mark Investigating') }}</button>
+              <button name="action" value="escalate" class="btn btn-outline-warning btn-sm">{{ _('Escalate') }}</button>
+              <button name="action" value="false_positive" class="btn btn-outline-success btn-sm">{{ _('False Positive') }}</button>
+              <button name="action" value="close" class="btn btn-outline-danger btn-sm" data-confirm="Close this alert?">{{ _('Close Alert') }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

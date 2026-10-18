@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Risk Band Criteria') }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div>
+    <h1 class="h3 mb-1"><i class="bi bi-sliders me-2"></i>{{ _('Risk Band Criteria') }}</h1>
+    <p class="text-muted small mb-0">
+      {{ _('What makes a case CRITICAL rather than LOW — and therefore how often it is re-screened. You define this; the system assumes nothing.') }}
+    </p>
+  </div>
+  <a href="{{ url_for('screening.ongoing_screening_dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> {{ _('Back to Ongoing Screening') }}</a>
+</div>
+
+{% if not criteria %}
+<div class="alert alert-warning d-flex"><i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+  <div><strong>{{ _('No criteria defined yet.') }}</strong><br>
+  <span class="small">{{ _('Until you define them, every case falls to the default cadence and the risk bands mean nothing. An auditor will ask how a case was classified and on what basis — this screen is the answer.') }}</span></div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header bg-light d-flex justify-content-between">
+        <strong>{{ _('Defined criteria') }}</strong><span class="badge bg-secondary">{{ criteria|length }}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light"><tr>
+            <th>{{ _('Band') }}</th><th>{{ _('Rule') }}</th><th>{{ _('Weight') }}</th>
+            <th>{{ _('Defined by') }}</th><th>{{ _('Status') }}</th><th class="text-end"></th>
+          </tr></thead>
+          <tbody>
+          {% for c in criteria %}
+            <tr class="{% if not c.is_active %}opacity-50{% endif %}">
+              <td><span class="badge bg-{{ 'danger' if c.band=='CRITICAL' else ('warning text-dark' if c.band=='HIGH' else ('info' if c.band=='MODERATE' else 'success')) }}">{{ c.band }}</span></td>
+              <td class="small">
+                <strong>{{ c.factor|replace('_',' ')|title }}</strong>
+                <span class="text-muted">{{ c.operator|replace('_',' ') }}</span>
+                <code>{{ c.value or '—' }}</code>
+                {% if c.description %}<div class="text-muted" style="font-size:11px">{{ c.description }}</div>{% endif %}
+              </td>
+              <td><span class="badge bg-dark">{{ c.weight }}</span></td>
+              <td class="small">
+                {% if c.created_by_name %}{{ c.created_by_name }}
+                  <div class="text-muted" style="font-size:11px">{{ c.created_at.strftime('%d %b %Y') }}</div>
+                {% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+              <td>{% if c.is_active %}<span class="badge bg-success">{{ _('Active') }}</span>
+                  {% else %}<span class="badge bg-secondary">{{ _('Disabled') }}</span>{% endif %}</td>
+              <td class="text-end"><div class="btn-group btn-group-sm">
+                <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="toggle">
+                  <input type="hidden" name="criterion_id" value="{{ c.id }}">
+                  <button class="btn btn-outline-secondary"><i class="bi bi-toggle-{{ 'on' if c.is_active else 'off' }}"></i></button></form>
+                <form method="POST" data-confirm="{{ _('Remove this criterion?') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="criterion_id" value="{{ c.id }}">
+                  <button class="btn btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+              </div></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-5">
+              <i class="bi bi-sliders fs-1 opacity-25"></i><br>{{ _('Nothing defined yet.') }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header bg-light"><strong>{{ _('Add a criterion') }}</strong></div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="add">
+          <div class="mb-2">
+            <label class="form-label small">{{ _('Band') }} <span class="text-danger">*</span></label>
+            <select name="band" class="form-select form-select-sm" required>
+              <option value="">{{ _('— choose —') }}</option>
+              {% for b in bands %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">{{ _('Factor') }} <span class="text-danger">*</span></label>
+            <select name="factor" class="form-select form-select-sm" id="factorSel" required>
+              <option value="">{{ _('— choose —') }}</option>
+              {% for code, label, hint in factors %}
+              <option value="{{ code }}" data-hint="{{ hint }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text" id="factorHint"></div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">{{ _('Condition') }}</label>
+            <select name="operator" class="form-select form-select-sm">
+              {% for op, label in operators %}<option value="{{ op }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">{{ _('Value') }}</label>
+            <input name="value" class="form-control form-control-sm"
+                   placeholder="{{ _('e.g. 95, or EMLCU, or EG') }}">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">{{ _('Weight') }}</label>
+            <input type="number" name="weight" class="form-control form-control-sm" value="1" min="1" max="10">
+            <div class="form-text">{{ _('How strongly this factor pulls a case into the band.') }}</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small">{{ _('Rationale') }}</label>
+            <textarea name="description" class="form-control form-control-sm" rows="2"
+                      placeholder="{{ _('Why does this make a case that risk level?') }}"></textarea>
+          </div>
+          <button class="btn btn-primary btn-sm w-100"><i class="bi bi-plus-lg"></i> {{ _('Add criterion') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var f = document.getElementById('factorSel');
+  if (!f) return;
+  f.addEventListener('change', function () {
+    var o = f.options[f.selectedIndex];
+    document.getElementById('factorHint').textContent = (o && o.dataset.hint) || '';
+  });
+}());
+</script>
+{% endblock %}

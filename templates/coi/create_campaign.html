@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Annual Declaration Cycle - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Create New Declaration Cycle') }}</h1>
+    <a href="{{ url_for('coi.list_campaigns') }}" class="btn btn-outline-secondary">{{ _('Back to List') }}</a>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ _('Cycle Details') }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="cycle_name" class="form-label">{{ _('Cycle Name') }}</label>
+                        <input type="text" class="form-control" id="cycle_name" name="cycle_name"
+                            value="Annual COI Declaration {{ current_year + 1 if current_year else 2026 }}" required>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="cycle_year" class="form-label">{{ _('Year') }}</label>
+                            <input type="number" class="form-control" id="cycle_year" name="cycle_year"
+                                value="{{ current_year + 1 if current_year else 2026 }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="start_date" class="form-label">{{ _('Start Date') }}</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="end_date" class="form-label">{{ _('End Date') }}</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">{{ _('Description / Instructions') }}</label>
+                        <textarea class="form-control" id="description" name="description" rows="4"
+                            required>Please complete the Annual Conflict of Interest Declaration for {{ current_year + 1 if current_year else 2026 }}. All employees are required to disclose any potential conflicts.</textarea>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> {{ _('Creating this campaign will immediately notify all active
+                        employees.') }}
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary">{{ _('Create Campaign') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

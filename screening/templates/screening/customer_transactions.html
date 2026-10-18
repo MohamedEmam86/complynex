@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-exchange-alt text-primary"></i> Transaction Analysis</h1>
+        <div>
+            <a href="{{ url_for('screening.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    {# Customer Info Card #}
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="m-0 font-weight-bold text-dark">👤 CUSTOMER INFORMATION</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 border-end">
+                    <p class="mb-2"><strong>Full Name:</strong> {{ customer.full_name or 'N/A' }}</p>
+                    <p class="mb-2"><strong>Customer ID:</strong> {{ customer.customer_number }}</p>
+                    <p class="mb-2"><strong>Nationality:</strong> {{ customer.nationality or 'N/A' }}</p>
+                </div>
+                <div class="col-md-6 ps-4">
+                    <p class="mb-2"><strong>Risk Level:</strong>
+                        <span
+                            class="badge {% if customer.risk_classification == 'HIGH' %}bg-danger{% elif customer.risk_classification == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                            {{ customer.risk_classification }}
+                        </span>
+                    </p>
+                    <p class="mb-2"><strong>Status:</strong> <span class="badge bg-primary">{{ customer.status }}</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Alerts Section #}
+    {% if alerts %}
+    <h4 class="mb-3">🚩 Compliance Alerts</h4>
+    {% for alert in alerts %}
+    <div
+        class="alert {% if alert.severity == 'HIGH' %}alert-danger{% elif alert.severity == 'MEDIUM' %}alert-warning{% else %}alert-info{% endif %} shadow-sm mb-3">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-circle fa-2x me-3"></i>
+            <div>
+                <h5 class="alert-heading fw-bold mb-1">{{ alert.type }}</h5>
+                <p class="mb-0">{{ alert.description }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {# Stats Row #}
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted small text-uppercase">Total Transactions</h6>
+                    <h3 class="fw-bold mb-0">{{ stats.count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted small text-uppercase">Total Volume</h6>
+                    <h3 class="fw-bold mb-0 text-primary">{{ "%.2f"|format(stats.total) }} <small
+                            class="fs-6">EGP</small></h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted small text-uppercase">Average Amount</h6>
+                    <h3 class="fw-bold mb-0">{{ "%.2f"|format(stats.avg) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted small text-uppercase">Max Transaction</h6>
+                    <h3 class="fw-bold mb-0 text-danger">{{ "%.2f"|format(stats.max) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Transactions Table #}
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="m-0 font-weight-bold text-dark">📜 TRANSACTION HISTORY</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th class="text-end">Amount (EGP)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if transactions %}
+                        {% for tx in transactions %}
+                        <tr>
+                            <td>{{ tx.timestamp }}</td>
+                            <td class="small">{{ tx.id }}</td>
+                            <td><span class="badge bg-light text-dark">{{ tx.transaction_type }}</span></td>
+                            <td>{{ tx.description }}</td>
+                            <td class="text-end fw-bold {% if tx.amount >= 10000 %}text-danger{% endif %}">
+                                {{ "%.2f"|format(tx.amount) }}
+                            </td>
+                            <td><span class="badge bg-success">{{ tx.status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">No transactions found for this customer.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

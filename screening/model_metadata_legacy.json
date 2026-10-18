@@ -1,0 +1,22 @@
+{
+    "last_trained": "2026-02-12T02:41:18.661404",
+    "version": "202602120241",
+    "metrics": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+    },
+    "feature_importance": {
+        "fuzzy_ratio": 0.13151135786000864,
+        "jaro_winkler": 0.2799681268393873,
+        "phonetic_score": 0.48446187457641804,
+        "dob_bonus": 0.005558923797887817,
+        "is_common_name": 0.0001249743371513558,
+        "network_score": 0.004871358269768712,
+        "tx_velocity_score": 0.0579522566303375,
+        "media_risk_score": 0.0022744323733346304,
+        "tenure_days": 0.033276695315705956
+    },
+    "samples": 500
+}

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Respond to Clarification - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% if session.get('dir') == 'rtl' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+</head>
+
+<body class="complynex-public">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        class="logo">
+                    <h1><i class="bi bi-chat-left-text"></i> {{ _('Clarification Request') }}</h1>
+                    <p>{{ _('Provide further details requested by compliance') }}</p>
+                </div>
+
+                <div class="row">
+                    <!-- Left Column: Instructions & Response -->
+                    <div class="col-12 col-md-7">
+                        <div class="complynex-form-card mb-4">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                            {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                            {% endif %}
+                            {% endwith %}
+
+                            <div class="mb-4">
+                                <h5 class="text-primary border-bottom pb-2">{{ _('Reviewer Feedback') }}</h5>
+                                <div class="p-3 bg-light border rounded">
+                                    <p class="mb-0 white-space-pre">{{ declaration.review_comments }}</p>
+                                </div>
+                            </div>
+
+                            <form method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="mb-4">
+                                    <label for="response_text" class="form-label font-weight-bold">{{ _('Your Response')
+                                        }}</label>
+                                    <textarea name="response_text" id="response_text" class="form-control" rows="8"
+                                        placeholder="{{ _('Provide the clarification requested here...') }}"
+                                        required></textarea>
+                                    <div class="form-text">
+                                        {{ _('Be as detailed as possible to avoid further requests.') }}
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-complynex btn-lg">
+                                        <i class="bi bi-send"></i> {{ _('Submit Clarification') }}
+                                    </button>
+                                    <a href="{{ url_for('portal.status') }}" class="btn btn-outline-secondary">{{
+                                        _('Save for Later') }}</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Original Submission Reference -->
+                    <div class="col-12 col-md-5">
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-dark text-white font-weight-bold">
+                                <i class="bi bi-info-circle"></i> {{ _('Original Submission') }}
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <small class="text-muted d-block">{{ _('Campaign') }}</small>
+                                        <strong>{{ declaration.campaign_name }}</strong>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <small class="text-muted d-block">{{ _('Submitted On') }}</small>
+                                        <strong>{{ declaration.declaration_date }}</strong>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <small class="text-muted d-block">{{ _('Reference ID') }}</small>
+                                        <span class="font-monospace">#COI-{{ declaration.id }}</span>
+                                    </li>
+                                </ul>
+
+                                <div class="p-3">
+                                    <h6 class="small font-weight-bold text-uppercase text-muted mb-3">{{ _('Submission
+                                        Details') }}
+                                    </h6>
+
+                                    <div class="mb-2">
+                                        <small class="d-block text-muted">{{ _('Financial Interests') }}</small>
+                                        <span>{{ _('Yes') if declaration.has_financial_interests else _('No') }}</span>
+                                    </div>
+                                    {% if declaration.has_financial_interests %}
+                                    <div class="p-2 bg-light small mb-3 border rounded">{{
+                                        declaration.financial_interests_details }}</div>
+                                    {% endif %}
+
+                                    <div class="mb-2">
+                                        <small class="d-block text-muted">{{ _('Family in Competitor') }}</small>
+                                        <span>{{ _('Yes') if declaration.has_family_in_competitor else _('No') }}</span>
+                                    </div>
+                                    {% if declaration.has_family_in_competitor %}
+                                    <div class="p-2 bg-light small mb-3 border rounded">{{
+                                        declaration.family_competitor_details }}</div>
+                                    {% endif %}
+
+                                    <div class="mb-2">
+                                        <small class="d-block text-muted">{{ _('Family in Supplier') }}</small>
+                                        <span>{{ _('Yes') if declaration.has_family_in_supplier else _('No') }}</span>
+                                    </div>
+                                    {% if declaration.has_family_in_supplier %}
+                                    <div class="p-2 bg-light small mb-3 border rounded">{{
+                                        declaration.family_supplier_details }}</div>
+                                    {% endif %}
+
+                                    <div class="mb-2">
+                                        <small class="d-block text-muted">{{ _('Outside Employment') }}</small>
+                                        <span>{{ _('Yes') if declaration.has_outside_employment else _('No') }}</span>
+                                    </div>
+                                    {% if declaration.has_outside_employment %}
+                                    <div class="p-2 bg-light small mb-3 border rounded">{{
+                                        declaration.outside_employment_details }}</div>
+                                    {% endif %}
+
+                                    <div class="mb-2">
+                                        <small class="d-block text-muted">{{ _('Gifts Received') }}</small>
+                                        <span>{{ _('Yes') if declaration.has_received_gifts else _('No') }}</span>
+                                    </div>
+                                    {% if declaration.has_received_gifts %}
+                                    <div class="p-2 bg-light small mb-3 border rounded">{{ declaration.gifts_details }}
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="mb-2">
+                                        <small class="d-block text-muted">{{ _('Other Conflicts') }}</small>
+                                        <span>{{ _('Yes') if declaration.has_other_conflicts else _('No') }}</span>
+                                    </div>
+                                    {% if declaration.has_other_conflicts %}
+                                    <div class="p-2 bg-light small mb-3 border rounded">{{
+                                        declaration.other_conflicts_details }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="complynex-footer">
+                    <p>© 2026 {{ _('ComplyNex Compliance Monitoring System.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <style>
+        .white-space-pre {
+            white-space: pre-wrap;
+        }
+    </style>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+</body>
+
+</html>

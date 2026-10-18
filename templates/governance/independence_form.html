@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Independence Declaration - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Independence Declaration: ') }}
+        {% if member %}{{ member.member_name }}
+        {% else %}<span class="text-danger">{{ _('Board member no longer exists') }}</span>{% endif %}
+    </h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <form method="POST" class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Annual Confirmation') }}</h5>
+            </div>
+            <div class="card-body">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <p class="text-muted mb-4">{{ _('Please confirm the following statements to determine independence
+                    status.') }}</p>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="no_material_interest" id="check1" {{ 'checked'
+                        if not declaration or declaration.no_material_interest else '' }}>
+                    <label class="form-check-label" for="check1">
+                        {{ _('I do not hold more than %(pct)s%% of the voting shares of the company.', pct=shareholding_pct) }}
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="no_employment_5years" id="check2" {{ 'checked'
+                        if not declaration or declaration.no_employment_5years else '' }}>
+                    <label class="form-check-label" for="check2">
+                        {{ _('I have not been employed by the company or its affiliates in the last 5 years.') }}
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="no_relative_employment" id="check3"
+                        {{ 'checked' if not declaration or declaration.no_relative_employment else '' }}>
+                    <label class="form-check-label" for="check3">
+                        {{ _('No first-degree relative is currently a senior executive of the company.') }}
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="no_professional_relationship" id="check4"
+                        {{ 'checked' if not declaration or declaration.no_professional_relationship else '' }}>
+                    <label class="form-check-label" for="check4">
+                        {{ _('I have no material professional relationship (auditor, consultant) with the company.') }}
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="no_significant_business" id="check6"
+                        {{ 'checked' if not declaration or declaration.no_significant_business else '' }}>
+                    <label class="form-check-label" for="check6">
+                        {{ _('I do not have a significant business relationship with the company (as customer, supplier, or partner).') }}
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="no_remuneration_except_fees" id="check7"
+                        {{ 'checked' if not declaration or declaration.no_remuneration_except_fees else '' }}>
+                    <label class="form-check-label" for="check7">
+                        {{ _('I receive no remuneration from the company other than board/committee fees.') }}
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="no_other_directorships" id="check8"
+                        {{ 'checked' if not declaration or declaration.no_other_directorships else '' }}>
+                    <label class="form-check-label" for="check8">
+                        {{ _('I hold no other directorships that create a conflict of interest with this board.') }}
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="served_less_than_9years" id="check5"
+                        {{ 'checked' if not declaration or declaration.served_less_than_9years else '' }}>
+                    <label class="form-check-label" for="check5">
+                        {{ _('I have served on the board for less than %(years)s consecutive years.', years=tenure_years) }}
+                    </label>
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Explanation / Exceptions') }}</label>
+                    <textarea name="explanation" class="form-control" rows="3"
+                        placeholder="{{ _('Provide details if any of the above are unchecked...') }}">{{ declaration.explanation if declaration else '' }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">{{ _('Submit Declaration') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

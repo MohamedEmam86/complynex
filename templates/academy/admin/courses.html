@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% from 'academy/admin/_provider.html' import provider_badge %}
+{% block title %}{{ _('Academy courses') }}{% endblock %}
+{% block content %}
+{% set page_title = _('Courses') %}
+{% include 'academy/admin/_nav.html' %}
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+  <div class="small text-muted">
+    {{ provider_badge('integrys') }} {{ _('= Integrys course (Integrys brand, signed by H. El Gaafary & M. Emam)') }} &nbsp;
+    {{ provider_badge('complynex') }} {{ _('= ComplyNex course (ComplyNex brand, signed by M. Emam)') }}
+  </div>
+  {% if current_user.can_edit('academy') %}<a href="{{ url_for('academy_admin.course_form') }}" class="btn btn-sm btn-success"><i class="bi bi-plus-lg"></i> {{ _('New course') }}</a>{% endif %}
+</div>
+<div class="card">
+  <table class="table table-hover mb-0 align-middle">
+    <thead class="table-light"><tr><th>{{ _('Course') }}</th><th>{{ _('Provider') }}</th><th>{{ _('Status') }}</th><th class="text-end">{{ _('Lessons') }}</th><th class="text-end">{{ _('Question bank') }}</th>
+      <th class="text-end">{{ _('Per attempt') }}</th><th class="text-end">{{ _('Pass mark') }}</th><th class="text-end">{{ _('Enrolled') }}</th><th>{{ _('Approved') }}</th></tr></thead>
+    <tbody>
+    {% for c in rows %}
+    <tr data-href="{{ url_for('academy_admin.course', cid=c.id) }}" class="cursor-pointer">
+      <td><a href="{{ url_for('academy_admin.course', cid=c.id) }}">{{ c.title_en }}</a><div class="small text-muted" dir="rtl">{{ c.title_ar or '' }}</div></td>
+      <td>{{ provider_badge(c.provider) }}</td>
+      <td><span class="badge bg-{{ {'published':'success','draft':'secondary','retired':'dark'}.get(c.status) }}">{{ c.status }}</span></td>
+      <td class="text-end">{{ c.lessons }}</td><td class="text-end">{{ c.questions }}</td><td class="text-end">{{ c.questions_per_attempt }}</td>
+      <td class="text-end">{{ c.pass_mark }}%</td><td class="text-end">{{ c.enrolled }}</td>
+      <td class="small">{% if c.approved_by %}{{ academy_uname(c.approved_by) }} · {{ c.approved_at.strftime('%d %b %Y') }}{% else %}—{% endif %}</td>
+    </tr>
+    {% else %}<tr><td colspan="9" class="text-muted">{{ _('No courses.') }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="small text-muted mt-2">{{ _('Publishing requires an approval note and is recorded against your name. Internal staff training lives in Training → Learning Portal.') }}</p>
+{% endblock %}

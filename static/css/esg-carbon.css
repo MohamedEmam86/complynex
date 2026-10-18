@@ -1,0 +1,125 @@
+/* =============================================================================
+   Copyright (c) 2026 ComplyNex (complynex.online) — All Rights Reserved.
+   ESG Management & Carbon Footprint modules — shared visual identity.
+
+   Design intent: a distinct, purpose-built "climate & governance" look that
+   stays inside ComplyNex's existing brand palette (--primary-color #123E5F,
+   --accent-color #00A6B4) rather than clashing with it, while being
+   immediately recognizable as its own thing — the first ESG/Carbon module
+   built for the Egyptian PSP market. Carbon uses a teal->emerald gradient
+   (climate/nature). ESG uses an indigo->amber gradient (governance/value).
+   ============================================================================= */
+
+:root {
+    --ecx-carbon-1: #00A6B4;
+    --ecx-carbon-2: #10b981;
+    --ecx-carbon-3: #05614f;
+    --ecx-esg-1: #4c3f91;
+    --ecx-esg-2: #7c6fd8;
+    --ecx-esg-3: #f0b429;
+    --ecx-ink: #0f2a3d;
+    --ecx-muted: #6b8a99;
+    --ecx-card-radius: 16px;
+    --ecx-card-shadow: 0 4px 20px rgba(15, 42, 61, 0.07);
+    --ecx-card-shadow-hover: 0 10px 32px rgba(15, 42, 61, 0.12);
+}
+
+.ecx-hero {
+    border-radius: var(--ecx-card-radius);
+    padding: 28px 32px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: var(--ecx-card-shadow);
+}
+.ecx-hero.ecx-carbon { background: linear-gradient(120deg, var(--ecx-carbon-3) 0%, var(--ecx-carbon-1) 55%, var(--ecx-carbon-2) 100%); }
+.ecx-hero.ecx-esg { background: linear-gradient(120deg, #2c2361 0%, var(--ecx-esg-1) 55%, var(--ecx-esg-2) 100%); }
+.ecx-hero::after {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 85% 20%, rgba(255,255,255,0.14) 0, transparent 45%),
+                       radial-gradient(circle at 95% 90%, rgba(255,255,255,0.10) 0, transparent 40%);
+    pointer-events: none;
+}
+.ecx-hero .ecx-eyebrow {
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    opacity: .85; font-weight: 700; margin-bottom: 6px;
+}
+.ecx-hero h1 { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+.ecx-hero p { opacity: .92; margin-bottom: 0; font-size: 14px; max-width: 640px; }
+.ecx-hero .ecx-pioneer-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 999px; padding: 4px 12px; font-size: 11.5px; font-weight: 700;
+    margin-top: 10px;
+}
+
+.ecx-card {
+    background: #fff; border-radius: var(--ecx-card-radius);
+    box-shadow: var(--ecx-card-shadow); border: 1px solid rgba(15,42,61,0.05);
+    padding: 20px; height: 100%; transition: box-shadow .2s ease;
+}
+.ecx-card:hover { box-shadow: var(--ecx-card-shadow-hover); }
+.ecx-card h6 { font-weight: 700; color: var(--ecx-ink); font-size: 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+
+.ecx-stat { text-align: center; padding: 6px 0; }
+.ecx-stat .n { font-size: 30px; font-weight: 800; color: var(--ecx-ink); line-height: 1.1; }
+.ecx-stat .l { font-size: 11.5px; color: var(--ecx-muted); text-transform: uppercase; letter-spacing: .04em; margin-top: 4px; }
+.ecx-stat.ecx-carbon-accent .n { color: var(--ecx-carbon-3); }
+.ecx-stat.ecx-esg-accent .n { color: var(--ecx-esg-1); }
+
+.ecx-scope-bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: #eef2f4; margin: 10px 0; }
+.ecx-scope-bar span { height: 100%; }
+.ecx-scope-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ecx-muted); }
+.ecx-scope-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-inline-end: 5px; vertical-align: middle; }
+
+.ecx-pillar-ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ecx-pillar-ring { width: 92px; height: 92px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+.ecx-pillar-ring .val { font-size: 18px; font-weight: 800; color: var(--ecx-ink); }
+.ecx-pillar-ring .inner { width: 72px; height: 72px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.ecx-pillar-name { font-size: 12.5px; font-weight: 700; color: var(--ecx-ink); }
+.ecx-pillar-weight { font-size: 10.5px; color: var(--ecx-muted); }
+
+.ecx-badge-source {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #E0F7F5; color: #05614f;
+    border-radius: 6px; padding: 2px 8px; font-size: 10.5px; font-weight: 700;
+}
+.ecx-methodology-box {
+    background: linear-gradient(135deg, #f4fbfb, #eef7f2);
+    border: 1px dashed #9fd8cf;
+    border-radius: 12px; padding: 14px 16px; font-size: 12.5px; color: #295c4f;
+    margin-top: 10px;
+}
+.ecx-methodology-box.ecx-esg { background: linear-gradient(135deg, #f7f5ff, #fdf7ea); border-color: #cfc4f2; color: #453a7a; }
+.ecx-methodology-box strong { display: block; margin-bottom: 4px; font-size: 12.5px; }
+.ecx-methodology-box code { background: rgba(0,0,0,0.05); padding: 1px 5px; border-radius: 4px; }
+
+.ecx-rating-pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #fff; }
+
+.ecx-table-clean { width: 100%; font-size: 13px; }
+.ecx-table-clean th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ecx-muted); font-weight: 700; padding: 8px 10px; border-bottom: 2px solid #eef2f4; text-align: start; }
+.ecx-table-clean td { padding: 9px 10px; border-bottom: 1px solid #f1f4f5; vertical-align: middle; }
+.ecx-table-clean tbody tr:hover { background: #f8fbfb; }
+
+.ecx-scope-tag { display: inline-block; padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+.ecx-scope-tag.scope1 { background: #fff1e6; color: #b5560c; }
+.ecx-scope-tag.scope2 { background: #e6f6ff; color: #0a6ea8; }
+.ecx-scope-tag.scope3 { background: #eaf7ee; color: #1c7a3e; }
+
+.ecx-empty-state { text-align: center; padding: 40px 20px; color: var(--ecx-muted); }
+.ecx-empty-state i { font-size: 34px; opacity: .35; display: block; margin-bottom: 10px; }
+
+.ecx-nav-pills .nav-link { border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ecx-ink); padding: 6px 16px; }
+.ecx-nav-pills .nav-link.active.ecx-carbon { background: var(--ecx-carbon-1); color: #fff; }
+.ecx-nav-pills .nav-link.active.ecx-esg { background: var(--ecx-esg-1); color: #fff; }
+
+.ecx-slider-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #f1f4f5; }
+.ecx-slider-row:last-child { border-bottom: none; }
+.ecx-slider-row .maturity-label { min-width: 84px; font-size: 12px; font-weight: 700; text-align: center; padding: 3px 6px; border-radius: 6px; }
+
+/* --- RTL overrides (Arabic), matching the app-wide [dir="rtl"] convention --- */
+[dir="rtl"] .ecx-hero .ecx-pioneer-badge i { transform: scaleX(-1); }
+[dir="rtl"] .ecx-scope-legend .dot { margin-inline-start: 5px; margin-inline-end: 0; }
+[dir="rtl"] .ecx-table-clean th { text-align: end; }

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Data Protection Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Data Protection (PDPL) Control') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('dp.report_breach') }}" class="btn btn-sm btn-outline-danger">{{ _('Report Data Breach') }}</a>
+                <a href="{{ url_for('dp.create_dpia') }}" class="btn btn-sm btn-outline-primary">{{ _('New DPIA') }}</a>
+                <a href="{{ url_for('dp.activity_list') }}" class="btn btn-sm btn-outline-success">{{ _('ROPA Inventory') }}</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-4 g-4 mb-4">
+        <div class="col">
+            <a href="{{ url_for('dp.dsr_list') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-primary">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">{{ _('Open DSRs') }}</h6>
+                        <h2 class="card-title mb-0 text-primary">{{ open_dsrs }}</h2>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="{{ url_for('dp.dpia_list') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-warning">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">{{ _('Pending DPIAs') }}</h6>
+                        <h2 class="card-title mb-0 text-warning">{{ pending_dpias }}</h2>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="{{ url_for('dp.consent_log') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-info">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">{{ _('Active Consents') }}</h6>
+                        <h2 class="card-title mb-0 text-info">{{ active_consents }}</h2>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a href="{{ url_for('dp.activity_list') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-success">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">{{ _('ROPA Activities') }}</h6>
+                        <h2 class="card-title mb-0 text-success">{% if activities_count %}{{ activities_count }}{% else
+                            %}-{% endif %}</h2>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">{{ _('Active Breach Notifications') }}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>{{ _('Ref') }}</th>
+                                    <th>{{ _('Discovery Date') }}</th>
+                                    <th>{{ _('Type') }}</th>
+                                    <th>{{ _('Severity') }}</th>
+                                    <th>{{ _('Status') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for breach in active_breaches %}
+                                <tr>
+                                    <td><code>{{ breach.breach_number }}</code></td>
+                                    <td>{{ breach.discovery_date }}</td>
+                                    <td>{{ breach.breach_type }}</td>
+                                    <td>
+                                        <span
+                                            class="badge {% if breach.severity == 'CRITICAL' %}bg-dark{% elif breach.severity == 'HIGH' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ breach.severity or 'PENDING' }}
+                                        </span>
+                                    </td>
+                                    <td><span class="badge bg-primary">{{ breach.status }}</span></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">{{ _('No active breaches reported') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% if active_breaches %}
+                <div class="card-footer text-center bg-white border-top-0">
+                    <a href="{{ url_for('dp.breach_list') }}" class="small text-decoration-none">{{ _('View All Breaches') }}</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

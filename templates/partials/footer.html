@@ -1,0 +1,23 @@
+<!-- Footer — one definition, included by base.html for every page.
+     The previous markup fought itself: the column carried
+     "text-center text-md-start" while the <p> inside forced
+     "w-100 text-center", so alignment depended on which rule won at a given
+     breakpoint. That is why it looked different from page to page. -->
+<footer class="site-footer">
+    <div class="container-fluid">
+        <div class="row align-items-center gy-2">
+            <div class="col-md-6 text-center text-md-start">
+                <span class="site-footer__copy">
+                    &copy; 2026 <strong>ComplyNex</strong>. {{ _('All rights reserved.') }}
+                </span>
+            </div>
+            <div class="col-md-6 text-center text-md-end">
+                <a href="{{ url_for('whistleblowing.anonymous_info') }}" class="site-footer__link site-footer__link--report">
+                    <i class="bi bi-shield-lock-fill"></i>{{ _('Report Misconduct') }}
+                </a>
+                <a href="{{ url_for('policies.list_policies') }}" class="site-footer__link">{{ _('Policies') }}</a>
+                <a href="{{ url_for('support') }}" class="site-footer__link">{{ _('Support') }}</a>
+            </div>
+        </div>
+    </div>
+</footer>

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Risk Form') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4"><i class="bi bi-shield-exclamation me-2"></i>{{ risk.risk_id + ' - Re-score' if risk else _('Register New Risk') }}</h3>
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if not risk %}
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label">{{ _('Risk Title') }}</label>
+                        <input type="text" name="risk_title" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Category') }}</label>
+                        <select name="category_id" class="form-select" required>
+                            {% for c in categories %}<option value="{{ c.id }}">{{ c.category_name }} ({{ c.category_code }})</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Description') }}</label>
+                    <textarea name="risk_description" class="form-control" rows="3">{{ risk.risk_description if risk else '' }}</textarea>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Risk Owner') }}</label>
+                        <select name="risk_owner_id" class="form-select" required>
+                            {% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Department') }}</label>
+                        <select name="department_id" class="form-select">
+                            <option value="">-</option>
+                            {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Review Frequency') }}</label>
+                        <select name="review_frequency" class="form-select">
+                            {% for f in ['MONTHLY', 'QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL'] %}<option value="{{ f }}" {{ 'selected' if f == 'QUARTERLY' }}>{{ f }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Existing Controls (narrative)') }}</label>
+                    <textarea name="existing_controls" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Risk Response') }}</label>
+                        <select name="risk_response" class="form-select">
+                            <option value="">-</option>
+                            {% for r in ['ACCEPT', 'MITIGATE', 'TRANSFER', 'AVOID'] %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Next Review Date') }}</label>
+                        <input type="date" name="next_review_date" class="form-control">
+                    </div>
+                </div>
+                {% endif %}
+
+                <hr>
+                <h5>{{ _('Inherent Risk') }}</h5>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Likelihood (1-5)') }}</label>
+                        <input type="number" min="1" max="5" name="likelihood" class="form-control" value="{{ risk.likelihood if risk else 3 }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Impact (1-5)') }}</label>
+                        <input type="number" min="1" max="5" name="impact" class="form-control" value="{{ risk.impact if risk else 3 }}" required>
+                    </div>
+                </div>
+
+                {% if risk %}
+                <h5>{{ _('Residual Risk') }}</h5>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Residual Likelihood (1-5)') }}</label>
+                        <input type="number" min="1" max="5" name="residual_likelihood" class="form-control" value="{{ risk.residual_likelihood or '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Residual Impact (1-5)') }}</label>
+                        <input type="number" min="1" max="5" name="residual_impact" class="form-control" value="{{ risk.residual_impact or '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Control Effectiveness') }}</label>
+                        <select name="control_effectiveness" class="form-select">
+                            {% for e in ['NOT_ASSESSED', 'EFFECTIVE', 'PARTIALLY_EFFECTIVE', 'INEFFECTIVE'] %}
+                            <option value="{{ e }}" {{ 'selected' if risk.control_effectiveness == e }}>{{ e }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Reason for change') }}</label>
+                    <input type="text" name="change_reason" class="form-control">
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+                <a href="{{ url_for('risk_management.register_list') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

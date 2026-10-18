@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Acknowledgment Status') }} - {{ policy.policy_name or _('Untitled Policy') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2 mb-0">{{ _('Acknowledgment Status') }}</h1>
+        <div class="text-muted">{{ policy.policy_name or _('Untitled Policy') }}
+            {% if policy.policy_number %}<span class="mx-1">{{ _('&middot;') }}</span>{{ policy.policy_number }}{% endif %}</div>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('policies.acknowledgment_dashboard') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left me-1"></i>{{ _('Back to Dashboard') }}</a>
+        <a href="{{ url_for('policies.view_policy', id=policy.id) }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-eye me-1"></i>{{ _('View Policy') }}</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-subtitle text-muted mb-1">{{ _('Acknowledged') }}</h6>
+                <h3 class="card-title mb-0 text-success">{{ acknowledged|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-subtitle text-muted mb-1">{{ _('Pending') }}</h6>
+                <h3 class="card-title mb-0 text-danger">{{ pending|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-subtitle text-muted mb-1">{{ _('Compliance Rate') }}</h6>
+                {% set total = (acknowledged|length) + (pending|length) %}
+                {% set rate = ((acknowledged|length) / total * 100) | int if total > 0 else 0 %}
+                <h3 class="card-title mb-0">{{ rate }}%</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="card-title mb-0"><i class="bi bi-check-circle-fill text-success me-2"></i>{{ _('Acknowledged') }} ({{ acknowledged|length }})</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if acknowledged %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">{{ _('Employee') }}</th>
+                                <th>{{ _('Department') }}</th>
+                                <th class="text-end pe-3">{{ _('Date') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in acknowledged %}
+                            <tr>
+                                <td class="ps-3">{{ a.employee_name or _('Unknown') }}</td>
+                                <td>{{ a.department or '—' }}</td>
+                                <td class="text-end pe-3 text-muted small">{{ a.acknowledgment_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0 p-3">{{ _('No one has acknowledged this policy yet.') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="card-title mb-0"><i class="bi bi-exclamation-circle-fill text-danger me-2"></i>{{ _('Pending') }} ({{ pending|length }})</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if pending %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">{{ _('Employee') }}</th>
+                                <th>{{ _('Department') }}</th>
+                                <th class="text-end pe-3">{{ _('Email') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in pending %}
+                            <tr>
+                                <td class="ps-3">{{ p.employee_name or _('Unknown') }}</td>
+                                <td>{{ p.department or '—' }}</td>
+                                <td class="text-end pe-3 text-muted small">{{ p.email or '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0 p-3">{{ _('Everyone has acknowledged this policy.') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Transaction Monitoring Dashboard') }}{% endblock %}
+{% block extra_css %}
+<style>
+.stat-card { border-left: 4px solid; border-radius: 8px; }
+.stat-high { border-color: #dc3545; }
+.stat-medium { border-color: #fd7e14; }
+.stat-info { border-color: #0dcaf0; }
+.stat-success { border-color: #198754; }
+.severity-HIGH { background: #f8d7da; color: #842029; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
+.severity-MEDIUM { background: #fff3cd; color: #664d03; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
+.severity-LOW { background: #d1ecf1; color: #0c5460; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-line text-primary"></i> {{ _('Transaction Monitoring') }}</h2>
+    <div>
+      <a href="{{ url_for('aml.alert_list') }}" class="btn btn-warning me-2"><i class="fas fa-bell"></i> {{ _('Alerts Queue') }}</a>
+      <a href="{{ url_for('aml.transaction_list') }}" class="btn btn-primary me-2"><i class="fas fa-list"></i> {{ _('Transactions') }}</a>
+      <a href="{{ url_for('aml.create_transaction') }}" class="btn btn-success"><i class="fas fa-plus"></i> {{ _('New Transaction') }}</a>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-2">
+      <div class="card stat-card stat-high h-100">
+        <div class="card-body text-center">
+          <h2 class="text-danger">{{ stats.total_open }}</h2>
+          <p class="mb-0 small text-muted">{{ _('Open Alerts') }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card stat-card stat-medium h-100">
+        <div class="card-body text-center">
+          <h2 class="text-warning">{{ stats.total_investigating }}</h2>
+          <p class="mb-0 small text-muted">{{ _('Investigating') }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card stat-card stat-high h-100">
+        <div class="card-body text-center">
+          <h2 class="text-danger">{{ stats.high_severity }}</h2>
+          <p class="mb-0 small text-muted">{{ _('High Severity') }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card stat-card stat-medium h-100">
+        <div class="card-body text-center">
+          <h2 class="text-warning">{{ stats.total_escalated }}</h2>
+          <p class="mb-0 small text-muted">{{ _('Escalated') }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card stat-card stat-info h-100">
+        <div class="card-body text-center">
+          <h2 class="text-info">{{ stats.total_transactions }}</h2>
+          <p class="mb-0 small text-muted">{{ _('Total Transactions') }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card stat-card stat-success h-100">
+        <div class="card-body text-center">
+          <h2 class="text-success">{{ stats.flagged_transactions }}</h2>
+          <p class="mb-0 small text-muted">{{ _('Flagged') }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Recent Alerts -->
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between">
+          <strong><i class="fas fa-exclamation-triangle text-warning"></i> {{ _('Active Alerts') }}</strong>
+          <a href="{{ url_for('aml.alert_list') }}" class="btn btn-sm btn-outline-warning">{{ _('View All') }}</a>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0 small">
+            <thead class="table-dark">
+              <tr><th>{{ _('Ref') }}</th><th>{{ _('Customer') }}</th><th>{{ _('Rule') }}</th><th>{{ _('Severity') }}</th><th>{{ _('Date') }}</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for a in recent_alerts %}
+              <tr>
+                <td><code>{{ a.alert_reference }}</code></td>
+                <td>{{ a.full_name or a.company_name or '-' }}<br><small class="text-muted">{{ a.customer_reference }}</small></td>
+                <td>{{ a.rule_name }}</td>
+                <td><span class="severity-{{ a.alert_severity }}">{{ a.alert_severity }}</span></td>
+                <td>{{ a.alert_date[:10] }}</td>
+                <td><a href="{{ url_for('aml.view_alert', alert_id=a.id) }}" class="btn btn-xs btn-outline-primary btn-sm">{{ _('Review') }}</a></td>
+              </tr>
+              {% else %}
+              <tr><td colspan="6" class="text-center text-muted py-3">{{ _('No active alerts') }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rule Stats -->
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between">
+          <strong><i class="fas fa-cogs"></i> {{ _('Rule Performance') }}</strong>
+          <a href="{{ url_for('aml.rule_list') }}" class="btn btn-sm btn-outline-secondary">{{ _('Manage') }}</a>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0 small">
+            <thead class="table-light"><tr><th>{{ _('Rule') }}</th><th>{{ _('Severity') }}</th><th>{{ _('Alerts') }}</th></tr></thead>
+            <tbody>
+              {% for r in rule_stats %}
+              <tr>
+                <td>{{ r.rule_code }}</td>
+                <td><span class="severity-{{ r.severity }}">{{ r.severity }}</span></td>
+                <td><strong>{{ r.alert_count }}</strong></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Monthly Volume -->
+      <div class="card shadow-sm mt-3">
+        <div class="card-header"><strong><i class="fas fa-chart-bar"></i> {{ _('Monthly Volume') }}</strong></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0 small">
+            <thead class="table-light"><tr><th>{{ _('Month') }}</th><th>{{ _('Transactions') }}</th><th>{{ _('Flagged') }}</th></tr></thead>
+            <tbody>
+              {% for m in monthly_volume %}
+              <tr>
+                <td>{{ m.month }}</td>
+                <td>{{ m.count }}</td>
+                <td class="text-danger">{{ m.flagged }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

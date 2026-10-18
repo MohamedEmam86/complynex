@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>KYC/CDD Form - {{ customer.full_name or customer.company_name }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <style>
+        @page {
+            margin: 1.5cm;
+            size: A4;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 3px double #004085;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 18pt;
+            color: #004085;
+        }
+
+        .header h2 {
+            margin: 3px 0;
+            font-size: 12pt;
+            color: #555;
+            font-weight: normal;
+        }
+
+        .print-date {
+            text-align: right;
+            font-size: 9pt;
+            color: #888;
+        }
+
+        .section {
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            background: #004085;
+            color: white;
+            padding: 5px 12px;
+            font-size: 11pt;
+            font-weight: bold;
+            margin-bottom: 8px;
+            border-radius: 2px;
+        }
+
+        .section-title.risk {
+            background: #dc3545;
+        }
+
+        .section-title.screening {
+            background: #28a745;
+        }
+
+        .section-title.approval {
+            background: #17a2b8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .info-table td {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        .info-table td:first-child {
+            background: #f8f9fa;
+            font-weight: bold;
+            width: 35%;
+            white-space: nowrap;
+        }
+
+        .badge-clear {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 9pt;
+        }
+
+        .badge-risk {
+            background: #dc3545;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 9pt;
+        }
+
+        .badge-pending {
+            background: #ffc107;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 9pt;
+        }
+
+        .signature-box {
+            display: inline-block;
+            width: 45%;
+            border-top: 2px solid #333;
+            margin-top: 40px;
+            padding-top: 5px;
+            text-align: center;
+        }
+
+        .amendment-section {
+            border: 1px dashed #ccc;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .amendment-section h4 {
+            margin: 0 0 8px;
+            font-size: 10pt;
+        }
+
+        .amendment-line {
+            border-bottom: 1px dotted #ccc;
+            height: 25px;
+        }
+
+        .checks li {
+            list-style: none;
+            margin: 3px 0;
+        }
+
+        .checks li::before {
+            content: '☐ ';
+            font-size: 14pt;
+        }
+
+        .checks li.checked::before {
+            content: '☑ ';
+            color: #28a745;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="no-print" style="text-align:center; margin-bottom:15px;">
+        <button data-action="print"
+            style="padding:8px 20px; background:#004085; color:white; border:none; border-radius:4px; cursor:pointer; font-size:12pt;">
+            {{ _('🖨 Print / Save as PDF') }}
+        </button>
+        <button data-action="close"
+            style="padding:8px 20px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer; font-size:12pt; margin-left:10px;">
+            {{ _('Close') }}
+        </button>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>{{ _('ComplyNex - Customer Due Diligence (CDD) Form') }}</h1>
+        <h2>{{ _('Know Your Customer – Compliance Record') }}</h2>
+    </div>
+    <div class="print-date">
+        Generated on: {{ now_date }} | Ref: {{ customer.customer_reference }}
+    </div>
+
+    <!-- Section 1: Customer Identity -->
+    <div class="section">
+        <div class="section-title">{{ _('1. Customer Identity Information') }}</div>
+        <table class="info-table">
+            <tr>
+                <td>{{ _('Full Name (English)') }}</td>
+                <td>{{ customer.full_name or customer.company_name or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Full Name (Arabic)') }}</td>
+                <td style="direction:rtl">{{ customer.full_name_arabic or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Customer Type') }}</td>
+                <td>{{ customer.customer_type or 'Individual' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Date of Birth / Incorporation') }}</td>
+                <td>{{ customer.date_of_birth or customer.registration_date or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Nationality / Country') }}</td>
+                <td>{{ customer.nationality or customer.country or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('ID Type') }}</td>
+                <td>{{ customer.id_type or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('ID Number') }}</td>
+                <td>{{ customer.id_number or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('ID Expiry Date') }}</td>
+                <td>{{ customer.id_expiry_date or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Gender') }}</td>
+                <td>{{ customer.gender or 'N/A' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Section 2: Contact & Address -->
+    <div class="section">
+        <div class="section-title">{{ _('2. Contact & Address Details') }}</div>
+        <table class="info-table">
+            <tr>
+                <td>{{ _('Address') }}</td>
+                <td>{{ customer.address or customer.address_line1 or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Phone') }}</td>
+                <td>{{ customer.phone or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Email') }}</td>
+                <td>{{ customer.email or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Industry / Occupation') }}</td>
+                <td>{{ customer.industry or 'N/A' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Section 3: Risk Assessment -->
+    <div class="section">
+        <div class="section-title risk">{{ _('3. Risk Assessment') }}</div>
+        <table class="info-table">
+            <tr>
+                <td>{{ _('Risk Classification') }}</td>
+                <td>
+                    {% if customer.risk_classification == 'HIGH' or customer.risk_classification == 'CRITICAL' %}
+                    <span class="badge-risk">{{ customer.risk_classification }}</span>
+                    {% else %}
+                    <span class="badge-clear">{{ customer.risk_classification or 'Not Assessed' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>{{ _('Risk Score') }}</td>
+                <td>{{ customer.risk_score or 0 }} / 100</td>
+            </tr>
+            <tr>
+                <td>{{ _('Risk Assessment Date') }}</td>
+                <td>{{ customer.risk_classification_date or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Source of Funds') }}</td>
+                <td>{{ customer.source_of_funds or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Purpose of Relationship') }}</td>
+                <td>{{ customer.purpose_of_relationship or customer.purpose or 'N/A' }}</td>
+            </tr>
+        </table>
+
+        <div style="margin-top: 8px;">
+            <strong>{{ _('Risk Indicators:') }}</strong>
+            <ul class="checks">
+                <li class="{{ 'checked' if customer.is_pep else '' }}">{{ _('Politically Exposed Person (PEP)') }}</li>
+                <li class="{{ 'checked' if customer.is_sanctioned else '' }}">{{ _('Sanctions List Match') }}</li>
+                <li class="{{ 'checked' if customer.is_high_risk_country else '' }}">{{ _('High-Risk Country Connection') }}</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Section 4: Screening Results -->
+    <div class="section">
+        <div class="section-title screening">{{ _('4. Sanctions Screening Results') }}</div>
+        <table class="info-table">
+            <tr>
+                <td>{{ _('Screening Status') }}</td>
+                <td>
+                    {% set ss = customer.screening_status or 'Not Screened' %}
+                    {% if ss == 'Clear' %}
+                    <span class="badge-clear">{{ ss }}</span>
+                    {% elif ss == 'Pending Review' %}
+                    <span class="badge-pending">{{ ss }}</span>
+                    {% else %}
+                    <span class="badge-risk">{{ ss }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>{{ _('Last Screening Date') }}</td>
+                <td>{{ customer.last_screening_date or 'Never' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Screening Notes') }}</td>
+                <td>{{ customer.screening_notes or 'N/A' }}</td>
+            </tr>
+        </table>
+
+        {% if screening_records %}
+        <div style="margin-top:10px;">
+            <strong>{{ _('Screening History:') }}</strong>
+            <table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:9pt;">
+                <thead>
+                    <tr style="background:#e9ecef;">
+                        <th style="padding:3px 6px; border:1px solid #ddd;">{{ _('Date') }}</th>
+                        <th style="padding:3px 6px; border:1px solid #ddd;">{{ _('Entity') }}</th>
+                        <th style="padding:3px 6px; border:1px solid #ddd;">{{ _('Matches') }}</th>
+                        <th style="padding:3px 6px; border:1px solid #ddd;">{{ _('High Risk') }}</th>
+                        <th style="padding:3px 6px; border:1px solid #ddd;">{{ _('Score') }}</th>
+                        <th style="padding:3px 6px; border:1px solid #ddd;">{{ _('Result') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in screening_records %}
+                    <tr>
+                        <td style="padding:3px 6px; border:1px solid #ddd;">{{ r.screening_date }}</td>
+                        <td style="padding:3px 6px; border:1px solid #ddd;">{{ r.entity_name }}</td>
+                        <td style="padding:3px 6px; border:1px solid #ddd; text-align:center;">{{ r.total_matches_found
+                            }}</td>
+                        <td style="padding:3px 6px; border:1px solid #ddd; text-align:center;">{{ r.high_risk_matches }}
+                        </td>
+                        <td style="padding:3px 6px; border:1px solid #ddd; text-align:center;">{{
+                            "%.1f"|format(r.highest_score or 0) }}%</td>
+                        <td style="padding:3px 6px; border:1px solid #ddd;">{{ r.screening_result }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Section 5: Compliance Approval -->
+    <div class="section">
+        <div class="section-title approval">{{ _('5. Compliance Approval') }}</div>
+        <table class="info-table">
+            <tr>
+                <td>{{ _('Customer Status') }}</td>
+                <td>{{ customer.status or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Onboarding Date') }}</td>
+                <td>{{ customer.onboarding_date or customer.created_at or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Created By') }}</td>
+                <td>{{ customer.created_by or 'System' }}</td>
+            </tr>
+            <tr>
+                <td>{{ _('Last Updated') }}</td>
+                <td>{{ customer.updated_at or 'N/A' }}</td>
+            </tr>
+        </table>
+
+        <div style="margin-top:25px; display: flex; justify-content: space-between;">
+            <div class="signature-box">
+                <strong>{{ _('Compliance Officer') }}</strong><br>
+                <small>{{ _('Name: _____________________') }}</small><br>
+                <small>{{ _('Date: _____________________') }}</small>
+            </div>
+            <div class="signature-box">
+                <strong>{{ _('Senior Compliance Officer') }}</strong><br>
+                <small>{{ _('Name: _____________________') }}</small><br>
+                <small>{{ _('Date: _____________________') }}</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 6: Amendment Tracking -->
+    <div class="section">
+        <div class="section-title">{{ _('6. Amendment Tracking') }}</div>
+        <div class="amendment-section">
+            <h4>{{ _('Record any amendments or updates to this CDD below:') }}</h4>
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#f8f9fa;">
+                        <th style="padding:4px 8px; border:1px solid #ddd; width:15%;">{{ _('Date') }}</th>
+                        <th style="padding:4px 8px; border:1px solid #ddd; width:40%;">{{ _('Amendment Details') }}</th>
+                        <th style="padding:4px 8px; border:1px solid #ddd; width:20%;">{{ _('Amended By') }}</th>
+                        <th style="padding:4px 8px; border:1px solid #ddd; width:25%;">{{ _('Signature') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                    </tr>
+                    <tr>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                    </tr>
+                    <tr>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                    </tr>
+                    <tr>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                        <td class="amendment-line"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div
+        style="text-align:center; font-size:8pt; color:#999; margin-top:20px; border-top:1px solid #eee; padding-top:5px;">
+        {{ _('CONFIDENTIAL – This document is property of ComplyNex Compliance Department.
+        Unauthorized distribution is prohibited.') }}
+    </div>
+<script src="{{ url_for('static', filename='js/csp_helpers.js') }}"></script>
+</body>
+
+</html>

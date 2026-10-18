@@ -1,0 +1,47 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('Academy privacy notice', 'إشعار الخصوصية') }}{% endblock %}
+{% block content %}
+<article class="ia-panel ia-prose">
+  <h1>{{ t('Integrys Academy — privacy notice', 'أكاديمية إنتيجريس — إشعار الخصوصية') }}</h1>
+  <p class="ia-small ia-muted">{{ t('Version', 'الإصدار') }} {{ version }} · {{ t('Personal Data Protection Law No. 151 of 2020 (Egypt)', 'قانون حماية البيانات الشخصية رقم 151 لسنة 2020') }}</p>
+  {% if ar %}
+  <h3>من نحن</h3>
+  <p>إنتيجريس للاستشارات (القاهرة، مصر) هي المسؤولة عن معالجة بياناتك في الأكاديمية. يتم تقديم التدريب على منصة ComplyNex المستضافة على خوادم تحت سيطرتنا، ولا تتم مشاركة بياناتك مع أي مزود خدمة تدريب خارجي.</p>
+  <h3>البيانات التي نجمعها</h3>
+  <ul><li>الاسم، والاسم على الشهادة، وبريد العمل، والشركة، والمسمى الوظيفي، والدولة.</li>
+      <li>تقدمك في الدورات، ونتائج الاختبارات، والشهادات الصادرة.</li>
+      <li>بيانات تقنية محدودة لأغراض الأمان (عنوان IP عند التسجيل وتسجيل الدخول).</li></ul>
+  <h3>لماذا نستخدمها</h3>
+  <ul><li>لتقديم التدريب وإصدار الشهادات والتحقق منها — بناءً على موافقتك عند التسجيل.</li>
+      <li>لإرسال أخبار الدورات والمستجدات التنظيمية والخدمات — <b>فقط</b> إذا وافقت على ذلك بشكل منفصل، ويمكنك سحب الموافقة في أي وقت.</li>
+      <li>لحماية المنصة من إساءة الاستخدام.</li></ul>
+  <h3>سجل التحقق العام</h3>
+  <p>عند إصدار شهادة، يمكن لأي شخص يملك رقمها أن يتحقق منها ويرى الاسم المطبوع عليها واسم الدورة والتاريخ والدرجة. هذا هو الغرض من الشهادة القابلة للتحقق.</p>
+  <h3>مدة الاحتفاظ</h3>
+  <p>نحتفظ بالبيانات طالما كان حسابك نشطًا، ونحذفها بعد {{ retention }} شهرًا من آخر نشاط. التسجيلات التي لم يتم تأكيد بريدها تُحذف بعد 30 يومًا.</p>
+  <h3>حقوقك</h3>
+  <p>يمكنك الاطلاع على بياناتك وتعديل تفضيلات البريد وحذف بياناتك بنفسك من صفحة «بياناتي» بعد تسجيل الدخول، أو بمراسلتنا على info@integrysconsult.com.</p>
+  <h3>أين تُحفظ البيانات</h3>
+  <p>على خوادم تديرها إنتيجريس / ComplyNex. لا نبيع بياناتك ولا نشاركها مع أطراف أخرى لأغراض تسويقية.</p>
+  {% else %}
+  <h3>Who we are</h3>
+  <p>Integrys Consulting (Cairo, Egypt) is responsible for your data in the Academy. Training is delivered on the ComplyNex platform, hosted on servers under our control; your data is not shared with any third-party training provider.</p>
+  <h3>What we collect</h3>
+  <ul><li>Name, certificate name, work email, company, job title and country.</li>
+      <li>Your course progress, assessment results and certificates issued.</li>
+      <li>Limited technical data for security (IP address at registration and sign-in).</li></ul>
+  <h3>Why we use it</h3>
+  <ul><li>To deliver training and issue and verify certificates — on the basis of the consent you give at registration.</li>
+      <li>To send news about courses, regulatory updates and services — <b>only</b> if you separately opt in. You can withdraw at any time.</li>
+      <li>To protect the platform against abuse.</li></ul>
+  <h3>Public verification register</h3>
+  <p>When a certificate is issued, anyone holding its number can verify it and see the name printed on it, the course, the date and the score. That is what makes the certificate verifiable.</p>
+  <h3>How long we keep it</h3>
+  <p>For as long as your account is active, and deleted {{ retention }} months after your last activity. Registrations whose email is never verified are deleted after 30 days.</p>
+  <h3>Your rights</h3>
+  <p>You can see your data, change email preferences and delete your data yourself from “My data” after signing in, or by writing to info@integrysconsult.com.</p>
+  <h3>Where it is stored</h3>
+  <p>On servers operated by Integrys / ComplyNex. We do not sell your data or share it with others for their marketing.</p>
+  {% endif %}
+</article>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Risk Category Management') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">{{ _('Risk Category Management') }}</h3>
+            <p class="text-muted mb-0 small">{{ _('Create, edit, archive, or delete risk categories. The Risk Register always reflects this list dynamically.') }}</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>{{ _('Code') }}</th>
+                                <th>{{ _('Name') }}</th>
+                                <th>{{ _('Parent') }}</th>
+                                <th>{{ _('Description') }}</th>
+                                <th>{{ _('Status') }}</th>
+                                <th>{{ _('Risks Using It') }}</th>
+                                <th class="text-end">{{ _('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for c in categories %}
+                            <tr class="{{ 'text-muted' if not c.is_active else '' }}">
+                                <td><span class="badge bg-secondary">{{ c.category_code }}</span></td>
+                                <td>{{ c.category_name }}</td>
+                                <td class="small">{{ (categories | selectattr('id', 'equalto', c.parent_category_id) | map(attribute='category_name') | first) or '-' }}</td>
+                                <td class="small text-muted">{{ c.category_description or '-' }}</td>
+                                <td>
+                                    {% if c.is_active %}
+                                        <span class="badge bg-success">{{ _('Active') }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ _('Archived') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ usage.get(c.id, 0) }}</td>
+                                <td class="text-end">
+                                    <div class="d-flex gap-1 justify-content-end">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal" data-bs-target="#editCategoryModal{{ c.id }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        {% if c.is_active %}
+                                        <form method="post" action="{{ url_for('risk_management.category_archive', category_id=c.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="{{ _('Archive') }}">
+                                                <i class="bi bi-archive"></i>
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <form method="post" action="{{ url_for('risk_management.category_reactivate', category_id=c.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="{{ _('Reactivate') }}">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% if usage.get(c.id, 0) == 0 %}
+                                        <form method="post" action="{{ url_for('risk_management.category_delete', category_id=c.id) }}"
+                                              data-confirm="{{ _('Delete this category permanently? This cannot be undone.') }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ _('Delete') }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Edit modal -->
+                            <div class="modal fade" id="editCategoryModal{{ c.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="post" action="{{ url_for('risk_management.category_edit', category_id=c.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">{{ _('Edit Category') }} — {{ c.category_code }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="mb-2">
+                                                    <label class="form-label">{{ _('Name') }}</label>
+                                                    <input type="text" name="category_name" class="form-control" value="{{ c.category_name }}" required>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <label class="form-label">{{ _('Description') }}</label>
+                                                    <textarea name="category_description" class="form-control" rows="2">{{ c.category_description or '' }}</textarea>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <label class="form-label">{{ _('Parent Category') }}</label>
+                                                    <select name="parent_category_id" class="form-select">
+                                                        <option value="">-</option>
+                                                        {% for p in categories if p.id != c.id %}
+                                                        <option value="{{ p.id }}" {% if p.id == c.parent_category_id %}selected{% endif %}>{{ p.category_name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                                                <button type="submit" class="btn btn-primary">{{ _('Save Changes') }}</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><strong>{{ _('Add Category') }}</strong></div>
+                <div class="card-body">
+                    <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-2">
+                            <label class="form-label">{{ _('Code') }}</label>
+                            <input type="text" name="category_code" class="form-control" maxlength="10" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">{{ _('Name') }}</label>
+                            <input type="text" name="category_name" class="form-control" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">{{ _('Description') }}</label>
+                            <textarea name="category_description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Parent Category') }}</label>
+                            <select name="parent_category_id" class="form-select">
+                                <option value="">-</option>
+                                {% for c in categories if c.is_active %}<option value="{{ c.id }}">{{ c.category_name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">{{ _('Add') }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

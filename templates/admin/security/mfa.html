@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Multi-Factor Authentication') }}{% endblock %}
+{% block content %}
+{% set enrolled = users|selectattr('mfa_enabled')|list %}
+{% set required = users|selectattr('mfa_required_override')|list %}
+<div class="pt-3 pb-2 mb-3 border-bottom">
+  <h1 class="h2"><i class="bi bi-shield-lock me-2"></i>{{ _('Multi-Factor Authentication') }}</h1>
+  <p class="text-muted small mb-0">
+    {{ _('Require, lift or reset a second factor for any user. Resetting clears the enrolment entirely so the person starts again — use it when a phone is lost or an account is suspect.') }}
+  </p>
+</div>
+
+<div class="row g-3 mb-3">
+  {% for label, val, cls in [
+      (_('Users'), users|length, 'primary'),
+      (_('MFA enabled'), enrolled|length, 'success'),
+      (_('Not enrolled'), users|length - enrolled|length, 'warning'),
+      (_('Explicitly required'), required|length, 'info')] %}
+  <div class="col"><div class="card text-center h-100"><div class="card-body py-3">
+    <div class="h3 mb-0 text-{{ cls }}">{{ val }}</div>
+    <div class="small text-muted">{{ label }}</div>
+  </div></div></div>
+  {% endfor %}
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header bg-light"><strong>{{ _('Users') }}</strong></div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light"><tr>
+            <th>{{ _('User') }}</th><th>{{ _('Role') }}</th>
+            <th>{{ _('Status') }}</th><th>{{ _('Requirement') }}</th>
+            <th class="text-end">{{ _('Actions') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for u in users %}
+            <tr class="{% if not u.is_active %}opacity-50{% endif %}">
+              <td>
+                <strong>{{ (u.first_name ~ ' ' ~ u.last_name)|trim or u.email }}</strong>
+                <div class="text-muted" style="font-size:11px">{{ u.email }}</div>
+              </td>
+              <td><span class="badge bg-light text-dark">{{ u.role }}</span></td>
+              <td>
+                {% if u.mfa_enabled %}
+                  <span class="badge bg-success"><i class="bi bi-shield-check"></i> {{ _('Enabled') }}</span>
+                  {% if u.mfa_enrolled_at %}<div class="text-muted" style="font-size:11px">
+                    {{ _('since') }} {{ u.mfa_enrolled_at.strftime('%d %b %Y') }}</div>{% endif %}
+                {% else %}
+                  <span class="badge bg-secondary">{{ _('Not enrolled') }}</span>
+                  {% if u.mfa_last_reset_at %}<div class="text-muted" style="font-size:11px">
+                    {{ _('reset') }} {{ u.mfa_last_reset_at.strftime('%d %b %Y') }}</div>{% endif %}
+                {% endif %}
+              </td>
+              <td>
+                {% if u.mfa_required_override is none %}
+                  <span class="text-muted small">{{ _('Role default') }}</span>
+                  {% if u.role in ['admin','compliance_officer','compliance_manager'] %}
+                    <div><span class="badge bg-warning text-dark" style="font-size:10px">{{ _('required') }}</span></div>
+                  {% endif %}
+                {% elif u.mfa_required_override %}
+                  <span class="badge bg-danger">{{ _('Required') }}</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ _('Not required') }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-primary js-mfa"
+                        data-id="{{ u.id }}"
+                        data-name="{{ (u.first_name ~ ' ' ~ u.last_name)|trim or u.email }}"
+                        data-enabled="{{ 1 if u.mfa_enabled else 0 }}">
+                  <i class="bi bi-gear"></i> {{ _('Manage') }}
+                </button>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header bg-light"><strong>{{ _('MFA activity') }}</strong></div>
+      <div class="list-group list-group-flush" style="max-height:520px;overflow-y:auto">
+        {% for h in history %}
+        <div class="list-group-item small py-2">
+          <div class="d-flex justify-content-between">
+            <strong>{{ h.action|replace('_',' ')|title }}</strong>
+            <span class="text-muted">{{ h.performed_at.strftime('%d %b %H:%M') }}</span>
+          </div>
+          <div class="text-muted">
+            {{ h.target_name or '—' }} · {{ _('by') }} {{ h.actor_name or _('System') }}
+          </div>
+          {% if h.reason %}<div class="fst-italic mt-1">"{{ h.reason }}"</div>{% endif %}
+        </div>
+        {% else %}
+        <div class="list-group-item text-muted small">{{ _('No MFA actions recorded yet.') }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="mfaModal" tabindex="-1"><div class="modal-dialog">
+  <form method="POST" id="mfaForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">{{ _('Manage MFA') }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p class="mb-3"><strong id="mfaName"></strong></p>
+        <label class="form-label small">{{ _('Reason') }}</label>
+        <textarea name="reason" class="form-control form-control-sm mb-3" rows="2"
+                  placeholder="{{ _('e.g. Phone lost — user requested a reset by phone on 3 Aug.') }}"></textarea>
+        <div class="form-text mb-3">{{ _('Required when turning off an active second factor. Recorded against your name.') }}</div>
+
+        <div class="d-grid gap-2">
+          <button name="mfa_action" value="reset" class="btn btn-warning" id="btnReset"
+                  data-confirm="{{ _('Reset this user\'s MFA? Their current authenticator and backup codes stop working immediately.') }}">
+            <i class="bi bi-arrow-repeat"></i> {{ _('Reset enrolment') }}
+            <div class="small opacity-75">{{ _('Lost phone, or suspected compromise') }}</div>
+          </button>
+          <button name="mfa_action" value="require" class="btn btn-outline-danger">
+            <i class="bi bi-shield-lock"></i> {{ _('Require MFA for this user') }}
+          </button>
+          <button name="mfa_action" value="not_required" class="btn btn-outline-secondary">
+            <i class="bi bi-shield-slash"></i> {{ _('Do not require MFA') }}
+          </button>
+          <button name="mfa_action" value="follow_role" class="btn btn-outline-info btn-sm">
+            {{ _('Follow the default rule for their role') }}
+          </button>
+          <button name="mfa_action" value="disable" class="btn btn-outline-danger btn-sm" id="btnDisable"
+                  data-confirm="{{ _('Turn off this user\'s active second factor?') }}">
+            {{ _('Turn off their active MFA') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div></div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var el = document.getElementById('mfaModal');
+  if (!el) return;
+  var modal = new bootstrap.Modal(el);
+  var form = document.getElementById('mfaForm');
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.js-mfa');
+    if (!b) return;
+    form.action = '{{ url_for("admin.user_mfa", user_id=987654321) }}'
+                    .replace('987654321', b.dataset.id);
+    document.getElementById('mfaName').textContent = b.dataset.name;
+    var on = b.dataset.enabled === '1';
+    // Only meaningful against a live enrolment; hidden otherwise so the screen
+    // does not offer actions that would do nothing.
+    document.getElementById('btnReset').style.display   = on ? '' : 'none';
+    document.getElementById('btnDisable').style.display = on ? '' : 'none';
+    form.reset();
+    modal.show();
+  });
+}());
+</script>
+{% endblock %}

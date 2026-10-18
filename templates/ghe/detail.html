@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ declaration.declaration_number }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-gift"></i> {{ declaration.declaration_number }}
+    </h1>
+    <div class="d-print-none">
+        <a href="{{ url_for('ghe.list_declarations') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to List') }}
+        </a>
+        {% if declaration.status == 'pending' and declaration.employee_id == current_user.id %}
+        <a href="{{ url_for('ghe.edit_declaration', id=declaration.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil"></i> {{ _('Edit') }}
+        </a>
+        {% endif %}
+        <button data-action="print" class="btn btn-outline-info">
+            <i class="bi bi-printer"></i> {{ _('Print') }}
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Details -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-file-text"></i> {{ _('Declaration Details') }}</h5>
+                {% if declaration.status == 'pending' %}
+                <span class="badge bg-warning text-dark fs-6">{{ _('Pending') }}</span>
+                {% elif declaration.status == 'manager_review' %}
+                <span class="badge bg-info fs-6">{{ _('Awaiting Manager Review') }}</span>
+                {% elif declaration.status == 'compliance_review' %}
+                <span class="badge bg-secondary fs-6">{{ _('Awaiting Compliance Review') }}</span>
+                {% elif declaration.status == 'approved' %}
+                <span class="badge bg-success fs-6">
+                    {% if declaration.auto_approved %}Auto-{% endif %}Approved
+                </span>
+                {% elif declaration.status == 'requires_clarification' %}
+                <span class="badge bg-warning text-dark fs-6">{{ _('Action Required') }}</span>
+                {% elif declaration.status == 'rejected' %}
+                <span class="badge bg-danger fs-6">{{ _('Rejected') }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <td width="30%" class="text-muted"><strong>{{ _('Employee:') }}</strong></td>
+                            <td>{{ declaration.employee_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted"><strong>{{ _('Department:') }}</strong></td>
+                            <td>{{ declaration.department or 'Not specified' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted"><strong>{{ _('Declaration Date:') }}</strong></td>
+                            <td>{{ declaration.declaration_date }}</td>
+                        </tr>
+                        <tr class="table-primary">
+                            <td class="text-muted"><strong>{{ _('Type:') }}</strong></td>
+                            <td>
+                                {% if declaration.ghe_type == 'Gift' %}
+                                <span class="badge bg-primary">{{ _('Gift') }}</span>
+                                {% elif declaration.ghe_type == 'Hospitality' %}
+                                <span class="badge bg-info">{{ _('Hospitality') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ _('Entertainment') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted"><strong>{{ _('Direction:') }}</strong></td>
+                            <td>{{ declaration.direction }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted"><strong>{{ _('Event Date:') }}</strong></td>
+                            <td>{{ declaration.event_date }}</td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td class="text-muted"><strong>{{ _('Estimated Value:') }}</strong></td>
+                            <td class="fw-bold fs-5">{{ "{:,.2f}".format(declaration.estimated_value_egp) }} EGP</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted"><strong>{{ _('Provider/Recipient:') }}</strong></td>
+                            <td>{{ declaration.provider_recipient_name }}</td>
+                        </tr>
+                        {% if declaration.provider_recipient_company %}
+                        <tr>
+                            <td class="text-muted"><strong>{{ _('Company:') }}</strong></td>
+                            <td>{{ declaration.provider_recipient_company }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td class="text-muted"><strong>{{ _('Description:') }}</strong></td>
+                            <td>{{ declaration.description }}</td>
+                        </tr>
+                        {% if declaration.business_purpose %}
+                        <tr>
+                            <td class="text-muted"><strong>{{ _('Business Purpose:') }}</strong></td>
+                            <td>{{ declaration.business_purpose }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if declaration.is_government_official %}
+                        <tr class="table-danger">
+                            <td class="text-muted"><strong>{{ _('Government Official:') }}</strong></td>
+                            <td>
+                                <span class="badge bg-danger">{{ _('YES - GOVERNMENT OFFICIAL') }}</span>
+                                <br>
+                                <strong>{{ _('Entity:') }}</strong> {{ declaration.government_official_details }}
+                                <br>
+                                <strong>{{ _('Position:') }}</strong> {{ declaration.government_official_position or
+                                'N/A' }}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Audit Trail & Activity Log -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 text-dark"><i class="bi bi-clock-history"></i> {{ _('Audit Trail & Activity Log') }}</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">{{ _('Activity') }}</th>
+                                <th>{{ _('Performer') }}</th>
+                                <th>{{ _('Status Change') }}</th>
+                                <th>{{ _('Timestamp') }}</th>
+                                <th class="pe-3">{{ _('Comments') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for history in approval_history %}
+                            <tr>
+                                <td class="ps-3">
+                                    <span class="badge 
+                                        {% if 'Approved' in history.action or 'Auto-approved' in history.action %}bg-success
+                                        {% elif 'Rejected' in history.action %}bg-danger
+                                        {% elif 'Created' in history.action %}bg-primary
+                                        {% elif 'Escalated' in history.action %}bg-warning
+                                        {% elif 'Feedback' in history.action %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ history.action }}
+                                    </span>
+                                </td>
+                                <td>{{ history.performer_name or history.action_by_name or 'System' }}</td>
+                                <td>
+                                    {% if history.old_status %}
+                                    <small class="text-muted">{{ history.old_status.replace('_', ' ') }}</small>
+                                    <i class="bi bi-arrow-right mx-1"></i>
+                                    {% endif %}
+                                    <span class="fw-bold">{{ history.new_status.replace('_', ' ') if history.new_status
+                                        else history.status_after.replace('_', ' ') if history.status_after else 'N/A'
+                                        }}</span>
+                                </td>
+                                <td>{{ history.created_at or history.action_date }}</td>
+                                <td class="pe-3 small text-muted">{{ history.comments or '---' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-muted">{{ _('No activity logs found.') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Approval Actions -->
+        {% if can_approve %}
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-check2-circle"></i> {{ _('Approval Actions') }}</h5>
+            </div>
+            <div class="card-body">
+                <!-- Approve Form -->
+                <form method="POST" action="{{ url_for('ghe.approve_declaration', id=declaration.id) }}" class="mb-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Approval Comments (Optional)') }}</label>
+                        <textarea name="comments" class="form-control" rows="2"
+                            placeholder="{{ _('Optional comments for approval') }}"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-lg"></i> {{ _('Approve') }}
+                    </button>
+                </form>
+
+                <hr>
+
+                <!-- Reject Form -->
+                <form method="POST" action="{{ url_for('ghe.reject_declaration', id=declaration.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Rejection Reason') }} <span class="text-danger">*</span></label>
+                        <textarea name="comments" class="form-control" rows="2" required
+                            placeholder="{{ _('Provide reason for rejection') }}"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="bi bi-x-lg"></i> {{ _('Reject') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Attachment -->
+        {% if declaration.attachment_path %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-paperclip"></i> {{ _('Attachment') }}</h5>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('ghe.download_attachment', id=declaration.id) }}"
+                    class="btn btn-outline-primary w-100" target="_blank">
+                    <i class="bi bi-file-earmark-arrow-down"></i> {{ _('View/Download Attachment') }}
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Status Information -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> {{ _('Status Information') }}</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td><strong>{{ _('Created:') }}</strong></td>
+                            <td>{{ declaration.created_at }}</td>
+                        </tr>
+                        {% if declaration.manager_id %}
+                        <tr>
+                            <td><strong>{{ _('Manager:') }}</strong></td>
+                            <td>{{ declaration.manager_name or 'Pending assignment' }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if declaration.manager_approval_date %}
+                        <tr class="table-info">
+                            <td><strong>{{ _('Manager Approved:') }}</strong></td>
+                            <td>{{ declaration.manager_approval_date }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if declaration.manager_comments %}
+                        <tr>
+                            <td><strong>{{ _('Manager Comments:') }}</strong></td>
+                            <td><em>{{ declaration.manager_comments }}</em></td>
+                        </tr>
+                        {% endif %}
+                        {% if declaration.compliance_officer_id %}
+                        <tr>
+                            <td><strong>{{ _('Compliance Officer:') }}</strong></td>
+                            <td>{{ declaration.compliance_officer_name }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if declaration.compliance_approval_date %}
+                        <tr class="table-success">
+                            <td><strong>{{ _('Compliance Approved:') }}</strong></td>
+                            <td>{{ declaration.compliance_approval_date }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if declaration.compliance_comments %}
+                        <tr>
+                            <td><strong>{{ _('Compliance Comments:') }}</strong></td>
+                            <td><em>{{ declaration.compliance_comments }}</em></td>
+                        </tr>
+                        {% endif %}
+                        {% if declaration.auto_approved %}
+                        <tr class="table-success">
+                            <td colspan="2">
+                                <i class="bi bi-lightning text-success"></i>
+                                <strong>{{ _('Auto-approved') }}</strong> {{ _('(value below 500 EGP threshold)') }}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+
+        /* Hide non-essential elements */
+        .sidebar,
+        .navbar,
+        .d-print-none,
+        footer,
+        .btn {
+            display: none !important;
+        }
+
+        /* Full width for main content */
+        .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+
+        .col-md-8,
+        .col-md-4 {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        /* Print header */
+        body::before {
+            content: "COMPLYNEX FULL COMPLIANCE PLATFORM";
+            display: block;
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+
+        /* Page title */
+        h1.h2 {
+            font-size: 18pt !important;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+
+        /* Cards styling */
+        .card {
+            border: 1px solid #ccc !important;
+            page-break-inside: avoid;
+            margin-bottom: 15px !important;
+        }
+
+        .card-header {
+            background-color: #f5f5f5 !important;
+            color: #000 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Tables */
+        .table {
+            font-size: 10pt;
+        }
+
+        /* Badges - ensure visibility */
+        .badge {
+            border: 1px solid #333;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Hide approval actions in print */
+        .border-primary.card:has(form) {
+            display: none !important;
+        }
+
+        /* Footer with timestamp */
+        @page {
+            margin: 1cm;
+        }
+
+        body::after {
+            content: "Printed on: " attr(data-print-date);
+            display: block;
+            text-align: center;
+            font-size: 9pt;
+            margin-top: 20px;
+            color: #666;
+        }
+    }
+</style>
+{% endblock %}

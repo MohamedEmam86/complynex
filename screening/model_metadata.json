@@ -1,0 +1,56 @@
+{
+  "version": "202602192229",
+  "trained": "2026-02-19T22:29:50.528252",
+  "type": "RandomForest with Enhanced Transliteration - 24K Dataset",
+  "training_data": {
+    "total_scenarios": 24000,
+    "training_samples": 19200,
+    "test_samples": 4800,
+    "distribution": {
+      "hard_false_positive": 6000,
+      "english_to_arabic": 6000,
+      "arabic_to_english": 6000,
+      "mixed_script": 3000,
+      "clear_non_match": 3000
+    }
+  },
+  "metrics": {
+    "accuracy": 0.9985416666666667,
+    "precision": 0.9989996665555185,
+    "recall": 0.9986666666666667,
+    "f1_score": 0.9988331388564761
+  },
+  "features": [
+    "fuzzy_ratio",
+    "jaro_winkler",
+    "phonetic_score",
+    "has_arabic_input",
+    "has_arabic_watchlist",
+    "mixed_script",
+    "transliteration_score",
+    "first_name_match",
+    "last_name_match",
+    "known_translit_pair",
+    "dob_exact_match",
+    "dob_days_diff",
+    "dob_year_match",
+    "dob_bonus"
+  ],
+  "samples": 24000,
+  "hyperparameters": {
+    "n_estimators": 200,
+    "max_depth": 12,
+    "min_samples_split": 8,
+    "min_samples_leaf": 4,
+    "class_weight": "balanced"
+  },
+  "cross_validation": {
+    "f1_mean": 0.9978669214483012,
+    "f1_std": 0.0007851473132896644
+  },
+  "improvement": {
+    "baseline_f1": 0.856,
+    "new_f1": 0.9988331388564761,
+    "improvement_pct": 16.686114352392067
+  }
+}

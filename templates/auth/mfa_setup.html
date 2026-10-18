@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Enable Two-Factor Authentication - ComplyNex CMS') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #F8F8F8; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .card { border: none; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,.10); max-width: 480px; width: 100%; }
+        .card-header { background: linear-gradient(135deg, #1a3c5e 0%, #2d6a9f 100%); border-radius: 16px 16px 0 0; color: #fff; padding: 1.75rem; text-align: center; }
+        .secret-box { font-family: monospace; font-size: 1.1rem; letter-spacing: .15em; background: #f0f4f8; border-radius: 8px; padding: .75rem 1rem; word-break: break-all; }
+        .otp-input { letter-spacing: .4em; font-size: 1.4rem; text-align: center; font-weight: 700; }
+        .step-badge { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: #2d6a9f; color: #fff; font-size: .85rem; font-weight: 700; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-shield-check fs-1 mb-2 d-block"></i>
+        <h4 class="mb-0">{{ _('Set Up Two-Factor Authentication') }}</h4>
+        <small class="opacity-75">{{ _('Required for your role — takes 2 minutes') }}</small>
+    </div>
+    <div class="card-body p-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for cat, msg in messages %}
+            <div class="alert alert-{{ 'danger' if cat == 'danger' else 'success' }} alert-dismissible">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+          {% endfor %}
+        {% endwith %}
+
+        <div class="d-flex align-items-start gap-3 mb-3">
+            <span class="step-badge">1</span>
+            <div>
+                <strong>{{ _('Install an authenticator app') }}</strong>
+                <p class="text-muted small mb-0">{{ _('Google Authenticator, Microsoft Authenticator, or Authy') }}</p>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-start gap-3 mb-3">
+            <span class="step-badge">2</span>
+            <div class="w-100">
+                <strong>{{ _('Scan this QR code') }}</strong>
+                <p class="text-muted small mb-2">{{ _('Or enter the key manually') }}</p>
+                <div class="text-center mb-2">
+                    <img src="data:image/png;base64,{{ qr_b64 }}" alt="{{ _('QR Code') }}" style="max-width:200px; border-radius:8px; border:4px solid #e9ecef;">
+                </div>
+                <div class="secret-box text-center mb-1">{{ secret }}</div>
+                <p class="text-muted small text-center">{{ _('Manual entry key') }}</p>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-start gap-3 mb-4">
+            <span class="step-badge">3</span>
+            <div class="w-100">
+                <strong>{{ _('Enter the 6-digit code to confirm') }}</strong>
+                <form method="POST" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="verify">
+                    <div class="mb-3">
+                        <input type="text" name="code" class="form-control otp-input"
+                               maxlength="6" placeholder="000000"
+                               inputmode="numeric" autocomplete="one-time-code"
+                               autofocus required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle me-2"></i>{{ _('Activate &amp; Continue') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="alert alert-warning small">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            {{ _('You will receive one-time backup codes on the next screen. Store them safely — they are shown') }} <strong>{{ _('once only') }}</strong>.
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

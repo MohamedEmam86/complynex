@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Lesson') }} — {{ c.title_en }}{% endblock %}
+{% block content %}
+{% set page_title = _('Edit lesson') if l.id else _('New lesson') %}
+{% include 'academy/admin/_nav.html' %}
+<p class="small"><a href="{{ url_for('academy_admin.course', cid=c.id) }}#lessons"><i class="bi bi-arrow-left"></i> {{ c.title_en }}</a></p>
+<form method="post" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card mb-3"><div class="card-header bg-light"><strong>1. {{ _('Title & written material') }}</strong></div><div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label fw-bold">{{ _('Lesson title (English)') }} *</label>
+          <input name="title_en" class="form-control" required maxlength="200" value="{{ l.title_en or '' }}"></div>
+        <div class="col-md-6"><label class="form-label fw-bold">{{ _('Lesson title (Arabic)') }}</label>
+          <input name="title_ar" class="form-control" dir="rtl" maxlength="200" value="{{ l.title_ar or '' }}"></div>
+        <div class="col-md-6"><label class="form-label fw-bold">{{ _('Material (English)') }}</label>
+          <textarea name="body_en" class="form-control font-monospace small" rows="16">{{ l.body_en or '' }}</textarea></div>
+        <div class="col-md-6"><label class="form-label fw-bold">{{ _('Material (Arabic)') }}</label>
+          <textarea name="body_ar" class="form-control small" rows="16" dir="rtl">{{ l.body_ar or '' }}</textarea></div>
+      </div>
+      <div class="alert alert-light border small mt-3 mb-0">
+        <b>{{ _('Formatting') }}:</b> {{ _('blank line = new paragraph') }} · <code>## </code>{{ _('heading') }} · <code>- </code>{{ _('bullet') }} ·
+        <code>**{{ _('bold') }}**</code> · <code>&gt; </code>{{ _('highlighted box') }}
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-header bg-light"><strong>2. {{ _('Video') }}</strong></div><div class="card-body">
+      <label class="form-label small fw-bold">{{ _('YouTube / Vimeo link (recommended)') }}</label>
+      <input name="video_url" class="form-control form-control-sm mb-1" placeholder="https://www.youtube.com/watch?v=…" value="{{ l.video_url or '' }}">
+      <div class="form-text mb-2">{{ _('Upload as "Unlisted" on YouTube — plays embedded inside the lesson.') }}</div>
+      <label class="form-label small fw-bold">{{ _('…or upload MP4 (max 300 MB)') }}</label>
+      <input type="file" name="video_upload" accept="video/mp4,video/webm" class="form-control form-control-sm">
+      {% if l.video_file %}<div class="small mt-2"><i class="bi bi-camera-video"></i> {{ l.video_name }}
+        <label class="ms-2 text-danger"><input type="checkbox" name="remove_video" value="1"> {{ _('remove') }}</label></div>{% endif %}
+      <div class="form-text">{{ _('If both are set, the uploaded file is shown.') }}</div>
+    </div></div>
+
+    <div class="card mb-3"><div class="card-header bg-light"><strong>3. {{ _('Presentation') }}</strong></div><div class="card-body">
+      <input type="file" name="presentation_upload" accept=".pdf,.pptx,.ppt" class="form-control form-control-sm">
+      <div class="form-text">{{ _('PDF is shown inside the lesson (best). PPTX is offered as a download. Max 60 MB.') }}</div>
+      {% if l.presentation_file %}<div class="small mt-2"><i class="bi bi-easel"></i> {{ l.presentation_name }}
+        <label class="ms-2 text-danger"><input type="checkbox" name="remove_presentation" value="1"> {{ _('remove') }}</label></div>{% endif %}
+    </div></div>
+
+    <div class="card mb-3"><div class="card-header bg-light"><strong>4. {{ _('Downloadable handout (optional)') }}</strong></div><div class="card-body">
+      <input type="file" name="material_upload" accept=".pdf,.docx,.doc,.xlsx,.pptx,.zip" class="form-control form-control-sm">
+      <div class="form-text">{{ _('PDF, Word, Excel, PowerPoint or ZIP. Max 60 MB.') }}</div>
+      {% if l.material_file %}<div class="small mt-2"><i class="bi bi-file-earmark"></i> {{ l.material_name }}
+        <label class="ms-2 text-danger"><input type="checkbox" name="remove_material" value="1"> {{ _('remove') }}</label></div>{% endif %}
+    </div></div>
+
+    <button class="btn btn-primary w-100">{{ _('Save lesson') }}</button>
+  </div>
+</div>
+</form>
+{% endblock %}

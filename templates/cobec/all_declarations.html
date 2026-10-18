@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}All COBEC Declarations{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="bi bi-shield-check"></i> {{ _('COBEC Declarations') }}</h2>
+        <p class="text-muted">Overview of all Code of Business Ethics & Conduct declarations for {{ selected_year }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                Year: {{ selected_year }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                {% for y in range(2024, selected_year + 2) %}
+                <li><a class="dropdown-item" href="{{ url_for('cobec.all_declarations', year=y) }}">{{ y }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <a href="{{ url_for('admin.list_users') }}" class="btn btn-outline-dark ms-2">
+            <i class="bi bi-people"></i> {{ _('Manage Employees') }}
+        </a>
+        <a href="{{ url_for('tracker.export_declarations', declaration_type='cobec', year=selected_year) }}"
+            class="btn btn-outline-success ms-2">
+            <i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Export CSV') }}
+        </a>
+        <button data-action="print" class="btn btn-outline-primary ms-2">
+            <i class="bi bi-printer"></i> {{ _('Print Report') }}
+        </button>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <h6 class="card-title opacity-75">{{ _('Total Employees') }}</h6>
+                <h2 class="display-6 mb-0">{{ stats.total_employees }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <h6 class="card-title opacity-75">{{ _('Submitted') }}</h6>
+                <h2 class="display-6 mb-0">{{ stats.submitted }}</h2>
+                <small>{{ stats.completion_rate }}% Completion</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark h-100">
+            <div class="card-body">
+                <h6 class="card-title opacity-75">{{ _('Not Submitted') }}</h6>
+                <h2 class="display-6 mb-0">{{ stats.not_submitted }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Declarations Table -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0">{{ _('Declaration Status') }}</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{{ _('Employee') }}</th>
+                        <th>{{ _('Department') }}</th>
+                        <th>{{ _('Date') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Violations Declared') }}</th>
+                        <th>{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in compliance_list %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-initial rounded-circle bg-label-primary me-2">
+                                    {{ item.employee_name[:1] }}
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ item.employee_name }}</h6>
+                                    <small class="text-muted">{{ item.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ item.department }}</td>
+                        <td>{{ (item.declaration_date|string)[:10] if item.declaration_date else '-' }}</td>
+                        <td>
+                            {% if item.status == 'approved' %}
+                            <span class="badge bg-success">{{ _('Approved') }}</span>
+                            {% elif item.status == 'submitted' %}
+                            <span class="badge bg-info">{{ _('Submitted') }}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{{ _('Pending') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.declaration_id %}
+                            {% if item.has_issues %}
+                            <span class="badge bg-danger">{{ _('Yes') }}</span>
+                            {% else %}
+                            <span class="badge bg-success">No</span>
+                            {% endif %}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.declaration_id %}
+                            <a href="{{ url_for('cobec.view_declaration', id=item.declaration_id) }}"
+                                class="btn btn-sm btn-outline-primary">
+                                {{ _('View Details') }}
+                            </a>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>{{ _('No Declaration') }}</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                            {{ _('No employees found') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

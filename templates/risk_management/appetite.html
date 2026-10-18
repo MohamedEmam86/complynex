@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Risk Appetite') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('Risk Appetite Statements') }}</h3>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>{{ _('Category') }}</th><th>{{ _('Level') }}</th><th>{{ _('Max Residual Score') }}</th><th>{{ _('Effective') }}</th></tr></thead>
+                        <tbody>
+                        {% for s in statements %}
+                            <tr>
+                                <td>{{ (categories | selectattr('id', 'equalto', s.category_id) | first).category_name if s.category_id else _('Entity-wide') }}</td>
+                                <td><span class="badge bg-info">{{ s.appetite_level }}</span></td>
+                                <td>{{ s.max_acceptable_residual_score }}</td>
+                                <td class="small">{{ s.effective_from }} - {{ s.effective_to or _('ongoing') }}</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">{{ _('No appetite statements recorded yet.') }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><strong>{{ _('New Statement') }}</strong></div>
+                <div class="card-body">
+                    <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-2">
+                            <label class="form-label">{{ _('Category (blank = entity-wide)') }}</label>
+                            <select name="category_id" class="form-select">
+                                <option value="">{{ _('Entity-wide') }}</option>
+                                {% for c in categories %}<option value="{{ c.id }}">{{ c.category_name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">{{ _('Statement') }}</label>
+                            <textarea name="statement_text" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">{{ _('Appetite Level') }}</label>
+                            <select name="appetite_level" class="form-select" required>
+                                {% for l in ['AVERSE', 'MINIMAL', 'CAUTIOUS', 'OPEN', 'HUNGRY'] %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">{{ _('Max Acceptable Residual Score') }}</label>
+                            <input type="number" min="1" max="25" name="max_acceptable_residual_score" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Effective From') }}</label>
+                            <input type="date" name="effective_from" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">{{ _('Save') }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

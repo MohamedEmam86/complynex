@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Methodology') }} — {{ _('Carbon Footprint') }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+  <div class="ecx-hero ecx-carbon">
+    <div class="ecx-eyebrow">{{ _('Carbon Footprint & Climate') }}</div>
+    <h1><i class="bi bi-journal-richtext me-2"></i>{{ _('Calculation Methodology') }}</h1>
+    <p>{{ _('How every number in this module is produced — in plain language, so anyone on the team can explain a figure without needing a carbon-accounting background.') }}</p>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="ecx-card mb-3">
+        <h6><i class="bi bi-1-circle me-1"></i>{{ _('The core formula') }}</h6>
+        <p class="small">{{ _('Every activity entry (a litre of diesel, a kWh of electricity, a flight) is converted to carbon dioxide equivalent (CO2e) using one formula, applied consistently everywhere in this module:') }}</p>
+        <div class="ecx-methodology-box"><code style="font-size:14px;">{{ _('tCO2e = (Activity Quantity × Emission Factor) ÷ 1000') }}</code></div>
+        <p class="small mt-3 mb-0">{{ _('The emission factor converts a physical quantity (litres, kWh, km, kg) into kilograms of CO2-equivalent. Dividing by 1000 converts kilograms to tonnes, the standard unit for corporate GHG reporting.') }}</p>
+      </div>
+
+      <div class="ecx-card mb-3">
+        <h6><i class="bi bi-2-circle me-1"></i>{{ _('The three Scopes (GHG Protocol)') }}</h6>
+        <table class="ecx-table-clean">
+          <tr><td><span class="ecx-scope-tag scope1">{{ _('SCOPE 1') }}</span></td><td class="small">{{ _('Direct emissions from sources the company owns or controls — company vehicles, on-site generators, refrigerant leaks.') }}</td></tr>
+          <tr><td><span class="ecx-scope-tag scope2">{{ _('SCOPE 2') }}</span></td><td class="small">{{ _('Indirect emissions from purchased electricity, heat, steam or cooling. Reported two ways: location-based (grid average) and market-based (your actual electricity contracts, e.g. a renewable PPA).') }}</td></tr>
+          <tr><td><span class="ecx-scope-tag scope3">{{ _('SCOPE 3') }}</span></td><td class="small">{{ _('Everything else in the value chain — business travel, employee commuting, purchased goods, waste, and 12 other categories defined by the GHG Protocol Scope 3 Standard.') }}</td></tr>
+        </table>
+      </div>
+
+      <div class="ecx-card">
+        <h6><i class="bi bi-3-circle me-1"></i>{{ _('Year-on-year comparison') }}</h6>
+        <p class="small mb-0">{{ _('YoY change is only ever calculated against a prior period\'s closed, stored total — never a live recalculation of an open period. This avoids a moving-target comparison, which was one of the errors found in the earlier consultant-built spreadsheets this module replaces.') }}</p>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="ecx-card mb-3">
+        <h6><i class="bi bi-bookmark-check me-1"></i>{{ _('Factor sources in this library') }}</h6>
+        <div class="mb-2 small text-muted">{{ factor_count }} {{ _('active emission factors currently loaded') }}</div>
+        {% for s in sources %}
+        <div class="d-flex justify-content-between align-items-center py-1" style="border-bottom:1px solid #f1f4f5;">
+          <span class="small">{{ s.source }}</span>
+          <span class="ecx-badge-source">{{ s.vintage_year }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="ecx-card">
+        <h6><i class="bi bi-exclamation-triangle me-1"></i>{{ _('Known limitations (read before external disclosure)') }}</h6>
+        <ul class="small mb-0" style="padding-inline-start:18px;">
+          <li>{{ _('The Egypt grid electricity factor is an indicative estimate pending an official EgyptERA/EETC published factor.') }}</li>
+          <li>{{ _('The purchased-goods (Category 1) spend-based factor is a generic placeholder — validate against a sector-specific dataset before using it in a signed-off report.') }}</li>
+          <li>{{ _('Scope 3 categories with no logged activity are simply absent from totals, not assumed to be zero — check the factor library for full category coverage.') }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

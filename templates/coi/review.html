@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Review Declaration - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Review Declaration') }}</h1>
+    <a href="{{ url_for('coi.pending_review') }}" class="btn btn-outline-secondary">{{ _('Back to List') }}</a>
+</div>
+
+<div class="row">
+    <!-- Declaration View (Read Only) -->
+    <div class="col-md-7">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ _('Declaration Data') }}</h5>
+                <a href="{{ url_for('coi.view_declaration', id=declaration.id) }}" target="_blank"
+                    class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-eye"></i> {{ _('View Original Form') }}
+                </a>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">{{ _('Employee') }}</dt>
+                    <dd class="col-sm-8">{{ declaration.employee_name }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Department') }}</dt>
+                    <dd class="col-sm-8">{{ declaration.department }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Date') }}</dt>
+                    <dd class="col-sm-8">{{ declaration.declaration_date }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Case PIN') }}</dt>
+                    <dd class="col-sm-8"><span class="badge bg-secondary font-monospace">{{ declaration.pin_code
+                            }}</span>
+                        <small class="text-muted d-block mt-1">{{ _('Provide this to the employee if they forget it.') }}</small>
+                    </dd>
+                </dl>
+
+                <hr>
+
+                <div class="mb-3">
+                    <h6 class="border-bottom pb-2">{{ _('Full Declaration Form') }}</h6>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ _('Conflict Area') }}</th>
+                                    <th>{{ _('Response') }}</th>
+                                    <th>{{ _('Details Provided') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ _('Financial Interests') }}</td>
+                                    <td>{{ 'Yes' if declaration.has_financial_interests else 'No' }}</td>
+                                    <td>{{ declaration.financial_interests_details or '---' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ _('Family in Competitor') }}</td>
+                                    <td>{{ 'Yes' if declaration.has_family_in_competitor else 'No' }}</td>
+                                    <td>{{ declaration.family_competitor_details or '---' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ _('Family in Supplier') }}</td>
+                                    <td>{{ 'Yes' if declaration.has_family_in_supplier else 'No' }}</td>
+                                    <td>{{ declaration.family_supplier_details or '---' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ _('Outside Employment') }}</td>
+                                    <td>{{ 'Yes' if declaration.has_outside_employment else 'No' }}</td>
+                                    <td>{{ declaration.outside_employment_details or '---' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ _('Gifts Received') }}</td>
+                                    <td>{{ 'Yes' if declaration.has_received_gifts else 'No' }}</td>
+                                    <td>{{ declaration.gifts_details or '---' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ _('Other Conflicts') }}</td>
+                                    <td>{{ 'Yes' if declaration.has_other_conflicts else 'No' }}</td>
+                                    <td>{{ declaration.other_conflicts_details or '---' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Trail & Activity Log -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0 text-dark"><i class="bi bi-clock-history"></i> {{ _('Audit Trail & Activity Log') }}</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">{{ _('Activity') }}</th>
+                                <th>{{ _('Performer') }}</th>
+                                <th>{{ _('Status Change') }}</th>
+                                <th>{{ _('Timestamp') }}</th>
+                                <th class="pe-3">{{ _('Comments') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in history %}
+                            <tr>
+                                <td class="ps-3">
+                                    <span
+                                        class="badge {{ 'bg-success' if log.action == 'approved' else 'bg-primary' if log.action == 'submitted' else 'bg-warning' if log.action == 'clarification_requested' else 'bg-info' }}">
+                                        {{ log.action.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>{{ log.performer_name or 'System' }}</td>
+                                <td>
+                                    {% if log.status_before %}
+                                    <small class="text-muted">{{ log.status_before.replace('_', ' ') }}</small>
+                                    <i class="bi bi-arrow-right mx-1"></i>
+                                    {% endif %}
+                                    <span class="fw-bold">{{ log.status_after.replace('_', ' ') if log.status_after else
+                                        'N/A' }}</span>
+                                </td>
+                                <td>{{ log.created_at }}</td>
+                                <td class="pe-3 small text-muted">{{ log.comments or '---' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-muted">{{ _('No activity logs found.') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Action Form -->
+    <div class="col-md-5">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">{{ _('Review Action') }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="comments" class="form-label">{{ _('Reviewer Comments') }}</label>
+                        <textarea class="form-control" id="comments" name="comments" rows="4"
+                            placeholder="{{ _('Enter your assessment or request for details...') }}" required></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="action" value="approve" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> {{ _('Approve Declaration') }}
+                        </button>
+
+                        {% if not mitigation_plan %}
+                        <button type="submit" name="action" value="mitigate" class="btn btn-primary">
+                            <i class="bi bi-shield-check"></i> {{ _('Require Mitigation Plan') }}
+                        </button>
+                        {% else %}
+                        <div class="alert alert-info py-2">
+                            <h6 class="alert-heading mb-1"><i class="bi bi-info-circle"></i> {{ _('Mitigation In Progress') }}</h6>
+                            <p class="small mb-2">{{ _('A mitigation plan has been created for this conflict.') }}</p>
+                            <a href="{{ url_for('coi.view_mitigation_plan', id=mitigation_plan.id) }}"
+                                class="btn btn-sm btn-info w-100 text-white">
+                                <i class="bi bi-eye"></i> {{ _('View Mitigation Plan') }}
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" name="action" value="clarify" class="btn btn-warning">
+                            <i class="bi bi-question-circle"></i> {{ _('Request Clarification') }}
+                        </button>
+
+                        <button type="submit" name="action" value="escalate" class="btn btn-danger">
+                            <i class="bi bi-arrow-up-circle"></i> {{ _('Escalate to Management') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

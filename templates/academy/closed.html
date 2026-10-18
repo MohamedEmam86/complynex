@@ -1,0 +1,11 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('Opening soon', 'قريبًا') }}{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow ia-center">
+  <img src="{{ url_for('static', filename='images/academy/integrys-emblem-256.png') }}" alt="" width="110" height="110">
+  <h1>{{ t('Integrys Academy opens soon', 'أكاديمية إنتيجريس تفتح قريبًا') }}</h1>
+  <p class="ia-muted">{{ t('Free, practitioner-written compliance training grounded in Egyptian regulation.', 'تدريب مجاني في الالتزام، كتبه ممارسون، ومبني على التنظيم المصري.') }}</p>
+  <p><a class="ia-btn ia-btn--ghost" href="https://integrysconsult.com/">integrysconsult.com</a></p>
+  <p class="ia-small"><a href="{{ url_for('academy.verify_lookup') }}">{{ t('Verify a certificate', 'تحقق من شهادة') }}</a></p>
+</div>
+{% endblock %}

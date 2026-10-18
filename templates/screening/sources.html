@@ -1,0 +1,972 @@
+{% extends "base.html" %}
+
+{% block content %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 text-gray-800"><i class="fas fa-database me-2"></i>{{ _('Watchlist Data Sources') }}</h1>
+            <p class="text-muted mb-0">{{ _('Manage sanctions lists, source URLs, scraping, and audit trail.') }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('screening.config') }}" class="btn btn-outline-primary btn-sm me-2">
+                <i class="fas fa-sliders-h me-1"></i>{{ _('Algorithm Settings') }}
+            </a>
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                data-bs-target="#addSourceModal">
+                <i class="fas fa-plus me-1"></i>{{ _('Add New Source') }}
+            </button>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 1: Stats Overview Cards                                        -->
+    <!-- ===================================================================== -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{{ _('Total Watchlist
+                                Records') }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ watchlist_count|default(0)|int }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-database fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{{ _('Active Sources') }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ data_sources|selectattr('is_active')|list|length }} / {{ data_sources|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">{{ _('Last Data Update') }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" style="font-size: 0.95rem;">
+                                {% set last_updates = data_sources|selectattr('last_successful_update')|list %}
+                                {% if last_updates %}
+                                {% set latest_update = last_updates|sort(attribute='last_successful_update',
+                                reverse=true)|first %}
+                                {{ latest_update.last_successful_update[:16] }}
+                                {% else %}
+                                <span class="text-warning">{{ _('Never') }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">{{ _('Audit Log Entries') }}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ recent_audits|length if recent_audits
+                                else 0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 2: Data Sources Table                                          -->
+    <!-- ===================================================================== -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-globe me-2"></i>{{ _('All Data Sources') }}
+            </h6>
+            <div>
+                <button class="btn btn-sm btn-outline-info me-2" data-onclick-fn="validateAllUrls">
+                    <i class="fas fa-check-double me-1"></i>{{ _('Validate All URLs') }}
+                </button>
+                <button class="btn btn-sm btn-outline-success" data-onclick-fn="syncAllSources">
+                    <i class="fas fa-sync-alt me-1"></i>{{ _('Sync All') }}
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle" id="sourcesTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:3%">#</th>
+                            <th style="width:18%">{{ _('Source') }}</th>
+                            <th style="width:6%">{{ _('Type') }}</th>
+                            <th style="width:25%">{{ _('Source URL') }}</th>
+                            <th style="width:8%">{{ _('URL Status') }}</th>
+                            <th style="width:12%">{{ _('Last Updated') }}</th>
+                            <th style="width:8%">{{ _('Records') }}</th>
+                            <th style="width:5%">{{ _('Priority') }}</th>
+                            <th style="width:15%">{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for source in data_sources %}
+                        <tr data-source-id="{{ source.id }}" data-source-name="{{ source.source_name }}">
+                            <td class="text-center">{{ source.id }}</td>
+                            <td>
+                                <div class="fw-bold">{{ source.source_display_name or source.source_name }}</div>
+                                <small class="text-muted">{{ source.source_name }}</small>
+                                {% if source.is_active %}
+                                <span class="badge bg-success ms-1" style="font-size:0.65rem">{{ _('Active') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary ms-1" style="font-size:0.65rem">{{ _('Inactive') }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% set type_colors = {'UN': 'primary', 'OFAC': 'danger', 'HMT': 'info', 'EU': 'success',
+                                'EMLCU': 'warning', 'OpenSanctions': 'dark', 'FTJSON': 'secondary'} %}
+                                <span class="badge bg-{{ type_colors.get(source.source_type, 'secondary') }}">
+                                    {{ source.source_type or '—' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if source.source_url %}
+                                <div class="text-truncate" style="max-width:320px;" title="{{ source.source_url }}">
+                                    <a href="{{ source.source_url }}" target="_blank"
+                                        class="text-decoration-none small">
+                                        {{ source.source_url[:80] }}{% if source.source_url|length > 80 %}...{% endif %}
+                                    </a>
+                                </div>
+                                {% else %}
+                                <span class="text-muted fst-italic small">{{ _('Not configured') }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary url-status" id="url-status-{{ source.id }}">
+                                    <i class="fas fa-question-circle me-1"></i>{{ _('Unknown') }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if source.last_successful_update %}
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle me-1"></i>{{
+                                    source.last_successful_update[:16] }}
+                                </small>
+                                {% else %}
+                                <small class="text-warning">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ _('Never') }}
+                                </small>
+                                {% endif %}
+                                {% if source.last_update_records_added %}
+                                <br><small class="text-muted">+{{ source.last_update_records_added }} added</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="fw-bold">{{ source.total_records|default(0) }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark">{{ source.priority|default('—') }}</span>
+                            </td>
+                            <td>
+                                <!-- Actions row: sync status -->
+                                <div class="source-status mb-1 d-none" id="status-{{ source.source_name }}">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <div class="spinner-border spinner-border-sm text-primary"
+                                            id="spinner-{{ source.source_name }}" role="status"></div>
+                                        <small class="fw-semibold text-primary"
+                                            id="statusText-{{ source.source_name }}">{{ _('Syncing...') }}</small>
+                                    </div>
+                                    <div class="progress mt-1" id="progress-{{ source.source_name }}"
+                                        style="height: 4px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                            id="progressBar-{{ source.source_name }}" style="width: 5%"></div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-success py-1 px-2 small mb-1 d-none"
+                                    id="success-{{ source.source_name }}"></div>
+                                <div class="alert alert-danger py-1 px-2 small mb-1 d-none"
+                                    id="error-{{ source.source_name }}"></div>
+
+                                <!-- Action buttons -->
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button class="btn btn-outline-primary" title="{{ _('Edit URL') }}"
+                                        data-action-fn="editUrl"
+                                        data-arg-id="{{ source.id }}" data-arg-name="{{ source.source_display_name or source.source_name }}" data-arg-url="{{ source.source_url or '' }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-outline-success" title="{{ _('Sync Now') }}"
+                                        id="scrapeBtn-{{ source.source_name }}"
+                                        data-action-fn="scrapeSource"
+                                        data-arg-key="{{ source.source_name }}" data-arg-name="{{ source.source_display_name or source.source_name }}">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info" title="{{ _('Validate URL') }}"
+                                        data-action-fn="validateUrl"
+                                        data-arg-id="{{ source.id }}" data-arg-url="{{ source.source_url or '' }}">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary" title="{{ _('URL History') }}"
+                                        data-action-fn="showHistory"
+                                        data-arg-id="{{ source.id }}" data-arg-name="{{ source.source_display_name or source.source_name }}">
+                                        <i class="fas fa-history"></i>
+                                    </button>
+                                    <button class="btn btn-outline-warning" title="{{ _('Upload File') }}"
+                                        data-action-fn="openUploadModal"
+                                        data-arg-key="{{ source.source_name }}" data-arg-name="{{ source.source_display_name or source.source_name }}">
+                                        <i class="fas fa-upload"></i>
+                                    </button>
+                                </div>
+                                <!-- Toggle / Delete -->
+                                <div class="mt-1">
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="toggle">
+                                        <input type="hidden" name="sid" value="{{ source.id }}">
+                                        <button type="submit" class="btn btn-link btn-sm p-0 text-muted"
+                                            title="{{ _('Toggle Active') }}">
+                                            {% if source.is_active %}
+                                            <i class="fas fa-toggle-on text-success"></i>
+                                            {% else %}
+                                            <i class="fas fa-toggle-off text-secondary"></i>
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 3: Recent Audit Log                                            -->
+    <!-- ===================================================================== -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-clipboard-list me-2"></i>{{ _('Recent Update Audit Log') }}
+            </h6>
+            <a href="{{ url_for('screening.audit_log') }}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-external-link-alt me-1"></i>{{ _('View Full Audit Log') }}
+            </a>
+        </div>
+        <div class="card-body">
+            {% if recent_audits and recent_audits|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>{{ _('Type') }}</th>
+                            <th>By</th>
+                            <th>{{ _('Added') }}</th>
+                            <th>{{ _('Updated') }}</th>
+                            <th>{{ _('Errors') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Started') }}</th>
+                            <th>{{ _('Duration') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in recent_audits %}
+                        <tr>
+                            <td>{{ record.id }}</td>
+                            <td>
+                                {% if record.update_type == 'FULL_UPDATE' %}
+                                <span class="badge bg-primary">{{ _('Full') }}</span>
+                                {% elif record.update_type == 'INCREMENTAL' %}
+                                <span class="badge bg-info">{{ _('Incremental') }}</span>
+                                {% elif record.update_type == 'SINGLE_SOURCE' %}
+                                <span class="badge bg-secondary">{{ _('Single') }}</span>
+                                {% else %}
+                                <span class="badge bg-dark">{{ record.update_type or '—' }}</span>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ record.initiated_by_user or ('User #' ~ record.initiated_by) if
+                                    record.initiated_by else '—' }}</small></td>
+                            <td>
+                                {% if record.records_added %}
+                                <span class="text-success fw-bold">+{{ record.records_added }}</span>
+                                {% else %}0{% endif %}
+                            </td>
+                            <td>
+                                {% if record.records_updated %}
+                                <span class="text-info fw-bold">{{ record.records_updated }}</span>
+                                {% else %}0{% endif %}
+                            </td>
+                            <td>
+                                {% if record.errors_count %}
+                                <span class="text-danger fw-bold">{{ record.errors_count }}</span>
+                                {% else %}<span class="text-success">0</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if record.status == 'COMPLETED' %}
+                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>OK</span>
+                                {% elif record.status == 'IN_PROGRESS' %}
+                                <span class="badge bg-warning text-dark"><i
+                                        class="fas fa-spinner fa-spin me-1"></i>{{ _('Running') }}</span>
+                                {% elif record.status == 'FAILED' %}
+                                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>{{ _('Failed') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ record.status or '—' }}</span>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ record.started_at[:16] if record.started_at else '—'
+                                    }}</small></td>
+                            <td>
+                                {% if record.duration_seconds %}
+                                {% if record.duration_seconds < 60 %} {{ record.duration_seconds }}s {% else %} {{
+                                    (record.duration_seconds / 60)|round(1) }}m {% endif %} {% else %}—{% endif %} </td>
+                        </tr>
+                        {% if record.error_message %}
+                        <tr class="table-danger">
+                            <td colspan="9"><small><i class="fas fa-exclamation-triangle me-1"></i>{{
+                                    record.error_message }}</small></td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-clipboard-check fa-2x text-muted mb-2 d-block"></i>
+                <p class="text-muted mb-0">{{ _('No audit records yet. Records appear here after data sync operations.') }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- MODALS                                                                 -->
+<!-- ===================================================================== -->
+
+<!-- Edit URL Modal -->
+<div class="modal fade" id="editUrlModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>{{ _('Edit Source URL') }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUrlForm">
+                    <input type="hidden" id="editSourceId">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Source Name') }}</label>
+                        <input type="text" class="form-control" id="editSourceName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('New URL') }}</label>
+                        <div class="input-group">
+                            <input type="url" class="form-control" id="editNewUrl" placeholder="https://..." required>
+                            <button type="button" class="btn btn-outline-info" data-onclick-fn="testUrlInModal">
+                                <i class="fas fa-check me-1"></i>{{ _('Test') }}
+                            </button>
+                        </div>
+                        <div id="urlTestResult" class="mt-2" style="display:none;"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Notes (reason for change)') }}</label>
+                        <textarea class="form-control" id="editNotes" rows="2"
+                            placeholder="{{ _('Why is this URL being changed?') }}"></textarea>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="editValidate" checked>
+                        <label class="form-check-label" for="editValidate">{{ _('Validate URL before saving') }}</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                <button type="button" class="btn btn-primary" data-onclick-fn="saveUrl">
+                    <i class="fas fa-save me-1"></i>{{ _('Save URL') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- URL History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-history me-2"></i>{{ _('URL Change History —') }} <span
+                        id="historySourceName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="historyContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">{{ _('Loading history...') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title"><i class="fas fa-upload me-2"></i>{{ _('Upload:') }} <span id="uploadSourceName"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">{{ _('Upload a file to update this sanctions list.') }}</p>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <input type="hidden" name="source" id="uploadSourceId">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ _('Select File') }}</label>
+                        <input type="file" name="file" class="form-control" required>
+                        <div class="form-text">{{ _('Supported: XML for UN/OFAC/EU/HMT, XLSX for EMLCU') }}</div>
+                    </div>
+
+                    <!-- Dynamic Guidance for EMLCU -->
+                    <div id="emlcu-guidance" class="alert alert-info d-none mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-info-circle fa-lg me-2"></i>
+                            <h6 class="mb-0 fw-bold">{{ _('EMLCU Manual Upload Help') }}</h6>
+                        </div>
+                        <p class="small mb-2">{{ _('If the automatic scraper fails, follow these steps:') }}</p>
+                        <ol class="small mb-2 ps-3">
+                            <li>{{ _('Visit the') }} <a href="https://www.mlcu.org.eg" target="_blank" class="fw-bold">{{ _('MLCU
+                                    Website') }}</a>.</li>
+                            <li>{{ _('Download the latest') }} <strong>{{ _('Excel (.xlsx)') }}</strong> {{ _('list from the homepage.') }}</li>
+                            <li>{{ _('Upload the file here -') }} <strong>{{ _('Dynamic column mapping') }}</strong> {{ _('is now supported.') }}</li>
+                        </ol>
+                        <div class="small text-muted"><i class="fas fa-magic me-1"></i>{{ _('The system will automatically
+                            detect names, IDs, and passport columns.') }}</div>
+                    </div>
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary btn-lg fw-semibold" id="startUploadBtn">
+                            <i class="fas fa-cloud-upload-alt me-1"></i> {{ _('Upload & Process') }}
+                        </button>
+                    </div>
+                    <div id="upload-feedback-container" class="mt-3">
+                        <div id="upload-progress-box" class="d-none">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <span class="fw-semibold text-primary" id="upload-progress-text">{{ _('Uploading...') }}</span>
+                            </div>
+                            <div class="progress mb-2" style="height: 6px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                    style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div id="upload-success-box" class="alert alert-success d-none">
+                            <i class="fas fa-check-circle me-1"></i><span id="upload-success-msg"></span>
+                        </div>
+                        <div id="upload-error-box" class="alert alert-danger d-none">
+                            <i class="fas fa-exclamation-triangle me-1"></i><span id="upload-error-msg"></span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Source Modal -->
+<div class="modal fade" id="addSourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="add">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i>{{ _('Add Screening Source') }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ _('Internal ID (Slug)') }}</label>
+                        <input type="text" name="id" class="form-control" placeholder="{{ _('e.g. un_consolidated') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ _('Display Name') }}</label>
+                        <input type="text" name="name" class="form-control" placeholder="{{ _('e.g. UN Security Council List') }}"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ _('Source URL') }}</label>
+                        <input type="url" name="url" class="form-control" placeholder="https://..." required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ _('Source Type') }}</label>
+                        <select name="type" class="form-select">
+                            <option value="UN">{{ _('UN Security Council') }}</option>
+                            <option value="OFAC">{{ _('OFAC SDN') }}</option>
+                            <option value="HMT">{{ _('HM Treasury') }}</option>
+                            <option value="EU">{{ _('EU Sanctions') }}</option>
+                            <option value="EMLCU">{{ _('EMLCU Egypt') }}</option>
+                            <option value="OpenSanctions" selected>{{ _('OpenSanctions') }}</option>
+                            <option value="Custom">{{ _('Custom Database') }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary fw-semibold">{{ _('Add Source') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- JAVASCRIPT                                                             -->
+<!-- ===================================================================== -->
+<script nonce="{{ csp_nonce }}">
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-action-fn]');
+        if (!btn) return;
+        var fn = btn.dataset.actionFn, d = btn.dataset;
+        if (fn === 'editUrl')         editUrl(d.argId, d.argName, d.argUrl);
+        else if (fn === 'scrapeSource')    scrapeSource(d.argKey, d.argName);
+        else if (fn === 'validateUrl')     validateUrl(d.argId, d.argUrl);
+        else if (fn === 'showHistory')     showHistory(d.argId, d.argName);
+        else if (fn === 'openUploadModal') openUploadModal(d.argKey, d.argName);
+    });
+
+    // =============================================
+    // URL Management
+    // =============================================
+    function editUrl(sourceId, sourceName, currentUrl) {
+        document.getElementById('editSourceId').value = sourceId;
+        document.getElementById('editSourceName').value = sourceName;
+        document.getElementById('editNewUrl').value = currentUrl;
+        document.getElementById('editNotes').value = '';
+        document.getElementById('urlTestResult').style.display = 'none';
+        new bootstrap.Modal(document.getElementById('editUrlModal')).show();
+    }
+
+    function testUrlInModal() {
+        var url = document.getElementById('editNewUrl').value;
+        var resultDiv = document.getElementById('urlTestResult');
+        if (!url) {
+            resultDiv.innerHTML = '<div class="alert alert-warning mb-0 py-2">{{ _('Please enter a URL') }}</div>{{ _('\';
+            resultDiv.style.display = \'block\';
+            return;
+        }
+        resultDiv.innerHTML = \'') }}<div class="alert alert-info mb-0 py-2"><i class="fas fa-spinner fa-spin me-1"></i>{{ _('Testing...') }}</div>';
+        resultDiv.style.display = 'block';
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch('{{ url_for("screening.validate_source_url") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ url: url })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.valid) {
+                    resultDiv.innerHTML = '<div class="alert alert-success mb-0 py-2"><i class="fas fa-check-circle me-1"></i>{{ _('URL is valid (HTTP \' + (data.status_code || \'OK\') + \')\' +
+                        (data.content_type ? \'') }}<br><small>{{ _('Type: \' + data.content_type + \'') }}</small>' : '') + '</div>';
+                } else {
+                    resultDiv.innerHTML = '<div class="alert alert-danger mb-0 py-2"><i class="fas fa-times-circle me-1"></i>{{ _('\' + (data.error || \'Unknown error\') + \'') }}</div>';
+                }
+            })
+            .catch(function (err) {
+                resultDiv.innerHTML = '<div class="alert alert-danger mb-0 py-2">{{ _('Request failed: \' + err.message + \'') }}</div>';
+            });
+    }
+
+    function saveUrl() {
+        var sourceId = document.getElementById('editSourceId').value;
+        var newUrl = document.getElementById('editNewUrl').value;
+        var notes = document.getElementById('editNotes').value;
+        var validate = document.getElementById('editValidate').checked;
+        if (!newUrl) { alert('Please enter a URL'); return; }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch('{{ url_for("screening.update_source_url") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ source_id: parseInt(sourceId), url: newUrl, notes: notes, validate: validate })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('editUrlModal')).hide();
+                    location.reload();
+                } else {
+                    alert('Failed: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(function (err) { alert('Request failed: ' + err.message); });
+    }
+
+    function validateUrl(sourceId, url) {
+        var badge = document.getElementById('url-status-' + sourceId);
+        if (!url || url === 'internal' || url === '#') {
+            badge.innerHTML = '<i class="fas fa-minus-circle me-1"></i>N/A';
+            badge.className = 'badge bg-secondary url-status';
+            badge.title = url === 'internal' ? 'Internal source — no URL to validate' : 'No URL configured';
+            return;
+        }
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            badge.innerHTML = '<i class="fas fa-minus-circle me-1"></i>{{ _('N/A\';
+            badge.className = \'badge bg-secondary url-status\';
+            badge.title = \'Not an HTTP URL\';
+            return;
+        }
+        badge.innerHTML = \'') }}<i class="fas fa-spinner fa-spin me-1"></i>Checking...';
+        badge.className = 'badge bg-info url-status';
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch('{{ url_for("screening.validate_source_url") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ url: url })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.valid) {
+                    var info = data.status_code ? ' (' + data.status_code + ')' : '';
+                    badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Valid' + info;
+                    badge.className = 'badge bg-success url-status';
+                    badge.title = 'URL is reachable';
+                } else {
+                    var errMsg = data.error || 'Unreachable';
+                    badge.innerHTML = '<i class="fas fa-times-circle me-1"></i>Failed';
+                    badge.className = 'badge bg-danger url-status';
+                    badge.title = errMsg;
+                }
+            })
+            .catch(function (err) {
+                badge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Error';
+                badge.className = 'badge bg-warning url-status';
+                badge.title = 'Request failed: ' + (err.message || 'Network error');
+            });
+    }
+
+    function validateAllUrls() {
+        document.querySelectorAll('tr[data-source-id]').forEach(function (row) {
+            var sourceId = row.dataset.sourceId;
+            var urlCell = row.querySelector('td:nth-child(4) a');
+            var url = urlCell ? urlCell.getAttribute('href') : '';
+            if (!urlCell) {
+                var urlText = row.querySelector('td:nth-child(4)');
+                url = urlText ? urlText.textContent.trim() : '';
+            }
+            validateUrl(sourceId, url);
+        });
+    }
+
+    function showHistory(sourceId, sourceName) {
+        document.getElementById('historySourceName').textContent = sourceName;
+        document.getElementById('historyContent').innerHTML =
+            '<div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">{{ _('Loading...') }}</p></div>';
+        new bootstrap.Modal(document.getElementById('historyModal')).show();
+
+        fetch('{{ url_for("screening.get_url_history") }}?source_id=' + sourceId, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success && data.history && data.history.length > 0) {
+                    var html = '<table class="table table-sm table-striped"><thead><tr><th>URL</th><th>{{ _('Status') }}</th><th>{{ _('From') }}</th><th>{{ _('Until') }}</th><th>{{ _('Notes') }}</th></tr></thead><tbody>';
+                    data.history.forEach(function (h) {
+                        var badge = h.is_current ? '<span class="badge bg-success">{{ _('Current') }}</span>' : '<span class="badge bg-secondary">{{ _('Previous') }}</span>{{ _('\';
+                        html += \'') }}<tr><td><small class="text-break">{{ _('\' + h.url + \'') }}</small></td><td>{{ _('\' + badge +
+                            \'') }}</td><td><small>{{ _('\' + (h.valid_from || \'-\') + \'') }}</small></td><td><small>{{ _('\' + (h.valid_until || \'-\') +
+                            \'') }}</small></td><td><small>{{ _('\' + (h.notes || \'-\') + \'') }}</small></td></tr>{{ _('\';
+                    });
+                    html += \'') }}</tbody></table>';
+                    document.getElementById('historyContent').innerHTML = html;
+                } else {
+                    document.getElementById('historyContent').innerHTML =
+                        '<div class="text-center text-muted py-4"><i class="fas fa-info-circle me-2"></i>{{ _('No URL change history.') }}</div>';
+                }
+            })
+            .catch(function (err) {
+                document.getElementById('historyContent').innerHTML = '<div class="alert alert-danger">{{ _('Failed: \' + err.message + \'') }}</div>';
+            });
+    }
+
+    // =============================================
+    // Sync / Scrape
+    // =============================================
+    function scrapeSource(sourceName, displayName) {
+        var statusEl = document.getElementById('status-' + sourceName);
+        var spinnerEl = document.getElementById('spinner-' + sourceName);
+        var statusTextEl = document.getElementById('statusText-' + sourceName);
+        var progressContainerEl = document.getElementById('progress-' + sourceName);
+        var progressBarEl = document.getElementById('progressBar-' + sourceName);
+        var successEl = document.getElementById('success-' + sourceName);
+        var errorEl = document.getElementById('error-' + sourceName);
+        var scrapeBtn = document.getElementById('scrapeBtn-' + sourceName);
+
+        if (scrapeBtn) { scrapeBtn.disabled = true; scrapeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+        if (statusEl) statusEl.classList.remove('d-none');
+        if (successEl) successEl.classList.add('d-none');
+        if (errorEl) errorEl.classList.add('d-none');
+        if (statusTextEl) statusTextEl.textContent = 'Connecting...';
+
+        var onSuccess = function (data) {
+            if (statusEl) statusEl.classList.add('d-none');
+            if (successEl) { successEl.textContent = data.message || 'Sync completed!'; successEl.classList.remove('d-none'); }
+            if (scrapeBtn) { scrapeBtn.disabled = false; scrapeBtn.innerHTML = '<i class="fas fa-check text-success"></i>'; }
+            setTimeout(function () { location.reload(); }, 3000);
+        };
+        var onError = function (msg) {
+            if (statusEl) statusEl.classList.add('d-none');
+            if (errorEl) { errorEl.textContent = msg || 'Sync failed'; errorEl.classList.remove('d-none'); }
+            if (scrapeBtn) { scrapeBtn.disabled = false; scrapeBtn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
+        };
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch('/screening/api/scrape-source', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ source: sourceName })
+        })
+            .then(function (response) {
+                if (!response.ok && response.status === 302) throw new Error('Session expired');
+                return response.json();
+            })
+            .then(function (data) {
+                if (data.success && data.task_id) {
+                    if (statusTextEl) statusTextEl.textContent = 'Initializing...';
+                    var pollCount = 0;
+                    var pollInterval = setInterval(function () {
+                        pollCount++;
+                        if (pollCount > 600) { clearInterval(pollInterval); onError('Timeout'); return; }
+                        fetch('/screening/api/task_status/' + data.task_id)
+                            .then(function (r) { return r.json(); })
+                            .then(function (task) {
+                                if (task.success) {
+                                    var pct = task.progress || 0;
+                                    if (progressBarEl) progressBarEl.style.width = pct + '%';
+                                    if (statusTextEl) statusTextEl.textContent = task.message || 'Processing...';
+                                    if (task.status === 'completed') { clearInterval(pollInterval); onSuccess(task.result || task); }
+                                    else if (task.status === 'failed') { clearInterval(pollInterval); onError(task.message); }
+                                } else { clearInterval(pollInterval); onError(task.error); }
+                            })
+                            .catch(function (e) { clearInterval(pollInterval); onError(e.message); });
+                    }, 1000);
+                } else if (data.success) {
+                    onSuccess(data);
+                } else {
+                    onError(data.error);
+                }
+            })
+            .catch(function (err) { onError(err.message); });
+    }
+
+    function syncAllSources() {
+        if (!confirm('Sync all active sources? This may take several minutes.')) return;
+        document.querySelectorAll('tr[data-source-name]').forEach(function (row) {
+            var sourceName = row.dataset.sourceName;
+            var btn = document.getElementById('scrapeBtn-' + sourceName);
+            if (btn && !btn.disabled) {
+                var displayName = row.querySelector('td:nth-child(2) .fw-bold');
+                scrapeSource(sourceName, displayName ? displayName.textContent : sourceName);
+            }
+        });
+    }
+
+    // =============================================
+    // File Upload
+    // =============================================
+    function openUploadModal(sourceKey, sourceLabel) {
+        document.getElementById('uploadSourceId').value = sourceKey;
+        var nameSpan = document.getElementById('uploadSourceName');
+        if (nameSpan) nameSpan.textContent = sourceLabel;
+
+        // Show/hide EMLCU guidance
+        var emlcuGuidance = document.getElementById('emlcu-guidance');
+        if (emlcuGuidance) {
+            if (sourceKey.toLowerCase().includes('emlcu')) {
+                emlcuGuidance.classList.remove('d-none');
+            } else {
+                emlcuGuidance.classList.add('d-none');
+            }
+        }
+
+        var pBox = document.getElementById('upload-progress-box');
+        var sBox = document.getElementById('upload-success-box');
+        var eBox = document.getElementById('upload-error-box');
+        var btn = document.getElementById('startUploadBtn');
+        if (pBox) pBox.classList.add('d-none');
+        if (sBox) sBox.classList.add('d-none');
+        if (eBox) eBox.classList.add('d-none');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-upload-alt me-1"></i> Upload & Process'; btn.className = 'btn btn-primary btn-lg fw-semibold'; }
+        document.getElementById('uploadForm').reset();
+        new bootstrap.Modal(document.getElementById('uploadModal')).show();
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var form = this;
+        var modal = document.getElementById('uploadModal');
+        var btn = document.getElementById('startUploadBtn');
+        var pBox = modal.querySelector('#upload-progress-box') || document.getElementById('upload-progress-box');
+        var sBox = modal.querySelector('#upload-success-box') || document.getElementById('upload-success-box');
+        var eBox = modal.querySelector('#upload-error-box') || document.getElementById('upload-error-box');
+        var statusText = modal.querySelector('#upload-progress-text') || document.getElementById('upload-progress-text');
+
+        // Create fallback elements if still not found
+        var feedbackContainer = modal.querySelector('#upload-feedback-container') || form;
+        if (!sBox) {
+            sBox = document.createElement('div');
+            sBox.id = 'upload-success-box';
+            sBox.className = 'alert alert-success d-none';
+            sBox.innerHTML = '<i class="fas fa-check-circle me-1"></i><span id="upload-success-msg"></span>';
+            feedbackContainer.appendChild(sBox);
+        }
+        if (!eBox) {
+            eBox = document.createElement('div');
+            eBox.id = 'upload-error-box';
+            eBox.className = 'alert alert-danger d-none';
+            eBox.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i><span id="upload-error-msg"></span>';
+            feedbackContainer.appendChild(eBox);
+        }
+        if (!pBox) {
+            pBox = document.createElement('div');
+            pBox.id = 'upload-progress-box';
+            pBox.className = 'd-none';
+            pBox.innerHTML = '<div class="d-flex align-items-center gap-2 mb-2"><div class="spinner-border spinner-border-sm text-primary" role="status"></div><span class="fw-semibold text-primary" id="upload-progress-text">{{ _('Uploading...') }}</span></div><div class="progress mb-2" style="height:6px"><div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:100%"></div></div>';
+            feedbackContainer.insertBefore(pBox, sBox);
+            statusText = pBox.querySelector('#upload-progress-text');
+        }
+        if (!statusText) { statusText = pBox.querySelector('.fw-semibold') || document.createElement('span'); }
+
+        var formData = new FormData(form);
+        var progressBar = pBox.querySelector('.progress-bar');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Uploading...';
+        pBox.classList.remove('d-none');
+        sBox.classList.add('d-none');
+        eBox.classList.add('d-none');
+        statusText.textContent = 'Preparing upload...';
+
+        setTimeout(function () {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/screening/api/upload-source', true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            xhr.timeout = 300000;
+
+            if (xhr.upload) {
+                xhr.upload.onprogress = function (ev) {
+                    if (ev.lengthComputable) {
+                        var pct = Math.round((ev.loaded / ev.total) * 100);
+                        progressBar.style.width = pct + '%';
+                        statusText.textContent = 'Uploading: ' + pct + '%';
+                    }
+                };
+                xhr.upload.onload = function () {
+                    progressBar.style.width = '100%';
+                    statusText.textContent = 'Upload complete. Processing...';
+                };
+            }
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        if (data.success && data.task_id) {
+                            statusText.textContent = 'Processing data...';
+                            var pollCount = 0;
+                            var pi = setInterval(function () {
+                                pollCount++;
+                                if (pollCount > 300) { clearInterval(pi); finishUpload(false, 'Timeout'); return; }
+                                fetch('/screening/api/task_status/' + data.task_id)
+                                    .then(function (r) { return r.json(); })
+                                    .then(function (s) {
+                                        if (s.total && s.total > 0) {
+                                            var p = Math.round((s.progress / s.total) * 100);
+                                            progressBar.style.width = p + '%';
+                                            statusText.textContent = (s.message || 'Processing') + ' (' + p + '%)';
+                                        } else { statusText.textContent = s.message || 'Processing...'; }
+                                        if (s.status === 'completed') { clearInterval(pi); finishUpload(true, s.message); }
+                                        else if (s.status === 'failed') { clearInterval(pi); finishUpload(false, s.message); }
+                                    }).catch(function () { });
+                            }, 1000);
+                        } else if (data.success) { finishUpload(true, data.message); }
+                        else { finishUpload(false, data.error); }
+                    } catch (ex) { finishUpload(false, 'Invalid response'); }
+                } else { finishUpload(false, 'HTTP ' + xhr.status); }
+            };
+            xhr.onerror = function () { finishUpload(false, 'Network error'); };
+            xhr.send(formData);
+        }, 100);
+
+        function finishUpload(ok, msg) {
+            pBox.classList.add('d-none');
+            btn.disabled = false;
+            if (ok) {
+                sBox.classList.remove('d-none');
+                document.getElementById('upload-success-msg').textContent = msg || 'Import successful!';
+                btn.innerHTML = '<i class="fas fa-check me-1"></i> Done!';
+                btn.className = 'btn btn-success btn-lg fw-semibold';
+                setTimeout(function () { location.reload(); }, 2500);
+            } else {
+                btn.innerHTML = '<i class="fas fa-cloud-upload-alt me-1"></i> {{ _('Upload & Process\';
+                btn.className = \'btn btn-primary btn-lg fw-semibold\';
+                eBox.classList.remove(\'d-none\');
+                document.getElementById(\'upload-error-msg\').textContent = msg || \'Upload failed\';
+            }
+        }
+    });') }}
+</script>
+{% endblock %}

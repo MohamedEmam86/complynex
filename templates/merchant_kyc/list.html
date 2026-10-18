@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Merchant KYC Directory{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Merchant KYC Directory') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('merchant_kyc.export_merchants') }}" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-download"></i> {{ _('Export CSV') }}
+            </a>
+            <a href="{{ url_for('merchant_kyc.create_merchant') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i> {{ _('Add Merchant') }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        {% set total = merchants|length %}
+        {% set pending = merchants|selectattr('kyc_status', 'equalto', 'PENDING')|list|length +
+        merchants|selectattr('kyc_status', 'equalto', 'SENT')|list|length %}
+        {% set submitted = merchants|selectattr('kyc_status', 'equalto', 'SUBMITTED')|list|length %}
+        {% set approved = merchants|selectattr('kyc_status', 'equalto', 'APPROVED')|list|length %}
+        <div class="col-md-3">
+            <div class="card border-start border-primary border-4">
+                <div class="card-body py-2">
+                    <small class="text-muted">{{ _('Total Merchants') }}</small>
+                    <h3 class="mb-0">{{ total }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-warning border-4">
+                <div class="card-body py-2">
+                    <small class="text-muted">{{ _('Pending KYC') }}</small>
+                    <h3 class="mb-0">{{ pending }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-info border-4">
+                <div class="card-body py-2">
+                    <small class="text-muted">{{ _('Submitted (Awaiting Review)') }}</small>
+                    <h3 class="mb-0">{{ submitted }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-success border-4">
+                <div class="card-body py-2">
+                    <small class="text-muted">{{ _('Approved') }}</small>
+                    <h3 class="mb-0">{{ approved }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-5">
+                    <input type="text" class="form-control form-control-sm" id="merchantSearch"
+                        placeholder="{{ _('Search by merchant name, CR number, or contact...') }}">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select form-select-sm" id="kycStatusFilter">
+                        <option value="">{{ _('All KYC Status') }}</option>
+                        <option value="PENDING">{{ _('Pending') }}</option>
+                        <option value="SENT">{{ _('Sent') }}</option>
+                        <option value="SUBMITTED">{{ _('Submitted') }}</option>
+                        <option value="UNDER_REVIEW">{{ _('Under Review') }}</option>
+                        <option value="APPROVED">{{ _('Approved') }}</option>
+                        <option value="REJECTED">{{ _('Rejected') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select form-select-sm" id="riskFilter">
+                        <option value="">{{ _('All Risk') }}</option>
+                        <option value="LOW">{{ _('Low') }}</option>
+                        <option value="MEDIUM">{{ _('Medium') }}</option>
+                        <option value="HIGH">{{ _('High') }}</option>
+                        <option value="CRITICAL">{{ _('Critical') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-2 text-end">
+                    <span class="badge bg-primary" id="merchantCount">{{ merchants|length }}</span>
+                    <small class="text-muted">{{ _('merchants') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="merchantTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('Merchant Name') }}</th>
+                            <th>{{ _('CR Number') }}</th>
+                            <th>{{ _('Contact') }}</th>
+                            <th>{{ _('Business Type') }}</th>
+                            <th>{{ _('KYC Status') }}</th>
+                            <th>{{ _('Risk') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in merchants %}
+                        <tr data-kyc="{{ m.kyc_status }}" data-risk="{{ m.risk_level }}">
+                            <td>
+                                <div class="fw-bold">{{ m.merchant_name }}</div>
+                                {% if m.trade_name %}
+                                <small class="text-muted">{{ m.trade_name }}</small>
+                                {% endif %}
+                            </td>
+                            <td><code>{{ m.cr_number or 'N/A' }}</code></td>
+                            <td>
+                                <div>{{ m.contact_person or '-' }}</div>
+                                <small class="text-muted">{{ m.contact_email or '' }}</small>
+                            </td>
+                            <td>{{ m.business_type or '-' }}</td>
+                            <td>
+                                {% if m.kyc_status == 'APPROVED' %}
+                                <span class="badge bg-success">{{ _('Approved') }}</span>
+                                {% elif m.kyc_status == 'SUBMITTED' %}
+                                <span class="badge bg-info">{{ _('Submitted') }}</span>
+                                {% elif m.kyc_status == 'REJECTED' %}
+                                <span class="badge bg-danger">{{ _('Rejected') }}</span>
+                                {% elif m.kyc_status == 'SENT' %}
+                                <span class="badge bg-warning text-dark">{{ _('Sent') }}</span>
+                                {% elif m.kyc_status == 'UNDER_REVIEW' %}
+                                <span class="badge bg-secondary">{{ _('Under Review') }}</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark border">{{ _('Pending') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if m.risk_level == 'HIGH' or m.risk_level == 'CRITICAL' %}bg-danger{% elif m.risk_level == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                    {{ m.risk_level }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('merchant_kyc.view_merchant', id=m.id) }}"
+                                        class="btn btn-sm btn-outline-primary" title="{{ _('View KYC') }}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('merchant_kyc.edit_merchant', id=m.id) }}"
+                                        class="btn btn-sm btn-outline-secondary" title="{{ _('Edit') }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% if m.kyc_status == 'PENDING' %}
+                                    <form method="POST" action="{{ url_for('merchant_kyc.send_kyc_link', id=m.id) }}"
+                                        class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-success"
+                                            title="{{ _('Generate & Send KYC Link') }}">
+                                            <i class="bi bi-send"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">{{ _('No merchants found') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    document.getElementById('merchantSearch').addEventListener('input', filterMerchants);
+    ['kycStatusFilter', 'riskFilter'].forEach(function(id) {
+        document.getElementById(id).addEventListener('change', filterMerchants);
+    });
+
+    function filterMerchants() {
+        const search = document.getElementById('merchantSearch').value.toLowerCase();
+        const kycFilter = document.getElementById('kycStatusFilter').value;
+        const riskFilter = document.getElementById('riskFilter').value;
+        const rows = document.querySelectorAll('#merchantTable tbody tr[data-kyc]');
+        let count = 0;
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const kyc = row.getAttribute('data-kyc');
+            const risk = row.getAttribute('data-risk');
+            const match = (!search || text.includes(search)) && (!kycFilter || kyc === kycFilter) && (!riskFilter || risk === riskFilter);
+            row.style.display = match ? '' : 'none';
+            if (match) count++;
+        });
+        document.getElementById('merchantCount').textContent = count;
+    }
+</script>
+{% endblock %}

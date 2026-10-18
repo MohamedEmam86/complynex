@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('eKYC Screening') }} #{{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2 mb-0">{{ _('Screening') }} — {{ _('Session') }} #{{ session.id }}</h1>
+        <a href="{{ url_for('ekyc.view_session', session_id=session.id) }}" class="btn btn-sm btn-outline-secondary">
+            {{ _('Back to Session') }}
+        </a>
+    </div>
+
+    {% if screening_matches %}
+    <div class="card">
+        <div class="card-header">{{ _('Screening Hits') }}</div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>{{ _('Matched Name') }}</th><th>{{ _('List Source') }}</th><th>{{ _('Score') }}</th>
+                        <th>{{ _('Status') }}</th><th>{{ _('Resolution') }}</th><th>{{ _('Resolved By') }}</th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in screening_matches %}
+                    <tr>
+                        <td>{{ m.match_name or '-' }}</td>
+                        <td>{{ m.list_source or '-' }}</td>
+                        <td>{{ m.match_score }}%</td>
+                        <td><span class="badge bg-{{ 'success' if m.status == 'Resolved' else 'danger' }}">{{ m.status }}</span></td>
+                        <td>{{ m.resolution or '-' }}</td>
+                        <td>{{ m.resolved_by_name or '-' }}</td>
+                        <td class="text-end">
+                            {% if m.status != 'Resolved' and current_user.can_view('screening') %}
+                            <a href="{{ url_for('screening.queue_review', id=m.id) }}" class="btn btn-sm btn-warning">{{ _('Disposition') }}</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif screening_history %}
+    <div class="alert alert-success">
+        {{ _('Screened — no high-risk matches found.') }} ({{ screening_history[0].screening_result or 'CLEAR' }})
+    </div>
+    {% else %}
+    <div class="alert alert-secondary">{{ _('Screening has not been run for this session yet.') }}</div>
+    {% endif %}
+</div>
+{% endblock %}

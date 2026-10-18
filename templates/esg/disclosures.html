@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Disclosure Tracker') }} — {{ _('ESG Management') }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+  <div class="ecx-hero ecx-esg">
+    <div class="ecx-eyebrow">{{ _('ESG Management') }}</div>
+    <h1><i class="bi bi-list-check me-2"></i>{{ _('Disclosure Tracker') }}</h1>
+    <p>{{ _('Track readiness against GRI, IFRS S1/S2, TCFD and EGX disclosure requirements — assign an owner, record evidence, and mark progress per item.') }}</p>
+  </div>
+
+  <ul class="nav ecx-nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.dashboard') }}">{{ _('Dashboard') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.materiality') }}">{{ _('Materiality Assessment') }}</a></li>
+    <li class="nav-item"><a class="nav-link active ecx-esg" href="{{ url_for('esg.disclosures') }}">{{ _('Disclosure Tracker') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.framework_view') }}">{{ _('Framework & Weights') }}</a></li>
+  </ul>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-3">
+      <div class="ecx-card ecx-stat ecx-esg-accent">
+        <div class="n">{{ completion.overall_pct if completion.overall_pct is not none else '—' }}%</div>
+        <div class="l">{{ _('Overall Completion') }} ({{ completion.total_items }} {{ _('items') }})</div>
+      </div>
+    </div>
+    <div class="col-lg-9">
+      <div class="ecx-card">
+        <div class="row g-2">
+          {% for fw, d in completion.by_framework.items() %}
+          <div class="col-6 col-lg-2-4" style="flex:1 1 19%;">
+            <div class="small fw-semibold">{{ fw }}</div>
+            <div class="progress" style="height:8px; border-radius:999px;">
+              <div class="progress-bar" style="width:{{ d.pct }}%; background:var(--ecx-esg-1);"></div>
+            </div>
+            <div class="small text-muted">{{ d.pct }}%</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-3 flex-wrap">
+    <div class="btn-group">
+      <a href="{{ url_for('esg.disclosures') }}" class="btn btn-sm {{ 'btn-dark' if not current_framework else 'btn-outline-secondary' }}">{{ _('All Frameworks') }}</a>
+      {% for fw in frameworks %}
+      <a href="{{ url_for('esg.disclosures', framework=fw, status=current_status) }}" class="btn btn-sm {{ 'btn-dark' if current_framework==fw else 'btn-outline-secondary' }}">{{ fw }}</a>
+      {% endfor %}
+    </div>
+    <div class="btn-group">
+      <a href="{{ url_for('esg.disclosures', framework=current_framework) }}" class="btn btn-sm {{ 'btn-dark' if not current_status else 'btn-outline-secondary' }}">{{ _('All Statuses') }}</a>
+      <a href="{{ url_for('esg.disclosures', framework=current_framework, status='not_started') }}" class="btn btn-sm {{ 'btn-dark' if current_status=='not_started' else 'btn-outline-secondary' }}">{{ _('Not Started') }}</a>
+      <a href="{{ url_for('esg.disclosures', framework=current_framework, status='partial') }}" class="btn btn-sm {{ 'btn-dark' if current_status=='partial' else 'btn-outline-secondary' }}">{{ _('Partial') }}</a>
+      <a href="{{ url_for('esg.disclosures', framework=current_framework, status='complete') }}" class="btn btn-sm {{ 'btn-dark' if current_status=='complete' else 'btn-outline-secondary' }}">{{ _('Complete') }}</a>
+    </div>
+  </div>
+
+  <div class="ecx-card">
+    <table class="ecx-table-clean">
+      <thead>
+        <tr>
+          <th>{{ _('Framework') }}</th><th>{{ _('Ref.') }}</th><th>{{ _('Requirement') }}</th>
+          <th>{{ _('Owner') }}</th><th>{{ _('Status') }}</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+        <tr>
+          <td><span class="ecx-badge-source">{{ it.framework }}</span></td>
+          <td class="small fw-semibold">{{ it.ref_code }}</td>
+          <td>
+            <div class="fw-semibold small">{{ it.title }}</div>
+            <div class="text-muted small">{{ it.requirement }}</div>
+          </td>
+          <td class="small">{{ it.owner_name or '—' }}</td>
+          <td>
+            <span class="badge {{ 'bg-success' if it.status=='complete' else ('bg-warning text-dark' if it.status=='partial' else ('bg-secondary' if it.status=='not_started' else 'bg-light text-dark')) }}">
+              {{ _('Complete') if it.status=='complete' else (_('Partial') if it.status=='partial' else (_('Not Applicable') if it.status=='not_applicable' else _('Not Started'))) }}
+            </span>
+          </td>
+          <td>
+            {% if current_user.can_edit('esg') %}
+            <button class="btn btn-sm btn-outline-secondary py-0 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#edit_{{ it.id }}">
+              <i class="bi bi-pencil"></i>
+            </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% if current_user.can_edit('esg') %}
+        <tr class="collapse" id="edit_{{ it.id }}">
+          <td colspan="6">
+            <form method="POST" action="{{ url_for('esg.disclosure_update', item_id=it.id) }}" class="d-flex gap-2 align-items-end flex-wrap py-2">
+              <input type="hidden" name="return_framework" value="{{ current_framework or '' }}">
+              <div>
+                <label class="small text-muted d-block">{{ _('Status') }}</label>
+                <select name="status" class="form-select form-select-sm">
+                  <option value="not_started" {{ 'selected' if it.status=='not_started' }}>{{ _('Not Started') }}</option>
+                  <option value="partial" {{ 'selected' if it.status=='partial' }}>{{ _('Partial') }}</option>
+                  <option value="complete" {{ 'selected' if it.status=='complete' }}>{{ _('Complete') }}</option>
+                  <option value="not_applicable" {{ 'selected' if it.status=='not_applicable' }}>{{ _('Not Applicable') }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="small text-muted d-block">{{ _('Owner') }}</label>
+                <select name="owner_id" class="form-select form-select-sm">
+                  <option value="">—</option>
+                  {% for u in users %}<option value="{{ u.id }}" {{ 'selected' if it.owner_id == u.id }}>{{ u.full_name }}</option>{% endfor %}
+                </select>
+              </div>
+              <div style="flex:1; min-width:220px;">
+                <label class="small text-muted d-block">{{ _('Evidence / Notes') }}</label>
+                <input type="text" name="evidence_notes" class="form-control form-control-sm" value="{{ it.evidence_notes or '' }}">
+              </div>
+              <button class="btn btn-sm" style="background:var(--ecx-esg-1); color:#fff;">{{ _('Save') }}</button>
+            </form>
+          </td>
+        </tr>
+        {% endif %}
+        {% else %}
+        <tr><td colspan="6"><div class="ecx-empty-state"><i class="bi bi-list-check"></i><div>{{ _('No disclosure items match this filter.') }}</div></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}DSR Detail - {{ dsr.request_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Request Details: {{ dsr.request_number }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('dp.dsr_list') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> {{ _('Back to List') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- left Column: Details -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ _('Request Information') }}</h5>
+                    <span
+                        class="badge {% if dsr.status == 'NEW' %}bg-primary{% elif dsr.status == 'OVERDUE' %}bg-danger{% elif dsr.status == 'COMPLETED' %}bg-success{% else %}bg-info{% endif %}">
+                        {{ dsr.status }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">{{ _('Data Subject:') }}</div>
+                        <div class="col-md-8 fw-bold">{{ dsr.data_subject_name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">{{ _('Request Type:') }}</div>
+                        <div class="col-md-8"><span class="badge bg-light text-dark border">{{ dsr.request_type
+                                }}</span></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">{{ _('Due Date:') }}</div>
+                        <div class="col-md-8 {% if dsr.status == 'OVERDUE' %}text-danger{% endif %} fw-bold">{{
+                            dsr.due_date }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">{{ _('Description:') }}</div>
+                        <div class="col-md-8">{{ dsr.request_description or 'No description provided.' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Identity Verification Info -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{{ _('Identity Verification') }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if dsr.identity_verified %}
+                    <div class="alert alert-success d-flex align-items-center mb-0">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <div>
+                            Identity verified on {{ dsr.identity_verification_date }} via <strong>{{
+                                dsr.identity_verification_method }}</strong>.
+                        </div>
+                    </div>
+                    {% else %}
+                    <form action="{{ url_for('dp.verify_identity', id=dsr.id) }}" method="POST"
+                        class="row row-cols-lg-auto g-3 align-items-center">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="col-12">
+                            <label class="visually-hidden" for="method">{{ _('Verification Method') }}</label>
+                            <select class="form-select" id="method" name="method" required>
+                                <option value="" selected disabled>{{ _('Choose method...') }}</option>
+                                <option value="ID_CARD">{{ _('National ID Card') }}</option>
+                                <option value="PASSPORT">{{ _('Passport') }}</option>
+                                <option value="EMAIL_TOKEN">{{ _('Email Verification') }}</option>
+                                <option value="IN_PERSON">{{ _('In-Person') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-success">{{ _('Mark as Verified') }}</button>
+                        </div>
+                    </form>
+                    <p class="text-muted small mt-2">{{ _('Identity MUST be verified before processing data erasure or access
+                        requests.') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{{ _('Request Timeline') }}</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for event in timeline %}
+                        <li class="list-group-item px-0">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold text-primary small">{{ event.action_type }}</span>
+                                <span class="text-muted smaller">{{ event.action_date }}</span>
+                            </div>
+                            <div class="small">{{ event.action_description }}</div>
+                            <div class="smaller text-muted">By: {{ event.user_name }}</div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Actions -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">{{ _('Assign & Manage') }}</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('dp.assign_dsr', id=dsr.id) }}" method="POST" class="mb-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label class="form-label small">{{ _('Assign To') }}</label>
+                        <div class="input-group">
+                            <select name="user_id" class="form-select form-select-sm" required>
+                                <option value="" disabled {% if not dsr.assigned_to %}selected{% endif %}>{{ _('Select User...') }}
+                                </option>
+                                {% for u in users %}
+                                <option value="{{ u.id }}" {% if dsr.assigned_to==u.id %}selected{% endif %}>{{
+                                    u.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary">{{ _('Assign') }}</button>
+                        </div>
+                    </form>
+
+                    <hr>
+
+                    <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#completeModal" {% if
+                        dsr.status in ['COMPLETED', 'REJECTED' ] %}disabled{% endif %}>
+                        {{ _('Resolve Request') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Completion Modal -->
+<div class="modal fade" id="completeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('dp.complete_dsr', id=dsr.id) }}" method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('Resolve Request') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Resolution Status') }}</label>
+                    <select name="status" class="form-select" required>
+                        <option value="COMPLETED">{{ _('Completed (Fulfilled)') }}</option>
+                        <option value="REJECTED">{{ _('Rejected') }}</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Notes') }}</label>
+                    <textarea name="notes" class="form-control" rows="3"
+                        placeholder="{{ _('Provide details about the response...') }}" required></textarea>
+                </div>
+                <div id="rejectionSection" class="mb-3 d-none">
+                    <label class="form-label">{{ _('Rejection Reason (Public)') }}</label>
+                    <textarea name="rejection_reason" class="form-control" rows="2"
+                        placeholder="{{ _('Legal basis for rejection...') }}"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary">{{ _('Submit Resolution') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    document.querySelector('select[name="status"]').addEventListener('change', function () {
+        const rejectionSection = document.getElementById('rejectionSection');
+        if (this.value === 'REJECTED') {
+            rejectionSection.classList.remove('d-none');
+        } else {
+            rejectionSection.classList.add('d-none');
+        }
+    });
+</script>
+{% endblock %}

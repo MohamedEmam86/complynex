@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('My GHE Declarations') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1"><i class="bi bi-person-badge text-primary me-2"></i>{{ _('My GHE Declarations')
+                }}</h1>
+            <p class="text-muted small">{{ _('History of your disclosed Gifts, Hospitality and Entertainment.') }}</p>
+        </div>
+        <a href="{{ url_for('ghe.create_declaration') }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> {{ _('Submit New Disclosure') }}
+        </a>
+    </div>
+
+    <!-- Annual Cumulative Tracker Hidden for Employees -->
+
+    <!-- Status Cards Hidden for Employees -->
+
+    <!-- Declarations List -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white py-3 border-0">
+            <h5 class="fw-bold mb-0">{{ _('Disclosure History') }}</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">{{ _('Declaration #') }}</th>
+                        <th>{{ _('Type & Date') }}</th>
+                        <th>{{ _('Provider/Recipient') }}</th>
+                        <th class="text-end">{{ _('Value (EGP)') }}</th>
+                        <th class="text-center">{{ _('Status') }}</th>
+                        <th class="pe-4 text-end">{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in declarations %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-primary">{{ d.declaration_number }}</div>
+                            <div class="extra-small text-muted">Ref: #{{ d.id }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">
+                                {% if d.ghe_type == 'Gift' %}<i class="bi bi-gift text-primary"></i>
+                                {% elif d.ghe_type == 'Hospitality' %}<i class="bi bi-cup-hot text-info"></i>
+                                {% else %}<i class="bi bi-ticket-perforated text-secondary"></i>{% endif %}
+                                {{ d.ghe_type }}
+                            </div>
+                            <div class="extra-small text-muted">{{ d.event_date }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-medium text-dark">{{ d.provider_recipient_name }}</div>
+                            <div class="extra-small text-muted">{{ d.provider_recipient_company or '_' }}</div>
+                        </td>
+                        <td class="text-end fw-bold">
+                            {{ "{:,.2f}".format(d.estimated_value_egp) }}
+                        </td>
+                        <td class="text-center">
+                            {% if d.status == 'approved' %}
+                            <span
+                                class="badge rounded-pill bg-success bg-opacity-10 text-success p-2 px-3 border border-success border-opacity-25">{{
+                                _('Approved') }}</span>
+                            {% elif d.status == 'rejected' %}
+                            <span
+                                class="badge rounded-pill bg-danger bg-opacity-10 text-danger p-2 px-3 border border-danger border-opacity-25">{{
+                                _('Rejected') }}</span>
+                            {% elif d.status == 'requires_clarification' %}
+                            <span
+                                class="badge rounded-pill bg-warning bg-opacity-10 text-warning p-2 px-3 border border-warning border-opacity-25">{{
+                                _('Info Requested') }}</span>
+                            {% else %}
+                            <span
+                                class="badge rounded-pill bg-info bg-opacity-10 text-info p-2 px-3 border border-info border-opacity-25">{{
+                                _('In Review') }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="pe-4 text-end">
+                            <div class="btn-group">
+                                <a href="{{ url_for('ghe.view_declaration', id=d.id) }}"
+                                    class="btn btn-sm btn-light border-0"><i class="bi bi-eye"></i></a>
+                                {% if d.status in ['pending', 'requires_clarification'] %}
+                                <a href="{{ url_for('ghe.edit_declaration', id=d.id) }}"
+                                    class="btn btn-sm btn-light border-0 text-primary"><i class="bi bi-pencil"></i></a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted opacity-25 mb-3"><i class="bi bi-card-checklist display-1"></i></div>
+                            <p class="text-muted">{{ _('No GHE disclosures found.') }}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .extra-small {
+        font-size: 0.75rem;
+    }
+
+    .card {
+        border-radius: 1rem;
+    }
+
+    .progress {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    @media (min-width: 992px) {
+        .border-end-lg {
+            border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+    }
+</style>
+{% endblock %}

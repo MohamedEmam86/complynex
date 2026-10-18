@@ -1,0 +1,15 @@
+ComplyNex source code attestation
+=================================
+Product      : ComplyNex Compliance Management Platform
+Author       : Mohamed Emam
+Generated    : 2026-08-07T15:28:03+02:00
+Host         : vmi3447325
+
+Tree SHA-256 : daab5915c860a7237cb883bf023727a5601d173eb71df38cf436c6e08c8c4738
+Git HEAD     : b3446d43453181214c997e29377c1d0c79fe80b0
+Git commits  : 29
+Files        : 882
+Lines        : 145103
+
+The tree hash above is the SHA-256 of the sorted list of every source file
+path and its individual SHA-256. Any change to any file changes it.

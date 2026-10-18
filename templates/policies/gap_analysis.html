@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Policy Gap Analysis') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1 fw-bold"><i class="bi bi-shield-check text-primary me-2"></i>{{ _('CBE Compliance Gap
+                    Analysis') }}</h1>
+                <p class="text-muted">{{ _('Comparison of required CBE policies against currently implemented and
+                    published versions.') }}</p>
+            </div>
+            <div class="d-flex gap-2">
+                {% if current_user.is_compliance_officer() %}
+                <a href="{{ url_for('policies.manage_gap_requirements') }}"
+                    class="btn btn-outline-primary d-flex align-items-center">
+                    <i class="bi bi-gear me-2"></i>{{ _('Manage Requirements') }}
+                </a>
+                {% endif %}
+                <button class="btn btn-outline-secondary d-flex align-items-center" data-action="print">
+                    <i class="bi bi-printer me-2"></i>{{ _('Print Report') }}
+                </button>
+                <a href="{{ url_for('policies.export_gap_analysis') }}"
+                    class="btn btn-primary d-flex align-items-center">
+                    <i class="bi bi-file-earmark-arrow-down me-2"></i>{{ _('Export CSV') }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">{{ _('Total Required') }}</h6>
+                    <h2 class="fw-bold mb-0 text-primary">{{ gaps|length }}</h2>
+                </div>
+            </div>
+        </div>
+        {% set implemented = gaps|selectattr('implemented_id')|list %}
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">{{ _('Implemented') }}</h6>
+                    <h2 class="fw-bold mb-0 text-success">{{ implemented|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">{{ _('Missing') }}</h6>
+                    <h2 class="fw-bold mb-0 text-danger">{{ gaps|length - implemented|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">{{ _('Compliance Rate') }}</h6>
+                    <h2 class="fw-bold mb-0 text-info">
+                        {% if gaps|length > 0 %}
+                        {{ ((implemented|length / gaps|length) * 100)|round|int }}%
+                        {% else %}
+                        0%
+                        {% endif %}
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">{{ _('Required Policy Name') }}</th>
+                            <th>{{ _('Regulatory Reference') }}</th>
+                            <th>{{ _('Priority') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th class="text-end pe-4">{{ _('Action') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for gap in gaps %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">
+                                    {{ gap.required.policy_name_en if session.get('lang', 'en') == 'en' else
+                                    gap.required.policy_name_ar or gap.required.policy_name_en }}
+                                </div>
+                                <div class="small text-muted">{{ gap.required.regulatory_reference }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ gap.required.regulatory_reference or
+                                    _('CBE Circular 2023') }}</span>
+                            </td>
+                            <td>
+                                {% if gap.required.is_mandatory %}
+                                <span class="badge bg-danger text-white">{{ _('Mandatory') }}</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">{{ _('Recommended') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if gap.policy %}
+                                {% if gap.policy.status == 'published' %}
+                                <span class="badge bg-success-soft text-success"><i
+                                        class="bi bi-check-circle-fill me-1"></i>{{ _('Compliant') }}</span>
+                                {% else %}
+                                <span class="badge bg-warning-soft text-warning"><i
+                                        class="bi bi-exclamation-circle me-1"></i>{{ _('Draft/Pending') }}</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="badge bg-danger-soft text-danger"><i class="bi bi-x-circle me-1"></i>{{
+                                    _('Missing') }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                {% if gap.policy %}
+                                <a href="{{ url_for('policies.view_policy', id=gap.policy.id) }}"
+                                    class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> {{ _('View') }}
+                                </a>
+                                {% else %}
+                                <a href="{{ url_for('policies.create_policy', name=gap.required.policy_name_en) }}"
+                                    class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-lg"></i> {{ _('Create Now') }}
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-success-soft {
+        background-color: rgba(25, 135, 84, 0.1);
+    }
+
+    .bg-warning-soft {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+
+    .bg-danger-soft {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+
+    .text-end {
+        text-align: end !important;
+    }
+</style>
+{% endblock %}

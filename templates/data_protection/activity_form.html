@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Register Activity - ROPA{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Register Processing Activity') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('dp.activity_list') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> {{ _('Back to ROPA') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">{{ _('Activity Documentation') }}</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('dp.create_activity') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('Activity Code') }}</label>
+                                <input type="text" name="code" class="form-control" placeholder="{{ _('e.g. PROC-HR-001') }}"
+                                    required>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">{{ _('Activity Name') }}</label>
+                                <input type="text" name="name" class="form-control"
+                                    placeholder="{{ _('e.g. Employee Payroll Processing') }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Processing Purpose') }}</label>
+                            <textarea name="purpose" class="form-control" rows="2"
+                                placeholder="{{ _('Why is this data being processed?') }}" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Legal Basis (PDPL)') }}</label>
+                            <select name="legal_basis" class="form-select" required>
+                                <option value="CONSENT">{{ _('Data Subject Consent') }}</option>
+                                <option value="CONTRACT">{{ _('Performance of a Contract') }}</option>
+                                <option value="LEGAL_OBLIGATION">{{ _('Legal Obligation') }}</option>
+                                <option value="VITAL_INTERESTS">{{ _('Vital Interests') }}</option>
+                                <option value="PUBLIC_INTEREST">{{ _('Public Interest / Official Authority') }}</option>
+                                <option value="LEGITIMATE_INTERESTS">{{ _('Legitimate Interests') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('Data Categories') }}</label>
+                                <textarea name="categories" class="form-control" rows="3"
+                                    placeholder="{{ _('e.g. Name, DOB, Salary details...') }}"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('Data Subject Categories') }}</label>
+                                <textarea name="subjects" class="form-control" rows="3"
+                                    placeholder="{{ _('e.g. Employees, Contractors...') }}"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-grid shadow-sm">
+                            <button type="submit" class="btn btn-success">{{ _('Register in ROPA Inventory') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

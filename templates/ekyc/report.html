@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>eKYC Report — {{ session.customer_reference or session.session_token[:12] }}</title>
+<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+<link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+<style>
+    @page {
+        size: A4;
+        margin: 1.6cm 1.4cm 2cm 1.4cm;
+        @bottom-center {
+            content: "صفحة " counter(page) " من " counter(pages) " — Page " counter(page) " of " counter(pages);
+            font-size: 8pt;
+            color: #888;
+        }
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: 'Amiri', 'KacstOne', 'Arial', sans-serif;
+        font-size: 10.5pt;
+        color: #222;
+        direction: rtl;
+        margin: 0;
+    }
+    .ltr { direction: ltr; }
+    .header {
+        background: linear-gradient(135deg, #123E5F 0%, #071E36 100%);
+        color: #fff;
+        padding: 14px 18px;
+        margin-bottom: 14px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .header img { height: 42px; background: #fff; padding: 4px; border-radius: 4px; }
+    .header .title { text-align: center; flex: 1; }
+    .header h1 { margin: 0; font-size: 15pt; }
+    .header .sub { margin: 2px 0 0; font-size: 8.5pt; opacity: .85; }
+    .meta-bar {
+        display: flex; justify-content: space-between; font-size: 9pt; color: #555;
+        border-bottom: 2px solid #00A6B4; padding-bottom: 6px; margin-bottom: 14px;
+    }
+    h2 {
+        font-size: 11.5pt; color: #123E5F; border-bottom: 1.5px solid #00A6B4;
+        padding-bottom: 3px; margin: 18px 0 8px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 9.5pt; }
+    th, td { border: 1px solid #ddd; padding: 5px 8px; text-align: right; vertical-align: top; }
+    th { background: #E8EEF3; color: #123E5F; font-size: 9pt; }
+    tr:nth-child(even) td { background: #fafafa; }
+    .badge {
+        display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 7.5pt;
+        color: #fff; white-space: nowrap;
+    }
+    .badge-ai { background: #6c757d; }
+    .badge-manual { background: #E67E22; }
+    .badge-pass { background: #198754; }
+    .badge-fail { background: #C0392B; }
+    .badge-review { background: #E67E22; }
+    .badge-resolved { background: #198754; }
+    .badge-pending { background: #C0392B; }
+    .images-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .images-row figure { flex: 1; margin: 0; text-align: center; }
+    .images-row img { max-width: 100%; max-height: 180px; border: 1px solid #ccc; border-radius: 3px; }
+    .images-row figcaption { font-size: 8pt; color: #666; margin-top: 3px; }
+    .no-image {
+        height: 120px; display: flex; align-items: center; justify-content: center;
+        border: 1px dashed #bbb; color: #999; font-size: 8.5pt; border-radius: 3px;
+    }
+    .reasons-list { margin: 4px 0 0; padding-right: 18px; font-size: 9.5pt; }
+    .signature-block { display: flex; justify-content: space-between; margin-top: 28px; }
+    .signature-block .sig { width: 45%; }
+    .signature-line { border-top: 1px solid #333; margin-top: 36px; padding-top: 4px; font-size: 9pt; }
+    .footer-note {
+        font-size: 7.5pt; color: #888; border-top: 1px solid #ddd; padding-top: 6px; margin-top: 22px;
+    }
+    .confidential { text-align: center; font-size: 8pt; color: #C0392B; font-weight: bold; margin-top: 2px; }
+    .toolbar { text-align: center; margin-bottom: 12px; }
+    @media print {
+        .toolbar { display: none; }
+        body { font-size: 10pt; }
+    }
+</style>
+</head>
+<body>
+
+{% if not is_pdf %}
+<div class="toolbar">
+    <a href="?format=pdf" style="background:#123E5F;color:#fff;padding:6px 14px;border-radius:4px;text-decoration:none;font-size:10pt;">
+        {{ _('تنزيل PDF / Download PDF') }}
+    </a>
+    <button data-print style="background:#6c757d;color:#fff;padding:6px 14px;border:none;border-radius:4px;font-size:10pt;">
+        {{ _('طباعة / Print') }}
+    </button>
+</div>
+{% endif %}
+
+<div class="header">
+    <img src="{{ logo_path }}" alt="{{ _('ComplyNex') }}">
+    <div class="title">
+        <h1>{{ _('تقرير التحقق من الهوية الإلكتروني / eKYC Verification Report') }}</h1>
+        <p class="sub">{{ _('ComplyNex — Compliance Use Only / للاستخدام الرقابي فقط') }}</p>
+    </div>
+    <div style="width:42px;"></div>
+</div>
+<p class="confidential">{{ _('CONFIDENTIAL — سري') }}</p>
+
+<div class="meta-bar">
+    <span><strong>{{ _('المرجع / Reference:') }}</strong> {{ session.customer_reference or ('SESSION-' ~ session.id) }}</span>
+    <span><strong>{{ _('الجلسة / Session ID:') }}</strong> #{{ session.id }}</span>
+    <span><strong>{{ _('تاريخ الإصدار / Generated:') }}</strong> <span class="ltr">{{ generated_at }}</span></span>
+</div>
+
+<h2>{{ _('1. هوية العميل / Customer Identity') }}</h2>
+<table>
+    <thead><tr><th style="width:30%;">{{ _('الحقل / Field') }}</th><th>{{ _('القيمة / Value') }}</th><th style="width:12%;">{{ _('المصدر / Source') }}</th></tr></thead>
+    <tbody>
+        {% for key, ar_label, en_label in [
+            ('extracted_full_name_ar', 'الاسم الكامل', 'Full Name'),
+            ('national_id', 'الرقم القومي', 'National ID'),
+            ('dob', 'تاريخ الميلاد', 'Date of Birth'),
+            ('gender', 'النوع', 'Gender'),
+            ('governorate_name', 'المحافظة', 'Governorate'),
+            ('extracted_occupation', 'المهنة', 'Occupation'),
+            ('extracted_marital_status', 'الحالة الاجتماعية', 'Marital Status'),
+            ('id_expiry_raw', 'تاريخ انتهاء الهوية', 'ID Expiry'),
+        ] %}
+        <tr>
+            <td>{{ ar_label }} / {{ en_label }}</td>
+            <td>{{ result.get(key) or '-' }}
+                {% if key == 'national_id' and result.get('national_id_valid') is not none %}
+                <span class="badge {{ 'badge-pass' if result.national_id_valid else 'badge-fail' }}">
+                    {{ 'صالح / Valid' if result.national_id_valid else 'غير صالح / Invalid' }}</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if result.get(key) %}
+                <span class="badge {{ 'badge-manual' if field_sources.get(key) == 'manual' else 'badge-ai' }}">
+                    {{ 'يدوي / Manual' if field_sources.get(key) == 'manual' else 'النظام / System' }}</span>
+                {% else %}-{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td>{{ _('نوع الوثيقة / Document Type') }}</td>
+            <td colspan="2">{{ session.document_type }}</td>
+        </tr>
+        {% if customer %}
+        <tr>
+            <td>{{ _('تم الإلحاق بحساب عميل / Onboarded Customer') }}</td>
+            <td colspan="2"><span class="ltr">#{{ customer.id }}</span> — {{ customer.customer_reference }}</td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<h2>{{ _('2. صور الوثيقة / Document Images') }}</h2>
+<div class="images-row">
+    <figure>
+        {% if id_front_image %}<img src="{{ id_front_image }}">{% else %}<div class="no-image">{{ _('غير متاح / Not available') }}</div>{% endif %}
+        <figcaption>{{ _('الوجه الأمامي للهوية / ID Front') }}</figcaption>
+    </figure>
+    <figure>
+        {% if id_back_image %}<img src="{{ id_back_image }}">{% else %}<div class="no-image">{{ _('غير متاح / Not available') }}</div>{% endif %}
+        <figcaption>{{ _('الوجه الخلفي للهوية / ID Back') }}</figcaption>
+    </figure>
+    <figure>
+        {% if selfie_image %}<img src="{{ selfie_image }}">{% else %}<div class="no-image">{{ _('غير متاح / Not available') }}</div>{% endif %}
+        <figcaption>{{ _('صورة السيلفي / Selfie') }}</figcaption>
+    </figure>
+</div>
+
+<h2>{{ _('3. البيانات الحيوية / Biometric Verification') }}</h2>
+<table>
+    <tbody>
+        <tr>
+            <td style="width:30%;">{{ _('تطابق الوجه / Face Match Score') }}</td>
+            <td>{{ result.get('face_match_score') if result.get('face_match_score') is not none else '-' }} ({{ result.get('face_match_engine') or '-' }})</td>
+        </tr>
+        <tr>
+            <td>{{ _('الحيوية السلبية / Passive Liveness') }}</td>
+            <td>{{ result.get('passive_liveness_score') if result.get('passive_liveness_score') is not none else '-' }}
+                {% if result.get('passive_liveness_pass') is not none %}
+                <span class="badge {{ 'badge-pass' if result.get('passive_liveness_pass') else 'badge-fail' }}">
+                    {{ 'نجح / Pass' if result.get('passive_liveness_pass') else 'فشل / Fail' }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td>{{ _('الحيوية النشطة / Active Liveness') }}</td>
+            <td>{{ result.get('active_liveness_challenge') or '-' }}
+                {% if result.get('active_liveness_pass') is not none %}
+                <span class="badge {{ 'badge-pass' if result.get('active_liveness_pass') else 'badge-fail' }}">
+                    {{ 'نجح / Pass' if result.get('active_liveness_pass') else 'فشل / Fail' }}</span>
+                {% else %}<span class="badge badge-ai">{{ _('غير مقيّم / Not evaluated') }}</span>{% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td>{{ _('كشف التكرار / Duplicate Detection') }}</td>
+            <td>
+                {% if result.get('duplicate_of_session_id') %}
+                <span class="badge badge-fail">تكرار محتمل لجلسة / Possible duplicate of session #{{ result.get('duplicate_of_session_id') }}</span>
+                {% else %}<span class="badge badge-pass">{{ _('لم يتم اكتشاف تكرار / No duplicate detected') }}</span>{% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td>{{ _('فحص هجمات وثيقة الهوية / Document PAD') }}</td>
+            <td>{{ result.get('document_pad_score') if result.get('document_pad_score') is not none else '-' }}
+                {% if result.get('document_pad_pass') is not none %}
+                <span class="badge {{ 'badge-pass' if result.get('document_pad_pass') else 'badge-fail' }}">
+                    {{ 'نجح / Pass' if result.get('document_pad_pass') else 'فشل / Fail' }}</span>
+                {% endif %}
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>{{ _('4. نتيجة التحقق الآلي ودرجة الخطورة / Automated Verification Result &amp; Risk Score') }}</h2>
+<table>
+    <tbody>
+        <tr>
+            <td style="width:30%;">{{ _('قرار النظام الآلي / System Decision') }}</td>
+            <td>
+                <span class="badge {{ 'badge-pass' if result.get('decision') == 'PASS' else ('badge-fail' if result.get('decision') == 'FAIL' else 'badge-review') }}">
+                    {{ result.get('decision') or '-' }}</span>
+            </td>
+        </tr>
+        <tr>
+            <td>{{ _('درجة الخطورة / Risk Score') }}</td>
+            <td>{{ result.get('risk_score') if result.get('risk_score') is not none else '-' }} / 100</td>
+        </tr>
+    </tbody>
+</table>
+{% if result.get('decision_reasons') %}
+<p style="margin-bottom:2px;"><strong>{{ _('الأسباب / Reasons:') }}</strong></p>
+<ul class="reasons-list">
+    {% for reason in result.decision_reasons %}<li>{{ reason }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+<h2>{{ _('5. فحص قوائم العقوبات / Sanctions &amp; PEP Screening') }}</h2>
+{% if screening_matches %}
+<table>
+    <thead>
+        <tr>
+            <th>{{ _('الاسم المطابق / Matched Name') }}</th><th>{{ _('المصدر / List Source') }}</th><th>{{ _('النسبة / Score') }}</th>
+            <th>{{ _('الحالة / Status') }}</th><th>{{ _('القرار / Disposition') }}</th><th>{{ _('المراجع / Reviewer') }}</th><th>{{ _('التاريخ / Date') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in screening_matches %}
+        <tr>
+            <td>{{ m.match_name or '-' }}</td>
+            <td>{{ m.list_source or '-' }}</td>
+            <td>{{ m.match_score }}%</td>
+            <td><span class="badge {{ 'badge-resolved' if m.status == 'Resolved' else 'badge-pending' }}">{{ m.status }}</span></td>
+            <td>{{ m.resolution or '-' }}{% if m.resolution_notes %} — {{ m.resolution_notes }}{% endif %}</td>
+            <td>{{ m.resolved_by_name or '-' }}</td>
+            <td><span class="ltr">{{ m.resolved_date or '-' }}</span></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% elif screening_history %}
+<p>تم الفحص ولم يتم رصد أي تطابقات عالية الخطورة / Screened — no high-risk matches found.
+   ({{ screening_history[0].screening_result or 'CLEAR' }})</p>
+{% else %}
+<p>{{ _('لم يتم تنفيذ الفحص بعد / Screening has not been run for this session yet.') }}</p>
+{% endif %}
+
+<h2>{{ _('6. سجل الموافقة / Consent Record') }}</h2>
+<table>
+    <tbody>
+        <tr>
+            <td style="width:30%;">{{ _('تمت الموافقة / Consent Given') }}</td>
+            <td>{{ 'نعم / Yes' if session.consent_given else 'لا / No' }}</td>
+        </tr>
+        {% if session.consent_given %}
+        <tr><td>{{ _('تاريخ الموافقة / Consent Date') }}</td><td><span class="ltr">{{ session.consent_given_at or '-' }}</span></td></tr>
+        <tr><td>{{ _('عنوان IP / Consent IP') }}</td><td><span class="ltr">{{ session.consent_ip or '-' }}</span></td></tr>
+        <tr><td>{{ _('نص الموافقة / Consent Text') }}</td><td style="font-size:8.5pt;">{{ session.consent_text or '-' }}</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<h2>{{ _('7. القرار النهائي للالتزام / Compliance Decision') }}</h2>
+<table>
+    <tbody>
+        <tr>
+            <td style="width:30%;">{{ _('حالة الجلسة / Session Status') }}</td>
+            <td>{{ session.status }}</td>
+        </tr>
+        <tr>
+            <td>{{ _('القرار النهائي / Final Decision') }}</td>
+            <td>
+                {% if session.final_decision %}
+                <span class="badge {{ 'badge-pass' if session.final_decision == 'APPROVED' else 'badge-fail' }}">{{ session.final_decision }}</span>
+                {% else %}<span class="badge badge-pending">{{ _('قيد الانتظار / Pending') }}</span>{% endif %}
+            </td>
+        </tr>
+        <tr><td>{{ _('راجعه / Reviewed By') }}</td><td>{{ reviewed_by_name or '-' }} {% if session.reviewed_at %}— <span class="ltr">{{ session.reviewed_at }}</span>{% endif %}</td></tr>
+        <tr><td>{{ _('قرر بواسطة / Decided By') }}</td><td>{{ decision_by_name or '-' }} {% if session.decided_at %}— <span class="ltr">{{ session.decided_at }}</span>{% endif %}</td></tr>
+        {% if session.decision_notes %}<tr><td>{{ _('ملاحظات القرار / Decision Notes') }}</td><td>{{ session.decision_notes }}</td></tr>{% endif %}
+    </tbody>
+</table>
+
+<div class="signature-block">
+    <div class="sig">
+        <div class="signature-line">{{ _('توقيع موظف الالتزام / Compliance Officer Signature &nbsp;&nbsp; التاريخ / Date: ______________') }}</div>
+    </div>
+    <div class="sig">
+        <div class="signature-line">{{ _('الاسم بالكامل / Printed Name: ______________') }}</div>
+    </div>
+</div>
+
+<div class="footer-note">
+    تم إنشاء هذا التقرير من قِبل / Generated by: {{ generated_by }} — <span class="ltr">{{ generated_at }}</span><br>
+    {{ _('المرجع الرقابي / Audit Reference:') }} <span class="ltr">{{ session.session_token[:16] }}…</span> — Session #{{ session.id }}<br>
+    {{ _('هذا التقرير يحتوي على بيانات شخصية حساسة ويجب التعامل معه وفقًا لسياسة حماية البيانات.
+    This report contains sensitive personal data and must be handled per the data protection policy.') }}
+</div>
+
+</body>
+</html>

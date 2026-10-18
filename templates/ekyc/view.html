@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('eKYC Session') }} #{{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2 mb-0">{{ _('eKYC Session') }} #{{ session.id }}</h1>
+        <div class="btn-toolbar">
+            <a href="{{ url_for('ekyc.session_report', session_id=session.id) }}" target="_blank" class="btn btn-sm btn-outline-dark me-2">
+                <i class="bi bi-printer"></i> {{ _('Print / Download PDF') }}
+            </a>
+            {% if current_user.can_edit('ekyc') and session.status not in ('COMPLETED', 'NEEDS_REVIEW', 'DECISION_PENDING', 'APPROVED', 'ONBOARDED', 'REJECTED') %}
+            <a href="{{ url_for('ekyc.edit_session', session_id=session.id) }}" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-pencil"></i> {{ _('Edit') }}
+            </a>
+            <form method="POST" action="{{ url_for('ekyc.regenerate_link', session_id=session.id) }}"
+                  data-confirm="{{ _('This invalidates the current link. Continue?') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrow-repeat"></i> {{ _('Recreate Link') }}
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">{{ _('Session') }}</div>
+                <div class="card-body">
+                    <p><strong>{{ _('Status') }}:</strong> <span class="badge bg-secondary">{{ session.status }}</span></p>
+                    <p><strong>{{ _('Document Type') }}:</strong> {{ session.document_type }}</p>
+                    {% if current_user.can_edit('ekyc') %}
+                    <form method="POST" action="{{ url_for('ekyc.update_customer_reference', session_id=session.id) }}" class="mb-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <label class="form-label mb-1"><strong>{{ _('Customer Reference') }}</strong></label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="customer_reference" class="form-control" value="{{ session.customer_reference or '' }}">
+                            <button type="submit" class="btn btn-outline-secondary">{{ _('Save') }}</button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <p><strong>{{ _('Customer Reference') }}:</strong> {{ session.customer_reference or '-' }}</p>
+                    {% endif %}
+                    <p><strong>{{ _('Consent Given') }}:</strong> {{ 'Yes' if session.consent_given else 'No' }}</p>
+                    <p><strong>{{ _('Created') }}:</strong> {{ session.created_at }}</p>
+                    <p><strong>{{ _('Expires') }}:</strong> {{ session.expires_at }}</p>
+                    {% if session.status in ('CREATED',) %}
+                    <hr>
+                    <label class="form-label">{{ _('Verification Link (share with customer)') }}</label>
+                    <input type="text" class="form-control" readonly value="{{ verify_url }}" data-autoselect>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if current_user.can_edit('ekyc') %}
+            <div class="card mb-3">
+                <div class="card-header">{{ _('Workflow') }}</div>
+                <div class="card-body d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('ekyc.session_screening', session_id=session.id) }}" class="btn btn-sm btn-outline-dark">
+                        <i class="bi bi-search"></i> {{ _('Screening') }}
+                    </a>
+                    {% if session.status == 'NEEDS_REVIEW' %}
+                    <a href="{{ url_for('ekyc.review_detail', session_id=session.id) }}" class="btn btn-sm btn-warning">
+                        <i class="bi bi-pencil-square"></i> {{ _('Start Review') }}
+                    </a>
+                    {% endif %}
+                    {% if session.status == 'FAILED' %}
+                    <a href="{{ url_for('ekyc.review_detail', session_id=session.id) }}" class="btn btn-sm btn-warning">
+                        <i class="bi bi-pencil-square"></i> {{ _('Manual Data Entry') }}
+                    </a>
+                    {% endif %}
+                    {% if session.status == 'DECISION_PENDING' %}
+                    <form method="POST" action="{{ url_for('ekyc.session_decision', session_id=session.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="action" value="approve"/>
+                        <button type="submit" class="btn btn-sm btn-success" data-confirm="{{ _('Approve this session?') }}">
+                            <i class="bi bi-check-circle"></i> {{ _('Approve') }}
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if session.status in ('NEEDS_REVIEW', 'DECISION_PENDING') %}
+                    <form method="POST" action="{{ url_for('ekyc.session_decision', session_id=session.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="action" value="reject"/>
+                        <button type="submit" class="btn btn-sm btn-danger" data-confirm="{{ _('Reject this session?') }}">
+                            <i class="bi bi-x-circle"></i> {{ _('Reject') }}
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if session.status == 'APPROVED' %}
+                    <form method="POST" action="{{ url_for('ekyc.session_onboard', session_id=session.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-sm btn-primary" data-confirm="{{ _('Create the customer record and onboard?') }}">
+                            <i class="bi bi-person-check"></i> {{ _('Onboard Customer') }}
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if session.status == 'ONBOARDED' %}
+                    <span class="badge bg-success align-self-center">
+                        {{ _('Onboarded as Customer') }} #{{ session.onboarded_customer_id }}
+                    </span>
+                    {% endif %}
+                </div>
+                {% if session.final_decision %}
+                <div class="card-footer small text-muted">
+                    {{ _('Final Decision') }}: <strong>{{ session.final_decision }}</strong>
+                    {% if session.decided_at %} — {{ session.decided_at }}{% endif %}
+                    {% if session.decision_notes %} — {{ session.decision_notes }}{% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if result %}
+            <div class="card mb-3">
+                <div class="card-header">{{ _('Result') }}</div>
+                <div class="card-body">
+                    <p><strong>{{ _('Decision') }}:</strong>
+                        <span class="badge bg-{{ 'success' if result.decision == 'PASS' else ('danger' if result.decision == 'FAIL' else 'warning') }}">
+                            {{ result.decision or '-' }}
+                        </span>
+                    </p>
+                    <p><strong>{{ _('Risk Score') }}:</strong> {{ result.risk_score if result.risk_score is not none else '-' }} / 100</p>
+                    <p><strong>{{ _('Extracted Name') }}:</strong> {{ result.extracted_full_name_ar or '-' }}</p>
+                    <p><strong>{{ _('National ID') }}:</strong> {{ result.national_id or '-' }}
+                        {% if result.national_id_valid %}<span class="badge bg-success">{{ _('Valid') }}</span>
+                        {% elif result.national_id %}<span class="badge bg-danger">{{ _('Invalid') }}</span>{% endif %}
+                    </p>
+                    <p><strong>{{ _('DOB / Gender / Governorate') }}:</strong>
+                        {{ result.dob or '-' }} / {{ result.gender or '-' }} / {{ result.governorate_name or '-' }}</p>
+                    {% if result.back_card_detected is not none %}
+                    <p><strong>{{ _('Back-Side Extracted Fields') }}:</strong>
+                        {{ _('Occupation') }}: {{ result.extracted_occupation or '-' }} /
+                        {{ _('Marital Status') }}: {{ result.extracted_marital_status or '-' }} /
+                        {{ _('Expiry') }}: {{ result.id_expiry_raw or '-' }}
+                        <span class="badge bg-{{ 'success' if result.back_card_detected else 'secondary' }}">
+                            {{ _('Back card detected') if result.back_card_detected else _('Back card not detected') }}</span>
+                        {% if result.back_ocr_confidence is not none %}
+                        <span class="text-muted">({{ _('OCR confidence') }}: {{ result.back_ocr_confidence }})</span>
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                    <p><strong>{{ _('Face Match Score') }}:</strong> {{ result.face_match_score if result.face_match_score is not none else '-' }}
+                        ({{ result.face_match_engine or '-' }})</p>
+                    <p><strong>{{ _('Passive Liveness') }}:</strong>
+                        {{ result.passive_liveness_score if result.passive_liveness_score is not none else '-' }}
+                        {% if result.passive_liveness_pass is not none %}
+                        <span class="badge bg-{{ 'success' if result.passive_liveness_pass else 'danger' }}">
+                            {{ 'PASS' if result.passive_liveness_pass else 'FAIL' }}</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>{{ _('Active Liveness') }}:</strong>
+                        {{ result.active_liveness_challenge or '-' }}
+                        {% if result.active_liveness_pass is not none %}
+                        <span class="badge bg-{{ 'success' if result.active_liveness_pass else 'danger' }}">
+                            {{ 'PASS' if result.active_liveness_pass else 'FAIL' }}</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>{{ _('Document PAD Score') }}:</strong>
+                        {{ result.document_pad_score if result.document_pad_score is not none else '-' }}
+                        {% if result.document_pad_pass is not none %}
+                        <span class="badge bg-{{ 'success' if result.document_pad_pass else 'danger' }}">
+                            {{ 'PASS' if result.document_pad_pass else 'FAIL' }}</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>{{ _('Screening Result') }}:</strong> {{ result.screening_result or '-' }}</p>
+                    {% if result.decision_reasons %}
+                    <p class="mb-1"><strong>{{ _('Decision Reasons') }}:</strong></p>
+                    <ul>
+                        {% for reason in result.decision_reasons %}
+                        <li>{{ reason }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if documents and current_user.can_edit('ekyc') %}
+            <div class="card mb-3">
+                <div class="card-header">{{ _('Captured Media') }}</div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        {{ _('Viewing decrypts the file on demand and is logged in the audit trail below.') }}
+                    </p>
+                    <ul class="list-unstyled mb-0">
+                        {% for doc in documents %}
+                        <li class="mb-1">
+                            {% if doc.purged_at %}
+                            <span class="text-muted">{{ doc.doc_role }} — {{ _('purged') }} ({{ doc.purged_at }})</span>
+                            {% else %}
+                            <a href="{{ url_for('ekyc.view_document', doc_id=doc.id) }}" target="_blank">
+                                {{ doc.doc_role }} — {{ doc.captured_at }}
+                            </a>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">{{ _('Audit Trail') }}</div>
+                <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                    <ul class="list-unstyled mb-0">
+                        {% for entry in audit_trail %}
+                        <li class="mb-2 pb-2 border-bottom">
+                            <small class="text-muted">{{ entry.created_at }}</small><br>
+                            <strong>{{ entry.action }}</strong>
+                            {% if entry.user_name %} &mdash; {{ entry.user_name }}{% endif %}
+                            {% if entry.details %}<br><span class="text-muted">{{ entry.details }}</span>{% endif %}
+                        </li>
+                        {% else %}
+                        <li class="text-muted">{{ _('No activity yet.') }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

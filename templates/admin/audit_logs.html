@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Logs - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-clock-history me-2"></i>{{ _('System Audit Logs') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-outline-secondary" data-action="print">
+            <i class="bi bi-printer"></i> {{ _('Export PDF') }}
+        </button>
+    </div>
+</div>
+
+<!-- Advanced Filtering Section -->
+<div class="card border-0 shadow-sm mb-4 bg-light">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">{{ _('Search Details/User') }}</label>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="{{ _('Search...') }}"
+                    value="{{ filters.get('search', '') }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">{{ _('Module') }}</label>
+                <select name="module" class="form-select form-select-sm">
+                    <option value="">{{ _('All Modules') }}</option>
+                    {% for mod in modules %}
+                    <option value="{{ mod }}" {% if filters.get('module')==mod %}selected{% endif %}>{{ mod | capitalize
+                        }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">{{ _('Action Type') }}</label>
+                <select name="action" class="form-select form-select-sm">
+                    <option value="">{{ _('All Actions') }}</option>
+                    {% for act in actions %}
+                    <option value="{{ act }}" {% if filters.get('action')==act %}selected{% endif %}>{{ act }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">{{ _('From Date') }}</label>
+                <input type="date" name="date_from" class="form-control form-control-sm"
+                    value="{{ filters.get('date_from', '') }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">{{ _('To Date') }}</label>
+                <input type="date" name="date_to" class="form-control form-control-sm"
+                    value="{{ filters.get('date_to', '') }}">
+            </div>
+            <div class="col-md-1 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-filter"></i></button>
+                <a href="{{ url_for('admin.view_audit_logs') }}" class="btn btn-outline-secondary btn-sm"><i
+                        class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle border shadow-sm bg-white">
+        <thead class="table-light">
+            <tr>
+                <th class="ps-3" style="width: 15%;">{{ _('Timestamp') }}</th>
+                <th style="width: 20%;">{{ _('User & Role') }}</th>
+                <th style="width: 15%;">{{ _('Action') }}</th>
+                <th style="width: 15%;">{{ _('Module') }}</th>
+                <th>{{ _('Details') }}</th>
+                <th class="text-end pe-3">{{ _('Origin') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td class="ps-3 small">
+                    <div class="text-dark">
+                        {% if log.created_at is string %}
+                        {{ log.created_at.split(' ')[0] }}
+                        {% else %}
+                        {{ log.created_at.strftime('%Y-%m-%d') if log.created_at else '' }}
+                        {% endif %}
+                    </div>
+                    <div class="text-muted smaller">
+                        {% if log.created_at is string %}
+                        {{ log.created_at.split(' ')[1] }}
+                        {% else %}
+                        {{ log.created_at.strftime('%H:%M:%S') if log.created_at else '' }}
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <div class="fw-bold small">{{ log.user_name or 'System/Anonymous' }}</div>
+                    <div class="text-muted smaller">{{ log.user_email or '---' }}</div>
+                    {% if log.user_role %}
+                    <span class="badge bg-light text-dark border-0 smaller fw-normal p-0">{{ log.user_role | capitalize
+                        }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set action_lower = log.action.lower() %}
+                    <span class="badge 
+                        {% if 'create' in action_lower or 'publish' in action_lower or 'save' in action_lower %}bg-success-subtle text-success
+                        {% elif 'update' in action_lower or 'amend' in action_lower %}bg-primary-subtle text-primary
+                        {% elif 'delete' in action_lower or 'fail' in action_lower or 'archive' in action_lower %}bg-danger-subtle text-danger
+                        {% elif 'login' in action_lower or 'logout' in action_lower %}bg-info-subtle text-info
+                        {% else %}bg-secondary-subtle text-secondary{% endif %} 
+                        px-2 py-1 border-0">
+                        {{ log.action }}
+                    </span>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ log.module }}</span></td>
+                <td>
+                    <div class="small text-dark fw-medium">{{ log.details or '' }}</div>
+                    {% if log.item_id %}
+                    <div class="smaller text-muted">ID Ref: #{{ log.item_id }}</div>
+                    {% endif %}
+                </td>
+                <td class="text-end pe-3">
+                    <code class="smaller text-muted">{{ log.ip_address or '---' }}</code>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center py-5">
+                    <i class="bi bi-search display-6 text-muted mb-3 d-block"></i>
+                    <p class="text-muted">{{ _('No audit logs found matching your filters.') }}</p>
+                    <a href="{{ url_for('admin.view_audit_logs') }}" class="btn btn-sm btn-outline-primary">{{ _('Clear All
+                        Filters') }}</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .smaller {
+        font-size: 0.75rem;
+    }
+
+    .bg-success-subtle {
+        background-color: #d1e7dd;
+    }
+
+    .text-success {
+        color: #0f5132;
+    }
+
+    .bg-primary-subtle {
+        background-color: #cfe2ff;
+    }
+
+    .text-primary {
+        color: #084298;
+    }
+
+    .bg-danger-subtle {
+        background-color: #f8d7da;
+    }
+
+    .text-danger {
+        color: #842029;
+    }
+
+    .bg-info-subtle {
+        background-color: #cff4fc;
+    }
+
+    .text-info {
+        color: #055160;
+    }
+
+    .bg-secondary-subtle {
+        background-color: #e2e3e5;
+    }
+
+    .text-secondary {
+        color: #41464b;
+    }
+</style>
+{% endblock %}

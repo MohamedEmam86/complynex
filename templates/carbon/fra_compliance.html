@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('FRA Compliance') }} — ComplyNex{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">
+{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+  <div class="ecx-hero ecx-carbon">
+    <div class="ecx-eyebrow">{{ _('Carbon Footprint & Climate') }}</div>
+    <h1><i class="bi bi-bank me-2"></i>{{ _('FRA Decision 36/2026 Compliance') }} — {{ period.label if period else _('No period') }}</h1>
+    <p>{{ _('Annual carbon report, accredited verification, and the 20%% offset obligation — the full legal cycle in one place.') }}</p>
+  </div>
+
+  {% if not period %}
+  <div class="alert alert-warning">{{ _('No reporting period exists yet. Create one in the ESG module first.') }}</div>
+  {% else %}
+
+  <!-- Status stepper -->
+  <div class="ecx-card p-4 mb-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+      <h5 class="mb-0">{{ _('Report lifecycle') }}</h5>
+      <a class="btn btn-outline-success btn-sm" href="{{ url_for('carbon.fra_report') }}" target="_blank">
+        <i class="bi bi-file-earmark-text me-1"></i>{{ _('Generate FRA Report (print / save PDF)') }}
+      </a>
+    </div>
+    <div class="d-flex flex-wrap gap-2 my-3">
+      {% for s in statuses %}
+        {% set reached = statuses.index(period.fra_status) >= loop.index0 %}
+        <span class="badge rounded-pill bg-{{ 'success' if reached else 'light text-muted border' }} px-3 py-2">
+          {{ loop.index }}. {{ _(s) }}
+        </span>
+        {% if not loop.last %}<span class="text-muted">{{ _('&rarr;') }}</span>{% endif %}
+      {% endfor %}
+    </div>
+    <div class="row small text-muted g-2 mb-3">
+      {% if period.verifier_name %}<div class="col-auto"><strong>{{ _('Verifier:') }}</strong> {{ period.verifier_name }}</div>{% endif %}
+      {% if period.sent_to_verifier_at %}<div class="col-auto"><strong>{{ _('Sent:') }}</strong> {{ period.sent_to_verifier_at }}</div>{% endif %}
+      {% if period.certified_at %}<div class="col-auto"><strong>{{ _('Certified:') }}</strong> {{ period.certified_at }}</div>{% endif %}
+      {% if period.submitted_to_fra_at %}<div class="col-auto"><strong>{{ _('Submitted to FRA:') }}</strong> {{ period.submitted_to_fra_at }}</div>{% endif %}
+    </div>
+
+    {% if current_user.can_edit('carbon') %}
+    <form method="POST" action="{{ url_for('carbon.fra_status') }}" class="row g-2 align-items-end">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="col-md-2">
+        <label class="form-label small">{{ _('Move to status') }}</label>
+        <select class="form-select form-select-sm" name="fra_status">
+          {% for s in statuses %}<option value="{{ s }}" {% if s == period.fra_status %}selected{% endif %}>{{ _(s) }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">{{ _('Verifier (FRA-accredited body)') }}</label>
+        <input class="form-control form-control-sm" name="verifier_name" list="verifierList"
+               value="{{ period.verifier_name or '' }}" placeholder="{{ _('Name of accredited verifier') }}">
+        <datalist id="verifierList">
+          {% for v in verifiers %}<option value="{{ v.name }}">{% endfor %}
+        </datalist>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">{{ _('Verifier contact') }}</label>
+        <input class="form-control form-control-sm" name="verifier_contact" value="{{ period.verifier_contact or '' }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">{{ _('Notes') }}</label>
+        <input class="form-control form-control-sm" name="verification_notes" placeholder="{{ _('e.g. verifier queries, certificate ref') }}">
+      </div>
+      <div class="col-md-1">
+        <button class="btn btn-success btn-sm w-100">{{ _('Update') }}</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="row g-3 mb-3">
+    <!-- Compliance calendar -->
+    <div class="col-lg-4">
+      <div class="ecx-card p-4 h-100">
+        <h6><i class="bi bi-calendar-event me-1"></i>{{ _('Compliance calendar') }}</h6>
+        {% if calendar %}
+        <ul class="list-group list-group-flush">
+          {% for c in calendar %}
+          <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+            <span class="small">{{ c.label }}<br><span class="text-muted">{{ c.date }}</span></span>
+            <span class="badge bg-{{ 'danger' if c.days is not none and c.days <= 14 else ('warning' if c.days is not none and c.days <= 60 else 'success') }}">
+              {{ c.days }} {{ _('days') }}
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="small text-muted mb-0">{{ _('Set your fiscal year end in Carbon Settings to activate deadline tracking.') }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Verification readiness -->
+    <div class="col-lg-4">
+      <div class="ecx-card p-4 h-100">
+        <h6><i class="bi bi-clipboard2-check me-1"></i>{{ _('Verification readiness') }}</h6>
+        <p class="small text-muted">{{ _('%(n)s activity entries in the current boundary.', n=readiness.total) }}</p>
+        <label class="form-label small mb-0">{{ _('Entries with evidence attached') }}</label>
+        <div class="progress mb-2" style="height: 18px">
+          <div class="progress-bar bg-{{ 'success' if readiness.evidence_pct >= 80 else 'warning' }}" style="width: {{ readiness.evidence_pct }}%">{{ readiness.evidence_pct }}%</div>
+        </div>
+        <label class="form-label small mb-0">{{ _('Entries reviewed / signed-off') }}</label>
+        <div class="progress mb-2" style="height: 18px">
+          <div class="progress-bar bg-{{ 'success' if readiness.reviewed_pct >= 80 else 'warning' }}" style="width: {{ readiness.reviewed_pct }}%">{{ readiness.reviewed_pct }}%</div>
+        </div>
+        <p class="small text-muted mb-0">{{ _('The accredited verifier will sample evidence — attach bills/invoices at entry time, not at verification time.') }}</p>
+      </div>
+    </div>
+
+    <!-- Current totals -->
+    <div class="col-lg-4">
+      <div class="ecx-card p-4 h-100">
+        <h6><i class="bi bi-cloud-haze2 me-1"></i>{{ _('Declared emissions (current boundary)') }}</h6>
+        <div class="display-6">{{ totals.total_location_based }} <span class="fs-6 text-muted">{{ _('tCO2e') }}</span></div>
+        <ul class="list-unstyled small mb-0 mt-2">
+          {% if 'scope1' in enabled %}<li>{{ _('Scope 1:') }} <strong>{{ totals.scope1 }}</strong> {{ _('tCO2e') }}</li>{% endif %}
+          {% if 'scope2' in enabled %}<li>{{ _('Scope 2 (location):') }} <strong>{{ totals.scope2_location }}</strong> {{ _('tCO2e') }}</li>{% endif %}
+          {% if 'scope3' in enabled %}<li>{{ _('Scope 3:') }} <strong>{{ totals.scope3 }}</strong> {{ _('tCO2e') }}</li>
+          {% else %}<li class="text-muted">{{ _('Scope 3: excluded from reporting boundary') }}</li>{% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Offset obligation -->
+  <div class="ecx-card p-4 mb-4">
+    <h5><i class="bi bi-arrow-repeat me-1"></i>{{ _('Offset obligation (20%% of declared emissions, within 90 days of submission)') }}</h5>
+    {% if obligation %}
+      <div class="row g-3 align-items-center mb-3">
+        <div class="col-auto">
+          <div class="small text-muted">{{ _('Required') }}</div>
+          <div class="fs-4">{{ obligation.required_tco2e }} tCO2e</div>
+        </div>
+        <div class="col-auto">
+          <div class="small text-muted">{{ _('Purchased') }}</div>
+          <div class="fs-4 text-{{ 'success' if purchased >= obligation.required_tco2e|float else 'warning' }}">{{ purchased }} tCO2e</div>
+        </div>
+        <div class="col-auto">
+          <div class="small text-muted">{{ _('Deadline') }}</div>
+          <div class="fs-5">{{ obligation.deadline_date }}
+            {% if days_left is not none %}
+            <span class="badge bg-{{ 'danger' if days_left <= 14 else ('warning' if days_left <= 60 else 'success') }}">{{ days_left }} {{ _('days left') }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-auto">
+          <div class="small text-muted">{{ _('Status') }}</div>
+          <span class="badge fs-6 bg-{{ 'success' if obligation.status == 'FULFILLED' else ('danger' if obligation.status == 'OVERDUE' else 'warning') }}">{{ obligation.status }}</span>
+        </div>
+      </div>
+
+      {% if purchases %}
+      <div class="table-responsive mb-3">
+        <table class="table table-sm">
+          <thead class="table-light"><tr>
+            <th>{{ _('Project') }}</th><th>{{ _('Registry Ref') }}</th><th>{{ _('tCO2e') }}</th>
+            <th>{{ _('Date') }}</th><th>{{ _('Cost (EGP)') }}</th><th>{{ _('Logged by') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for pu in purchases %}
+            <tr>
+              <td>{{ pu.project_name }}</td><td>{{ pu.registry_reference or '-' }}</td>
+              <td>{{ pu.quantity_tco2e }}</td><td>{{ pu.purchase_date }}</td>
+              <td>{{ pu.cost_egp or '-' }}</td><td class="small">{{ pu.created_by_email or '' }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if current_user.can_edit('carbon') and obligation.status != 'FULFILLED' %}
+      <form method="POST" action="{{ url_for('carbon.fra_offset_purchase') }}" class="row g-2 align-items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="col-md-3">
+          <label class="form-label small">{{ _('Project name (FRA registry)') }}</label>
+          <input class="form-control form-control-sm" name="project_name" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">{{ _('Registry reference') }}</label>
+          <input class="form-control form-control-sm" name="registry_reference">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">{{ _('Quantity (tCO2e)') }}</label>
+          <input type="number" step="any" class="form-control form-control-sm" name="quantity_tco2e" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">{{ _('Purchase date') }}</label>
+          <input type="date" class="form-control form-control-sm" name="purchase_date" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">{{ _('Cost (EGP)') }}</label>
+          <input type="number" step="any" class="form-control form-control-sm" name="cost_egp">
+        </div>
+        <div class="col-md-1">
+          <button class="btn btn-success btn-sm w-100">{{ _('Log') }}</button>
+        </div>
+      </form>
+      {% endif %}
+    {% else %}
+      <p class="text-muted small mb-0">{{ _("The obligation is created automatically the moment the report status is moved to Submitted: 20%% of the declared total, due within 90 days. Certificates are purchased through the FRA Climate Project Registry in the regulated voluntary carbon market.") }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

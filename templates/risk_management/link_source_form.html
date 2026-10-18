@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Link Source Record') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('Link Source Record to') }} {{ risk.risk_id }}</h3>
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Source Module') }}</label>
+                        <select name="source_module" class="form-select" required>
+                            {% for m in allowed_modules %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Source Table') }}</label>
+                        <input type="text" name="source_table" class="form-control" required placeholder="{{ _('e.g. cyber_incidents') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Source Record ID') }}</label>
+                        <input type="number" name="source_record_id" class="form-control" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Link Type') }}</label>
+                        <select name="link_type" class="form-select">
+                            <option value="RELATED">{{ _('RELATED') }}</option>
+                            <option value="EVIDENCE">{{ _('EVIDENCE') }}</option>
+                            <option value="TRIGGER">{{ _('TRIGGER') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">{{ _('Notes') }}</label>
+                        <input type="text" name="notes" class="form-control">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">{{ _('Link') }}</button>
+                <a href="{{ url_for('risk_management.register_detail', risk_pk=risk.id) }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

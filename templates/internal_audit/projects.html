@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Audit Engagements') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>{{ _('Audit Engagements') }}</h3>
+        {% if current_user.can_edit('internal_audit') %}
+        <a href="{{ url_for('internal_audit.projects_new') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>{{ _('New Engagement') }}</a>
+        {% endif %}
+    </div>
+
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('internal_audit.projects') }}" class="btn btn-sm {{ 'btn-dark' if not current_status else 'btn-outline-secondary' }}">{{ _('All') }}</a>
+        {% for s in ['PLANNED', 'FIELDWORK', 'REPORTING', 'MANAGEMENT_RESPONSE', 'FOLLOW_UP', 'CLOSED'] %}
+        <a href="{{ url_for('internal_audit.projects', status=s) }}" class="btn btn-sm {{ 'btn-dark' if current_status == s else 'btn-outline-secondary' }}">{{ s.replace('_', ' ') | title }}</a>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead><tr>
+                    <th>{{ _('#') }}</th><th>{{ _('Name') }}</th><th>{{ _('Type') }}</th>
+                    <th>{{ _('Lead Auditor') }}</th><th>{{ _('Planned Dates') }}</th>
+                    <th>{{ _('Status') }}</th><th>{{ _('Findings') }}</th><th></th>
+                </tr></thead>
+                <tbody>
+                {% for p in projects %}
+                    {% set lead = users_by_id.get(p.lead_auditor_id) %}
+                    <tr>
+                        <td>{{ p.audit_number }}</td><td>{{ p.audit_name }}</td>
+                        <td><span class="badge bg-secondary">{{ p.audit_type }}</span></td>
+                        <td>{{ (lead.first_name ~ ' ' ~ lead.last_name) if lead else '-' }}</td>
+                        <td class="small">{{ p.planned_start_date or '-' }} &rarr; {{ p.planned_end_date or '-' }}</td>
+                        <td>
+                            <span class="badge {{ 'bg-success' if p.status == 'CLOSED' else ('bg-primary' if p.status == 'FIELDWORK' else ('bg-info text-dark' if p.status == 'REPORTING' else 'bg-secondary')) }}">{{ p.status.replace('_', ' ') }}</span>
+                        </td>
+                        <td>{{ findings_count.get(p.id, 0) }}</td>
+                        <td><a href="{{ url_for('internal_audit.project_detail', project_id=p.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('View') }}</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">{{ _('No engagements yet.') }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

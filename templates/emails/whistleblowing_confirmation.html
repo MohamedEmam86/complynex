@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Report Receipt Confirmation</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        .code-box {
+            background-color: #e9ecef;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+            letter-spacing: 2px;
+            border-radius: 4px;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #0d6efd;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>ComplyNex - Report Receipt Confirmation</h2>
+        </div>
+
+        <p>Dear Reporter,</p>
+
+        <p>Your report has been successfully received. We take all reports seriously, and it will be reviewed by the
+            specialized Governance team.</p>
+
+        <p><strong>Case Number:</strong> {{ case_number }}</p>
+
+        {% if anonymous_code %}
+        <p>You have submitted this report anonymously. To track the status of your report or add more information,
+            please use the following tracking code:</p>
+
+        <div class="code-box">{{ anonymous_code }}</div>
+
+        <p style="color: #dc3545; font-weight: bold;">IMPORTANT: Please save this code in a safe place. We cannot
+            recover it for you if lost.</p>
+        {% endif %}
+
+        <p>Thank you for your concern for ComplyNex's integrity and safety.</p>
+
+        <div class="footer">
+            <p>This is an automated message, please do not reply.</p>
+            <p>&copy; 2026 ComplyNex. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+
+</html>

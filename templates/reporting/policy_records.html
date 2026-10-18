@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Policy Acknowledgments - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2">{{ _('Policy Acknowledgments') }}</h1>
+        <p class="text-muted">{{ _('Records for:') }} <strong>{{ policy.policy_name }}</strong> ({{ policy.policy_number }})</p>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('reporting.extended_reports') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Reports') }}
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">{{ _('Employee') }}</th>
+                        <th>{{ _('Department') }}</th>
+                        <th>{{ _('Date Acknowledged') }}</th>
+                        <th>{{ _('IP Address') }}</th>
+                        <th>{{ _('Signature') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ack in acknowledgments %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ ack.employee_name }}</div>
+                        </td>
+                        <td>{{ ack.department or '-' }}</td>
+                        <td>{{ ack.acknowledgment_date }}</td>
+                        <td class="text-muted small">{{ ack.ip_address or 'N/A' }}</td>
+                        <td class="small">{{ ack.digital_signature or 'Standard Click-wrap' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">{{ _('No acknowledgments recorded yet.') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

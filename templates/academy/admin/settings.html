@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Academy settings') }}{% endblock %}
+{% block content %}
+{% set page_title = _('Settings') %}
+{% include 'academy/admin/_nav.html' %}
+<div class="row g-3">
+  <div class="col-lg-6">
+    <form method="post" class="card">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="card-header bg-light"><strong>{{ _('Portal controls') }}</strong></div>
+      <div class="card-body">
+        <label class="form-label fw-bold">{{ _('Public portal') }}</label>
+        <select name="public_enabled" class="form-select mb-1">
+          <option value="false" {{ 'selected' if s.public_enabled != 'true' }}>{{ _('Closed — visitors see "opening soon"') }}</option>
+          <option value="true" {{ 'selected' if s.public_enabled == 'true' }}>{{ _('Open — anyone can register') }}</option></select>
+        <p class="small text-muted">{{ _('Open only after a course is published and Integrys has approved the pages and certificate.') }}</p>
+
+        <label class="form-label fw-bold">{{ _('Free / personal email addresses') }}</label>
+        <select name="free_email_policy" class="form-select mb-1">
+          <option value="reject" {{ 'selected' if s.free_email_policy == 'reject' }}>{{ _('Reject (work email only)') }}</option>
+          <option value="flag" {{ 'selected' if s.free_email_policy == 'flag' }}>{{ _('Accept but flag in the learner database') }}</option></select>
+        <p class="small text-muted">{{ _('Disposable addresses and domains without a mail server are always rejected.') }}</p>
+
+        <label class="form-label fw-bold">{{ _('Retention (months of inactivity before erasure)') }}</label>
+        <input type="number" name="retention_months" min="6" max="120" class="form-control mb-1" value="{{ s.retention_months }}">
+        <p class="small text-muted">{{ _('Applied by the monthly retention job. Unverified registrations are erased after 30 days.') }}</p>
+        {% if current_user.can_edit('academy') %}<button class="btn btn-primary">{{ _('Save') }}</button>{% endif %}
+      </div>
+    </form>
+  </div>
+  <div class="col-lg-6">
+    <div class="card mb-3"><div class="card-header bg-light"><strong>{{ _('Preview link (staff)') }}</strong></div><div class="card-body">
+      <p class="small">{{ _('Opens the portal in preview mode while it is closed — includes draft courses. Valid 14 days. Do not share publicly.') }}</p>
+      <input class="form-control form-control-sm" readonly value="{{ preview_url }}">
+    </div></div>
+    <div class="card mb-3"><div class="card-header bg-light"><strong>{{ _('Status') }}</strong></div>
+      <ul class="list-group list-group-flush small">
+        <li class="list-group-item">{{ _('OTP email') }}: {% if mail_live %}<span class="text-success">{{ _('live') }}</span>{% else %}<span class="text-danger">{{ _('mock mode — codes are not emailed') }}</span>{% endif %} · {{ _('sender name') }} “{{ s.sender_name }}”</li>
+        <li class="list-group-item">{{ _('Privacy notice version') }}: {{ s.privacy_version }}</li>
+        <li class="list-group-item">{{ _('Public host') }}: <code>academy.integrysconsult.com</code></li>
+      </ul></div>
+    <div class="card"><div class="card-header bg-light"><strong>{{ _('Staff activity') }}</strong></div>
+      <ul class="list-group list-group-flush small">
+      {% for a in log %}<li class="list-group-item">{{ a.created_at.strftime('%d %b %Y %H:%M') }} · <b>{{ a.action }}</b> · {{ academy_uname(a.actor_user_id) }} <span class="text-muted">{{ a.detail }}</span></li>
+      {% else %}<li class="list-group-item text-muted">—</li>{% endfor %}</ul></div>
+  </div>
+</div>
+{% endblock %}

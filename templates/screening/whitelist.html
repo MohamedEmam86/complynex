@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Screening Whitelist Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-shield-check text-success"></i> {{ _('Whitelist Management') }}</h2>
+        <div>
+            <a href="{{ url_for('screening.export_whitelist') }}" class="btn btn-outline-success btn-sm me-1">
+                <i class="bi bi-download"></i> {{ _('Export') }}
+            </a>
+            <a href="{{ url_for('screening.bulk_upload_whitelist') }}" class="btn btn-outline-primary btn-sm me-1">
+                <i class="bi bi-file-earmark-arrow-up"></i> {{ _('Bulk Add (CSV/Excel)') }}
+            </a>
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                data-bs-target="#addWhitelistModal">
+                <i class="bi bi-plus-circle"></i> {{ _('Add Entry') }}
+            </button>
+        </div>
+    </div>
+
+    <div class="alert alert-info border-0 shadow-sm">
+        <i class="bi bi-info-circle me-2"></i>
+        {{ _('Whitelisted entries are automatically marked as') }} <strong>{{ _('CLEAR') }}</strong> {{ _('during screening.
+        Entries can be revoked if circumstances change. Review dates track periodic reassessment.') }}
+    </div>
+
+    <!-- Search -->
+    <div class="mb-3">
+        <input type="text" id="wlSearch" class="form-control form-control-sm"
+            placeholder="{{ _('Search whitelist by name, reason, or source...') }}" style="max-width:400px;">
+    </div>
+
+    <div class="card shadow-sm border-0">
+        {% if active_filter %}
+<div class="alert alert-info d-flex justify-content-between align-items-center">
+  <div>
+    <i class="bi bi-funnel-fill me-2"></i>
+    <strong>{{ _('Filtered:') }}</strong> {{ _(filter_labels.get(active_filter, active_filter)) }}
+    <span class="badge bg-secondary ms-2">{{ whitelist|length }}</span>
+  </div>
+  <div>
+    <a href="{{ url_for('screening.ongoing_screening_dashboard') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> {{ _('Back to Ongoing Screening') }}</a>
+    <a href="{{ url_for('screening.manage_whitelist') }}" class="btn btn-sm btn-outline-primary">
+      {{ _('Show all') }}</a>
+  </div>
+</div>
+{% endif %}
+{% if needs_review %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+  <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+  <div>
+    <strong>{{ needs_review }} {{ _('entries need review before they suppress anything.') }}</strong><br>
+    <span class="small">{{ _('These names match an active sanctions, PEP or internal watchlist record. They are held in quarantine: they stay on the list and stay visible, but they do not suppress screening alerts until someone reinstates them with a recorded justification.') }}</span>
+  </div>
+</div>
+{% endif %}
+<div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="wlTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>{{ _('Name') }}</th>
+                            <th>{{ _('Entity Type') }}</th>
+                            <th>{{ _('Normalized') }}</th>
+                            <th>{{ _('Reason') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Original Match') }}</th>
+                            <th>{{ _('Score') }}</th>
+                            <th>{{ _('List Source') }}</th>
+                            <th>{{ _('Added By') }}</th>
+                            <th>{{ _('Added At') }}</th>
+                            <th>{{ _('Review Date') }}</th>
+                            <th class="text-end">{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if whitelist %}
+                        {% for entry in whitelist %}
+                        <tr class="{% if entry.status == 'Revoked' %}table-danger opacity-75{% elif entry.status == 'Requires Review' %}table-warning{% endif %}">
+                            <td><strong>{{ entry.name }}</strong></td>
+                            <td><span class="badge bg-light text-dark">{{ entry.entity_type or 'Individual' }}</span>
+                            </td>
+                            <td><code class="small">{{ entry.normalized_name }}</code></td>
+                            <td><small>{{ entry.reason or '-' }}</small></td>
+                            <td>
+                                <span
+                                    class="badge {% if entry.status == 'Active' %}bg-success{% elif entry.status == 'Revoked' %}bg-danger{% elif entry.status == 'Requires Review' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ entry.status or 'Active' }}
+                                </span>
+                                {% if entry.status == 'Requires Review' %}
+                                <i class="bi bi-exclamation-triangle-fill text-warning ms-1"
+                                   title="{{ _('This name matches an active watchlist entry. It does not suppress alerts until reviewed.') }}"></i>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ entry.original_match_name or '-' }}</small></td>
+                            <td>
+                                {% if entry.original_match_score %}
+                                <span class="badge bg-info">{{ "%.0f"|format(entry.original_match_score) }}%</span>
+                                {% else %}-{% endif %}
+                            </td>
+                            <td><small>{{ entry.original_list_source or '-' }}</small></td>
+                            <td>
+                                {% if entry.added_by_name %}
+                                  <strong>{{ entry.added_by_name }}</strong>
+                                  <div class="text-muted" style="font-size:11px">{{ entry.added_by_email }}</div>
+                                {% else %}<span class="text-muted">{{ _('System') }}</span>{% endif %}
+                            </td>
+                            <td><small class="text-muted">{{ entry.added_at }}</small></td>
+                            <td><small>{{ entry.review_date or 'Not set' }}</small></td>
+                            <td class="text-end">
+                                <a href="{{ url_for('screening.whitelist_case', id=entry.id) }}"
+                                   class="btn btn-sm btn-outline-dark me-1" title="{{ _('Open case') }}">
+                                   <i class="bi bi-folder2-open"></i>
+                                   {% if entry.open_findings %}<span class="badge bg-danger">{{ entry.open_findings }}</span>{% endif %}
+                                </a>
+                                {% if can_edit_wl %}
+                                <div class="btn-group btn-group-sm">
+                                    {% if entry.status == 'Active' %}
+                                    <button type="button" class="btn btn-sm btn-outline-warning js-wl-revoke"
+                                            data-id="{{ entry.id }}" data-name="{{ entry.name }}"
+                                            title="{{ _('Revoke') }}">
+                                        <i class="bi bi-slash-circle"></i>
+                                    </button>
+                                    {% else %}
+                                    <button type="button" class="btn btn-sm btn-outline-success js-wl-reinstate"
+                                            data-id="{{ entry.id }}" data-name="{{ entry.name }}"
+                                            title="{{ _('Reinstate') }}">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                    {% endif %}
+                                    <form method="POST" data-confirm="{{ _('Permanently remove this entry? The audit history is kept.') }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="wid" value="{{ entry.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ _('Delete') }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% else %}
+                                <span class="text-muted small">{{ _('View only') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="12" class="text-center py-5 text-muted">
+                                <i class="bi bi-shield-check fs-1 opacity-25"></i><br>
+                                {{ _('No whitelist entries yet.') }}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Whitelist Modal -->
+<div class="modal fade" id="addWhitelistModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="add">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-shield-plus"></i> {{ _('Add to Whitelist') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Name') }} <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" placeholder="{{ _('Exact name as screened') }}"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Reason / Justification') }} <span class="text-danger">*</span></label>
+                        <textarea name="reason" class="form-control" rows="3"
+                            placeholder="{{ _('Explain why this is a known false positive...') }}" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle"></i> {{ _('Add to
+                        Whitelist') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- One shared modal rather than a modal per row: with ~100 entries, per-row
+     modals would bloat the DOM. The row's id/name are copied in on open. -->
+<div class="modal fade" id="wlReasonModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" id="wlReasonForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="wlReasonTitle"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2"><strong id="wlReasonName"></strong></p>
+          <div id="wlReinstateWarning" class="alert alert-warning small d-none">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            {{ _('Reinstating this entry stops screening alerts being raised for this name. If the name matches a sanctions or PEP list, record exactly why the match is not this person.') }}
+          </div>
+          <label class="form-label">{{ _('Reason') }} <span class="text-danger">*</span></label>
+          <textarea name="reason" id="wlReasonText" class="form-control" rows="3" required
+                    placeholder="{{ _('e.g. Verified different date of birth and national ID; not the listed individual.') }}"></textarea>
+          <div class="form-text">{{ _('Recorded permanently against your name in the whitelist audit trail.') }}</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+          <button type="submit" class="btn btn-primary" id="wlReasonSubmit"></button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    // Revoke / reinstate both need a typed justification, so they go through a
+    // modal rather than submitting a hidden canned string.
+    (function () {
+      var el = document.getElementById('wlReasonModal');
+      if (!el) return;
+      var modal = new bootstrap.Modal(el);
+      var form  = document.getElementById('wlReasonForm');
+
+      function open(kind, id, name) {
+        var revoke = (kind === 'revoke');
+        form.action = (revoke
+          ? '{{ url_for("screening.revoke_whitelist", id=987654321) }}'
+          : '{{ url_for("screening.reinstate_whitelist", id=987654321) }}'
+        ).replace('987654321', id);
+        document.getElementById('wlReasonTitle').textContent =
+          revoke ? '{{ _("Revoke whitelist entry") }}' : '{{ _("Reinstate whitelist entry") }}';
+        document.getElementById('wlReasonName').textContent = name;
+        document.getElementById('wlReasonSubmit').textContent =
+          revoke ? '{{ _("Revoke") }}' : '{{ _("Reinstate") }}';
+        document.getElementById('wlReasonSubmit').className =
+          revoke ? 'btn btn-warning' : 'btn btn-success';
+        document.getElementById('wlReinstateWarning').classList.toggle('d-none', revoke);
+        document.getElementById('wlReasonText').value = '';
+        modal.show();
+      }
+
+      document.addEventListener('click', function (e) {
+        var b = e.target.closest('.js-wl-revoke, .js-wl-reinstate');
+        if (!b) return;
+        open(b.classList.contains('js-wl-revoke') ? 'revoke' : 'reinstate',
+             b.dataset.id, b.dataset.name);
+      });
+    }());
+
+    // Quick search filter
+    document.getElementById('wlSearch').addEventListener('input', function () {
+        const search = this.value.toLowerCase();
+        document.querySelectorAll('#wlTable tbody tr').forEach(function (row) {
+            row.style.display = row.textContent.toLowerCase().includes(search) ? '' : 'none';
+        });
+    });
+</script>
+{% endblock %}

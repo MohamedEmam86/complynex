@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Search — "{{ q }}" - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h4 class="mb-1">{{ _('Search results') }}</h4>
+    <p class="text-muted">{{ _('Query:') }} <strong>{{ q }}</strong></p>
+
+    {% set has_results = results.risks or results.findings or results.policies %}
+    {% if not q %}
+    <div class="alert alert-secondary">{{ _('Enter a search term in the dashboard command bar.') }}</div>
+    {% elif not has_results %}
+    <div class="alert alert-secondary">{{ _('No matches found in risks, audit findings, or policies.') }}</div>
+    {% endif %}
+
+    {% if results.risks %}
+    <div class="card mb-3">
+        <div class="card-header"><strong>{{ _('Risks') }}</strong></div>
+        <ul class="list-group list-group-flush">
+            {% for r in results.risks %}
+            <li class="list-group-item">
+                <a href="{{ url_for('risk_management.register_detail', risk_pk=r.id) }}">{{ r.risk_id }} — {{ r.risk_title }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if results.findings %}
+    <div class="card mb-3">
+        <div class="card-header"><strong>{{ _('Internal Audit Findings') }}</strong></div>
+        <ul class="list-group list-group-flush">
+            {% for f in results.findings %}
+            <li class="list-group-item">
+                <a href="{{ url_for('internal_audit.finding_detail', finding_id=f.id) }}">{{ f.finding_number }} — {{ f.finding_title }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if results.policies %}
+    <div class="card mb-3">
+        <div class="card-header"><strong>{{ _('Policies') }}</strong></div>
+        <ul class="list-group list-group-flush">
+            {% for p in results.policies %}
+            <li class="list-group-item">{{ p.policy_name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

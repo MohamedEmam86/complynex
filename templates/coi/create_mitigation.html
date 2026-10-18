@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Mitigation Plan - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<nav aria-label="{{ _('breadcrumb') }}" class="mt-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">{{ _('Dashboard') }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('coi.pending_review') }}">{{ _('COI Reviews') }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('coi.review_declaration', id=declaration.id) }}">{{ _('Review') }}</a></li>
+        <li class="breadcrumb-item active">{{ _('New Mitigation Plan') }}</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>{{ _('Create Conflict Mitigation Plan') }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-light border mb-4">
+                    <h6 class="text-primary"><i class="bi bi-person-badge me-2"></i>{{ _('Conflict Details') }}</h6>
+                    <p class="mb-1"><strong>{{ _('Employee:') }}</strong> {{ declaration.employee_name }} ({{
+                        declaration.department }})</p>
+                    <p class="mb-0 text-muted small"><strong>{{ _('Conflict Identified:') }}</strong>
+                        {% set conflicts = [] %}
+                        {% if declaration.has_financial_interests %}{% set _ignored = conflicts.append(_('Financial Interests')) %}{% endif %}
+                        {% if declaration.has_family_in_competitor %}{% set _ignored = conflicts.append(_('Family in Competitor')) %}{% endif %}
+                        {% if declaration.has_family_in_supplier %}{% set _ignored = conflicts.append(_('Family in Supplier')) %}{% endif %}
+                        {% if declaration.has_outside_employment %}{% set _ignored = conflicts.append(_('Outside Employment')) %}{% endif %}
+                        {% if declaration.has_received_gifts %}{% set _ignored = conflicts.append(_('Gifts')) %}{% endif %}
+                        {% if declaration.has_other_conflicts %}{% set _ignored = conflicts.append(_('Other')) %}{% endif %}
+                        {{ conflicts|join(', ') }}
+                    </p>
+                </div>
+
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">{{ _('Mitigation Strategy') }}</label>
+                            <select class="form-select" name="mitigation_strategy" required>
+                                <option value="" selected disabled>{{ _('Select a strategy...') }}</option>
+                                <option value="Avoidance">{{ _('Avoidance (Eliminating the conflict)') }}</option>
+                                <option value="Transfer">{{ _('Transfer (Moving responsibilities)') }}</option>
+                                <option value="Mitigation">{{ _('Mitigation (Reducing impact with controls)') }}</option>
+                                <option value="Acceptance">{{ _('Acceptance (Noted with periodic monitoring)') }}</option>
+                            </select>
+                            <div class="form-text mt-1 small">{{ _('Choose how the organization will manage this specific
+                                conflict.') }}</div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">{{ _('Plan Details & Specific Controls') }}</label>
+                            <textarea class="form-control" name="plan_details" rows="5"
+                                placeholder="{{ _('Describe the specific steps, restrictions, or monitoring requirements...') }}"
+                                required></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">{{ _('Assigned Reviewer/Owner') }}</label>
+                            <select class="form-select" name="assigned_to" required>
+                                <option value="" selected disabled>{{ _('Select owner...') }}</option>
+                                {% for user in assignees %}
+                                <option value="{{ user.id }}">{{ user.get_full_name() }} ({{ user.department or 'N/A'
+                                    }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">{{ _('Implementation Target Date') }}</label>
+                            <input type="date" class="form-control" name="target_date" required>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-between">
+                        <a href="{{ url_for('coi.review_declaration', id=declaration.id) }}"
+                            class="btn btn-light px-4">{{ _('Cancel') }}</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            {{ _('Save & Activate Plan') }} <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

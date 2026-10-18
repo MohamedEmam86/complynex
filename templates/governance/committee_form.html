@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ _('Edit Committee') if committee else _('Create New
+                        Committee') }}</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ _('Committee Name') }}</label>
+                                <input type="text" name="committee_name" class="form-control" required
+                                    value="{{ committee.committee_name if committee else '' }}"
+                                    placeholder="{{ _('e.g. Audit Committee') }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Committee Type') }}</label>
+                                <input type="text" name="committee_type" list="committee_types" class="form-control"
+                                    value="{{ committee.committee_type if committee else '' }}" required>
+                                <datalist id="committee_types">
+                                    <option value="AUDIT">
+                                    <option value="RISK">
+                                    <option value="COMPLIANCE">
+                                    <option value="NOMREM">
+                                    <option value="GOVERNANCE">
+                                    <option value="EXECUTIVE">
+                                    <option value="INVESTMENT">
+                                    <option value="IT">
+                                    <option value="CREDIT">
+                                    <option value="OTHER">
+                                </datalist>
+                                <div class="form-text small">{{ _('You can type a custom type or select from common
+                                    ones.') }}</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Meeting Frequency') }}</label>
+                                <input type="text" name="meeting_frequency" class="form-control"
+                                    value="{{ committee.meeting_frequency if committee else '' }}"
+                                    placeholder="{{ _('e.g. Quarterly') }}">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ _('Committee Chairman') }}</label>
+                                <select name="chairman_id" class="form-select">
+                                    <option value="">-- {{ _('Select Chairman') }} --</option>
+                                    {% for member in members %}
+                                    <option value="{{ member.id }}" {{ 'selected' if committee and
+                                        committee.chairman_id==member.id else '' }}>{{ member.member_name }} ({{
+                                        member.role }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">{{ _('Committee Charter / Terms of Reference (PDF)')
+                                    }}</label>
+                                <input type="file" name="charter_file" class="form-control">
+                                {% if committee and committee.charter_file %}
+                                <div class="form-text">
+                                    <a href="{{ url_for('governance.committee_charter', id=committee.id) }}"
+                                        target="_blank">{{ _('View current charter') }}</a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if committee %}
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
+                                        {{ 'checked' if committee.is_active else '' }}>
+                                    <label class="form-check-label" for="is_active">
+                                        {{ _('Committee is Active') }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ _('Update Committee') if committee else _('Create
+                                Committee') }}
+                            </button>
+                            <a href="{{ url_for('governance.list_committees') }}" class="btn btn-secondary">
+                                {{ _('Cancel') }}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

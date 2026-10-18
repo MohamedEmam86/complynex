@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Workflow Management - {{ policy.policy_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Workflow: {{ policy.policy_name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('policies.view_policy', id=policy.id) }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i> {{ _('BACK TO POLICY') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Active Approval Stages') }}</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">{{ _('Stage Name') }}</th>
+                                <th>{{ _('Reviewer') }}</th>
+                                <th>{{ _('Status') }}</th>
+                                <th class="text-end pe-4">{{ _('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for review in reviews %}
+                            <tr>
+                                <td class="ps-4 fw-bold">{{ review.stage_name }}</td>
+                                <td>{{ review.reviewer_name }}</td>
+                                <td>
+                                    {% if review.status == 'approved' %}
+                                    <span class="badge bg-success">{{ _('Approved') }}</span>
+                                    {% elif review.status == 'rejected' %}
+                                    <span class="badge bg-danger">{{ _('Rejected') }}</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">{{ _('Pending') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if review.status == 'pending' %}
+                                    <button class="btn btn-sm btn-outline-danger disabled">{{ _('Remove') }}</button>
+                                    {% else %}
+                                    <small class="text-muted">{{ review.review_date }}</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">{{ _('No review stages defined yet.') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Add Approval Stage') }}</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('policies.workflow_management', id=policy.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Stage Name') }}</label>
+                        <select class="form-select" name="stage_name" required>
+                            <option value="Initial Review">{{ _('Initial Review') }}</option>
+                            <option value="Compliance Review">{{ _('Compliance Review') }}</option>
+                            <option value="Legal Review">{{ _('Legal Review') }}</option>
+                            <option value="Management Approval">{{ _('Management Approval') }}</option>
+                            <option value="Board Approval">{{ _('Board Approval') }}</option>
+                        </select>
+                        <small class="text-muted">{{ _('Stages will be completed in the order they are added.') }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Assign Reviewer') }}</label>
+                        <select class="form-select" name="reviewer_id" required>
+                            <option value="">{{ _('Select User...') }}</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }} ({{ user.role }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">{{ _('ADD TO WORKFLOW') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-3 shadow-sm">
+            <h6 class="fw-bold"><i class="bi bi-info-circle"></i> {{ _('Workflow Logic') }}</h6>
+            <p class="small mb-0">{{ _('When multiple stages are added, the policy status will only advance to') }}
+                <strong>{{ _('Approved') }}</strong> {{ _('once ALL stages are marked as Approved.') }}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

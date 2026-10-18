@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Declaration {{ declaration.declaration_number }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-pencil"></i> Edit Declaration {{ declaration.declaration_number }}
+    </h1>
+    <a href="{{ url_for('ghe.view_declaration', id=declaration.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> {{ _('Back to Details') }}
+    </a>
+</div>
+
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{ _('You can only edit declarations that are still pending. Changes will reset the approval workflow.') }}
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-pencil-square"></i> {{ _('Edit Declaration Details') }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('ghe.edit_declaration', id=declaration.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- GHE Type & Direction -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="ghe_type" class="form-label">{{ _('Type') }} <span class="text-danger">*</span></label>
+                    <select class="form-select" id="ghe_type" name="ghe_type" required>
+                        <option value="Gift" {% if declaration.ghe_type=='Gift' %}selected{% endif %}>{{ _('Gift') }}</option>
+                        <option value="Hospitality" {% if declaration.ghe_type=='Hospitality' %}selected{% endif %}>
+                            {{ _('Hospitality') }}</option>
+                        <option value="Entertainment" {% if declaration.ghe_type=='Entertainment' %}selected{% endif %}>
+                            {{ _('Entertainment') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="direction" class="form-label">{{ _('Direction') }} <span class="text-danger">*</span></label>
+                    <select class="form-select" id="direction" name="direction" required>
+                        <option value="Given" {% if declaration.direction=='Given' %}selected{% endif %}>{{ _('Given (by me)') }}
+                        </option>
+                        <option value="Received" {% if declaration.direction=='Received' %}selected{% endif %}>{{ _('Received
+                            (by me)') }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Event Date & Value -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="event_date" class="form-label">{{ _('Event Date') }} <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="event_date" name="event_date" required max="{{ today }}"
+                        value="{{ declaration.event_date }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="estimated_value_egp" class="form-label">{{ _('Estimated Value (EGP)') }} <span
+                            class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">EGP</span>
+                        <input type="number" class="form-control" id="estimated_value_egp" name="estimated_value_egp"
+                            min="0" step="0.01" required value="{{ declaration.estimated_value_egp }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provider/Recipient -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="provider_recipient_name" class="form-label">{{ _('Provider/Recipient Name') }} <span
+                            class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="provider_recipient_name" name="provider_recipient_name"
+                        required value="{{ declaration.provider_recipient_name }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="provider_recipient_company" class="form-label">{{ _('Company/Organization') }}</label>
+                    <input type="text" class="form-control" id="provider_recipient_company"
+                        name="provider_recipient_company" value="{{ declaration.provider_recipient_company or '' }}">
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+                <label for="description" class="form-label">{{ _('Description') }} <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="description" name="description" rows="3"
+                    required>{{ declaration.description }}</textarea>
+            </div>
+
+            <!-- Business Purpose -->
+            <div class="mb-3">
+                <label for="business_purpose" class="form-label">{{ _('Business Purpose') }}</label>
+                <textarea class="form-control" id="business_purpose" name="business_purpose"
+                    rows="2">{{ declaration.business_purpose or '' }}</textarea>
+            </div>
+
+            <!-- Government Official -->
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="is_government_official"
+                        name="is_government_official" value="1" {% if declaration.is_government_official %}checked{%
+                        endif %}>
+                    <label class="form-check-label" for="is_government_official">
+                        <strong>{{ _('This involves a Government Official') }}</strong>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Government Official Details -->
+            <div id="gov_official_details_section"
+                style="display: {% if declaration.is_government_official %}block{% else %}none{% endif %};">
+                <div class="mb-3">
+                    <label for="government_official_details" class="form-label">{{ _('Official Name & Agency')
+                        }}</label>
+                    <textarea class="form-control" id="government_official_details" name="government_official_details"
+                        rows="2">{{ declaration.government_official_details or '' }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="government_official_position" class="form-label">{{ _('Official Position') }}</label>
+                    <input type="text" class="form-control" id="government_official_position"
+                        name="government_official_position" value="{{ declaration.government_official_position or '' }}"
+                        placeholder="{{ _('e.g., Director, Head of Dept...') }}">
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('ghe.view_declaration', id=declaration.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x"></i> {{ _('Cancel') }}
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> {{ _('Save Changes') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+    document.getElementById('is_government_official').addEventListener('change', function () {
+        const detailsDiv = document.getElementById('gov_official_details_section');
+        const detailsField = document.getElementById('government_official_details');
+        const positionField = document.getElementById('government_official_position');
+
+        if (this.checked) {
+            detailsDiv.style.display = 'block';
+            detailsField.required = true;
+            positionField.required = true;
+        } else {
+            detailsDiv.style.display = 'none';
+            detailsField.required = false;
+            positionField.required = false;
+        }
+    });
+</script>
+{% endblock %}

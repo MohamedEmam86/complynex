@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %}Code of Business Ethics & Conduct Declaration - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Code of Business Ethics & Conduct Declaration') }}</h1>
+    <a href="{{ url_for('cobec.my_declarations') }}" class="btn btn-outline-secondary">{{ _('Back') }}</a>
+</div>
+
+<!-- Info Banner -->
+<div class="alert alert-primary">
+    <h5><i class="bi bi-shield-check"></i> Annual Declaration {{ year }}</h5>
+    <p class="mb-0">{{ _('Please read and acknowledge the following statements regarding the Code of Business Ethics &
+        Conduct.') }}</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">{{ _('Declaration Form') }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('cobec.declare') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Section 1: Read Code -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-book me-2"></i>{{ _('1. Code Acknowledgment') }}</h6>
+                <p class="text-muted small mb-3">{{ _('Have you read and understood the ComplyNex Code of Business Ethics &
+                    Conduct?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="has_read_code" id="read_yes" value="1"
+                                required>
+                            <label class="form-check-label text-success fw-semibold" for="read_yes">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('Yes, I have read and understood the Code') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="has_read_code" id="read_no" value="0">
+                            <label class="form-check-label text-danger fw-semibold" for="read_no">
+                                <i class="bi bi-x-circle me-1"></i> {{ _('No, I have not read the Code') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Responsibilities -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-person-check me-2"></i>{{ _('2. Responsibilities') }}</h6>
+                <p class="text-muted small mb-3">{{ _('Do you understand your responsibilities under the Code?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="understands_responsibilities"
+                                id="resp_yes" value="1" required>
+                            <label class="form-check-label text-success fw-semibold" for="resp_yes">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('Yes, I understand my responsibilities') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="understands_responsibilities"
+                                id="resp_no" value="0">
+                            <label class="form-check-label text-danger fw-semibold" for="resp_no">
+                                <i class="bi bi-x-circle me-1"></i> {{ _('No, I need clarification') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Commitment -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-hand-thumbs-up me-2"></i>{{ _('3. Commitment to Compliance') }}</h6>
+                <p class="text-muted small mb-3">{{ _('Do you commit to complying with the Code in all your business
+                    activities?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="commits_to_compliance" id="commit_yes"
+                                value="1" required>
+                            <label class="form-check-label text-success fw-semibold" for="commit_yes">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('Yes, I commit to compliance') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="commits_to_compliance" id="commit_no"
+                                value="0">
+                            <label class="form-check-label text-danger fw-semibold" for="commit_no">
+                                <i class="bi bi-x-circle me-1"></i> No
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Reporting -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-megaphone me-2"></i>{{ _('4. Reporting Violations') }}</h6>
+                <p class="text-muted small mb-3">{{ _('Will you report any known or suspected violations of the Code?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="will_report_violations" id="report_yes"
+                                value="1" required>
+                            <label class="form-check-label text-success fw-semibold" for="report_yes">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('Yes, I will report violations') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="will_report_violations" id="report_no"
+                                value="0">
+                            <label class="form-check-label text-danger fw-semibold" for="report_no">
+                                <i class="bi bi-x-circle me-1"></i> No
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Known Violations -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-exclamation-triangle me-2"></i>{{ _('5. Known Violations') }}</h6>
+                <p class="text-muted small mb-3">{{ _('Are you aware of any current or past violations of the Code that have
+                    not been reported?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_known_violations"
+                                id="violations_yes" value="1">
+                            <label class="form-check-label text-danger fw-semibold" for="violations_yes">
+                                <i class="bi bi-exclamation-circle me-1"></i> {{ _('Yes, I am aware of violations') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_known_violations"
+                                id="violations_no" value="0" checked>
+                            <label class="form-check-label text-success fw-semibold" for="violations_no">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('No, I am not aware of any violations') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="conflict-details mt-3" id="violation_details_div" style="display: none;">
+                    <label class="form-label">{{ _('Please provide details:') }}</label>
+                    <textarea class="form-control" name="violation_details" rows="3"
+                        placeholder="{{ _('Describe the violation(s) you are aware of') }}"></textarea>
+                </div>
+            </div>
+
+            <!-- Section 6: Prior Misconduct -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-person-x me-2"></i>{{ _('6. Prior Misconduct') }}</h6>
+                <p class="text-muted small mb-3">{{ _('Have you been involved in any conduct that may be considered a
+                    violation of the Code?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_prior_misconduct"
+                                id="misconduct_yes" value="1">
+                            <label class="form-check-label text-danger fw-semibold" for="misconduct_yes">
+                                <i class="bi bi-exclamation-circle me-1"></i> {{ _('Yes, I have been involved') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_prior_misconduct"
+                                id="misconduct_no" value="0" checked>
+                            <label class="form-check-label text-success fw-semibold" for="misconduct_no">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('No, I have not been involved') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="conflict-details mt-3" id="misconduct_details_div" style="display: none;">
+                    <label class="form-label">{{ _('Please provide details:') }}</label>
+                    <textarea class="form-control" name="misconduct_details" rows="3"
+                        placeholder="{{ _('Describe the conduct') }}"></textarea>
+                </div>
+            </div>
+
+            <!-- Declaration Statement -->
+            <div class="mb-4 p-3 border border-primary rounded">
+                <h6 class="border-bottom pb-2 text-primary"><i class="bi bi-file-earmark-text me-2"></i>{{ _('Declaration
+                    Statement') }}</h6>
+                <p>{{ _('By signing below, I confirm that:') }}</p>
+                <ol>
+                    <li>{{ _('I have read and understood the ComplyNex Code of Business Ethics & Conduct.') }}</li>
+                    <li>{{ _('I understand my obligations under the Code.') }}</li>
+                    <li>{{ _('I commit to complying with the Code in all my business activities.') }}</li>
+                    <li>{{ _('I will report any violations of the Code that I become aware of.') }}</li>
+                    <li>{{ _('The information provided above is true and accurate.') }}</li>
+                </ol>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="agree_statement" required>
+                    <label class="form-check-label" for="agree_statement">
+                        <strong>{{ _('I agree to the above statement and confirm my commitment to ethical conduct.') }}</strong>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Digital Signature -->
+            <div class="mb-4">
+                <label for="digital_signature" class="form-label">{{ _('Digital Signature') }} <span
+                        class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="digital_signature" name="digital_signature"
+                    placeholder="{{ _('Type your full name as digital signature') }}" required>
+                <div class="form-text">{{ _('By typing your name, you are electronically signing this declaration.') }}</div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('cobec.my_declarations') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+                <button type="submit" class="btn btn-primary btn-lg">{{ _('Submit Declaration') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+    // Show/hide details when radio button is changed
+    document.querySelectorAll('.conflict-radio').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            const section = this.closest('.p-3');
+            const detailsDiv = section.querySelector('.conflict-details');
+            const textarea = detailsDiv ? detailsDiv.querySelector('textarea') : null;
+
+            if (this.value === '1' && this.checked) {
+                if (detailsDiv) {
+                    detailsDiv.style.display = 'block';
+                    if (textarea) textarea.required = true;
+                }
+            } else if (this.value === '0' && this.checked) {
+                if (detailsDiv) {
+                    detailsDiv.style.display = 'none';
+                    if (textarea) {
+                        textarea.required = false;
+                        textarea.value = '';
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

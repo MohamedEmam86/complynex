@@ -1,0 +1,521 @@
+{% extends "base.html" %}
+
+{% block title %}Add User{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Add New User') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin.list_users') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Users') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <h5 class="card-title mb-4">{{ _('User Details') }}</h5>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label">{{ _('First Name *') }}</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label">{{ _('Last Name *') }}</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">{{ _('Email Address *') }}</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="form-text">{{ _('This will be used as the username.') }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">{{ _('Initial Password *') }}</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="department_id" class="form-label">{{ _('Primary Department') }}</label>
+                            <div class="input-group">
+                                <select class="form-select" id="department_id" name="department_id">
+                                    <option value="">{{ _('Select Department...') }}</option>
+                                    {% for dept in departments %}
+                                    <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.code }})</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                    data-bs-target="#newDeptModal" title="{{ _('Add New Department') }}">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">{{ _('Main affiliation (displayed in lists).') }}</div>
+
+                            <div class="mt-3">
+                                <label class="form-label mb-1">{{ _('Additional Access') }}</label>
+                                <div class="card p-2" style="max-height: 150px; overflow-y: auto;"
+                                    id="additional-access-list">
+                                    {% for dept in departments %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="accessible_departments"
+                                            value="{{ dept.id }}" id="dept_access_{{ dept.id }}">
+                                        <label class="form-check-label small" for="dept_access_{{ dept.id }}">
+                                            {{ dept.name }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="form-text">{{ _('Select other departments this user manages.') }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="job_title" class="form-label">{{ _('Job Title') }}</label>
+                            <input type="text" class="form-control" id="job_title" name="job_title">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="role" class="form-label">{{ _('Role') }}</label>
+                        <select class="form-select" id="role" name="role">
+                            <option value="employee" selected>{{ _('Employee') }}</option>
+                            <option value="manager">{{ _('Manager') }}</option>
+                            <option value="compliance_manager">{{ _('Compliance Manager') }}</option>
+                            <option value="compliance_officer">{{ _('Compliance Officer') }}</option>
+                            <option value="admin">{{ _('Administrator') }}</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="manager_id" class="form-label">{{ _('Reports To (Manager)') }}</label>
+                        <select class="form-select" id="manager_id" name="manager_id">
+                            <option value="">{{ _('None') }}</option>
+                            {% for m in managers %}
+                            <option value="{{ m.id }}">{{ m.first_name }} {{ m.last_name }} ({{ m.role }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">{{ _('Used to route COI, GHE and COBEC declarations to this employee\'s manager for review.') }}</div>
+                    </div>
+
+                    <h5 class="card-title mt-4 mb-3">{{ _('Module Permissions') }}</h5>
+                    <div class="row g-3 mb-4">
+                        {% for module in [('governance', 'Corporate Governance'), ('aml', 'AML/CFT'), ('policies', 'Policies'), ('reports', 'Regulatory Reports'), ('pdpl', 'Data Protection'), ('training', 'Training'), ('screening', 'Sanction Screening'), ('ongoing_screening', 'Ongoing Screening'), ('config', 'System Configuration'), ('cyber', 'Cyber Incidents Hub'), ('phishing', 'Phishing Awareness'), ('ghe', 'GHE Declarations'), ('coi', 'COI Declarations'), ('cobec', 'Code of Ethics'), ('merchant_kyc', 'Merchant KYC'), ('tm', 'Transaction Monitoring'), ('whistleblowing', 'Whistleblowing'), ('consumer_protection', 'Consumer Protection'), ('ekyc', 'eKYC'), ('risk_management', 'Risk Management'), ('internal_audit', 'Internal Audit'), ('esg', 'ESG Management'), ('carbon', 'Carbon Footprint'), ('academy', 'Integrys Academy (learners)')] %}
+                        <div class="col-md-4">
+                            <div class="card bg-light border-0">
+                                <div class="card-body p-2">
+                                    <label class="form-label small fw-bold">{{ module[1] }}</label>
+                                    <select class="form-select form-select-sm" name="perm_{{ module[0] }}">
+                                        <option value="none" selected>{{ _('None') }}</option>
+                                        <option value="view">{{ _('View Only') }}</option>
+                                        <option value="edit">{{ _('View &amp; Edit') }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body p-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="can_assign_training"
+                                    name="can_assign_training">
+                                <label class="form-check-label fw-bold" for="can_assign_training">
+                                    {{ _('Training Assignment Authority') }}
+                                </label>
+                            </div>
+                            <div class="form-text">{{ _('Allows this user to assign/enroll training courses to
+                                employees in their accessible departments, without granting full Compliance
+                                Officer rights.') }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Temporary User Section -->
+                    <div class="card border-warning mb-4 mt-4">
+                        <div class="card-header bg-warning bg-opacity-10">
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="is_temporary" name="is_temporary">
+                                <label class="form-check-label fw-bold text-dark" for="is_temporary">
+                                    <i class="bi bi-clock-history me-1 text-warning"></i> {{ _('Temporary Access') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body" id="tempOptions" style="display:none;">
+                            <p class="text-muted small mb-3">{{ _('This account will be automatically deactivated after the selected period.') }}</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">{{ _('Duration') }}</label>
+                                    <select class="form-select" name="temp_duration" id="temp_duration">
+                                        <option value="1">{{ _('1 day') }}</option>
+                                        <option value="3">{{ _('3 days') }}</option>
+                                        <option value="7" selected>{{ _('1 week') }}</option>
+                                        <option value="14">{{ _('2 weeks') }}</option>
+                                        <option value="30">{{ _('1 month') }}</option>
+                                        <option value="90">{{ _('3 months') }}</option>
+                                        <option value="0">{{ _('Custom date') }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6" id="customDateDiv" style="display:none;">
+                                    <label class="form-label fw-semibold">{{ _('Custom Expiry Date') }}</label>
+                                    <input type="date" class="form-control" name="expires_at_custom" id="expires_at_custom">
+                                </div>
+                            </div>
+                            <div class="mt-3 p-2 rounded" style="background:#FFF8E7; border:1px solid #F39C12;">
+                                <small class="text-dark">
+                                    <i class="bi bi-calendar-x me-1 text-warning"></i>
+                                    {{ _('Account will expire on:') }} <strong id="expiryPreview">—</strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+
+<!-- ===================== Organisational Authority ===================== -->
+<div class="card border-primary mb-4">
+  <div class="card-header bg-primary bg-opacity-10 py-2">
+    <strong><i class="bi bi-diagram-3 me-1"></i>{{ _('Organisational Authority') }}</strong>
+    <div class="small text-muted">
+      {{ _('Module permissions decide which screens this user can open. This decides which parts of the organisation they see inside them. Both must allow it.') }}
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label">{{ _('Authority Level') }}</label>
+        <select class="form-select" id="authority_level" name="authority_level">
+          {% for key, meta in authority_levels.items() %}
+          <option value="{{ key }}" data-needs-unit="{{ 1 if meta.needs_unit else 0 }}"
+                  data-help="{{ meta.help }}"
+                  {% if 'group' == key %}selected{% endif %}>{{ meta.label }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-text" id="authorityHelp"></div>
+      </div>
+      <div class="col-md-4" id="authorityUnitWrap">
+        <label class="form-label">{{ _('Which unit') }}</label>
+        <select class="form-select" name="authority_unit_id" id="authority_unit_id">
+          <option value="">{{ _('— select —') }}</option>
+          {% for u in org_units %}
+          <option value="{{ u.id }}" {% if None and None|int == u.id|int %}selected{% endif %}>
+            {{ '　' * u.depth }}{{ u.name_en }} ({{ u.type_name }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">{{ _('Posted to (their own unit)') }}</label>
+        <select class="form-select" name="org_unit_id">
+          <option value="">{{ _('— none —') }}</option>
+          {% for u in org_units %}
+          <option value="{{ u.id }}" {% if None and None|int == u.id|int %}selected{% endif %}>
+            {{ '　' * u.depth }}{{ u.name_en }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-text">{{ _('Resolves “head of unit” approval stages.') }}</div>
+      </div>
+    </div>
+
+    <hr>
+    <div class="mb-2">
+      <strong><i class="bi bi-eye me-1"></i>{{ _('Exactly what this user can and cannot see') }}</strong>
+      <div class="small text-muted">
+        {{ _('Move units between the boxes, then save. Left is what they see; everything on the right is hidden from them.') }}
+      </div>
+    </div>
+
+    <div class="row g-2 align-items-center">
+      <div class="col-5">
+        <label class="form-label small text-success fw-bold mb-1">
+          <i class="bi bi-eye"></i> {{ _('CAN SEE') }}
+          <span class="badge bg-success ms-1" id="canCount">0</span>
+        </label>
+        <select multiple id="canSeeBox" class="form-select" size="12"
+                style="font-family:monospace;font-size:12.5px"></select>
+      </div>
+      <div class="col-2 text-center">
+        <button type="button" class="btn btn-sm btn-outline-danger w-100 mb-1" id="btnHide"
+                title="{{ _('Hide selected') }}"><i class="bi bi-chevron-right"></i></button>
+        <button type="button" class="btn btn-sm btn-outline-danger w-100 mb-3" id="btnHideAll"
+                title="{{ _('Hide everything') }}"><i class="bi bi-chevron-double-right"></i></button>
+        <button type="button" class="btn btn-sm btn-outline-success w-100 mb-1" id="btnShow"
+                title="{{ _('Show selected') }}"><i class="bi bi-chevron-left"></i></button>
+        <button type="button" class="btn btn-sm btn-outline-success w-100" id="btnShowAll"
+                title="{{ _('Show everything') }}"><i class="bi bi-chevron-double-left"></i></button>
+      </div>
+      <div class="col-5">
+        <label class="form-label small text-danger fw-bold mb-1">
+          <i class="bi bi-eye-slash"></i> {{ _('CANNOT SEE') }}
+          <span class="badge bg-danger ms-1" id="cannotCount">0</span>
+        </label>
+        <select multiple id="cannotSeeBox" class="form-select" size="12"
+                style="font-family:monospace;font-size:12.5px"></select>
+      </div>
+    </div>
+    <div class="form-text mt-2">
+      {{ _('Double-click a unit to move it. Ctrl/Cmd-click for several. Choosing a level above refills both boxes; adjusting them by hand saves exactly what you see.') }}
+    </div>
+    <div id="canSeeHidden"></div>
+  </div>
+</div>
+<!-- =================== end Organisational Authority =================== -->
+
+                        <button type="submit" class="btn btn-primary">{{ _('Create User') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Department Modal -->
+<div class="modal fade" id="newDeptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-building-add me-2"></i>{{ _('Create New Department') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="new_dept_name" class="form-label">{{ _('Department Name *') }}</label>
+                    <input type="text" class="form-control" id="new_dept_name" placeholder="{{ _('e.g. Human Resources') }}"
+                        required>
+                </div>
+                <div class="mb-3">
+                    <label for="new_dept_code" class="form-label">{{ _('Department Code *') }}</label>
+                    <input type="text" class="form-control" id="new_dept_code" placeholder="e.g. HR" maxlength="10"
+                        required>
+                    <div class="form-text">{{ _('Short unique code for the department.') }}</div>
+                </div>
+                <div class="mb-3">
+                    <label for="new_dept_description" class="form-label">{{ _('Description') }}</label>
+                    <textarea class="form-control" id="new_dept_description" rows="2"></textarea>
+                </div>
+                <div id="dept-create-error" class="alert alert-danger d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="btn-create-dept">
+                    <span class="spinner-border spinner-border-sm d-none" id="dept-spinner"></span>
+                    {{ _('Create Department') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var lvl = document.getElementById('authority_level');
+  var canBox = document.getElementById('canSeeBox');
+  var cannotBox = document.getElementById('cannotSeeBox');
+  if (!lvl || !canBox || !cannotBox) return;
+
+  var ALL_UNITS = {{ all_units_json|safe }};
+  var VISIBLE   = {{ visible_ids_json|safe }};
+  var wrap = document.getElementById('authorityUnitWrap');
+  var help = document.getElementById('authorityHelp');
+  var unitEl = document.getElementById('authority_unit_id');
+
+  function opt(u) {
+    var o = document.createElement('option');
+    o.value = u.id;
+    o.textContent = Array(u.depth + 1).join('\u3000') + u.name + '  [' + u.code + ']';
+    return o;
+  }
+  function fill(ids) {
+    canBox.innerHTML = ''; cannotBox.innerHTML = '';
+    var set = {}; ids.forEach(function (i) { set[i] = 1; });
+    ALL_UNITS.forEach(function (u) { (set[u.id] ? canBox : cannotBox).appendChild(opt(u)); });
+    recount();
+  }
+  function recount() {
+    document.getElementById('canCount').textContent = canBox.options.length;
+    document.getElementById('cannotCount').textContent = cannotBox.options.length;
+    var box = document.getElementById('canSeeHidden');
+    box.innerHTML = '';
+    for (var i = 0; i < canBox.options.length; i++) {
+      var h = document.createElement('input');
+      h.type = 'hidden'; h.name = 'can_see_units'; h.value = canBox.options[i].value;
+      box.appendChild(h);
+    }
+  }
+  function resort(box) {
+    var order = {}; ALL_UNITS.forEach(function (u, i) { order[u.id] = i; });
+    Array.prototype.slice.call(box.options)
+      .sort(function (a, b) { return order[a.value] - order[b.value]; })
+      .forEach(function (o) { box.appendChild(o); });
+  }
+  function move(from, to, allOf) {
+    var moving = [];
+    for (var i = 0; i < from.options.length; i++) {
+      if (allOf || from.options[i].selected) moving.push(from.options[i]);
+    }
+    moving.forEach(function (o) { o.selected = false; to.appendChild(o); });
+    resort(to); recount();
+  }
+  document.getElementById('btnHide').addEventListener('click', function () { move(canBox, cannotBox, false); });
+  document.getElementById('btnShow').addEventListener('click', function () { move(cannotBox, canBox, false); });
+  document.getElementById('btnHideAll').addEventListener('click', function () { move(canBox, cannotBox, true); });
+  document.getElementById('btnShowAll').addEventListener('click', function () { move(cannotBox, canBox, true); });
+  canBox.addEventListener('dblclick', function () { move(canBox, cannotBox, false); });
+  cannotBox.addEventListener('dblclick', function () { move(cannotBox, canBox, false); });
+
+  function syncLevel() {
+    var o = lvl.options[lvl.selectedIndex];
+    help.textContent = o.dataset.help || '';
+    wrap.style.display = (o.dataset.needsUnit === '1') ? '' : 'none';
+  }
+  function preset() {
+    var v = lvl.value, unit = unitEl ? unitEl.value : '';
+    if (v === 'custom' || v === 'explicit') return;
+    if (v === 'group') return fill(ALL_UNITS.map(function (u) { return u.id; }));
+    if (v === 'none')  return fill([]);
+    if (!unit) return;
+    var chosen = null;
+    ALL_UNITS.forEach(function (u) { if (String(u.id) === String(unit)) chosen = u; });
+    if (!chosen) return;
+    if (v === 'company') {
+      fill(ALL_UNITS.filter(function (u) { return u.path.indexOf(chosen.path) === 0; })
+                    .map(function (u) { return u.id; }));
+    } else if (v === 'department') { fill([chosen.id]); }
+    else if (v === 'function') {
+      fill(ALL_UNITS.filter(function (u) { return u.code === chosen.code; })
+                    .map(function (u) { return u.id; }));
+    }
+  }
+  lvl.addEventListener('change', function () { syncLevel(); preset(); });
+  if (unitEl) unitEl.addEventListener('change', preset);
+  syncLevel(); fill(VISIBLE);
+}());
+</script>
+
+<script nonce="{{ csp_nonce }}">
+document.getElementById('is_temporary').addEventListener('change', function () { toggleTempOptions(this.checked); });
+document.getElementById('temp_duration').addEventListener('change', updateExpiryPreview);
+document.getElementById('expires_at_custom').addEventListener('change', updateExpiryPreview);
+
+function toggleTempOptions(checked) {
+    document.getElementById("tempOptions").style.display = checked ? "block" : "none";
+    if (checked) updateExpiryPreview();
+}
+function updateExpiryPreview() {
+    var duration = document.getElementById("temp_duration").value;
+    var customDiv = document.getElementById("customDateDiv");
+    var preview = document.getElementById("expiryPreview");
+    if (duration === "0") {
+        customDiv.style.display = "block";
+        var customDate = document.getElementById("expires_at_custom").value;
+        if (customDate) {
+            var d = new Date(customDate);
+            preview.textContent = d.toLocaleDateString("en-GB", {day:"2-digit", month:"short", year:"numeric"});
+        }
+    } else {
+        customDiv.style.display = "none";
+        var d = new Date();
+        d.setDate(d.getDate() + parseInt(duration));
+        preview.textContent = d.toLocaleDateString("en-GB", {day:"2-digit", month:"short", year:"numeric"});
+    }
+}
+</script>
+<script nonce="{{ csp_nonce }}">
+    document.getElementById('btn-create-dept').addEventListener('click', function () {
+        const name = document.getElementById('new_dept_name').value.trim();
+        const code = document.getElementById('new_dept_code').value.trim();
+        const description = document.getElementById('new_dept_description').value.trim();
+        const errorDiv = document.getElementById('dept-create-error');
+        const spinner = document.getElementById('dept-spinner');
+
+        if (!name || !code) {
+            errorDiv.textContent = 'Name and Code are required.';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        errorDiv.classList.add('d-none');
+        spinner.classList.remove('d-none');
+
+        fetch('{{ url_for("admin.create_department_ajax") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ name: name, code: code, description: description })
+        })
+            .then(r => r.json())
+            .then(data => {
+                spinner.classList.add('d-none');
+                if (data.error) {
+                    errorDiv.textContent = data.error;
+                    errorDiv.classList.remove('d-none');
+                    return;
+                }
+
+                // Add to Primary Department dropdown and select it
+                const select = document.getElementById('department_id');
+                const opt = document.createElement('option');
+                opt.value = data.id;
+                opt.textContent = data.name + ' (' + data.code + ')';
+                opt.selected = true;
+                select.appendChild(opt);
+
+                // Add to Additional Access checkboxes
+                const accessList = document.getElementById('additional-access-list');
+                const div = document.createElement('div');
+                div.className = 'form-check';
+                div.innerHTML = '<input class="form-check-input" type="checkbox" name="accessible_departments" value="' +
+                    data.id + '" id="dept_access_' + data.id + '">' +
+                    '<label class="form-check-label small" for="dept_access_' + data.id + '">' + data.name + '</label>';
+                accessList.appendChild(div);
+
+                // Close modal and clear fields
+                bootstrap.Modal.getInstance(document.getElementById('newDeptModal')).hide();
+                document.getElementById('new_dept_name').value = '';
+                document.getElementById('new_dept_code').value = '';
+                document.getElementById('new_dept_description').value = '';
+            })
+            .catch(err => {
+                spinner.classList.add('d-none');
+                errorDiv.textContent = 'Failed to create department. Please try again.';
+                errorDiv.classList.remove('d-none');
+                console.error(err);
+            });
+    });
+</script>
+<script nonce="{{ csp_nonce }}">
+function toggleTempOptions(checked) {
+    document.getElementById('tempOptions').style.display = checked ? 'block' : 'none';
+    if (checked) updateExpiryPreview();
+}
+
+function updateExpiryPreview() {
+    const duration = document.getElementById('temp_duration').value;
+    const customDiv = document.getElementById('customDateDiv');
+    const preview = document.getElementById('expiryPreview');
+    
+    if (duration === '0') {
+        customDiv.style.display = 'block';
+        const customDate = document.getElementById('expires_at_custom').value;
+        if (customDate) {
+            const d = new Date(customDate);
+            preview.textContent = d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+        }
+    } else {
+        customDiv.style.display = 'none';
+        const d = new Date();
+        d.setDate(d.getDate() + parseInt(duration));
+        preview.textContent = d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+    }
+}
+</script>
+{% endblock %}

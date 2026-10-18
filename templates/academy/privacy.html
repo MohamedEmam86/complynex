@@ -1,0 +1,38 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('My data', 'بياناتي') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow">
+  <h1>{{ t('My data & preferences', 'بياناتي وتفضيلاتي') }}</h1>
+  <h2 class="ia-h3">{{ t('What we hold about you', 'البيانات المحفوظة عنك') }}</h2>
+  <dl class="ia-dl">
+    <dt>{{ t('Name', 'الاسم') }}</dt><dd>{{ data.full_name }}</dd>
+    <dt>{{ t('Certificate name', 'الاسم على الشهادة') }}</dt><dd dir="ltr">{{ data.certificate_name }}</dd>
+    <dt>{{ t('Email', 'البريد') }}</dt><dd dir="ltr">{{ data.email }}</dd>
+    <dt>{{ t('Company / title', 'الشركة / الوظيفة') }}</dt><dd>{{ data.company }}{% if data.job_title %} · {{ data.job_title }}{% endif %}</dd>
+    <dt>{{ t('Country', 'الدولة') }}</dt><dd>{{ data.country or '—' }}</dd>
+    <dt>{{ t('Registered', 'تاريخ التسجيل') }}</dt><dd>{{ data.created_at.strftime('%d %b %Y') }}</dd>
+    <dt>{{ t('Marketing emails', 'الرسائل التسويقية') }}</dt><dd>{{ t('Yes', 'نعم') if data.consent_marketing else t('No', 'لا') }}</dd>
+  </dl>
+  <p class="ia-small ia-muted">{{ t('Plus your course progress, assessment results and certificates.', 'بالإضافة إلى تقدمك في الدورات ونتائج الاختبارات والشهادات.') }}</p>
+
+  <form method="post" class="ia-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if data.consent_marketing %}
+      <button class="ia-btn ia-btn--ghost ia-btn--sm" name="action" value="marketing_off">{{ t('Stop marketing emails', 'إيقاف الرسائل التسويقية') }}</button>
+    {% else %}
+      <button class="ia-btn ia-btn--ghost ia-btn--sm" name="action" value="marketing_on">{{ t('Receive news about new courses', 'أرغب في أخبار الدورات الجديدة') }}</button>
+    {% endif %}
+  </form>
+
+  <h2 class="ia-h3 ia-danger-title">{{ t('Delete my data', 'حذف بياناتي') }}</h2>
+  <p class="ia-small">{{ t('This permanently removes your personal details and signs you out. Certificate numbers stay in the public register marked as issued, without your name. This cannot be undone.',
+                          'سيؤدي ذلك إلى حذف بياناتك الشخصية نهائيًا وتسجيل خروجك. تبقى أرقام الشهادات في السجل العام بدون اسمك. لا يمكن التراجع عن ذلك.') }}</p>
+  <form method="post" class="ia-row ia-row--tight">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="erase">
+    <input name="confirm" placeholder="{{ t('Type DELETE', 'اكتب DELETE') }}" dir="ltr" autocomplete="off">
+    <button class="ia-btn ia-btn--danger">{{ t('Delete', 'حذف') }}</button>
+  </form>
+</div>
+{% endblock %}

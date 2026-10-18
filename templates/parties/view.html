@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ party.full_name }} - {{ _('Entity 360') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">{{ party.full_name }}</h4>
+            {% if party.full_name_arabic %}<div class="text-muted">{{ party.full_name_arabic }}</div>{% endif %}
+        </div>
+        <span class="badge bg-secondary-subtle text-secondary border fs-6">{{ party.party_type }}</span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">{{ _('Bio') }}</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-5">{{ _('Nationality') }}</dt><dd class="col-7">{{ party.nationality or '-' }}</dd>
+                        <dt class="col-5">{{ _('Date of Birth') }}</dt><dd class="col-7">{{ party.date_of_birth or '-' }}</dd>
+                        <dt class="col-5">{{ _('ID Type') }}</dt><dd class="col-7">{{ party.id_type or '-' }}</dd>
+                        <dt class="col-5">{{ _('Email') }}</dt><dd class="col-7">{{ party.email or '-' }}</dd>
+                        <dt class="col-5">{{ _('Phone') }}</dt><dd class="col-7">{{ party.phone or '-' }}</dd>
+                        <dt class="col-5">{{ _('Risk Rating') }}</dt><dd class="col-7">{{ party.risk_rating or '-' }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">{{ _('Linked Records') }}</div>
+                <div class="list-group list-group-flush">
+                    {% for link in links %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-info-subtle text-info border me-2">{{ link.link_role }}</span>
+                            {{ link.source_module }} #{{ link.source_record_id }}
+                        </div>
+                        {% if link.view_endpoint %}
+                        <a href="{{ url_for(link.view_endpoint, id=link.source_record_id) }}" class="btn btn-sm btn-outline-primary">{{ _('View') }}</a>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="list-group-item text-muted text-center py-3">{{ _('No linked records.') }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header">{{ _('Associated Cases') }}</div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{{ _('Type') }}</th>
+                        <th>{{ _('Reference') }}</th>
+                        <th>{{ _('Title') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Due') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in cases %}
+                    <tr data-href="{{ url_for('cases.case_detail', case_id=c.id) }}" style="cursor:pointer;">
+                        <td>{{ c.case_type }}</td>
+                        <td>{{ c.reference or '-' }}</td>
+                        <td>{{ c.title or '-' }}</td>
+                        <td>{{ c.status }}</td>
+                        <td>{{ c.due_date or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">{{ _('No cases linked to this party.') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

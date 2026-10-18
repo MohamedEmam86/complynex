@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Reviews - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Pending Reviews') }}</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if declarations %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>{{ _('Employee') }}</th>
+                        <th>{{ _('Department') }}</th>
+                        <th>{{ _('Campaign') }}</th>
+                        <th>{{ _('Date') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Action') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for decl in declarations %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-2 bg-secondary text-white">{{ decl.employee_name[0] }}
+                                </div>
+                                <div>{{ decl.employee_name }}</div>
+                            </div>
+                        </td>
+                        <td>{{ decl.department }}</td>
+                        <td>{{ decl.campaign_name }}</td> <!-- Requires campaign name to be joined/attached -->
+                        <td>{{ decl.declaration_date }}</td>
+                        <td>
+                            {% if decl.status == 'escalated' %}
+                            <span class="badge bg-danger">{{ _('Escalated') }}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{{ _('Review Needed') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('coi.review_declaration', id=decl.id) }}"
+                                class="btn btn-sm btn-primary">
+                                {{ _('Review') }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-check2-all display-1 text-muted"></i>
+            <p class="lead mt-3">{{ _('All caught up!') }}</p>
+            <p class="text-muted">{{ _('You have no pending declarations to review.') }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

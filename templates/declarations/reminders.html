@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Send Reminders') }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div>
+    <h1 class="h2"><i class="bi bi-envelope-paper me-2"></i>{{ _('Send Declaration Reminders') }}</h1>
+    <p class="text-muted small mb-0">
+      {{ _('Chase GHE, COI and COBEC together. Anyone owing more than one gets a single message listing all of them, not three separate nags.') }}
+    </p>
+  </div>
+  <a href="{{ url_for('declarations.index') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> {{ _('Campaigns') }}</a>
+</div>
+
+<div class="alert alert-{{ 'success' if delivery.email else 'warning' }} d-flex">
+  <i class="bi bi-{{ 'envelope-check' if delivery.email else 'envelope-slash' }}-fill me-2 fs-5"></i>
+  <div>
+    <strong>{% if delivery.email %}{{ _('Email delivery is active.') }}
+           {% else %}{{ _('Email is not configured — reminders will be in-app only.') }}{% endif %}</strong>
+    <div class="small">{{ delivery.note }}</div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="card mb-3">
+        <div class="card-header bg-light"><strong>{{ _('Which declarations') }}</strong></div>
+        <div class="card-body">
+          {% for key, meta in modules.items() %}
+          {% set c = counts.get(key, {'pending':0,'overdue':0,'campaigns':0}) %}
+          <div class="form-check border rounded p-3 mb-2 d-flex align-items-start">
+            <input class="form-check-input mt-1 me-2 mod-check" type="checkbox"
+                   name="modules" value="{{ key }}" id="mod_{{ key }}"
+                   {% if not c.campaigns %}disabled{% endif %}>
+            <label class="form-check-label flex-grow-1" for="mod_{{ key }}">
+              <strong>{{ meta.label }}</strong>
+              {% if c.campaigns %}
+                <div class="small mt-1">
+                  <span class="badge bg-secondary">{{ c.pending }} {{ _('pending') }}</span>
+                  <span class="badge bg-danger">{{ c.overdue }} {{ _('overdue') }}</span>
+                  <span class="text-muted ms-1">{{ c.campaigns }} {{ _('open campaign(s)') }}</span>
+                </div>
+              {% else %}
+                <div class="small text-muted mt-1">{{ _('No open campaign — create one first.') }}</div>
+              {% endif %}
+            </label>
+          </div>
+          {% endfor %}
+          <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllMods">
+            <i class="bi bi-check-all"></i> {{ _('Select all') }}</button>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header bg-light"><strong>{{ _('Who to remind') }}</strong></div>
+        <div class="card-body">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="which" value="outstanding" id="w1" checked>
+            <label class="form-check-label" for="w1">
+              {{ _('Everyone outstanding') }}
+              <div class="small text-muted">{{ _('Pending and overdue') }}</div></label>
+          </div>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="radio" name="which" value="overdue" id="w2">
+            <label class="form-check-label" for="w2">
+              {{ _('Overdue only') }}
+              <div class="small text-muted">{{ _('Past the due date') }}</div></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header bg-light"><strong>{{ _('Message') }}</strong></div>
+        <div class="card-body">
+          <textarea name="message" class="form-control" rows="4"
+                    placeholder="{{ _('Leave blank to use the standard text, which lists each outstanding declaration by name and cycle year.') }}"></textarea>
+          <div class="form-text">{{ _('Sent in-app, and by email once configured.') }}</div>
+        </div>
+      </div>
+
+      <button class="btn btn-warning btn-lg w-100" id="sendBtn" disabled
+              data-confirm="{{ _('Send reminders now?') }}">
+        <i class="bi bi-send-fill"></i> {{ _('Send reminders') }}
+      </button>
+      <div class="form-text text-center mt-1" id="sendHint">{{ _('Select at least one declaration type.') }}</div>
+    </form>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header bg-light"><strong>{{ _('Reminder history') }}</strong></div>
+      <div class="list-group list-group-flush" style="max-height:520px;overflow-y:auto">
+        {% for h in history %}
+        <div class="list-group-item small py-2">
+          <div class="d-flex justify-content-between">
+            <span><strong>{{ h.recipients }}</strong> {{ _('recipients') }}</span>
+            <span class="text-muted">{{ h.sent_at.strftime('%d %b %H:%M') }}</span>
+          </div>
+          <div class="text-muted">
+            {{ (h.first_name ~ ' ' ~ h.last_name)|trim or _('System') }}
+            · <span class="badge bg-{{ 'success' if 'email' in (h.channel or '') else 'secondary' }}">{{ h.channel }}</span>
+          </div>
+          {% if h.target_filter %}<div class="text-muted" style="font-size:11px">{{ h.target_filter }}</div>{% endif %}
+        </div>
+        {% else %}
+        <div class="list-group-item text-muted small">{{ _('No reminders sent yet.') }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var checks = document.querySelectorAll('.mod-check');
+  var btn = document.getElementById('sendBtn');
+  var hint = document.getElementById('sendHint');
+  function sync() {
+    var n = 0;
+    checks.forEach(function (c) { if (c.checked) n++; });
+    btn.disabled = n === 0;
+    hint.textContent = n
+      ? '{{ _("Ready to send for") }} ' + n + ' {{ _("declaration type(s).") }}'
+      : '{{ _("Select at least one declaration type.") }}';
+  }
+  checks.forEach(function (c) { c.addEventListener('change', sync); });
+  document.getElementById('selectAllMods').addEventListener('click', function () {
+    checks.forEach(function (c) { if (!c.disabled) c.checked = true; });
+    sync();
+  });
+  sync();
+}());
+</script>
+{% endblock %}

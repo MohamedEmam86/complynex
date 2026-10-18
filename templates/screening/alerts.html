@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}{{ _('AML Alerts') }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-bell-fill"></i> {{ _('AML Alert Management') }}</h1>
+        <a href="{{ url_for('screening.dashboard') }}" class="btn btn-secondary btn-sm">{{ _('Back to Dashboard') }}</a>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-auto">
+            <div class="btn-group">
+                {% for s, label in [('OPEN', _('Open')), ('ESCALATED', _('Escalated')), ('CLOSED', _('Closed')), ('ALL', _('All'))] %}
+                <a href="{{ url_for('screening.alerts_list', status=s) }}"
+                   class="btn btn-sm {{ 'btn-primary' if status_filter == s else 'btn-outline-primary' }}">
+                    {{ label }}
+                    {% if s != 'ALL' and status_counts.get(s) %}<span class="badge bg-light text-dark">{{ status_counts.get(s, 0) }}</span>{% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% if status_filter == 'OPEN' and status_counts.get('OPEN') %}
+        <div class="col-auto ms-auto">
+            <form method="POST" action="{{ url_for('screening.alerts_bulk_disposition') }}"
+                  data-confirm="{{ _('Close all open alerts whose screening was already resolved through the review queue?') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="action" value="cleanup_resolved"/>
+                <button class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-broom"></i> {{ _('Backlog Cleanup (close alerts of already-resolved screenings)') }}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <form method="POST" action="{{ url_for('screening.alerts_bulk_disposition') }}" id="bulkForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="selected_ids" id="selected_ids"/>
+        <div class="card shadow mb-3">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:30px"><input type="checkbox" id="checkAll"/></th>
+                                <th>#</th>
+                                <th>{{ _('Matched Name') }}</th>
+                                <th>{{ _('Type') }}</th>
+                                <th>{{ _('Score') }}</th>
+                                <th>{{ _('Source List') }}</th>
+                                <th>{{ _('Risk') }}</th>
+                                <th>{{ _('Created') }}</th>
+                                <th>{{ _('Age') }}</th>
+                                <th>{{ _('Status') }}</th>
+                                <th>{{ _('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for a in alerts %}
+                            <tr>
+                                <td><input type="checkbox" class="rowCheck" value="{{ a.id }}"/></td>
+                                <td>{{ a.id }}</td>
+                                <td>{{ a.matched_name or '-' }}</td>
+                                <td class="small">{{ a.alert_type or '-' }}</td>
+                                <td>{{ a.match_score or '-' }}</td>
+                                <td class="small">{{ a.source_list or '-' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if a.risk_level in ['HIGH','EXTREME'] else ('warning' if a.risk_level=='MEDIUM' else 'secondary') }}">{{ a.risk_level }}</span>
+                                </td>
+                                <td class="small">{{ (a.created_at or '')[:16] }}</td>
+                                <td>
+                                    {% if a.alert_status == 'OPEN' %}
+                                    <span class="badge bg-{{ 'danger' if a.age_days > 30 else ('warning' if a.age_days > 7 else 'success') }}">{{ a.age_days }}d</span>
+                                    {% else %}<span class="text-muted small">{{ a.age_days }}d</span>{% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if a.alert_status=='OPEN' else ('warning' if a.alert_status=='ESCALATED' else 'success') }}">{{ a.alert_status }}</span>
+                                    {% if a.false_positive %}<span class="badge bg-secondary">FP</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if a.alert_status != 'CLOSED' %}
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">{{ _('Disposition') }}</button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <form method="POST" action="{{ url_for('screening.alert_disposition', alert_id=a.id) }}" class="px-3 py-2" style="min-width:260px">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                    <input type="text" name="notes" class="form-control form-control-sm mb-2" placeholder="{{ _('Notes (optional)') }}"/>
+                                                    <button name="action" value="close_false_positive" class="btn btn-sm btn-outline-success w-100 mb-1">{{ _('Close - False Positive') }}</button>
+                                                    <button name="action" value="close_resolved" class="btn btn-sm btn-outline-primary w-100 mb-1">{{ _('Close - Resolved') }}</button>
+                                                    <button name="action" value="escalate" class="btn btn-sm btn-outline-warning w-100">{{ _('Escalate') }}</button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    {% else %}
+                                    <span class="small text-muted" title="{{ a.resolution_notes or '' }}">{{ a.resolved_by_email or '' }} {{ (a.resolved_at or '')[:10] }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="11" class="text-center py-4 text-muted">{{ _('No alerts in this view.') }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <input type="text" name="notes" class="form-control form-control-sm" style="max-width:300px" placeholder="{{ _('Bulk disposition notes') }}"/>
+            <button type="submit" name="action" value="close_false_positive" class="btn btn-sm btn-outline-success">{{ _('Bulk: False Positive') }}</button>
+            <button type="submit" name="action" value="close_resolved" class="btn btn-sm btn-outline-primary">{{ _('Bulk: Resolved') }}</button>
+
+            <nav class="ms-auto">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if page > 1 %}<li class="page-item"><a class="page-link" href="{{ url_for('screening.alerts_list', status=status_filter, page=page-1) }}">&laquo;</a></li>{% endif %}
+                    <li class="page-item disabled"><span class="page-link">{{ page }} / {{ total_pages }}</span></li>
+                    {% if page < total_pages %}<li class="page-item"><a class="page-link" href="{{ url_for('screening.alerts_list', status=status_filter, page=page+1) }}">&raquo;</a></li>{% endif %}
+                </ul>
+            </nav>
+        </div>
+    </form>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+document.getElementById('checkAll')?.addEventListener('change', function () {
+    document.querySelectorAll('.rowCheck').forEach(cb => cb.checked = this.checked);
+});
+document.getElementById('bulkForm')?.addEventListener('submit', function (e) {
+    if (!collectIds()) e.preventDefault();
+});
+function collectIds() {
+    const ids = Array.from(document.querySelectorAll('.rowCheck:checked')).map(cb => cb.value);
+    if (!ids.length) { alert('{{ _("Select at least one alert.") }}'); return false; }
+    document.getElementById('selected_ids').value = ids.join(',');
+    return true;
+}
+</script>
+{% endblock %}

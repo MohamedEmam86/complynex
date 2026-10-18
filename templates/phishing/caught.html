@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ _('تنبيه أمني — ComplyNex Pay') }}</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#1a1a2e;font-family:Arial,Helvetica,sans-serif;direction:rtl;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .card{background:#fff;border-radius:14px;max-width:580px;width:100%;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.4)}
+    .alert-banner{background:#e62429;padding:24px 28px;text-align:center;color:#fff}
+    .alert-banner .icon{font-size:52px}
+    .alert-banner h1{font-size:22px;margin-top:10px;line-height:1.4}
+    .brand{text-align:center;padding:18px;border-bottom:1px solid #eee}
+    .brand .logo-text{font-size:18px;font-weight:bold;color:#003087;letter-spacing:1px}
+    .brand .sub{font-size:12px;color:#888;margin-top:3px}
+    .body{padding:24px 28px}
+    .intro{background:#fff8e1;border-right:4px solid #f0a500;border-radius:6px;padding:14px 16px;margin-bottom:24px}
+    .intro p{font-size:14px;color:#333;line-height:1.7}
+    h2{font-size:16px;color:#e62429;margin-bottom:14px}
+    .signs-list{list-style:none;margin-bottom:24px}
+    .signs-list li{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;font-size:14px;color:#333;line-height:1.6}
+    .signs-list .icon{font-size:20px;flex-shrink:0;margin-top:1px}
+    .signs-list strong{color:#e62429}
+    .action-box{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:16px 18px;margin-bottom:24px}
+    .action-box h3{font-size:14px;color:#2e7d32;margin-bottom:10px}
+    .action-box ol{padding-right:18px;font-size:13px;color:#333;line-height:1.8}
+    .footer{background:#f8f8f8;border-top:1px solid #eee;text-align:center;padding:16px;font-size:12px;color:#888}
+    .footer strong{color:#003087}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="alert-banner">
+    <div class="icon">⚠️</div>
+    <h1>لقد وقعت في فخ بريد إلكتروني مزيف!<br>هذا اختبار أمني داخلي</h1>
+  </div>
+  <div class="brand">
+    <div class="logo-text">{{ _('ComplyNex Pay') }}</div>
+    <div class="sub">برنامج التوعية بالأمن السيبراني</div>
+  </div>
+  <div class="body">
+    <div class="intro">
+      <p>البريد الإلكتروني الذي استلمته عن "كوبون كارفور" كان <strong>رسالة تصيد احتيالي مزيفة</strong> أُرسلت من فريق الأمن السيبراني في باسطة باي كجزء من برنامج التوعية الداخلي. لم يتم استخدام أي بيانات أدخلتها في أي عملية حقيقية، وهي آمنة تماماً.</p>
+    </div>
+    <h2>🔍 كيف كان يجب أن تكتشفه؟</h2>
+    <ul class="signs-list">
+      <li><span class="icon">📧</span><span><strong>عنوان المُرسِل مريب:</strong> {{ _('اسم المُرسِل يبدو "Carrefour Egypt" لكن البريد ليس من') }} <em>{{ _('@carrefour.com.eg') }}</em>.</span></li>
+      <li><span class="icon">🔗</span><span><strong>رابط لا يطابق الموقع الرسمي:</strong> تحقق دائماً من الرابط قبل النقر.</span></li>
+      <li><span class="icon">🎁</span><span><strong>عرض غير متوقع:</strong> رسائل المكافآت الحقيقية لا تطلب إدخال بريدك مجدداً.</span></li>
+      <li><span class="icon">⏰</span><span><strong>الضغط والإلحاح:</strong> عبارات مثل "عرض محدود" مصممة لتستعجلك.</span></li>
+      <li><span class="icon">💳</span><span><strong>طلب بيانات حساسة:</strong> أي موقع يطلب رقم بطاقة عبر رابط في بريد = خطر.</span></li>
+    </ul>
+    <div class="action-box">
+      <h3>✅ ماذا تفعل في المرة القادمة؟</h3>
+      <ol>
+        <li>تحقق من عنوان البريد الإلكتروني الحقيقي للمُرسِل — ليس فقط الاسم.</li>
+        <li>مرّر الماوس فوق الرابط قبل النقر وتأكد من النطاق.</li>
+        <li>إذا كان العرض "جيداً جداً" — فهو على الأرجح مزيف.</li>
+        <li>أبلغ فريق IT فوراً عن أي بريد مشبوه.</li>
+        <li>لا تُدخل أي بيانات في صفحة جاءت من رابط في بريد إلكتروني.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="footer">
+    <strong>{{ _('ComplyNex Pay — Information Security Team') }}</strong><br>
+    هذا الاختبار جزء من برنامج التوعية الأمنية الداخلي. بياناتك آمنة.<br>
+    {{ _('للاستفسار: compliance@complynex.online') }}
+  </div>
+</div>
+</body>
+</html>

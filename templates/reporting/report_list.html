@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Regulatory Report Templates - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Regulatory Report Templates') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('reporting.manage_report') }}" class="btn btn-sm btn-primary shadow-sm">
+            <i class="bi bi-plus-circle"></i> {{ _('NEW REPORT TYPE') }}
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="mb-0 fw-bold">{{ _('Active Templates') }}</h5>
+            </div>
+            <div class="col-auto">
+                <select class="form-select form-select-sm" id="regulatorFilter">
+                    <option value="all">{{ _('All Regulators') }}</option>
+                    {% for reg in regulators %}
+                    <option value="{{ reg.regulator_name }}">{{ reg.regulator_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="reportsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>{{ _('Code') }}</th>
+                        <th>{{ _('Report Name') }}</th>
+                        <th>{{ _('Regulator') }}</th>
+                        <th>{{ _('Frequency') }}</th>
+                        <th>{{ _('Responsible Dept') }}</th>
+                        <th class="text-end">{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr data-regulator="{{ report.regulator_name }}">
+                        <td><span class="badge bg-light text-primary border border-primary-subtle">{{ report.report_code
+                                }}</span></td>
+                        <td class="fw-bold">{{ report.report_name }}</td>
+                        <td>{{ report.regulator_name }}</td>
+                        <td><span class="badge bg-secondary-soft text-secondary">{{ report.frequency | capitalize
+                                }}</span></td>
+                        <td>{{ report.responsible_department or 'Compliance' }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('reporting.manage_report', id=report.id) }}"
+                                class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> {{ _('Edit') }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">{{ _('No report templates found.') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    document.getElementById('regulatorFilter').addEventListener('change', function () {
+        const filter = this.value;
+        const rows = document.querySelectorAll('#reportsTable tbody tr');
+
+        rows.forEach(row => {
+            if (filter === 'all' || row.getAttribute('data-regulator') === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+<style>
+    .bg-secondary-soft {
+        background-color: rgba(108, 117, 125, 0.1);
+    }
+</style>
+{% endblock %}

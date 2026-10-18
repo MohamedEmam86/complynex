@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Merchant KYC Form - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.0/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.10.0/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .kyc-container {
+            max-width: 900px;
+            margin: auto;
+            padding: 2rem 1rem;
+        }
+
+        .card {
+            border-radius: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="kyc-container">
+        <div class="text-center text-white mb-4">
+            <h2><i class="bi bi-shield-check"></i> {{ _('ComplyNex') }}</h2>
+            <p class="lead">{{ _('Merchant KYC (Know Your Customer) Form') }}</p>
+        </div>
+
+        {% if error %}
+        <div class="card shadow">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-exclamation-triangle text-danger" style="font-size:3rem"></i>
+                <h4 class="mt-3">{{ error }}</h4>
+                <p class="text-muted">{{ _('Please contact your ComplyNex representative for assistance.') }}</p>
+            </div>
+        </div>
+
+        {% elif submitted %}
+        <div class="card shadow">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-check-circle text-success" style="font-size:4rem"></i>
+                <h3 class="mt-3 text-success">{{ _('KYC Form Submitted Successfully!') }}</h3>
+                <p class="text-muted">{{ _('Thank you') }} <strong>{{ merchant.merchant_name }}</strong>{{ _('. Your KYC information has
+                    been submitted for review. Our compliance team will process your application shortly.') }}</p>
+                <hr>
+                <small class="text-muted">{{ _('You may now close this page.') }}</small>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0"> {{ _('Merchant KYC Onboarding Form') }}</h4>
+                <small>{{ _('Please fill out all required fields accurately') }}</small>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <!-- Business Info -->
+                    <h6 class="text-primary border-bottom pb-2 mb-3"><i class="bi bi-building"></i> {{ _('Business Information') }}
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Company / Merchant Name *') }}</label>
+                            <input type="text" name="merchant_name" class="form-control" required
+                                value="{{ (merchant.merchant_name or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Trade Name') }}</label>
+                            <input type="text" name="trade_name" class="form-control"
+                                value="{{ (merchant.trade_name or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('Commercial Registration (CR) *') }}</label>
+                            <input type="text" name="cr_number" class="form-control" required
+                                value="{{ (merchant.cr_number or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('Tax ID') }}</label>
+                            <input type="text" name="tax_id" class="form-control"
+                                value="{{ (merchant.tax_id or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('Business Type *') }}</label>
+                            <select class="form-select" name="business_type" required>
+                                <option value="">{{ _('Select...') }}</option>
+                                <option value="SOLE_PROPRIETORSHIP" {% if merchant and
+                                    merchant.business_type=='SOLE_PROPRIETORSHIP' %}selected{% endif %}>{{ _('Sole
+                                    Proprietorship') }}</option>
+                                <option value="PARTNERSHIP" {% if merchant and merchant.business_type=='PARTNERSHIP'
+                                    %}selected{% endif %}>{{ _('Partnership') }}</option>
+                                <option value="LLC" {% if merchant and merchant.business_type=='LLC' %}selected{% endif
+                                    %}>{{ _('LLC') }}</option>
+                                <option value="JOINT_STOCK" {% if merchant and merchant.business_type=='JOINT_STOCK'
+                                    %}selected{% endif %}>{{ _('Joint Stock Company') }}</option>
+                                <option value="OTHER" {% if merchant and merchant.business_type=='OTHER' %}selected{%
+                                    endif %}>{{ _('Other') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Industry / Sector') }}</label>
+                            <input type="text" name="industry" class="form-control"
+                                value="{{ (merchant.industry or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Website') }}</label>
+                            <input type="url" name="website" class="form-control"
+                                value="{{ (merchant.website or '') if merchant else '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Contact Info -->
+                    <h6 class="text-primary border-bottom pb-2 mb-3 mt-3"><i class="bi bi-person-lines-fill"></i>
+                        {{ _('Contact Information') }}</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('Contact Person *') }}</label>
+                            <input type="text" name="contact_person" class="form-control" required
+                                value="{{ (merchant.contact_person or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('Email *') }}</label>
+                            <input type="email" name="contact_email" class="form-control" required
+                                value="{{ (merchant.contact_email or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('Phone *') }}</label>
+                            <input type="text" name="contact_phone" class="form-control" required
+                                value="{{ (merchant.contact_phone or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-bold">{{ _('Business Address *') }}</label>
+                            <textarea name="address" class="form-control" rows="2"
+                                required>{{ (merchant.address or '') if merchant else '' }}</textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('City *') }}</label>
+                            <input type="text" name="city" class="form-control" required
+                                value="{{ (merchant.city or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Country') }}</label>
+                            <input type="text" name="country" class="form-control"
+                                value="{{ merchant.country if merchant else 'Egypt' }}">
+                        </div>
+                    </div>
+
+                    <!-- UBO -->
+                    <h6 class="text-primary border-bottom pb-2 mb-3 mt-3"><i class="bi bi-people"></i> {{ _('Beneficial
+                        Ownership (UBO)') }}</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('UBO Full Name *') }}</label>
+                            <input type="text" name="ubo_name" class="form-control" required
+                                value="{{ (merchant.ubo_name or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('UBO Nationality *') }}</label>
+                            <input type="text" name="ubo_nationality" class="form-control" required
+                                value="{{ (merchant.ubo_nationality or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('ID Type *') }}</label>
+                            <select class="form-select" name="ubo_id_type" required>
+                                <option value="">{{ _('Select...') }}</option>
+                                <option value="NATIONAL_ID" {% if merchant and merchant.ubo_id_type=='NATIONAL_ID'
+                                    %}selected{% endif %}>{{ _('National ID') }}</option>
+                                <option value="PASSPORT" {% if merchant and merchant.ubo_id_type=='PASSPORT'
+                                    %}selected{% endif %}>{{ _('Passport') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('ID Number *') }}</label>
+                            <input type="text" name="ubo_id_number" class="form-control" required
+                                value="{{ (merchant.ubo_id_number or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('Date of Birth') }}</label>
+                            <input type="date" name="ubo_dob" class="form-control"
+                                value="{{ (merchant.ubo_dob or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('Ownership Percentage') }}</label>
+                            <input type="number" name="ownership_percentage" class="form-control" min="0" max="100"
+                                value="{{ (merchant.ownership_percentage or '') if merchant else '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Banking -->
+                    <h6 class="text-primary border-bottom pb-2 mb-3 mt-3"><i class="bi bi-bank"></i> {{ _('Banking Details') }}
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('Bank Name') }}</label>
+                            <input type="text" name="bank_name" class="form-control"
+                                value="{{ (merchant.bank_name or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('Account Number') }}</label>
+                            <input type="text" name="bank_account_number" class="form-control"
+                                value="{{ (merchant.bank_account_number or '') if merchant else '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">{{ _('IBAN') }}</label>
+                            <input type="text" name="iban" class="form-control"
+                                value="{{ (merchant.iban or '') if merchant else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i> {{ _('By submitting this form, you confirm that all information
+                        provided is true and accurate. Providing false information may result in your application being
+                        rejected.') }}
+                    </div>
+
+                    <!-- Document Attachments -->
+                    <h6 class="text-primary border-bottom pb-2 mb-3 mt-3"><i class="bi bi-paperclip"></i> {{ _('Document
+                        Attachments') }}</h6>
+                    <p class="text-muted small">{{ _('Please upload supporting documents: Commercial Registration, Tax Card,
+                        ID copies, Bank letter, etc.') }}</p>
+                    <div id="doc-upload-rows">
+                        <div class="row mb-2 doc-row">
+                            <div class="col-md-4">
+                                <select name="doc_types" class="form-select form-select-sm">
+                                    <option value="Commercial Registration">{{ _('Commercial Registration (CR)') }}</option>
+                                    <option value="Tax Card">{{ _('Tax Card') }}</option>
+                                    <option value="National ID">{{ _('National ID / Passport') }}</option>
+                                    <option value="Bank Letter">{{ _('Bank Letter') }}</option>
+                                    <option value="Board Resolution">{{ _('Board Resolution') }}</option>
+                                    <option value="Power of Attorney">{{ _('Power of Attorney') }}</option>
+                                    <option value="Other">{{ _('Other') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <input type="file" name="documents" class="form-control form-control-sm"
+                                    accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-1 mb-3" data-onclick-fn="addDocRow"><i
+                            class="bi bi-plus-circle"></i> {{ _('Add Another Document') }}</button>
+
+                    <div class="d-grid mt-4">
+                        <!-- GPS Location Capture -->
+                    <div class="mb-4 p-3 rounded-3 border" id="gpsSection"
+                         style="background:#f0fdf4;border-color:#86efac!important">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div>
+                                <div class="fw-bold text-success small">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>{{ _('POS Machine Location') }}
+                                </div>
+                                <div class="text-muted" style="font-size:11px">
+                                    {{ _('Required — helps us verify your machine location') }}
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-success btn-sm rounded-pill px-3"
+                                    data-onclick-fn="captureLocation" id="gpsBtn">
+                                <i class="bi bi-crosshair me-1"></i>{{ _('Capture Location') }}
+                            </button>
+                        </div>
+                        <div id="gpsStatus" class="small text-muted">{{ _('📍 Location not captured yet') }}</div>
+                        <div id="gpsMapLink" class="mt-1" style="display:none">
+                            <a id="gpsMapAnchor" href="#" target="_blank" class="small text-success">
+                                <i class="bi bi-map me-1"></i>{{ _('View on Google Maps') }}
+                            </a>
+                        </div>
+                        <input type="hidden" name="gps_latitude" id="gps_latitude">
+                        <input type="hidden" name="gps_longitude" id="gps_longitude">
+                        <input type="hidden" name="gps_accuracy" id="gps_accuracy">
+                        <input type="hidden" name="gps_address" id="gps_address">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send"></i> {{ _('Submit KYC Form') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="text-center text-white-50 mt-4">
+            <small>{{ _('&copy; 2025 ComplyNex. All rights reserved.') }}</small>
+        </div>
+    </div>
+
+    <script nonce="{{ csp_nonce }}">
+        function addDocRow() {
+            const container = document.getElementById('doc-upload-rows');
+            const row = document.querySelector('.doc-row').cloneNode(true);
+            row.querySelector('input[type=file]').value = '';
+            container.appendChild(row);
+        }
+    </script>
+
+<script nonce="{{ csp_nonce }}">
+function captureLocation() {
+    const btn = document.getElementById('gpsBtn');
+    const status = document.getElementById('gpsStatus');
+    if (!navigator.geolocation) {
+        status.innerHTML = '❌ Geolocation not supported on this device';
+        status.className = 'small text-danger';
+        return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Locating...';
+    status.innerHTML = '⏳ Getting your location...';
+    status.className = 'small text-muted';
+
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            const lat = pos.coords.latitude.toFixed(6);
+            const lng = pos.coords.longitude.toFixed(6);
+            const acc = Math.round(pos.coords.accuracy);
+            document.getElementById('gps_latitude').value = lat;
+            document.getElementById('gps_longitude').value = lng;
+            document.getElementById('gps_accuracy').value = acc;
+            document.getElementById('gps_address').value = lat + ',' + lng;
+            status.innerHTML = '✅ Location captured — Lat: ' + lat + ', Lng: ' + lng + ' (±' + acc + 'm)';
+            status.className = 'small text-success fw-semibold';
+            btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Captured';
+            btn.className = 'btn btn-outline-success btn-sm rounded-pill px-3';
+            // Show map link
+            const mapDiv = document.getElementById('gpsMapLink');
+            const mapLink = document.getElementById('gpsMapAnchor');
+            mapLink.href = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+            mapDiv.style.display = 'block';
+        },
+        function(err) {
+            let msg = '❌ ';
+            if (err.code === 1) msg += 'Location access denied — please allow location in browser settings';
+            else if (err.code === 2) msg += 'Location unavailable — try again';
+            else msg += 'Location timeout — try again';
+            status.innerHTML = msg;
+            status.className = 'small text-danger';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-crosshair me-1"></i>Try Again';
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+}
+// Auto-capture on page load (silent)
+window.addEventListener('load', function() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                document.getElementById('gps_latitude').value = pos.coords.latitude.toFixed(6);
+                document.getElementById('gps_longitude').value = pos.coords.longitude.toFixed(6);
+                document.getElementById('gps_accuracy').value = Math.round(pos.coords.accuracy);
+                document.getElementById('gps_address').value = pos.coords.latitude.toFixed(6) + ',' + pos.coords.longitude.toFixed(6);
+                document.getElementById('gpsStatus').innerHTML = '✅ Location auto-captured (±' + Math.round(pos.coords.accuracy) + 'm) — <a href="https://www.google.com/maps?q=' + pos.coords.latitude + ',' + pos.coords.longitude + '" target="_blank" class="text-success">View map</a>';
+                document.getElementById('gpsStatus').className = 'small text-success';
+                document.getElementById('gpsBtn').innerHTML = '<i class="bi bi-check-circle me-1"></i>Captured';
+                document.getElementById('gpsBtn').className = 'btn btn-outline-success btn-sm rounded-pill px-3';
+            },
+            function() {}, // silent fail on auto-capture
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+});
+</script>
+<script src="{{ url_for('static', filename='js/csp_helpers.js') }}"></script>
+</body>
+
+</html>

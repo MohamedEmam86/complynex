@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('UBO Verification') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('aml.dashboard') }}">{{ _('AML Dashboard') }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ _('UBO Verification') }}</li>
+                </ol>
+            </nav>
+
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>{{ _('Ultimate Beneficial Ownership (UBO)
+                        Verification') }}</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted mb-4">{{ _('Verify the ownership structure of corporate entities and identify
+                        individual owners with more than 25%% stake.') }}</p>
+
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ _('Company Name') }}</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-white border-end-0"><i
+                                        class="bi bi-building"></i></span>
+                                <input type="text" name="company_name" class="form-control border-start-0"
+                                    placeholder="{{ _('Enter company name or registration number...') }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Registration Country') }}</label>
+                                <select class="form-select" name="country">
+                                    <option value="EG" selected>{{ _('Egypt') }}</option>
+                                    <option value="UAE">{{ _('United Arab Emirates') }}</option>
+                                    <option value="SA">{{ _('Saudi Arabia') }}</option>
+                                    <option value="UK">{{ _('United Kingdom') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Verification Depth') }}</label>
+                                <select class="form-select" name="depth">
+                                    <option value="standard">{{ _('Standard (Up to 2 layers)') }}</option>
+                                    <option value="full">{{ _('Full (Total unwind)') }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="card bg-light border-0 mb-4">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3"><i
+                                        class="bi bi-file-earmark-medical-fill me-2 text-dark"></i>{{ _('Required
+                                    Evidence') }}</h6>
+                                <p class="small text-muted">{{ _('System will attempt to retrieve the following
+                                    documents:') }}</p>
+                                <ul class="small mb-0">
+                                    <li>{{ _('Commercial Register (Recent extract)') }}</li>
+                                    <li>{{ _('Articles of Association') }}</li>
+                                    <li>{{ _('Shareholder Registry') }}</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-dark btn-lg shadow-sm">
+                                <i class="bi bi-diagram-3 me-2"></i>{{ _('Verify Entity Structure') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center py-4">
+                                <div class="display-6 text-primary mb-2"><i class="bi bi-check-circle"></i></div>
+                                <h6 class="fw-bold">{{ _('Direct Ownership') }}</h6>
+                                <p class="text-muted small px-3">{{ _('Immediate shareholders holding voting rights in
+                                    the entity.') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center py-4">
+                                <div class="display-6 text-warning mb-2"><i class="bi bi-eye-fill"></i></div>
+                                <h6 class="fw-bold">{{ _('Control Persons') }}</h6>
+                                <p class="text-muted small px-3">{{ _('Individuals exercising control via other means
+                                    than shareholding.') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

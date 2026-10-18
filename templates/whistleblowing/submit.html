@@ -1,0 +1,583 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4" dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body py-4">
+                    <h1 class="h3 mb-2"><i class="fas fa-shield-alt me-2"></i>{{ _('Confidential Whistleblowing Portal')
+                        }}</h1>
+                    <p class="mb-0">{{ _('Report workplace misconduct safely and securely. Your identity is protected.')
+                        }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information Cards -->
+    <div class="row mb-4">
+        <div class="col-12 col-md-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3"><i class="fas fa-user-secret fa-3x text-primary"></i></div>
+                    <h5 class="card-title">{{ _('Anonymous Reporting') }}</h5>
+                    <p class="text-muted small">{{ _('Your identity remains completely confidential. No personal
+                        information is collected.') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3"><i class="fas fa-lock fa-3x text-success"></i></div>
+                    <h5 class="card-title">{{ _('Secure & Encrypted') }}</h5>
+                    <p class="text-muted small">{{ _('All reports and attachments are encrypted end-to-end for maximum
+                        security.') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3"><i class="fas fa-ban fa-3x text-danger"></i></div>
+                    <h5 class="card-title">{{ _('No Retaliation') }}</h5>
+                    <p class="text-muted small">{{ _('Whistleblowers are protected by law. Retaliation is strictly
+                        prohibited.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submission Form -->
+    <div class="row">
+        <div class="col-12 col-lg-8 mx-auto">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>{{ _('Submit a Report') }}</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form id="whistleblowingForm" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <!-- Anonymity Option -->
+                        <div class="alert alert-info border-0">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isAnonymous" name="is_anonymous"
+                                    value="true" checked>
+                                <label class="form-check-label fw-bold" for="isAnonymous">
+                                    <i class="fas fa-user-secret me-1"></i>{{ _('Submit Anonymously') }}
+                                </label>
+                                <p class="small mb-0 mt-1 text-muted">{{ _("If checked, your identity will not be
+                                    recorded. You'll receive a tracking code to follow your case.") }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Optional Contact Info (hidden if anonymous) -->
+                        <div id="contactInfo" style="display: none;">
+                            <div class="row mb-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">{{ _('Your Name (Optional)') }}</label>
+                                    <input type="text" class="form-control" name="submitter_name"
+                                        placeholder="{{ _('John Doe') }}">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">{{ _('Email (Optional)') }}</label>
+                                    <input type="email" class="form-control" name="submitter_email"
+                                        placeholder="{{ _('john@example.com') }}">
+                                    <small class="text-muted">{{ _('For updates on your case') }}</small>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">{{ _('Phone (Optional)') }}</label>
+                                    <input type="tel" class="form-control" name="submitter_phone"
+                                        placeholder="{{ _('+20 XXX XXX XXXX') }}">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">{{ _('Department (Optional)') }}</label>
+                                    <input type="text" class="form-control" name="submitter_department"
+                                        placeholder="{{ _('e.g., Finance') }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Incident Type -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Type of Misconduct') }} <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-select" name="incident_type" required>
+                                <option value="">-- {{ _('Select Type') }} --</option>
+                                {% for category in categories %}
+                                <option value="{{ category.category_code }}"
+                                    data-severity="{{ category.severity_default }}">
+                                    {{ category.category_name_en if get_locale() == 'en' else category.category_name_ar
+                                    }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Severity -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Severity') }}</label>
+                            <select class="form-select" name="severity">
+                                <option value="LOW">{{ _('Low') }}</option>
+                                <option value="MEDIUM" selected>{{ _('Medium') }}</option>
+                                <option value="HIGH">{{ _('High') }}</option>
+                                <option value="CRITICAL">{{ _('Critical') }}</option>
+                            </select>
+                        </div>
+
+                        <!-- Incident Date & Location -->
+                        <div class="row mb-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">{{ _('When did this occur?') }}</label>
+                                <input type="date" class="form-control" name="incident_date">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">{{ _('Where did this occur?') }}</label>
+                                <input type="text" class="form-control" name="incident_location"
+                                    placeholder="{{ _('e.g., Head Office - 3rd Floor') }}">
+                            </div>
+                        </div>
+
+                        <!-- Title -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Brief Title') }} <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="title" required
+                                placeholder="{{ _('e.g., Unauthorized access to customer data') }}">
+                        </div>
+
+                        <!-- Detailed Description -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Detailed Description') }} <span
+                                    class="text-danger">*</span></label>
+                            <textarea class="form-control" name="description" rows="6" required
+                                placeholder="{{ _('Please provide a detailed description of what happened. Include:\n- What occurred?\n- Who was involved?\n- When did it happen?\n- How did you become aware of it?') }}"></textarea>
+                            <small class="text-muted">{{ _('Minimum 50 characters') }}</small>
+                        </div>
+
+                        <!-- Evidence Description -->
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Evidence (if any)') }}</label>
+                            <textarea class="form-control" name="evidence_description" rows="3"
+                                placeholder="{{ _('Describe any evidence you have (documents, emails, recordings, etc.)') }}"></textarea>
+                        </div>
+
+                        <!-- Witnesses -->
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Witnesses (if any)') }}</label>
+                            <input type="text" class="form-control" name="witnesses"
+                                placeholder="{{ _('Names or descriptions of people who witnessed the incident') }}">
+                        </div>
+
+                        <!-- Suspected Individuals -->
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Suspected Individuals') }}</label>
+                            <input type="text" class="form-control" name="suspected_individuals"
+                                placeholder="{{ _('Names or descriptions of people involved') }}">
+                        </div>
+
+                        <!-- File Attachments -->
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Attach Files (Optional)') }}</label>
+                            <input type="file" class="form-control" name="attachments" multiple
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt">
+                            <small class="text-muted">{{ _('Max 10MB per file. Supported: PDF, Word, Images, Text')
+                                }}</small>
+                        </div>
+
+                        <!-- Urgency -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isUrgent" name="is_urgent"
+                                    value="true">
+                                <label class="form-check-label text-danger fw-bold" for="isUrgent">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ _('This is urgent and requires
+                                    immediate attention') }}
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Disclaimer -->
+                        <div class="alert alert-warning border-0 mb-3">
+                            <h6 class="alert-heading"><i class="fas fa-info-circle me-1"></i>{{ _('Important') }}</h6>
+                            <ul class="mb-0 small">
+                                <li>{{ _('All reports are reviewed by the Compliance Department') }}</li>
+                                <li>{{ _('False or malicious reports may result in disciplinary action') }}</li>
+                                <li>{{ _('You will receive a case number to track your report') }}</li>
+                                <li>{{ _('Investigations typically take 10-30 business days') }}</li>
+                            </ul>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="fas fa-paper-plane me-2"></i>{{ _('Submit Report Securely') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i>{{ _('Report Submitted Successfully') }}
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h5>{{ _('Thank you for your report') }}</h5>
+                    <p class="text-muted">{{ _('Your report has been submitted securely.') }}</p>
+                    <div class="bg-light border rounded p-3 mt-2">
+                        <p class="mb-1 text-muted small text-uppercase">{{ _('Case Number') }}</p>
+                        <h3 class="font-monospace fw-bold text-dark mb-0" id="caseNumberDisplay">—</h3>
+                        <small class="text-muted">{{ _('Save this number to track your case') }}</small>
+                    </div>
+                </div>
+
+                <div class="alert alert-success border-0 text-center py-3" id="caseInfo">
+                    <p class="mb-1 text-muted small">{{ _('Your Case Number') }}</p>
+                    <h2 class="font-monospace fw-bold text-dark mb-0" id="caseNumber"></h2>
+                    <small class="text-muted">{{ _('Save this number to track your case') }}</small><br>
+                    <div id="anonymousCode" style="display: none;">
+                        <strong class="text-danger">{{ _('Your Tracking Code') }}:</strong><br>
+                        <div class="bg-white p-3 rounded border border-danger mt-2">
+                            <h3 class="text-center mb-0 font-monospace" id="trackingCode"></h3>
+                        </div>
+                        <small class="text-danger d-block mt-2">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <strong>{{ _('IMPORTANT') }}:</strong> {{ _("Save this code! You'll need it to track your
+                            case.") }}
+                        </small>
+                    </div>
+                </div>
+
+                <div class="text-muted small">
+                    <p><i class="fas fa-clock me-1"></i> {{ _('Cases are typically reviewed within 2-3 business days')
+                        }}</p>
+                    <p class="mb-0"><i class="fas fa-shield-alt me-1"></i> {{ _('All reports are handled with strict
+                        confidentiality') }}</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button data-onclick-fn="downloadCasePDF" class="btn btn-success">
+                    <i class="fas fa-file-pdf me-1"></i>{{ _('Download PDF') }}
+                </button>
+                <a href="{{ url_for('whistleblowing.track_case') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-search me-1"></i>{{ _('Track My Case') }}
+                </a>
+                <a href="{{ url_for('whistleblowing.submit_case') }}" class="btn btn-primary">
+                    <i class="fas fa-home me-1"></i>{{ _('Done') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inline Confirmation Banner -->
+<div id="confirmationBanner" style="display:none;" class="row mt-4">
+    <div class="col-12 col-lg-8 mx-auto">
+        <div class="card border-success shadow">
+            <div class="card-header bg-success text-white py-3">
+                <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>{{ _('Report Submitted Successfully') }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-success border-0 mb-3">
+                    <p class="mb-1"><strong>{{ _('Case Number') }}:</strong> 
+                        <span id="bannerCaseNumber" class="font-monospace fs-5 text-success fw-bold"></span>
+                    </p>
+                    <div id="bannerCodeRow" style="display:none;" class="mt-2">
+                        <strong class="text-danger">{{ _('Your Tracking Code') }}:</strong>
+                        <div class="bg-white p-3 rounded border border-danger mt-2 text-center">
+                            <h3 class="font-monospace mb-0" id="bannerAnonCode"></h3>
+                        </div>
+                        <small class="text-danger d-block mt-2">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <strong>{{ _('IMPORTANT') }}:</strong> {{ _("Save this code — it is the only way to track your case status.") }}
+                        </small>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button data-onclick-fn="downloadCasePDF" class="btn btn-success">
+                        <i class="fas fa-file-pdf me-2"></i>{{ _('Download Confirmation PDF') }}
+                    </button>
+                    <a href="{{ url_for('whistleblowing.track_case') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-2"></i>{{ _('Track My Case') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    function downloadCasePDF() {
+        const caseNumber = window._wbCaseNumber || 'N/A';
+        const anonCode = window._wbAnonCode || '';
+        const submittedAt = window._wbSubmittedAt || new Date().toLocaleString();
+
+        // These run inside a client-side JS template literal, so the
+        // translation has to happen here (Jinja _()) and be interpolated
+        // in below - _() can't run directly inside the literal itself.
+        const T_title = {{ _('Whistleblowing Case Confirmation') | tojson }};
+        const T_platform = {{ _('ComplyNex Full Compliance Platform') | tojson }};
+        const T_caseNumber = {{ _('CASE NUMBER') | tojson }};
+        const T_submitted = {{ _('Submitted:') | tojson }};
+        const T_trackingCode = {{ _('YOUR ANONYMOUS TRACKING CODE') | tojson }};
+        const T_keepCodeSafe = {{ _('KEEP THIS CODE SAFE — This is the only way to check your case status.') | tojson }};
+        const T_codeNotShownAgain = {{ _('This code will not be shown again.') | tojson }};
+        const T_nextSteps = {{ _('Next Steps') | tojson }};
+        const T_step1 = {{ _('Your report has been securely received and encrypted.') | tojson }};
+        const T_step2 = {{ _('The Compliance Department will review your case within 2-3 business days.') | tojson }};
+        const T_step3 = {{ _('An investigation will be conducted. Cases typically take 10-30 business days to resolve.') | tojson }};
+        const T_step4WithCode = {{ _('Use your tracking code') | tojson }};
+        const T_step4NoCode = {{ _('You will be notified of updates via your provided contact information.') | tojson }};
+        const T_toCheckStatus = {{ _('to check case status.') | tojson }};
+        const T_confidential = {{ _('This document is confidential and protected under Egyptian Labor Law No. 12/2003.') | tojson }};
+        const T_retaliation = {{ _('Retaliation against whistleblowers is strictly prohibited and grounds for immediate termination.') | tojson }};
+        const T_generated = {{ _('Generated:') | tojson }};
+
+        const printContent = `
+            <html><head><title>${T_title}</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+                .header { text-align: center; border-bottom: 3px solid #198754; padding-bottom: 20px; margin-bottom: 30px; }
+                .header h1 { color: #198754; font-size: 24px; margin: 0; }
+                .header p { color: #666; margin: 5px 0 0; }
+                .logo { font-size: 32px; color: #198754; margin-bottom: 10px; }
+                .info-box { background: #f8f9fa; border-left: 4px solid #198754; padding: 20px; margin: 20px 0; border-radius: 4px; }
+                .case-number { font-size: 28px; font-weight: bold; color: #198754; font-family: monospace; }
+                .tracking-box { background: #fff3cd; border: 2px solid #dc3545; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+                .tracking-code { font-size: 32px; font-weight: bold; font-family: monospace; color: #dc3545; letter-spacing: 3px; }
+                .warning { color: #dc3545; font-weight: bold; font-size: 13px; margin-top: 10px; }
+                .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #dee2e6; font-size: 12px; color: #888; text-align: center; }
+                .steps { margin: 20px 0; }
+                .step { display: flex; align-items: flex-start; margin: 10px 0; }
+                .step-num { background: #198754; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 12px; flex-shrink: 0; }
+            </style></head>
+            <body>
+                <div class="header">
+                    <div class="logo">🛡️</div>
+                    <h1>${T_title}</h1>
+                    <p>${T_platform}</p>
+                </div>
+
+                <div class="info-box">
+                    <p style="margin:0 0 8px;color:#666;font-size:13px;">${T_caseNumber}</p>
+                    <div class="case-number">${caseNumber}</div>
+                    <p style="margin:10px 0 0;color:#666;font-size:13px;">${T_submitted} ${submittedAt}</p>
+                </div>
+
+                ${anonCode ? `
+                <div class="tracking-box">
+                    <p style="margin:0 0 8px;font-weight:bold;color:#333;">${T_trackingCode}</p>
+                    <div class="tracking-code">${anonCode}</div>
+                    <p class="warning">⚠ ${T_keepCodeSafe}<br>
+                    ${T_codeNotShownAgain}</p>
+                </div>` : ''}
+
+                <div class="steps">
+                    <h3 style="color:#333;font-size:16px;">${T_nextSteps}</h3>
+                    <div class="step"><div class="step-num">1</div><div>${T_step1}</div></div>
+                    <div class="step"><div class="step-num">2</div><div>${T_step2}</div></div>
+                    <div class="step"><div class="step-num">3</div><div>${T_step3}</div></div>
+                    <div class="step"><div class="step-num">4</div><div>${anonCode ? `${T_step4WithCode} <strong>${anonCode}</strong> ${T_toCheckStatus}` : T_step4NoCode}</div></div>
+                </div>
+
+                <div class="footer">
+                    <p>${T_confidential}</p>
+                    <p>${T_retaliation}</p>
+                    <p>${T_generated} ${submittedAt}</p>
+                </div>
+            </body></html>
+        `;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('whistleblowingForm');
+        const isAnonymousCheckbox = document.getElementById('isAnonymous');
+        const contactInfo = document.getElementById('contactInfo');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // JS Translations
+        const msgMinChars = "{{ _('Please provide a more detailed description (at least 50 characters)') }}";
+        const msgSubmitting = "{{ _('Submitting...') }}";
+        const msgSubmitBtnOrig = "{{ _('Submit Report Securely') }}";
+        const msgError = "{{ _('Error: ') }}";
+        const msgGenericError = "{{ _('Submission failed') }}";
+        const msgNetworkError = "{{ _('An error occurred. Please try again.') }}";
+
+        // Toggle contact info visibility
+        if (isAnonymousCheckbox) {
+            isAnonymousCheckbox.addEventListener('change', function () {
+                contactInfo.style.display = this.checked ? 'none' : 'block';
+            });
+        }
+
+        // Auto-set severity based on incident type
+        const typeSelect = document.querySelector('select[name="incident_type"]');
+        if (typeSelect) {
+            typeSelect.addEventListener('change', function () {
+                const selectedOption = this.options[this.selectedIndex];
+                const defaultSeverity = selectedOption.dataset.severity;
+                if (defaultSeverity) {
+                    document.querySelector('select[name="severity"]').value = defaultSeverity;
+                }
+            });
+        }
+
+        // Form submission
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // Validate description length
+                const description = document.querySelector('textarea[name="description"]').value;
+                if (description.length < 50) {
+                    alert(msgMinChars);
+                    return;
+                }
+
+                // Disable submit button
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>' + msgSubmitting;
+
+                const formData = new FormData(form);
+
+                fetch('{{ url_for("whistleblowing.submit_case") }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Store globally for PDF generation
+                            window._wbCaseNumber = data.case_number || '';
+                            window._wbAnonCode = data.anonymous_code || '';
+                            window._wbSubmittedAt = new Date().toLocaleString();
+
+                            // Populate modal fields
+                            const caseNumEl = document.getElementById('caseNumber');
+                            const anonCodeEl = document.getElementById('anonymousCode');
+                            const trackingCodeEl = document.getElementById('trackingCode');
+                            const successModalEl = document.getElementById('successModal');
+
+                            if (caseNumEl) caseNumEl.textContent = data.case_number || 'N/A';
+                            const caseNumDisplay = document.getElementById('caseNumberDisplay');
+                            if (caseNumDisplay) caseNumDisplay.textContent = data.case_number || 'N/A';
+                            // Also update modal title area
+                            console.log('Case number received:', data.case_number);
+                            console.log('Anonymous code:', data.anonymous_code);
+
+                            if (anonCodeEl && trackingCodeEl) {
+                                if (data.anonymous_code) {
+                                    anonCodeEl.style.display = 'block';
+                                    trackingCodeEl.textContent = data.anonymous_code;
+                                } else {
+                                    anonCodeEl.style.display = 'none';
+                                }
+                            }
+
+                            // Show inline confirmation banner (always visible, no modal dependency)
+                            const banner = document.getElementById('confirmationBanner');
+                            const bannerCase = document.getElementById('bannerCaseNumber');
+                            const bannerCode = document.getElementById('bannerAnonCode');
+                            const bannerCodeRow = document.getElementById('bannerCodeRow');
+                            if (banner) {
+                                if (bannerCase) bannerCase.textContent = data.case_number || '';
+                                if (bannerCode && data.anonymous_code) {
+                                    bannerCode.textContent = data.anonymous_code;
+                                    if (bannerCodeRow) bannerCodeRow.style.display = 'block';
+                                }
+                                banner.style.display = 'block';
+                                banner.scrollIntoView({behavior: 'smooth'});
+                            }
+
+                            // Show modal
+                            try {
+                                if (successModalEl) {
+                                    const successModal = new bootstrap.Modal(successModalEl);
+                                    successModal.show();
+                                }
+                            } catch(modalErr) {
+                                console.warn('Modal error:', modalErr);
+                            }
+
+                            // Reset form
+                            form.reset();
+                        } else {
+                            alert(msgError + (data.error || msgGenericError));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert(msgNetworkError);
+                    })
+                    .finally(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>' + msgSubmitBtnOrig;
+                    });
+            });
+        }
+    });
+</script>
+
+{% block extra_css %}
+<style>
+    /* RTL Support */
+    [dir="rtl"] {
+        text-align: right;
+    }
+
+    [dir="rtl"] .me-2,
+    [dir="rtl"] .me-1 {
+        margin-right: 0 !important;
+        margin-left: 0.5rem !important;
+    }
+
+    [dir="rtl"] .ms-4 {
+        margin-left: 0 !important;
+        margin-right: 1.5rem !important;
+    }
+
+    [dir="rtl"] .alert {
+        text-align: right;
+    }
+
+    [dir="rtl"] .form-check-input {
+        float: right;
+        margin-right: -1.5rem;
+        margin-left: 0;
+    }
+
+    [dir="rtl"] .form-check-label {
+        padding-right: 1.5rem;
+        padding-left: 0;
+    }
+
+    /* Fix for flex alignment in RTL */
+    [dir="rtl"] .d-flex {
+        flex-direction: row-reverse;
+    }
+</style>
+{% endblock %}
+{% endblock %}

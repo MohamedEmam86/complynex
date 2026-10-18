@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Add Compliance Requirement') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Add Compliance Requirement') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('governance.compliance_dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> {{ _('Back to Tracker') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <p class="text-muted mb-4">{{ _('Track a new obligation from any regulator — pick one already registered in Regulatory Reporting, or describe it freely if it hasn\'t been registered yet.') }}</p>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Requirement Code') }} <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="requirement_code" required
+                                placeholder="e.g. FRA-GOV-04">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Compliance Area') }}</label>
+                            <input type="text" class="form-control" name="compliance_area"
+                                placeholder="e.g. Board Composition">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Requirement Description') }} <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="requirement_description" rows="3" required></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Regulator') }}</label>
+                            <select class="form-select" name="regulator_id">
+                                <option value="">{{ _('-- Not yet registered --') }}</option>
+                                {% for reg in regulators %}
+                                <option value="{{ reg.id }}">{{ reg.regulator_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                {{ _('New regulator? Add it under') }}
+                                <a href="{{ url_for('reporting.manage_regulator') }}" target="_blank">{{ _('Regulatory Reporting → Regulators') }}</a>,
+                                {{ _('then it will appear here.') }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Source (free text)') }}</label>
+                            <input type="text" class="form-control" name="regulatory_source"
+                                placeholder="{{ _('Used if the regulator above isn\'t selected, e.g. a specific circular or code section') }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Initial Status') }}</label>
+                            <select class="form-select" name="compliance_status">
+                                <option value="NON_COMPLIANT">{{ _('Non-Compliant') }}</option>
+                                <option value="PARTIAL">{{ _('Partial') }}</option>
+                                <option value="IN_PROGRESS">{{ _('In Progress') }}</option>
+                                <option value="COMPLIANT">{{ _('Compliant') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">{{ _('Due Date') }}</label>
+                            <input type="date" class="form-control" name="due_date">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a href="{{ url_for('governance.compliance_dashboard') }}" class="btn btn-outline-secondary px-4">{{ _('Cancel') }}</a>
+                        <button type="submit" class="btn btn-primary px-5">{{ _('Add Requirement') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

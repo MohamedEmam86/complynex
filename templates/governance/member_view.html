@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ member.member_name }} - Profile - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ member.member_name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('governance.dashboard') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left"></i> {{ _('Back to Dashboard') }}
+        </a>
+        <a href="{{ url_for('governance.edit_member', id=member.id) }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-edit"></i> {{ _('Edit Profile') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-user-tie fa-5x text-secondary"></i>
+                </div>
+                <h4 class="fw-bold mb-1">{{ member.member_name }}</h4>
+                <p class="text-muted mb-3">{{ member.role }}</p>
+                <span class="badge {{ 'bg-success' if member.status == 'ACTIVE' else 'bg-secondary' }}">
+                    {{ member.status }}
+                </span>
+                <hr>
+                <div class="text-start">
+                    <p class="small mb-1"><strong>{{ _('Type:') }}</strong> {{ member.member_type }}</p>
+                    <p class="small mb-1"><strong>{{ _('Position:') }}</strong> {{ member.position }}</p>
+                    <p class="small mb-1"><strong>{{ _('Independence:') }}</strong>
+                        <span class="badge {{ 'bg-info' if member.is_independent else 'bg-warning text-dark' }}">
+                            {{ _('Independent') if member.is_independent else _('Non-Independent') }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">{{ _('Contact Information') }}</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><i class="fas fa-envelope text-muted me-2"></i> {{ member.email or '-' }}</p>
+                <p class="mb-0"><i class="fas fa-phone text-muted me-2"></i> {{ member.phone or '-' }}</p>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">{{ _('Support Documents') }}</h6>
+            </div>
+            <div class="card-body">
+                {% if member.document_path %}
+                <a href="{{ url_for('governance.member_document', id=member.id) }}"
+                    class="btn btn-outline-primary btn-sm w-100" target="_blank">
+                    <i class="fas fa-file-pdf me-2"></i> {{ _('View Document') }}
+                </a>
+                {% else %}
+                <p class="text-muted small mb-0">{{ _('No documents uploaded.') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">{{ _('Biography & Expertise') }}</h6>
+            </div>
+            <div class="card-body">
+                <h6 class="fw-bold small text-muted text-uppercase mb-2">{{ _('Expertise Areas') }}</h6>
+                <p>{{ member.expertise_areas or _('Not specified') }}</p>
+
+                <h6 class="fw-bold small text-muted text-uppercase mt-4 mb-2">{{ _('Biography') }}</h6>
+                <p>{{ member.bio or _('No biography provided.') }}</p>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">{{ _('Appointments') }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 text-center border-end">
+                        <small class="text-muted d-block">{{ _('Appointment Date') }}</small>
+                        <span class="fw-bold">{{ member.appointment_date or '-' }}</span>
+                    </div>
+                    <div class="col-6 text-center">
+                        <small class="text-muted d-block">{{ _('Term End Date') }}</small>
+                        <span class="fw-bold text-danger">{{ member.term_end_date or '-' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">{{ _('Committee Memberships') }}</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">{{ _('Committee') }}</th>
+                                <th>{{ _('Role') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in committees %}
+                            <tr>
+                                <td class="ps-4">{{ c.committee_name }}</td>
+                                <td>{{ c.member_role }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center py-3 text-muted">{{ _('No committee memberships.') }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

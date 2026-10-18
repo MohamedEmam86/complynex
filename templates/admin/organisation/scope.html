@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Document Visibility') }} - {{ company_name }} CMS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div>
+    <h1 class="h4 mb-1"><i class="bi bi-eye me-2"></i>{{ _('Document Visibility') }} —
+      {{ user.first_name }} {{ user.last_name }}</h1>
+    <p class="text-muted small mb-0">{{ user.email }} · {{ user.role }}</p>
+  </div>
+  <a href="{{ url_for('admin.list_users') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> {{ _('Back to Users') }}</a>
+</div>
+
+<div class="alert alert-info d-flex">
+  <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+  <div class="small">
+    <strong>{{ _('This is separate from module permissions.') }}</strong><br>
+    {{ _('Module permissions decide whether this user can open Policies at all. These rules decide which documents they see inside it. Both have to allow it.') }}
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header bg-light"><strong>{{ _('Effective access') }}</strong></div>
+      <div class="card-body">
+        {% if resolved_count == 'all' %}
+          <p class="mb-1"><span class="badge bg-danger">{{ _('Entire organisation') }}</span></p>
+          <p class="text-muted small mb-0">{{ _('This user sees every unit. For an administrator that is expected; for anyone else, consider narrowing it.') }}</p>
+        {% elif resolved_count == 0 %}
+          <p class="mb-1"><span class="badge bg-secondary">{{ _('No units') }}</span></p>
+          <p class="text-muted small mb-0">{{ _('With no rules the default is deny — this user sees no scoped records at all.') }}</p>
+        {% else %}
+          <p class="mb-2"><span class="badge bg-success">{{ resolved_count }} {{ _('units visible') }}</span></p>
+        {% endif %}
+        {% if summary %}<ul class="small mb-0 ps-3">
+          {% for line in summary %}<li>{{ line }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-light"><strong>{{ _('Add a rule') }}</strong></div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-2">
+            <label class="form-label small">{{ _('Rule type') }}</label>
+            <select name="rule_type" id="ruleType" class="form-select form-select-sm">
+              <option value="subtree">{{ _('A unit and everything below it') }}</option>
+              <option value="unit_only">{{ _('One unit only') }}</option>
+              <option value="by_code">{{ _('Every unit with a given code (e.g. all Compliance departments)') }}</option>
+              <option value="by_type">{{ _('Every unit of a given type') }}</option>
+            </select>
+          </div>
+          <div class="mb-2 rule-f" data-for="subtree unit_only">
+            <label class="form-label small">{{ _('Unit') }}</label>
+            <select name="org_unit_id" class="form-select form-select-sm">
+              {% for u in units %}<option value="{{ u.id }}">{{ '　' * u.depth }}{{ u.name_en }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="mb-2 rule-f d-none" data-for="by_code">
+            <label class="form-label small">{{ _('Unit code') }}</label>
+            <input name="match_code" class="form-control form-control-sm text-uppercase" placeholder="COMP">
+          </div>
+          <div class="mb-2 rule-f d-none" data-for="by_type">
+            <label class="form-label small">{{ _('Unit type') }}</label>
+            <select name="match_type_id" class="form-select form-select-sm">
+              {% for t in unit_types %}<option value="{{ t.id }}">{{ t.name_en }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="mb-2 rule-f d-none" data-for="by_code by_type">
+            <label class="form-label small">{{ _('Limited to (optional)') }}</label>
+            <select name="root_unit_id" class="form-select form-select-sm">
+              <option value="">{{ _('— anywhere in the tree —') }}</option>
+              {% for u in units %}<option value="{{ u.id }}">{{ '　' * u.depth }}{{ u.name_en }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="form-check mb-3">
+            <input type="checkbox" name="is_exclusion" id="isExc" class="form-check-input">
+            <label class="form-check-label small" for="isExc">
+              {{ _('Exclusion — remove this from what they can see') }}
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm w-100">
+            <i class="bi bi-plus-lg"></i> {{ _('Add rule') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header bg-light"><strong>{{ _('Current rules') }}</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light"><tr>
+            <th>{{ _('Rule') }}</th><th>{{ _('Target') }}</th><th>{{ _('Granted') }}</th><th></th>
+          </tr></thead>
+          <tbody>
+          {% for r in rules %}
+            <tr class="{% if r.is_exclusion %}table-warning{% endif %}">
+              <td>{% if r.is_exclusion %}<span class="badge bg-warning text-dark">{{ _('Except') }}</span> {% endif %}
+                  <span class="small">{{ r.rule_type|replace('_',' ') }}</span></td>
+              <td class="small">
+                {% if r.unit_name %}{{ r.unit_name }}
+                {% elif r.match_code %}<code>{{ r.match_code }}</code>
+                {% elif r.type_name %}{{ r.type_name }}{% endif %}
+                {% if r.root_name %}<span class="text-muted">({{ _('within') }} {{ r.root_name }})</span>{% endif %}
+              </td>
+              <td class="small text-muted">{{ r.granted_at.strftime('%Y-%m-%d') if r.granted_at else '' }}</td>
+              <td class="text-end">
+                <form method="POST" data-confirm="{{ _('Remove this rule?') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="rule_id" value="{{ r.id }}">
+                  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x"></i></button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-4">
+              {{ _('No rules — this user sees no scoped records.') }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var sel = document.getElementById('ruleType');
+  function sync() {
+    document.querySelectorAll('.rule-f').forEach(function (f) {
+      f.classList.toggle('d-none', f.dataset.for.split(' ').indexOf(sel.value) === -1);
+    });
+  }
+  sel.addEventListener('change', sync);
+  sync();
+}());
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5" dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-6">
+            <div class="card shadow border-0">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                        <h2 class="h4">{{ _('Track Your Report') }}</h2>
+                        <p class="text-muted">{{ _('Enter your anonymous tracking code to view the status of your
+                            case.') }}</p>
+                    </div>
+
+                    <form action="{{ url_for('whistleblowing.track_case') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ _('Tracking Code') }}</label>
+                            <input type="text" name="anonymous_code"
+                                class="form-control form-control-lg text-center font-monospace"
+                                placeholder="{{ _('e.g. WB-2026-0025') }}" required>
+                            <div class="form-text mt-2 text-center">
+                                {{ _('This code was provided to you after you submitted your report.') }}
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-search me-2"></i>{{ _('Track Case') }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <p class="mb-2">{{ _('Need to submit a new report?') }}</p>
+                        <a href="{{ url_for('whistleblowing.submit_case') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-paper-plane me-2"></i>{{ _('Submit New Report') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 alert alert-info border-0">
+                <h6><i class="fas fa-info-circle me-2"></i>{{ _('Confidentiality Note') }}</h6>
+                <p class="small mb-0">{{ _('Your tracking code is the only way to access your report anonymously. If you
+                    lose this code, you will not be able to track your case or see updates from the compliance team.')
+                    }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    /* RTL Support */
+    [dir="rtl"] {
+        text-align: right;
+    }
+
+    [dir="rtl"] .me-2 {
+        margin-right: 0 !important;
+        margin-left: 0.5rem !important;
+    }
+
+    [dir="rtl"] .ms-2 {
+        margin-left: 0 !important;
+        margin-right: 0.5rem !important;
+    }
+</style>
+{% endblock %}
+{% endblock %}

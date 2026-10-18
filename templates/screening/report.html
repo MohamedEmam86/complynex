@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AML Screening Report - {{ result.screened_name }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.1.3/bootstrap.min.css') }}" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 11px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            padding: 30px;
+        }
+
+        .report-header {
+            border-bottom: 3px solid #0056b3;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .section-title {
+            background: #f8f9fa;
+            padding: 5px 10px;
+            font-weight: bold;
+            border-left: 4px solid #0056b3;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .label {
+            color: #666;
+            font-weight: 600;
+            width: 120px;
+            display: inline-block;
+        }
+
+        .match-item {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+
+        .match-score {
+            float: right;
+            font-size: 16px;
+            font-weight: bold;
+            color: #0056b3;
+        }
+
+        .risk-badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        .risk-critical {
+            background-color: #dc3545;
+        }
+
+        .risk-high {
+            background-color: #fd7e14;
+        }
+
+        .risk-low {
+            background-color: #198754;
+        }
+
+        .score-box {
+            background: #f0f4f8;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+
+        .arabic-text {
+            font-family: 'Traditional Arabic', serif;
+            font-size: 1.2em;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            .container {
+                width: 100%;
+                max-width: none;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="report-header d-flex justify-content-between align-items-end">
+            <div>
+                <h1 class="h3 text-primary mb-0">{{ _('AML Compliance Screening Report') }}</h1>
+                <p class="text-muted mb-0">{{ _('ComplyNex Screening Report') }}</p>
+            </div>
+            <div class="text-end">
+                <p class="mb-0"><strong>{{ _('Report ID:') }}</strong> {{ result.id }}</p>
+                <p class="mb-0"><strong>{{ _('Generated:') }}</strong> {{ result.created_at }}</p>
+            </div>
+        </div>
+
+        <div class="section-title">{{ _('Case Information') }}</div>
+        <div class="info-grid mb-4">
+            <div><span class="label">{{ _('Screened Name:') }}</span> <span class="fw-bold">{{ result.screened_name }}</span></div>
+            <div><span class="label">{{ _('Screening Type:') }}</span> {{ result.screening_type }}</div>
+            <div><span class="label">{{ _('Date of Birth:') }}</span> {{ result.screened_dob or 'N/A' }}</div>
+            <div><span class="label">{{ _('Status:') }}</span>
+                <span
+                    class="fw-bold {% if result.screening_result == 'CLEAR' %}text-success{% else %}text-danger{% endif %}">
+                    {{ result.screening_result }}
+                    {% if result.status and result.status != 'PENDING' %}
+                    &nbsp;→&nbsp;
+                    <span style="color: {% if result.status == 'FALSE_POSITIVE' %}green{% else %}red{% endif %}; font-weight:bold;">
+                        {% if result.status == 'FALSE_POSITIVE' %}✅ CLEARED (False Positive){% elif result.status == 'TRUE_HIT' %}🚨 CONFIRMED HIT{% else %}{{ result.status }}{% endif %}
+                    </span>
+                    {% endif %}
+                </span>
+            </div>
+            <div><span class="label">{{ _('Highest Score:') }}</span> {{ "%.1f"|format(result.highest_match_score) }}%</div>
+            <div><span class="label">{{ _('Reference:') }}</span> {{ result.id }}</div>
+        </div>
+
+        <div
+            class="alert {% if result.screening_result == 'CLEAR' %}alert-success{% else %}alert-warning{% endif %} py-2">
+            <strong>{{ _('Compliance Executive Summary:') }}</strong>
+            {% if result.screening_result == 'CLEAR' %}
+            Subject does not appear on any monitored international sanctions or PEP lists.
+            {% else %}
+            Potential match detected. Manual verification is required before proceeding with the transaction or
+            onboarding.
+            {% endif %}
+        </div>
+
+        <div class="section-title">Detailed Findings ({{ matches|length }} Results)</div>
+
+        {% if matches %}
+        {% for match in matches %}
+        <div class="match-item">
+            <div class="match-score">{{ "%.1f"|format(match.match_score) }}%</div>
+            <div class="h6 mb-1">
+                {{ match.full_name }}
+                {% if match.watchlist_name_ar %}
+                <span class="arabic-text ms-2" dir="rtl">{{ match.watchlist_name_ar }}</span>
+                {% endif %}
+            </div>
+
+            <div class="mb-2">
+                <span
+                    class="risk-badge {% if match.risk_level == 'CRITICAL' %}risk-critical{% else %}risk-high{% endif %}">
+                    {{ match.risk_level }} RISK
+                </span>
+                <span class="ms-2 text-muted">|
+                    {% if match.dataset == 'wikidata' %}Egypt PEP - Wikidata (via OpenSanctions)
+                    {% elif match.dataset == 'opensanctions_peps' %}Global PEP Database
+                    {% elif match.source == 'opensanctions' %}OpenSanctions (Aggregated)
+                    {% elif match.source == 'un_consolidated' %}UN Security Council
+                    {% elif match.source == 'ofac_sdn' %}OFAC SDN List
+                    {% elif match.source == 'eu_sanctions' %}EU Financial Sanctions
+                    {% elif match.source == 'uk_hmt' %}UK HMT Consolidated
+                    {% elif match.source == 'emlcu_egypt' %}EMLCU Egyptian Terrorist List
+                    {% elif match.source == 'open_sanctions_pep_eg' %}Egypt PEP - OpenSanctions
+                    {% elif match.source == 'wikidata_pep_eg' %}Egypt PEP - Wikidata
+                    {% else %}{{ match.source_name or match.dataset or match.source }}{% endif %}
+                    | {{ match.list_type }}</span>
+            </div>
+
+            <div class="row small mb-2 border-top pt-2">
+                <div class="col-6">
+                    <div><span class="label">{{ _('Entity Type:') }}</span>
+                        <span
+                            class="badge {% if match.entity_type == 'ENTITY' %}bg-info{% else %}bg-secondary{% endif %}"
+                            style="color: #333; border: 1px solid #ccc; font-weight: normal;">
+                            {{ match.entity_type or 'INDIVIDUAL' }}
+                        </span>
+                    </div>
+                    <div><span class="label">{{ _('Nationality:') }}</span> {{ match.nationality or 'N/A' }}</div>
+                    <div><span class="label">{{ _('DOB:') }}</span> {{ match.date_of_birth or 'N/A' }}</div>
+                </div>
+                <div class="col-6">
+                    <div><span class="label">{{ _('List ID:') }}</span> <code>{{ match.watchlist_id }}</code></div>
+                    <div><span class="label">{{ _('Source:') }}</span>
+                        {% if match.source_url and match.source_url.startswith('http') %}
+                        <a href="{{ match.source_url }}" target="_blank">{{ _('External Link') }}</a>
+                        {% elif match.source_url and match.source in ['opensanctions', 'opensanctions_pep'] %}
+                        <a href="https://www.opensanctions.org/entities/{{ match.source_url }}/" target="_blank">{{ _('External Link') }}</a>
+                        {% else %}
+                        <span class="text-muted">{{ _('Not Available') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if match.pep_position %}
+            <div class="mb-2 p-1 px-2 border-start border-3 border-primary bg-light">
+                <strong>{{ _('Position:') }}</strong> {{ match.pep_position }}
+            </div>
+            {% endif %}
+
+            {% if match.details %}
+            <div class="bg-light p-2 rounded small">
+                {% if match.details is mapping %}
+                {% if match.details.program %}<div><strong>{{ _('Program:') }}</strong> {{ match.details.program }}</div>{% endif
+                %}
+                {% if match.details.reason %}<div><strong>{{ _('Reason:') }}</strong> {{ match.details.reason }}</div>{% endif %}
+                {% if match.details.notes %}<div><strong>{{ _('Notes:') }}</strong> {{ match.details.notes }}</div>{% endif %}
+                {% elif match.details is string %}
+                {# Most watchlist sources: a 1-2 line bio/notability snippet already
+                   extracted server-side (complynex_engine.py's extract_bio_snippet). #}
+                <div><strong>{{ _('About:') }}</strong> {{ match.details }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if match.score_breakdown %}
+            <div class="score-box">
+                {{ _('ENSEMBLE MATCHING DETAILS:') }}
+                <br>Fuzzy: {{ "%.2f"|format(match.score_breakdown.fuzzy_ratio or 0) }} | JW: {{
+                "%.2f"|format(match.score_breakdown.jaro_winkler or 0) }} | Phonetic: {{ match.score_breakdown.phonetic
+                or 0 }} |
+                DOB-Adj: {{ match.score_breakdown.dob_adj or 0 }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="text-success fw-bold">{{ _('No records found matching the criteria.') }}</p>
+        {% endif %}
+
+
+        {% if adverse_hits %}
+        <div class="section-title" style="margin-top:30px; font-size:16px; font-weight:bold; border-bottom:2px solid #333; padding-bottom:6px;">
+            Adverse Media Findings ({{ adverse_hits|length }} Articles)
+        </div>
+        <table class="matches-table" style="width:100%; border-collapse:collapse; margin-top:15px; font-size:12px;">
+            <thead>
+                <tr style="background:#333; color:white;">
+                    <th style="padding:8px; text-align:left; width:4%;">#</th>
+                    <th style="padding:8px; text-align:left; width:42%;">{{ _('Title / Description') }}</th>
+                    <th style="padding:8px; text-align:left; width:15%;">{{ _('Source') }}</th>
+                    <th style="padding:8px; text-align:left; width:15%;">{{ _('Published') }}</th>
+                    <th style="padding:8px; text-align:center; width:10%;">{{ _('Risk Score') }}</th>
+                    <th style="padding:8px; text-align:left; width:14%;">{{ _('Keywords') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for hit in adverse_hits %}
+            <tr style="border-bottom:1px solid #ddd; {% if loop.index is odd %}background:#f9f9f9;{% endif %}">
+                <td style="padding:6px;">{{ loop.index }}</td>
+                <td style="padding:6px;">
+                    <strong>{{ hit.title }}</strong>
+                    {% if hit.description %}<br><span style="color:#555;">{{ hit.description[:150] }}</span>{% endif %}
+                </td>
+                <td style="padding:6px;">{{ hit.source }}</td>
+                <td style="padding:6px;">{{ (hit.published_at or hit.published or '')[:10] }}</td>
+                <td style="padding:6px; text-align:center;">
+                    <span style="background:{% if hit.risk_score >= 80 %}#dc3545{% elif hit.risk_score >= 40 %}#ffc107{% else %}#28a745{% endif %}; color:white; padding:2px 6px; border-radius:3px;">
+                        {{ hit.risk_score|int }}%
+                    </span>
+                </td>
+                <td style="padding:6px; font-size:11px;">{{ hit.matched_keywords[:3]|join(', ') if hit.matched_keywords else '' }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        <div class="mt-4 p-3 border rounded text-center text-muted small">
+            <p class="mb-0"><strong>{{ _('Notice:') }}</strong> {{ _('This report is for internal compliance use only. Scores are
+                generated using fuzzy logic and phonetic algorithms. A "Confirm Hit" requires manual validation against
+                KYC documents.') }}</p>
+        </div>
+
+        <div class="no-print mt-5 text-center">
+            <button data-action="print" class="btn btn-primary btn-lg px-5">{{ _('Print Report / Save as PDF') }}</button>
+        </div>
+    </div>
+
+<script src="{{ url_for('static', filename='js/csp_helpers.js') }}"></script>
+</body>
+
+</html>

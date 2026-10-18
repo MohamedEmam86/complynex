@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-file-invoice text-primary"></i> Compliance Reports</h1>
+        <div>
+            <a href="{{ url_for('screening.generate_sar') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Generate New SAR
+            </a>
+            <a href="{{ url_for('screening.dashboard') }}" class="btn btn-secondary ms-2">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="row">
+        {# Summary Cards #}
+        <div class="col-md-4 mb-4">
+            <div class="card bg-danger text-white shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase small">Pending SARs</h6>
+                            <h2 class="fw-bold">12</h2>
+                        </div>
+                        <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card bg-success text-white shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase small">Submitted (Yearly)</h6>
+                            <h2 class="fw-bold">145</h2>
+                        </div>
+                        <i class="fas fa-check-double fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card bg-info text-white shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase small">Next Regulatory Audit</h6>
+                            <h2 class="fw-bold">15 Days</h2>
+                        </div>
+                        <i class="fas fa-calendar-alt fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Recent Activity #}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="m-0 font-weight-bold text-dark">📋 RECENT REPORTING ACTIVITY</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Report Type</th>
+                            <th>Status</th>
+                            <th>Reference</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2026-02-10</td>
+                            <td><span class="badge bg-danger">SAR</span> Suspicious Activity Report</td>
+                            <td><span class="badge bg-warning text-dark">DRAFT</span></td>
+                            <td class="small">SAR-2026-0034</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                <button class="btn btn-sm btn-outline-secondary">Preview</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2026-02-05</td>
+                            <td><span class="badge bg-info text-dark">KYC</span> Periodic Review Summary</td>
+                            <td><span class="badge bg-success">SUBMITTED</span></td>
+                            <td class="small">REG-CBE-9921</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary">Download</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

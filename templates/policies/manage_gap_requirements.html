@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Manage Gap Analysis Requirements') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1 fw-bold"><i class="bi bi-gear text-primary me-2"></i>{{ _('Manage Compliance
+                    Requirements') }}</h1>
+                <p class="text-muted">{{ _('Define the set of policies required for CBE regulatory compliance.') }}</p>
+            </div>
+            <a href="{{ url_for('policies.gap_analysis') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>{{ _('Back to Gap Analysis') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Add New Requirement -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0 text-primary">{{ _('Add Required Policy') }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('policies.manage_gap_requirements') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="add">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">{{ _('Policy Name (EN) *') }}</label>
+                            <input type="text" name="policy_name_en" class="form-control" required
+                                placeholder="{{ _('e.g. Anti-Bribery Policy') }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">{{ _('Policy Name (AR)') }}</label>
+                            <input type="text" name="policy_name_ar" class="form-control"
+                                placeholder="سياسة مكافحة الرشوة">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">{{ _('Regulatory Reference') }}</label>
+                            <input type="text" name="regulatory_reference" class="form-control"
+                                placeholder="{{ _('e.g. CBE Circular 2023') }}">
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_mandatory" id="is_mandatory"
+                                    checked>
+                                <label class="form-check-label fw-bold" for="is_mandatory">{{ _('Mandatory Requirement')
+                                    }}</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">{{ _('Description (EN)') }}</label>
+                            <textarea name="description_en" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="d-grid shadow-sm">
+                            <button type="submit" class="btn btn-primary fw-bold">
+                                <i class="bi bi-plus-lg me-2"></i>{{ _('Save Requirement') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- List Requirements -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">{{ _('Policy Name') }}</th>
+                                    <th>{{ _('Reference') }}</th>
+                                    <th>{{ _('Priority') }}</th>
+                                    <th class="text-end pe-4">{{ _('Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in requirements %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold">{{ req.policy_name_en if session.get('lang', 'en') == 'en'
+                                            else req.policy_name_ar or req.policy_name_en }}</div>
+                                        <div class="small text-muted">{{ (req.description_en or '')[:60] }}...</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">{{ req.regulatory_reference or
+                                            'N/A' }}</span>
+                                    </td>
+                                    <td>
+                                        {% if req.is_mandatory %}
+                                        <span class="badge bg-danger text-white">{{ _('Mandatory') }}</span>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark">{{ _('Recommended') }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group shadow-sm">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                data-bs-toggle="modal" data-bs-target="#editModal{{ req.id }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal{{ req.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Edit Modal -->
+                                        <div class="modal fade" id="editModal{{ req.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content rounded-4 border-0">
+                                                    <div class="modal-header border-0">
+                                                        <h5 class="modal-title fw-bold">{{ _('Edit Requirement') }}</h5>
+                                                        <button type="button" class="btn-close"
+                                                            data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <div class="modal-body text-start">
+                                                            <input type="hidden" name="action" value="update">
+                                                            <input type="hidden" name="id" value="{{ req.id }}">
+                                                            <div class="mb-3">
+                                                                <label class="form-label small fw-bold">{{ _('Policy
+                                                                    Name (EN) *') }}</label>
+                                                                <input type="text" name="policy_name_en"
+                                                                    class="form-control" required
+                                                                    value="{{ req.policy_name_en }}">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label small fw-bold">{{ _('Policy
+                                                                    Name (AR)') }}</label>
+                                                                <input type="text" name="policy_name_ar"
+                                                                    class="form-control"
+                                                                    value="{{ req.policy_name_ar or '' }}">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label small fw-bold">{{ _('Regulatory
+                                                                    Reference') }}</label>
+                                                                <input type="text" name="regulatory_reference"
+                                                                    class="form-control"
+                                                                    value="{{ req.regulatory_reference or '' }}">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <div class="form-check form-switch">
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="is_mandatory"
+                                                                        id="edit_is_mandatory{{ req.id }}" {% if
+                                                                        req.is_mandatory %}checked{% endif %}>
+                                                                    <label class="form-check-label fw-bold"
+                                                                        for="edit_is_mandatory{{ req.id }}">{{
+                                                                        _('Mandatory Requirement') }}</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer border-0">
+                                                            <button type="button"
+                                                                class="btn btn-light rounded-pill px-4"
+                                                                data-bs-modal="modal">{{ _('Cancel') }}</button>
+                                                            <button type="submit"
+                                                                class="btn btn-primary rounded-pill px-4 fw-bold">{{
+                                                                _('Update') }}</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="deleteModal{{ req.id }}" tabindex="-1">
+                                            <div class="modal-dialog modal-sm">
+                                                <div class="modal-content rounded-4 border-0">
+                                                    <div class="modal-body text-center py-4">
+                                                        <i
+                                                            class="bi bi-exclamation-triangle text-danger display-4 mb-3"></i>
+                                                        <h5 class="fw-bold">{{ _('Are you sure?') }}</h5>
+                                                        <p class="text-muted small">{{ _('This will remove this requirement
+                                                            from the gap analysis report.') }}</p>
+                                                        <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                            <input type="hidden" name="action" value="delete">
+                                                            <input type="hidden" name="id" value="{{ req.id }}">
+                                                            <div class="d-flex gap-2">
+                                                                <button type="button"
+                                                                    class="btn btn-light w-100 rounded-pill"
+                                                                    data-bs-dismiss="modal">No</button>
+                                                                <button type="submit"
+                                                                    class="btn btn-danger w-100 rounded-pill">{{ _('Yes,
+                                                                    Delete') }}</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

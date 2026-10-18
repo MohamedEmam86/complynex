@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Internal Audit Dashboard') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3><i class="bi bi-clipboard2-check me-2"></i>{{ _('Internal Audit Dashboard') }}</h3>
+        {% if current_user.can_edit('internal_audit') %}
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('internal_audit.projects_new') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>{{ _('New Engagement') }}</a>
+            <a href="{{ url_for('internal_audit.universe_new') }}" class="btn btn-outline-secondary"><i class="bi bi-diagram-3 me-1"></i>{{ _('Add Auditable Area') }}</a>
+            <a href="{{ url_for('internal_audit.plans_new') }}" class="btn btn-outline-secondary"><i class="bi bi-calendar-check me-1"></i>{{ _('New Annual Plan') }}</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center"><div class="card-body">
+                <h2>{{ open_findings | length }}</h2><p class="text-muted mb-0">{{ _('Open Findings') }}</p>
+            </div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-danger"><div class="card-body">
+                <h2 class="text-danger">{{ overdue | length }}</h2><p class="text-muted mb-0">{{ _('Overdue Findings') }}</p>
+            </div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center"><div class="card-body">
+                <h2>{{ active_projects | length }}</h2><p class="text-muted mb-0">{{ _('Engagements in Fieldwork') }}</p>
+            </div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center"><div class="card-body">
+                <h2>{{ all_projects | length }}</h2><p class="text-muted mb-0">{{ _('Total Engagements') }}</p>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header"><strong>{{ _('Open Findings by Severity') }}</strong></div>
+                <div class="card-body">
+                    {% for sev, color in [('CRITICAL', 'danger'), ('HIGH', 'warning'), ('MEDIUM', 'info'), ('LOW', 'secondary')] %}
+                    {% set count = severity_breakdown.get(sev, 0) %}
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>{{ sev | title }}</span><span>{{ count }}</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 6px;">
+                        <div class="progress-bar bg-{{ color }}" style="width: {{ (100 * count / open_findings|length) if open_findings|length else 0 }}%"></div>
+                    </div>
+                    {% endfor %}
+                    {% if not open_findings %}<p class="text-muted small mb-0">{{ _('No open findings.') }}</p>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header"><strong>{{ _('Engagement Pipeline') }}</strong></div>
+                <div class="card-body">
+                    {% for status, count in pipeline.items() %}
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>{{ status.replace('_', ' ') | title }}</span><span>{{ count }}</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 6px;">
+                        <div class="progress-bar bg-primary" style="width: {{ (100 * count / all_projects|length) if all_projects|length else 0 }}%"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header"><strong>{{ _('Audit Plan Coverage') }}</strong>
+                    {% if current_plan %}<span class="text-muted small">{{ current_plan.plan_year }}</span>{% endif %}
+                </div>
+                <div class="card-body">
+                    {% if current_plan %}
+                    <p class="mb-1 small">{{ plan_coverage.covered_areas }} {{ _('of') }} {{ plan_coverage.total_areas }} {{ _('auditable areas scheduled') }}</p>
+                    <div class="progress mb-2" style="height: 10px;">
+                        <div class="progress-bar bg-success" style="width: {{ plan_coverage.pct }}%"></div>
+                    </div>
+                    <p class="text-muted small mb-0">{{ plan_coverage.pct }}% {{ _('coverage') }} — <span class="badge {{ 'bg-success' if current_plan.status == 'APPROVED' else 'bg-secondary' }}">{{ current_plan.status }}</span></p>
+                    {% else %}
+                    <p class="text-muted small mb-2">{{ _('No annual plan created yet for the current year.') }}</p>
+                    {% if current_user.can_edit('internal_audit') %}
+                    <a href="{{ url_for('internal_audit.plans_new') }}" class="btn btn-sm btn-outline-primary">{{ _('Create Plan') }}</a>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if upcoming_projects %}
+    <div class="card mb-4">
+        <div class="card-header"><strong>{{ _('Upcoming Planned Engagements') }}</strong></div>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr><th>{{ _('#') }}</th><th>{{ _('Name') }}</th><th>{{ _('Planned Start') }}</th><th></th></tr></thead>
+                <tbody>
+                {% for p in upcoming_projects %}
+                <tr>
+                    <td>{{ p.audit_number }}</td><td>{{ p.audit_name }}</td><td>{{ p.planned_start_date }}</td>
+                    <td><a href="{{ url_for('internal_audit.project_detail', project_id=p.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('View') }}</a></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>{{ _('Open Findings') }}</strong>
+            <a href="{{ url_for('internal_audit.findings') }}" class="small">{{ _('View all findings') }} &rarr;</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>{{ _('#') }}</th><th>{{ _('Title') }}</th><th>{{ _('Severity') }}</th><th>{{ _('Target Date') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+                <tbody>
+                {% for f in open_findings %}
+                    <tr>
+                        <td>{{ f.finding_number }}</td><td>{{ f.finding_title }}</td>
+                        <td><span class="badge {{ 'bg-danger' if f.severity == 'CRITICAL' else ('bg-warning text-dark' if f.severity == 'HIGH' else 'bg-secondary') }}">{{ f.severity }}</span></td>
+                        <td>{{ f.target_date or '-' }}</td><td>{{ f.status.replace('_', ' ') }}</td>
+                        <td><a href="{{ url_for('internal_audit.finding_detail', finding_id=f.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('View') }}</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">{{ _('No open findings.') }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

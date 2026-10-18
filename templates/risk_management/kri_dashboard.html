@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('KRI Dashboard') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>{{ _('Key Risk Indicators') }}</h3>
+        {% if current_user.can_edit('risk_management') %}
+        <a href="{{ url_for('risk_management.kris_new') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>{{ _('New KRI') }}</a>
+        {% endif %}
+    </div>
+    <div class="row">
+        {% for k in kris %}
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between">
+                    <strong>{{ k.kri_name }}</strong>
+                    {% set latest = histories[k.id][0] if histories[k.id] else none %}
+                    {% if latest %}
+                    <span class="badge {{ 'bg-danger' if latest.status == 'RED' else ('bg-warning text-dark' if latest.status == 'AMBER' else 'bg-success') }}">{{ latest.status }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-2">{{ k.kri_description or '' }}</p>
+                    {% set linked_risk = risks_by_id.get(k.risk_id) %}
+                    {% if linked_risk %}
+                    <p class="small mb-2"><i class="bi bi-link-45deg"></i> <a href="{{ url_for('risk_management.register_detail', risk_pk=linked_risk.id) }}">{{ linked_risk.risk_id }} - {{ linked_risk.risk_title }}</a></p>
+                    {% endif %}
+                    <p class="mb-1">{{ _('Latest') }}: <strong>{{ latest.actual_value if latest else '-' }} {{ k.unit_of_measure or '' }}</strong></p>
+                    <p class="mb-1 small">{{ _('Target') }}: {{ k.target_value or '-' }} | {{ _('Warning') }}: {{ k.warning_threshold or '-' }} | {{ _('Breach') }}: {{ k.breach_threshold or '-' }}</p>
+                    <ul class="list-unstyled small mb-2">
+                        {% for m in histories[k.id][:5] %}
+                        <li>{{ m.measurement_date }}: {{ m.actual_value }} <span class="badge {{ 'bg-danger' if m.status == 'RED' else ('bg-warning text-dark' if m.status == 'AMBER' else 'bg-success') }}">{{ m.status }}</span></li>
+                        {% endfor %}
+                    </ul>
+                    {% if current_user.can_edit('risk_management') %}
+                    <a href="{{ url_for('risk_management.kris_record_measurement', kri_id=k.id) }}" class="btn btn-sm btn-outline-primary">{{ _('Record Measurement') }}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12"><div class="card"><div class="card-body text-center text-muted py-4">{{ _('No KRIs defined yet.') }}</div></div></div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('Assessment', 'الاختبار') }} · {{ L(c, 'title') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<p class="ia-crumb"><a href="{{ url_for('academy.course', slug=c.slug) }}">{{ L(c, 'title') }}</a> / {{ t('Assessment', 'الاختبار') }}</p>
+<h1>{{ t('Assessment', 'الاختبار') }}</h1>
+<p class="ia-muted">{{ questions|length }} {{ t('questions · pass mark', 'سؤال · درجة النجاح') }} {{ c.pass_mark }}% · {{ t('answer every question', 'أجب عن كل الأسئلة') }}</p>
+<form method="post" class="ia-quiz" id="iaQuiz">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="attempt_id" value="{{ attempt.id }}">
+  {% for q in questions %}
+  {% set opts = (q.options_ar if ar and q.options_ar else q.options_en) %}
+  <fieldset class="ia-q">
+    <legend><span>{{ loop.index }}.</span> {{ L(q, 'text') }}</legend>
+    {% for o in opts %}
+    <label class="ia-opt"><input type="radio" name="q{{ q.id }}" value="{{ loop.index0 }}" required> <span>{{ o }}</span></label>
+    {% endfor %}
+  </fieldset>
+  {% endfor %}
+  <p class="ia-small ia-muted" id="iaQuizCount" data-total="{{ questions|length }}"></p>
+  <button class="ia-btn">{{ t('Submit answers', 'إرسال الإجابات') }}</button>
+</form>
+{% endblock %}

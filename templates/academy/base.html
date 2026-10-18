@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="{{ 'ar' if ar else 'en' }}" dir="{{ 'rtl' if ar else 'ltr' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ t('Integrys Academy', 'أكاديمية إنتيجريس') }}{% endblock %} · Integrys Consulting</title>
+  <meta name="description" content="{{ t('Free compliance training from Integrys Consulting — AML/CFT, governance and risk, grounded in Egyptian regulation.', 'تدريب مجاني في الالتزام من إنتيجريس للاستشارات — مكافحة غسل الأموال والحوكمة والمخاطر وفق التنظيم المصري.') }}">
+  <meta name="robots" content="{% block robots %}index, follow{% endblock %}">
+  <link rel="icon" href="{{ url_for('static', filename='images/academy/integrys-emblem-64.png') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/academy.css') }}?v=4">
+</head>
+<body class="ia {% block body_class %}{% endblock %}">
+<header class="ia-top">
+  <div class="ia-wrap ia-top__in">
+    <a class="ia-brand" href="https://integrysconsult.com/">
+      <img src="{{ url_for('static', filename='images/academy/integrys-emblem-128.png') }}" alt="Integrys" width="40" height="40">
+      <span><b>Integrys Consulting</b><small>{{ t('Academy', 'الأكاديمية') }}</small></span>
+    </a>
+    <nav class="ia-nav">
+      <a href="{{ url_for('academy.home') }}">{{ t('Courses', 'الدورات') }}</a>
+      <a href="{{ url_for('academy.verify_lookup') }}">{{ t('Verify a certificate', 'تحقق من شهادة') }}</a>
+      {% if learner and learner.status == 'active' %}
+        <a href="{{ url_for('academy.dashboard') }}">{{ t('My learning', 'تعلّمي') }}</a>
+        <form method="post" action="{{ url_for('academy.logout') }}" class="ia-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="ia-link">{{ t('Sign out', 'خروج') }}</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('academy.login') }}">{{ t('Sign in', 'دخول') }}</a>
+        <a class="ia-btn ia-btn--sm" href="{{ url_for('academy.register') }}">{{ t('Register free', 'سجّل مجانًا') }}</a>
+      {% endif %}
+      <a class="ia-lang" href="{{ url_for('academy.set_lang', code='en' if ar else 'ar', next=request.path) }}">{{ 'English' if ar else 'العربية' }}</a>
+    </nav>
+  </div>
+</header>
+
+<main class="ia-main">
+  <div class="ia-wrap">
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% for cat, m in msgs %}<div class="ia-alert ia-alert--{{ cat }}">{{ m }}</div>{% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+<footer class="ia-foot">
+  <div class="ia-wrap ia-foot__in">
+    <div>
+      <b>Integrys Consulting</b> · إنتيجريس للاستشارات<br>
+      <span>{{ t('Governance · Risk · Compliance · Financial Crime — Cairo, Egypt', 'الحوكمة · المخاطر · الالتزام · الجرائم المالية — القاهرة، مصر') }}</span>
+    </div>
+    <div class="ia-foot__links">
+      <a href="https://integrysconsult.com/">integrysconsult.com</a>
+      <a href="{{ url_for('academy.privacy_notice') }}">{{ t('Academy privacy notice', 'إشعار الخصوصية') }}</a>
+      <span class="ia-powered">{{ t('Powered by', 'مدعوم من') }} <b>ComplyNex</b></span>
+    </div>
+  </div>
+</footer>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/academy.js') }}?v=4"></script>
+</body>
+</html>

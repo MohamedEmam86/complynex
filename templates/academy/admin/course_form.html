@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('New course') if is_new else c.title_en }}{% endblock %}
+{% block content %}
+{% set page_title = _('New course') if is_new else _('Edit course') %}
+{% include 'academy/admin/_nav.html' %}
+<form method="post" class="card"><div class="card-body">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label fw-bold">{{ _('Provider — whose course is this?') }}</label>
+      <select name="provider" class="form-select">
+        <option value="integrys" {{ 'selected' if c.provider == 'integrys' }}>Integrys Consulting</option>
+        <option value="complynex" {{ 'selected' if c.provider == 'complynex' }}>ComplyNex</option>
+      </select>
+      <div class="form-text">{{ _('Sets the brand and signatures on the certificate, and the "by …" label learners see.') }}</div>
+    </div>
+    <div class="col-md-4"><label class="form-label fw-bold">{{ _('Level') }}</label>
+      <select name="level" class="form-select">{% for lv in ['Foundation','Intermediate','Advanced'] %}<option {{ 'selected' if c.level == lv }}>{{ lv }}</option>{% endfor %}</select></div>
+    <div class="col-md-4"><label class="form-label fw-bold">{{ _('Duration (minutes)') }}</label>
+      <input type="number" name="duration_minutes" class="form-control" min="5" max="600" value="{{ c.duration_minutes }}"></div>
+
+    <div class="col-md-6"><label class="form-label fw-bold">{{ _('Title (English)') }} *</label>
+      <input name="title_en" class="form-control" required maxlength="200" value="{{ c.title_en or '' }}">
+      <div class="form-text">{{ _('Printed on the certificate.') }}</div></div>
+    <div class="col-md-6"><label class="form-label fw-bold">{{ _('Title (Arabic)') }}</label>
+      <input name="title_ar" class="form-control" dir="rtl" maxlength="200" value="{{ c.title_ar or '' }}"></div>
+    <div class="col-md-6"><label class="form-label fw-bold">{{ _('Summary (English)') }}</label>
+      <textarea name="summary_en" class="form-control" rows="3" maxlength="1000">{{ c.summary_en or '' }}</textarea></div>
+    <div class="col-md-6"><label class="form-label fw-bold">{{ _('Summary (Arabic)') }}</label>
+      <textarea name="summary_ar" class="form-control" rows="3" dir="rtl" maxlength="1000">{{ c.summary_ar or '' }}</textarea></div>
+  </div>
+
+  <h3 class="h6 mt-4 mb-2 border-bottom pb-1">{{ _('Assessment & certificate') }}</h3>
+  <div class="row g-3">
+    <div class="col-md-3"><label class="form-label fw-bold">{{ _('Pass mark') ~ ' (%)' }}</label>
+      <input type="number" name="pass_mark" class="form-control" min="40" max="100" value="{{ c.pass_mark }}"></div>
+    <div class="col-md-3"><label class="form-label fw-bold">{{ _('Questions per attempt') }}</label>
+      <input type="number" name="questions_per_attempt" class="form-control" min="3" max="50" value="{{ c.questions_per_attempt }}">
+      <div class="form-text">{{ _('Drawn at random from the question bank.') }}</div></div>
+    <div class="col-md-3"><label class="form-label fw-bold">{{ _('Retry wait after a fail (minutes)') }}</label>
+      <input type="number" name="retry_cooldown_minutes" class="form-control" min="0" max="1440" value="{{ c.retry_cooldown_minutes }}"></div>
+    <div class="col-md-3"><label class="form-label fw-bold">{{ _('Certificate validity (months)') }}</label>
+      <input type="number" name="validity_months" class="form-control" min="0" max="120" value="{{ c.validity_months }}">
+      <div class="form-text">{{ _('0 = never expires.') }}</div></div>
+  </div>
+  <div class="mt-4 d-flex gap-2">
+    <button class="btn btn-primary">{{ _('Save course') }}</button>
+    <a href="{{ url_for('academy_admin.courses') if is_new else url_for('academy_admin.course', cid=c.id) }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+  </div>
+</div></form>
+{% endblock %}

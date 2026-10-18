@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Event Routing Rules') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">{{ _('Event Routing Rules') }}</h4>
+        <a href="{{ url_for('events.event_log') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-list-ul me-1"></i>{{ _('Event Log') }}
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{{ _('Name') }}</th>
+                        <th>{{ _('Event Pattern') }}</th>
+                        <th>{{ _('Action') }}</th>
+                        <th>{{ _('Priority') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rules %}
+                    <tr>
+                        <td>
+                            {{ r.name }}
+                            {% if r.description %}<div class="small text-muted">{{ r.description }}</div>{% endif %}
+                        </td>
+                        <td><code>{{ r.event_type_pattern }}</code></td>
+                        <td><span class="badge bg-info-subtle text-info border">{{ r.action_type }}</span></td>
+                        <td>{{ r.priority }}</td>
+                        <td>
+                            {% if r.enabled %}
+                            <span class="badge bg-success-subtle text-success border">{{ _('Enabled') }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border">{{ _('Disabled') }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <form method="post" action="{{ url_for('events.toggle_rule', rule_id=r.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    {{ _('Disable') if r.enabled else _('Enable') }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-5">{{ _('No routing rules configured.') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Compare Versions') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1 fw-bold"><i class="bi bi-intersect text-primary me-2"></i>{{ _('Compare Policy
+                    Versions') }}</h1>
+                <p class="text-muted">{{ _('Visual comparison of changes between two versions of the policy.') }}</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-light" data-action="back">
+                    <i class="bi bi-arrow-left me-2"></i>{{ _('Back') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">{{ _('Version') }} {{ v1.version_number }}</h5>
+                        <span class="badge bg-secondary rounded-pill">{{ v1.created_at }}</span>
+                    </div>
+                </div>
+                <div class="card-body p-4 bg-light bg-opacity-50">
+                    <div class="p-3 bg-white border rounded border-danger border-opacity-25"
+                        style="min-height: 400px; white-space: pre-wrap;">
+                        {{ v1.content }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">{{ _('Version') }} {{ v2.version_number }}</h5>
+                        <span class="badge bg-primary rounded-pill">{{ v2.created_at }}</span>
+                    </div>
+                </div>
+                <div class="card-body p-4 bg-light bg-opacity-50">
+                    <div class="p-3 bg-white border rounded border-success border-opacity-25"
+                        style="min-height: 400px; white-space: pre-wrap;">
+                        {{ v2.content }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">{{ _('Change Highlights') }}</h5>
+                    <div class="alert alert-info border-0 shadow-none mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        {{ v2.change_summary or _('No summary provided for this version change.') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="{{ _('breadcrumb') }}">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('whistleblowing.dashboard') }}">{{ _('Dashboard')
+                            }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ _('Case') }} #{{ case.case_number }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Case Overview -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ _('Case Details') }}</h5>
+                    <span
+                        class="badge bg-{{ 'primary' if case.status == 'SUBMITTED' else 'info' if case.status == 'UNDER_REVIEW' else 'success' if case.status == 'RESOLVED' else 'secondary' }}">
+                        {{ _(case.status) }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ case.title }}</h4>
+                    <p class="card-text">{{ case.description }}</p>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><strong>{{ _('Type') }}:</strong> {{ case.incident_type }}</li>
+                                <li class="mb-2"><strong>{{ _('Severity') }}:</strong> <span
+                                        class="badge bg-{{ 'danger' if case.severity == 'CRITICAL' else 'warning' if case.severity == 'HIGH' else 'info' }}">{{
+                                        _(case.severity) }}</span></li>
+                                <li class="mb-2"><strong>{{ _('Location') }}:</strong> {{ case.incident_location or
+                                    _('N/A') }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><strong>{{ _('Submitted') }}:</strong> {{ case.submitted_at }}</li>
+                                <li class="mb-2"><strong>{{ _('Reporter') }}:</strong>
+                                    {% if case.is_anonymous %}
+                                    <span class="text-muted"><i class="fas fa-user-secret me-1"></i>{{ _('Anonymous')
+                                        }}</span>
+                                    {% else %}
+                                    {{ case.submitter_name or _('Named') }}
+                                    {% endif %}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Investigation Notes / Internal Comments -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">{{ _('Investigation History') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for update in updates %}
+                        <div class="update-item mb-3 pb-3 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <span class="badge bg-light text-dark fw-bold me-2">{{ _(update.update_type)
+                                        }}</span>
+                                    {% if update.new_value %}
+                                    <span
+                                        class="badge bg-{{ 'primary' if update.new_value == 'SUBMITTED' else 'info' if update.new_value == 'UNDER_REVIEW' or update.new_value == 'INVESTIGATING' else 'success' if update.new_value == 'RESOLVED' else 'secondary' }}">
+                                        {{ _(update.new_value) }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted"><i class="far fa-clock me-1"></i>{{ update.created_at
+                                    }}</small>
+                            </div>
+                            <p class="mb-1 text-dark">{{ update.update_text }}</p>
+                            <div class="d-flex align-items-center">
+                                <small class="text-muted italic">
+                                    <i class="fas fa-user-edit me-1"></i>
+                                    {% if update.created_by_name %}
+                                    {{ _("Performed by") }}: <strong>{{ update.created_by_name }}</strong>
+                                    {% else %}
+                                    {{ _("System Action") }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <form action="{{ url_for('whistleblowing.add_update', case_id=case.id) }}" method="POST"
+                        class="mt-4" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Add Note / Update Status') }}</label>
+                            <textarea name="update_text" class="form-control" rows="3" required
+                                placeholder="{{ _('Enter investigation notes or the reason for status change...') }}"></textarea>
+                        </div>
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <select name="new_status" class="form-select form-select-sm">
+                                    <option value="">-- {{ _('Keep current status') }} --</option>
+                                    <option value="UNDER_REVIEW">{{ _('Move to Under Review') }}</option>
+                                    <option value="INVESTIGATING">{{ _('Move to Investigating') }}</option>
+                                    <option value="RESOLVED">{{ _('Move to Resolved') }}</option>
+                                    <option value="DISMISSED">{{ _('Dismiss Case') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="file" name="attachments" class="form-control form-control-sm" multiple>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12 text-end">
+                                <button type="submit" class="btn btn-primary btn-sm">{{ _('Post Update') }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Actions & Assignments -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">{{ _('Actions') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#assignModal">
+                            <i class="fas fa-user-plus me-2"></i>{{ _('Assign Investigator') }}
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" data-onclick-fn="escalateCase">
+                            <i class="fas fa-gavel me-2"></i>{{ _('Escalate to HR/Legal') }}
+                        </button>
+                        <hr>
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#resolveModal">
+                            <i class="fas fa-check-circle me-2"></i>{{ _('Mark as Resolved') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evidence Files -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">{{ _('Evidence Attachments') }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if attachments %}
+                    <ul class="list-group list-group-flush">
+                        {% for attachment in attachments %}
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-file-alt me-2 text-muted"></i>{{ attachment.original_filename
+                                }}</span>
+                            <a href="{{ url_for('whistleblowing.download_attachment', attachment_id=attachment.id) }}"
+                                class="btn btn-link btn-sm p-0"><i class="fas fa-download"></i></a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted small mb-0">{{ _('No attachments provided.') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Modal -->
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <!-- Was a JSON fetch() to /api/assign-case, which wrote only
+             whistleblowing_cases.assigned_to and silently failed on error, so a
+             case could look assigned in the UI and be unassigned in the data.
+             Now a plain form POST through the assignment engine: it supersedes
+             the previous owner, records the action type and reason, and writes
+             the audit row the timeline is built from. -->
+        <form method="POST" action="{{ url_for('whistleblowing.case_assignment', case_id=case.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ _('Assign / Transfer Case') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Action') }}</label>
+                        <select name="action_type" class="form-select" id="wbAction">
+                            <option value="assign">{{ _('Assign') }}</option>
+                            <option value="reassign">{{ _('Reassign to someone else') }}</option>
+                            <option value="transfer">{{ _('Transfer to another department') }}</option>
+                            <option value="escalate">{{ _('Escalate') }}</option>
+                            <option value="return">{{ _('Return to a previous owner') }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Assign to') }} <span class="text-danger">*</span></label>
+                        <select name="assigned_to" class="form-select" required>
+                            <option value="">-- {{ _('Select User') }} --</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }} ({{ user.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Reason') }}
+                            <span class="text-danger" id="wbReasonReq" style="display:none">*</span></label>
+                        <textarea name="reason" class="form-control" rows="2"
+                            placeholder="{{ _('Why is this case moving?') }}"></textarea>
+                        <div class="form-text" id="wbReasonHint">
+                            {{ _('Required for reassign, transfer, escalate and return. Recorded permanently in the case timeline.') }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Comments') }}</label>
+                        <textarea name="comments" class="form-control" rows="2"
+                            placeholder="{{ _('Optional instructions for the assignee...') }}"></textarea>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">{{ _('SLA (days)') }}</label>
+                        <input type="number" name="sla_days" class="form-control" value="5" min="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('Save assignment') }}</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resolve Modal -->
+<div class="modal fade" id="resolveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('Resolve Case') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="resolveForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Resolution Summary') }}</label>
+                        <textarea name="resolution_summary" class="form-control" rows="3" required
+                            placeholder="{{ _('Describe how the case was resolved...') }}"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Action Taken') }}</label>
+                        <input type="text" name="resolution_action" class="form-control"
+                            placeholder="{{ _('e.g., Disciplinary action, Policy update') }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-success">{{ _('Confirm Resolution') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+    const CSRF_TOKEN = "{{ csrf_token() }}";
+    });
+
+    document.getElementById('resolveForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = {
+            case_id: {{ case.id }},
+            resolution_summary: formData.get('resolution_summary'),
+            resolution_action: formData.get('resolution_action')
+        };
+
+        fetch("{{ url_for('whistleblowing.resolve_case') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF_TOKEN
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.error || 'Failed to resolve case');
+                }
+            });
+    });
+
+    function escalateCase() {
+        if (confirm("{{ _('Are you sure you want to escalate this case to HR/Legal?') }}")) {
+            const data = {
+                case_id: {{ case.id }},
+                status: 'INVESTIGATING',
+                note: 'Case escalated to HR/Legal for further action.'
+            };
+
+            fetch("{{ url_for('whistleblowing.update_status') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF_TOKEN
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.error || 'Failed to escalate case');
+                    }
+                });
+        }
+    }
+</script>
+{% endblock %}

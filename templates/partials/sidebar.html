@@ -1,0 +1,1315 @@
+{# ===================================================================
+   ComplyNex sidebar — three collapsible levels
+
+   GENERATED — see sidebar/build_sidebar.py. Every link carries the exact
+   permission guard it had in the original sidebar.
+
+     Level 1  Area      Governance & Conduct     collapsible
+     Level 2    Module    Gifts & Hospitality    collapsible
+     Level 3      Page      My Gift Declarations
+
+   The previous version made level 2 a static text heading, so opening an
+   area dumped every link at once and the headings read as top-level
+   categories. That is what this fixes.
+   =================================================================== #}
+<nav class="cnx-sidebar" id="cnxSidebar" aria-label="{{ _('Main navigation') }}">
+
+  <div class="cnx-sidebar__brand">
+    <a href="{{ url_for('portal.dashboard') }}" class="cnx-brand-link">
+      <i class="bi bi-shield-lock-fill"></i>
+      <span class="cnx-brand-text">{{ company_name or 'ComplyNex' }}</span>
+    </a>
+    <button class="cnx-collapse-btn" id="cnxCollapse" type="button"
+            aria-label="{{ _('Collapse sidebar') }}">
+      <i class="bi bi-chevron-double-left"></i>
+    </button>
+  </div>
+
+  <div class="cnx-search">
+    <i class="bi bi-search"></i>
+    <input type="search" id="cnxNavSearch" autocomplete="off"
+           placeholder="{{ _('Search menu…') }}"
+           aria-label="{{ _('Search navigation') }}">
+    <kbd class="cnx-kbd">/</kbd>
+  </div>
+
+  <div class="cnx-navtools">
+    <button type="button" class="cnx-navtool" id="cnxExpandAll">
+      <i class="bi bi-arrows-expand"></i><span>{{ _('Expand all') }}</span>
+    </button>
+    <button type="button" class="cnx-navtool" id="cnxCollapseAll">
+      <i class="bi bi-arrows-collapse"></i><span>{{ _('Collapse all') }}</span>
+    </button>
+  </div>
+
+  <div class="cnx-nav-scroll">
+  <ul class="cnx-nav" id="cnxNav">
+
+    {# ======== Dashboard — 4 links ======== #}
+    <li class="cnx-nav__item" data-area="dash">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-grid-1x2 cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Dashboard') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('dashboard') }}">
+              <span class="cnx-nav__label">{{ _('CMS Dashboard') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('portal.dashboard') }}">
+              <span class="cnx-nav__label">{{ _('Employee Portal') }}</span>
+            </a>
+          </li>
+          {% if current_user.role == 'employee' %}
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('portal.status') }}">
+              <span class="cnx-nav__label">{{ _('My Status') }}</span>
+            </a>
+          </li>
+          {% endif %}
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('support') }}">
+              <span class="cnx-nav__label">{{ _('Support') }}</span>
+            </a>
+          </li>
+      </ul></div>
+    </li>
+
+    {# ======== Screening & AML — 14 links ======== #}
+    {% if (current_user.can_view('screening') or current_user.can_view('aml')) or (current_user.can_view('reports')) or (current_user.is_admin()) %}
+    <li class="cnx-nav__item" data-area="screening">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-shield-check cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Screening & AML') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+        {% if (current_user.can_view('screening') or current_user.can_view('aml')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-search cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Sanctions Screening') }}</span>
+            <span class="cnx-nav__count">3</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('screening') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('screening.confirmed_matches') }}">
+                <span class="cnx-nav__label">{{ _('Confirmed Matches') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('screening.ongoing_screening_dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Ongoing Screening') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('screening.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Sanction Screening') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('screening') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('blacklist.index') }}">
+                <span class="cnx-nav__label">{{ _('Internal Blacklist') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('screening') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('blacklist.pep_index') }}">
+                <span class="cnx-nav__label">{{ _('Internal PEP List') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('screening') or current_user.can_view('aml')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-activity cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Transaction Monitoring') }}</span>
+            <span class="cnx-nav__count">8</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('AML Dashboard') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.tm_dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Monitoring Dashboard') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.transaction_list') }}">
+                <span class="cnx-nav__label">{{ _('Transactions') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.alert_list') }}">
+                <span class="cnx-nav__label">{{ _('Alerts Queue') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.rules_list') }}">
+                <span class="cnx-nav__label">{{ _('TM Rule Management') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.tm_analytics') }}">
+                <span class="cnx-nav__label">{{ _('TM Analytics') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.scenario_simulator') }}">
+                <span class="cnx-nav__label">{{ _('Scenario Simulator') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.tm_network') }}">
+                <span class="cnx-nav__label">{{ _('Network Graph') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('screening') or current_user.can_view('aml')) or (current_user.can_view('reports')) or (current_user.is_admin()) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-file-earmark-text cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Regulatory Reporting') }}</span>
+            <span class="cnx-nav__count">3</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.sar_list') }}">
+                <span class="cnx-nav__label">{{ _('SARs') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('reports') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('reporting.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Regulatory Reports') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.is_admin() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('reporting.extended_reports') }}">
+                <span class="cnx-nav__label">{{ _('Advanced Reports') }}</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+      </ul></div>
+    </li>
+    {% endif %}
+
+    {# ======== Customers & Merchants — 6 links ======== #}
+    {% if (current_user.can_view('screening') or current_user.can_view('aml')) or (current_user.can_view('merchant_kyc')) or (current_user.can_view('ekyc')) %}
+    <li class="cnx-nav__item" data-area="customers">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-people cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Customers & Merchants') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+        {% if (current_user.can_view('screening') or current_user.can_view('aml')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-person-vcard cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Customers') }}</span>
+            <span class="cnx-nav__count">3</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.customer_list') }}">
+                <span class="cnx-nav__label">{{ _('Customers') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.screening') }}">
+                <span class="cnx-nav__label">{{ _('CDD Screening') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('screening') or current_user.can_view('aml') %}
+            {% if current_user.can_view('aml') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('aml.ubo_verification') }}">
+                <span class="cnx-nav__label">{{ _('UBO Verification') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('merchant_kyc')) or (current_user.can_view('ekyc')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-shop cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Merchants') }}</span>
+            <span class="cnx-nav__count">3</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('merchant_kyc') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('merchant_kyc.merchant_list') }}">
+                <span class="cnx-nav__label">{{ _('All Merchants') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('merchant_kyc') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('merchant_kyc.create_merchant') }}">
+                <span class="cnx-nav__label">{{ _('Add Merchant') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('ekyc') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('ekyc.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('eKYC') }}</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+      </ul></div>
+    </li>
+    {% endif %}
+
+    {# ======== Governance & Conduct — 26 links ======== #}
+    {% if (current_user.can_view('governance')) or (current_user.can_view('policies')) or (current_user.can_view('coi')) or (current_user.can_view('ghe')) or (current_user.can_view('cobec')) or (current_user.is_admin()) %}
+    <li class="cnx-nav__item" data-area="governance">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-bank cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Governance & Conduct') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+        {% if (current_user.can_view('governance')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-building cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Corporate Governance') }}</span>
+            <span class="cnx-nav__count">10</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Governance Dashboard') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.fit_proper_dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Fit & Proper') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.independence_dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Independence') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.skills_matrix_dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Skills Matrix') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.compliance_dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Compliance Tracker') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.governance_report') }}">
+                <span class="cnx-nav__label">{{ _('Board Attendance Report') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.disclosure_report') }}">
+                <span class="cnx-nav__label">{{ _('Disclosure Report') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.annual_board_report') }}">
+                <span class="cnx-nav__label">{{ _('Annual Board Report') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.annual_governance_report') }}">
+                <span class="cnx-nav__label">{{ _('Annual Governance Report') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.fra_governance_report') }}">
+                <span class="cnx-nav__label">{{ _('FRA Governance Report') }}</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('policies')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-journal-text cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Policies') }}</span>
+            <span class="cnx-nav__count">4</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('policies') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('policies.list_policies') }}">
+                <span class="cnx-nav__label">{{ _('All Policies') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('policies') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('policies.pending_acknowledgment') }}">
+                <span class="cnx-nav__label">{{ _('Pending Acks') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('policies') %}
+            {% if current_user.is_compliance_officer() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('policies.acknowledgment_dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Ack Analytics') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('policies') %}
+            {% if current_user.is_compliance_officer() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('policies.gap_analysis') }}">
+                <span class="cnx-nav__label">{{ _('Gap Analysis') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('coi')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-exclamation-diamond cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Conflicts of Interest') }}</span>
+            <span class="cnx-nav__count">4</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('coi') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('declarations.bulk_reminders') }}">
+                <span class="cnx-nav__label">{{ _('Send Reminders') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('declarations.index') }}">
+                <span class="cnx-nav__label">{{ _('Declaration Campaigns') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('coi.my_declarations') }}">
+                <span class="cnx-nav__label">{{ _('My COI Declarations') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('coi') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('coi.report_conflict') }}">
+                <span class="cnx-nav__label">{{ _('Report Ad-hoc Conflict') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('coi') %}
+            {% if current_user.is_manager() or current_user.is_compliance_officer() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('coi.pending_review') }}">
+                <span class="cnx-nav__label">{{ _('Pending Reviews') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('coi') %}
+            {% if current_user.is_compliance_officer() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('coi.list_campaigns') }}">
+                <span class="cnx-nav__label">{{ _('All Cycles') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('ghe')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-gift cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Gifts & Hospitality') }}</span>
+            <span class="cnx-nav__count">4</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('ghe') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('ghe.my_declarations') }}">
+                <span class="cnx-nav__label">{{ _('My Gift Declarations') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('ghe') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('ghe.create_declaration') }}">
+                <span class="cnx-nav__label">{{ _('New Declaration') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('ghe') %}
+            {% if current_user.is_manager() or current_user.is_compliance_officer() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('ghe.pending_approval') }}">
+                <span class="cnx-nav__label">{{ _('Pending Approvals') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('ghe') %}
+            {% if current_user.is_manager() or current_user.is_compliance_officer() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('ghe.list_declarations') }}">
+                <span class="cnx-nav__label">{{ _('All Declarations') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('cobec')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-award cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Code of Ethics') }}</span>
+            <span class="cnx-nav__count">3</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('cobec') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('cobec.my_declarations') }}">
+                <span class="cnx-nav__label">{{ _('My Ethics Declarations') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('cobec') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('cobec.declare') }}">
+                <span class="cnx-nav__label">{{ _('Submit Declaration') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('cobec') %}
+            {% if current_user.is_compliance_officer() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('cobec.all_declarations') }}">
+                <span class="cnx-nav__label">{{ _('All Ethics Declarations') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+          {% if current_user.is_admin() %}
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('tracker.dashboard') }}">
+              <span class="cnx-nav__label">{{ _('Declaration Tracker') }}</span>
+            </a>
+          </li>
+          {% endif %}
+      </ul></div>
+    </li>
+    {% endif %}
+
+    {# ======== Risk & Audit — 15 links ======== #}
+    {% if (current_user.can_view('risk_management')) or (current_user.can_view('internal_audit')) %}
+    <li class="cnx-nav__item" data-area="risk">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-graph-up-arrow cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Risk & Audit') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+        {% if (current_user.can_view('risk_management')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-exclamation-triangle cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Risk Management') }}</span>
+            <span class="cnx-nav__count">8</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('risk_management') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('risk_management.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Risk Dashboard') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('risk_management') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('risk_management.register_list') }}">
+                <span class="cnx-nav__label">{{ _('Risk Register') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('risk_management') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('risk_management.suggestions') }}">
+                <span class="cnx-nav__label">{{ _('Suggested Risks') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('risk_management') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('risk_management.controls_list') }}">
+                <span class="cnx-nav__label">{{ _('Control Library') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('risk_management') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('risk_management.kris_dashboard') }}">
+                <span class="cnx-nav__label">{{ _('KRIs') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('risk_management') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('risk_management.treatments_list') }}">
+                <span class="cnx-nav__label">{{ _('Treatments') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('risk_management') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('risk_management.appetite') }}">
+                <span class="cnx-nav__label">{{ _('Risk Appetite') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('risk_management') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('risk_management.categories') }}">
+                <span class="cnx-nav__label">{{ _('Categories') }}</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('internal_audit')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-clipboard-data cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Internal Audit') }}</span>
+            <span class="cnx-nav__count">7</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('internal_audit') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('internal_audit.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Audit Dashboard') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('internal_audit') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('internal_audit.universe') }}">
+                <span class="cnx-nav__label">{{ _('Audit Universe') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('internal_audit') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('internal_audit.plans') }}">
+                <span class="cnx-nav__label">{{ _('Annual Plan') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('internal_audit') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('internal_audit.projects') }}">
+                <span class="cnx-nav__label">{{ _('Engagements') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('internal_audit') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('internal_audit.findings') }}">
+                <span class="cnx-nav__label">{{ _('Findings') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('internal_audit') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('internal_audit.committee_report') }}">
+                <span class="cnx-nav__label">{{ _('Committee Report') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('internal_audit') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('internal_audit.findings_report') }}">
+                <span class="cnx-nav__label">{{ _('Findings Report') }}</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+      </ul></div>
+    </li>
+    {% endif %}
+
+    {# ======== Sustainability — 13 links ======== #}
+    {% if (current_user.can_view('esg')) or (current_user.can_view('carbon')) %}
+    <li class="cnx-nav__item" data-area="sustainability">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-globe-americas cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Sustainability') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+        {% if (current_user.can_view('esg')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-tree cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('ESG') }}</span>
+            <span class="cnx-nav__count">6</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('esg') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('esg.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('ESG Dashboard') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('esg') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('esg.scoring', pillar_code='E') }}">
+                <span class="cnx-nav__label">{{ _('Score: Environmental') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('esg') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('esg.materiality') }}">
+                <span class="cnx-nav__label">{{ _('Materiality Assessment') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('esg') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('esg.disclosures') }}">
+                <span class="cnx-nav__label">{{ _('Disclosure Tracker') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('esg') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('esg.framework_view') }}">
+                <span class="cnx-nav__label">{{ _('Framework & Weights') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('esg') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('esg.methodology') }}">
+                <span class="cnx-nav__label">{{ _('Methodology') }}</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('carbon')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-cloud cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Carbon Footprint') }}</span>
+            <span class="cnx-nav__count">7</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('carbon') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Carbon Dashboard') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('carbon') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.entries_list') }}">
+                <span class="cnx-nav__label">{{ _('Activity Log') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('carbon') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.factors_library') }}">
+                <span class="cnx-nav__label">{{ _('Emission Factors') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('carbon') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.targets') }}">
+                <span class="cnx-nav__label">{{ _('Reduction Targets') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('carbon') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.methodology') }}">
+                <span class="cnx-nav__label">{{ _('Methodology') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('carbon') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.fra_compliance') }}">
+                <span class="cnx-nav__label">{{ _('FRA Compliance') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('carbon') %}
+            {% if current_user.can_edit('carbon') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('carbon.settings') }}">
+                <span class="cnx-nav__label">{{ _('Carbon Settings') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+      </ul></div>
+    </li>
+    {% endif %}
+
+    {# ======== Protection & Security — 12 links ======== #}
+    {% if (current_user.can_view('whistleblowing')) or (current_user.can_view('consumer_protection')) or (current_user.can_view('phishing')) or (current_user.can_view('cyber')) or (current_user.can_view('pdpl')) %}
+    <li class="cnx-nav__item" data-area="protection">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-shield-lock cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Protection & Security') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+        {% if (current_user.can_view('whistleblowing')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-megaphone cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Whistleblowing') }}</span>
+            <span class="cnx-nav__count">5</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('whistleblowing') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('whistleblowing.case_tracking') }}">
+                <span class="cnx-nav__label">{{ _('Case Tracking') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('whistleblowing.submit_case') }}">
+                <span class="cnx-nav__label">{{ _('Submit Report') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('whistleblowing') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('whistleblowing.track_case') }}">
+                <span class="cnx-nav__label">{{ _('Track Status') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('whistleblowing') %}
+            {% if current_user.is_authenticated %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('whistleblowing.my_cases') }}">
+                <span class="cnx-nav__label">{{ _('My Reports') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('whistleblowing') %}
+            {% if current_user.is_compliance_officer() or current_user.is_admin() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('whistleblowing.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Whistleblowing Dashboard') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('whistleblowing') %}
+            {% if current_user.is_compliance_officer() or current_user.is_admin() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('whistleblowing.reports') }}">
+                <span class="cnx-nav__label">{{ _('CBE Reporting') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('consumer_protection')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-people-fill cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Consumer Protection') }}</span>
+            <span class="cnx-nav__count">2</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('consumer_protection') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('consumer_protection.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Complaints Dashboard') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('consumer_protection') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('consumer_protection.complaints_list') }}">
+                <span class="cnx-nav__label">{{ _('Complaints List') }}</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.can_view('phishing')) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-envelope-exclamation cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Phishing Awareness') }}</span>
+            <span class="cnx-nav__count">3</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.can_view('phishing') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('phishing.dashboard') }}">
+                <span class="cnx-nav__label">{{ _('Phishing Dashboard') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('phishing') %}
+            {% if current_user.can_edit('phishing') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('phishing.create_campaign') }}">
+                <span class="cnx-nav__label">{{ _('New Campaign') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.can_view('phishing') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('phishing.reports') }}">
+                <span class="cnx-nav__label">{{ _('Analytics') }}</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+          {% if current_user.can_view('cyber') %}
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('cyber.dashboard') }}">
+              <span class="cnx-nav__label">{{ _('Cyber Incident Hub') }}</span>
+            </a>
+          </li>
+          {% endif %}
+          {% if current_user.can_view('pdpl') %}
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('dp.dashboard') }}">
+              <span class="cnx-nav__label">{{ _('Data Protection') }}</span>
+            </a>
+          </li>
+          {% endif %}
+      </ul></div>
+    </li>
+    {% endif %}
+
+    {# ======== Training — 1 links ======== #}
+    {% if (current_user.can_view('training')) or current_user.can_view('academy') %}
+    <li class="cnx-nav__item" data-area="training">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-mortarboard cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Training') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+          {% if current_user.can_view('training') %}
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('training.list_courses') }}">
+              <span class="cnx-nav__label">{{ _('Learning Portal') }}</span>
+            </a>
+          </li>
+          {% endif %}
+          {% if current_user.can_view('academy') %}
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('academy_admin.index') }}">
+              <span class="cnx-nav__label">{{ _('Integrys Academy') }}</span>
+            </a>
+          </li>
+          {% endif %}
+      </ul></div>
+    </li>
+    {% endif %}
+
+    {# ======== Administration — 18 links ======== #}
+    {% if (current_user.is_admin()) or (current_user.is_compliance_officer() and not current_user.is_admin()) %}
+    <li class="cnx-nav__item" data-area="admin">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-sliders cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Administration') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+        {% if (current_user.is_admin()) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-person-gear cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Users & Access') }}</span>
+            <span class="cnx-nav__count">5</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.is_admin() %}
+            {% if current_user.can_manage_users() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('users.list_users') }}">
+                <span class="cnx-nav__label">{{ _('Manage Users') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_manage_users() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.list_users') }}">
+                <span class="cnx-nav__label">{{ _('Users') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.settings_permissions_matrix') }}">
+                <span class="cnx-nav__label">{{ _('Permissions Matrix') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.document_types') }}">
+                <span class="cnx-nav__label">{{ _('Document Types') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.mfa_overview') }}">
+                <span class="cnx-nav__label">{{ _('Multi-Factor Auth') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.org_tree') }}">
+                <span class="cnx-nav__label">{{ _('Organisation') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.list_departments') }}">
+                <span class="cnx-nav__label">{{ _('Org Structure') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.settings_security') }}">
+                <span class="cnx-nav__label">{{ _('Security') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.is_admin()) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-dot cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Settings') }}</span>
+            <span class="cnx-nav__count">6</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.settings') }}">
+                <span class="cnx-nav__label">{{ _('Settings Hub') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.settings_general') }}">
+                <span class="cnx-nav__label">{{ _('General & Organization') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.settings_numbering') }}">
+                <span class="cnx-nav__label">{{ _('Numbering Sequences') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.settings_email_templates') }}">
+                <span class="cnx-nav__label">{{ _('Email Templates') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.training_requirements') }}">
+                <span class="cnx-nav__label">{{ _('Training Auto-Assignment Rules') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.settings_localization') }}">
+                <span class="cnx-nav__label">{{ _('Localization') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.is_admin()) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-hdd-network cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Platform') }}</span>
+            <span class="cnx-nav__count">4</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.settings_api_keys') }}">
+                <span class="cnx-nav__label">{{ _('API Keys') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.settings_integrations') }}">
+                <span class="cnx-nav__label">{{ _('Integrations') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.settings_backup') }}">
+                <span class="cnx-nav__label">{{ _('Backup Status') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() %}
+            {% if current_user.can_view('config') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.ops_panel') }}">
+                <span class="cnx-nav__label">{{ _('System Operations') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+        {% if (current_user.is_compliance_officer() and not current_user.is_admin()) or (current_user.is_admin()) %}
+        <li class="cnx-nav__item cnx-nav__item--module">
+          <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
+            <i class="bi bi-dot cnx-nav__icon"></i>
+            <span class="cnx-nav__label">{{ _('Oversight') }}</span>
+            <span class="cnx-nav__count">3</span>
+            <i class="bi bi-chevron-down cnx-nav__caret"></i>
+          </button>
+          <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+            {% if current_user.is_compliance_officer() and not current_user.is_admin() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.approvals') }}">
+                <span class="cnx-nav__label">{{ _('Approvals') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.is_compliance_officer() and not current_user.is_admin() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.view_audit_logs') }}">
+                <span class="cnx-nav__label">{{ _('Audit Logs') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.is_admin() %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.reports') }}">
+                <span class="cnx-nav__label">{{ _('Reports') }}</span>
+              </a>
+            </li>
+            {% endif %}
+          </ul></div>
+        </li>
+        {% endif %}
+      </ul></div>
+    </li>
+    {% endif %}
+
+  </ul>
+  </div>
+
+  <div class="cnx-sidebar__foot">
+    <div class="cnx-user">
+      <span class="cnx-user__avatar">{{ (current_user.full_name or '?')[0] }}</span>
+      <span class="cnx-user__meta">
+        <span class="cnx-user__name">{{ current_user.full_name }}</span>
+        <span class="cnx-user__role">{{ current_user.role }}</span>
+      </span>
+    </div>
+  </div>
+</nav>

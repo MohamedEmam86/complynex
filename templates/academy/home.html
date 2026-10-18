@@ -1,0 +1,40 @@
+{% extends 'academy/base.html' %}
+{% block content %}
+<section class="ia-hero">
+  <div>
+    <p class="ia-eyebrow">{{ t('INTEGRYS ACADEMY · FREE', 'أكاديمية إنتيجريس · مجانًا') }}</p>
+    <h1>{{ t('Practical compliance training, grounded in Egyptian regulation', 'تدريب عملي في الالتزام، مبني على التنظيم المصري') }}</h1>
+    <p class="ia-lead">{{ t('Short, practitioner-written modules on AML/CFT, governance and risk — built by the team that advises Egyptian banks, fintechs and payment providers. Free for professionals. Certificate on completion.',
+                          'وحدات قصيرة كتبها ممارسون في مكافحة غسل الأموال وتمويل الإرهاب والحوكمة والمخاطر — من الفريق الذي يقدّم الاستشارات للبنوك وشركات التكنولوجيا المالية ومقدمي خدمات الدفع في مصر. مجانية للمهنيين، وشهادة عند الإتمام.') }}</p>
+    <div class="ia-cta">
+      <a class="ia-btn" href="{{ url_for('academy.register') }}">{{ t('Register with your work email', 'سجّل ببريد العمل') }}</a>
+      <a class="ia-btn ia-btn--ghost" href="{{ url_for('academy.login') }}">{{ t('I already have access', 'لدي حساب بالفعل') }}</a>
+    </div>
+    <ul class="ia-ticks">
+      <li>{{ t('Work email only — verified by a one-time code', 'بريد العمل فقط — يتم التحقق برمز لمرة واحدة') }}</li>
+      <li>{{ t('No password to remember', 'بدون كلمة مرور') }}</li>
+      <li>{{ t('Verifiable certificate with QR code', 'شهادة قابلة للتحقق برمز QR') }}</li>
+    </ul>
+  </div>
+  <div class="ia-hero__card">
+    <img src="{{ url_for('static', filename='images/academy/integrys-emblem-256.png') }}" alt="" width="128" height="128">
+    <p><b>Integrys Consulting</b><br><span>{{ t('powered by', 'مدعوم من') }} ComplyNex</span></p>
+  </div>
+</section>
+
+<h2 class="ia-h2">{{ t('Available courses', 'الدورات المتاحة') }}</h2>
+{% if courses %}
+<div class="ia-grid">
+  {% for c in courses %}
+  <article class="ia-card">
+    <p class="ia-tag">{{ t('by', 'من') }} {{ PROVIDERS[c.provider]['label_ar'] if ar else PROVIDERS[c.provider]['label'] }} · {{ c.level }} · {{ c.duration_minutes }} {{ t('min', 'دقيقة') }} · {{ c.lesson_count }} {{ t('lessons', 'دروس') }}</p>
+    <h3>{{ L(c, 'title') }}</h3>
+    <p>{{ L(c, 'summary') }}</p>
+    <a class="ia-btn ia-btn--sm" href="{{ url_for('academy.course', slug=c.slug) }}">{{ t('Start course', 'ابدأ الدورة') }}</a>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<p class="ia-muted">{{ t('The first course is being finalised. Register now and we will email you when it opens.', 'جاري الانتهاء من أول دورة. سجّل الآن وسنراسلك عند فتحها.') }}</p>
+{% endif %}
+{% endblock %}

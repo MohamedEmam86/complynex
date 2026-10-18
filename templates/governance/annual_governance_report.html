@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Annual Governance Report') }} {{ year }} — ComplyNex{% endblock %}
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+  .agr-report { max-width: 950px; margin: 0 auto; background: #fff; padding: 2.5rem; }
+  .agr-report h2 { color: #4a1d63; border-bottom: 2px solid #4a1d63; padding-bottom: .3rem; margin-top: 1.6rem; }
+  .agr-report .rpt-head { text-align: center; border-bottom: 3px double #4a1d63; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .agr-sig { border-top: 1px solid #999; margin-top: 4rem; padding-top: .3rem; width: 260px; display: inline-block; }
+  @media print {
+    .sidebar, .sidebar-container, nav, .navbar, .no-print, .site-footer, .btn { display: none !important; }
+    .main-content, .agr-report { margin: 0 !important; padding: 0.5cm !important; width: 100% !important; max-width: 100% !important; }
+    body { background: #fff !important; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+<div class="no-print d-flex justify-content-between align-items-center mb-3">
+  <a href="{{ url_for('governance.dashboard') }}" class="btn btn-secondary btn-sm">&larr; {{ _('Back') }}</a>
+  <form method="GET" class="d-inline-flex align-items-center">
+    <label class="me-2 small text-muted mb-0">{{ _('Report Year') }}</label>
+    <select name="year" class="form-select form-select-sm me-2" data-auto-submit style="width:auto;">
+      {% for y in years_available %}
+      <option value="{{ y }}" {{ 'selected' if y == year }}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <button class="btn btn-success btn-sm" data-action="print"><i class="bi bi-printer me-1"></i>{{ _('Print / Save as PDF') }}</button>
+</div>
+
+<div class="agr-report shadow-sm">
+  <div class="rpt-head">
+    <h1 class="h3 mb-1">{{ company_name }}</h1>
+    <h3>{{ _('Annual Governance Report') }}</h3>
+    <div class="text-muted">{{ _('تقرير حوكمة سنوي') }}</div>
+    <div class="mt-2"><strong>{{ _('Reporting Year:') }}</strong> {{ year }}</div>
+    <div class="small text-muted">{{ _('Generated:') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+  </div>
+
+  <h2>{{ _('1. Governance Framework Overview') }}</h2>
+  <table class="table table-bordered table-sm">
+    <tbody>
+      <tr><th style="width:40%">{{ _('Board Meetings Held in') }} {{ year }}</th><td>{{ meetings_count }}</td></tr>
+      <tr><th>{{ _('Board Training Sessions in') }} {{ year }}</th><td>{{ training_count }}</td></tr>
+      <tr><th>{{ _('Committees') }}</th><td>{{ committees|length }}</td></tr>
+      <tr><th>{{ _('Board Members') }}</th><td>{{ board_members|length }}</td></tr>
+    </tbody>
+  </table>
+
+  <h2>{{ _('2. ESG Governance ("G") Pillar Score') }}</h2>
+  {% if esg_g_summary %}
+  <table class="table table-bordered table-sm">
+    <tbody>
+      <tr><th style="width:40%">{{ _('Score') }}</th><td>{{ esg_g_summary.score if esg_g_summary.score is not none else '—' }} / 5</td></tr>
+      <tr><th>{{ _('Completeness') }}</th><td>{{ esg_g_summary.completeness_pct }}%</td></tr>
+      {% if esg_g_summary.rating %}
+      <tr><th>{{ _('Rating') }}</th><td><span class="badge" style="background:{{ esg_g_summary.rating[1] }};">{{ esg_g_summary.rating[0] }}</span></td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+  <p class="text-muted small">{{ _('Sourced live from the ESG Management module — see ESG &rarr; Governance Pillar for indicator-level detail and evidence.') }}</p>
+  {% else %}
+  <p class="text-muted small">{{ _('No active ESG framework/reporting period found, or the Governance pillar has not been scored yet.') }}</p>
+  {% endif %}
+
+  <h2>{{ _('3. Regulatory Compliance Tracker') }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Area') }}</th><th>{{ _('Requirement') }}</th><th>{{ _('Regulator') }}</th><th>{{ _('Status') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for c in compliance %}
+      <tr>
+        <td>{{ c.compliance_area }}</td>
+        <td>{{ c.requirement_code or '-' }}</td>
+        <td>{{ c.regulator_name or '-' }}</td>
+        <td>
+          <span class="badge {{ 'bg-success' if c.compliance_status == 'COMPLIANT' else ('bg-danger' if c.compliance_status == 'NON_COMPLIANT' else 'bg-warning text-dark') }}">
+            {{ c.compliance_status }}
+          </span>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="text-center text-muted">{{ _('No compliance requirements tracked yet.') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('4. Fit & Proper Assessments Completed in') }} {{ year }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Member') }}</th><th>{{ _('Date') }}</th><th>{{ _('Result') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for f in fit_proper_rows %}
+      <tr><td>{{ f.member_name }}</td><td>{{ f.assessment_date }}</td><td>{{ f.assessment_result or '-' }}</td></tr>
+      {% else %}
+      <tr><td colspan="3" class="text-center text-muted">{{ _('No fit & proper assessments recorded for %(y)s.', y=year) }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('5. Independence Declarations Filed in') }} {{ year }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Member') }}</th><th>{{ _('Date') }}</th><th>{{ _('Status') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for d in independence_rows %}
+      <tr><td>{{ d.member_name }}</td><td>{{ d.declaration_date }}</td><td>{{ d.independence_status or '-' }}</td></tr>
+      {% else %}
+      <tr><td colspan="3" class="text-center text-muted">{{ _('No independence declarations recorded for %(y)s.', y=year) }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('6. Internal Audit / Committee Summary') }}</h2>
+  {% if committee_findings_summary %}
+  <table class="table table-bordered table-sm">
+    <tbody>
+      <tr><th style="width:40%">{{ _('Open Findings') }}</th><td>{{ committee_findings_summary.open_findings_count }}</td></tr>
+      <tr><th>{{ _('Overdue Findings') }}</th><td>{{ committee_findings_summary.overdue_count }}</td></tr>
+      <tr><th>{{ _('Findings Closed to Date') }}</th><td>{{ committee_findings_summary.closed_count }}</td></tr>
+    </tbody>
+  </table>
+  <p class="text-muted small">{{ _('Full detail: see the') }} <a href="{{ url_for('internal_audit.findings_report') }}">{{ _('Findings Report') }}</a>.</p>
+  {% else %}
+  <p class="text-muted small">{{ _('Internal Audit module has no data yet.') }}</p>
+  {% endif %}
+
+  <div class="mt-5">
+    <div class="row">
+      <div class="col-6"><span class="agr-sig">{{ _('Chairman of the Board') }}</span></div>
+      <div class="col-6"><span class="agr-sig">{{ _('Chief Compliance Officer') }}</span></div>
+    </div>
+  </div>
+</div>
+
+{% include 'partials/attachment_widget.html' %}
+</div>
+{% endblock %}

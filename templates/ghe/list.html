@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+
+{% block title %}GHE Declarations - ComplyNex CMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+
+        .sidebar,
+        .navbar,
+        .btn-toolbar,
+        .card-header.bg-light,
+        form,
+        .no-print {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .table {
+            font-size: 10pt;
+        }
+
+        .badge {
+            border: 1px solid #000;
+            background: none !important;
+            color: #000 !important;
+        }
+
+        body::before {
+            content: "ComplyNex CMS - GHE Declarations Report";
+            display: block;
+            text-align: center;
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% from 'macros.html' import empty_state %}
+
+<!-- Global Action Buttons -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-gift text-primary"></i> {{ _('GHE Governance Dashboard') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button data-action="print" class="btn btn-outline-secondary me-2 no-print shadow-sm rounded-pill px-3">
+            <i class="bi bi-printer"></i> {{ _('Export Report') }}
+        </button>
+        <a href="{{ url_for('ghe.create_declaration') }}" class="btn btn-primary no-print shadow-sm rounded-pill px-4">
+            <i class="bi bi-plus-lg"></i> {{ _('Disclose GHE') }}
+        </a>
+    </div>
+</div>
+
+<!-- Analytical Dashboard Section -->
+<div class="row g-4 mb-4">
+    <!-- Threshold Awareness Card -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0 text-muted">{{ _('Annual Threshold Awareness') }}</h6>
+            </div>
+            <div class="card-body pt-0 text-center">
+                <div class="mb-3">
+                    <h1 class="display-4 fw-bold text-primary mb-0">{{ "{:,.0f}".format(stats.total_value_ytd or 0) }}
+                    </h1>
+                    <p class="text-muted small fw-semibold">{{ _('YTD Cumulative EGP') }}</p>
+                </div>
+                {% set limit = 100000 %} {# Theoretical company-wide threshold for visibility or just an indicator #}
+                {% set percent = ((stats.total_value_ytd or 0) / limit * 100) | round | int %}
+                <div class="progress rounded-pill mb-2" style="height: 12px;">
+                    <div class="progress-bar bg-primary progress-bar-striped" role="progressbar"
+                        style="width: {{ percent }}%"></div>
+                </div>
+                <div class="d-flex justify-content-between extra-small text-muted">
+                    <span>{{ _('0 EGP') }}</span>
+                    <span>{{ _('Target Max: 100k EGP') }}</span>
+                </div>
+                <div class="mt-3 p-2 bg-light rounded-3">
+                    <p class="mb-0 extra-small text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        {{ _('Monitoring cumulative GHE is a core CBE requirement to prevent structural corruption.') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Distribution Chart -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0 text-muted">{{ _('Status Distribution') }}</h6>
+            </div>
+            <div class="card-body pt-0 d-flex align-items-center justify-content-center">
+                <canvas id="statusChart" style="max-height: 200px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Trend Chart -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0 text-muted">{{ _('Monthly Disclosure Trend') }}</h6>
+            </div>
+            <div class="card-body pt-0 d-flex align-items-center justify-content-center">
+                <canvas id="trendChart" style="max-height: 200px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Metrics -->
+<div class="row g-3 mb-4 no-print">
+    <div class="col">
+        <div class="card border-0 shadow-sm text-center py-3 bg-white">
+            <div class="h3 fw-bold text-dark mb-0">{{ stats.total or 0 }}</div>
+            <div class="small text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">{{ _('Total
+                Disclosures') }}</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card border-0 shadow-sm text-center py-3 bg-white">
+            <div class="h3 fw-bold text-warning mb-0">{{ stats.pending or 0 }}</div>
+            <div class="small text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">{{ _('Pending') }}
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card border-0 shadow-sm text-center py-3 bg-white">
+            <div class="h3 fw-bold text-info mb-0">{{ (stats.manager_review or 0) + (stats.compliance_review or 0) }}
+            </div>
+            <div class="small text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">{{ _('In Review') }}
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card border-0 shadow-sm text-center py-3 bg-white">
+            <div class="h3 fw-bold text-success mb-0">{{ stats.approved or 0 }}</div>
+            <div class="small text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">{{ _('Approved') }}
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div
+            class="card border-0 shadow-sm text-center py-3 bg-white border-start border-4 border-danger border-opacity-50">
+            <div class="h3 fw-bold text-danger mb-0">{{ stats.rejected or 0 }}</div>
+            <div class="small text-muted fw-semibold text-uppercase" style="font-size: 0.65rem;">{{ _('Rejected') }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="bi bi-funnel"></i> {{ _('Filters') }}</h6>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">{{ _('Status') }}</label>
+                <select name="status" class="form-select">
+                    <option value="">{{ _('All Statuses') }}</option>
+                    <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>{{ _('Pending') }}
+                    </option>
+                    <option value="manager_review" {% if request.args.get('status')=='manager_review' %}selected{% endif
+                        %}>{{ _('Manager Review') }}</option>
+                    <option value="compliance_review" {% if request.args.get('status')=='compliance_review' %}selected{%
+                        endif %}>{{ _('Compliance Review') }}</option>
+                    <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>{{ _('Approved') }}
+                    </option>
+                    <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>{{ _('Rejected') }}
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">{{ _('Type') }}</label>
+                <select name="ghe_type" class="form-select">
+                    <option value="">{{ _('All Types') }}</option>
+                    <option value="Gift" {% if request.args.get('ghe_type')=='Gift' %}selected{% endif %}>{{ _('Gift') }}</option>
+                    <option value="Hospitality" {% if request.args.get('ghe_type')=='Hospitality' %}selected{% endif %}>
+                        {{ _('Hospitality') }}</option>
+                    <option value="Entertainment" {% if request.args.get('ghe_type')=='Entertainment' %}selected{% endif
+                        %}>{{ _('Entertainment') }}</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">{{ _('Date From') }}</label>
+                <input type="date" name="date_from" class="form-control"
+                    value="{{ request.args.get('date_from', '') }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">{{ _('Date To') }}</label>
+                <input type="date" name="date_to" class="form-control" value="{{ request.args.get('date_to', '') }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-search"></i> {{ _('Filter') }}
+                </button>
+                <a href="{{ url_for('ghe.list_declarations') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x"></i> {{ _('Clear') }}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Declarations Table -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-table"></i> {{ _('All Declarations') }}</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{{ _('Declaration #') }}</th>
+                        <th>{{ _('Employee') }}</th>
+                        <th>{{ _('Type') }}</th>
+                        <th>{{ _('Direction') }}</th>
+                        <th class="text-end">{{ _('Value (EGP)') }}</th>
+                        <th>{{ _('Date') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for declaration in declarations %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('ghe.view_declaration', id=declaration.id) }}" class="fw-bold">
+                                {{ declaration.declaration_number }}
+                            </a>
+                            {% if declaration.is_government_official %}
+                            <span class="badge bg-warning text-dark" title="{{ _('Government Official') }}">
+                                <i class="bi bi-star-fill"></i>
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ declaration.employee_name }}
+                            <br><small class="text-muted">{{ declaration.department or 'N/A' }}</small>
+                        </td>
+                        <td>
+                            {% if declaration.ghe_type == 'Gift' %}
+                            <span class="badge bg-primary">{{ _('Gift') }}</span>
+                            {% elif declaration.ghe_type == 'Hospitality' %}
+                            <span class="badge bg-info">{{ _('Hospitality') }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ _('Entertainment') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ declaration.direction }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(declaration.estimated_value_egp) }}</td>
+                        <td>{{ declaration.declaration_date }}</td>
+                        <td>
+                            {% if declaration.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">{{ _('Pending') }}</span>
+                            {% elif declaration.status == 'manager_review' %}
+                            <span class="badge bg-info">{{ _('Manager Review') }}</span>
+                            {% elif declaration.status == 'compliance_review' %}
+                            <span class="badge bg-secondary">{{ _('Compliance Review') }}</span>
+                            {% elif declaration.status == 'approved' %}
+                            <span class="badge bg-success">{{ _('Approved') }}</span>
+                            {% elif declaration.status == 'rejected' %}
+                            <span class="badge bg-danger">{{ _('Rejected') }}</span>
+                            {% endif %}
+
+                            {% if declaration.auto_approved %}
+                            <span class="badge bg-success" title="{{ _('Auto-approved') }}">
+                                <i class="bi bi-lightning"></i>
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('ghe.view_declaration', id=declaration.id) }}"
+                                class="btn btn-sm btn-outline-primary" title="{{ _('View') }}">
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            {% if declaration.status == 'pending' and declaration.employee_id == current_user.id %}
+                            <a href="{{ url_for('ghe.edit_declaration', id=declaration.id) }}"
+                                class="btn btn-sm btn-outline-secondary" title="{{ _('Edit') }}">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="p-0 border-0">
+                            {{ empty_state(
+                                title="{{ _('No Declarations Found') }}",
+                                description="You have a clean slate. No GHE declarations match your current filters.",
+                                icon="stars"
+                            ) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

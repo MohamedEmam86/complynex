@@ -1,0 +1,316 @@
+@import url('../vendor/fonts/inter/inter.css');
+
+/*
+ * ComplyNex Brand Stylesheet
+ * Official brand colors and styling for ComplyNex Full Compliance Platform
+ * Palette matches the login page (navy -> teal gradient).
+ */
+
+:root {
+    /* ComplyNex Brand Colors */
+    --complynex-primary: #123E5F;
+    /* Primary brand navy */
+    --complynex-primary-dark: #071E36;
+    /* Darker navy for gradient ends */
+    --complynex-accent: #00A6B4;
+    /* Teal accent (hover/focus/CTA) */
+    --complynex-accent-dark: #007A85;
+    /* Darker teal for hover states */
+    --complynex-accent-bright: #00E2D1;
+    /* Bright teal glow accent */
+    --complynex-status-danger: #C0392B;
+    /* Semantic "rejected/danger" red - unrelated to brand color */
+
+    /* Secondary Colors */
+    --complynex-dark: #1A1A2E;
+    /* Dark text/header */
+    --complynex-gray: #6c757d;
+    /* Secondary text */
+    --complynex-light-gray: #F8F9FA;
+    /* Light backgrounds */
+    --complynex-white: #FFFFFF;
+
+    /* Typography */
+    --complynex-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* Spacing */
+    --complynex-radius: 25px;
+    /* Rounded buttons like the site */
+    --complynex-radius-card: 15px;
+}
+
+
+/* Base Styles */
+body.complynex-public {
+    font-family: var(--complynex-font);
+    background: linear-gradient(160deg, var(--complynex-primary) 0%, var(--complynex-primary-dark) 100%);
+    min-height: 100vh;
+}
+
+/* Brand Header */
+.complynex-brand-header {
+    background: var(--complynex-white);
+    padding: 30px;
+    text-align: center;
+    border-radius: var(--complynex-radius-card) var(--complynex-radius-card) 0 0;
+    border-bottom: 3px solid var(--complynex-accent);
+}
+
+.complynex-brand-header img.logo {
+    max-height: 60px;
+    margin-bottom: 15px;
+}
+
+.complynex-brand-header h1 {
+    color: var(--complynex-dark);
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+}
+
+.complynex-brand-header p {
+    color: var(--complynex-gray);
+    margin: 0;
+}
+
+/* Form Card */
+.complynex-form-card {
+    background: var(--complynex-white);
+    border-radius: 0 0 var(--complynex-radius-card) var(--complynex-radius-card);
+    padding: 30px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+}
+
+/* Form Labels */
+.complynex-form-card .form-label {
+    color: var(--complynex-gray);
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+}
+
+/* Form Inputs */
+.complynex-form-card .form-control,
+.complynex-form-card .form-select {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px 15px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.complynex-form-card .form-control:focus,
+.complynex-form-card .form-select:focus {
+    border-color: var(--complynex-accent);
+    box-shadow: 0 0 0 3px rgba(0, 166, 180, 0.15);
+}
+
+.complynex-form-card .form-control::placeholder {
+    color: #adb5bd;
+}
+
+/* Primary Button (navy -> teal gradient, matches the login sign-in button) */
+.btn-complynex {
+    background: linear-gradient(135deg, var(--complynex-primary) 0%, var(--complynex-accent) 100%);
+    border: none;
+    color: white;
+    padding: 14px 40px;
+    border-radius: var(--complynex-radius);
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(18, 62, 95, 0.3);
+}
+
+.btn-complynex:hover {
+    background: linear-gradient(135deg, var(--complynex-primary-dark) 0%, var(--complynex-accent-dark) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(18, 62, 95, 0.4);
+    color: white;
+}
+
+.btn-complynex-outline {
+    border: 2px solid var(--complynex-primary);
+    color: var(--complynex-primary);
+    background: transparent;
+    padding: 12px 30px;
+    border-radius: var(--complynex-radius);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-complynex-outline:hover {
+    background: var(--complynex-primary);
+    color: white;
+}
+
+/* Section Titles */
+.complynex-section-title {
+    background: var(--complynex-light-gray);
+    padding: 10px 15px;
+    border-left: 4px solid var(--complynex-accent);
+    margin: 25px 0 15px;
+    font-weight: 600;
+    color: var(--complynex-dark);
+}
+
+/* Info Box */
+.complynex-info-box {
+    background: #E9F6F7;
+    border: 1px solid #BEE6E9;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.complynex-info-box h6 {
+    color: var(--complynex-accent-dark);
+    font-weight: 600;
+}
+
+/* Tracking Box */
+.complynex-tracking-box {
+    background: var(--complynex-light-gray);
+    border: 3px dashed var(--complynex-accent-bright);
+    border-radius: 12px;
+    padding: 25px;
+    margin: 25px 0;
+    text-align: center;
+}
+
+.complynex-tracking-id {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--complynex-primary);
+    letter-spacing: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+/* Status Badges */
+.badge-complynex-approved {
+    background: #28a745;
+    color: white;
+    padding: 8px 20px;
+    border-radius: var(--complynex-radius);
+    font-size: 1rem;
+}
+
+.badge-complynex-pending {
+    background: #ffc107;
+    color: #333;
+    padding: 8px 20px;
+    border-radius: var(--complynex-radius);
+    font-size: 1rem;
+}
+
+.badge-complynex-rejected {
+    /* semantic "rejected" status - kept red on purpose, distinct from brand color */
+    background: var(--complynex-status-danger);
+    color: white;
+    padding: 8px 20px;
+    border-radius: var(--complynex-radius);
+    font-size: 1rem;
+}
+
+/* Footer */
+.complynex-footer {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
+}
+
+.complynex-footer a {
+    color: white;
+    text-decoration: underline;
+}
+
+/* Success Icon */
+.complynex-success-icon {
+    font-size: 80px;
+    color: #28a745;
+}
+
+/* Cards for internal pages */
+.complynex-card {
+    border: none;
+    border-radius: var(--complynex-radius-card);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+}
+
+.complynex-card .card-header {
+    background: var(--complynex-light-gray);
+    border-bottom: 1px solid #e0e0e0;
+    font-weight: 600;
+    color: var(--complynex-dark);
+}
+
+/* Timeline */
+.complynex-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.complynex-timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.complynex-timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.complynex-timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--complynex-primary);
+}
+
+.complynex-timeline-item.success::before {
+    background: #28a745;
+}
+
+.complynex-timeline-item.danger::before {
+    /* semantic "danger" step - kept red on purpose, distinct from brand color */
+    background: var(--complynex-status-danger);
+}
+
+.complynex-timeline-item.warning::before {
+    background: #ffc107;
+}
+
+/* Checkbox styling */
+.complynex-form-card .form-check-input:checked {
+    background-color: var(--complynex-primary);
+    border-color: var(--complynex-primary);
+}
+
+/* Links */
+a.complynex-link {
+    color: var(--complynex-primary);
+    text-decoration: underline;
+}
+
+a.complynex-link:hover {
+    color: var(--complynex-primary-dark);
+}
+
+/* Warning Box */
+.complynex-warning-box {
+    background: #FFF3CD;
+    border: 1px solid #FFECB5;
+    border-radius: 10px;
+    padding: 15px;
+    display: none;
+}

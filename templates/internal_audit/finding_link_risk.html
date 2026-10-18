@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Link Finding to Risk') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('Link Finding to Risk Register') }} - {{ finding.finding_number }}</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Link to Existing Risk') }}</strong></div>
+                <div class="card-body">
+                    <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="link_existing">
+                        <select name="risk_pk" class="form-select mb-3">
+                            {% for r in risks %}<option value="{{ r.id }}">{{ r.risk_id }} - {{ r.risk_title }}</option>{% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">{{ _('Link') }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><strong>{{ _('Create New Risk from this Finding') }}</strong></div>
+                <div class="card-body">
+                    <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="create_new">
+                        <div class="mb-2">
+                            <label class="form-label">{{ _('Category') }}</label>
+                            <select name="category_code" class="form-select">
+                                {% for c in categories %}<option value="{{ c.category_code }}">{{ c.category_name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Risk Owner') }}</label>
+                            <select name="risk_owner_id" class="form-select" required>
+                                {% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <p class="text-muted small">{{ _('The new risk will start as DRAFT with a neutral 3x3 score, ready for the owner to review and re-score.') }}</p>
+                        <button type="submit" class="btn btn-outline-primary btn-sm">{{ _('Create Draft Risk') }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Methodology') }} — {{ _('ESG Management') }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+  <div class="ecx-hero ecx-esg">
+    <div class="ecx-eyebrow">{{ _('ESG Management') }}</div>
+    <h1><i class="bi bi-journal-richtext me-2"></i>{{ _('Scoring Methodology') }}</h1>
+    <p>{{ _('How the ESG score behind every pillar and every ring on the dashboard is actually calculated.') }}</p>
+  </div>
+
+  <ul class="nav ecx-nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.dashboard') }}">{{ _('Dashboard') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.materiality') }}">{{ _('Materiality Assessment') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.disclosures') }}">{{ _('Disclosure Tracker') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.framework_view') }}">{{ _('Framework & Weights') }}</a></li>
+    <li class="nav-item"><a class="nav-link active ecx-esg" href="{{ url_for('esg.methodology') }}"><i class="bi bi-info-circle me-1"></i>{{ _('Methodology') }}</a></li>
+  </ul>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="ecx-card mb-3">
+        <h6><i class="bi bi-1-circle me-1"></i>{{ _('Indicator scoring (1-5 maturity scale)') }}</h6>
+        <table class="ecx-table-clean">
+          {% for v, label in maturity_labels.items() %}
+          <tr><td class="fw-semibold">{{ v }}</td><td>{{ label }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      <div class="ecx-card mb-3">
+        <h6><i class="bi bi-2-circle me-1"></i>{{ _('Roll-up formula') }}</h6>
+        <div class="ecx-methodology-box ecx-esg">
+          <code>{{ _('Pillar Score') }} = Σ(indicator_weight × indicator_score) ÷ Σ(indicator_weight)</code><br><br>
+          <code>{{ _('Overall Score') }} = Σ(pillar_weight × pillar_score) ÷ Σ(pillar_weight)</code>
+        </div>
+        <p class="small mt-3 mb-0">{{ _('Unanswered indicators (and unscored pillars) are excluded from both the numerator and denominator — never treated as a zero. This keeps a partially completed assessment honest rather than artificially deflated, which was a specific bug pattern found in the earlier consultant spreadsheets whenever a row was left blank.') }}</p>
+      </div>
+      <div class="ecx-card">
+        <h6><i class="bi bi-3-circle me-1"></i>{{ _('Why a fourth "Regulatory" pillar') }}</h6>
+        <p class="small mb-0">{{ _('Global ESG frameworks (GRI, IFRS S1/S2, TCFD) are built for listed multinationals and don\'t weight CBE/FRA supervisory standing at all. For an Egyptian PSP, AML/CFT programme maturity, licensing standing, and regulatory reporting track record are as material to stakeholders as the classic E/S/G pillars — so I-ESG Egypt gives them their own 15%% weight rather than burying them inside Governance.') }}</p>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="ecx-card">
+        <h6><i class="bi bi-book me-1"></i>{{ _('Standards this framework draws on') }}</h6>
+        <ul class="small" style="padding-inline-start:18px;">
+          <li>{{ _('GRI Universal & Topic Standards') }}</li>
+          <li>{{ _('IFRS S1 / S2 (Sustainability & Climate Disclosures)') }}</li>
+          <li>{{ _('TCFD recommendations') }}</li>
+          <li>{{ _('CBE regulatory & AML/CFT expectations, Law 80/2002') }}</li>
+          <li>{{ _('Egypt\'s National Financial Inclusion Strategy') }}</li>
+        </ul>
+      </div>
+      <div class="ecx-card mt-3">
+        <h6><i class="bi bi-bullseye me-1"></i>{{ _('Materiality scoring') }}</h6>
+        <p class="small mb-0">{{ _('Each topic is scored on a 1-5 scale for stakeholder importance and business impact. The matrix plots importance against impact — topics in the top-right are the highest reporting priorities. This does not feed into the pillar scores directly; it is a separate lens used to decide what to report on, per GRI 3 guidance on determining material topics.') }}</p>
+      </div>
+      <div class="ecx-card mt-3">
+        <h6><i class="bi bi-list-check me-1"></i>{{ _('Disclosure completion %%') }}</h6>
+        <p class="small mb-0">{{ _('Each framework\'s completion percentage counts "Complete" items fully and "Partial" items as half-credit: (complete + 0.5 × partial) ÷ total. "Not Applicable" items are excluded from the denominator once marked, so they don\'t artificially suppress a framework\'s score.') }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

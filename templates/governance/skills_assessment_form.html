@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Skills Assessment') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Skills Assessment: ') }} {{ member.member_name }}</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <form method="POST" class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Rate Competency (1-5)') }}</h5>
+                <small class="text-muted">{{ _('1: Beginner, 3: Competent, 5: Expert') }}</small>
+            </div>
+            <div class="card-body">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="row g-3">
+                    {% set skills = [
+                    ('financial_expertise', _('Financial Expertise')),
+                    ('risk_management', _('Risk Management')),
+                    ('compliance_regulatory', _('Compliance & Regulatory')),
+                    ('technology_digital', _('Technology & Digital')),
+                    ('strategy_business', _('Strategy & Business')),
+                    ('human_resources', _('Human Resources')),
+                    ('legal', _('Legal')),
+                    ('audit', _('Audit')),
+                    ('marketing_sales', _('Marketing & Sales')),
+                    ('operations', _('Operations'))
+                    ] %}
+
+                    {% for key, label in skills %}
+                    <div class="col-md-6">
+                        <label class="form-label">{{ label }}</label>
+                        <select name="{{ key }}" class="form-select">
+                            <option value="0">0 - {{ _('None') }}</option>
+                            <option value="1">1 - {{ _('Basic Awareness') }}</option>
+                            <option value="2">2 - {{ _('Developing') }}</option>
+                            <option value="3">3 - {{ _('Competent') }}</option>
+                            <option value="4">4 - {{ _('Advanced') }}</option>
+                            <option value="5">5 - {{ _('Expert') }}</option>
+                        </select>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <hr>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="has_professional_certifications"
+                        id="certCheck">
+                    <label class="form-check-label" for="certCheck">
+                        {{ _('Holder of Relevant Professional Certifications') }}
+                    </label>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ _('List Certifications') }}</label>
+                    <textarea name="certifications_list" class="form-control" rows="2"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">{{ _('Save Assessment') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

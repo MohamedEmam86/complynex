@@ -1,0 +1,170 @@
+# NOTE: torch/torchvision below MUST be installed from the CPU wheel index
+# (https://download.pytorch.org/whl/cpu) — the default PyPI index resolves
+# to CUDA builds + ~3GB of unused NVIDIA packages on this GPU-less server.
+# Install torch/torchvision separately first, e.g.:
+#   pip install torch==2.12.1 torchvision==0.27.1 --index-url https://download.pytorch.org/whl/cpu
+# then `pip install -r requirements.txt` (it will see them already satisfied).
+#
+# NOTE: insightface declares a hard dependency on `opencv-python` (the GUI
+# build), which conflicts with `opencv-python-headless` below — both
+# install into the same `cv2` namespace and the GUI build fails on this
+# headless server (missing libGL.so.1), breaking cv2 for everyone. After
+# `pip install -r requirements.txt`, run:
+#   pip uninstall -y opencv-python
+#   pip install --force-reinstall --no-deps opencv-python-headless==4.13.0.92
+#
+# Regenerated via `pip freeze` on Contabo (complynex.online) on 2026-07-17
+# during the Hostinger->Contabo migration, after discovering this file was
+# missing several real runtime dependencies that were only installed ad hoc
+# on Hostinger and never captured back into this file: prometheus_client
+# (metrics), pyotp + qrcode (MFA), plus ~24 transitive deps surfaced by
+# --no-deps installation. This freeze is the actual known-good installed
+# state as of that date — treat it as source of truth going forward.
+annotated-doc==0.0.4
+anyio==4.12.1
+babel==2.18.0
+bcrypt==5.0.0
+beautifulsoup4==4.14.3
+blinker==1.9.0
+boolean.py==5.0
+CacheControl==0.14.4
+certifi==2026.2.25
+cffi==2.0.0
+charset-normalizer==3.4.6
+click==8.3.1
+colorama==0.4.6
+croniter==6.2.4
+cryptography==46.0.5
+cssselect2==0.9.0
+cyclonedx-python-lib==11.11.0
+defusedxml==0.7.1
+Deprecated==1.3.1
+easyocr==1.7.2
+elastic-transport==8.19.0
+elasticsearch==8.15.0
+et_xmlfile==2.0.0
+faiss-cpu==1.13.2
+feedparser==6.0.12
+filelock==3.25.2
+Flask==3.1.3
+flask-babel==4.0.0
+Flask-Limiter==4.1.1
+Flask-Login==0.6.3
+Flask-Mail==0.10.0
+Flask-SQLAlchemy==3.1.1
+Flask-WTF==1.2.2
+flatbuffers==25.12.19
+fonttools==4.63.0
+fpdf2==2.8.7
+fsspec==2026.2.0
+fuzzywuzzy==0.18.0
+gevent==25.9.1
+greenlet==3.3.2
+gunicorn==25.1.0
+h11==0.16.0
+hf-xet==1.4.2
+httpcore==1.0.9
+httpx==0.28.1
+huggingface_hub==1.7.1
+idna==3.11
+ImageIO==2.37.3
+insightface==1.0.1
+itsdangerous==2.2.0
+jellyfish==1.2.1
+Jinja2==3.1.6
+joblib==1.5.3
+lazy-loader==0.5
+Levenshtein==0.27.3
+license-expression==30.4.4
+limits==5.8.0
+lxml==6.1.1
+markdown-it-py==4.0.0
+MarkupSafe==3.0.3
+mdurl==0.1.2
+ml_dtypes==0.5.4
+mpmath==1.3.0
+msgpack==1.2.1
+nest-asyncio==1.6.0
+networkx==3.6.1
+newsapi-python==0.2.7
+ninja==1.13.0
+numpy==2.4.3
+onnx==1.22.0
+onnxruntime==1.27.0
+opencv-python-headless==4.13.0.92
+openpyxl==3.1.5
+ordered-set==4.1.0
+packageurl-python==0.17.6
+packaging==26.0
+pandas==3.0.1
+pillow==12.2.0
+pip-api==0.0.34
+pip-requirements-parser==32.0.1
+pip_audit==2.10.1
+platformdirs==4.10.0
+prometheus_client==0.25.0
+protobuf==7.35.1
+psycopg2-binary==2.9.12
+py-serializable==2.1.0
+PyArabic==0.6.15
+pyclipper==1.4.0
+pycparser==3.0
+pydyf==0.12.1
+Pygments==2.19.2
+PyOTP==2.10.0
+pyparsing==3.3.2
+pyphen==0.17.2
+python-bidi==0.6.11
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.2
+python-Levenshtein==0.27.3
+pytz==2026.1.post1
+PyYAML==6.0.3
+qrcode==8.2
+RapidFuzz==3.14.3
+redis==8.0.0
+regex==2026.2.28
+requests==2.32.5
+rich==14.3.3
+rq==2.9.1
+safetensors==0.7.0
+schedule==1.2.2
+scikit-image==0.26.0
+scikit-learn==1.8.0
+scipy==1.17.1
+sentence-transformers==5.3.0
+setuptools==82.0.1
+sgmllib3k==1.0.0
+shapely==2.1.2
+shellingham==1.5.4
+six==1.17.0
+sniffio==1.3.1
+sortedcontainers==2.4.0
+soupsieve==2.8.3
+SQLAlchemy==2.0.48
+sympy==1.14.0
+threadpoolctl==3.6.0
+tifffile==2026.7.14
+tinycss2==1.5.1
+tinyhtml5==2.1.0
+tokenizers==0.22.2
+tomli==2.4.1
+tomli_w==1.2.0
+torch==2.12.1+cpu
+torchvision==0.27.1+cpu
+tqdm==4.67.3
+transformers==5.3.0
+transliterate==1.10.2
+typer==0.24.1
+typing_extensions==4.15.0
+tzdata==2025.3
+urllib3==2.6.3
+weasyprint==69.0
+webencodings==0.5.1
+Werkzeug==3.1.6
+wrapt==2.2.2
+WTForms==3.2.1
+zope.event==6.1
+zope.interface==8.2
+nh3==0.3.6
+dnspython>=2.6

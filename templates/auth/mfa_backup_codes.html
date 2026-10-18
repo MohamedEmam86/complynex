@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Backup Codes - ComplyNex CMS') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #F8F8F8; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .card { border: none; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,.10); max-width: 460px; width: 100%; }
+        .card-header { background: linear-gradient(135deg, #1a5e38 0%, #28a745 100%); border-radius: 16px 16px 0 0; color: #fff; padding: 1.75rem; text-align: center; }
+        .code-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+        .code-item { font-family: monospace; font-size: 1.1rem; letter-spacing: .15em; background: #f0f4f8; border-radius: 8px; padding: .5rem .75rem; text-align: center; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-shield-check fs-1 mb-2 d-block"></i>
+        <h4 class="mb-0">{{ _('MFA Enabled Successfully') }}</h4>
+        <small class="opacity-75">{{ _('Save your backup codes now') }}</small>
+    </div>
+    <div class="card-body p-4">
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-octagon me-2"></i>
+            <strong>{{ _('Save these codes now.') }}</strong> {{ _('They will not be shown again. Each code can only be used once to log in if you lose your phone.') }}
+        </div>
+
+        <div class="code-grid mb-4">
+            {% for code in codes %}
+            <div class="code-item">{{ code }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="d-grid gap-2">
+            <button data-onclick-fn="copyAll" class="btn btn-outline-secondary">
+                <i class="bi bi-clipboard me-2"></i>{{ _('Copy all codes') }}
+            </button>
+            <a href="{{ url_for(next_endpoint | default('dashboard')) }}" class="btn btn-primary">
+                <i class="bi bi-house me-2"></i>{{ _('Continue to Dashboard') }}
+            </a>
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+function copyAll() {
+    const codes = {{ codes | tojson }};
+    navigator.clipboard.writeText(codes.join('\n')).then(() => {
+        const btn = document.querySelector('[data-onclick-fn="copyAll"]');
+        btn.innerHTML = '<i class="bi bi-check2 me-2"></i>Copied!';
+        setTimeout(() => btn.innerHTML = '<i class="bi bi-clipboard me-2"></i>Copy all codes', 2000);
+    });
+}
+</script>
+<script src="{{ url_for('static', filename='js/csp_helpers.js') }}"></script>
+</body>
+</html>

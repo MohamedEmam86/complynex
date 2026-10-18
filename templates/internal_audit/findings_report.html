@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Internal Audit Findings Report') }} — ComplyNex{% endblock %}
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+  .fdr-report { max-width: 1000px; margin: 0 auto; background: #fff; padding: 2.5rem; }
+  .fdr-report h2 { color: #7a1f1f; border-bottom: 2px solid #7a1f1f; padding-bottom: .3rem; margin-top: 1.6rem; }
+  .fdr-report .rpt-head { text-align: center; border-bottom: 3px double #7a1f1f; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .fdr-sig { border-top: 1px solid #999; margin-top: 4rem; padding-top: .3rem; width: 260px; display: inline-block; }
+  @media print {
+    .sidebar, .sidebar-container, nav, .navbar, .no-print, .site-footer, .btn { display: none !important; }
+    .main-content, .fdr-report { margin: 0 !important; padding: 0.5cm !important; width: 100% !important; max-width: 100% !important; }
+    body { background: #fff !important; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+<div class="no-print d-flex justify-content-between align-items-center mb-3">
+  <a href="{{ url_for('internal_audit.findings') }}" class="btn btn-secondary btn-sm">&larr; {{ _('Back to Findings Dashboard') }}</a>
+  <button class="btn btn-success btn-sm" data-action="print"><i class="bi bi-printer me-1"></i>{{ _('Print / Save as PDF') }}</button>
+</div>
+
+<div class="fdr-report shadow-sm">
+  <div class="rpt-head">
+    <h1 class="h3 mb-1">{{ company_name }}</h1>
+    <h3>{{ _('Internal Audit Findings Report') }}</h3>
+    <div class="text-muted">{{ _('تقرير نتائج المراجعة الداخلية') }}</div>
+    <div class="small text-muted">{{ _('Generated:') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+  </div>
+
+  <h2>{{ _('1. Summary') }}</h2>
+  <div class="row text-center mb-3">
+    <div class="col-3"><div class="border rounded p-2"><div class="h4 mb-0">{{ summary.open_findings_count }}</div><div class="small text-muted">{{ _('Open') }}</div></div></div>
+    <div class="col-3"><div class="border rounded p-2 border-danger"><div class="h4 mb-0 text-danger">{{ summary.overdue_count }}</div><div class="small text-muted">{{ _('Overdue') }}</div></div></div>
+    <div class="col-3"><div class="border rounded p-2"><div class="h4 mb-0">{{ summary.closed_count }}</div><div class="small text-muted">{{ _('Closed to Date') }}</div></div></div>
+    <div class="col-3"><div class="border rounded p-2"><div class="h4 mb-0">{{ findings|length }}</div><div class="small text-muted">{{ _('Total Findings') }}</div></div></div>
+  </div>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light"><tr><th>{{ _('Severity') }}</th><th>{{ _('Open Count') }}</th></tr></thead>
+    <tbody>
+      {% for sev, cnt in summary.open_by_severity.items() %}
+      <tr><td>{{ sev }}</td><td>{{ cnt }}</td></tr>
+      {% else %}
+      <tr><td colspan="2" class="text-center text-muted">{{ _('No open findings.') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('2. All Findings') }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr>
+        <th>{{ _('#') }}</th><th>{{ _('Audit Project') }}</th><th>{{ _('Title') }}</th>
+        <th>{{ _('Severity') }}</th><th>{{ _('Status') }}</th><th>{{ _('Responsible') }}</th>
+        <th>{{ _('Target Date') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in findings %}
+      {% set proj = projects_by_id.get(f.project_id) %}
+      {% set person = users_by_id.get(f.responsible_person_id) %}
+      <tr class="{{ 'table-danger' if f.status in open_statuses and f.target_date and f.target_date < today else '' }}">
+        <td>{{ f.finding_number }}</td>
+        <td>{{ proj.audit_name if proj else '-' }}</td>
+        <td>{{ f.finding_title }}</td>
+        <td>
+          <span class="badge {{ 'bg-danger' if f.severity in ('CRITICAL','HIGH') else ('bg-warning text-dark' if f.severity == 'MEDIUM' else 'bg-secondary') }}">
+            {{ f.severity }}
+          </span>
+        </td>
+        <td>{{ f.status }}</td>
+        <td>{{ (person.first_name ~ ' ' ~ person.last_name) if person else '-' }}</td>
+        <td>{{ f.target_date or '-' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="text-center text-muted">{{ _('No findings recorded yet.') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('3. Detail: Root Cause, Recommendation and Agreed Action') }}</h2>
+  {% for f in findings %}
+  <div class="mb-3 pb-2 border-bottom">
+    <p class="mb-1"><strong>{{ f.finding_number }} — {{ f.finding_title }}</strong> <span class="badge bg-secondary">{{ f.severity }} / {{ f.status }}</span></p>
+    {% if f.root_cause %}<p class="small mb-1"><strong>{{ _('Root Cause:') }}</strong> {{ f.root_cause }}</p>{% endif %}
+    {% if f.recommendation %}<p class="small mb-1"><strong>{{ _('Recommendation:') }}</strong> {{ f.recommendation }}</p>{% endif %}
+    {% if f.management_response %}<p class="small mb-1"><strong>{{ _('Management Response:') }}</strong> {{ f.management_response }}</p>{% endif %}
+    {% if f.agreed_action %}<p class="small mb-0"><strong>{{ _('Agreed Action:') }}</strong> {{ f.agreed_action }}</p>{% endif %}
+  </div>
+  {% else %}
+  <p class="text-muted small">{{ _('No findings recorded yet.') }}</p>
+  {% endfor %}
+
+  <div class="mt-5">
+    <div class="row">
+      <div class="col-6"><span class="fdr-sig">{{ _('Head of Internal Audit') }}</span></div>
+      <div class="col-6"><span class="fdr-sig">{{ _('Audit Committee Chair') }}</span></div>
+    </div>
+  </div>
+</div>
+
+{% include 'partials/attachment_widget.html' %}
+</div>
+
+{# ---- Editable narrative sections (added 2026-07-24) ------------------ #}
+{% if can_edit_report %}
+<div class="text-end mb-3 no-print">
+    <a href="{{ url_for('internal_audit.findings_report_edit') }}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-pencil-square me-1"></i>{{ _('Edit Report Narrative') }}
+    </a>
+</div>
+{% endif %}
+{% if narrative %}
+{% for key, label, value in narrative %}
+{% if value %}
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white"><strong>{{ label }}</strong></div>
+    <div class="card-body"><p class="mb-0" style="white-space: pre-wrap;">{{ value }}</p></div>
+</div>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% endblock %}

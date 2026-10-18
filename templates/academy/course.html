@@ -1,0 +1,92 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ L(c, 'title') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+{% set done = enr.lessons_done or [] %}
+<p class="ia-crumb"><a href="{{ url_for('academy.dashboard') }}">{{ t('My learning', 'تعلّمي') }}</a> / {{ L(c, 'title') }}</p>
+<div class="ia-course">
+  <aside class="ia-toc">
+    <h2>{{ L(c, 'title') }}</h2>
+    <div class="ia-progress"><span style="width: {{ (100 * done|length / lessons|length)|round|int if lessons else 0 }}%"></span></div>
+    <ol>
+      {% for l in lessons %}
+      <li class="{% if current and l.position == current.position %}is-current{% endif %} {% if l.position in done %}is-done{% endif %}">
+        <a href="{{ url_for('academy.course', slug=c.slug, lesson=l.position) }}">{{ L(l, 'title') }}</a></li>
+      {% endfor %}
+      <li class="{% if ready %}is-open{% else %}is-locked{% endif %}"><a href="#assessment">{{ t('Assessment', 'الاختبار') }}</a></li>
+    </ol>
+    <p class="ia-small ia-muted">{{ t('Pass mark', 'درجة النجاح') }} {{ c.pass_mark }}% · {{ c.questions_per_attempt }} {{ t('questions', 'سؤال') }}</p>
+  </aside>
+
+  <section class="ia-lesson">
+    {% if current %}
+      <p class="ia-tag">{{ t('Lesson', 'الدرس') }} {{ current.position }} / {{ lessons|length }}</p>
+      <h1>{{ L(current, 'title') }}</h1>
+
+      {# ---- Video: uploaded MP4 wins, else YouTube/Vimeo embed, else plain link ---- #}
+      {% if current.video_file %}
+        {% set vdone = vp is not none and vp.completed_at %}
+        {% if not vdone %}
+        <div class="ia-cnx" id="iaCnx" data-min="15"
+             data-label="{{ t('Continue to the video', 'انتقل إلى الفيديو') }}">
+          {% include 'academy/_complynex_intro.html' %}
+          <button type="button" class="ia-btn" id="iaCnxGo" disabled>{{ t('Continue to the video', 'انتقل إلى الفيديو') }} (<span id="iaCnxCount">15</span>)</button>
+        </div>
+        {% else %}
+        <details class="ia-cnx ia-cnx--done"><summary>{{ t('About ComplyNex', 'عن ComplyNex') }}</summary>{% include 'academy/_complynex_intro.html' %}</details>
+        {% endif %}
+        <div class="ia-media" id="iaVideoWrap" {% if not vdone %}hidden{% endif %}>
+          <video id="iaVideo" controls preload="metadata" controlsList="nodownload noplaybackrate" disablePictureInPicture
+                 data-endpoint="{{ url_for('academy.lesson_video', slug=c.slug, pos=current.position) }}"
+                 data-max="{{ vp.max_position if vp else 0 }}" data-done="{{ 1 if vdone else 0 }}"
+                 src="{{ url_for('academy.lesson_file', lid=current.id, kind='video') }}"></video>
+        </div>
+        {% if not vdone %}
+        <p class="ia-small ia-muted" id="iaVideoNote" hidden>{{ t('Watch the whole video to continue — skipping ahead and speeding up are disabled. You can pause and come back; your place is saved.', 'شاهد الفيديو كاملًا للمتابعة — التقديم والتسريع غير متاحين. يمكنك الإيقاف والعودة لاحقًا وسيتم حفظ موضعك.') }}</p>
+        <p class="ia-small ia-ok" id="iaVideoDone" hidden>{{ t('Video completed — you can continue.', 'تمت مشاهدة الفيديو — يمكنك المتابعة.') }}</p>
+        {% endif %}
+      {% elif current.video_url %}
+        {% set ev = embed_url(current.video_url) %}
+        {% if ev %}<div class="ia-media ia-media--16x9"><iframe src="{{ ev }}" title="{{ L(current, 'title') }}" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>
+        {% else %}<p><a class="ia-btn ia-btn--ghost ia-btn--sm" href="{{ current.video_url }}" target="_blank" rel="noopener">{{ t('Watch the video', 'شاهد الفيديو') }}</a></p>{% endif %}
+      {% endif %}
+
+      {# ---- Presentation: PDF shown inline, PPTX offered as download ---- #}
+      {% if current.presentation_file %}
+        <h3 class="ia-h3">{{ t('Presentation', 'العرض التقديمي') }}</h3>
+        {% if ext_of(current.presentation_file) == 'pdf' %}
+          <div class="ia-media ia-media--slides"><iframe src="{{ url_for('academy.lesson_file', lid=current.id, kind='presentation') }}#view=FitH" title="{{ t('Presentation', 'العرض التقديمي') }}"></iframe></div>
+          <p class="ia-small"><a href="{{ url_for('academy.lesson_file', lid=current.id, kind='presentation') }}" target="_blank">{{ t('Open full screen', 'افتح بملء الشاشة') }}</a></p>
+        {% else %}
+          <p><a class="ia-btn ia-btn--ghost ia-btn--sm" href="{{ url_for('academy.lesson_file', lid=current.id, kind='presentation') }}">{{ t('Download the presentation', 'حمّل العرض التقديمي') }} ({{ ext_of(current.presentation_file)|upper }})</a></p>
+        {% endif %}
+      {% endif %}
+
+      <div class="ia-prose">{{ L(current, 'body')|ia_body }}</div>
+
+      {% if current.material_file %}
+        <div class="ia-callout">{{ t('Lesson material:', 'مادة الدرس:') }}
+          <a href="{{ url_for('academy.lesson_file', lid=current.id, kind='material') }}">{{ current.material_name or t('Download', 'تحميل') }}</a></div>
+      {% endif %}
+      <form method="post" action="{{ url_for('academy.lesson_done', slug=c.slug, pos=current.position) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="ia-btn" id="iaDoneBtn" {% if current.video_file and not (vp is not none and vp.completed_at) %}disabled{% endif %}>{{ t('Mark complete & continue', 'تم — الدرس التالي') }}</button>
+      </form>
+    {% endif %}
+
+    <div id="assessment" class="ia-assess">
+      <h2>{{ t('Assessment', 'الاختبار') }}</h2>
+      {% if enr.status == 'passed' %}
+        <p>{{ t('You passed this course with', 'اجتزت هذه الدورة بدرجة') }} <b>{{ enr.best_score }}%</b>. <a href="{{ url_for('academy.dashboard') }}">{{ t('Your certificate', 'شهادتك') }}</a></p>
+      {% elif not ready %}
+        <p class="ia-muted">{{ t('Complete every lesson to unlock the assessment.', 'أكمل كل الدروس لفتح الاختبار.') }}</p>
+      {% elif cooldown %}
+        <p class="ia-muted">{{ t('You can retake the assessment in', 'يمكنك إعادة الاختبار بعد') }} {{ cooldown // 60 + 1 }} {{ t('minutes. Use the time to review the lessons.', 'دقيقة. استغل الوقت في مراجعة الدروس.') }}</p>
+      {% else %}
+        <p>{{ c.questions_per_attempt }} {{ t('questions drawn from the course question bank. Pass mark', 'سؤالًا من بنك أسئلة الدورة. درجة النجاح') }} {{ c.pass_mark }}%.</p>
+        <a class="ia-btn" href="{{ url_for('academy.quiz', slug=c.slug) }}">{{ t('Start the assessment', 'ابدأ الاختبار') }}</a>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

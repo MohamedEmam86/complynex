@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Email Templates') }} - {{ company_name }} CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-envelope-paper me-2"></i>{{ _('Email Templates') }}</h1>
+    <div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTplModal">
+            <i class="bi bi-plus-lg"></i> {{ _('New Template') }}
+        </button>
+        <a href="{{ url_for('admin.settings') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Settings') }}
+        </a>
+    </div>
+</div>
+
+<p class="text-muted small">{{ _('Templates edited here override the built-in defaults. If no active template exists for a key, the system falls back to its hardcoded default — nothing changes until you edit one.') }}</p>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>{{ _('Key') }}</th>
+                <th>{{ _('Subject') }}</th>
+                <th>{{ _('Status') }}</th>
+                <th>{{ _('Updated') }}</th>
+                <th class="text-end">{{ _('Actions') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tpl in templates %}
+            <tr>
+                <td><code>{{ tpl.template_key }}</code></td>
+                <td>{{ tpl.subject }}</td>
+                <td>
+                    {% if tpl.is_active %}
+                    <span class="badge bg-success">{{ _('Active') }}</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ _('Disabled') }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ tpl.updated_at }}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editTpl{{ tpl.id }}">
+                        <i class="bi bi-pencil"></i> {{ _('Edit') }}
+                    </button>
+                </td>
+            </tr>
+
+            <div class="modal fade" id="editTpl{{ tpl.id }}" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <form method="POST" action="{{ url_for('admin.edit_email_template', template_id=tpl.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-header">
+                                <h5 class="modal-title">{{ tpl.template_key }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('Subject') }}</label>
+                                    <input type="text" name="subject" class="form-control" value="{{ tpl.subject }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('Body (HTML)') }}</label>
+                                    <textarea name="body_html" class="form-control" rows="6">{{ tpl.body_html or '' }}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('Body (Plain Text fallback)') }}</label>
+                                    <textarea name="body_text" class="form-control" rows="3">{{ tpl.body_text or '' }}</textarea>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="active{{ tpl.id }}" {{ 'checked' if tpl.is_active }}>
+                                    <label class="form-check-label" for="active{{ tpl.id }}">{{ _('Active (overrides built-in default)') }}</label>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                                <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <tr><td colspan="5" class="text-center py-4 text-muted">{{ _('No templates yet — create one below.') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="createTplModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.create_email_template') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ _('New Email Template') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Template Key') }}</label>
+                        <input type="text" name="template_key" class="form-control" placeholder="{{ _('e.g. password_reset') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Subject') }}</label>
+                        <input type="text" name="subject" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Body (HTML)') }}</label>
+                        <textarea name="body_html" class="form-control" rows="6"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Body (Plain Text fallback)') }}</label>
+                        <textarea name="body_text" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('Create') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

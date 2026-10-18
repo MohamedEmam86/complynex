@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Submission Status - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% if session.get('dir') == 'rtl' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+</head>
+
+<body class="complynex-public">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10 col-md-12">
+                <!-- Brand Header -->
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        class="logo">
+                    <h1><i class="bi bi-search"></i> {{ _('Submission Status') }}</h1>
+                    <p>{{ _('View your compliance submissions') }}</p>
+                </div>
+
+                <!-- Form Card -->
+                <div class="complynex-form-card">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <!-- Email Check Form -->
+                    <form method="POST" action="{{ url_for('portal.status') }}" class="mb-4">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="input-group">
+                            <input type="email" name="email" class="form-control form-control-lg"
+                                placeholder="{{ _('Enter your company email') }}" value="{{ email if email else '' }}"
+                                required>
+                            <button type="submit" class="btn btn-complynex">
+                                <i class="bi bi-search"></i> {{ _('Check Status') }}
+                            </button>
+                        </div>
+                    </form>
+
+                    {% if user %}
+                    <hr>
+                    <h5 class="mb-3">
+                        <i class="bi bi-person-circle"></i>
+                        {{ user.first_name }} {{ user.last_name }}
+                        <small class="text-muted">({{ email }})</small>
+                    </h5>
+
+                    <!-- COI Submissions -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <i class="bi bi-file-earmark-text"></i> {{ _('COI Declarations') }}
+                        </div>
+                        <div class="card-body">
+                            {% if coi_submissions %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ _('Campaign') }}</th>
+                                            <th>{{ _('Year') }}</th>
+                                            <th>{{ _('Submitted') }}</th>
+                                            <th>{{ _('Status') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sub in coi_submissions %}
+                                        <tr>
+                                            <td>{{ sub.campaign_name }}</td>
+                                            <td>{{ sub.campaign_year }}</td>
+                                            <td>{{ (sub.created_at|string)[:10] if sub.created_at else _('N/A') }}</td>
+                                            <td>
+                                                {% if sub.status == 'approved' %}
+                                                <span class="badge bg-success">{{ _('Approved') }}</span>
+                                                {% elif sub.status == 'under_review' %}
+                                                <span class="badge bg-warning text-dark">{{ _('Under Review') }}</span>
+                                                {% elif sub.status == 'submitted' %}
+                                                <span class="badge bg-info">{{ _('Submitted') }}</span>
+                                                {% elif sub.status == 'requires_clarification' %}
+                                                <span class="badge bg-danger">{{ _('Requires Clarification') }}</span>
+                                                <a href="{{ url_for('portal.verify_coi_pin', id=sub.id) }}"
+                                                    class="btn btn-sm btn-outline-danger ms-2">
+                                                    <i class="bi bi-chat-dots"></i> {{ _('Respond') }}
+                                                </a>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ sub.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">{{ _('No COI declarations found.') }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- COBEC Submissions -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <i class="bi bi-shield-check"></i> {{ _('COBEC Declarations') }}
+                        </div>
+                        <div class="card-body">
+                            {% if cobec_submissions %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ _('Year') }}</th>
+                                            <th>{{ _('Submitted') }}</th>
+                                            <th>{{ _('Status') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sub in cobec_submissions %}
+                                        <tr>
+                                            <td>{{ sub.declaration_year }}</td>
+                                            <td>{{ (sub.created_at|string)[:10] if sub.created_at else _('N/A') }}</td>
+                                            <td>
+                                                {% if sub.status == 'approved' %}
+                                                <span class="badge bg-success">{{ _('Approved') }}</span>
+                                                {% elif sub.status == 'submitted' %}
+                                                <span class="badge bg-info">{{ _('Submitted') }}</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ sub.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">{{ _('No COBEC declarations found.') }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Policy Acknowledgments -->
+                    <div class="card mb-4 border-info">
+                        <div class="card-header bg-info text-white">
+                            <i class="bi bi-file-earmark-check"></i> {{ _('Policy Acknowledgments') }}
+                        </div>
+                        <div class="card-body">
+                            {% if policy_acknowledgments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ _('Policy Name') }}</th>
+                                            <th>{{ _('Number') }}</th>
+                                            <th>{{ _('Date') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sub in policy_acknowledgments %}
+                                        <tr>
+                                            <td>{{ sub.policy_name }}</td>
+                                            <td><code>{{ sub.policy_number }}</code></td>
+                                            <td>{{ (sub.acknowledgment_date|string)[:10] if sub.acknowledgment_date else
+                                                _('N/A') }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">{{ _('No policies acknowledged yet.') }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Training Status -->
+                    <div class="card mb-4 border-success">
+                        <div class="card-header bg-success text-white">
+                            <i class="bi bi-mortarboard"></i> {{ _('Training & Certifications') }}
+                        </div>
+                        <div class="card-body">
+                            {% if training_enrollments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ _('Course') }}</th>
+                                            <th>{{ _('Status') }}</th>
+                                            <th>{{ _('Score') }}</th>
+                                            <th>{{ _('Pass Score') }}</th>
+                                            <th>{{ _('Certificate') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sub in training_enrollments %}
+                                        <tr>
+                                            <td>{{ sub.course_name }}</td>
+                                            <td>
+                                                <span
+                                                    class="badge {% if sub.status == 'completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                                    {{ _(sub.status | capitalize) }}
+                                                </span>
+                                            </td>
+                                            <td>{{ sub.score if sub.score is not none else '-' }}%</td>
+                                            <td>{{ sub.passing_score }}%</td>
+                                            <td>
+                                                {% if sub.cert_id %}
+                                                <a href="{{ url_for('training.download_certificate', cert_id=sub.cert_id) }}"
+                                                    class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-download"></i> {{ _('Download') }}
+                                                </a>
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">{{ _('No training enrollments found.') }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- GHE Submissions -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <i class="bi bi-gift"></i> {{ _('GHE Submissions') }}
+                        </div>
+                        <div class="card-body">
+                            {% if ghe_submissions %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ _('Type') }}</th>
+                                            <th>{{ _('Direction') }}</th>
+                                            <th>{{ _('Value') }}</th>
+                                            <th>{{ _('Date') }}</th>
+                                            <th>{{ _('Status') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sub in ghe_submissions %}
+                                        <tr>
+                                            <td>{{ sub.ghe_type }}</td>
+                                            <td>{{ sub.direction }}</td>
+                                            <td>{{ sub.estimated_value_egp }} {{ _('EGP') }}</td>
+                                            <td>{{ (sub.event_date|string)[:10] if sub.event_date else _('N/A') }}</td>
+                                            <td>
+                                                {% if sub.approval_status == 'approved' %}
+                                                <span class="badge bg-success">{{ _('Approved') }}</span>
+                                                {% elif sub.approval_status == 'pending_manager' %}
+                                                <span class="badge bg-warning text-dark">{{ _('Pending Manager')
+                                                    }}</span>
+                                                {% elif sub.approval_status == 'pending_compliance' %}
+                                                <span class="badge bg-info">{{ _('Pending Compliance') }}</span>
+                                                {% elif sub.approval_status == 'rejected' %}
+                                                <span class="badge bg-danger">{{ _('Rejected') }}</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ sub.approval_status }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">{{ _('No GHE submissions found.') }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('portal.dashboard') }}" class="complynex-link">
+                            <i class="bi bi-arrow-left"></i> {{ _('Back to Portal') }}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="complynex-footer">
+                    <p>{{ _('&copy; 2026 ComplyNex. All rights reserved. &nbsp;|&nbsp; Powered by Mohamed Emam &nbsp;|&nbsp;') }} <a href="mailto:info@complynex.online">{{ _('info@complynex.online') }}</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block title %}Cycle Details - {{ campaign.campaign_name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="bi bi-calendar-check"></i> {{ campaign.campaign_name }}</h2>
+        <p class="text-muted">
+            <span class="badge bg-secondary me-2">{{ campaign.campaign_year }}</span>
+            {{ _('Cycle Details and Statistics') }}
+        </p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('coi.list_campaigns') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Cycles') }}
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Cycle Status Card -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">{{ _('Cycle Status') }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="text-muted small text-uppercase">{{ _('Status') }}</label>
+                    <div><span class="badge bg-{{ 'success' if campaign.status == 'active' else 'secondary' }}">
+                            {{ campaign.status|title }}
+                        </span></div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small text-uppercase">{{ _('Period') }}</label>
+                    <div>{{ campaign.start_date }} to {{ campaign.end_date }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small text-uppercase">{{ _('Description') }}</label>
+                    <p class="text-muted">{{ campaign.description }}</p>
+                </div>
+
+                {% if current_user.is_compliance_officer() %}
+                <hr>
+                <h6>{{ _('Compliance Officer Actions') }}</h6>
+                <div class="btn-group d-flex flex-column gap-2">
+                    <a href="{{ url_for('coi.export_campaign', id=campaign.id) }}" class="btn btn-outline-success">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Export CSV') }}
+                    </a>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                        data-bs-target="#manageEmployeesModal">
+                        <i class="bi bi-people"></i> {{ _('Manage Employees') }}
+                    </button>
+                    {% if campaign.status == 'active' %}
+                    <form method="POST" action="{{ url_for('coi.close_campaign', id=campaign.id) }}" class="d-inline"
+                        data-confirm="Are you sure you want to close this campaign?">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-x-circle"></i> {{ _('Close Campaign') }}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if campaign.status == 'active' and not current_user.is_compliance_officer() %}
+                <hr>
+                <h6>{{ _('Actions') }}</h6>
+                <form method="POST" action="{{ url_for('coi.send_reminders', id=campaign.id) }}" class="mb-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-warning w-100">
+                        <i class="bi bi-bell"></i> {{ _('Send Reminders') }}
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ _('Statistics') }}</h5>
+                <a href="{{ url_for('admin.list_users') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-people"></i> {{ _('Manage Employees') }}
+                </a>
+            </div>
+            <div class="card-body">
+                <h6 class="text-muted">{{ _('Participation Rate') }}</h6>
+                {% if campaign.campaign_type != 'adhoc' %}
+                <div class="progress mb-3" style="height: 25px;">
+                    <div class="progress-bar bg-success" role="progressbar"
+                        style="width: {{ campaign.completion_rate }}%" aria-valuenow="{{ campaign.completion_rate }}"
+                        aria-valuemin="0" aria-valuemax="100">
+                        {{ campaign.completion_rate }}%
+                    </div>
+                </div>
+                <div class="text-center text-muted small">
+                    {{ stats.completed }} of {{ stats.total_employees }} employees have completed the declaration
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i> {{ _('This is an ad-hoc campaign. Declarations are
+                    voluntary/incident-based.') }}
+                    <br>
+                    <strong>{{ stats.completed }}</strong> {{ _('declarations submitted so far.') }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <h6 class="card-title opacity-75">{{ _('Total Employees') }}</h6>
+                <h2 class="display-6 mb-0">{{ stats.total_employees }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <h6 class="card-title opacity-75">{{ _('Completed') }}</h6>
+                <h2 class="display-6 mb-0">{{ stats.completed }}</h2>
+                <small>{{ stats.completion_rate }}% Completion</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <h6 class="card-title opacity-75">{{ _('Under Review') }}</h6>
+                <h2 class="display-6 mb-0">{{ stats.submitted }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark h-100">
+            <div class="card-body">
+                <h6 class="card-title opacity-75">{{ _('Not Started') }}</h6>
+                <h2 class="display-6 mb-0">{{ stats.pending }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white h-100">
+            <div class="card-body">
+                <h6 class="card-title opacity-75">{{ _('Overdue') }}</h6>
+                <h2 class="display-6 mb-0">{{ stats.overdue }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Members Table -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0">{{ _('Compliance Tracker') }}</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{{ _('Employee') }}</th>
+                        <th>{{ _('Department') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Completion Date') }}</th>
+                        <th>{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in members %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-initial rounded-circle bg-label-primary me-2">
+                                    {{ member.employee_name[:1] }}
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ member.employee_name }}</h6>
+                                    <small class="text-muted">{{ member.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ member.department }}</td>
+                        <td>
+                            {% if member.participation_status == 'completed' %}
+                            <span class="badge bg-success">{{ _('Completed') }}</span>
+                            {% elif member.participation_status == 'submitted' %}
+                            <span class="badge bg-info">{{ _('Under Review') }}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{{ _('Pending') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ (member.completed_date|string)[:10] if member.completed_date else '-' }}</td>
+                        <td>
+                            {% if member.declaration_id %}
+                            <a href="{{ url_for('coi.view_declaration', id=member.declaration_id) }}"
+                                class="btn btn-sm btn-outline-primary">
+                                {{ _('View') }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted small">{{ _('No declaration') }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-1 d-block mb-3"></i>
+                            {{ _('No members in this campaign') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

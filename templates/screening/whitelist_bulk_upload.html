@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Bulk Add to Whitelist') }} — ComplyNex{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0"><i class="bi bi-file-earmark-arrow-up"></i> {{ _('Bulk Add Approved Customers to Whitelist') }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Instructions -->
+                    <div class="alert alert-info border-0 shadow-sm">
+                        <h5 class="alert-heading fw-bold"><i class="bi bi-info-circle"></i> {{ _('Instructions:') }}</h5>
+                        <p>{{ _('To whitelist a batch of already-approved customers at once, instead of adding them one by one:') }}</p>
+                        <ol class="mb-3">
+                            <li>{{ _('Download the CSV template below.') }}</li>
+                            <li>{{ _('Fill in one row per customer.') }} <code>name</code> {{ _('and') }} <code>reason</code> {{ _('are mandatory; the rest are optional.') }}</li>
+                            <li>{{ _('Save the file in') }} <code>.csv</code> {{ _('or') }} <code>.xlsx</code> {{ _('format.') }}</li>
+                            <li>{{ _('Upload it below.') }}</li>
+                        </ol>
+                        <p class="mb-0 fs-7">{{ _('Each row is added independently — a mistake in one row will not block the rest of the batch. Rows that match an existing whitelist entry (same normalized name) update the reason instead of failing.') }}</p>
+                    </div>
+
+                    <!-- Template Download -->
+                    <div class="card mb-4 border shadow-none bg-light">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="mb-1 fw-bold">{{ _('Need a starting point?') }}</h6>
+                                <p class="text-muted small mb-0">{{ _('Download the template with the expected columns and two examples.') }}</p>
+                            </div>
+                            <a href="{{ url_for('screening.download_whitelist_template') }}"
+                                class="btn btn-primary d-flex align-items-center gap-2">
+                                <i class="bi bi-download"></i> {{ _('Download Template') }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Upload Form -->
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ _('Select File (CSV or Excel)') }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="bi bi-file-earmark-spreadsheet text-success"></i></span>
+                                <input type="file" name="file" class="form-control" accept=".csv,.xlsx" required>
+                            </div>
+                            <div class="form-text mt-2">
+                                {{ _('Required columns: name, reason. Optional: entity_type, national_id, commercial_registry, date_of_birth, nationality.') }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <a href="{{ url_for('screening.manage_whitelist') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg"></i> {{ _('Cancel') }}
+                            </a>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                                <i class="bi bi-upload"></i> {{ _('Upload and Add') }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Import Results -->
+                    {% if import_total is defined %}
+                    <div class="mt-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> {{ _('Import Result') }}</h5>
+                            <span class="badge bg-success">{{ import_successful }}/{{ import_total }} {{ _('added') }}</span>
+                        </div>
+                        {% if import_errors %}
+                        <div class="alert alert-warning p-0 overflow-hidden border-0 shadow-sm">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped mb-0 small">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th class="ps-3 py-2">{{ _('Row') }}</th>
+                                            <th class="py-2">{{ _('Name') }}</th>
+                                            <th class="pe-3 py-2">{{ _('Reason for failure') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for error in import_errors[:25] %}
+                                        <tr>
+                                            <td class="ps-3">{{ error.row }}</td>
+                                            <td><code>{{ error.name }}</code></td>
+                                            <td class="pe-3">{{ error.error }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% if import_errors|length > 25 %}
+                                <div class="p-2 text-center bg-light text-muted small">
+                                    {{ _('And %(n)s more...', n=import_errors|length - 25) }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

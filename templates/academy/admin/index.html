@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% from 'academy/admin/_provider.html' import provider_badge %}
+{% block title %}{{ _('Integrys Academy') }}{% endblock %}
+{% block content %}
+{% set page_title = _('Overview') %}
+{% include 'academy/admin/_nav.html' %}
+
+{% if not public_enabled %}
+<div class="alert alert-warning py-2"><i class="bi bi-lock"></i> {{ _('The public portal is CLOSED. Visitors see an "opening soon" page. Staff can preview from Settings.') }}
+  <a href="{{ url_for('academy_admin.settings') }}" class="alert-link">{{ _('Settings') }}</a></div>
+{% endif %}
+
+<div class="row g-3 mb-3">
+  {% for label, val, cls, link in [
+      (_('Registered'), k.registered, 'primary', url_for('academy_admin.learners')),
+      (_('Email verified'), k.verified, 'success', url_for('academy_admin.learners', status='active')),
+      (_('Awaiting verification'), k.pending, 'secondary', url_for('academy_admin.learners', status='pending')),
+      (_('Started a course'), e.enrolled, 'info', url_for('academy_admin.learners')),
+      (_('Passed'), e.passed, 'success', url_for('academy_admin.learners', outcome='passed')),
+      (_('Valid certificates'), certs, 'primary', url_for('academy_admin.certificates')),
+      (_('Marketing opt-in'), k.marketing, 'warning', url_for('academy_admin.learners', marketing='1')),
+      (_('New in 30 days'), k.last30, 'dark', url_for('academy_admin.learners'))] %}
+  <div class="col-6 col-md-3"><a href="{{ link }}" class="text-decoration-none"><div class="card text-center h-100"><div class="card-body py-3">
+    <div class="h3 mb-0 text-{{ cls }}">{{ val or 0 }}</div><div class="text-muted small">{{ label }}</div></div></div></a></div>
+  {% endfor %}
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3"><div class="card-header bg-light"><strong>{{ _('Courses') }}</strong></div>
+      <table class="table table-sm mb-0 align-middle">
+        <thead><tr><th>{{ _('Course') }}</th><th>{{ _('Status') }}</th><th class="text-end">{{ _('Enrolled') }}</th><th class="text-end">{{ _('Passed') }}</th><th class="text-end">{{ _('Pass rate') }}</th><th class="text-end">{{ _('Avg best score') }}</th></tr></thead>
+        <tbody>
+        {% for c in courses %}
+        <tr><td><a href="{{ url_for('academy_admin.course', cid=c.id) }}">{{ c.title_en }}</a> {{ provider_badge(c.provider) }}</td>
+            <td><span class="badge bg-{{ 'success' if c.status == 'published' else 'secondary' }}">{{ c.status }}</span></td>
+            <td class="text-end">{{ c.enrolled }}</td><td class="text-end">{{ c.passed }}</td>
+            <td class="text-end">{{ ((100 * c.passed / c.enrolled)|round|int ~ '%') if c.enrolled else '—' }}</td>
+            <td class="text-end">{{ (c.avg_score ~ '%') if c.avg_score is not none else '—' }}</td></tr>
+        {% else %}<tr><td colspan="6" class="text-muted">{{ _('No courses yet.') }}</td></tr>{% endfor %}
+        </tbody></table></div>
+
+    <div class="card"><div class="card-header bg-light"><strong>{{ _('Top companies (verified learners)') }}</strong></div>
+      <table class="table table-sm mb-0"><tbody>
+      {% for r in companies %}<tr><td><a href="{{ url_for('academy_admin.learners', q=r.company) }}">{{ r.company }}</a></td><td class="text-end">{{ r.n }}</td></tr>
+      {% else %}<tr><td class="text-muted">{{ _('No learners yet.') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card mb-3"><div class="card-header bg-light"><strong>{{ _('Where learners come from') }}</strong></div>
+      <table class="table table-sm mb-0"><tbody>
+      {% for r in sources %}<tr><td>{{ r.s }}</td><td class="text-end">{{ r.n }}</td></tr>
+      {% else %}<tr><td class="text-muted">—</td></tr>{% endfor %}
+      </tbody></table>
+      <div class="card-footer small text-muted">{{ _('Tag LinkedIn links with ?utm_source=linkedin&utm_campaign=… to see campaigns here.') }}</div></div>
+
+    <div class="card"><div class="card-header bg-light"><strong>{{ _('Rejected registration domains') }}</strong>
+      <span class="small text-muted">— {{ _('no personal data kept') }}</span></div>
+      <table class="table table-sm mb-0"><thead><tr><th>{{ _('Domain') }}</th><th>{{ _('Reason') }}</th><th class="text-end">{{ _('Attempts') }}</th></tr></thead><tbody>
+      {% for r in rejected %}<tr><td>{{ r.domain }}</td><td><span class="badge bg-light text-dark">{{ r.reason }}</span></td><td class="text-end">{{ r.hits }}</td></tr>
+      {% else %}<tr><td colspan="3" class="text-muted">{{ _('None yet.') }}</td></tr>{% endfor %}
+      </tbody></table>
+      <div class="card-footer small text-muted">{{ _('If many real prospects appear under free_provider, consider switching the policy to "flag" in Settings.') }}</div></div>
+  </div>
+</div>
+{% endblock %}

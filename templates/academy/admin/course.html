@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% from 'academy/admin/_provider.html' import provider_badge %}
+{% block title %}{{ c.title_en }}{% endblock %}
+{% block content %}
+{% set page_title = _('Course') %}
+{% set can_edit = current_user.can_edit('academy') %}
+{% include 'academy/admin/_nav.html' %}
+<p><a href="{{ url_for('academy_admin.courses') }}" class="small"><i class="bi bi-arrow-left"></i> {{ _('Back to courses') }}</a></p>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card mb-3"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-start gap-2">
+        <div>
+          <h2 class="h5 mb-1">{{ c.title_en }} {{ provider_badge(c.provider) }}</h2>
+          <p class="text-muted mb-2" dir="rtl">{{ c.title_ar or '' }}</p>
+        </div>
+        {% if can_edit %}<a href="{{ url_for('academy_admin.course_form', cid=c.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> {{ _('Edit details') }}</a>{% endif %}
+      </div>
+      <p class="mb-2">{{ c.summary_en or '' }}</p>
+      <div class="d-flex flex-wrap gap-3 small">
+        <span><b>{{ _('Level') }}:</b> {{ c.level }}</span><span><b>{{ _('Duration') }}:</b> {{ c.duration_minutes }} min</span>
+        <span><b>{{ _('Pass mark') }}:</b> {{ c.pass_mark }}%</span><span><b>{{ _('Questions per attempt') }}:</b> {{ c.questions_per_attempt }}</span>
+        <span><b>{{ _('Retry after') }}:</b> {{ c.retry_cooldown_minutes }} min</span><span><b>{{ _('Certificate valid') }}:</b> {{ c.validity_months or '∞' }} {{ _('months') }}</span>
+      </div>
+    </div></div>
+
+    <div class="card mb-3" id="lessons">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong>{{ _('Lessons') }} ({{ lessons|length }})</strong>
+        {% if can_edit %}<a href="{{ url_for('academy_admin.lesson_form', cid=c.id) }}" class="btn btn-sm btn-success"><i class="bi bi-plus-lg"></i> {{ _('Add lesson') }}</a>{% endif %}
+      </div>
+      <table class="table table-sm mb-0 align-middle">
+        <thead class="table-light"><tr><th style="width:3rem">#</th><th>{{ _('Title') }}</th><th>{{ _('Material') }}</th><th class="text-center">{{ _('Video') }}</th><th class="text-center">{{ _('Presentation') }}</th><th class="text-center">{{ _('Handout') }}</th><th></th></tr></thead>
+        <tbody>
+        {% for l in lessons %}
+        <tr>
+          <td>{{ l.position }}</td>
+          <td>{{ l.title_en }}<div class="small text-muted" dir="rtl">{{ l.title_ar or '' }}</div></td>
+          <td class="small">{% if l.body_en %}<i class="bi bi-check-circle text-success"></i> EN{% endif %} {% if l.body_ar %}<i class="bi bi-check-circle text-success"></i> AR{% endif %}</td>
+          <td class="text-center">{% if l.video_file %}<a href="{{ url_for('academy_admin.lesson_file', lid=l.id, kind='video') }}" target="_blank" title="{{ l.video_name }}"><i class="bi bi-camera-video-fill text-primary"></i></a>{% elif l.video_url %}<a href="{{ l.video_url }}" target="_blank" title="{{ l.video_url }}"><i class="bi bi-youtube text-danger"></i></a>{% else %}—{% endif %}</td>
+          <td class="text-center">{% if l.presentation_file %}<a href="{{ url_for('academy_admin.lesson_file', lid=l.id, kind='presentation') }}" target="_blank" title="{{ l.presentation_name }}"><i class="bi bi-easel-fill text-warning"></i></a>{% else %}—{% endif %}</td>
+          <td class="text-center">{% if l.material_file %}<a href="{{ url_for('academy_admin.lesson_file', lid=l.id, kind='material') }}" title="{{ l.material_name }}"><i class="bi bi-file-earmark-arrow-down text-secondary"></i></a>{% else %}—{% endif %}</td>
+          <td class="text-end text-nowrap">{% if can_edit %}
+            <form method="post" action="{{ url_for('academy_admin.lesson_move', cid=c.id, lid=l.id, direction='up') }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-link p-0" title="{{ _('Move up') }}" {{ 'disabled' if loop.first }}><i class="bi bi-arrow-up"></i></button></form>
+            <form method="post" action="{{ url_for('academy_admin.lesson_move', cid=c.id, lid=l.id, direction='down') }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-link p-0" title="{{ _('Move down') }}" {{ 'disabled' if loop.last }}><i class="bi bi-arrow-down"></i></button></form>
+            <a href="{{ url_for('academy_admin.lesson_form', cid=c.id, lid=l.id) }}" class="btn btn-sm btn-outline-primary py-0">{{ _('Edit') }}</a>
+            <form method="post" action="{{ url_for('academy_admin.lesson_delete', cid=c.id, lid=l.id) }}" class="d-inline" data-confirm="{{ _('Delete this lesson and its uploaded files?') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button></form>
+          {% endif %}</td>
+        </tr>
+        {% else %}<tr><td colspan="7" class="text-muted">{{ _('No lessons yet.') }}</td></tr>{% endfor %}
+        </tbody></table>
+    </div>
+
+    <div class="card" id="questions">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <strong>{{ _('Question bank') }} — {{ questions|selectattr('is_active')|list|length }} {{ _('active') }}
+          <span class="small text-muted fw-normal">({{ _('each attempt draws') }} {{ c.questions_per_attempt }})</span></strong>
+        {% if can_edit %}
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{{ url_for('academy_admin.question_form', cid=c.id) }}" class="btn btn-sm btn-success"><i class="bi bi-plus-lg"></i> {{ _('Add question') }}</a>
+          <form method="post" enctype="multipart/form-data" action="{{ url_for('academy_admin.questions_import', cid=c.id) }}" class="d-flex gap-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="file" name="csv_file" accept=".csv" class="form-control form-control-sm" style="max-width:210px" required>
+            <button class="btn btn-sm btn-outline-success">{{ _('Import CSV') }}</button>
+          </form>
+          <a href="{{ url_for('academy_admin.questions_template') }}" class="btn btn-sm btn-link">{{ _('CSV template') }}</a>
+        </div>{% endif %}
+      </div>
+      <table class="table table-sm mb-0 small align-top"><tbody>
+      {% for q in questions %}
+      <tr class="{{ '' if q.is_active else 'text-muted' }}"><td style="width:2.5rem">{{ loop.index }}</td>
+        <td><b>{{ q.text_en }}</b>{% if not q.is_active %} <span class="badge bg-secondary">{{ _('disabled') }}</span>{% endif %}
+          <div dir="rtl" class="text-muted">{{ q.text_ar or '' }}</div>
+          <ol type="A" class="mb-1">{% for o in q.options_en %}<li class="{{ 'text-success fw-bold' if loop.index0 == q.correct_index }}">{{ o }}{% if loop.index0 == q.correct_index %} ✓{% endif %}</li>{% endfor %}</ol>
+          {% if q.explanation_en %}<div class="text-muted"><i class="bi bi-info-circle"></i> {{ q.explanation_en }}</div>{% endif %}</td>
+        <td class="text-end text-nowrap">{% if can_edit %}
+          <a href="{{ url_for('academy_admin.question_form', cid=c.id, qid=q.id) }}" class="btn btn-sm btn-outline-primary py-0">{{ _('Edit') }}</a>
+          <form method="post" action="{{ url_for('academy_admin.question_toggle', cid=c.id, qid=q.id) }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-secondary py-0">{{ _('Disable') if q.is_active else _('Enable') }}</button></form>
+          <form method="post" action="{{ url_for('academy_admin.question_delete', cid=c.id, qid=q.id) }}" class="d-inline" data-confirm="{{ _('Delete this question?') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button></form>
+        {% endif %}</td></tr>
+      {% else %}<tr><td class="text-muted">{{ _('No questions yet.') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-header bg-light"><strong>{{ _('Publication') }}</strong></div><div class="card-body">
+      <p>{{ _('Status') }}: <span class="badge bg-{{ {'published':'success','draft':'secondary','retired':'dark'}.get(c.status) }}">{{ c.status }}</span></p>
+      {% set nq = questions|selectattr('is_active')|list|length %}
+      <ul class="small list-unstyled mb-2">
+        <li>{% if lessons %}<i class="bi bi-check-circle text-success"></i>{% else %}<i class="bi bi-x-circle text-danger"></i>{% endif %} {{ _('At least one lesson') }}</li>
+        <li>{% if nq >= c.questions_per_attempt %}<i class="bi bi-check-circle text-success"></i>{% else %}<i class="bi bi-x-circle text-danger"></i>{% endif %} {{ nq }} / {{ c.questions_per_attempt }} {{ _('active questions needed') }}
+          {% if nq < c.questions_per_attempt * 2 %}<div class="text-muted ms-3">{{ _('Tip: 2× the per-attempt number gives each learner a different paper.') }}</div>{% endif %}</li>
+      </ul>
+      {% if c.approved_by %}<p class="small">{{ _('Approved by') }} <b>{{ academy_uname(c.approved_by) }}</b> {{ _('on') }} {{ c.approved_at.strftime('%d %b %Y %H:%M') }}<br><i>{{ c.approval_note }}</i></p>{% endif %}
+      {% if can_edit %}
+      <form method="post" action="{{ url_for('academy_admin.course_status', cid=c.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="status" class="form-select form-select-sm mb-2">
+          {% for s in ['published','draft','retired'] %}<option value="{{ s }}" {{ 'selected' if c.status == s }}>{{ s }}</option>{% endfor %}</select>
+        <textarea name="note" class="form-control form-control-sm mb-2" rows="3" required placeholder="{{ _('Approval note — e.g. Content reviewed and approved by H. El Gaafary and M. Emam on …') }}"></textarea>
+        <button class="btn btn-sm btn-primary w-100">{{ _('Record decision') }}</button>
+      </form>
+      {% endif %}
+      <hr><p class="small mb-0">{{ _('Preview as a learner: Settings → Preview link, then open') }}<br><code class="small">/academy/course/{{ c.slug }}</code></p>
+    </div></div>
+    <div class="card"><div class="card-header bg-light"><strong>{{ _('History') }}</strong></div>
+      <ul class="list-group list-group-flush small">
+      {% for a in log %}<li class="list-group-item">{{ a.created_at.strftime('%d %b %Y %H:%M') }} · <b>{{ a.action }}</b> · {{ academy_uname(a.actor_user_id) }}<br><span class="text-muted">{{ a.detail }}</span></li>
+      {% else %}<li class="list-group-item text-muted">—</li>{% endfor %}
+      </ul></div>
+  </div>
+</div>
+{% endblock %}

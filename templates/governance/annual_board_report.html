@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Annual Board of Directors Report') }} {{ year }} — ComplyNex{% endblock %}
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+  .abr-report { max-width: 950px; margin: 0 auto; background: #fff; padding: 2.5rem; }
+  .abr-report h2 { color: #0d3b66; border-bottom: 2px solid #0d3b66; padding-bottom: .3rem; margin-top: 1.6rem; }
+  .abr-report .rpt-head { text-align: center; border-bottom: 3px double #0d3b66; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .abr-sig { border-top: 1px solid #999; margin-top: 4rem; padding-top: .3rem; width: 260px; display: inline-block; }
+  @media print {
+    .sidebar, .sidebar-container, nav, .navbar, .no-print, .site-footer, .btn { display: none !important; }
+    .main-content, .abr-report { margin: 0 !important; padding: 0.5cm !important; width: 100% !important; max-width: 100% !important; }
+    body { background: #fff !important; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+<div class="no-print d-flex justify-content-between align-items-center mb-3">
+  <a href="{{ url_for('governance.dashboard') }}" class="btn btn-secondary btn-sm">&larr; {{ _('Back') }}</a>
+  <form method="GET" class="d-inline-flex align-items-center">
+    <label class="me-2 small text-muted mb-0">{{ _('Report Year') }}</label>
+    <select name="year" class="form-select form-select-sm me-2" data-auto-submit style="width:auto;">
+      {% for y in years_available %}
+      <option value="{{ y }}" {{ 'selected' if y == year }}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <button class="btn btn-success btn-sm" data-action="print"><i class="bi bi-printer me-1"></i>{{ _('Print / Save as PDF') }}</button>
+</div>
+
+<div class="abr-report shadow-sm">
+  <div class="rpt-head">
+    <h1 class="h3 mb-1">{{ company_name }}</h1>
+    <h3>{{ _('Annual Board of Directors Report') }}</h3>
+    <div class="text-muted">{{ _('تقرير مجلس الإدارة السنوي') }}</div>
+    <div class="mt-2"><strong>{{ _('Reporting Year:') }}</strong> {{ year }}</div>
+    <div class="small text-muted">{{ _('Generated:') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+  </div>
+
+  <h2>{{ _('1. Board Composition') }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Name') }}</th><th>{{ _('Role') }}</th><th>{{ _('Type') }}</th><th>{{ _('Appointed') }}</th><th>{{ _('Status') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for m in board_members %}
+      <tr>
+        <td>{{ m.member_name }}{% if m.member_name_arabic %} <span class="text-muted small">({{ m.member_name_arabic }})</span>{% endif %}</td>
+        <td>{{ m.role or '-' }}</td>
+        <td>{{ m.member_type }}</td>
+        <td>{{ m.appointment_date or '-' }}</td>
+        <td><span class="badge {{ 'bg-success' if m.status == 'ACTIVE' else 'bg-secondary' }}">{{ m.status }}</span></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="text-center text-muted">{{ _('No board members recorded.') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('2. Board Meetings Held in') }} {{ year }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Reference') }}</th><th>{{ _('Type') }}</th><th>{{ _('Date') }}</th><th>{{ _('Quorum Met') }}</th><th>{{ _('Status') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for mt in meetings %}
+      <tr>
+        <td>{{ mt.meeting_reference or '-' }}</td>
+        <td>{{ mt.meeting_type }}</td>
+        <td>{{ mt.meeting_date }}</td>
+        <td>{{ _('Yes') if mt.quorum_met else _('No') }}</td>
+        <td>{{ mt.status }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="text-center text-muted">{{ _('No board meetings recorded for %(y)s.', y=year) }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="text-muted small">{{ _('Total meetings held: %(n)s', n=meetings|length) }}</p>
+
+  <h2>{{ _('3. Attendance Summary') }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Member') }}</th><th>{{ _('Attended') }}</th><th>{{ _('Total Meetings') }}</th><th>{{ _('Attendance Rate') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for a in attendance_rows %}
+      <tr>
+        <td>{{ a.member_name }}</td>
+        <td>{{ a.attended_count }}</td>
+        <td>{{ a.total_count }}</td>
+        <td>{{ ((a.attended_count / a.total_count * 100) if a.total_count else 0) | round(0) | int }}%</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="text-center text-muted">{{ _('No attendance records for %(y)s.', y=year) }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('4. Decisions Taken') }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Meeting Date') }}</th><th>{{ _('Decision #') }}</th><th>{{ _('Decision') }}</th><th>{{ _('Responsible') }}</th><th>{{ _('Deadline') }}</th><th>{{ _('Status') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for d in decisions %}
+      <tr>
+        <td>{{ d.meeting_date }}</td>
+        <td>{{ d.decision_number or '-' }}</td>
+        <td>{{ d.decision_text }}</td>
+        <td>{{ d.responsible_person or '-' }}</td>
+        <td>{{ d.deadline or '-' }}</td>
+        <td>{{ d.status }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center text-muted">{{ _('No decisions recorded for %(y)s.', y=year) }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('5. Committee Activity') }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Committee') }}</th><th>{{ _('Type') }}</th><th>{{ _('Meetings Held in') }} {{ year }}</th></tr>
+    </thead>
+    <tbody>
+      {% for c in committees %}
+      <tr>
+        <td>{{ c.committee_name }}</td>
+        <td>{{ c.committee_type }}</td>
+        <td>{{ committee_meeting_counts.get(c.id, 0) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" class="text-center text-muted">{{ _('No committees recorded.') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('6. Board Training') }}</h2>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Title') }}</th><th>{{ _('Date') }}</th><th>{{ _('Provider') }}</th><th>{{ _('Status') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for t in training %}
+      <tr>
+        <td>{{ t.training_title }}</td>
+        <td>{{ t.training_date }}</td>
+        <td>{{ t.provider_name or '-' }}</td>
+        <td>{{ t.status }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="text-center text-muted">{{ _('No training recorded for %(y)s.', y=year) }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('7. Board Performance Evaluation') }}</h2>
+  {% if evaluations %}
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr><th>{{ _('Type') }}</th><th>{{ _('Methodology') }}</th><th>{{ _('Overall Rating') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for e in evaluations %}
+      <tr><td>{{ e.evaluation_type }}</td><td>{{ e.methodology or '-' }}</td><td>{{ e.overall_rating or '-' }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-muted small">{{ _('No board evaluation recorded for %(y)s.', y=year) }}</p>
+  {% endif %}
+
+  <div class="mt-5">
+    <div class="row">
+      <div class="col-6"><span class="abr-sig">{{ _('Chairman of the Board') }}</span></div>
+      <div class="col-6"><span class="abr-sig">{{ _('Corporate Secretary') }}</span></div>
+    </div>
+  </div>
+</div>
+
+{% include 'partials/attachment_widget.html' %}
+</div>
+{% endblock %}

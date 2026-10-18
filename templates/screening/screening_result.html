@@ -1,0 +1,621 @@
+{% extends "base.html" %}
+
+{# MACRO FOR MATCH CARDS #}
+{% macro render_match_card(match, idx, type) %}
+<div class="card mb-4 border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
+    <div class="row g-0">
+        <div class="col-md-1 bg-light d-flex align-items-center justify-content-center border-end">
+            <div class="text-center">
+                <div class="small text-muted mb-1">{{ _('SCORE') }}</div>
+                <div class="fs-4 fw-bold text-primary">{{ "%.0f"|format(match.match_score) }}%</div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h4 class="card-title fw-bold text-dark mb-0">{{ match.full_name }}</h4>
+                    <span
+                        class="badge {% if type == 'SANCTIONS' %}bg-danger{% else %}bg-warning text-dark{% endif %} text-uppercase">
+                        {{ match.risk_level }}
+                    </span>
+                </div>
+
+                <p class="text-muted small mb-3">
+                    <i class="fas fa-database me-1"></i>
+                    <strong>{{ _('Source:') }}</strong>
+                    {# dataset checks come before the generic source=='opensanctions' catch-all:
+                       the real ingestion pipeline tags every OpenSanctions-origin record
+                       (including the 265,992 Wikidata-sourced ones) with source='opensanctions'
+                       and uses `dataset` for the actual sub-source, so 'wikidata_pep_eg' below
+                       never matched anything real — those records were silently falling through
+                       to the generic "OpenSanctions (Aggregated)" label instead of this one. #}
+                    {% if match.dataset == 'wikidata' %}Egypt PEP - Wikidata (via OpenSanctions)
+                    {% elif match.dataset == 'opensanctions_peps' %}Global PEP Database
+                    {% elif match.source == 'opensanctions' %}OpenSanctions (Aggregated)
+                    {% elif match.source == 'un_consolidated' %}UN Security Council
+                    {% elif match.source == 'ofac_sdn' %}OFAC SDN List
+                    {% elif match.source == 'eu_sanctions' %}EU Financial Sanctions
+                    {% elif match.source == 'uk_hmt' %}UK HMT Consolidated
+                    {% elif match.source == 'emlcu_egypt' %}EMLCU Egyptian Terrorist List
+                    {% elif match.source == 'open_sanctions_pep_eg' %}Egypt PEP - OpenSanctions
+                    {% elif match.source == 'wikidata_pep_eg' %}Egypt PEP - Wikidata
+                    {% else %}{{ match.source_name or match.dataset }}{% endif %}
+                </p>
+
+                <div class="mb-3">
+                    {% if match.properties and match.properties is mapping %}
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        {% if match.properties.get('position') %}
+                        <span class="badge bg-light text-dark border"><i class="fas fa-briefcase me-1 text-muted"></i>
+                            {{ match.properties.get('position') }}</span>
+                        {% endif %}
+                        {% if match.properties.get('nationality') %}
+                        <span class="badge bg-light text-dark border"><i class="fas fa-globe me-1 text-muted"></i> {{
+                            match.properties.get('nationality') }}</span>
+                        {% endif %}
+                        {% if match.properties.get('pep_classification') %}
+                        <span class="badge bg-light text-dark border"><i class="fas fa-user-tag me-1 text-muted"></i> {{
+                            match.properties.get('pep_classification') }}</span>
+                        {% endif %}
+                        {% if match.date_of_birth or match.properties.get('birthDate') %}
+                        <span class="badge bg-light text-dark border"><i
+                                class="fas fa-birthday-cake me-1 text-muted"></i>
+                            {{ match.date_of_birth or match.properties.get('birthDate') }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {# BIOGRAPHICAL INTELLIGENCE / REASON FOR LISTING #}
+                    {% set m_details = match.details if match.details is defined else {} %}
+                    {% set details = m_details if m_details is mapping else {} %}
+                    {# For most watchlist sources (OpenSanctions, OpenSanctions-PEP, UN),
+                       match.details is a plain string — a 1-2 line bio/notability snippet
+                       already extracted server-side from the source's own narrative text
+                       (screening/complynex_engine.py's extract_bio_snippet). Internal
+                       PEP/blacklist hits instead carry details as a dict (reason/notes/etc,
+                       handled above), so only treat it as a bio when it's a non-empty string. #}
+                    {% set bio_text = m_details if (m_details is string and m_details) else "" %}
+
+                    {% set m_props = match.properties if match.properties is defined else {} %}
+                    {% set props = m_props if m_props is mapping else {} %}
+
+                    {% set m_reason = match.reason if match.reason is defined else "" %}
+                    {% set reason = m_reason or details.get('reason') or props.get('reason') %}
+                    {% set notes = details.get('notes') or props.get('notes') %}
+                    {% set summary = details.get('summary') or props.get('summary') %}
+                    {% set program = props.get('program') or props.get('sanctionsProgram') %}
+                    {% if reason or notes or summary or bio_text or program or match.aliases %}
+                    <div class="bg-light p-3 rounded border mb-2 mt-2">
+                        <h6 class="fw-bold mb-2 text-dark"><i class="fas fa-address-card me-1 text-primary"></i> {{ _('Entity
+                            Profile & Intelligence') }}</h6>
+                        <ul class="list-unstyled small text-muted mb-0">
+                            {% if program %}
+                            <li class="mb-1"><strong class="text-dark">{{ _('Sanctions Program:') }}</strong> {{ program }}</li>
+                            {% endif %}
+                            {% if reason %}
+                            <li class="mb-1"><strong class="text-dark">{{ _('Reason for Listing:') }}</strong> {{ reason }}</li>
+                            {% endif %}
+                            {% if bio_text %}
+                            <li class="mb-1"><strong class="text-dark">{{ _('About:') }}</strong> {{ bio_text }}</li>
+                            {% endif %}
+                            {% if summary %}
+                            <li class="mb-1"><strong class="text-dark">{{ _('Summary:') }}</strong> {{ summary }}</li>
+                            {% endif %}
+                            {% if notes %}
+                            <li class="mb-1"><strong class="text-dark">{{ _('Notes:') }}</strong> {{ notes }}</li>
+                            {% endif %}
+                            {% if match.aliases %}
+                            <li class="mb-1">
+                                <strong class="text-dark">{{ _('Known Aliases:') }}</strong>
+                                {% if match.aliases is string %}
+                                {{ match.aliases }}
+                                {% else %}
+                                {{ match.aliases|join(", ") }}
+                                {% endif %}
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <button class="btn btn-sm btn-link p-0 text-decoration-none text-muted" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#breakdown-{{ type }}-{{ idx }}">
+                    <i class="fas fa-plus-circle me-1"></i> {{ _('View Scoring Intelligence') }}
+                </button>
+
+                <div class="collapse mt-2" id="breakdown-{{ type }}-{{ idx }}">
+                    <div class="p-2 bg-light rounded small border">
+                        <div class="row text-center">
+                            <div class="col">
+                                <span class="d-block text-muted">{{ _('Fuzzy') }}</span>
+                                <strong>{{ "%.0f"|format(match.score_breakdown.fuzzy_ratio or 0) }}%</strong>
+                            </div>
+                            <div class="col">
+                                <span class="d-block text-muted">{{ _('Phonetic') }}</span>
+                                <strong>{{ "%.0f"|format(match.score_breakdown.phonetic or 0) }}%</strong>
+                            </div>
+                            <div class="col">
+                                <span class="d-block text-muted">{{ _('Jaro') }}</span>
+                                <strong>{{ "%.0f"|format(match.score_breakdown.jaro_winkler or 0) }}%</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 d-flex flex-column bg-white p-4 border-start">
+            <div class="mb-auto">
+                <h6>{{ _('Decision Support:') }}</h6>
+                <div
+                    class="p-2 rounded {% if type == 'SANCTIONS' %}bg-danger-subtle text-danger{% else %}bg-warning-subtle text-warning-emphasis{% endif %} small fw-bold">
+                    {% if type == 'SANCTIONS' %}
+                    🚨 BLOCK: Entity listed on restricted list.
+                    {% else %}
+                    ⚠️ REVIEW: High-profile political exposure.
+                    {% endif %}
+                </div>
+            </div>
+            {% if match.source_url and match.source_url.startswith('http') %}
+            <a href="{{ match.source_url }}" target="_blank" class="btn btn-dark w-100 btn-sm mt-3">
+                {{ _('OFFICIAL PROFILE') }} <i class="fas fa-external-link-alt ms-1"></i>
+            </a>
+            {% elif match.source_url and match.source in ['opensanctions', 'opensanctions_pep'] %}
+            {# Older cached results (screening_results/screening_history) can still hold a bare
+               OpenSanctions entity ID from before the source_url backfill (2026-07-11) — a relative
+               href here resolves against the current /screening/result/<id> page instead of
+               opensanctions.org and 404s against our own int-only route. Rebuild the real link. #}
+            <a href="https://www.opensanctions.org/entities/{{ match.source_url }}/" target="_blank" class="btn btn-dark w-100 btn-sm mt-3">
+                {{ _('OFFICIAL PROFILE') }} <i class="fas fa-external-link-alt ms-1"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-shield-alt text-primary"></i> {{ _('Screening Result') }}</h1>
+        <div>
+            <a href="{{ url_for('screening.download_report', id=result.id) }}" target="_blank"
+                class="btn btn-outline-primary me-2">
+                <i class="fas fa-file-pdf"></i> {{ _('Download Report') }}
+            </a>
+            <a href="{{ url_for('screening.dashboard') }}" class="btn btn-secondary">{{ _('Back to Dashboard') }}</a>
+        </div>
+    </div>
+
+    {# Matches are classified in the view (screening.match_classifier), not
+       here: deciding PEP vs SANCTIONS is a compliance judgement and used to
+       be wrong because "OpenSanctions" contains the substring "sanction".
+       The block below only runs if a caller rendered this template without
+       supplying the classified lists. #}
+    {% if sanction_matches is not defined %}
+    {% set sanction_matches = [] %}
+    {% set pep_matches = [] %}
+    {% set other_matches = [] %}
+
+    {% if matches %}
+    {% for m in matches %}
+    {% set mtype = (m.list_type|string|lower) if m.list_type else '' %}
+    {% set src = (m.source|string|lower) if m.source else '' %}
+    {% set dataset = (m.dataset|string|lower) if m.dataset else '' %}
+
+    {# Check source for '_pep'/'pep' generically (catches 'opensanctions_pep',
+       'open_sanctions_pep_eg', 'wikidata_pep_eg', etc.) before the sanctions
+       check below — some sources' list_type is a source label like
+       'OpenSanctions' rather than a real PEP/SANCTIONS classification, and
+       that label happens to contain the substring 'sanction', which would
+       otherwise misroute genuine PEP hits into the sanctions bucket. #}
+    {% if 'pep' in mtype or 'politici' in mtype or 'peps' in dataset or 'pep' in src %}
+    {% do pep_matches.append(m) %}
+    {% elif 'sanction' in mtype or 'terror' in mtype or 'watch' in mtype or 'ofac' in src or 'un_consolidated' in src or
+    'hmt' in src or 'eu_sanctions' in src or 'blacklist' in src %}
+    {% do sanction_matches.append(m) %}
+    {% else %}
+    {# Fallback for unknown sources, let's treat them carefully. If it's a high score, maybe show it? For now, append to
+    sanction just to make it visible. #}
+    {% do sanction_matches.append(m) %}
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    {% endif %}
+
+    {# Parse Adverse Media - Now handled in route #}
+    {# adverse_hits is passed from the view function #}
+
+    {# Summary Section #}
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="m-0 font-weight-bold text-dark">{{ _('📊 SCREENING SUMMARY') }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 border-end">
+                    <p class="mb-2"><strong>{{ _('Name Screened:') }}</strong> <span class="fs-5">{{ result.screened_name }}</span>
+                    </p>
+                    <p class="mb-2"><strong>{{ _('Date:') }}</strong> <span class="text-muted">{{ result.created_at }}</span></p>
+
+                    <div class="mt-3">
+                        <p class="mb-1 fw-bold">{{ _('Classification Counts:') }}</p>
+                        <div class="d-flex gap-3 mt-2">
+                            <div class="p-2 border rounded text-center bg-danger-subtle" style="min-width: 120px;">
+                                <div class="small fw-bold text-danger">{{ _('SANCTIONS') }}</div>
+                                <div class="fs-4 fw-bold">{{ sanction_matches|length }}</div>
+                            </div>
+                            <div class="p-2 border rounded text-center bg-warning-subtle" style="min-width: 120px;">
+                                <div class="small fw-bold text-warning-emphasis">PEP</div>
+                                <div class="fs-4 fw-bold">{{ pep_matches|length }}</div>
+                            </div>
+                            <div class="p-2 border rounded text-center bg-info-subtle" style="min-width: 120px;">
+                                <div class="small fw-bold text-info-emphasis">{{ _('ADVERSE MEDIA') }}</div>
+                                <div class="fs-4 fw-bold" id="am-summary-count">
+                                    {% if result.adverse_media_summary and '"risk_level": "PENDING"' in result.adverse_media_summary %}
+                                        <i class="fas fa-spinner fa-spin fs-5 text-info"></i>
+                                    {% elif result.adverse_media_summary and '"risk_level": "TIMEOUT"' in result.adverse_media_summary %}
+                                        <i class="fas fa-exclamation-triangle text-warning fs-5"></i>
+                                    {% else %}
+                                        {{ adverse_hits|length }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="mb-1 fw-bold">{{ _('Verification Scope:') }}</p>
+                        <div class="row small text-muted">
+                            <div class="col-6">
+                                <div>{{ _('✅ OFAC SDN') }}</div>
+                                <div>{{ _('✅ UN Sanctions') }}</div>
+                                <div>{{ _('✅ EU Sanctions') }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div>{{ _('✅ Egypt PEP (OpenSanctions)') }}</div>
+                                <div>{{ _('✅ Egypt PEP (Wikidata)') }}</div>
+                                <div>{{ _('✅ Adverse Media Monitoring') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 ps-4">
+                    <h6 class="fw-bold mb-3">{{ _('Overall Decision:') }}</h6>
+                    {% if sanction_matches|length > 0 %}
+                    <div class="alert alert-danger d-flex align-items-center mb-3">
+                        <i class="fas fa-ban fa-2x me-3"></i>
+                        <div>
+                            <h5 class="alert-heading fw-bold mb-0 text-danger">{{ _('🔴 HIGH RISK (SANCTIONS)') }}</h5>
+                            <p class="mb-0 small">{{ _('Action Required: BLOCK TRANSACTION IMMEDIATELY') }}</p>
+                        </div>
+                    </div>
+                    {% elif pep_matches|length > 0 %}
+                    <div class="alert alert-warning d-flex align-items-center mb-3">
+                        <i class="fas fa-user-tie fa-2x me-3 text-warning"></i>
+                        <div>
+                            <h5 class="alert-heading fw-bold mb-0 text-warning-emphasis">{{ _('🟡 MEDIUM RISK (PEP)') }}</h5>
+                            <p class="mb-0 small">{{ _('Action Required: ENHANCED DUE DILIGENCE') }}</p>
+                        </div>
+                    </div>
+                    {% elif adverse_hits|length > 0 %}
+                    <div class="alert alert-info d-flex align-items-center mb-3">
+                        <i class="fas fa-newspaper fa-2x me-3"></i>
+                        <div>
+                            <h5 class="alert-heading fw-bold mb-0 text-info">{{ _('🔵 ADVERSE MEDIA DETECTED') }}</h5>
+                            <p class="mb-0 small">{{ _('Action Required: REVIEW NEGATIVE NEWS') }}</p>
+                        </div>
+                    </div>
+                    {% elif result.adverse_media_summary and '"risk_level": "TIMEOUT"' in result.adverse_media_summary %}
+                    <div class="alert alert-secondary d-flex align-items-center mb-3">
+                        <i class="fas fa-exclamation-triangle fa-2x me-3 text-warning"></i>
+                        <div>
+                            <h5 class="alert-heading fw-bold mb-0 text-dark">{{ _('⚪ ADVERSE MEDIA TIMEOUT') }}</h5>
+                            <p class="mb-0 small">{{ _('External APIs failed to respond in time.') }}</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success d-flex align-items-center mb-3">
+                        <i class="fas fa-check-circle fa-2x me-3"></i>
+                        <div>
+                            <h5 class="alert-heading fw-bold mb-0 text-success">{{ _('🟢 CLEAR') }}</h5>
+                            <p class="mb-0 small">{{ _('Action Required: PROCEED (STANDARD DUE DILIGENCE)') }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="p-3 bg-light rounded border">
+                        <p class="mb-0"><strong>{{ _('Highest Match Confidence:') }}</strong></p>
+                        <div class="fs-2 fw-bold text-primary">{{ "%.1f"|format(result.highest_match_score) }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <div class="accordion" id="screeningResultsAccordion">
+
+        {# SECTION 1: SANCTIONS MATCHES #}
+        <div class="accordion-item mb-3 border-0 shadow-sm rounded overflow-hidden">
+            <h2 class="accordion-header" id="headingSanctions">
+                <button class="accordion-button {% if not sanction_matches %}collapsed{% endif %}" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseSanctions"
+                    aria-expanded="{% if sanction_matches %}true{% else %}false{% endif %}"
+                    aria-controls="collapseSanctions">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                            style="width: 40px; height: 40px;">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-bold text-danger">{{ _('Sanctions Matches') }}</h5>
+                            <small class="text-muted">{{ _('Hits from global/local enforcement and restricted lists') }}</small>
+                        </div>
+                        <span class="badge bg-danger rounded-pill ms-auto me-3 fs-6">{{ sanction_matches|length
+                            }}</span>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapseSanctions" class="accordion-collapse collapse {% if sanction_matches %}show{% endif %}"
+                aria-labelledby="headingSanctions" data-bs-parent="#screeningResultsAccordion">
+                <div class="accordion-body bg-light">
+                    {% if sanction_matches %}
+                    {% for match in sanction_matches %}
+                    {{ render_match_card(match, loop.index, 'SANCTIONS') }}
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-check-circle text-success fs-3 mb-2"></i>
+                        <p class="mb-0">{{ _('No matches found in Sanctions Lists') }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# SECTION 2: PEP MATCHES #}
+        <div class="accordion-item mb-3 border-0 shadow-sm rounded overflow-hidden">
+            <h2 class="accordion-header" id="headingPEP">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapsePEP" aria-expanded="false" aria-controls="collapsePEP">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center me-3"
+                            style="width: 40px; height: 40px;">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-bold text-dark">{{ _('PEP Matches') }}</h5>
+                            <small class="text-muted">{{ _('Politically Exposed Persons (OpenSanctions/Wikidata)') }}</small>
+                        </div>
+                        <span class="badge bg-warning text-dark rounded-pill ms-auto me-3 fs-6">{{ pep_matches|length
+                            }}</span>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapsePEP" class="accordion-collapse collapse" aria-labelledby="headingPEP"
+                data-bs-parent="#screeningResultsAccordion">
+                <div class="accordion-body bg-light">
+                    {% if pep_matches %}
+                    {% for match in pep_matches %}
+                    {{ render_match_card(match, loop.index, 'PEP') }}
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-user-check text-success fs-3 mb-2"></i>
+                        <p class="mb-0">{{ _('No matches found in PEP Databases') }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# SECTION 3: ADVERSE MEDIA #}
+        <div class="accordion-item mb-3 border-0 shadow-sm rounded overflow-hidden">
+            <h2 class="accordion-header" id="headingMedia">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseMedia" aria-expanded="false" aria-controls="collapseMedia">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                            style="width: 40px; height: 40px;">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-bold text-info">{{ _('Adverse Media Hits') }}</h5>
+                            <small class="text-muted">{{ _('Negative news and media reports') }}</small>
+                        </div>
+                        <span class="badge bg-info text-white rounded-pill ms-auto me-3 fs-6">
+                            {% if result.adverse_media_summary and '"risk_level": "PENDING"' in result.adverse_media_summary %}
+                                <i class="fas fa-circle-notch fa-spin"></i>
+                            {% else %}
+                                {{ adverse_hits|length }}
+                            {% endif %}
+                        </span>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapseMedia" class="accordion-collapse collapse" aria-labelledby="headingMedia"
+                data-bs-parent="#screeningResultsAccordion">
+                <div class="accordion-body bg-light">
+                    {% if result.adverse_media_summary and '"risk_level": "PENDING"' in result.adverse_media_summary %}
+                    <div class="text-center py-5 text-muted" id="adverse-media-spinner">
+                        <div class="spinner-border text-info mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+                        <h5 class="fw-bold">{{ _('Running Background Media Search...') }}</h5>
+                        <p>{{ _('Querying external news APIs and RSS feeds asynchronously to prevent pipeline blocking.') }}</p>
+                    </div>
+                    <div id="adverse-media-error" class="text-center text-danger py-4 fw-bold"></div>
+                    {% elif adverse_hits %}
+                    <div class="row g-4">
+                        {% for hit in adverse_hits %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm border-0 border-top border-info border-3">
+                                <div class="card-body p-4 d-flex flex-column">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="badge bg-info-subtle text-info fw-bold">{{ hit.source|upper
+                                            }}</span>
+                                        <span class="text-muted small"><i class="far fa-clock me-1"></i> {{
+                                            (hit.published_at or hit.published or hit.publishedAt or "")[:10] }}</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold mb-3 text-dark">{{ hit.title }}</h5>
+                                    <p class="card-text text-muted small flex-grow-1">
+                                        {{ hit.description or hit.summary or "Negative news report regarding entity
+                                        involvement in risk activities." }}
+                                    </p>
+
+                                    <div class="mb-3">
+                                        {% if hit.risk_keywords %}
+                                        {% for kw in hit.risk_keywords[:3] %}
+                                        <span
+                                            class="badge bg-danger-subtle text-danger border border-danger-subtle small me-1">{{
+                                            kw }}</span>
+                                        {% endfor %}
+                                        {% elif hit.matched_keywords %}
+                                        {% for kw in hit.matched_keywords[:3] %}
+                                        <span
+                                            class="badge bg-danger-subtle text-danger border border-danger-subtle small me-1">{{
+                                            kw }}</span>
+                                        {% endfor %}
+                                        {% endif %}
+                                    </div>
+
+                                    <a href="{{ hit.link or hit.url }}" target="_blank"
+                                        class="btn btn-outline-info w-100 btn-sm fw-bold">
+                                        {{ _('VIEW FULL ARTICLE') }} <i class="fas fa-external-link-alt ms-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% elif result.adverse_media_summary and '"risk_level": "TIMEOUT"' in result.adverse_media_summary %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-exclamation-triangle text-warning fs-3 mb-2"></i>
+                        <p class="mb-0">{{ _('Failed to complete media search due to network timeout across external sources.') }}</p>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-globe text-success fs-3 mb-2"></i>
+                        <p class="mb-0">{{ _('No adverse media hits identified') }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ---- ADJUDICATION RECORD (shown once a decision has been made) ---- #}
+    {% if result.status in ['TRUE_HIT', 'FALSE_POSITIVE'] %}
+    <div class="card mb-5 border-0 shadow-lg">
+        <div class="card-header {{ 'bg-danger' if result.status == 'TRUE_HIT' else 'bg-success' }} text-white py-3">
+            <h5 class="mb-0 fw-bold px-2">
+                <i class="fas fa-gavel me-2"></i>
+                {% if result.status == 'TRUE_HIT' %}{{ _('CONFIRMED TRUE MATCH — ENTITY BLOCKED') }}
+                {% else %}{{ _('CONFIRMED FALSE POSITIVE — ENTITY CLEARED') }}{% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <div class="text-muted small text-uppercase fw-bold">{{ _('Decision') }}</div>
+                    <div class="fs-5 fw-bold {{ 'text-danger' if result.status == 'TRUE_HIT' else 'text-success' }}">
+                        {% if result.status == 'TRUE_HIT' %}{{ _('True Match') }}{% else %}{{ _('False Positive') }}{% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="text-muted small text-uppercase fw-bold">{{ _('Adjudicated by') }}</div>
+                    <div>{{ result.resolved_by_name or result.resolved_by_email or _('Unknown') }}</div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="text-muted small text-uppercase fw-bold">{{ _('Date') }}</div>
+                    <div>{{ result.resolved_at or '-' }}</div>
+                </div>
+            </div>
+            {% if result.resolution_notes %}
+            <hr>
+            <div class="text-muted small text-uppercase fw-bold">{{ _('Reviewer Rationale') }}</div>
+            <p class="mb-0" style="white-space: pre-wrap;">{{ result.resolution_notes }}</p>
+            {% endif %}
+            <hr>
+            <div class="text-muted small">
+                {{ _('Screened by') }}:
+                {{ result.screened_by_name or result.screened_by_email or _('Unknown') }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# RESOLUTION SECTION - NULL is treated as pending: results created before
+       the status default was added would otherwise never show these controls. #}
+    {% if not result.status or result.status == 'PENDING' %}
+    <div class="card mb-5 border-0 shadow-lg" style="background: #f8f9fa;">
+        <div class="card-header bg-dark text-white py-3">
+            <h5 class="mb-0 fw-bold px-2"><i class="fas fa-gavel me-2"></i> {{ _('COMPLIANCE RESOLUTION') }}</h5>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ url_for('screening.resolve_hit') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="result_id" value="{{ result.id }}">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">{{ _('Final Decision') }}</label>
+                        <select name="status" class="form-select shadow-sm" required>
+                            <option value="">{{ _('Select Action...') }}</option>
+                            <option value="TRUE_HIT">{{ _('🚨 CONFIRM POSITIVE (Block Entity)') }}</option>
+                            <option value="FALSE_POSITIVE">{{ _('✅ CONFIRM FALSE POSITIVE (Clear Entity)') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label fw-bold">{{ _('Reviewer Rationale') }}</label>
+                        <textarea name="notes" class="form-control shadow-sm" rows="1"
+                            placeholder="{{ _('Provide justification for the compliance decision...') }}" required></textarea>
+                    </div>
+                </div>
+                <div class="text-end mt-2">
+                    <button type="submit" class="btn btn-dark btn-lg px-5 shadow-sm fw-bold">{{ _('SUBMIT
+                        ADJUDICATION') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+    document.addEventListener("DOMContentLoaded", function() {
+        const resultId = "{{ result.id }}";
+        // Uses Jinja's |tojson (not manual backtick-escaping) so any character that
+        // could break out of this script context — <\/script>, backslashes, unicode
+        // line/paragraph separators — is properly escaped. adverse_media_summary
+        // ultimately reflects scraped/third-party news text, so it must never be
+        // treated as trusted HTML/JS.
+        const amSummaryJSON = {{ result.adverse_media_summary | tojson }};
+        let isPending = false;
+        try {
+            if (amSummaryJSON.includes('"risk_level": "PENDING"')) isPending = true;
+        } catch(e) {}
+
+        if (isPending) {
+            console.log("Adverse media is pending, executing background fetch via /screening/api/adverse_media/" + resultId);
+            fetch(`/screening/api/adverse_media/${resultId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        // Refresh the entire page so Jinja re-renders the DOM with the newly seeded SQLite record
+                        window.location.reload();
+                    }
+                })
+                .catch((err) => {
+                    console.error('Adverse media fetch failed:', err);
+                    document.getElementById('adverse-media-spinner').style.display = 'none';
+                    document.getElementById('adverse-media-error').innerHTML =
+                        '<p>{{ _('Media search temporarily unavailable. Please try again later.') }}</p>';
+                });
+        }
+    });
+</script>
+{% endblock %}

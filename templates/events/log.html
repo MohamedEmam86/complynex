@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Compliance Event Log') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">{{ _('Compliance Event Log') }}</h4>
+        <a href="{{ url_for('events.rules_list') }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-diagram-3 me-1"></i>{{ _('Routing Rules') }}
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{{ _('Time') }}</th>
+                        <th>{{ _('Event Type') }}</th>
+                        <th>{{ _('Source') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Details') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in events %}
+                    <tr>
+                        <td class="small text-muted">{{ e.created_at }}</td>
+                        <td><code>{{ e.event_type }}</code></td>
+                        <td class="small">{{ e.source_module or '-' }}{% if e.source_record_id %} #{{ e.source_record_id }}{% endif %}</td>
+                        <td>
+                            {% if e.status == 'processed' %}
+                            <span class="badge bg-success-subtle text-success border">{{ _('Processed') }}</span>
+                            {% elif e.status == 'error' %}
+                            <span class="badge bg-danger-subtle text-danger border">{{ _('Error') }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border">{{ _('Pending') }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ e.error_message or (e.payload | tojson) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-5">{{ _('No events yet.') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

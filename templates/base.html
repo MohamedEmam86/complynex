@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="{{ get_locale() }}" dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+<head>
+    <link href="{{ url_for('static', filename='vendor/fonts/quicksand/quicksand.css') }}" rel="stylesheet">
+
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ComplyNex Full Compliance Platform">
+    <title>{% block title %}{{ company_name }} CMS{% endblock %}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+
+    <!-- Bootstrap 5 CSS -->
+    {# bootstrap-css-once: load ONE Bootstrap build, not both.
+       Previously the LTR build (227 KB) loaded unconditionally and the RTL
+       build (227 KB) was added on top for Arabic — 455 KB of render-blocking
+       CSS for Arabic users, of which half was immediately overridden. The RTL
+       build is complete on its own. #}
+    {% if get_locale() == 'ar' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    {% else %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    {% endif %}
+
+    <!-- Bootstrap Icons -->
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="{{ url_for('static', filename='vendor/fontawesome/6.4.2/all.min.css') }}" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ static_v('css/style.css') }}">
+    <!-- ComplyNex Brand CSS -->
+    <link rel="stylesheet" href="{{ static_v('css/complynex-brand.css') }}">
+    <!-- Governance / Regulatory Reporting shared styles -->
+    <link rel="stylesheet" href="{{ static_v('css/governance-reporting.css') }}">
+    <!-- Restructured sidebar -->
+    <link rel="stylesheet" href="{{ static_v('css/cnx-sidebar.css') }}">
+
+    {% if get_locale() == 'ar' %}
+    <link rel="stylesheet" href="{{ static_v('css/rtl.css') }}">
+    {% endif %}
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+    <div class="app-wrapper">
+        <!-- Sidebar Container -->
+        {% if current_user.is_authenticated %}
+        <div class="sidebar-container">
+            {% include 'partials/sidebar.html' %}
+        </div>
+        {% endif %}
+
+        <!-- Main Wrapper (Navbar + Content + Footer) -->
+        <div class="main-wrapper">
+            <!-- Navbar -->
+            {% include 'partials/navbar.html' %}
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+                {% include 'partials/breadcrumbs.html' %}
+                
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="container-fluid mb-4">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {% if category == 'success' %}
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif category == 'danger' %}
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% elif category == 'warning' %}
+                        <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        {% else %}
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <!-- Page Content -->
+                {% block content %}{% endblock %}
+            </main>
+
+            <!-- Footer at the bottom of the wrapper -->
+            {% include 'partials/footer.html' %}
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+
+    <!-- Custom JS -->
+    <script src="{{ static_v('js/main.js') }}"></script>
+    <!-- CSP inline-handler polyfill (replaces onclick/onsubmit/onchange attrs) -->
+    <script src="{{ static_v('js/csp_helpers.js') }}"></script>
+    <script src="{{ static_v('js/cnx-sidebar.js') }}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

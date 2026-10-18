@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}{{ l.full_name }} — {{ _('Academy learner') }}{% endblock %}
+{% block content %}
+{% set page_title = _('Learner') %}
+{% include 'academy/admin/_nav.html' %}
+<p><a href="{{ url_for('academy_admin.learners') }}" class="small"><i class="bi bi-arrow-left"></i> {{ _('Back to learners') }}</a></p>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-body">
+      <h2 class="h5 mb-1">{{ l.full_name }}</h2>
+      <p class="text-muted small mb-2">{{ l.job_title or '' }}{% if l.company %} · {{ l.company }}{% endif %}</p>
+      <span class="badge bg-{{ {'active':'success','pending':'secondary','suspended':'danger','erased':'dark'}.get(l.status,'light') }}">{{ l.status }}</span>
+      {% if l.free_provider %}<span class="badge bg-warning text-dark">{{ _('free-mail') }}</span>{% endif %}
+      <dl class="row small mt-3 mb-0">
+        <dt class="col-5">{{ _('Email') }}</dt><dd class="col-7 text-break">{{ l.email }}</dd>
+        <dt class="col-5">{{ _('Certificate name') }}</dt><dd class="col-7">{{ l.certificate_name or '—' }}</dd>
+        <dt class="col-5">{{ _('Country') }}</dt><dd class="col-7">{{ l.country or '—' }}</dd>
+        <dt class="col-5">{{ _('Source') }}</dt><dd class="col-7">{{ l.utm_source or l.source or '—' }}{% if l.utm_campaign %} / {{ l.utm_campaign }}{% endif %}</dd>
+        <dt class="col-5">{{ _('Registered') }}</dt><dd class="col-7">{{ l.created_at.strftime('%d %b %Y %H:%M') }}</dd>
+        <dt class="col-5">{{ _('Verified') }}</dt><dd class="col-7">{{ l.email_verified_at.strftime('%d %b %Y %H:%M') if l.email_verified_at else '—' }}</dd>
+        <dt class="col-5">{{ _('Last active') }}</dt><dd class="col-7">{{ l.last_activity_at.strftime('%d %b %Y %H:%M') if l.last_activity_at else '—' }}</dd>
+        <dt class="col-5">{{ _('Training consent') }}</dt><dd class="col-7">{{ l.consent_training_at.strftime('%d %b %Y') }} (v{{ l.privacy_version }})</dd>
+        <dt class="col-5">{{ _('Marketing consent') }}</dt><dd class="col-7">{% if l.consent_marketing %}<span class="text-success">{{ _('Yes') }}</span> · {{ l.consent_marketing_at.strftime('%d %b %Y') if l.consent_marketing_at }}{% else %}{{ _('No') }}{% endif %}</dd>
+      </dl>
+    </div></div>
+
+    {% if current_user.can_edit('academy') and l.status != 'erased' %}
+    <div class="card border-danger-subtle"><div class="card-header bg-light"><strong>{{ _('Actions') }}</strong></div><div class="card-body">
+      <form method="post" action="{{ url_for('academy_admin.learner_action', lid=l.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="form-label small">{{ _('Reason (recorded in the audit trail)') }}</label>
+        <input name="reason" class="form-control form-control-sm mb-2" required maxlength="500">
+        <div class="d-flex gap-2 flex-wrap">
+          {% if l.status == 'active' %}<button class="btn btn-sm btn-outline-warning" name="action" value="suspend">{{ _('Suspend access') }}</button>{% endif %}
+          {% if l.status == 'suspended' %}<button class="btn btn-sm btn-outline-success" name="action" value="reactivate">{{ _('Reactivate') }}</button>{% endif %}
+        </div>
+        <hr>
+        <label class="form-label small text-danger">{{ _('Erase personal data (PDPL request). Type ERASE to confirm.') }}</label>
+        <div class="input-group input-group-sm">
+          <input name="confirm" class="form-control" placeholder="ERASE" autocomplete="off">
+          <button class="btn btn-danger" name="action" value="erase">{{ _('Erase') }}</button>
+        </div>
+      </form>
+    </div></div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card mb-3"><div class="card-header bg-light"><strong>{{ _('Courses') }}</strong></div>
+      <table class="table table-sm mb-0"><thead><tr><th>{{ _('Course') }}</th><th>{{ _('Lessons') }}</th><th>{{ _('Attempts') }}</th><th>{{ _('Best') }}</th><th>{{ _('Status') }}</th><th>{{ _('Started') }}</th><th>{{ _('Completed') }}</th></tr></thead><tbody>
+      {% for e in enrs %}<tr><td>{{ e.title_en }}</td><td>{{ (e.lessons_done or [])|length }}/{{ e.lesson_count }}</td><td>{{ e.attempts_count }}</td>
+        <td>{{ (e.best_score ~ '%') if e.best_score is not none else '—' }}</td>
+        <td><span class="badge bg-{{ 'success' if e.status == 'passed' else 'secondary' }}">{{ e.status }}</span></td>
+        <td class="small">{{ e.started_at.strftime('%d %b %Y') }}</td><td class="small">{{ e.completed_at.strftime('%d %b %Y') if e.completed_at else '—' }}</td></tr>
+      {% else %}<tr><td colspan="7" class="text-muted">{{ _('Not enrolled in any course.') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+
+    <div class="card mb-3"><div class="card-header bg-light"><strong>{{ _('Assessment attempts') }}</strong></div>
+      <table class="table table-sm mb-0"><thead><tr><th>{{ _('When') }}</th><th>{{ _('Course') }}</th><th>{{ _('Score') }}</th><th>{{ _('Result') }}</th></tr></thead><tbody>
+      {% for a in attempts %}<tr><td class="small">{{ a.submitted_at.strftime('%d %b %Y %H:%M') }}</td><td>{{ a.title_en }}</td><td>{{ a.score }}%</td>
+        <td>{% if a.passed %}<span class="text-success">{{ _('Pass') }}</span>{% else %}<span class="text-danger">{{ _('Fail') }}</span>{% endif %}</td></tr>
+      {% else %}<tr><td colspan="4" class="text-muted">—</td></tr>{% endfor %}
+      </tbody></table></div>
+
+    <div class="card mb-3"><div class="card-header bg-light"><strong>{{ _('Certificates') }}</strong></div>
+      <table class="table table-sm mb-0"><thead><tr><th>{{ _('Number') }}</th><th>{{ _('Course') }}</th><th>{{ _('Issued') }}</th><th>{{ _('Expires') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead><tbody>
+      {% for c in certs %}<tr><td><code>{{ c.cert_number }}</code></td><td>{{ c.course_title }}</td><td class="small">{{ c.issued_at.strftime('%d %b %Y') }}</td>
+        <td class="small">{{ c.expires_at.strftime('%d %b %Y') if c.expires_at else '—' }}</td><td>{{ c.status }}</td>
+        <td><a href="{{ url_for('academy_admin.certificate_pdf', cert_id=c.id) }}" target="_blank">PDF</a></td></tr>
+      {% else %}<tr><td colspan="6" class="text-muted">—</td></tr>{% endfor %}
+      </tbody></table></div>
+
+    <div class="card"><div class="card-header bg-light"><strong>{{ _('Audit trail') }}</strong></div>
+      <table class="table table-sm mb-0 small"><tbody>
+      {% for a in log %}<tr><td class="text-nowrap">{{ a.created_at.strftime('%d %b %Y %H:%M') }}</td><td><b>{{ a.action }}</b></td><td>{{ a.detail or '' }}</td>
+        <td class="text-muted">{{ academy_uname(a.actor_user_id) if a.actor_user_id else _('learner') }}</td></tr>
+      {% endfor %}
+      </tbody></table></div>
+  </div>
+</div>
+{% endblock %}

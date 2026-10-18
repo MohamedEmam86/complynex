@@ -1,0 +1,61 @@
+{
+    "version": "semantic-v1",
+    "features": [
+        "fuzzy_ratio",
+        "jaro_winkler",
+        "phonetic_score",
+        "partial_ratio",
+        "token_set_ratio",
+        "has_arabic_input",
+        "has_arabic_watchlist",
+        "mixed_script",
+        "transliteration_score",
+        "first_name_match",
+        "last_name_match",
+        "middle_name_match",
+        "known_translit_pair",
+        "dob_exact_match",
+        "dob_days_diff",
+        "dob_year_match",
+        "dob_bonus",
+        "semantic_score",
+        "network_score",
+        "media_risk_score"
+    ],
+    "feature_importance": {
+        "transliteration_score": 0.162771658389872,
+        "dob_year_match": 0.14453788551809893,
+        "dob_bonus": 0.13190904283447913,
+        "dob_exact_match": 0.12688626591099508,
+        "middle_name_match": 0.12,
+        "dob_days_diff": 0.11608156676939614,
+        "known_translit_pair": 0.10533062211685458,
+        "first_name_match": 0.03180258021252767,
+        "last_name_match": 0.0242959754731882,
+        "token_set_ratio": 0.014404855730256834,
+        "partial_ratio": 0.0074879987408515,
+        "jaro_winkler": 0.006517432562430394,
+        "fuzzy_ratio": 0.005462114481901065,
+        "semantic_score": 0.0025120012591485002,
+        "phonetic_score": 0.0,
+        "has_arabic_input": 0.0,
+        "has_arabic_watchlist": 0.0,
+        "mixed_script": 0.0,
+        "network_score": 0.0,
+        "media_risk_score": 0.0
+    },
+    "threshold": 0.6,
+    "trained": "2026-07-10T10:10:32.085498+00:00",
+    "training_data": {
+        "source": "synthetic",
+        "total_samples": 1900,
+        "training_samples": 1520,
+        "test_samples": 380
+    },
+    "metrics": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+    }
+}

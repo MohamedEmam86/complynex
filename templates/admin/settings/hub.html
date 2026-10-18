@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Settings') }} - {{ company_name }} CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-gear me-2"></i>{{ _('Settings') }}</h1>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.settings_general') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-building fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('General & Organization') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Company info, regulator, contact details, workflow thresholds') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.list_departments') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-diagram-3 fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('Org Structure') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Departments, Business Units, Branches') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.list_users') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-people fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('Users') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Manage user accounts and per-module permissions') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.settings_permissions_matrix') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-shield-lock fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('Roles & Permissions Matrix') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Read-only overview of every user\'s module access') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.settings_numbering') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-123 fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('Numbering Sequences') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Configure document ID prefixes (Risk Register, Audit Engagements)') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.settings_email_templates') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-envelope-paper fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('Email Templates') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Edit subject/body of system emails') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.settings_security') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-shield-check fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('Security') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Session timeout, password policy, MFA overview') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.settings_api_keys') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-key fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('API Keys') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Issue and revoke API keys for external integrations') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.settings_integrations') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-plug fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('Integrations') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Live health status of Elasticsearch, Redis, PostgreSQL') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.settings_localization') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-translate fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('Localization') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Platform default language (Arabic / English)') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.settings_backup') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-hdd-network fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('Backup Status') }}</h5>
+                    <p class="text-muted small mb-0">
+                        {% if backup_info.latest %}
+                            {{ _('Last backup:') }} {{ backup_info.latest.mtime }}
+                        {% else %}
+                            {{ _('No backups found') }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.view_audit_logs') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-journal-text fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('Audit Trail') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Full system audit log of who changed what') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('admin.ops_panel') }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <i class="bi bi-terminal fs-3 text-primary"></i>
+                    <h5 class="mt-2 mb-1">{{ _('System Operations') }}</h5>
+                    <p class="text-muted small mb-0">{{ _('Safe, audited service/log operations panel') }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

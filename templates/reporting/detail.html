@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Submission - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <nav aria-label="{{ _('breadcrumb') }}">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('reporting.dashboard') }}">{{ _('Reporting') }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ submission.report_code }}</li>
+            </ol>
+        </nav>
+        <h1 class="h2">{{ submission.report_name }}</h1>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('reporting.dashboard') }}" class="btn btn-sm btn-outline-secondary">{{ _('Back to Calendar') }}</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Submission Details') }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4 bg-light p-3 rounded mx-0">
+                    <div class="col-sm-6 mb-3">
+                        <small class="text-muted d-block text-uppercase fw-bold small">{{ _('Regulator') }}</small>
+                        <div class="fw-bold">{{ submission.regulator_name }}</div>
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <small class="text-muted d-block text-uppercase fw-bold small">{{ _('Reporting Period') }}</small>
+                        <div>{{ submission.reporting_period_start }} to {{ submission.reporting_period_end }}</div>
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <small class="text-muted d-block text-uppercase fw-bold small">{{ _('Due Date') }}</small>
+                        <div class="text-danger fw-bold">{{ submission.due_date }}</div>
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <small class="text-muted d-block text-uppercase fw-bold small">{{ _('Current Status') }}</small>
+                        <div>
+                            {% if submission.status == 'submitted' %}
+                            <span class="badge bg-success">{{ _('Submitted') }}</span>
+                            {% elif submission.status == 'in_progress' %}
+                            <span class="badge bg-primary">{{ _('In Progress') }}</span>
+                            {% elif submission.status == 'late' %}
+                            <span class="badge bg-danger">{{ _('Late') }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ _('Pending') }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <h6 class="fw-bold mb-3 border-bottom pb-2">{{ _('Update Submission') }}</h6>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="status" class="form-label fw-bold">{{ _('Update Status') }}</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="pending" {% if submission.status=='pending' %}selected{% endif %}>{{ _('Pending') }}
+                                </option>
+                                <option value="in_progress" {% if submission.status=='in_progress' %}selected{% endif
+                                    %}>{{ _('In Progress') }}</option>
+                                <option value="submitted" {% if submission.status=='submitted' %}selected{% endif %}>
+                                    {{ _('Mark as Submitted') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="submission_reference" class="form-label fw-bold">{{ _('Submission Ref/Receipt
+                                No.') }}</label>
+                            <input type="text" class="form-control" id="submission_reference"
+                                name="submission_reference" value="{{ submission.submission_reference or '' }}"
+                                placeholder="{{ _('Regulator receipt / acknowledgement ID') }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label fw-bold">{{ _('Notes / Description') }}</label>
+                        <textarea class="form-control" id="notes" name="notes"
+                            rows="3">{{ submission.notes }}</textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="attachment" class="form-label fw-bold">{{ _('Attachment (Optional Proof of
+                            Submission)') }}</label>
+                        {% if submission.attachment_path %}
+                        <div class="mb-2">
+                            <a href="{{ url_for('reporting.download_attachment', id=submission.id) }}"
+                                class="btn btn-sm btn-outline-info" target="_blank">
+                                <i class="bi bi-file-earmark-check"></i> {{ _('View Current File') }}
+                            </a>
+                        </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="attachment" name="attachment">
+                    </div>
+
+                    <hr class="my-4">
+
+                    <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">
+                        <i class="bi bi-save me-2"></i> {{ _('Save Submission Update') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm border-start border-primary border-4 mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold text-uppercase small text-primary mb-3">{{ _('Regulatory Context') }}</h6>
+                <p class="small text-muted mb-0">
+                    This report is mandatory
+                    {% if submission.regulator_name %}under {{ submission.regulator_name }}{% endif %}
+                    {% if submission.regulatory_reference %}(Ref: {{ submission.regulatory_reference }}){% endif %}.
+                    Failure to submit within the timeframe may result in penalties or compliance findings.
+                </p>
+            </div>
+        </div>
+
+        {% if submission.status == 'submitted' %}
+        <div class="card border-0 shadow-sm bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill fs-2 me-3"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">{{ _('Record Finalized') }}</h6>
+                        <small>Submitted on {{ submission.submission_date }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

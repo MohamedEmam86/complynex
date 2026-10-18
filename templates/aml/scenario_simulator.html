@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Scenario Simulator') }}{% endblock %}
+{% block extra_css %}
+<style>
+.severity-HIGH{background:#f8d7da;color:#842029;padding:2px 8px;border-radius:4px;font-size:.8em;font-weight:600;}
+.severity-MEDIUM{background:#fff3cd;color:#664d03;padding:2px 8px;border-radius:4px;font-size:.8em;font-weight:600;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-between mb-4">
+    <h2><i class="fas fa-flask text-info"></i> {{ _('Scenario Simulator') }}</h2>
+    <a href="{{ url_for('aml.tm_dashboard') }}" class="btn btn-outline-secondary">{{ _('← Dashboard') }}</a>
+  </div>
+
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> <strong>{{ _('Dry-run mode:') }}</strong> {{ _('This simulator evaluates existing transactions against a selected rule') }}
+    <strong>{{ _('without creating real alerts') }}</strong>. Use it to test rule parameters before activating or to assess impact of threshold changes.
+  </div>
+
+  <!-- Simulation Form -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-info text-white"><strong>{{ _('Configure Scenario') }}</strong></div>
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ _('Rule to Simulate *') }}</label>
+            <select name="rule_id" class="form-select" required>
+              <option value="">{{ _('-- Select Rule --') }}</option>
+              {% for r in rules %}
+              <option value="{{ r.id }}"
+                {% if results and results.rule.id == r.id %}selected{% endif %}>
+                {{ r.rule_code }} — {{ r.rule_name }}
+                {% if not r.is_active %}({{ _('Inactive') }}){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-bold">{{ _('Date From') }}</label>
+            <input type="date" name="date_from" class="form-control"
+              value="{{ results.date_from if results else '' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-bold">{{ _('Date To') }}</label>
+            <input type="date" name="date_to" class="form-control"
+              value="{{ results.date_to if results else '' }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-bold">{{ _('Customer Risk') }}</label>
+            <select name="customer_risk" class="form-select">
+              <option value="">{{ _('All') }}</option>
+              {% for r in ['LOW','MEDIUM','HIGH','PROHIBITED'] %}
+              <option value="{{ r }}" {% if results and results.get('customer_risk')==r %}selected{% endif %}>{{ r }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-12">
+            <button type="submit" class="btn btn-info text-white px-5">
+              <i class="fas fa-play"></i> {{ _('Run Simulation') }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results -->
+  {% if results %}
+  <div class="card shadow-sm mb-3 border-info">
+    <div class="card-header bg-info text-white">
+      <strong>{{ _('Simulation Results:') }} {{ results.rule.rule_code }} — {{ results.rule.rule_name }}</strong>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 mb-3">
+        <div class="col-md-2"><div class="card text-center"><div class="card-body py-2"><h3>{{ results.total_evaluated }}</h3><small class="text-muted">{{ _('Evaluated') }}</small></div></div></div>
+        <div class="col-md-2"><div class="card text-center border-danger"><div class="card-body py-2"><h3 class="text-danger">{{ results.would_trigger }}</h3><small class="text-muted">{{ _('Would Trigger') }}</small></div></div></div>
+        <div class="col-md-2"><div class="card text-center border-success"><div class="card-body py-2"><h3 class="text-success">{{ results.would_not_trigger }}</h3><small class="text-muted">{{ _('Would Pass') }}</small></div></div></div>
+        <div class="col-md-2"><div class="card text-center border-warning"><div class="card-body py-2"><h3 class="text-warning">{{ results.new_alerts }}</h3><small class="text-muted">{{ _('New Alerts') }}</small></div></div></div>
+        <div class="col-md-2"><div class="card text-center"><div class="card-body py-2"><h3>{{ results.already_flagged }}</h3><small class="text-muted">{{ _('Already Flagged') }}</small></div></div></div>
+        <div class="col-md-2"><div class="card text-center border-info"><div class="card-body py-2"><h3 class="text-info">{{ results.trigger_rate }}%</h3><small class="text-muted">{{ _('Trigger Rate') }}</small></div></div></div>
+      </div>
+
+      {% if results.triggered_transactions %}
+      <h6 class="fw-bold mt-3 mb-2">{{ _('Transactions That Would Trigger (showing up to 50)') }}</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover">
+          <thead class="table-dark">
+            <tr><th>{{ _('Reference') }}</th><th>{{ _('Customer') }}</th><th>{{ _('Date') }}</th><th>{{ _('Type') }}</th><th>{{ _('Amount') }}</th><th>{{ _('Country') }}</th><th>{{ _('Trigger Reason') }}</th><th>{{ _('Status') }}</th></tr>
+          </thead>
+          <tbody>
+            {% for t in results.triggered_transactions %}
+            <tr class="{% if t.already_flagged %}table-warning{% endif %}">
+              <td><code>{{ t.transaction_reference }}</code></td>
+              <td>{{ t.full_name or t.company_name or '-' }}<br><small class="text-muted">{{ t.customer_reference }}</small></td>
+              <td>{{ t.transaction_date[:10] }}</td>
+              <td>{{ t.transaction_type }}</td>
+              <td><strong>{{ "{:,.2f}".format(t.amount) }}</strong> {{ t.currency }}</td>
+              <td>{{ t.counterparty_country or '-' }}</td>
+              <td class="text-danger small">{{ t.sim_reason }}</td>
+              <td>
+                {% if t.already_flagged %}
+                <span class="badge bg-warning text-dark">{{ _('Already Flagged') }}</span>
+                {% else %}
+                <span class="badge bg-danger">{{ _('New Alert') }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="alert alert-success mt-3">
+        <i class="fas fa-check-circle"></i> {{ _('No transactions would trigger this rule with the selected parameters.') }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

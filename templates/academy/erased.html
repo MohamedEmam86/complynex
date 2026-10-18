@@ -1,0 +1,10 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('Data deleted', 'تم الحذف') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow ia-center">
+  <h1>{{ t('Your data has been deleted', 'تم حذف بياناتك') }}</h1>
+  <p>{{ t('Your personal details have been removed and you have been signed out. You are welcome back any time.', 'تم حذف بياناتك الشخصية وتسجيل خروجك. مرحبًا بك في أي وقت.') }}</p>
+  <a class="ia-btn ia-btn--ghost" href="https://integrysconsult.com/">integrysconsult.com</a>
+</div>
+{% endblock %}

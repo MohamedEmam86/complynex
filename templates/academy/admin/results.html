@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% from 'academy/admin/_provider.html' import provider_badge %}
+{% block title %}{{ _('Academy results') }}{% endblock %}
+{% block content %}
+{% set page_title = _('Results — who took what, and how they scored') %}
+{% include 'academy/admin/_nav.html' %}
+
+{% macro sort_link(key, label) -%}
+  {% set cur = args.get('sort', 'started') %}
+  {% set nd = 'asc' if (cur == key and args.get('dir') != 'asc') else 'desc' %}
+  {% set q = args.to_dict() %}{% do q.update({'sort': key, 'dir': nd}) %}
+  <a href="{{ url_for('academy_admin.results', **q) }}" class="text-decoration-none text-reset">{{ label }}
+  {%- if cur == key %} <i class="bi bi-caret-{{ 'up' if args.get('dir') == 'asc' else 'down' }}-fill"></i>{% endif %}</a>
+{%- endmacro %}
+
+<form class="card card-body py-2 mb-3" method="get">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-3"><label class="form-label small mb-0">{{ _('Learner / company / email') }}</label>
+      <input name="q" class="form-control form-control-sm" value="{{ args.get('q','') }}"></div>
+    <div class="col-md-3"><label class="form-label small mb-0">{{ _('Course') }}</label>
+      <select name="course" class="form-select form-select-sm"><option value="">{{ _('All courses') }}</option>
+        {% for c in courses %}<option value="{{ c.id }}" {{ 'selected' if args.get('course') == c.id|string }}>{{ c.title_en }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label small mb-0">{{ _('Provider') }}</label>
+      <select name="provider" class="form-select form-select-sm"><option value="">{{ _('Both') }}</option>
+        <option value="integrys" {{ 'selected' if args.get('provider') == 'integrys' }}>Integrys</option>
+        <option value="complynex" {{ 'selected' if args.get('provider') == 'complynex' }}>ComplyNex</option></select></div>
+    <div class="col-md-1"><label class="form-label small mb-0">{{ _('Status') }}</label>
+      <select name="status" class="form-select form-select-sm"><option value="">{{ _('Any') }}</option>
+        <option value="passed" {{ 'selected' if args.get('status') == 'passed' }}>{{ _('Passed') }}</option>
+        <option value="in_progress" {{ 'selected' if args.get('status') == 'in_progress' }}>{{ _('In progress') }}</option></select></div>
+    <div class="col-md-1"><label class="form-label small mb-0">{{ _('Min score') }}</label>
+      <input type="number" name="min_score" min="0" max="100" class="form-control form-control-sm" value="{{ args.get('min_score','') }}"></div>
+    <div class="col-md-1"><label class="form-label small mb-0">{{ _('From') }}</label><input type="date" name="from" class="form-control form-control-sm" value="{{ args.get('from','') }}"></div>
+    <div class="col-md-1"><label class="form-label small mb-0">{{ _('To') }}</label><input type="date" name="to" class="form-control form-control-sm" value="{{ args.get('to','') }}"></div>
+  </div>
+  <div class="d-flex justify-content-between mt-2 flex-wrap gap-2">
+    <div><button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> {{ _('Apply') }}</button>
+      <a href="{{ url_for('academy_admin.results') }}" class="btn btn-sm btn-outline-secondary">{{ _('Reset') }}</a></div>
+    {% set qe = args.to_dict() %}{% do qe.update({'export': 'csv'}) %}
+    <a class="btn btn-sm btn-success" href="{{ url_for('academy_admin.results', **qe) }}"><i class="bi bi-download"></i> {{ _('Export to Excel (CSV)') }}</a>
+  </div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col"><div class="card text-center"><div class="card-body py-2"><div class="h4 mb-0">{{ summary.n }}</div><div class="small text-muted">{{ _('Course enrolments') }}</div></div></div></div>
+  <div class="col"><div class="card text-center"><div class="card-body py-2"><div class="h4 mb-0 text-success">{{ summary.passed }}</div><div class="small text-muted">{{ _('Passed') }}</div></div></div></div>
+  <div class="col"><div class="card text-center"><div class="card-body py-2"><div class="h4 mb-0">{{ ((100 * summary.passed / summary.n)|round|int ~ '%') if summary.n else '—' }}</div><div class="small text-muted">{{ _('Pass rate') }}</div></div></div></div>
+  <div class="col"><div class="card text-center"><div class="card-body py-2"><div class="h4 mb-0">{{ (summary.avg_best ~ '%') if summary.avg_best is not none else '—' }}</div><div class="small text-muted">{{ _('Average best score') }}</div></div></div></div>
+</div>
+
+<div class="card"><div class="table-responsive">
+<table class="table table-sm table-hover mb-0 align-middle">
+  <thead class="table-light"><tr>
+    <th>{{ sort_link('learner', _('Learner')) }}</th><th>{{ sort_link('company', _('Company')) }}</th><th>{{ sort_link('course', _('Course')) }}</th>
+    <th>{{ sort_link('provider', _('Provider')) }}</th><th>{{ sort_link('status', _('Status')) }}</th><th class="text-end">{{ _('Lessons') }}</th>
+    <th class="text-end">{{ sort_link('attempts', _('Attempts')) }}</th><th class="text-end">{{ sort_link('best', _('Best')) }}</th><th class="text-end">{{ _('Last') }}</th>
+    <th>{{ sort_link('started', _('Started')) }}</th><th>{{ sort_link('completed', _('Completed')) }}</th><th>{{ _('Certificate') }}</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td><a href="{{ url_for('academy_admin.learner', lid=r.learner_id) }}">{{ r.full_name }}</a><div class="small text-muted">{{ r.email }}</div></td>
+    <td class="small">{{ r.company or '' }}<div class="text-muted">{{ r.job_title or '' }}</div></td>
+    <td class="small">{{ r.title_en }}</td><td>{{ provider_badge(r.provider) }}</td>
+    <td><span class="badge bg-{{ 'success' if r.status == 'passed' else 'secondary' }}">{{ _('passed') if r.status == 'passed' else _('in progress') }}</span></td>
+    <td class="text-end">{{ (r.lessons_done or [])|length }}/{{ r.lesson_count }}</td>
+    <td class="text-end">{{ r.attempts_count }}</td>
+    <td class="text-end fw-bold {{ 'text-success' if r.best_score is not none and r.best_score >= r.pass_mark else '' }}">{{ (r.best_score ~ '%') if r.best_score is not none else '—' }}</td>
+    <td class="text-end">{{ (r.last_score ~ '%') if r.last_score is not none else '—' }}</td>
+    <td class="small text-nowrap">{{ r.started_at.strftime('%d %b %Y') }}</td>
+    <td class="small text-nowrap">{{ r.completed_at.strftime('%d %b %Y') if r.completed_at else '—' }}</td>
+    <td class="small">{% if r.cert_number %}<code>{{ r.cert_number }}</code>{% if r.cert_status != 'valid' %} <span class="badge bg-dark">{{ r.cert_status }}</span>{% endif %}{% else %}—{% endif %}</td>
+  </tr>
+  {% else %}<tr><td colspan="12" class="text-center text-muted py-4">{{ _('No results match these filters.') }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% if rows|length == 500 %}<div class="card-footer small text-muted">{{ _('Showing the first 500 — use filters or export for the full list.') }}</div>{% endif %}
+</div>
+{% endblock %}

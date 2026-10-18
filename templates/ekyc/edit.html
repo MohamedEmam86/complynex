@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Edit eKYC Session') }} #{{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h2 pt-3 pb-2 mb-3 border-bottom">{{ _('Edit eKYC Session') }} #{{ session.id }}</h1>
+    <div class="card" style="max-width: 600px;">
+        <div class="card-body">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Document Type') }}</label>
+                    <select name="document_type" class="form-select">
+                        {% for value, label in document_types %}
+                        <option value="{{ value }}" {% if value == session.document_type %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Customer Reference (optional)') }}</label>
+                    <input type="text" name="customer_reference" class="form-control"
+                           value="{{ session.customer_reference or '' }}"
+                           placeholder="{{ _('e.g. merchant ID, application number') }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Customer Language') }}</label>
+                    <select name="locale" class="form-select">
+                        <option value="ar" {% if session.locale == 'ar' %}selected{% endif %}>{{ _('Arabic') }}</option>
+                        <option value="en" {% if session.locale == 'en' %}selected{% endif %}>{{ _('English') }}</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">{{ _('Save Changes') }}</button>
+                <a href="{{ url_for('ekyc.view_session', session_id=session.id) }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

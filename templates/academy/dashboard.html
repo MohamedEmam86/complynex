@@ -1,0 +1,57 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('My learning', 'تعلّمي') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<h1>{{ t('Welcome', 'أهلًا') }}, {{ learner.full_name.split(' ')[0] }}</h1>
+
+<h2 class="ia-h2">{{ t('My courses', 'دوراتي') }}</h2>
+{% if enrollments %}
+<div class="ia-grid">
+  {% for e in enrollments %}
+  {% set done = (e.lessons_done or [])|length %}
+  <article class="ia-card">
+    <p class="ia-tag">{% if e.status == 'passed' %}<span class="ia-pill ia-pill--ok">{{ t('Passed', 'ناجح') }} · {{ e.best_score }}%</span>
+      {% else %}{{ done }}/{{ e.lesson_count }} {{ t('lessons', 'دروس') }}{% if e.best_score is not none %} · {{ t('best', 'أفضل') }} {{ e.best_score }}%{% endif %}{% endif %}</p>
+    <h3>{{ L(e, 'title') }}</h3>
+    <div class="ia-progress"><span style="width: {{ (100 * done / e.lesson_count)|round|int if e.lesson_count else 0 }}%"></span></div>
+    <a class="ia-btn ia-btn--sm" href="{{ url_for('academy.course', slug=e.slug) }}">{{ t('Review', 'مراجعة') if e.status == 'passed' else t('Continue', 'استكمل') }}</a>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<p class="ia-muted">{{ t('You have not started a course yet.', 'لم تبدأ أي دورة بعد.') }}</p>
+{% endif %}
+
+{% if available %}
+<h2 class="ia-h2">{{ t('Available to you', 'متاح لك') }}</h2>
+<div class="ia-grid">
+  {% for c in available %}
+  <article class="ia-card">
+    <p class="ia-tag">{{ c.level }} · {{ c.duration_minutes }} {{ t('min', 'دقيقة') }}</p>
+    <h3>{{ L(c, 'title') }}</h3>
+    <p>{{ L(c, 'summary') }}</p>
+    <a class="ia-btn ia-btn--sm" href="{{ url_for('academy.course', slug=c.slug) }}">{{ t('Start', 'ابدأ') }}</a>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="ia-h2">{{ t('My certificates', 'شهاداتي') }}</h2>
+{% if certs %}
+<table class="ia-table">
+  <thead><tr><th>{{ t('Course', 'الدورة') }}</th><th>{{ t('Number', 'الرقم') }}</th><th>{{ t('Issued', 'الإصدار') }}</th><th>{{ t('Valid until', 'صالحة حتى') }}</th><th></th></tr></thead>
+  <tbody>
+  {% for c in certs %}
+  <tr><td>{{ c.course_title }}</td><td dir="ltr">{{ c.cert_number }}</td><td>{{ c.issued_at.strftime('%d %b %Y') }}</td>
+      <td>{{ c.expires_at.strftime('%d %b %Y') if c.expires_at else '—' }}</td>
+      <td>{% if c.status == 'valid' %}<a href="{{ url_for('academy.certificate_pdf', number=c.cert_number) }}">PDF</a> ·
+          <a href="{{ url_for('academy.verify', number=c.cert_number) }}">{{ t('Verify link', 'رابط التحقق') }}</a>{% else %}{{ c.status }}{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="ia-muted">{{ t('Pass a course assessment to earn your certificate.', 'اجتز اختبار دورة لتحصل على شهادتك.') }}</p>
+{% endif %}
+
+<p class="ia-small ia-muted"><a href="{{ url_for('academy.privacy') }}">{{ t('My data & email preferences', 'بياناتي وتفضيلات البريد') }}</a></p>
+{% endblock %}

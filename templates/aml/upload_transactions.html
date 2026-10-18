@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Upload Transactions{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between mb-4">
+    <h2><i class="fas fa-upload text-primary"></i> {{ _('Bulk Transaction Upload') }}</h2>
+    <div>
+      <a href="{{ url_for('aml.download_tx_template') }}" class="btn btn-outline-success me-2">
+        <i class="fas fa-download"></i> {{ _('Download Template') }}
+      </a>
+      <a href="{{ url_for('aml.transaction_list') }}" class="btn btn-outline-secondary">{{ _('← Back') }}</a>
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if not done %}
+  <div class="row">
+    <div class="col-md-7">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white"><strong>{{ _('Upload File') }}</strong></div>
+        <div class="card-body">
+          <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-4">
+              <label class="form-label fw-bold">{{ _('Select CSV or Excel File *') }}</label>
+              <input type="file" name="file" class="form-control" accept=".csv,.xlsx,.xls" required>
+              <div class="form-text">{{ _('Max 10MB. Supported: .csv, .xlsx, .xls') }}</div>
+            </div>
+            <div class="alert alert-info">
+              <strong><i class="fas fa-info-circle"></i> {{ _('Required columns:') }}</strong>
+              <code>{{ _('customer_reference, transaction_date, transaction_type, amount') }}</code><br>
+              <strong>{{ _('Optional:') }}</strong> <code>{{ _('currency, counterparty_name, counterparty_account, counterparty_country, purpose_of_transaction, remittance_information') }}</code>
+            </div>
+            <button type="submit" class="btn btn-primary px-5">
+              <i class="fas fa-upload"></i> {{ _('Upload & Evaluate') }}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-header"><strong><i class="fas fa-book"></i> {{ _('Format Guide') }}</strong></div>
+        <div class="card-body small">
+          <table class="table table-sm">
+            <thead class="table-light"><tr><th>{{ _('Field') }}</th><th>{{ _('Format / Values') }}</th></tr></thead>
+            <tbody>
+              <tr><td>{{ _('customer_reference') }}</td><td>{{ _('e.g. CUST-001') }}</td></tr>
+              <tr><td>{{ _('transaction_date') }}</td><td>{{ _('YYYY-MM-DD or YYYY-MM-DD HH:MM:SS') }}</td></tr>
+              <tr><td>{{ _('transaction_type') }}</td><td>{{ _('CREDIT, DEBIT, TRANSFER_IN, TRANSFER_OUT, CASH_DEPOSIT, CASH_WITHDRAWAL, PAYMENT, REFUND') }}</td></tr>
+              <tr><td>{{ _('amount') }}</td><td>{{ _('Numeric (no commas)') }}</td></tr>
+              <tr><td>{{ _('currency') }}</td><td>{{ _('EGP, USD, EUR, SAR, AED (default: EGP)') }}</td></tr>
+              <tr><td>{{ _('counterparty_country') }}</td><td>{{ _('Country name in English') }}</td></tr>
+            </tbody>
+          </table>
+          <div class="alert alert-warning py-2 small mt-2">
+            <i class="fas fa-bolt"></i> {{ _('Each transaction is') }} <strong>{{ _('automatically evaluated') }}</strong> {{ _('against all active TM rules on upload.') }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- Results -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card text-center border-success"><div class="card-body"><h2 class="text-success">{{ results.added }}</h2><p class="mb-0">{{ _('Imported') }}</p></div></div></div>
+    <div class="col-md-3"><div class="card text-center border-warning"><div class="card-body"><h2 class="text-warning">{{ results.skipped }}</h2><p class="mb-0">{{ _('Skipped') }}</p></div></div></div>
+    <div class="col-md-3"><div class="card text-center border-danger"><div class="card-body"><h2 class="text-danger">{{ results.alerts }}</h2><p class="mb-0">{{ _('Alerts Raised') }}</p></div></div></div>
+    <div class="col-md-3"><div class="card text-center border-info"><div class="card-body"><h2 class="text-info">{{ results.errors|length }}</h2><p class="mb-0">{{ _('Errors') }}</p></div></div></div>
+  </div>
+
+  {% if results.errors %}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header bg-danger text-white"><strong>Errors ({{ results.errors|length }})</strong></div>
+    <div class="card-body" style="max-height:300px;overflow-y:auto;">
+      {% for e in results.errors %}
+      <div class="text-danger small">{{ e }}</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('aml.upload_transactions') }}" class="btn btn-primary">{{ _('Upload Another File') }}</a>
+    <a href="{{ url_for('aml.transaction_list') }}" class="btn btn-outline-secondary">{{ _('View Transactions') }}</a>
+    {% if results.alerts > 0 %}
+    <a href="{{ url_for('aml.alert_list') }}" class="btn btn-warning">View Alerts ({{ results.alerts }})</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

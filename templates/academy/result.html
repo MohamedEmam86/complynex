@@ -1,0 +1,25 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('Result', 'النتيجة') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow ia-center">
+  {% if passed %}
+    <p class="ia-score ia-score--ok">{{ score }}%</p>
+    <h1>{{ t('Congratulations — you passed', 'مبروك — لقد نجحت') }}</h1>
+    <p>{{ L(c, 'title') }}</p>
+    {% if cert %}
+    <p><a class="ia-btn" href="{{ url_for('academy.certificate_pdf', number=cert.cert_number) }}">{{ t('Download your certificate', 'حمّل شهادتك') }}</a></p>
+    <p class="ia-small ia-muted">{{ t('Certificate number', 'رقم الشهادة') }} <b dir="ltr">{{ cert.cert_number }}</b> ·
+       <a href="{{ url_for('academy.verify', number=cert.cert_number) }}">{{ t('public verification link', 'رابط التحقق العام') }}</a></p>
+    <p class="ia-small">{{ t('Share it on LinkedIn: add it under Licenses & certifications with issuing organisation "Integrys Consulting" and the verification link above.',
+                            'شاركها على LinkedIn: أضفها في Licenses & certifications باسم الجهة "Integrys Consulting" ورابط التحقق أعلاه.') }}</p>
+    {% endif %}
+  {% else %}
+    <p class="ia-score">{{ score }}%</p>
+    <h1>{{ t('Not this time', 'ليس هذه المرة') }}</h1>
+    <p>{{ t('The pass mark is', 'درجة النجاح') }} {{ c.pass_mark }}%. {{ t('Questions to revisit:', 'الأسئلة التي تحتاج مراجعة:') }} {{ wrong|join(', ') }} {{ t('of', 'من') }} {{ total }}.</p>
+    <p class="ia-muted">{{ t('Review the lessons — you can retake the assessment in', 'راجع الدروس — يمكنك إعادة الاختبار بعد') }} {{ c.retry_cooldown_minutes }} {{ t('minutes, with a fresh set of questions.', 'دقيقة بمجموعة أسئلة جديدة.') }}</p>
+    <a class="ia-btn" href="{{ url_for('academy.course', slug=c.slug, lesson=1) }}">{{ t('Review the lessons', 'راجع الدروس') }}</a>
+  {% endif %}
+</div>
+{% endblock %}

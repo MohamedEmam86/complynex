@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Annual COBEC Declaration - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% if session.get('dir') == 'rtl' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+</head>
+
+<body class="complynex-public">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8 col-md-10">
+                <!-- Brand Header -->
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        class="logo">
+                    <h1><i class="bi bi-shield-check"></i> {{ _('Annual COBEC Declaration') }}</h1>
+                    <p>{{ _('Code of Business Ethics & Conduct for %(year)s', year=year) }}</p>
+                </div>
+
+                <!-- Form Card -->
+                <div class="complynex-form-card">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="complynex-info-box mb-4">
+                        <h6><i class="bi bi-info-circle"></i> {{ _('About This Declaration') }}</h6>
+                        <p class="mb-0">{{ _("By completing this form, you acknowledge that you have read and understood
+                            the Company's Code of Business Ethics & Conduct and commit to complying with its
+                            principles.") }}
+                        </p>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('portal.annual_cobec') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <!-- Your Information -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-person"></i> {{ _('Your Information') }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Email Address') }} <span
+                                    class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" required value="{{ email }}" {% if
+                                email %}readonly{% endif %}>
+                        </div>
+
+                        <!-- Acknowledgments -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-check2-square"></i> {{ _('Acknowledgments') }}
+                        </div>
+
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="has_read_code" id="read_code"
+                                    required>
+                                <label class="form-check-label" for="read_code">
+                                    <strong>{{ _('I confirm that I have read and understood the Code of Business Ethics
+                                        & Conduct.') }}</strong>
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="understands_responsibilities"
+                                    id="understand" required>
+                                <label class="form-check-label" for="understand">
+                                    <strong>{{ _('I understand my responsibilities under this Code.') }}</strong>
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="commits_to_compliance" id="commit"
+                                    required>
+                                <label class="form-check-label" for="commit">
+                                    <strong>{{ _('I commit to complying with this Code in all my business activities.')
+                                        }}</strong>
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="will_report_violations"
+                                    id="report" required>
+                                <label class="form-check-label" for="report">
+                                    <strong>{{ _('I will report any known or suspected violations of this Code.')
+                                        }}</strong>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Potential Violations -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-exclamation-triangle"></i> {{ _('Disclosure of Potential Issues') }}
+                        </div>
+
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <label class="form-label fw-semibold">{{ _('Are you aware of any potential violations of the
+                                Code?') }}</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_known_violations" id="viol_yes"
+                                    value="1">
+                                <label class="form-check-label" for="viol_yes">{{ _('Yes') }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_known_violations" id="viol_no"
+                                    value="0" checked>
+                                <label class="form-check-label" for="viol_no">{{ _('No') }}</label>
+                            </div>
+                            <div id="viol_details" class="mt-2" style="display: none;">
+                                <textarea name="violation_details" class="form-control" rows="3"
+                                    placeholder="{{ _('Please describe the potential violation(s)...') }}"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <label class="form-label fw-semibold">{{ _('Have you previously been involved in any
+                                misconduct or ethics-related issues?') }}</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_prior_misconduct" id="misc_yes"
+                                    value="1">
+                                <label class="form-check-label" for="misc_yes">{{ _('Yes') }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_prior_misconduct" id="misc_no"
+                                    value="0" checked>
+                                <label class="form-check-label" for="misc_no">{{ _('No') }}</label>
+                            </div>
+                            <div id="misc_details" class="mt-2" style="display: none;">
+                                <textarea name="misconduct_details" class="form-control" rows="3"
+                                    placeholder="{{ _('Please provide details...') }}"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Digital Signature -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-pen"></i> {{ _('Digital Signature') }}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">{{ _('Type your full name as signature') }} <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" name="digital_signature" class="form-control" required
+                                placeholder="{{ _('Your full legal name') }}">
+                            <small class="text-muted">{{ _('By typing your name, you certify that all information
+                                provided is true and accurate.') }}</small>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-complynex btn-lg">
+                                <i class="bi bi-send"></i> {{ _('Submit Declaration') }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('portal.dashboard') }}" class="complynex-link">
+                            <i class="bi bi-arrow-left"></i> {{ _('Back to Portal') }}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="complynex-footer">
+                    <p>{{ _('&copy; 2026 ComplyNex. All rights reserved. &nbsp;|&nbsp; Powered by Mohamed Emam &nbsp;|&nbsp;') }} <a href="mailto:info@complynex.online">{{ _('info@complynex.online') }}</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+    <script nonce="{{ csp_nonce }}">
+        // Toggle detail fields
+        document.querySelectorAll('input[name="has_known_violations"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                document.getElementById('viol_details').style.display =
+                    this.value === '1' ? 'block' : 'none';
+            });
+        });
+
+        document.querySelectorAll('input[name="has_prior_misconduct"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                document.getElementById('misc_details').style.display =
+                    this.value === '1' ? 'block' : 'none';
+            });
+        });
+    </script>
+</body>
+
+</html>

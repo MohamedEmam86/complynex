@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} TM Rule{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between">
+          <h5 class="mb-0"><i class="fas fa-cogs"></i> {{ action }} Transaction Monitoring Rule</h5>
+          <a href="{{ url_for('aml.rule_list') }}" class="btn btn-sm btn-outline-light">{{ _('← Back') }}</a>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-bold">{{ _('Rule Code *') }}</label>
+                <input type="text" name="rule_code" class="form-control text-uppercase"
+                  value="{{ rule.rule_code if rule else '' }}"
+                  {% if rule %}readonly{% endif %} required
+                  placeholder="e.g. TM011">
+                <div class="form-text">{{ _('Unique identifier. Cannot be changed after creation.') }}</div>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label fw-bold">{{ _('Rule Name *') }}</label>
+                <input type="text" name="rule_name" class="form-control"
+                  value="{{ rule.rule_name if rule else '' }}" required
+                  placeholder="{{ _('e.g. Large Wire Transfer') }}">
+              </div>
+              <div class="col-md-12">
+                <label class="form-label fw-bold">{{ _('Description') }}</label>
+                <textarea name="rule_description" class="form-control" rows="2"
+                  placeholder="{{ _('Explain what this rule detects...') }}">{{ rule.rule_description if rule else '' }}</textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ _('Category') }}</label>
+                <input type="text" name="rule_category" class="form-control"
+                  value="{{ rule.rule_category if rule else '' }}"
+                  placeholder="{{ _('e.g. Cash, Velocity, Geographic') }}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ _('Rule Type *') }}</label>
+                <select name="rule_type" class="form-select" required>
+                  {% for t in ['THRESHOLD','VELOCITY','PATTERN','GEOGRAPHIC','BEHAVIORAL'] %}
+                  <option value="{{ t }}" {% if rule and rule.rule_type==t %}selected{% endif %}>{{ t }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">{{ _('Threshold Value') }}</label>
+                <input type="number" name="threshold_value" class="form-control" step="0.01"
+                  value="{{ rule.threshold_value if rule and rule.threshold_value else '' }}"
+                  placeholder="e.g. 10000">
+                <div class="form-text">{{ _('Leave blank if not applicable') }}</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">{{ _('Currency') }}</label>
+                <select name="threshold_currency" class="form-select">
+                  <option value="">{{ _('None') }}</option>
+                  {% for c in ['EGP','USD','EUR','SAR','AED'] %}
+                  <option value="{{ c }}" {% if rule and rule.threshold_currency==c %}selected{% endif %}>{{ c }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">{{ _('Time Period (days)') }}</label>
+                <input type="number" name="time_period_days" class="form-control"
+                  value="{{ rule.time_period_days if rule else 1 }}" min="1">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ _('Severity *') }}</label>
+                <select name="severity" class="form-select" required>
+                  {% for s in ['HIGH','MEDIUM','LOW'] %}
+                  <option value="{{ s }}" {% if rule and rule.severity==s %}selected{% elif not rule and s=='MEDIUM' %}selected{% endif %}>{{ s }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            {% if action == 'Edit' %}
+            <div class="alert alert-info mt-3 small">
+              <i class="fas fa-info-circle"></i> {{ _('Changes to threshold values and time periods take effect immediately on new transactions.
+              Built-in rules (TM001–TM010) can be edited but not deleted — use the Disable button to deactivate them.') }}
+            </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between mt-4">
+              <div>
+                {% if action == 'Edit' and not rule.rule_code.startswith('TM0') %}
+                <form method="POST" action="{{ url_for('aml.delete_rule', rule_id=rule.id) }}"
+                      style="display:inline"
+                      data-confirm="Delete this rule permanently?">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-outline-danger">
+                    <i class="fas fa-trash"></i> {{ _('Delete Rule') }}
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('aml.rule_list') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+                <button type="submit" class="btn btn-success px-5">
+                  <i class="fas fa-save"></i> {{ action }} Rule
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

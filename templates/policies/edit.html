@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit {{ policy.policy_number }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">{{ _('Modify Policy Document') }}</h1>
+                    <p class="text-muted small">{{ _('Update existing policy metadata, content, or lifecycle status.')
+                        }}</p>
+                </div>
+                <a href="{{ url_for('policies.view_policy', id=policy.id) }}" class="btn btn-light rounded-pill px-4">{{
+                    _('Cancel') }}</a>
+            </div>
+
+            <div class="card border-0 shadow-lg overflow-hidden rounded-4">
+                <div class="card-body p-0">
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row g-0">
+                            <!-- Left: Main Form -->
+                            <div class="col-md-7 p-4 p-lg-5">
+                                <h5 class="fw-bold mb-4 d-flex align-items-center text-primary">
+                                    <i class="bi bi-pencil-square me-2"></i> {{ _('Content & Taxonomy') }}
+                                </h5>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Policy Title') }} <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" name="policy_name"
+                                        class="form-control rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                        required value="{{ policy.policy_name }}">
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">{{ _('Taxonomy Category') }} <span
+                                                class="text-danger">*</span></label>
+                                        <select name="category_id"
+                                            class="form-select rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                            required>
+                                            {% for category in categories %}
+                                            <option value="{{ category.id }}" {% if category.id==policy.category_id
+                                                %}selected{% endif %}>
+                                                {{ category.name_en if current_user.language == 'en' else
+                                                category.name_ar }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">{{ _('Policy Numbering') }}</label>
+                                        <input type="text" name="policy_number"
+                                            class="form-control rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                            value="{{ policy.policy_number }}">
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Responsible Function') }} <span
+                                            class="text-danger">*</span></label>
+
+                                    <select name="department_id"
+                                        class="form-select rounded-3 py-2 shadow-none border-primary border-opacity-10 mb-2">
+                                        {% if current_user.is_admin() %}
+                                        <option value="" {% if not policy.department_id %}selected{% endif %}>
+                                            {{ _('Global / All Functions') }}
+                                        </option>
+                                        {% endif %}
+                                        {% for dept in departments %}
+                                        <option value="{{ dept.id }}" {% if policy.department_id and policy.department_id|int == dept.id %}selected{% endif %}>
+                                            {{ dept.name }} ({{ dept.code }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text mb-3">{{ _('Responsible department (optional)') }}</div>
+
+                                    <label class="form-label fw-semibold">{{ _('Owner Function') }}</label>
+                                    <select name="owner_function"
+                                        class="form-select rounded-3 py-2 shadow-none border-primary border-opacity-10">
+                                        <option value="">{{ _('-- Select Owner Function --') }}</option>
+                                        {% for dept in departments %}
+                                        <option value="{{ dept.name }} ({{ dept.code }})"
+                                            {% if policy.owner_function and dept.code in policy.owner_function %}selected{% endif %}>
+                                            {{ dept.name }} ({{ dept.code }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">{{ _('Function responsible for this policy') }}</div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Visibility & Access') }} <span
+                                            class="text-danger">*</span></label>
+                                    <div class="d-flex gap-4 mt-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="is_public"
+                                                id="vis_public" value="1" {% if policy.is_public %}checked{% endif %}>
+                                            <label class="form-check-label" for="vis_public">
+                                                <i class="bi bi-globe me-1"></i> {{ _('Public (All Employees)') }}
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="is_public"
+                                                id="vis_internal" value="0" {% if not policy.is_public %}checked{% endif
+                                                %}>
+                                            <label class="form-check-label" for="vis_internal">
+                                                <i class="bi bi-lock-fill me-1"></i> {{ _('Internal (Function Only)') }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Brief Summary') }}</label>
+                                    <textarea name="description"
+                                        class="form-control rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                        rows="3">{% if policy.description and policy.description != "None" %}{{ policy.description }}{% endif %}</textarea>
+                                </div>
+
+                                <div class="mb-0">
+                                    <label class="form-label fw-semibold">{{ _('Document Content') }}</label>
+                                    <textarea name="content"
+                                        class="form-control rounded-3 py-2 shadow-none border-primary border-opacity-10"
+                                        rows="12">{% if policy.content and policy.content != "None" %}{{ policy.content }}{% endif %}</textarea>
+                                </div>
+                            </div>
+
+                            <!-- Right: Metadata -->
+                            <div class="col-md-5 bg-light p-4 p-lg-5 border-start">
+                                <h5 class="fw-bold mb-4 d-flex align-items-center text-primary">
+                                    <i class="bi bi-gear-fill me-2"></i> {{ _('Control Panel') }}
+                                </h5>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Current Version') }}</label>
+                                    <input type="text" name="version_number"
+                                        class="form-control rounded-3 border-0 shadow-sm"
+                                        value="{{ policy.version_number }}" required>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Current Status') }}</label>
+                                    <select name="status" class="form-select rounded-3 border-0 shadow-sm">
+                                        <option value="draft" {% if policy.status=='draft' %}selected{% endif %}>{{
+                                            _('Draft') }}</option>
+                                        <option value="pending_approval" {% if policy.status=='pending_approval'
+                                            %}selected{% endif %}>{{ _('Pending Approval') }}</option>
+                                        <option value="approved" {% if policy.status=='approved' %}selected{% endif %}>
+                                            {{ _('Approved') }}</option>
+                                        <option value="published" {% if policy.status=='published' %}selected{% endif
+                                            %}>{{ _('Published') }}</option>
+                                        <option value="archived" {% if policy.status=='archived' %}selected{% endif %}>
+                                            {{ _('Archived') }}</option>
+                                    </select>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">{{ _('Effective Date') }}</label>
+                                        <input type="date" name="effective_date" class="form-control border-0 shadow-sm"
+                                            value="{{ policy.effective_date }}" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">{{ _('Next Review') }}</label>
+                                        <input type="date" name="next_review_date"
+                                            class="form-control border-0 shadow-sm"
+                                            value="{{ policy.next_review_date }}">
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">{{ _('Regulatory Reference') }}</label>
+                                    <input type="text" name="regulatory_reference"
+                                        class="form-control border-0 shadow-sm"
+                                        value="{{ policy.regulatory_reference or '' }}">
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="form-check form-switch custom-switch">
+                                        <input class="form-check-input" type="checkbox" id="is_mandatory"
+                                            name="is_mandatory" {% if policy.is_mandatory %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold ms-2" for="is_mandatory">{{ _('Mandatory
+                                            Acknowledgment') }}</label>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">{{ _('If enabled, this policy will be flagged
+                                        as mandatory and tracked in the Acknowledgment Dashboard.') }}</small>
+                                </div>
+
+
+
+                                <div class="mb-5">
+                                    <label class="form-label fw-semibold">{{ _('Document Attachments') }}</label>
+
+                                    <!-- Existing Attachments -->
+                                    {% if attachments %}
+                                    <div class="mb-3">
+                                        {% for att in attachments %}
+                                        <div class="d-flex align-items-center bg-white rounded-3 p-2 mb-2 border">
+                                            {% if att.filename.endswith('.pdf') %}
+                                            <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>
+                                            {% else %}
+                                            <i class="bi bi-file-earmark-word-fill text-primary me-2"></i>
+                                            {% endif %}
+                                            <span class="small flex-grow-1 text-truncate">{{ att.filename }}</span>
+                                            <a href="{{ url_for('policies.download_policy_attachment', attachment_id=att.id) }}"
+                                                class="btn btn-sm btn-outline-primary me-1" target="_blank"
+                                                title="{{ _('Download') }}">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            <form method="POST"
+                                                action="{{ url_for('policies.delete_attachment', attachment_id=att.id) }}"
+                                                class="d-inline" data-confirm="Delete this attachment?">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                    title="{{ _('Remove') }}">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Legacy single attachment info -->
+                                    {% if policy.attachment_path and not attachments %}
+                                    <div class="mb-2 extra-small text-success">
+                                        <i class="bi bi-file-check"></i> {{ _('Legacy file exists.') }}
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Single file replace (for main form) -->
+                                    <div
+                                        class="file-upload-wrapper bg-white p-4 rounded-3 text-center border-2 border-dashed border-primary border-opacity-25 mb-2">
+                                        <input type="file" name="attachment"
+                                            class="form-control form-control-sm border-0 shadow-none"
+                                            accept=".pdf,.doc,.docx">
+                                        <div class="small text-muted mt-1">{{ _('Replace primary attachment') }}</div>
+                                    </div>
+                                </div>
+
+                                <!-- Save button inside main form -->
+                                <div class="d-grid mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">
+                                        <i class="bi bi-save me-2"></i>{{ _('Save Changes') }}
+                                    </button>
+                                </div>
+                                </div>
+                            </div>
+                    </form>
+
+                    <!-- Multi-file upload (separate form - does NOT affect main save) -->
+                    <form method="POST" action="{{ url_for('policies.upload_attachment', id=policy.id) }}"
+                        enctype="multipart/form-data" class="mb-4 mt-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label class="form-label fw-semibold small text-primary">{{ _('Add More Attachments') }}</label>
+                        <div
+                            class="file-upload-wrapper bg-white p-3 rounded-3 text-center border-2 border-dashed border-success border-opacity-25">
+                            <input type="file" name="attachments" multiple
+                                class="form-control form-control-sm border-0 shadow-none" accept=".pdf,.doc,.docx">
+                            <div class="small text-muted mt-1">{{ _('Select multiple files (PDF, DOC, DOCX)') }}</div>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-success w-100 mt-2 rounded-pill">
+                            <i class="bi bi-cloud-upload me-1"></i>{{ _('Upload Additional Files') }}
+                        </button>
+                    </form>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+<style>
+    .custom-switch .form-check-input {
+        width: 3rem;
+        height: 1.5rem;
+    }
+
+    .extra-small {
+        font-size: 0.75rem;
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+    }
+</style>
+{% endblock %}

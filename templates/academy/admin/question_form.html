@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Question') }} — {{ c.title_en }}{% endblock %}
+{% block content %}
+{% set page_title = _('Edit question') if editing else _('New question') %}
+{% include 'academy/admin/_nav.html' %}
+<p class="small"><a href="{{ url_for('academy_admin.course', cid=c.id) }}#questions"><i class="bi bi-arrow-left"></i> {{ c.title_en }}</a></p>
+<form method="post" class="card"><div class="card-body">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="row g-3">
+    <div class="col-md-6"><label class="form-label fw-bold">{{ _('Question (English)') }} *</label>
+      <textarea name="text_en" class="form-control" rows="3" required>{{ q.get('text_en', '') }}</textarea></div>
+    <div class="col-md-6"><label class="form-label fw-bold">{{ _('Question (Arabic)') }}</label>
+      <textarea name="text_ar" class="form-control" rows="3" dir="rtl">{{ q.get('text_ar', '') }}</textarea></div>
+    <div class="col-md-6"><label class="form-label fw-bold">{{ _('Answer options (English) — one per line, 2 to 6') }} *</label>
+      <textarea name="options_en" class="form-control" rows="6" required placeholder="Option 1&#10;Option 2&#10;Option 3&#10;Option 4">{{ q.get('options_en', '') }}</textarea></div>
+    <div class="col-md-6"><label class="form-label fw-bold">{{ _('Answer options (Arabic) — same order, one per line') }}</label>
+      <textarea name="options_ar" class="form-control" rows="6" dir="rtl">{{ q.get('options_ar', '') }}</textarea></div>
+    <div class="col-md-4"><label class="form-label fw-bold">{{ _('Correct answer') }} *</label>
+      <select name="correct" class="form-select" required>
+        <option value="">{{ _('— choose —') }}</option>
+        {% for i in range(1, 7) %}<option value="{{ i }}" {{ 'selected' if q.get('correct') == i|string }}>{{ _('Option') }} {{ i }} ({{ 'ABCDEF'[i-1] }})</option>{% endfor %}
+      </select>
+      <div class="form-text">{{ _('The line number of the correct option above. Learners see options in this order.') }}</div></div>
+    <div class="col-md-4"><label class="form-label fw-bold">{{ _('Explanation (English)') }}</label>
+      <textarea name="explanation_en" class="form-control" rows="3">{{ q.get('explanation_en', '') }}</textarea>
+      <div class="form-text">{{ _('For reviewers only — never shown to learners, so the bank cannot be harvested.') }}</div></div>
+    <div class="col-md-4"><label class="form-label fw-bold">{{ _('Explanation (Arabic)') }}</label>
+      <textarea name="explanation_ar" class="form-control" rows="3" dir="rtl">{{ q.get('explanation_ar', '') }}</textarea></div>
+  </div>
+  <div class="mt-4 d-flex gap-2 flex-wrap">
+    <button class="btn btn-primary">{{ _('Save question') }}</button>
+    <button class="btn btn-outline-primary" name="save_and_new" value="1">{{ _('Save & add another') }}</button>
+    <a href="{{ url_for('academy_admin.course', cid=c.id) }}#questions" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+  </div>
+</div></form>
+{% endblock %}

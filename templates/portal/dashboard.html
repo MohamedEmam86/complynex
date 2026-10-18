@@ -1,0 +1,211 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}{{ _('Employee Portal - Dashboard') }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="welcome-banner shadow-sm">
+            <div class="d-flex justify-content-between align-items-center position-relative" style="z-index: 2;">
+                <div>
+                    <h2 class="fw-bold mb-1">{{ _('Welcome back, %(name)s!', name=current_user.first_name) }}</h2>
+                    <p class="mb-2 opacity-75">{{ _('Manage your compliance tasks, training, and declarations in one
+                        place.') }}</p>
+                    {% if can_access_cms %}
+                    <a href="{{ url_for('index') }}" class="btn btn-sm btn-light text-primary fw-bold">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> {{ _('Access CMS Dashboard') }}
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="d-none d-md-block text-white opacity-50">
+                    <i class="bi bi-shield-check" style="font-size: 3rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Declarations Card -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm complynex-card">
+            <div class="card-header bg-white py-3 border-bottom-0">
+                <div class="d-flex align-items-center">
+                    <div class="icon-shape text-white rounded-circle p-2 me-3"
+                        style="background-color: var(--complynex-red);">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <h5 class="mb-0">{{ _('Declarations') }}</h5>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <!-- COI Status -->
+                    <div
+                        class="list-group-item px-0 d-flex justify-content-between align-items-center border-bottom-0 pb-3">
+                        <div>
+                            <span class="d-block fw-bold">{{ _('COI Declaration') }}</span>
+                            <small class="text-muted">{{ current_year }}</small>
+                        </div>
+                        {% if coi_status.submitted %}
+                        {% if coi_status.status == 'requires_clarification' %}
+                        <a href="{{ url_for('portal.verify_coi_pin', id=coi_status.id) }}"
+                            class="btn btn-sm btn-warning">{{ _('Action Required') }}</a>
+                        {% else %}
+                        <span class="badge bg-success">{{ _('Submitted') }}</span>
+                        {% endif %}
+                        {% else %}
+                        <a href="{{ url_for('portal.annual_coi') }}" class="btn btn-sm btn-complynex">{{ _('Submit Now')
+                            }}</a>
+                        {% endif %}
+                    </div>
+
+                    <!-- COBEC Status -->
+                    <div
+                        class="list-group-item px-0 d-flex justify-content-between align-items-center border-bottom-0 pb-3">
+                        <div>
+                            <span class="d-block fw-bold">{{ _('COBEC') }}</span>
+                            <small class="text-muted">{{ current_year }}</small>
+                        </div>
+                        {% if cobec_status.submitted %}
+                        <span class="badge bg-success">{{ _('Submitted') }}</span>
+                        {% else %}
+                        <a href="{{ url_for('portal.annual_cobec') }}" class="btn btn-sm btn-complynex">{{ _('Submit Now')
+                            }}</a>
+                        {% endif %}
+                    </div>
+
+                    <!-- Ad-hoc Incident -->
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center border-top pt-3">
+                        <div>
+                            <span class="d-block fw-bold">{{ _('Report Incident') }}</span>
+                            <small class="text-muted">{{ _('GHE / COI') }}</small>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown">
+                                {{ _('Report') }}
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('portal.incident_ghe') }}">{{ _('GHE
+                                        Incident') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('portal.incident_coi') }}">{{ _('COI
+                                        Incident') }}</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Policies Card -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm complynex-card">
+            <div class="card-header bg-white py-3 border-bottom-0">
+                <div class="d-flex align-items-center">
+                    <div class="icon-shape text-white rounded-circle p-2 me-3"
+                        style="background-color: var(--complynex-dark);">
+                        <i class="bi bi-journal-check"></i>
+                    </div>
+                    <h5 class="mb-0">{{ _('Policies') }}</h5>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-3">
+                    <h3 class="display-4 fw-bold {{ 'text-danger' if pending_policies_count > 0 else 'text-success' }}">
+                        {{ pending_policies_count }}
+                    </h3>
+                    <p class="text-muted mb-4">{{ _('Pending Acknowledgments') }}</p>
+                    <a href="{{ url_for('portal.policy_list') }}" class="btn btn-complynex-outline w-100">
+                        {{ _('View Policies') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Card -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm complynex-card">
+            <div class="card-header bg-white py-3 border-bottom-0">
+                <div class="d-flex align-items-center">
+                    <div class="icon-shape bg-success text-white rounded-circle p-2 me-3">
+                        <i class="bi bi-mortarboard"></i>
+                    </div>
+                    <h5 class="mb-0">{{ _('Training') }}</h5>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-3">
+                    <h3 class="display-4 fw-bold {{ 'text-danger' if training_due_count > 0 else 'text-success' }}">
+                        {{ training_due_count }}
+                    </h3>
+                    <p class="text-muted mb-4">{{ _('Courses Due') }}</p>
+                    <a href="{{ url_for('portal.training_list') }}" class="btn btn-outline-success w-100">
+                        {{ _('Go to Learning Portal') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Whistleblowing Card -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm complynex-card">
+            <div class="card-header bg-white py-3 border-bottom-0">
+                <div class="d-flex align-items-center">
+                    <div class="icon-shape text-white rounded-circle p-2 me-3" style="background-color: #6f42c1;">
+                        <i class="bi bi-megaphone"></i>
+                    </div>
+                    <h5 class="mb-0">{{ _('Whistleblowing') }}</h5>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-3">
+                    <h3 class="display-4 fw-bold text-primary">
+                        {{ whistleblowing_count }}
+                    </h3>
+                    <p class="text-muted mb-4">{{ _('Reports Submitted') }}</p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('whistleblowing.submit_case') }}" class="btn btn-complynex">
+                            <i class="bi bi-plus-circle me-1"></i> {{ _('Submit Report') }}
+                        </a>
+                        <a href="{{ url_for('whistleblowing.track_case') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-search me-1"></i> {{ _('Track Case') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">{{ _('Recent Activity') }}</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                <ul class="list-group list-group-flush">
+                    {% for activity in recent_activities %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold">{{ activity.description }}</span>
+                            <br>
+                            <small class="text-muted">{{ activity.date }}</small>
+                        </div>
+                        <span class="badge bg-light text-dark border">{{ activity.type }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center py-3">{{ _('No recent activity found.') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Profile - {{ customer.full_name or customer.company_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('aml.dashboard') }}">{{ _('AML Dashboard') }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('aml.customer_list') }}">{{ _('Customers') }}</a></li>
+            <li class="breadcrumb-item active">{{ _('Profile') }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Sidebar: Summary Info -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-person-circle fs-1 text-primary"></i>
+                    </div>
+                    <h4 class="card-title">{{ customer.full_name or customer.company_name }}</h4>
+                    <p class="text-muted small">Ref: {{ customer.customer_reference }}</p>
+
+                    <div class="d-flex justify-content-center gap-2 mb-3">
+                        <span
+                            class="badge {% if customer.risk_classification == 'HIGH' %}bg-danger{% elif customer.risk_classification == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %} fs-6">
+                            Risk: {{ customer.risk_classification }}
+                        </span>
+                        <span
+                            class="badge {% if customer.status == 'ACTIVE' %}bg-success{% elif customer.status == 'BLOCKED' %}bg-dark{% else %}bg-info{% endif %} fs-6">
+                            Status: {{ customer.status }}
+                        </span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('aml.edit_customer', id=customer.id) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-1"></i> {{ _('Edit Identity Info') }}
+                        </a>
+                        <a href="{{ url_for('aml.create_sar', customer_id=customer.id) }}"
+                            class="btn btn-outline-danger">
+                            <i class="bi bi-exclamation-triangle me-1"></i> {{ _('File SAR') }}
+                        </a>
+                        <a href="{{ url_for('aml.print_cdd_form', id=customer.id) }}" class="btn btn-outline-secondary"
+                            target="_blank">
+                            <i class="bi bi-printer me-1"></i> {{ _('Print KYC Form') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screening Status Card -->
+            <div class="card shadow-sm border-0 mb-4 border-start border-danger border-3">
+                <div class="card-header bg-light d-flex align-items-center justify-content-between">
+                    <span class="fw-bold"><i class="bi bi-shield-exclamation text-danger me-1"></i> {{ _('Sanctions
+                        Screening') }}</span>
+                    <form method="POST" action="{{ url_for('aml.run_customer_screening', id=customer.id) }}"
+                        class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-danger" id="runScreeningBtn">
+                            <i class="bi bi-search"></i>
+                            {% if customer.last_screening_date %}Re-Screen{% else %}Run Screening{% endif %}
+                        </button>
+                    </form>
+                </div>
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small">{{ _('Status:') }}</span>
+                        {% set ss = customer.screening_status or 'Not Screened' %}
+                        <span
+                            class="badge {% if ss == 'Clear' %}bg-success{% elif ss == 'Pending Review' %}bg-warning text-dark{% elif ss == 'Blocked' %}bg-danger{% else %}bg-secondary{% endif %}">
+                            {{ ss }}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small">{{ _('Last Screened:') }}</span>
+                        <span class="small">{{ customer.last_screening_date or 'Never' }}</span>
+                    </div>
+                    {% if customer.screening_notes %}
+                    <div class="small text-muted mt-1 border-top pt-1">{{ customer.screening_notes }}</div>
+                    {% endif %}
+                    {% if customer.screening_status == 'Pending Review' %}
+                    <a href="{{ url_for('screening.screening_queue') }}"
+                        class="btn btn-sm btn-outline-warning w-100 mt-2">
+                        <i class="bi bi-inbox"></i> {{ _('View Screening Queue') }}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Risk Metrics -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light fw-bold">{{ _('Risk Assessment Highlights') }}</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ _('Risk Score:') }}</span>
+                        <span class="fw-bold">{{ customer.risk_score }}/100</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ _('Last Assessment:') }}</span>
+                        <span class="small">{{ customer.risk_classification_date or 'N/A' }}</span>
+                    </div>
+                    <hr>
+                    <ul class="list-unstyled small">
+                        <li class="mb-1">
+                            <i
+                                class="bi {% if customer.is_pep %}bi-check-circle-fill text-danger{% else %}bi-dash-circle text-muted{% endif %} me-2"></i>
+                            {{ _('Politically Exposed Person (PEP)') }}
+                        </li>
+                        <li class="mb-1">
+                            <i
+                                class="bi {% if customer.is_sanctioned %}bi-check-circle-fill text-danger{% else %}bi-dash-circle text-muted{% endif %} me-2"></i>
+                            {{ _('Sanctions List Match') }}
+                        </li>
+                        <li class="mb-1">
+                            <i
+                                class="bi {% if customer.is_high_risk_country %}bi-check-circle-fill text-warning{% else %}bi-dash-circle text-muted{% endif %} me-2"></i>
+                            {{ _('High Risk Country Connection') }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Main Content: Detailed CDD Profile -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
+                        <li class="nav-tabs-item" role="presentation">
+                            <button class="nav-link active" id="identity-tab" data-bs-toggle="tab"
+                                data-bs-target="#identity" type="button" role="tab" aria-controls="identity"
+                                aria-selected="true">
+                                {{ _('Identity & KYC') }}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="alerts-tab" data-bs-toggle="tab" data-bs-target="#alerts"
+                                type="button" role="tab" aria-controls="alerts" aria-selected="false">
+                                {{ _('Transaction Alerts') }}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="myTabContent">
+                        <!-- Identity Tab -->
+                        <div class="tab-pane fade show active" id="identity" role="tabpanel"
+                            aria-labelledby="identity-tab">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">{{ _('Full Name (AR)') }}</label>
+                                    <div class="fw-bold">{{ customer.full_name_arabic or 'N/A' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">{{ _('Nationality') }}</label>
+                                    <div class="fw-bold">{{ customer.nationality or 'N/A' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">{{ _('ID / Registration Number') }}</label>
+                                    <div class="fw-bold">{{ customer.id_type or 'ID' }}: {{ customer.id_number or 'N/A'
+                                        }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">{{ _('ID Expiry') }}</label>
+                                    <div class="fw-bold text-danger">{{ customer.id_expiry_date or 'N/A' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">{{ _('Date of Birth / Incorporation') }}</label>
+                                    <div class="fw-bold">{{ customer.date_of_birth or customer.registration_date or
+                                        'N/A' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">{{ _('Industry / Occupation') }}</label>
+                                    <div class="fw-bold">{{ customer.industry or 'N/A' }}</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="text-muted small d-block">{{ _('Address') }}</label>
+                                    <div class="fw-bold">{{ customer.address or 'N/A' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">{{ _('Contact Info') }}</label>
+                                    <div class="fw-bold">{{ customer.email or 'No Email' }} | {{ customer.phone or 'No
+                                        Phone' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block">{{ _('Source of Funds') }}</label>
+                                    <div class="fw-bold">{{ customer.source_of_funds or 'N/A' }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerts Tab -->
+                        <div class="tab-pane fade" id="alerts" role="tabpanel" aria-labelledby="alerts-tab">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ _('Date') }}</th>
+                                            <th>{{ _('Rule') }}</th>
+                                            <th>{{ _('Status') }}</th>
+                                            <th>{{ _('Action') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for alert in recent_alerts %}
+                                        <tr>
+                                            <td><small>{{ alert.alert_date }}</small></td>
+                                            <td>{{ alert.rule_name }}</td>
+                                            <td><span class="badge bg-light text-dark border">{{ alert.status }}</span>
+                                            </td>
+                                            <td><a href="#" class="btn btn-sm btn-link">{{ _('Details') }}</a></td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4 text-muted">{{ _('No alerts found for this
+                                                customer.') }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Radar Chart -->
+<div class="container-fluid px-4 pb-4">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white fw-bold">
+          <i class="bi bi-bullseye"></i> {{ _('Risk Profile — Multi-Dimensional Analysis') }}
+        </div>
+        <div class="card-body text-center">
+          <canvas id="riskRadar" style="max-height:280px;"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white fw-bold">
+          <i class="bi bi-file-pdf"></i> {{ _('Export') }}
+        </div>
+        <div class="card-body">
+          <p class="text-muted small">{{ _('Download a complete Customer Due Diligence report including risk profile, transaction history, and screening results.') }}</p>
+          <a href="{{ url_for('aml.customer_pdf', id=customer.id) }}" class="btn btn-danger" target="_blank">
+            <i class="bi bi-download"></i> {{ _('Download CDD PDF Report') }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% include 'partials/attachment_widget.html' %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+document.getElementById('runScreeningBtn').addEventListener('click', function () {
+    this.disabled = true;
+    this.innerHTML = '<i class="bi bi-hourglass-split"></i> Screening...';
+    this.closest('form').submit();
+});
+
+const radarData = {{ risk_radar_json | safe }};
+new Chart(document.getElementById('riskRadar'), {
+  type: 'radar',
+  data: {
+    labels: radarData.labels,
+    datasets: [{
+      label: 'Risk Score',
+      data: radarData.scores,
+      backgroundColor: 'rgba(192,57,43,0.15)',
+      borderColor: '#C0392B',
+      pointBackgroundColor: '#C0392B',
+      pointBorderColor: '#fff',
+      pointRadius: 5
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      r: {
+        beginAtZero: true, max: 100,
+        ticks: { stepSize: 25, font: { size: 10 } },
+        pointLabels: { font: { size: 11 } },
+        grid: { color: 'rgba(0,0,0,0.1)' }
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` Score: ${ctx.raw}/100`
+        }
+      }
+    }
+  }
+});
+</script>
+{% endblock %}
+{% endblock %}

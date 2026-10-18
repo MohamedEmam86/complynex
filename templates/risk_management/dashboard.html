@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Risk Management Dashboard') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3><i class="bi bi-shield-exclamation me-2"></i>{{ _('Risk Management Dashboard') }}</h3>
+        <div>
+            {% if current_user.can_view('risk_management') %}
+            <a href="{{ url_for('risk_management.suggestions') }}" class="btn btn-outline-warning me-2">
+                <i class="bi bi-lightbulb me-1"></i>{{ _('Suggested Risks') }}
+                {% if suggestion_count %}<span class="badge bg-warning text-dark ms-1">{{ suggestion_count }}</span>{% endif %}
+            </a>
+            {% endif %}
+            {% if current_user.can_edit('risk_management') %}
+            <a href="{{ url_for('risk_management.register_new') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>{{ _('Register New Risk') }}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header"><strong>{{ _('Risk Heat Map') }}</strong> <span class="text-muted small">{{ _('Likelihood x Impact') }}</span></div>
+                <div class="card-body">
+                    <table class="table table-bordered text-center align-middle mb-0">
+                        <tbody>
+                        {% for impact in range(5, 0, -1) %}
+                            <tr>
+                                <th class="align-middle">{{ impact }}</th>
+                                {% for likelihood in range(1, 6) %}
+                                    {% set score = likelihood * impact %}
+                                    {% set band = bands | selectattr('min_score', 'le', score) | selectattr('max_score', 'ge', score) | first %}
+                                    <td style="background-color: {{ band.color_hex if band else '#eee' }}; color: #fff; min-width: 60px;">
+                                        {{ heat_map.get((likelihood, impact), 0) }}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                            <tr>
+                                <th></th>
+                                {% for likelihood in range(1, 6) %}<th>{{ likelihood }}</th>{% endfor %}
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="text-muted small mt-2 mb-0">{{ _('Rows = Impact, Columns = Likelihood. Cell value = number of active risks.') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><strong>{{ _('Risk Bands') }}</strong></div>
+                <ul class="list-group list-group-flush">
+                    {% for band in bands %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><span class="badge" style="background-color: {{ band.color_hex }};">{{ _('&nbsp;') }}</span> {{ band.band_name }}</span>
+                        <span class="text-muted small">{{ band.min_score }}-{{ band.max_score }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><strong>{{ _('Top 10 Risks by Residual Score') }}</strong></div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr>
+                    <th>{{ _('Risk ID') }}</th><th>{{ _('Title') }}</th><th>{{ _('Category') }}</th>
+                    <th>{{ _('Inherent') }}</th><th>{{ _('Residual') }}</th><th>{{ _('Appetite') }}</th><th></th>
+                </tr></thead>
+                <tbody>
+                {% for r in top_risks %}
+                    <tr>
+                        <td>{{ r.risk_id }}</td>
+                        <td>{{ r.risk_title }}</td>
+                        <td>{{ categories[r.category_id].category_name if r.category_id in categories else '-' }}</td>
+                        <td>{{ r.inherent_risk_score }}</td>
+                        <td>{{ r.residual_risk_score or '-' }}</td>
+                        <td>
+                            {% if r.risk_appetite_aligned is none %}<span class="text-muted">-</span>
+                            {% elif r.risk_appetite_aligned %}<span class="badge bg-success">{{ _('Within') }}</span>
+                            {% else %}<span class="badge bg-danger">{{ _('Breach') }}</span>{% endif %}
+                        </td>
+                        <td><a href="{{ url_for('risk_management.register_detail', risk_pk=r.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('View') }}</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">{{ _('No active risks registered yet.') }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

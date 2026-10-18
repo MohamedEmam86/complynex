@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Localization') }} - {{ company_name }} CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-translate me-2"></i>{{ _('Localization') }}</h1>
+    <a href="{{ url_for('admin.settings') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> {{ _('Back to Settings') }}
+    </a>
+</div>
+
+<div class="col-md-6">
+    <form method="POST" action="{{ url_for('admin.settings_localization') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">{{ _('Platform Default Language') }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">{{ _('Individual users can still switch language per-session from the top navigation. This sets what a first-time visitor sees.') }}</p>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="default_locale" id="localeAr" value="ar" {{ 'checked' if default_locale == 'ar' }}>
+                    <label class="form-check-label" for="localeAr">{{ _('Arabic (العربية)') }}</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="default_locale" id="localeEn" value="en" {{ 'checked' if default_locale == 'en' }}>
+                    <label class="form-check-label" for="localeEn">{{ _('English') }}</label>
+                </div>
+            </div>
+            <div class="card-footer bg-white text-end">
+                <button type="submit" class="btn btn-primary">{{ _('Save Changes') }}</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

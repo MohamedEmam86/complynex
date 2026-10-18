@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}New Fit & Proper Assessment - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('New Assessment: ') }} {{ member.member_name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('governance.fit_proper_dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            {{ _('Cancel') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <form method="POST" class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Assessment Criteria (Score 0-20)') }}</h5>
+            </div>
+            <div class="card-body">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Assessment Type') }}</label>
+                        <select name="assessment_type" class="form-select">
+                            <option value="PERIODIC">{{ _('Periodic Review') }}</option>
+                            <option value="INITIAL">{{ _('Initial Appointment') }}</option>
+                            <option value="REAPPOINTMENT">{{ _('Re-appointment') }}</option>
+                            <option value="TRIGGERED">{{ _('Triggered by Event') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Assessment Date') }}</label>
+                        <input type="date" name="assessment_date" class="form-control" value="{{ today }}" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ _('1. Honesty, Integrity & Reputation') }}</label>
+                    <input type="number" name="honesty_integrity_score" class="form-control" min="0" max="20" required>
+                    <div class="form-text">{{ _('Criminal record, regulatory sanctions, personal conduct.') }}</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ _('2. Competence & Capability') }}</label>
+                    <input type="number" name="competence_capability_score" class="form-control" min="0" max="20"
+                        required>
+                    <div class="form-text">{{ _('Education, experience, track record.') }}</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ _('3. Financial Soundness') }}</label>
+                    <input type="number" name="financial_soundness_score" class="form-control" min="0" max="20"
+                        required>
+                    <div class="form-text">{{ _('Credit history, bankruptcy checks.') }}</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ _('4. Time Commitment') }}</label>
+                    <input type="number" name="time_commitment_score" class="form-control" min="0" max="20" required>
+                    <div class="form-text">{{ _('Attendance record, other directorships.') }}</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ _('5. Reputation') }}</label>
+                    <input type="number" name="reputation_score" class="form-control" min="0" max="20" required>
+                    <div class="form-text">{{ _('Public standing, professional feedback.') }}</div>
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Overall Result') }}</label>
+                    <select name="assessment_result" class="form-select" required>
+                        <option value="APPROVED">{{ _('Approved - Fit & Proper') }}</option>
+                        <option value="CONDITIONAL">{{ _('Approved with Conditions') }}</option>
+                        <option value="REJECTED">{{ _('Rejected - Not Fit') }}</option>
+                    </select>
+                </div>
+
+                <hr>
+                <h6 class="fw-bold mb-3">{{ _('Regulatory Submission (optional)') }}</h6>
+                <p class="text-muted small mb-3">{{ _('If this assessment must be filed with a regulator, record the submission details here.') }}</p>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Regulator') }}</label>
+                        <select name="regulator_id" class="form-select">
+                            <option value="">{{ _('-- None --') }}</option>
+                            {% for reg in regulators %}
+                            <option value="{{ reg.id }}">{{ reg.regulator_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Submitted to Regulator?') }}</label>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                name="submitted_to_regulator" id="submittedSwitch">
+                            <label class="form-check-label" for="submittedSwitch">{{ _('Yes, submitted') }}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Submission Date') }}</label>
+                        <input type="date" name="regulator_submission_date" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Regulator Reference Number') }}</label>
+                        <input type="text" name="regulator_reference_number" class="form-control">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Approval Status') }}</label>
+                        <select name="regulator_approval_status" class="form-select">
+                            <option value="">{{ _('-- Pending / N/A --') }}</option>
+                            <option value="APPROVED">{{ _('Approved') }}</option>
+                            <option value="CONDITIONAL">{{ _('Approved with Conditions') }}</option>
+                            <option value="REJECTED">{{ _('Rejected') }}</option>
+                            <option value="UNDER_REVIEW">{{ _('Under Review') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Approval Date') }}</label>
+                        <input type="date" name="regulator_approval_date" class="form-control">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Regulator Feedback') }}</label>
+                    <textarea name="regulator_feedback" class="form-control" rows="2"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">{{ _('Submit Assessment') }}</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- History Sidebar -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light py-3">
+                <h6 class="mb-0 fw-bold">{{ _('Assessment History') }}</h6>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for prev in previous %}
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6
+                            class="mb-1 {{ 'text-success' if prev.assessment_result == 'APPROVED' else 'text-danger' }}">
+                            {{ prev.assessment_result }}
+                        </h6>
+                        <small>{{ prev.assessment_date }}</small>
+                    </div>
+                    <p class="mb-1 small">{{ prev.assessment_type }}</p>
+                    <div class="d-flex w-100 justify-content-between align-items-center mt-2">
+                        <small class="text-muted">{{ _('Score: ') }} {{ prev.total_score }}/100</small>
+                        <a href="{{ url_for('governance.view_fit_proper', id=prev.id) }}" target="_blank"
+                            class="btn btn-sm btn-link p-0 text-decoration-none" title="Print/View">
+                            <i class="fas fa-print"></i> {{ _('Print') }}
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="list-group-item text-muted small">{{ _('No previous assessments.') }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

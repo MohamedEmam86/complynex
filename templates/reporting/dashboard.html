@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+
+{% block title %}Reporting Calendar - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2">{{ _('Regulatory Reporting Hub') }}</h1>
+        <p class="text-muted">
+            {% if regulators %}
+            Tracking mandatory submissions across {{ regulators|length }} regulator{{ 's' if regulators|length != 1 }}:
+            {{ regulators|map(attribute='regulator_name')|join(', ') }}
+            {% else %}
+            Tracking mandatory regulatory submissions and periodicity
+            {% endif %}
+        </p>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('reporting.list_regulators') }}" class="btn btn-sm btn-outline-secondary shadow-sm">
+                <i class="bi bi-building"></i> {{ _('REGULATORS') }}
+            </a>
+            <a href="{{ url_for('reporting.list_reports') }}" class="btn btn-sm btn-outline-secondary shadow-sm">
+                <i class="bi bi-file-earmark-text"></i> {{ _('REPORT TYPES') }}
+            </a>
+        </div>
+        <form method="POST" action="{{ url_for('reporting.generate_calendar') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-outline-primary me-2 shadow-sm"
+                title="{{ _('Auto-generate missing submissions based on report frequency') }}">
+                <i class="bi bi-calendar-event"></i> {{ _('GENERATE CALENDAR') }}
+            </button>
+        </form>
+        <a href="{{ url_for('reporting.export_calendar') }}" class="btn btn-sm btn-outline-secondary me-2 shadow-sm">
+            <i class="bi bi-calendar-arrow-down"></i> {{ _('EXPORT ICS') }}
+        </a>
+        <button class="btn btn-sm btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#newSubmissionModal">
+            <i class="bi bi-plus-circle"></i> {{ _('NEW SUBMISSION') }}
+        </button>
+    </div>
+</div>
+
+<!-- Key Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-primary text-white">
+            <div class="card-body">
+                <h6 class="text-white-50 text-uppercase fw-bold small">{{ _('Upcoming Due') }}</h6>
+                <h2 class="fw-bold mb-0">{{ upcoming|length }}</h2>
+                <small>{{ _('Next 30 days') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-warning text-dark">
+            <div class="card-body">
+                <h6 class="text-dark-50 text-uppercase fw-bold small">{{ _('Overdue') }}</h6>
+                <h2 class="fw-bold mb-0">{{ overdue_count }}</h2>
+                <small>{{ _('Immediate action required') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-success text-white">
+            <div class="card-body">
+                <h6 class="text-white-50 text-uppercase fw-bold small">{{ _('Submitted') }}</h6>
+                <h2 class="fw-bold mb-0">{{ all_submissions | selectattr('status', 'equalto', 'submitted') | list |
+                    length }}</h2>
+                <small>{{ _('This Year') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-white">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase fw-bold small">{{ _('Total Reports') }}</h6>
+                <h2 class="fw-bold mb-0">{{ reports|length }}</h2>
+                <small>Across {{ regulators|length }} regulators</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Upcoming Calendar View -->
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Critical Deadlines (Next 30 Days)') }}</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">{{ _('Period') }}</th>
+                                <th>{{ _('Report') }}</th>
+                                <th>{{ _('Regulator') }}</th>
+                                <th>{{ _('Due Date') }}</th>
+                                <th>{{ _('Status') }}</th>
+                                <th class="text-end pe-4">{{ _('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in upcoming %}
+                            <tr class="{% if (sub.due_date|string) < (now.date()|string) %}table-danger{% endif %}">
+                                <td class="ps-4">
+                                    <small class="text-muted">{{ sub.reporting_period_start }} - {{
+                                        sub.reporting_period_end }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ sub.report_name }}</div>
+                                    <small class="text-muted">{{ sub.report_code }}</small>
+                                </td>
+                                <td>{{ sub.regulator_name }}</td>
+                                <td>
+                                    <span
+                                        class="fw-bold {% if (sub.due_date|string) < (now.date()|string) %}text-danger{% endif %}">
+                                        {{ sub.due_date }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if sub.status == 'pending' %}
+                                    <span class="badge bg-secondary-soft text-secondary">{{ _('Pending') }}</span>
+                                    {% elif sub.status == 'in_progress' %}
+                                    <span class="badge bg-primary-soft text-primary">{{ _('In Progress') }}</span>
+                                    {% elif sub.status == 'late' %}
+                                    <span class="badge bg-danger">{{ _('Late Submission') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('reporting.view_submission', id=sub.id) }}"
+                                        class="btn btn-sm btn-primary">
+                                        {{ _('Handle') }}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">{{ _('No upcoming deadlines found.') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold">{{ _('Active Reporting Templates') }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for report in reports %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border rounded-3 hover-shadow transition-all">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge bg-light text-primary border border-primary-subtle rounded-pill px-3">{{
+                                report.report_code }}</span>
+                            <span class="badge bg-secondary-soft text-secondary rounded-pill">{{ report.frequency |
+                                capitalize }}</span>
+                        </div>
+                        <h6 class="fw-bold mb-2 text-dark">{{ report.report_name }}</h6>
+                        <div class="d-flex align-items-center mb-3">
+                            {% if report.regulator_name %}
+                            <span class="badge bg-primary-soft text-primary">
+                                <i class="bi bi-building me-1"></i>{{ report.regulator_name }}
+                            </span>
+                            {% else %}
+                            <small class="text-muted"><i class="bi bi-building me-1"></i>{{ _('No regulator linked') }}</small>
+                            {% endif %}
+                        </div>
+                        <p class="small text-muted mb-0 border-top pt-2 mt-2">{{ (report.description or '') |
+                            truncate(80) }}
+                        </p>
+                        <div class="mt-3 text-end">
+                            <a href="{{ url_for('reporting.manage_report', id=report.id) }}"
+                                class="btn btn-sm btn-outline-secondary">{{ _('Edit') }}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- New Submission Modal -->
+<div class="modal fade" id="newSubmissionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('Create New Submission') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
+            </div>
+            <form action="{{ url_for('reporting.create_submission') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Regulatory Report') }}</label>
+                        <select class="form-select" name="report_id" id="reportSelect" required>
+                            <option value="">{{ _('Select Report...') }}</option>
+                            {% for report in reports %}
+                            <option value="{{ report.id }}">{{ report.report_code }} - {{ report.report_name }}</option>
+                            {% endfor %}
+                            <option value="new">{{ _('+ Create New Report Type') }}</option>
+                        </select>
+                    </div>
+
+                    <!-- Fields for New Report -->
+                    <div id="newReportFields" style="display: none;" class="p-3 bg-light rounded mb-3 border">
+                        <h6 class="mb-3 border-bottom pb-2">{{ _('New Report Details') }}</h6>
+                        <div class="mb-2">
+                            <label class="form-label small">{{ _('Report Name') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="new_report_name"
+                                placeholder="{{ _('e.g. Monthly Transaction Report') }}">
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-2">
+                                <label class="form-label small">{{ _('Regulator') }}</label>
+                                <select class="form-select form-select-sm" name="new_regulator_id">
+                                    {% for reg in regulators %}
+                                    <option value="{{ reg.id }}">{{ reg.regulator_name }}</option>
+                                    {% endfor %}
+                                    <!-- Fallback if no regulators -->
+                                </select>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="form-label small">{{ _('Frequency') }}</label>
+                                <select class="form-select form-select-sm" name="new_frequency">
+                                    <option value="Monthly">{{ _('Monthly') }}</option>
+                                    <option value="Quarterly">{{ _('Quarterly') }}</option>
+                                    <option value="Annual">{{ _('Annual') }}</option>
+                                    <option value="Adhoc">{{ _('Adhoc') }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Period Start') }}</label>
+                            <input type="date" class="form-control" name="reporting_period_start">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Period End') }}</label>
+                            <input type="date" class="form-control" name="reporting_period_end">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Due Date') }} <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="due_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Notes') }}</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="{{ _('Optional notes...') }}"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('Create Submission') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    document.getElementById('reportSelect').addEventListener('change', toggleNewReportFields);
+
+    function toggleNewReportFields() {
+        var select = document.getElementById('reportSelect');
+        var fields = document.getElementById('newReportFields');
+        if (select.value === 'new') {
+            fields.style.display = 'block';
+        } else {
+            fields.style.display = 'none';
+        }
+    }
+</script>
+
+<style>
+    .hover-shadow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    }
+
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+
+    .bg-primary-soft {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+
+    .bg-secondary-soft {
+        background-color: rgba(108, 117, 125, 0.1);
+    }
+</style>
+{% endblock %}

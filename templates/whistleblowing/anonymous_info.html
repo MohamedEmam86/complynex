@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5" dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+    <!-- Hero Section -->
+    <div class="row mb-5">
+        <div class="col-12 col-lg-10 mx-auto text-center">
+            <div class="mb-4">
+                <i class="fas fa-shield-alt fa-5x text-primary mb-3"></i>
+            </div>
+            <h1 class="display-4 fw-bold mb-3">{{ _('Anonymous Whistleblowing') }}</h1>
+            <p class="lead text-muted">
+                {{ _('Report misconduct safely and confidentially. Your identity is protected by law.') }}
+            </p>
+            <div class="mt-4">
+                <a href="{{ url_for('whistleblowing.public_report') }}" class="btn btn-primary btn-lg me-2">
+                    <i class="fas fa-file-alt me-2"></i>{{ _('Submit Anonymous Report') }}
+                </a>
+                <a href="{{ url_for('whistleblowing.track_case') }}" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-search me-2"></i>{{ _('Track Your Report') }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Your Protection -->
+    <div class="row mb-5">
+        <div class="col-12 col-lg-10 mx-auto">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <h2 class="h3 mb-4 text-center">
+                        <i class="fas fa-balance-scale text-success me-2"></i>
+                        {{ _('You Are Protected By Law') }}
+                    </h2>
+
+                    <div class="row g-4">
+                        <div class="col-12 col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-success-subtle rounded-circle p-3">
+                                        <i class="fas fa-gavel fa-2x text-success"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>{{ _('Egyptian Labor Law') }}</h5>
+                                    <p class="text-muted mb-0">{{ protection_info.egypt_law }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary-subtle rounded-circle p-3">
+                                        <i class="fas fa-university fa-2x text-primary"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>{{ _('CBE Regulation') }}</h5>
+                                    <p class="text-muted mb-0">{{ protection_info.cbe_regulation }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-warning-subtle rounded-circle p-3">
+                                        <i class="fas fa-building fa-2x text-warning"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>{{ _('Company Policy') }}</h5>
+                                    <p class="text-muted mb-0">{{ protection_info.company_policy }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-danger-subtle rounded-circle p-3">
+                                        <i class="fas fa-ban fa-2x text-danger"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>{{ _('Retaliation Penalties') }}</h5>
+                                    <p class="text-muted mb-0">{{ protection_info.penalties }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="row mb-5">
+        <div class="col-12 col-lg-10 mx-auto">
+            <h2 class="h3 mb-4 text-center">{{ _('How Anonymous Reporting Works') }}</h2>
+
+            <div class="row g-4">
+                <div class="col-12 col-md-3">
+                    <div class="text-center">
+                        <div class="bg-primary text-white rounded-circle mx-auto mb-3"
+                            style="width: 60px; height: 60px; line-height: 60px;">
+                            <span class="h4 mb-0">1</span>
+                        </div>
+                        <h5>{{ _('Submit Report') }}</h5>
+                        <p class="text-muted small">{{ _('Fill out the anonymous form. No login required.') }}</p>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="text-center">
+                        <div class="bg-primary text-white rounded-circle mx-auto mb-3"
+                            style="width: 60px; height: 60px; line-height: 60px;">
+                            <span class="h4 mb-0">2</span>
+                        </div>
+                        <h5>{{ _('Get Tracking Code') }}</h5>
+                        <p class="text-muted small">{{ _('Save the code (e.g., WB-ABC-123-XYZ) to track your case.') }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="text-center">
+                        <div class="bg-primary text-white rounded-circle mx-auto mb-3"
+                            style="width: 60px; height: 60px; line-height: 60px;">
+                            <span class="h4 mb-0">3</span>
+                        </div>
+                        <h5>{{ _('We Investigate') }}</h5>
+                        <p class="text-muted small">{{ _('Compliance team reviews and investigates your report.') }}</p>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="text-center">
+                        <div class="bg-primary text-white rounded-circle mx-auto mb-3"
+                            style="width: 60px; height: 60px; line-height: 60px;">
+                            <span class="h4 mb-0">4</span>
+                        </div>
+                        <h5>{{ _('Track Status') }}</h5>
+                        <p class="text-muted small">{{ _('Use your code to see updates and resolution.') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- What You Can Report -->
+    <div class="row mb-5">
+        <div class="col-12 col-lg-10 mx-auto">
+            <h2 class="h3 mb-4 text-center">{{ _('What You Can Report') }}</h2>
+
+            <div class="row g-3">
+                {% for category in categories %}
+                <div class="col-12 col-md-6">
+                    <div class="card h-100 border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                {{ category.category_name_en if get_locale() == 'en' else category.category_name_ar }}
+                            </h6>
+                            <p class="card-text small text-muted mb-0">
+                                {{ category.description_en if get_locale() == 'en' else category.description_ar }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Anonymity Guarantees -->
+    <div class="row mb-5">
+        <div class="col-12 col-lg-10 mx-auto">
+            <div class="card border-0 shadow bg-primary text-white">
+                <div class="card-body p-5">
+                    <h2 class="h3 mb-4 text-center">{{ _('Our Anonymity Guarantees') }}</h2>
+
+                    <div class="row g-4">
+                        <div class="col-12 col-md-4 text-center">
+                            <i class="fas fa-user-secret fa-3x mb-3"></i>
+                            <h5>{{ _('No Identity Collection') }}</h5>
+                            <p class="small mb-0">{{ _('We never ask for or store your name, email, or employee ID.') }}
+                            </p>
+                        </div>
+
+                        <div class="col-12 col-md-4 text-center">
+                            <i class="fas fa-network-wired fa-3x mb-3"></i>
+                            <h5>{{ _('No IP Logging') }}</h5>
+                            <p class="small mb-0">{{ _("We don't log IP addresses or track your location.") }}</p>
+                        </div>
+
+                        <div class="col-12 col-md-4 text-center">
+                            <i class="fas fa-lock fa-3x mb-3"></i>
+                            <h5>{{ _('Encrypted Storage') }}</h5>
+                            <p class="small mb-0">{{ _('All reports and attachments are encrypted for security.') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQs -->
+    <div class="row mb-5">
+        <div class="col-12 col-lg-10 mx-auto">
+            <h2 class="h3 mb-4 text-center">{{ _('Frequently Asked Questions') }}</h2>
+
+            <div class="accordion" id="faqAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            {{ _('Will anyone know it was me?') }}
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            {{ _("No. When you submit anonymously, we have no way to identify you. We don't collect
+                            names, emails, IP addresses, or any identifying information. Only you know your tracking
+                            code.") }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#faq2">
+                            {{ _('Can I be fired for reporting?') }}
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            {{ _('No. Egyptian law and company policy strictly prohibit retaliation against
+                            whistleblowers. Any retaliation is grounds for immediate termination of the person who
+                            retaliates.') }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#faq3">
+                            {{ _('How long does an investigation take?') }}
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            {{ _('Most cases are reviewed within 2-3 business days. Full investigations typically take
+                            10-30 business days depending on complexity. You can track status using your code.') }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#faq4">
+                            {{ _('What if I lose my tracking code?') }}
+                        </button>
+                    </h2>
+                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            {{ _('Unfortunately, without the tracking code, there is no way to access your anonymous
+                            report. This is by design to protect your anonymity. Please save the code in a secure
+                            place.') }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#faq5">
+                            {{ _('Should I use VPN or Tor?') }}
+                        </button>
+                    </h2>
+                    <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            {{ _("While we don't log IPs, using VPN, Tor, or public WiFi adds an extra layer of privacy
+                            if you're concerned. Also use incognito/private browsing mode and clear your browser history
+                            afterward.") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="row">
+        <div class="col-12 col-lg-8 mx-auto text-center">
+            <div class="card border-0 shadow-lg bg-primary text-white">
+                <div class="card-body p-5">
+                    <h2 class="h2 mb-3 fw-bold">{{ _('Ready to Report?') }}</h2>
+                    <p class="lead mb-4 opacity-75">{{ _('Your voice matters. Help us maintain integrity and safety.')
+                        }}</p>
+                    <a href="{{ url_for('whistleblowing.public_report') }}" class="btn btn-light btn-lg px-5 shadow-sm">
+                        <i class="fas fa-shield-alt me-2"></i>{{ _('Submit Anonymous Report Now') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* RTL Support */
+    [dir="rtl"] {
+        text-align: right;
+    }
+
+    [dir="rtl"] .text-start {
+        text-align: right !important;
+    }
+
+    [dir="rtl"] .text-end {
+        text-align: left !important;
+    }
+
+    [dir="rtl"] .me-2,
+    [dir="rtl"] .me-3,
+    [dir="rtl"] .me-1 {
+        margin-right: 0 !important;
+        margin-left: 0.5rem !important;
+    }
+
+    [dir="rtl"] .ms-3,
+    [dir="rtl"] .ms-2 {
+        margin-left: 0 !important;
+        margin-right: 1rem !important;
+    }
+
+    [dir="rtl"] .accordion-button::after {
+        margin-right: auto;
+        margin-left: 0;
+    }
+
+    /* Fix for flex alignment in RTL */
+    [dir="rtl"] .d-flex {
+        flex-direction: row-reverse;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Approval Workflow') }} - {{ company_name }} CMS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div>
+    <h1 class="h4 mb-1"><i class="{{ dt.icon }} me-2"></i>{{ dt.name_en }} — {{ _('Approval Workflow') }}</h1>
+    <p class="text-muted small mb-0">{{ _('Applied automatically when a document of this type is created.') }}</p>
+  </div>
+  <a href="{{ url_for('admin.document_types') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> {{ _('Back to Types') }}</a>
+</div>
+
+<div class="alert alert-secondary small d-flex">
+  <i class="bi bi-info-circle me-2"></i>
+  <div>{{ _('The chain is snapshotted onto each document when it is created. Editing it here changes future documents only — documents already in approval keep the chain they started with, so their history stays accurate.') }}</div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong>{{ _('Stages') }}</strong>
+        <span class="text-muted small">{{ _('Author submits, then:') }}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light"><tr>
+            <th style="width:46px">#</th><th>{{ _('Stage') }}</th><th>{{ _('Approver') }}</th>
+            <th class="text-center">{{ _('SLA') }}</th><th class="text-center">{{ _('Required') }}</th>
+            <th>{{ _('Status') }}</th><th class="text-end">{{ _('Actions') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for s in stages %}
+            <tr class="{% if not s.is_enabled %}opacity-50{% endif %}">
+              <td><span class="badge bg-primary rounded-pill">{{ s.stage_order }}</span></td>
+              <td><strong>{{ s.stage_name }}</strong></td>
+              <td class="small">
+                {% if s.approver_mode == 'org_unit_head' %}
+                  <i class="bi bi-person-badge me-1"></i>{{ _('Head of the document\'s own unit') }}
+                  <div class="text-muted">{{ _('resolved when the document is created') }}</div>
+                {% elif s.approver_mode == 'parent_unit_head' %}
+                  <i class="bi bi-person-badge me-1"></i>{{ _('Head of the parent unit') }}
+                {% elif s.approver_mode == 'role' %}
+                  <i class="bi bi-people me-1"></i>{{ _('Role') }}: <code>{{ s.approver_role }}</code>
+                {% else %}
+                  <i class="bi bi-person me-1"></i>{{ _('Named user') }}
+                {% endif %}
+              </td>
+              <td class="text-center"><span class="badge bg-light text-dark">{{ s.sla_days }}d</span></td>
+              <td class="text-center">{% if s.is_mandatory %}<i class="bi bi-check-circle-fill text-success"></i>
+                  {% else %}<span class="text-muted">{{ _('Optional') }}</span>{% endif %}</td>
+              <td>{% if s.is_enabled %}<span class="badge bg-success">{{ _('Enabled') }}</span>
+                  {% else %}<span class="badge bg-secondary">{{ _('Disabled') }}</span>{% endif %}</td>
+              <td class="text-end"><div class="btn-group btn-group-sm">
+                {% for act, icon, dis in [('move_up','arrow-up', loop.first), ('move_down','arrow-down', loop.last)] %}
+                <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="{{ act }}">
+                  <input type="hidden" name="stage_id" value="{{ s.id }}">
+                  <button class="btn btn-outline-secondary" {% if dis %}disabled{% endif %}>
+                    <i class="bi bi-{{ icon }}"></i></button></form>
+                {% endfor %}
+                <button class="btn btn-outline-primary js-edit-stage" data-id="{{ s.id }}"
+                        data-name="{{ s.stage_name }}" data-mode="{{ s.approver_mode }}"
+                        data-role="{{ s.approver_role or '' }}" data-user="{{ s.approver_user_id or '' }}"
+                        data-sla="{{ s.sla_days }}" data-mand="{{ 1 if s.is_mandatory else 0 }}">
+                  <i class="bi bi-pencil"></i></button>
+                <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="toggle_stage">
+                  <input type="hidden" name="stage_id" value="{{ s.id }}">
+                  <button class="btn btn-outline-secondary"><i class="bi bi-toggle-{{ 'on' if s.is_enabled else 'off' }}"></i></button></form>
+                <form method="POST" data-confirm="{{ _('Remove this stage? Disabling is usually safer — a used stage appears in the history of every document that passed through it.') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="delete_stage">
+                  <input type="hidden" name="stage_id" value="{{ s.id }}">
+                  <button class="btn btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+              </div></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="text-center text-muted py-4">
+              {{ _('No stages yet — documents of this type will be approved on creation.') }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header bg-light"><strong id="stageFormTitle">{{ _('Add a stage') }}</strong></div>
+      <div class="card-body">
+        <form method="POST" id="stageForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" id="s_action" value="add_stage">
+          <input type="hidden" name="stage_id" id="s_id">
+          <div class="mb-2"><label class="form-label small">{{ _('Stage name') }} <span class="text-danger">*</span></label>
+            <input name="stage_name" id="s_name" class="form-control form-control-sm" required
+                   placeholder="{{ _('e.g. Compliance Manager') }}"></div>
+          <div class="mb-2"><label class="form-label small">{{ _('Who approves') }}</label>
+            <select name="approver_mode" id="s_mode" class="form-select form-select-sm">
+              <option value="org_unit_head">{{ _('Head of the document\'s own unit') }}</option>
+              <option value="parent_unit_head">{{ _('Head of the parent unit') }}</option>
+              <option value="role" selected>{{ _('Anyone with a role') }}</option>
+              <option value="user">{{ _('A named person') }}</option>
+            </select>
+            <div class="form-text">{{ _('Unit-head modes let one workflow serve every company without editing.') }}</div>
+          </div>
+          <div class="mb-2 s-f" data-for="role"><label class="form-label small">{{ _('Role') }}</label>
+            <select name="approver_role" id="s_role" class="form-select form-select-sm">
+              {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}</select></div>
+          <div class="mb-2 s-f d-none" data-for="user"><label class="form-label small">{{ _('Person') }}</label>
+            <select name="approver_user_id" id="s_user" class="form-select form-select-sm">
+              {% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }} ({{ u.role }})</option>{% endfor %}</select></div>
+          <div class="mb-2"><label class="form-label small">{{ _('SLA (days)') }}</label>
+            <input type="number" name="sla_days" id="s_sla" class="form-control form-control-sm" value="7" min="1"></div>
+          <div class="form-check mb-3">
+            <input type="checkbox" name="is_mandatory" id="s_mand" class="form-check-input" checked>
+            <label class="form-check-label small" for="s_mand">{{ _('Mandatory stage') }}</label></div>
+          <button class="btn btn-primary btn-sm w-100"><i class="bi bi-plus-lg"></i> <span id="s_submit">{{ _('Add stage') }}</span></button>
+          <button type="button" class="btn btn-link btn-sm w-100 d-none" id="s_cancel">{{ _('Cancel edit') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var mode = document.getElementById('s_mode');
+  function sync() {
+    document.querySelectorAll('.s-f').forEach(function (f) {
+      f.classList.toggle('d-none', f.dataset.for !== mode.value);
+    });
+  }
+  mode.addEventListener('change', sync); sync();
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.js-edit-stage');
+    if (!b) return;
+    document.getElementById('s_action').value = 'update_stage';
+    document.getElementById('s_id').value     = b.dataset.id;
+    document.getElementById('s_name').value   = b.dataset.name;
+    mode.value = b.dataset.mode; sync();
+    if (b.dataset.role) document.getElementById('s_role').value = b.dataset.role;
+    if (b.dataset.user) document.getElementById('s_user').value = b.dataset.user;
+    document.getElementById('s_sla').value    = b.dataset.sla;
+    document.getElementById('s_mand').checked = b.dataset.mand === '1';
+    document.getElementById('stageFormTitle').textContent = '{{ _("Edit stage") }}';
+    document.getElementById('s_submit').textContent = '{{ _("Save changes") }}';
+    document.getElementById('s_cancel').classList.remove('d-none');
+    document.getElementById('s_name').focus();
+  });
+
+  document.getElementById('s_cancel').addEventListener('click', function () {
+    document.getElementById('stageForm').reset();
+    document.getElementById('s_action').value = 'add_stage';
+    document.getElementById('s_id').value = '';
+    document.getElementById('stageFormTitle').textContent = '{{ _("Add a stage") }}';
+    document.getElementById('s_submit').textContent = '{{ _("Add stage") }}';
+    this.classList.add('d-none'); sync();
+  });
+}());
+</script>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('ESG Management') }} — ComplyNex{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+  <div class="ecx-hero ecx-esg">
+    <div class="ecx-eyebrow">{{ _('ESG Management') }}</div>
+    <h1><i class="bi bi-globe-americas me-2"></i>{{ framework.name if framework else _('ESG Scorecard') }}</h1>
+    <p>{{ _('A configurable, weighted ESG scoring framework built for Egyptian PSPs — Environmental, Social, Governance, plus a fourth Regulatory pillar reflecting CBE/FRA supervisory expectations that generic global frameworks miss.') }}</p>
+    <span class="ecx-pioneer-badge"><i class="bi bi-stars"></i> {{ _('First ESG framework purpose-built for Egyptian fintech') }}</span>
+  </div>
+
+  <ul class="nav ecx-nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link active ecx-esg" href="{{ url_for('esg.dashboard') }}">{{ _('Dashboard') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.materiality') }}">{{ _('Materiality Assessment') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.disclosures') }}">{{ _('Disclosure Tracker') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.framework_view') }}">{{ _('Framework & Weights') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.methodology') }}"><i class="bi bi-info-circle me-1"></i>{{ _('Methodology') }}</a></li>
+  </ul>
+
+  {% if period %}
+  <div class="row g-3 mb-3">
+    <div class="col-lg-6">
+      <div class="ecx-card">
+        <h6><span><i class="bi bi-bullseye me-1"></i>{{ _('Materiality Assessment') }}</span>
+          <span class="ecx-badge-source">{{ materiality_progress.scored }}/{{ materiality_progress.total }}</span>
+        </h6>
+        <div class="progress" style="height:10px; border-radius:999px;">
+          <div class="progress-bar" style="width:{{ materiality_progress.pct }}%; background:var(--ecx-esg-1);"></div>
+        </div>
+        <a href="{{ url_for('esg.materiality') }}" class="d-block text-center mt-2 small">{{ _('Open Materiality Matrix →') }}</a>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="ecx-card">
+        <h6><span><i class="bi bi-list-check me-1"></i>{{ _('Disclosure Readiness') }}</span>
+          <span class="ecx-badge-source">{{ disclosure_progress.total_items }} {{ _('items') }}</span>
+        </h6>
+        <div class="progress" style="height:10px; border-radius:999px;">
+          <div class="progress-bar" style="width:{{ disclosure_progress.overall_pct or 0 }}%; background:var(--ecx-esg-1);"></div>
+        </div>
+        <a href="{{ url_for('esg.disclosures') }}" class="d-block text-center mt-2 small">{{ _('Open Disclosure Tracker →') }} ({{ disclosure_progress.overall_pct if disclosure_progress.overall_pct is not none else 0 }}%)</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not summary %}
+  <div class="ecx-card">
+    <div class="ecx-empty-state"><i class="bi bi-globe-americas"></i>
+      <div>{{ _('No active framework or reporting period found. Ask an administrator to set one up.') }}</div>
+    </div>
+  </div>
+  {% else %}
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-3">
+      <div class="ecx-card ecx-stat ecx-esg-accent" style="height:auto;">
+        <div class="n">{{ summary.overall_score if summary.overall_score is not none else '—' }}<span style="font-size:15px; color:var(--ecx-muted);">/5</span></div>
+        <div class="l">{{ _('Overall ESG Score') }}</div>
+        {% if summary.overall_rating %}
+        <span class="ecx-rating-pill mt-2" style="background:{{ summary.overall_rating[1] }};">{{ summary.overall_rating[0] }}</span>
+        {% endif %}
+      </div>
+    </div>
+    {% for p in summary.pillars %}
+    <div class="col-6 col-lg-2 col-xl-2" style="flex:1;">
+      <div class="ecx-card">
+        <div class="ecx-pillar-ring-wrap">
+          {% set pct = ((p.score / 5.0) * 100) if p.score is not none else 0 %}
+          <div class="ecx-pillar-ring" style="background: conic-gradient(var(--ecx-esg-1) {{ pct }}%, #eef0f7 {{ pct }}% 100%);">
+            <div class="inner">
+              <span class="val">{{ p.score if p.score is not none else '—' }}</span>
+            </div>
+          </div>
+          <div class="ecx-pillar-name">{{ p.name }}</div>
+          <div class="ecx-pillar-weight">{{ (p.weight*100)|round(0)|int }}% {{ _('weight') }} · {{ p.answered_count }}/{{ p.indicator_count }} {{ _('answered') }}</div>
+          <a href="{{ url_for('esg.scoring', pillar_code=p.code) }}" class="small">{{ _('Score →') }}</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="ecx-card">
+        <h6><i class="bi bi-bar-chart me-1"></i>{{ _('Pillar Breakdown') }}</h6>
+        {% for p in summary.pillars %}
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="fw-semibold">{{ p.name }} ({{ p.code }})</span>
+            <span>{{ p.score if p.score is not none else _('not scored yet') }} {% if p.score is not none %}/5{% endif %}</span>
+          </div>
+          <div class="progress" style="height:10px; border-radius:999px;">
+            <div class="progress-bar" style="width:{{ ((p.score/5.0)*100) if p.score is not none else 0 }}%; background:{{ p.rating[1] if p.rating else '#adb5bd' }};"></div>
+          </div>
+        </div>
+        {% endfor %}
+        <div class="ecx-methodology-box ecx-esg mt-3">
+          <strong><i class="bi bi-calculator me-1"></i>{{ _('How this is calculated') }}</strong>
+          {{ _('Each indicator is scored 1-5. A pillar score is the weighted average of its indicators; the overall score is the weighted average of the four pillars. Unanswered indicators are excluded, never treated as zero. Full weights are shown on the') }}
+          <a href="{{ url_for('esg.framework_view') }}">{{ _('Framework & Weights page') }}</a>.
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="ecx-card">
+        <h6><i class="bi bi-list-check me-1"></i>{{ _('Score Your Pillars') }}</h6>
+        {% for p in summary.pillars %}
+        <a href="{{ url_for('esg.scoring', pillar_code=p.code) }}" class="d-flex justify-content-between align-items-center py-2 text-decoration-none" style="border-bottom:1px solid #f1f4f5; color:inherit;">
+          <span>{{ p.name }}</span>
+          <span class="badge {{ 'bg-success' if p.completeness_pct == 100 else ('bg-warning text-dark' if p.completeness_pct > 0 else 'bg-secondary') }}">{{ p.completeness_pct }}%</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="{{ get_locale() }}" dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ _('Fit & Proper Assessment') }} - {{ assessment.member_name }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <!-- Added 2026-07-24 for the optional evidence-attachment widget (partials/attachment_widget.html) -->
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #dc3545;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #dc3545;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            background: #f8f9fa;
+            padding: 10px;
+            border-left: 5px solid #dc3545;
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            width: 40%;
+        }
+
+        .result-box {
+            text-align: center;
+            padding: 20px;
+            border: 2px solid #dc3545;
+            background: #fff5f5;
+            margin-top: 30px;
+        }
+
+        .result-box h2 {
+            margin: 0;
+            color: #dc3545;
+        }
+
+        .footer {
+            margin-top: 50px;
+            font-size: 0.8em;
+            color: #666;
+            text-align: center;
+        }
+
+        @media print {
+            .btn-print {
+                display: none;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        .btn-print {
+            background: #dc3545;
+            color: #white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            float: right;
+        }
+    </style>
+</head>
+
+<body>
+    <button class="btn-print" data-action="print">{{ _('Print Assessment') }}</button>
+    <div class="header">
+        <h1>ComplyNex</h1>
+        <h3>{{ _('Fit & Proper Assessment Report') }}</h3>
+    </div>
+
+    <div class="section">
+        <div class="section-title">{{ _('Member Details') }}</div>
+        <table>
+            <tr>
+                <th>{{ _('Name:') }}</th>
+                <td>{{ assessment.member_name }}</td>
+            </tr>
+            <tr>
+                <th>{{ _('Assessment Type:') }}</th>
+                <td>{{ assessment.assessment_type }}</td>
+            </tr>
+            <tr>
+                <th>{{ _('Assessment Date:') }}</th>
+                <td>{{ assessment.assessment_date }}</td>
+            </tr>
+            <tr>
+                <th>{{ _('Period covered:') }}</th>
+                <td>{{ assessment.assessment_period }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">{{ _('Assessment Scores (Scale 0-20)') }}</div>
+        <table>
+            <tr>
+                <th>{{ _('Honesty & Integrity:') }}</th>
+                <td>{{ assessment.honesty_integrity_score }} / 20</td>
+            </tr>
+            <tr>
+                <th>{{ _('Competence & Capability:') }}</th>
+                <td>{{ assessment.competence_capability_score }} / 20</td>
+            </tr>
+            <tr>
+                <th>{{ _('Financial Soundness:') }}</th>
+                <td>{{ assessment.financial_soundness_score }} / 20</td>
+            </tr>
+            <tr>
+                <th>{{ _('Reputation:') }}</th>
+                <td>{{ assessment.reputation_score }} / 20</td>
+            </tr>
+            <tr>
+                <th>{{ _('Time Commitment:') }}</th>
+                <td>{{ assessment.time_commitment_score }} / 20</td>
+            </tr>
+            <tr style="font-weight: bold; background: #eee;">
+                <th>{{ _('Total Score:') }}</th>
+                <td>{{ assessment.total_score }} / 100</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">{{ _('Checks & Verifications') }}</div>
+        <table>
+            <tr>
+                <th>{{ _('Criminal Record:') }}</th>
+                <td>{{ _('Clear') if assessment.criminal_record_clear else _('Issues Found') }}</td>
+            </tr>
+            <tr>
+                <th>{{ _('Credit Check:') }}</th>
+                <td>{{ _('Clear') if assessment.credit_check_clear else _('Issues Found') }}</td>
+            </tr>
+            <tr>
+                <th>{{ _('Regulatory Actions:') }}</th>
+                <td>{{ _('None') if not assessment.regulatory_actions_found else _('Found') }}</td>
+            </tr>
+            <tr>
+                <th>{{ _('Litigation:') }}</th>
+                <td>{{ _('None') if not assessment.active_litigation else _('Active') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    {% if assessment.conditions_imposed %}
+    <div class="section">
+        <div class="section-title">{{ _('Conditions Imposed') }}</div>
+        <p>{{ assessment.conditions_imposed }}</p>
+    </div>
+    {% endif %}
+
+    {% if assessment.regulator_name or assessment.regulator_reference_number %}
+    <div class="section">
+        <div class="section-title">{{ _('Regulatory Submission') }}</div>
+        <table>
+            <tr>
+                <th>{{ _('Regulator:') }}</th>
+                <td>{{ assessment.regulator_name or '-' }}</td>
+            </tr>
+            <tr>
+                <th>{{ _('Submitted:') }}</th>
+                <td>{{ _('Yes') if assessment.submitted_to_regulator else _('No') }}
+                    {% if assessment.regulator_submission_date %} ({{ assessment.regulator_submission_date }}){% endif %}</td>
+            </tr>
+            <tr>
+                <th>{{ _('Reference Number:') }}</th>
+                <td>{{ assessment.regulator_reference_number or '-' }}</td>
+            </tr>
+            <tr>
+                <th>{{ _('Approval Status:') }}</th>
+                <td>{{ assessment.regulator_approval_status or '-' }}
+                    {% if assessment.regulator_approval_date %} ({{ assessment.regulator_approval_date }}){% endif %}</td>
+            </tr>
+            {% if assessment.regulator_feedback %}
+            <tr>
+                <th>{{ _('Regulator Feedback:') }}</th>
+                <td>{{ assessment.regulator_feedback }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="result-box">
+        <p>{{ _('Final Assessment Result:') }}</p>
+        <h2>{{ assessment.assessment_result }}</h2>
+    </div>
+
+    {% include 'partials/attachment_widget.html' %}
+
+    <div class="footer">
+        <p>{{ _('This is a system generated report from ComplyNex Full Compliance Platform.') }}</p>
+        <p>{{ _('Printed on:') }} {{ now }}</p>
+    </div>
+<script src="{{ url_for('static', filename='js/csp_helpers.js') }}"></script>
+</body>
+
+</html>

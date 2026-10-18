@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Compliance Tracker - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Governance Compliance Tracker') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        {% if show_inactive %}
+        <a href="{{ url_for('governance.compliance_dashboard') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-eye-slash"></i> {{ _('Hide Retired') }}
+        </a>
+        {% else %}
+        <a href="{{ url_for('governance.compliance_dashboard', include_inactive=1) }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-eye"></i> {{ _('Show Retired') }}
+        </a>
+        {% endif %}
+        <a href="{{ url_for('governance.add_compliance') }}" class="btn btn-sm btn-primary me-2">
+            <i class="bi bi-plus-circle"></i> {{ _('Add Requirement') }}
+        </a>
+        <button data-action="print" class="btn btn-sm btn-outline-primary me-2">
+            <i class="fas fa-print"></i> {{ _('Print Status') }}
+        </button>
+        <a href="{{ url_for('governance.dashboard') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left"></i> {{ _('Back to Dashboard') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">{{ _('Requirement') }}</th>
+                                <th>{{ _('Source') }}</th>
+                                <th>{{ _('Status') }}</th>
+                                <th>{{ _('Evidence Description') }}</th>
+                                <th>{{ _('Internal Notes') }}</th>
+                                <th class="text-end pe-4">{{ _('Update') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in requirements %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ req.requirement_code }}</div>
+                                    <small class="text-muted">{{ req.requirement_description }}</small>
+                                </td>
+                                <td>
+                                    {% if req.regulator_name %}
+                                    <span class="badge bg-primary-soft text-primary">{{ req.regulator_name }}</span>
+                                    {% elif req.regulatory_source %}
+                                    {{ req.regulatory_source }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if req.compliance_status == 'COMPLIANT' %}
+                                    <span class="badge bg-success">{{ _('Compliant') }}</span>
+                                    {% elif req.compliance_status == 'PARTIAL' %}
+                                    <span class="badge bg-warning text-dark">{{ _('Partial') }}</span>
+                                    {% elif req.compliance_status == 'NON_COMPLIANT' %}
+                                    <span class="badge bg-danger">{{ _('Non-Compliant') }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ req.compliance_status }}</span>
+                                    {% endif %}
+                                    {% if not req.is_active %}
+                                    <span class="badge bg-light text-muted border ms-1">{{ _('Retired') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if req.evidence_description %}
+                                    <small>{{ req.evidence_description|truncate(40) }}</small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if req.notes %}
+                                    <small class="text-info">{{ req.notes|truncate(40) }}</small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('governance.edit_compliance', id=req.id) }}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil-square me-1"></i>{{ _('Edit') }}
+                                    </a>
+                                    {% if req.is_active %}
+                                    <a href="{{ url_for('governance.deactivate_compliance', id=req.id) }}"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        data-confirm="{{ _('Retire this requirement? Its history is kept.') }}">
+                                        <i class="bi bi-archive"></i>
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ url_for('governance.reactivate_compliance', id=req.id) }}"
+                                        class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

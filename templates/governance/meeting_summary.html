@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Meeting Summary') }} - {{ meeting.meeting_date }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Meeting Summary') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button data-action="print" class="btn btn-sm btn-outline-primary me-2">
+            <i class="bi bi-printer"></i> {{ _('Print Summary') }}
+        </button>
+        <a href="{{ url_for('governance.list_meetings') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Meetings') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-primary mb-4">{{ _('Meeting Details') }}</h5>
+                <p><strong>{{ _('Reference:') }}</strong> {{ meeting.meeting_reference or _('N/A') }}</p>
+                <p><strong>{{ _('Type:') }}</strong> {{ meeting.meeting_type }}</p>
+                <p><strong>{{ _('Date:') }}</strong> {{ meeting.meeting_date }}</p>
+                <p><strong>{{ _('Time:') }}</strong> {{ meeting.meeting_time }}</p>
+                <p><strong>{{ _('Location:') }}</strong> {{ meeting.location }}</p>
+                <p><strong>{{ _('Status:') }}</strong> <span
+                        class="badge {{ 'bg-success' if meeting.status == 'COMPLETED' else 'bg-primary' }}">{{
+                        meeting.status }}</span></p>
+                <hr>
+                <h6>{{ _('Agenda') }}</h6>
+                <div class="text-muted small">
+                    {{ (meeting.agenda | e | replace('\n', '<br>') | safe) if meeting.agenda else _('No agenda provided') }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-primary">{{ _('Attendance Report') }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ _('Participant') }}</th>
+                                <th>{{ _('Status') }}</th>
+                                <th>{{ _('Notes/Proxy') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance %}
+                            <tr>
+                                <td><strong>{{ record.member_name }}</strong></td>
+                                <td>
+                                    {% if record.attended %}
+                                    <span class="text-success"><i class="bi bi-check-circle-fill"></i> {{ _('Attended') }}</span>
+                                    {% elif record.apology_received %}
+                                    <span class="text-warning"><i class="bi bi-exclamation-circle"></i> {{ _('Apology') }}</span>
+                                    {% else %}
+                                    <span class="text-danger"><i class="bi bi-x-circle"></i> {{ _('Absent') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">
+                                    {{ record.proxy_name if record.proxy_name else '' }}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted border-0">{{ _('Attendance has not been recorded for this meeting.') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% set count_attended = attendance | selectattr('attended') | list | length %}
+                {% if attendance %}
+                <div class="mt-4 p-3 bg-light rounded d-flex justify-content-between align-items-center">
+                    <span><strong>{{ _('Total Participants:') }}</strong> {{ attendance | length }}</span>
+                    <span><strong>{{ _('Present:') }}</strong> {{ count_attended }}</span>
+                    <span><strong>{{ _('Attendance Rate:') }}</strong> {{ (count_attended / (attendance | length) * 100) | round(1)
+                        }}%</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'partials/attachment_widget.html' %}
+{% endblock %}

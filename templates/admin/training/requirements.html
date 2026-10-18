@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block title %}Training Requirements - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Training Logic & Assignment Rules') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('training.list_courses') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Training') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Add New Rule Form -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0 h6">{{ _('Add Assignment Rule') }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">{{ _('Role (Optional)') }}</label>
+                        <select name="role" class="form-select form-select-sm">
+                            <option value="">{{ _('-- Apply to All Roles --') }}</option>
+                            <option value="employee">{{ _('Employee') }}</option>
+                            <option value="manager">{{ _('Manager') }}</option>
+                            <option value="compliance_officer">{{ _('Compliance Officer') }}</option>
+                            <option value="compliance_manager">{{ _('Compliance Manager') }}</option>
+                            <option value="admin">{{ _('Administrator') }}</option>
+                        </select>
+                        <div class="form-text smaller">{{ _('If empty, applies to all roles matching department') }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">{{ _('Department (Optional)') }}</label>
+                        <select name="department" class="form-select form-select-sm">
+                            <option value="">{{ _('-- Apply to All Departments --') }}</option>
+                            <option value="IT">IT</option>
+                            <option value="HR">HR</option>
+                            <option value="Finance">{{ _('Finance') }}</option>
+                            <option value="Operations">{{ _('Operations') }}</option>
+                            <option value="Legal">{{ _('Legal') }}</option>
+                            <option value="Sales">{{ _('Sales') }}</option>
+                            <option value="Marketing">{{ _('Marketing') }}</option>
+                        </select>
+                        <div class="form-text smaller">{{ _('If empty, applies to all depts matching role') }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">{{ _('Course to Assign') }}</label>
+                        <select name="course_id" class="form-select form-select-sm">
+                            <option value="">{{ _('-- Select Course --') }}</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.course_name }} ({{ course.course_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">{{ _('Policy to Assign (Ack)') }}</label>
+                        <select name="policy_id" class="form-select form-select-sm">
+                            <option value="">{{ _('-- Select Policy --') }}</option>
+                            {% for policy in policies %}
+                            <option value="{{ policy.id }}">{{ policy.policy_name }} ({{ policy.policy_number }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="is_mandatory" name="is_mandatory" value="1"
+                            checked>
+                        <label class="form-check-label small" for="is_mandatory">{{ _('Mandatory Requirement') }}</label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">{{ _('Days to Complete') }}</label>
+                        <input type="number" class="form-control form-control-sm" name="deadline_days" value="30"
+                            min="1">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm w-100">{{ _('Create Rule') }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- List of Rules -->
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('Target Role / Dept') }}</th>
+                            <th>{{ _('Assignment') }}</th>
+                            <th>{{ _('Type') }}</th>
+                            <th>{{ _('Deadline') }}</th>
+                            <th>{{ _('Action') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requirements %}
+                        <tr>
+                            <td>
+                                <div>
+                                    <span class="badge bg-secondary">{{ req.role or 'Any Role' }}</span>
+                                    <span class="badge bg-info text-dark">{{ req.department or 'Any Dept' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if req.course_name %}
+                                <div class="fw-medium text-dark"><i class="bi bi-book me-1"></i>{{ req.course_name }}
+                                </div>
+                                {% endif %}
+                                {% if req.policy_name %}
+                                <div class="fw-medium text-dark"><i class="bi bi-file-earmark-text me-1"></i>{{
+                                    req.policy_name }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if req.is_mandatory %}
+                                <span class="badge bg-danger">{{ _('Mandatory') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ _('Optional') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.deadline_days }} Days</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-secondary border-0 edit-rule-btn"
+                                        data-id="{{ req.id }}" data-role="{{ req.role or '' }}"
+                                        data-dept="{{ req.department or '' }}" data-course="{{ req.course_id or '' }}"
+                                        data-policy="{{ req.policy_id or '' }}"
+                                        data-mandatory="{{ '1' if req.is_mandatory else '0' }}"
+                                        data-deadline="{{ req.deadline_days }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form method="POST"
+                                        data-confirm="Are you sure you want to delete this rule?"
+                                        class="d-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="delete" value="1">
+                                        <input type="hidden" name="id" value="{{ req.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                {{ _('No assignment rules defined.') }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Rule Modal -->
+<div class="modal fade" id="editRuleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title h6">{{ _('Edit Assignment Rule') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <input type="hidden" name="update" value="1">
+                    <input type="hidden" name="id" id="edit-id">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">{{ _('Role (Optional)') }}</label>
+                        <select name="role" id="edit-role" class="form-select form-select-sm">
+                            <option value="">{{ _('-- Apply to All Roles --') }}</option>
+                            <option value="employee">{{ _('Employee') }}</option>
+                            <option value="manager">{{ _('Manager') }}</option>
+                            <option value="compliance_officer">{{ _('Compliance Officer') }}</option>
+                            <option value="compliance_manager">{{ _('Compliance Manager') }}</option>
+                            <option value="admin">{{ _('Administrator') }}</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">{{ _('Department (Optional)') }}</label>
+                        <select name="department" id="edit-dept" class="form-select form-select-sm">
+                            <option value="">{{ _('-- Apply to All Departments --') }}</option>
+                            <option value="IT">IT</option>
+                            <option value="HR">HR</option>
+                            <option value="Finance">{{ _('Finance') }}</option>
+                            <option value="Operations">{{ _('Operations') }}</option>
+                            <option value="Legal">{{ _('Legal') }}</option>
+                            <option value="Sales">{{ _('Sales') }}</option>
+                            <option value="Marketing">{{ _('Marketing') }}</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">{{ _('Course to Assign') }}</label>
+                        <select name="course_id" id="edit-course" class="form-select form-select-sm">
+                            <option value="">{{ _('-- Select Course --') }}</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.course_name }} ({{ course.course_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">{{ _('Policy to Assign') }}</label>
+                        <select name="policy_id" id="edit-policy" class="form-select form-select-sm">
+                            <option value="">{{ _('-- Select Policy --') }}</option>
+                            {% for policy in policies %}
+                            <option value="{{ policy.id }}">{{ policy.policy_name }} ({{ policy.policy_number }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="edit-mandatory" name="is_mandatory"
+                            value="1">
+                        <label class="form-check-label small" for="edit-mandatory">{{ _('Mandatory Requirement') }}</label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">{{ _('Days to Complete') }}</label>
+                        <input type="number" class="form-control form-control-sm" name="deadline_days"
+                            id="edit-deadline" min="1">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-sm btn-primary">{{ _('Save Changes') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+    document.addEventListener('DOMContentLoaded', function () {
+        const editBtns = document.querySelectorAll('.edit-rule-btn');
+        const modal = new bootstrap.Modal(document.getElementById('editRuleModal'));
+
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.getElementById('edit-id').value = this.dataset.id;
+                document.getElementById('edit-role').value = this.dataset.role;
+                document.getElementById('edit-dept').value = this.dataset.dept;
+                document.getElementById('edit-course').value = this.dataset.course;
+                document.getElementById('edit-policy').value = this.dataset.policy;
+                document.getElementById('edit-mandatory').checked = this.dataset.mandatory === '1';
+                document.getElementById('edit-deadline').value = this.dataset.deadline;
+
+                modal.show();
+            });
+        });
+    });
+</script>
+{% endblock %}

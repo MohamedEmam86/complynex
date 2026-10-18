@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}COI Declaration - {{ campaign.campaign_name }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        {% if 'Ad-hoc' in campaign.campaign_name %}
+        Report Potential Conflict
+        {% else %}
+        Annual Declaration
+        {% endif %}
+    </h1>
+    <a href="{{ url_for('coi.my_declarations') }}" class="btn btn-outline-secondary">{{ _('Back') }}</a>
+</div>
+
+<!-- Campaign Info -->
+<div class="alert alert-info">
+    <h5><i class="bi bi-info-circle"></i> {{ campaign.campaign_name }}</h5>
+    <p class="mb-0">{{ campaign.description }}</p>
+    <small>Declaration Period: {{ campaign.start_date }} to {{ campaign.end_date }}</small>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">{{ _('Declaration Form') }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('coi.declare', campaign_id=campaign.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Section 1: Financial Interests -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-bank me-2"></i>{{ _('1. Financial Interests') }}</h6>
+                <p class="text-muted small mb-3">{{ _('Do you have any financial interests (stocks, shares, investments) in
+                    companies that are competitors, suppliers, or business partners of ComplyNex?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_financial_interests"
+                                id="financial_yes" value="1">
+                            <label class="form-check-label text-danger fw-semibold" for="financial_yes">
+                                <i class="bi bi-exclamation-circle me-1"></i> {{ _('I have a conflict to declare') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_financial_interests"
+                                id="financial_no" value="0" checked>
+                            <label class="form-check-label text-success fw-semibold" for="financial_no">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('I don\'t have a conflict') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="conflict-details mt-3" id="financial_interests_details_div" style="display: none;">
+                    <label class="form-label">{{ _('Please provide details:') }}</label>
+                    <textarea class="form-control" name="financial_interests_details" rows="3"
+                        placeholder="{{ _('Company name, type of interest, value, etc.') }}"></textarea>
+                </div>
+            </div>
+
+            <!-- Section 2: Family in Competitor -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-people me-2"></i>{{ _('2. Family Members in Competitor Organizations') }}
+                </h6>
+                <p class="text-muted small mb-3">{{ _('Do you have family members (spouse, parent, child, sibling) who work
+                    for a competitor of ComplyNex?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_family_in_competitor"
+                                id="family_comp_yes" value="1">
+                            <label class="form-check-label text-danger fw-semibold" for="family_comp_yes">
+                                <i class="bi bi-exclamation-circle me-1"></i> {{ _('I have a conflict to declare') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_family_in_competitor"
+                                id="family_comp_no" value="0" checked>
+                            <label class="form-check-label text-success fw-semibold" for="family_comp_no">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('I don\'t have a conflict') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="conflict-details mt-3" id="family_competitor_details_div" style="display: none;">
+                    <label class="form-label">{{ _('Please provide details:') }}</label>
+                    <textarea class="form-control" name="family_competitor_details" rows="3"
+                        placeholder="{{ _('Relationship, company name, position, etc.') }}"></textarea>
+                </div>
+            </div>
+
+            <!-- Section 3: Family in Supplier -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-truck me-2"></i>{{ _('3. Family Members in Supplier Organizations') }}
+                </h6>
+                <p class="text-muted small mb-3">{{ _('Do you have family members who work for a supplier, vendor, or service
+                    provider to ComplyNex?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_family_in_supplier"
+                                id="family_sup_yes" value="1">
+                            <label class="form-check-label text-danger fw-semibold" for="family_sup_yes">
+                                <i class="bi bi-exclamation-circle me-1"></i> {{ _('I have a conflict to declare') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_family_in_supplier"
+                                id="family_sup_no" value="0" checked>
+                            <label class="form-check-label text-success fw-semibold" for="family_sup_no">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('I don\'t have a conflict') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="conflict-details mt-3" id="family_supplier_details_div" style="display: none;">
+                    <label class="form-label">{{ _('Please provide details:') }}</label>
+                    <textarea class="form-control" name="family_supplier_details" rows="3"
+                        placeholder="{{ _('Relationship, company name, position, etc.') }}"></textarea>
+                </div>
+            </div>
+
+            <!-- Section 4: Outside Employment -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-briefcase me-2"></i>{{ _('4. Outside Employment') }}</h6>
+                <p class="text-muted small mb-3">{{ _('Do you have employment, consulting arrangements, or business interests
+                    outside of ComplyNex?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_outside_employment"
+                                id="employment_yes" value="1">
+                            <label class="form-check-label text-danger fw-semibold" for="employment_yes">
+                                <i class="bi bi-exclamation-circle me-1"></i> {{ _('I have a conflict to declare') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_outside_employment"
+                                id="employment_no" value="0" checked>
+                            <label class="form-check-label text-success fw-semibold" for="employment_no">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('I don\'t have a conflict') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="conflict-details mt-3" id="outside_employment_details_div" style="display: none;">
+                    <label class="form-label">{{ _('Please provide details:') }}</label>
+                    <textarea class="form-control" name="outside_employment_details" rows="3"
+                        placeholder="{{ _('Company name, position, nature of work, hours per week, etc.') }}"></textarea>
+                </div>
+            </div>
+
+            <!-- Section 5: Gifts & Benefits -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-gift me-2"></i>{{ _('5. Gifts and Benefits') }}</h6>
+                <p class="text-muted small mb-3">{{ _('Have you received gifts, hospitality, or benefits from customers,
+                    suppliers, or business partners that were NOT declared through the GHE system?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_received_gifts"
+                                id="gifts_yes" value="1">
+                            <label class="form-check-label text-danger fw-semibold" for="gifts_yes">
+                                <i class="bi bi-exclamation-circle me-1"></i> {{ _('I have a conflict to declare') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_received_gifts"
+                                id="gifts_no" value="0" checked>
+                            <label class="form-check-label text-success fw-semibold" for="gifts_no">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('I don\'t have a conflict') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="conflict-details mt-3" id="gifts_details_div" style="display: none;">
+                    <label class="form-label">{{ _('Please provide details:') }}</label>
+                    <textarea class="form-control" name="gifts_details" rows="3"
+                        placeholder="{{ _('Description, value, date, provider, etc.') }}"></textarea>
+                </div>
+            </div>
+
+            <!-- Section 6: Other Conflicts -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="fw-bold mb-3"><i class="bi bi-question-circle me-2"></i>{{ _('6. Other Potential Conflicts') }}</h6>
+                <p class="text-muted small mb-3">{{ _('Are you aware of any other situation, relationship, or circumstance
+                    that could create a conflict of interest with ComplyNex?') }}</p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_other_conflicts"
+                                id="other_yes" value="1">
+                            <label class="form-check-label text-danger fw-semibold" for="other_yes">
+                                <i class="bi bi-exclamation-circle me-1"></i> {{ _('I have a conflict to declare') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-check">
+                            <input class="form-check-input conflict-radio" type="radio" name="has_other_conflicts"
+                                id="other_no" value="0" checked>
+                            <label class="form-check-label text-success fw-semibold" for="other_no">
+                                <i class="bi bi-check-circle me-1"></i> {{ _('I don\'t have a conflict') }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="conflict-details mt-3" id="other_conflicts_details_div" style="display: none;">
+                    <label class="form-label">{{ _('Please provide details:') }}</label>
+                    <textarea class="form-control" name="other_conflicts_details" rows="3"
+                        placeholder="{{ _('Describe the potential conflict') }}"></textarea>
+                </div>
+            </div>
+
+            <!-- Declaration Statement -->
+            <div class="mb-4 p-3 border border-primary rounded">
+                <h6 class="border-bottom pb-2 text-primary"><i class="bi bi-file-earmark-text me-2"></i>{{ _('Declaration
+                    Statement') }}</h6>
+                <p>{{ _('I declare that:') }}</p>
+                <ol>
+                    <li>{{ _('The information provided in this declaration is true and accurate to the best of my knowledge.') }}
+                    </li>
+                    <li>{{ _('I understand that failure to disclose conflicts of interest may result in disciplinary action.') }}
+                    </li>
+                    <li>{{ _('I will promptly update this declaration if my circumstances change.') }}</li>
+                    <li>{{ _('I understand that ComplyNex will review this declaration and may contact me for additional
+                        information.') }}</li>
+                </ol>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="agree_statement" required>
+                    <label class="form-check-label" for="agree_statement">
+                        <strong>{{ _('I agree to the above statement and confirm that all information provided is
+                            accurate.') }}</strong>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Digital Signature -->
+            <div class="mb-4">
+                <label for="digital_signature" class="form-label">{{ _('Digital Signature') }} <span
+                        class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="digital_signature" name="digital_signature"
+                    placeholder="{{ _('Type your full name as digital signature') }}" required>
+                <div class="form-text">{{ _('By typing your name, you are electronically signing this declaration.') }}</div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('coi.my_declarations') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+                <button type="submit" class="btn btn-primary btn-lg">{{ _('Submit Declaration') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+    // Show/hide conflict details when radio button is changed
+    document.querySelectorAll('.conflict-radio').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            // Find the parent section and the details div
+            const section = this.closest('.p-3');
+            const detailsDiv = section.querySelector('.conflict-details');
+            const textarea = detailsDiv ? detailsDiv.querySelector('textarea') : null;
+
+            if (this.value === '1' && this.checked) {
+                if (detailsDiv) {
+                    detailsDiv.style.display = 'block';
+                    if (textarea) textarea.required = true;
+                }
+            } else if (this.value === '0' && this.checked) {
+                if (detailsDiv) {
+                    detailsDiv.style.display = 'none';
+                    if (textarea) {
+                        textarea.required = false;
+                        textarea.value = '';
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

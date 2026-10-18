@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Suspicious Activity Reports') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Suspicious Activity Reports (SAR)') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('aml.create_sar') }}" class="btn btn-sm btn-danger">
+                <i class="bi bi-exclamation-triangle"></i> {{ _('File New SAR') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('Ref') }}</th>
+                            <th>{{ _('Customer') }}</th>
+                            <th>{{ _('Discovery Date') }}</th>
+                            <th>{{ _('Amount') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Deadline') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sar in sars %}
+                        <tr>
+                            <td><code>{{ sar.sar_reference }}</code></td>
+                            <td>{{ sar.customer_name or 'N/A' }}</td>
+                            <td>{{ sar.discovery_date }}</td>
+                            <td>{{ "{:,.2f}".format(sar.amount_involved or 0) }} {{ sar.currency or 'EGP' }}</td>
+                            <td>
+                                <span
+                                    class="badge {% if sar.investigation_status == 'NEW' %}bg-primary{% elif sar.investigation_status == 'FILE_SAR' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                    {{ sar.investigation_status }}
+                                </span>
+                            </td>
+                            <td class="text-danger font-monospace">{{ sar.sar_deadline or 'N/A' }}</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-outline-secondary">{{ _('Investigate') }}</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">{{ _('No SARs reported') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

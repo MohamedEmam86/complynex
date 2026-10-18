@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.course_name }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <nav aria-label="{{ _('breadcrumb') }}">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('training.list_courses') }}">{{ _('Training') }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ course.course_code }}</li>
+            </ol>
+        </nav>
+        <h1 class="h2">{{ course.course_name }}</h1>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('training.list_courses') }}" class="btn btn-sm btn-outline-secondary">{{ _('Back to My Training') }}</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 col-md-8">
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+            {% set video_locked = (course.video_file_path or course.video_url) and (not enrollment or not enrollment.video_completed) %}
+            {% if course.video_file_path or course.video_url %}
+            <div class="ratio ratio-16x9 bg-black">
+                <video id="trainingVideo" class="w-100 h-100" preload="metadata" disablePictureInPicture
+                    disableRemotePlayback playsinline
+                    {% if not video_locked %}controls{% endif %}>
+                    {% if course.video_file_path %}
+                    <source src="{{ url_for('training.course_asset', id=course.id, asset_type='video') }}" type="video/mp4">
+                    {% endif %}
+                    Your browser does not support the video tag.
+                </video>
+                {% if course.video_url and 'youtube' in course.video_url %}
+                <!-- Simple YouTube fallback if URL provided and not file -->
+                <iframe src="{{ course.video_url | replace('watch?v=', 'embed/') }}" title="{{ _('YouTube video player') }}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+                {% endif %}
+            </div>
+            {% if video_locked %}
+            <div class="d-flex align-items-center gap-2 px-3 py-2 bg-dark bg-opacity-75">
+                <button type="button" id="playPauseBtn" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-play-fill" id="playPauseIcon"></i>
+                </button>
+                <div class="flex-grow-1 progress" style="height: 6px; cursor: not-allowed;">
+                    <div id="playerProgressBar" class="progress-bar bg-warning" style="width: 0%"></div>
+                </div>
+                <span id="playerTimeLabel" class="text-light small text-nowrap">0:00 / 0:00</span>
+                <button type="button" id="muteBtn" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-volume-up-fill" id="muteIcon"></i>
+                </button>
+            </div>
+            <div class="px-3 py-1 bg-dark bg-opacity-50 text-warning small">
+                <i class="bi bi-lock-fill me-1"></i>{{ _('Seeking is disabled until the video has been fully watched.') }}
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 border-bottom pb-2">{{ _('Course Overview') }}</h5>
+                <p>{{ course.description }}</p>
+
+                <div class="my-4 p-4 border rounded bg-white">
+                    {{ course.content | safe or _('No written content provided for this module.') }}
+                </div>
+
+                {% if course.external_link %}
+                <div class="mt-4 p-3 bg-light rounded border d-flex align-items-center">
+                    <i class="bi bi-link-45deg fs-2 text-info me-3"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 fw-bold">{{ _('External Resource') }}</h6>
+                        <small class="text-muted"><a href="{{ course.external_link }}" target="_blank">{{
+                                course.external_link }}</a></small>
+                    </div>
+                    <a href="{{ course.external_link }}" class="btn btn-outline-info btn-sm" target="_blank">{{ _('Open Link') }}</a>
+                </div>
+                {% endif %}
+
+                {% if course.presentation_path %}
+                <div class="mt-4 p-3 bg-light rounded border d-flex align-items-center">
+                    <i class="bi bi-slideshow fs-2 text-warning me-3"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 fw-bold">{{ _('Course Presentation') }}</h6>
+                        <small class="text-muted">{{ _('Slides / Presentation File') }}</small>
+                    </div>
+                    <a href="{{ url_for('training.course_asset', id=course.id, asset_type='presentation') }}"
+                        class="btn btn-outline-warning btn-sm" target="_blank">{{ _('View Slides') }}</a>
+                </div>
+                {% endif %}
+
+                {% if course.document_path %}
+                <div class="mt-4 p-3 bg-light rounded border d-flex align-items-center">
+                    <i class="bi bi-file-earmark-text fs-2 text-primary me-3"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 fw-bold">{{ _('Course Handout / Reading Material') }}</h6>
+                        <small class="text-muted">{{ _('Document') }}</small>
+                    </div>
+                    <a href="{{ url_for('training.course_asset', id=course.id, asset_type='document') }}"
+                        class="btn btn-outline-primary btn-sm" target="_blank">{{ _('View File') }}</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-bottom text-center">
+                <h6 class="text-uppercase fw-bold small text-muted mb-0">{{ _('Learning Progress') }}</h6>
+            </div>
+            <div class="card-body">
+                {% if enrollment %}
+                {% if enrollment.status == 'completed' %}
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <span
+                            class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                            style="width: 60px; height: 60px;">
+                            <i class="bi bi-check-lg fs-2"></i>
+                        </span>
+                    </div>
+                    <h5 class="fw-bold text-success">{{ _('Course Completed!') }}</h5>
+                    <p class="text-muted small">{{ _('You scored %(score)s%% on the assessment.', score=enrollment.score) }}</p>
+                    <a href="{{ url_for('training.my_certificates') }}" class="btn btn-success w-100">
+                        <i class="bi bi-award me-2"></i> {{ _('View Certificate') }}
+                    </a>
+                </div>
+                {% else %}
+                {% set has_video = course.video_file_path or course.video_url %}
+                <div class="text-center mb-4">
+                    {% if has_video and not enrollment.video_completed %}
+                    <i class="bi bi-play-circle display-4 text-warning"></i>
+                    <h6 class="mt-3 fw-bold">{{ _('Video Completion Required') }}</h6>
+                    <p class="small text-muted">{{ _('You must watch the entire video before taking the quiz. Scrubbing is disabled.') }}</p>
+
+                    <div class="progress mt-3" style="height: 10px;">
+                        <div id="videoProgressBar" class="progress-bar bg-warning" role="progressbar" style="width: 0%">
+                        </div>
+                    </div>
+                    <small id="progressText" class="text-muted">{{ _('0%% watched') }}</small>
+                    {% else %}
+                    <i class="bi bi-journal-check display-4 text-primary"></i>
+                    <h6 class="mt-3 fw-bold">{{ _('Assessment Ready') }}</h6>
+                    <p class="small text-muted">{{ _('Complete the assessment to finish the course. You need %(score)s%% to pass.', score=course.passing_score) }}</p>
+                    {% endif %}
+                </div>
+
+                <div id="quizAction"
+                    class="{{ 'd-none' if has_video and not enrollment.video_completed else '' }}">
+                    <a href="{{ url_for('training.take_quiz', id=course.id) }}"
+                        class="btn btn-primary btn-lg w-100 py-3 shadow-sm">
+                        <i class="bi bi-pencil-square me-2"></i> {{ _('Take Course Quiz') }}
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted">{{ _('You are not enrolled in this course.') }}</p>
+                    <form method="POST" action="{{ url_for('training.enroll_user') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="course_id" value="{{ course.id }}">
+                        <input type="hidden" name="user_id" value="{{ current_user.id }}">
+                        <button type="submit" class="btn btn-outline-primary">{{ _('Self-Enroll Now') }}</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-3">
+                <h6 class="fw-bold small text-uppercase text-muted mb-3">{{ _('Module Info') }}</h6>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted py-1 small">{{ _('Duration:') }}</td>
+                        <td class="fw-bold py-1 small text-end">{{ course.duration_minutes }} mins</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted py-1 small">{{ _('Questions:') }}</td>
+                        <td class="fw-bold py-1 small text-end">{{ (course.get_questions()|length) if
+                            course.get_questions else 0 }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted py-1 small">{{ _('Passing Score:') }}</td>
+                        <td class="fw-bold py-1 small text-end">{{ course.passing_score }}%</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+    document.addEventListener('DOMContentLoaded', function () {
+        const video = document.getElementById('trainingVideo');
+        if (!video) return;
+
+        const isCompleted = {{ 'true' if enrollment and enrollment.video_completed else 'false' }};
+    let lastPlayedTime = {{ enrollment.video_progress if enrollment else 0 }};
+    let maxSeenTime = lastPlayedTime;
+
+    // Anti-scrubbing logic for non-completed enrollments.
+    // Native controls are omitted entirely while locked (see template), so there is
+    // no scrubber/seek-bar UI. This is defense-in-depth against seeks issued any
+    // other way (keyboard, devtools, a re-inserted controls attribute, etc).
+    if (!isCompleted) {
+        video.currentTime = lastPlayedTime;
+
+        video.addEventListener('timeupdate', function () {
+            if (!video.seeking) {
+                if (video.currentTime > lastPlayedTime + 2) {
+                    video.currentTime = lastPlayedTime;
+                } else {
+                    lastPlayedTime = video.currentTime;
+                }
+            }
+
+            if (video.currentTime > maxSeenTime) {
+                maxSeenTime = video.currentTime;
+                updateProgressBar();
+            }
+
+            updatePlayerBar();
+        });
+
+        video.addEventListener('seeking', function () {
+            if (video.currentTime > lastPlayedTime) {
+                video.currentTime = lastPlayedTime;
+            }
+        });
+
+        video.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Block keyboard seek shortcuts (arrow keys, Home/End, media keys) whenever
+        // the video element has focus.
+        video.addEventListener('keydown', function (e) {
+            const blocked = ['ArrowLeft', 'ArrowRight', 'Home', 'End', 'MediaTrackNext', 'MediaTrackPrevious'];
+            if (blocked.includes(e.key)) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+        // Wire up the custom minimal control bar (play/pause + mute only, no seek control)
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const playPauseIcon = document.getElementById('playPauseIcon');
+        const muteBtn = document.getElementById('muteBtn');
+        const muteIcon = document.getElementById('muteIcon');
+        const timeLabel = document.getElementById('playerTimeLabel');
+
+        function formatTime(t) {
+            if (!isFinite(t)) return '0:00';
+            const m = Math.floor(t / 60);
+            const s = Math.floor(t % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function updatePlayerBar() {
+            const bar = document.getElementById('playerProgressBar');
+            if (bar && video.duration) {
+                bar.style.width = ((video.currentTime / video.duration) * 100) + '%';
+            }
+            if (timeLabel) {
+                timeLabel.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+            }
+        }
+
+        if (playPauseBtn) {
+            playPauseBtn.addEventListener('click', function () {
+                if (video.paused) video.play(); else video.pause();
+            });
+            video.addEventListener('play', () => playPauseIcon.className = 'bi bi-pause-fill');
+            video.addEventListener('pause', () => playPauseIcon.className = 'bi bi-play-fill');
+        }
+
+        if (muteBtn) {
+            muteBtn.addEventListener('click', function () {
+                video.muted = !video.muted;
+                muteIcon.className = video.muted ? 'bi bi-volume-mute-fill' : 'bi bi-volume-up-fill';
+            });
+        }
+
+        video.addEventListener('loadedmetadata', updatePlayerBar);
+    }
+
+    function updateProgressBar() {
+        const duration = video.duration;
+        if (duration) {
+            const percent = (maxSeenTime / duration) * 100;
+            const bar = document.getElementById('videoProgressBar');
+            const text = document.getElementById('progressText');
+            if (bar) bar.style.width = percent + '%';
+            if (text) text.innerText = Math.round(percent) + '% watched';
+        }
+    }
+
+    setInterval(function () {
+        if (!video.paused && !isCompleted) {
+            saveProgress(false);
+        }
+    }, 5000);
+
+    video.addEventListener('ended', function () {
+        if (!isCompleted) {
+            saveProgress(true);
+        }
+    });
+
+    function saveProgress(completed) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch("{{ url_for('training.update_progress', id=course.id) }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                seconds: Math.floor(video.currentTime),
+                completed: completed,
+                duration: video.duration
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (completed && data.success) {
+                    const quizAction = document.getElementById('quizAction');
+                    if (quizAction) quizAction.classList.remove('d-none');
+
+                    // Change UI to Assessment Ready
+                    const learningProgressCard = document.querySelector('.col-md-4 .card-body');
+                    if (learningProgressCard) {
+                        learningProgressCard.innerHTML = `
+                                <div class="text-center mb-4">
+                                    <i class="bi bi-journal-check display-4 text-primary"></i>
+                                    <h6 class="mt-3 fw-bold">{{ _('Assessment Ready') }}</h6>
+                                    <p class="small text-muted">Video completed! Please take the quiz to finish the course.</p>
+                                </div>
+                                <div id="quizAction">
+                                    <a href="{{ url_for('training.take_quiz', id=course.id) }}"
+                                        class="btn btn-primary btn-lg w-100 py-3 shadow-sm">
+                                        <i class="bi bi-pencil-square me-2"></i> {{ _('Take Course Quiz') }}
+                                    </a>
+                                </div>
+                            `;
+                    }
+                }
+            });
+    }
+
+    // Initial progress bar update
+    if (video.duration) updateProgressBar();
+    else video.addEventListener('loadedmetadata', updateProgressBar);
+    });
+</script>
+{% endblock %}

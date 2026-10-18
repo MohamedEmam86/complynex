@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Add Blacklist Entry{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0"><i class="fas fa-plus-circle"></i> {{ _('Add Internal PEP List Entry') }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+                        <!-- Basic Information -->
+                        <h5 class="mb-3 text-primary border-bottom pb-2">{{ _('Basic Information') }}</h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Full Name') }} <span class="text-danger">*</span></label>
+                                <input type="text" name="full_name" class="form-control" required
+                                    placeholder="{{ _('Enter full name') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Original Name (Arabic/Other)') }}</label>
+                                <input type="text" name="original_name" class="form-control"
+                                    placeholder="{{ _('Enter original script name') }}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Entity Type') }} <span class="text-danger">*</span></label>
+                                <select name="entity_type" class="form-select" required id="entityType">
+                                    <option value="INDIVIDUAL">{{ _('Individual') }}</option>
+                                    <option value="ORGANIZATION">{{ _('Organization') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Risk Level') }} <span class="text-danger">*</span></label>
+                                <select name="risk_level" class="form-select" required>
+                                    <option value="HIGH" selected>{{ _('High') }}</option>
+                                    <option value="MEDIUM">{{ _('Medium') }}</option>
+                                    <option value="LOW">{{ _('Low') }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Individual Fields -->
+                        <div id="individualFields">
+                            <h5 class="mb-3 mt-4 text-primary border-bottom pb-2">{{ _('Individual Information') }}</h5>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">{{ _('National ID') }}</label>
+                                    <input type="text" name="national_id" class="form-control"
+                                        placeholder="{{ _('E.g. 14-digit National ID') }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">{{ _('Passport Number') }}</label>
+                                    <input type="text" name="passport_number" class="form-control"
+                                        placeholder="{{ _('E.g. Passport identifier') }}">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">{{ _('Date of Birth') }}</label>
+                                    <input type="date" name="date_of_birth" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">{{ _('Place of Birth') }}</label>
+                                    <input type="text" name="place_of_birth" class="form-control"
+                                        placeholder="{{ _('City, Country') }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Organization Fields -->
+                        <div id="organizationFields" style="display: none;">
+                            <h5 class="mb-3 mt-4 text-primary border-bottom pb-2">{{ _('Organization Information') }}</h5>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ _('Registration Number') }}</label>
+                                <input type="text" name="registration_number" class="form-control"
+                                    placeholder="{{ _('Company registration / TAX ID') }}">
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <h5 class="mb-3 mt-4 text-primary border-bottom pb-2">{{ _('Location & Identification') }}</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Address') }}</label>
+                            <textarea name="address" class="form-control" rows="2"
+                                placeholder="{{ _('Full address details') }}"></textarea>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">{{ _('City') }}</label>
+                                <input type="text" name="city" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">{{ _('Country') }}</label>
+                                <input type="text" name="country" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">{{ _('Nationality') }}</label>
+                                <input type="text" name="nationality" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- Blacklist Details -->
+                        <h5 class="mb-3 mt-4 text-primary border-bottom pb-2">{{ _('Blacklist Details') }}</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Reason for Blacklisting') }} <span
+                                    class="text-danger">*</span></label>
+                            <textarea name="reason" class="form-control" rows="3" required
+                                placeholder="{{ _('Provide detailed reason for adding to blacklist') }}"></textarea>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Category') }}</label>
+                                <select name="category" class="form-select">
+                                    <option value="">{{ _('Select category...') }}</option>
+                                    <option value="Fraud">{{ _('Fraud') }}</option>
+                                    <option value="Money Laundering">{{ _('Money Laundering') }}</option>
+                                    <option value="Terrorism">{{ _('Terrorism') }}</option>
+                                    <option value="Sanctions Violation">{{ _('Sanctions Violation') }}</option>
+                                    <option value="Corruption">{{ _('Corruption') }}</option>
+                                    <option value="Tax Evasion">{{ _('Tax Evasion') }}</option>
+                                    <option value="Internal Policy">{{ _('Internal Policy') }}</option>
+                                    <option value="Other">{{ _('Other') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Aliases (comma-separated)') }}</label>
+                                <input type="text" name="aliases" class="form-control"
+                                    placeholder="{{ _('e.g., Johnny, J.Doe, John D') }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Additional Notes') }}</label>
+                            <textarea name="notes" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <!-- Contact -->
+                        <h5 class="mb-3 mt-4 text-primary border-bottom pb-2">{{ _('Contact Information') }}</h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Phone Number') }}</label>
+                                <input type="text" name="phone_number" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Email') }}</label>
+                                <input type="email" name="email" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="d-flex justify-content-between mt-5 border-top pt-4">
+                            <a href="{{ url_for('blacklist.pep_index') }}" class="btn btn-outline-secondary px-4">
+                                <i class="fas fa-arrow-left"></i> {{ _('Back to List') }}
+                            </a>
+                            <button type="submit" class="btn btn-primary px-5">
+                                <i class="fas fa-save"></i> {{ _('Save Blacklist Entry') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    document.getElementById('entityType').addEventListener('change', function () {
+        const individualFields = document.getElementById('individualFields');
+        const organizationFields = document.getElementById('organizationFields');
+
+        if (this.value === 'INDIVIDUAL') {
+            individualFields.style.display = 'block';
+            organizationFields.style.display = 'none';
+        } else {
+            individualFields.style.display = 'none';
+            organizationFields.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}

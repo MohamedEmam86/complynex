@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('API Keys') }} - {{ company_name }} CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-key me-2"></i>{{ _('API Keys') }}</h1>
+    <div>
+        <button type="button" class="btn btn-primary" id="newKeyBtn">
+            <i class="bi bi-plus-lg"></i> {{ _('New API Key') }}
+        </button>
+        <a href="{{ url_for('admin.settings') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Settings') }}
+        </a>
+    </div>
+</div>
+
+<p class="text-muted small">{{ _('Keys grant programmatic access to the Compliance API (see') }}
+    <a href="{{ url_for('api_v1.openapi_spec') }}" target="_blank" rel="noopener">{{ _('API Docs') }}</a>).
+    {{ _('The raw key is shown only once at creation time — store it securely.') }}
+</p>
+
+<div id="apiKeysAlert"></div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>{{ _('Name') }}</th>
+                <th>{{ _('Prefix') }}</th>
+                <th>{{ _('Scopes') }}</th>
+                <th>{{ _('Rate Limit') }}</th>
+                <th>{{ _('Owner') }}</th>
+                <th>{{ _('Last Used') }}</th>
+                <th>{{ _('Status') }}</th>
+                <th class="text-end">{{ _('Actions') }}</th>
+            </tr>
+        </thead>
+        <tbody id="apiKeysBody">
+            <tr><td colspan="8" class="text-center py-4 text-muted">{{ _('Loading...') }}</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- New Key Modal -->
+<div class="modal fade" id="newKeyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('New API Key') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="newKeyForm">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Name') }}</label>
+                        <input type="text" id="keyName" class="form-control" placeholder="{{ _('e.g. Core Banking Integration') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Scopes (comma-separated)') }}</label>
+                        <input type="text" id="keyScopes" class="form-control" value="screening:read,aml:read,kyc:read">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Rate Limit (requests/min)') }}</label>
+                        <input type="number" id="keyRateLimit" class="form-control" value="100" min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Expires On') }} <span class="text-muted small">({{ _('optional') }})</span></label>
+                        <input type="date" id="keyExpiresAt" class="form-control">
+                        <div class="form-text">{{ _('Leave blank for a key that never expires.') }}</div>
+                    </div>
+                </div>
+                <div id="newKeyResult" class="d-none">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        {{ _('This key will not be shown again — copy it now.') }}
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="rawKeyOutput" class="form-control font-monospace" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="copyKeyBtn">{{ _('Copy') }}</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Close') }}</button>
+                <button type="button" class="btn btn-primary" id="createKeyBtn">{{ _('Create Key') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+const newKeyModal = new bootstrap.Modal(document.getElementById('newKeyModal'));
+
+function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadKeys() {
+    const resp = await fetch('/api/v1/keys');
+    const data = await resp.json();
+    const tbody = document.getElementById('apiKeysBody');
+    const keys = (data.data && data.data.keys) || [];
+    if (!keys.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">{{ _("No API keys yet.") }}</td></tr>';
+        return;
+    }
+    tbody.innerHTML = keys.map(k => `
+        <tr>
+            <td class="fw-bold">${escapeHtml(k.name)}</td>
+            <td><code>${escapeHtml(k.key_prefix)}...</code></td>
+            <td class="small">${escapeHtml(k.scopes)}</td>
+            <td>${k.rate_limit}/min</td>
+            <td class="small text-muted">${escapeHtml(k.owner_email || '-')}</td>
+            <td class="small text-muted">${k.last_used_at ? new Date(k.last_used_at).toLocaleString() : '{{ _("Never") }}'}</td>
+            <td>${k.is_active ? '<span class="badge bg-success">{{ _("Active") }}</span>' : '<span class="badge bg-secondary">{{ _("Revoked") }}</span>'}</td>
+            <td class="text-end">
+                ${k.is_active ? `<button type="button" class="btn btn-sm btn-outline-danger js-revoke" data-key-id="${k.id}"><i class="bi bi-x-circle"></i> {{ _("Revoke") }}</button>` : ''}
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function revokeKey(id) {
+    if (!confirm('{{ _("Revoke this API key? This cannot be undone.") }}')) return;
+    const resp = await fetch(`/api/v1/keys/${id}`, {
+        method: 'DELETE',
+        headers: {'X-CSRFToken': csrfToken}
+    });
+    if (resp.ok) {
+        loadKeys();
+    } else {
+        alert('{{ _("Failed to revoke key.") }}');
+    }
+}
+
+document.getElementById('newKeyBtn').addEventListener('click', () => {
+    document.getElementById('newKeyForm').classList.remove('d-none');
+    document.getElementById('newKeyResult').classList.add('d-none');
+    document.getElementById('keyName').value = '';
+    document.getElementById('keyExpiresAt').value = '';
+    newKeyModal.show();
+});
+
+document.getElementById('createKeyBtn').addEventListener('click', async () => {
+    const name = document.getElementById('keyName').value.trim();
+    if (!name) { alert('{{ _("Name is required.") }}'); return; }
+    const resp = await fetch('/api/v1/keys', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+        body: JSON.stringify({
+            name: name,
+            scopes: document.getElementById('keyScopes').value,
+            rate_limit: parseInt(document.getElementById('keyRateLimit').value || '100', 10),
+            expires_at: document.getElementById('keyExpiresAt').value || null
+        })
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+        document.getElementById('newKeyForm').classList.add('d-none');
+        document.getElementById('newKeyResult').classList.remove('d-none');
+        document.getElementById('rawKeyOutput').value = data.data.key;
+        loadKeys();
+    } else {
+        alert(data.error || '{{ _("Failed to create key.") }}');
+    }
+});
+
+document.getElementById('copyKeyBtn').addEventListener('click', () => {
+    const el = document.getElementById('rawKeyOutput');
+    el.select();
+    navigator.clipboard.writeText(el.value);
+});
+
+/* Delegated: the tbody is rebuilt on every loadKeys(), so binding per-row
+   would leak listeners and break after the first refresh. */
+document.getElementById('apiKeysBody').addEventListener('click', function (e) {
+    const btn = e.target.closest('.js-revoke');
+    if (btn) revokeKey(parseInt(btn.dataset.keyId, 10));
+});
+
+loadKeys();
+</script>
+{% endblock %}

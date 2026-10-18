@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Annual COI Declaration - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% if session.get('dir') == 'rtl' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+</head>
+
+<body class="complynex-public">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8 col-md-10">
+                <!-- Brand Header -->
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        class="logo">
+                    <h1><i class="bi bi-file-earmark-text"></i> {{ _('Annual COI Declaration') }}</h1>
+                    <p>{{ _('Conflict of Interest Declaration for %(year)s', year=year) }}</p>
+                </div>
+
+                <!-- Form Card -->
+                <div class="complynex-form-card">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="complynex-info-box mb-4">
+                        <h6><i class="bi bi-info-circle"></i> {{ _('About This Declaration') }}</h6>
+                        <p class="mb-0">{{ _('This annual declaration helps identify and manage potential conflicts of
+                            interest. Please answer all questions honestly and completely.') }}</p>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('portal.annual_coi') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <!-- Your Information -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-person"></i> {{ _('Your Information') }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Email Address') }} <span
+                                    class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" required value="{{ email }}" {% if
+                                email %}readonly{% endif %}>
+                        </div>
+
+                        <!-- Declaration Items -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-clipboard-check"></i> {{ _('Declaration Items') }}
+                        </div>
+
+                        <!-- Financial Interests -->
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <label class="form-label fw-semibold">1. {{ _('Financial Interests') }}</label>
+                            <p class="text-muted small">{{ _('Do you or your immediate family members have any financial
+                                interests in companies that do business with ComplyNex?') }}</p>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_financial_interests" id="fin_yes"
+                                    value="1">
+                                <label class="form-check-label" for="fin_yes">{{ _('Yes') }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_financial_interests" id="fin_no"
+                                    value="0" checked>
+                                <label class="form-check-label" for="fin_no">{{ _('No') }}</label>
+                            </div>
+                            <div id="fin_details" class="mt-2" style="display: none;">
+                                <textarea name="financial_interests_details" class="form-control" rows="2"
+                                    placeholder="{{ _('Please provide details...') }}"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Outside Employment -->
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <label class="form-label fw-semibold">2. {{ _('Outside Employment') }}</label>
+                            <p class="text-muted small">{{ _('Do you have any outside employment, consulting, or board
+                                positions?') }}</p>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_outside_employment" id="emp_yes"
+                                    value="1">
+                                <label class="form-check-label" for="emp_yes">{{ _('Yes') }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_outside_employment" id="emp_no"
+                                    value="0" checked>
+                                <label class="form-check-label" for="emp_no">{{ _('No') }}</label>
+                            </div>
+                            <div id="emp_details" class="mt-2" style="display: none;">
+                                <textarea name="outside_employment_details" class="form-control" rows="2"
+                                    placeholder="{{ _('Please provide details...') }}"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Family Relationships -->
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <label class="form-label fw-semibold">3. {{ _('Family Relationships') }}</label>
+                            <p class="text-muted small">{{ _('Do you have family members or close personal relationships
+                                with vendors, customers, or competitors?') }}</p>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_family_relationships"
+                                    id="fam_yes" value="1">
+                                <label class="form-check-label" for="fam_yes">{{ _('Yes') }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_family_relationships" id="fam_no"
+                                    value="0" checked>
+                                <label class="form-check-label" for="fam_no">{{ _('No') }}</label>
+                            </div>
+                            <div id="fam_details" class="mt-2" style="display: none;">
+                                <textarea name="family_relationships_details" class="form-control" rows="2"
+                                    placeholder="{{ _('Please provide details...') }}"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Gifts & Hospitality -->
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <label class="form-label fw-semibold">4. {{ _('Gifts & Hospitality') }}</label>
+                            <p class="text-muted small">{{ _('Have you received any gifts, hospitality, or entertainment
+                                from business partners exceeding 500 EGP?') }}</p>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_gifts_hospitality" id="gift_yes"
+                                    value="1">
+                                <label class="form-check-label" for="gift_yes">{{ _('Yes') }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_gifts_hospitality" id="gift_no"
+                                    value="0" checked>
+                                <label class="form-check-label" for="gift_no">{{ _('No') }}</label>
+                            </div>
+                            <div id="gift_details" class="mt-2" style="display: none;">
+                                <textarea name="gifts_hospitality_details" class="form-control" rows="2"
+                                    placeholder="{{ _('Please provide details...') }}"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Other Conflicts -->
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <label class="form-label fw-semibold">5. {{ _('Other Potential Conflicts') }}</label>
+                            <p class="text-muted small">{{ _('Are there any other situations that might create a
+                                conflict of interest?') }}</p>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_other_conflicts" id="other_yes"
+                                    value="1">
+                                <label class="form-check-label" for="other_yes">{{ _('Yes') }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="has_other_conflicts" id="other_no"
+                                    value="0" checked>
+                                <label class="form-check-label" for="other_no">{{ _('No') }}</label>
+                            </div>
+                            <div id="other_details" class="mt-2" style="display: none;">
+                                <textarea name="other_conflicts_details" class="form-control" rows="2"
+                                    placeholder="{{ _('Please provide details...') }}"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Digital Signature -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-pen"></i> {{ _('Digital Signature') }}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">{{ _('Type your full name as signature') }} <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" name="digital_signature" class="form-control" required
+                                placeholder="{{ _('Your full legal name') }}">
+                            <small class="text-muted">{{ _('By typing your name, you certify that all information
+                                provided is true and accurate.') }}</small>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-complynex btn-lg">
+                                <i class="bi bi-send"></i> {{ _('Submit Declaration') }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('portal.dashboard') }}" class="complynex-link">
+                            <i class="bi bi-arrow-left"></i> {{ _('Back to Portal') }}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="complynex-footer">
+                    <p>{{ _('&copy; 2026 ComplyNex. All rights reserved. &nbsp;|&nbsp; Powered by Mohamed Emam &nbsp;|&nbsp;') }} <a href="mailto:info@complynex.online">{{ _('info@complynex.online') }}</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+    <script nonce="{{ csp_nonce }}">
+        // Toggle detail fields
+        const toggles = [
+            { radio: 'has_financial_interests', details: 'fin_details' },
+            { radio: 'has_outside_employment', details: 'emp_details' },
+            { radio: 'has_family_relationships', details: 'fam_details' },
+            { radio: 'has_gifts_hospitality', details: 'gift_details' },
+            { radio: 'has_other_conflicts', details: 'other_details' }
+        ];
+
+        toggles.forEach(t => {
+            document.querySelectorAll(`input[name="${t.radio}"]`).forEach(radio => {
+                radio.addEventListener('change', function () {
+                    document.getElementById(t.details).style.display =
+                        this.value === '1' ? 'block' : 'none';
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

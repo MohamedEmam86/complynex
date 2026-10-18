@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Edit') if rule else _('New') }} {{ _('AML Rule') }}{% endblock %}
+{% block content %}
+<div class="container mt-4" style="max-width:680px">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">
+      <i class="fas fa-{{ 'pen' if rule else 'plus' }} text-secondary me-2"></i>
+      {{ _('Edit') if rule else _('New') }} {{ _('AML Rule') }}
+      {% if rule %}<small class="text-muted fs-6 ms-2">v{{ rule.version }} → v{{ rule.version + 1 }} ({{ _('pending approval') }})</small>{% endif %}
+    </h2>
+    <a href="{{ url_for('aml.rules_list') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="fas fa-arrow-left me-1"></i>{{ _('Back') }}
+    </a>
+  </div>
+
+  {% if rule %}
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle me-1"></i>
+    {{ _('Editing creates a new') }} <strong>{{ _('pending') }}</strong> {{ _('version of this rule. The current active version remains in effect until a compliance officer approves the new one.') }}
+  </div>
+  {% endif %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ 'danger' if cat == 'error' else cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ _('Rule Code') }} <span class="text-danger">*</span></label>
+            <input type="text" name="rule_code" class="form-control" required
+                   pattern="[A-Za-z0-9\-_]+" title="{{ _('Alphanumeric, dashes, underscores only') }}"
+                   value="{{ rule.rule_code if rule else '' }}"
+                   placeholder="{{ _('e.g. TM010') }}">
+          </div>
+          <div class="col-md-8">
+            <label class="form-label fw-bold">{{ _('Rule Name') }} <span class="text-danger">*</span></label>
+            <input type="text" name="rule_name" class="form-control" required
+                   value="{{ rule.rule_name if rule else '' }}"
+                   placeholder="{{ _('e.g. Large Cash Transaction') }}">
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-bold">{{ _('Description') }}</label>
+            <textarea name="rule_description" class="form-control" rows="2"
+                      placeholder="{{ _('Brief explanation of what this rule detects…') }}">{{ rule.rule_description if rule else '' }}</textarea>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ _('Category') }}</label>
+            <select name="rule_category" class="form-select">
+              {% for cat in ['Cash','Transfer','Pattern','High-Risk Country','PEP','General'] %}
+              <option {{ 'selected' if rule and rule.rule_category == cat else '' }}>{{ _(cat) }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ _('Rule Type') }}</label>
+            <select name="rule_type" class="form-select" id="ruleType">
+              {% for t in ['THRESHOLD','PATTERN','VELOCITY','COUNTRY','PEP'] %}
+              <option {{ 'selected' if rule and rule.rule_type == t else '' }}>{{ t }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text" id="typeHint"></div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ _('Severity') }}</label>
+            <select name="severity" class="form-select">
+              {% for sev in ['LOW','MEDIUM','HIGH','CRITICAL'] %}
+              <option {{ 'selected' if rule and rule.severity == sev else '' }}>{{ sev }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ _('Threshold Value') }}</label>
+            <input type="number" name="threshold_value" class="form-control" step="0.01" min="0"
+                   value="{{ rule.threshold_value if rule else '' }}"
+                   placeholder="{{ _('e.g. 10000') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ _('Currency') }}</label>
+            <select name="threshold_currency" class="form-select">
+              {% for cur in ['EGP','USD','EUR','GBP'] %}
+              <option {{ 'selected' if rule and rule.threshold_currency == cur else '' }}>{{ cur }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ _('Time Period (days)') }}</label>
+            <input type="number" name="time_period_days" class="form-control" min="1"
+                   value="{{ rule.time_period_days if rule else 1 }}">
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-paper-plane me-1"></i>{{ _('Submit for Approval') }}
+          </button>
+          <a href="{{ url_for('aml.rules_list') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+document.getElementById('ruleType').addEventListener('change', updateTypeHint);
+
+const hints = {
+  THRESHOLD: {{ _('Alert fires when a single transaction exceeds the threshold value.') | tojson }},
+  PATTERN:   {{ _('Alert fires when multiple transactions in the time window sum to ≥ threshold.') | tojson }},
+  VELOCITY:  {{ _('Alert fires when transaction count in the time window exceeds threshold.') | tojson }},
+  COUNTRY:   {{ _('Alert fires on transactions to/from high-risk countries.') | tojson }},
+  PEP:       {{ _('Alert fires on transactions involving politically exposed persons.') | tojson }},
+};
+function updateTypeHint() {
+  const t = document.getElementById('ruleType').value;
+  document.getElementById('typeHint').textContent = hints[t] || '';
+}
+updateTypeHint();
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Backup Status') }} - {{ company_name }} CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-hdd-network me-2"></i>{{ _('Backup Status') }}</h1>
+    <a href="{{ url_for('admin.settings') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> {{ _('Back to Settings') }}
+    </a>
+</div>
+
+<p class="text-muted small">{{ _('Backups run automatically once per day via a server cron job and are GPG-encrypted before being written to disk. This page reflects real, current status — it is not a configuration form.') }}</p>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                {% if backup_info.latest %}
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-check-circle-fill text-success fs-2 me-3"></i>
+                    <div>
+                        <div class="fw-bold">{{ _('Last backup succeeded') }}</div>
+                        <div class="text-muted small">{{ backup_info.latest.mtime }}</div>
+                    </div>
+                </div>
+                <table class="table table-sm mb-0">
+                    <tr><th>{{ _('File') }}</th><td>{{ backup_info.latest.name }}</td></tr>
+                    <tr><th>{{ _('Size') }}</th><td>{{ backup_info.latest.size_mb }} MB</td></tr>
+                    <tr><th>{{ _('Total backups retained') }}</th><td>{{ backup_info.count }}</td></tr>
+                    <tr><th>{{ _('Location') }}</th><td><code>{{ backup_info.directory }}</code></td></tr>
+                </table>
+                {% else %}
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill text-warning fs-2 me-3"></i>
+                    <div class="fw-bold">{{ _('No backups found') }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

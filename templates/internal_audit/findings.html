@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Audit Findings') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">{{ _('Audit Findings') }}</h3>
+        <a href="{{ url_for('internal_audit.findings_report') }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-file-earmark-text"></i> {{ _('Findings Report (Printable)') }}
+        </a>
+    </div>
+
+    <form method="get" class="row g-2 mb-3 align-items-end">
+        <div class="col-auto">
+            <label class="form-label small mb-0">{{ _('Status') }}</label>
+            <select name="status" class="form-select form-select-sm" data-auto-submit>
+                <option value="">{{ _('All') }}</option>
+                {% for s in ['OPEN', 'MANAGEMENT_RESPONSE_RECEIVED', 'REMEDIATION_IN_PROGRESS', 'REMEDIATED_PENDING_VERIFICATION', 'VERIFIED_CLOSED'] %}
+                <option value="{{ s }}" {{ 'selected' if current_status == s }}>{{ s.replace('_', ' ') | title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <label class="form-label small mb-0">{{ _('Severity') }}</label>
+            <select name="severity" class="form-select form-select-sm" data-auto-submit>
+                <option value="">{{ _('All') }}</option>
+                {% for s in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] %}
+                <option value="{{ s }}" {{ 'selected' if current_severity == s }}>{{ s | title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if current_status or current_severity %}
+        <div class="col-auto"><a href="{{ url_for('internal_audit.findings') }}" class="btn btn-sm btn-outline-secondary">{{ _('Clear filters') }}</a></div>
+        {% endif %}
+    </form>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead><tr>
+                    <th>{{ _('#') }}</th><th>{{ _('Title') }}</th><th>{{ _('Engagement') }}</th>
+                    <th>{{ _('Severity') }}</th><th>{{ _('Status') }}</th><th>{{ _('Target Date') }}</th><th></th>
+                </tr></thead>
+                <tbody>
+                {% for f in findings %}
+                    {% set project = projects_by_id.get(f.project_id) %}
+                    {% set is_overdue = f.target_date and f.target_date < today and f.status in open_statuses %}
+                    <tr class="{{ 'table-danger' if is_overdue else '' }}">
+                        <td>{{ f.finding_number }}</td>
+                        <td>{{ f.finding_title }}</td>
+                        <td class="small">{% if project %}<a href="{{ url_for('internal_audit.project_detail', project_id=project.id) }}">{{ project.audit_number }}</a>{% else %}-{% endif %}</td>
+                        <td><span class="badge {{ 'bg-danger' if f.severity == 'CRITICAL' else ('bg-warning text-dark' if f.severity == 'HIGH' else ('bg-info text-dark' if f.severity == 'MEDIUM' else 'bg-secondary')) }}">{{ f.severity }}</span></td>
+                        <td><span class="badge bg-secondary">{{ f.status.replace('_', ' ') }}</span></td>
+                        <td>{{ f.target_date or '-' }} {% if is_overdue %}<i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="{{ _('Overdue') }}"></i>{% endif %}</td>
+                        <td><a href="{{ url_for('internal_audit.finding_detail', finding_id=f.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('View') }}</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">{{ _('No findings recorded yet.') }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Acknowledgments - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Pending Policy Acknowledgments') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('policies.list_policies') }}" class="btn btn-sm btn-outline-secondary me-2">{{ _('All
+            Policies') }}</a>
+        {% if policies %}
+        <form action="{{ url_for('policies.acknowledge_all') }}" method="POST" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-danger"
+                data-confirm="{{ _('Are you sure you want to acknowledge all pending policies?') }}">
+                <i class="bi bi-check-all me-1"></i> {{ _('Acknowledge All') }}
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    {{ _('The following policies have been published and require your formal acknowledgment to ensure compliance with
+    ComplyNex standards and CBE regulations.') }}
+</div>
+
+{% if policies %}
+<div class="row">
+    {% for policy in policies %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm border-start border-warning border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <small class="text-muted fw-bold">{{ policy.policy_number }}</small>
+                    <span class="badge bg-warning-soft text-warning rounded-pill px-3">
+                        {{ policy.category_name_ar if session.get('lang') == 'ar' else policy.category_name_en }}
+                    </span>
+                </div>
+                <h5 class="card-title fw-bold mb-3">{{ policy.policy_name }}</h5>
+                <p class="card-text text-muted small mb-4">
+                    {{ policy.description | truncate(150) or 'Mandatory policy document for employee review.' }}
+                </p>
+                <div class="d-flex justify-content-between align-items-center mt-auto">
+                    <small class="text-muted">Effective: {{ policy.effective_date }}</small>
+                    <a href="{{ url_for('policies.view_policy', id=policy.id) }}" class="btn btn-primary btn-sm px-4">
+                        {{ _('Review & Sign') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card border-0 shadow-sm text-center py-5">
+    <div class="card-body">
+        <i class="bi bi-check-all text-success display-1 mb-4"></i>
+        <h3>{{ _('All Caught Up!') }}</h3>
+        <p class="text-muted">{{ _('You have no pending policy acknowledgments at this time.') }}</p>
+        <a href="{{ url_for('policies.list_policies') }}" class="btn btn-outline-primary mt-3">{{ _('Back to Policies') }}</a>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .bg-warning-soft {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+</style>
+{% endblock %}

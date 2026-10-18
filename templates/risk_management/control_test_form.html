@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Log Control Test Result') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('Log Test Result') }} - {{ control.control_code }}</h3>
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Test Date') }}</label>
+                        <input type="date" name="test_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Result') }}</label>
+                        <select name="result" class="form-select" required>
+                            {% for r in ['EFFECTIVE', 'PARTIALLY_EFFECTIVE', 'INEFFECTIVE'] %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Test Procedure') }}</label>
+                    <textarea name="test_procedure" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Exceptions Noted') }}</label>
+                    <textarea name="exceptions_noted" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Evidence File') }}</label>
+                    <input type="file" name="evidence_file" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+                <a href="{{ url_for('risk_management.controls_detail', control_id=control.id) }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

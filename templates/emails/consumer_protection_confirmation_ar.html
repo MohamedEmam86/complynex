@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>تأكيد استلام الشكوى</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            direction: rtl;
+            text-align: right;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        .code-box {
+            background-color: #e9ecef;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+            letter-spacing: 2px;
+            border-radius: 4px;
+            direction: ltr;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>بساطه - تأكيد استلام الشكوى</h2>
+        </div>
+
+        <p>عزيزي العميل،</p>
+
+        <p>تم استلام شكواك بنجاح. نحن ملتزمون بحل مشكلتك في أقرب وقت ممكن.</p>
+
+        <p><strong>الرقم المرجعي للشكوى:</strong> {{ complaint_ref }}</p>
+
+        <p>لتتبع حالة شكواك، يرجى استخدام رقم التعريف الشخصي (PIN) التالي:</p>
+
+        <div class="code-box">{{ pin }}</div>
+
+        <p>سيقوم فريق حماية المستهلك لدينا بمراجعة شكواك والرد عليك خلال يومي عمل.</p>
+
+        <p>شكراً لتواصلك معنا.</p>
+
+        <div class="footer">
+            <p>هذه رسالة آلية، يرجى عدم الرد عليها.</p>
+            <p>&copy; 2026 بساطه للمقاولات. جميع الحقوق محفوظة.</p>
+        </div>
+    </div>
+</body>
+
+</html>

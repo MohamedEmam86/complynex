@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Screening Result — {{ record.entity_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-shield-exclamation text-primary"></i> {{ _('Screening Result Details') }}</h2>
+        <div>
+            <a href="{{ url_for('screening.screening_history_full') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> {{ _('Back to History') }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Entity Info Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <small class="text-muted">{{ _('Entity Name') }}</small>
+                    <h5 class="mb-0">{{ record.entity_name }}</h5>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted">{{ _('Type') }}</small>
+                    <div><span class="badge bg-light text-dark">{{ record.entity_type }}</span></div>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted">{{ _('Date') }}</small>
+                    <div>{{ record.screening_date }}</div>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted">{{ _('Result') }}</small>
+                    <div>
+                        <span
+                            class="badge {% if record.screening_result == 'CLEAR' %}bg-success{% elif record.screening_result == 'POTENTIAL_MATCH' %}bg-warning text-dark{% elif record.screening_result == 'CONFIRMED_HIT' %}bg-danger{% elif record.screening_result == 'WHITE_LISTED' %}bg-info{% else %}bg-secondary{% endif %} fs-6">
+                            {{ record.screening_result }}
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <small class="text-muted">{{ _('Score') }}</small>
+                    <div>
+                        {% if record.highest_score %}
+                        <span
+                            class="badge {% if record.highest_score >= 90 %}bg-danger{% elif record.highest_score >= 70 %}bg-warning text-dark{% elif record.highest_score > 0 %}bg-info{% else %}bg-light text-dark{% endif %} fs-6">
+                            {{ "%.1f"|format(record.highest_score) }}%
+                        </span>
+                        {% else %}-{% endif %}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted">{{ _('Status') }}</small>
+                    <div>
+                        <span
+                            class="badge {% if record.status == 'Completed' %}bg-success{% elif record.status == 'Pending Review' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ record.status }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <small class="text-muted">{{ _('Source') }}</small>
+                    <div><span class="badge bg-secondary">{{ record.source_module or 'Manual' }}</span></div>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">{{ _('Initiated By') }}</small>
+                    <div>{{ record.initiated_by_email or '-' }}</div>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted">{{ _('Total Matches') }}</small>
+                    <div class="fw-bold">{{ record.total_matches_found }}</div>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted">{{ _('High Risk Matches') }}</small>
+                    <div>
+                        {% if record.high_risk_matches %}
+                        <span class="badge bg-danger">{{ record.high_risk_matches }}</span>
+                        {% else %}0{% endif %}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted">{{ _('Processing Time') }}</small>
+                    <div>{{ record.processing_time_ms or 0 }}ms</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matches Table -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-check text-warning"></i> Screening Matches ({{ matches|length }})</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if matches %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>{{ _('Matched Name') }}</th>
+                            <th>{{ _('Arabic Name') }}</th>
+                            <th>{{ _('Entity Type') }}</th>
+                            <th>{{ _('Source / Dataset') }}</th>
+                            <th>{{ _('Score') }}</th>
+                            <th>{{ _('Risk Level') }}</th>
+                            <th>{{ _('Nationality') }}</th>
+                            <th>{{ _('DOB') }}</th>
+                            <th>{{ _('About') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in matches %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ m.full_name or m.get('match_name', '-') }}</strong></td>
+                            <td>{{ m.watchlist_name_ar or m.get('full_name_arabic', '-') }}</td>
+                            <td><span class="badge bg-light text-dark">{{ m.entity_type or '-' }}</span></td>
+                            <td>
+                                <span class="badge bg-info text-dark">{{ m.source or m.dataset or '-' }}</span>
+                                {% if m.list_type %}
+                                <br><small class="text-muted">{{ m.list_type }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if m.match_score >= 90 %}bg-danger{% elif m.match_score >= 70 %}bg-warning text-dark{% elif m.match_score >= 50 %}bg-info{% else %}bg-secondary{% endif %}">
+                                    {{ "%.1f"|format(m.match_score) }}%
+                                </span>
+                                {% if m.score_breakdown %}
+                                <br>
+                                <small class="text-muted">
+                                    F:{{ "%.0f"|format(m.score_breakdown.fuzzy_ratio or 0) }}
+                                    P:{{ "%.0f"|format(m.score_breakdown.phonetic or 0) }}
+                                    J:{{ "%.2f"|format(m.score_breakdown.jaro_winkler or 0) }}
+                                </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if m.risk_level == 'HIGH' or m.risk_level == 'CRITICAL' %}
+                                <span class="badge bg-danger">{{ m.risk_level }}</span>
+                                {% elif m.risk_level == 'MEDIUM' %}
+                                <span class="badge bg-warning text-dark">{{ m.risk_level }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ m.risk_level or '-' }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ m.nationality or '-' }}</td>
+                            <td>{{ m.date_of_birth or '-' }}</td>
+                            <td style="max-width: 260px; white-space: normal;">
+                                {% if m.details is string and m.details %}
+                                <small class="text-muted">{{ m.details }}</small>
+                                {% elif m.details is mapping and (m.details.get('reason') or m.details.get('notes')) %}
+                                <small class="text-muted">{{ m.details.get('reason') or m.details.get('notes') }}</small>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-check-circle fs-1 text-success opacity-50"></i>
+                <p class="mt-2">{{ _('No matches found for this screening.') }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Adverse Media Section -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-newspaper text-danger"></i> Adverse Media ({{ adverse_media|length }})</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if adverse_media %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>{{ _('Source') }}</th>
+                            <th>{{ _('Title / Description') }}</th>
+                            <th>{{ _('Category') }}</th>
+                            <th>{{ _('Risk Score') }}</th>
+                            <th>{{ _('Date') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for am in adverse_media %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ am.source or am.get('provider', '-') }}</td>
+                            <td>{{ am.title or am.get('description', '-') }}</td>
+                            <td><span class="badge bg-warning text-dark">{{ am.category or '-' }}</span></td>
+                            <td>
+                                {% set score = am.risk_score or am.get('score', 0) %}
+                                <span
+                                    class="badge {% if score >= 70 %}bg-danger{% elif score >= 40 %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                    {{ score }}
+                                </span>
+                            </td>
+                            <td>{{ am.date or am.get('published_date', '-') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-check-circle fs-1 text-success opacity-50"></i>
+                <p class="mt-2">{{ _('No adverse media found.') }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

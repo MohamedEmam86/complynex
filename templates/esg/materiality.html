@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Materiality Assessment') }} — {{ _('ESG Management') }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+  <div class="ecx-hero ecx-esg">
+    <div class="ecx-eyebrow">{{ _('ESG Management') }}</div>
+    <h1><i class="bi bi-bullseye me-2"></i>{{ _('Materiality Assessment') }}</h1>
+    <p>{{ _('Score each topic on how important it is to stakeholders and how significant its business impact is. Topics in the top-right quadrant are your highest reporting priorities.') }}</p>
+  </div>
+
+  <ul class="nav ecx-nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.dashboard') }}">{{ _('Dashboard') }}</a></li>
+    <li class="nav-item"><a class="nav-link active ecx-esg" href="{{ url_for('esg.materiality') }}">{{ _('Materiality Assessment') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.disclosures') }}">{{ _('Disclosure Tracker') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.framework_view') }}">{{ _('Framework & Weights') }}</a></li>
+  </ul>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="ecx-card">
+        <h6><i class="bi bi-grid-3x3-gap me-1"></i>{{ _('Materiality Matrix') }}
+          <span class="ecx-badge-source">{{ completion.scored }}/{{ completion.total }} {{ _('scored') }}</span>
+        </h6>
+        <div style="position:relative; width:100%; padding-bottom:100%; background:
+            linear-gradient(to top right, #fdf3f0 0%, #fdf3f0 49%, #eee 49%, #eee 51%, #f2fbf6 51%);
+            border-radius:12px; overflow:hidden; border:1px solid #eef0f2;">
+          <!-- axis labels -->
+          <div style="position:absolute; bottom:4px; left:50%; transform:translateX(-50%); font-size:10.5px; color:var(--ecx-muted); font-weight:700;">{{ _('Business Impact') }} →</div>
+          <div style="position:absolute; top:50%; left:4px; transform:translateY(-50%) rotate(-90deg); transform-origin:left; font-size:10.5px; color:var(--ecx-muted); font-weight:700; white-space:nowrap;">{{ _('Stakeholder Importance') }} →</div>
+          <div style="position:absolute; top:8px; right:10px; font-size:10.5px; font-weight:800; color:#198754;">{{ _('High Priority') }}</div>
+          {% for p in plotted %}
+          {% set x = ((p.impact - 1) / 4.0) * 92 + 4 %}
+          {% set y = 96 - (((p.importance - 1) / 4.0) * 92) %}
+          <div title="{{ p.topic.name }} — {{ _('Importance') }} {{ p.importance }}, {{ _('Impact') }} {{ p.impact }}"
+               style="position:absolute; left:{{ x }}%; top:{{ y }}%; width:11px; height:11px; margin:-5.5px;
+                      border-radius:50%; background:var(--ecx-esg-1); border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.25); cursor:default;"></div>
+          {% endfor %}
+        </div>
+        {% if not plotted %}
+        <div class="ecx-empty-state"><i class="bi bi-bullseye"></i><div>{{ _('No topics scored yet — use the form to plot the matrix.') }}</div></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <form method="POST" class="ecx-card">
+        {% for t in topics %}
+        {% set s = scores_by_topic.get(t.id) %}
+        <div class="ecx-slider-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-semibold small">{{ t.name }} <span class="ecx-scope-tag {{ 'scope1' if t.category=='E' else ('scope2' if t.category=='S' else 'scope3') }}">{{ t.category }}</span></span>
+            {% if t.gri_reference %}<span class="text-muted small">{{ t.gri_reference }}</span>{% endif %}
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="small text-muted">{{ _('Stakeholder Importance (1-5)') }}</label>
+              <select name="importance_{{ t.id }}" class="form-select form-select-sm" {{ 'disabled' if not current_user.can_edit('esg') }}>
+                <option value="">—</option>
+                {% for v in range(1,6) %}<option value="{{ v }}" {{ 'selected' if s and s.stakeholder_importance == v }}>{{ v }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="small text-muted">{{ _('Business Impact (1-5)') }}</label>
+              <select name="impact_{{ t.id }}" class="form-select form-select-sm" {{ 'disabled' if not current_user.can_edit('esg') }}>
+                <option value="">—</option>
+                {% for v in range(1,6) %}<option value="{{ v }}" {{ 'selected' if s and s.business_impact == v }}>{{ v }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        {% if current_user.can_edit('esg') %}
+        <button class="btn mt-3" style="background:var(--ecx-esg-1); color:#fff; font-weight:700;"><i class="bi bi-check2-circle me-1"></i>{{ _('Save Assessment') }}</button>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

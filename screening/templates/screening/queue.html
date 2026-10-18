@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}Screening Queue{% endblock %}
+
+{% block content %}
+<style>
+    .row-false-positive>td {
+        background-color: rgba(57, 255, 20, 0.2) !important;
+    }
+
+    .row-true-match>td {
+        background-color: rgba(255, 7, 58, 0.2) !important;
+    }
+</style>
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-inbox-fill text-danger"></i> Screening Review Queue</h2>
+        <div>
+            <a href="{{ url_for('screening.screening_history_full') }}" class="btn btn-outline-secondary btn-sm me-1">
+                <i class="bi bi-clock-history"></i> Full History
+            </a>
+            <a href="{{ url_for('screening.screening_history_full') }}" class="btn btn-outline-secondary btn-sm me-1">
+                <i class="bi bi-clock-history"></i> Full History
+            </a>
+            <a href="{{ url_for('screening.manage_whitelist') }}" class="btn btn-outline-success btn-sm me-1">
+                <i class="bi bi-shield-check"></i> Whitelist
+            </a>
+            <a href="{{ url_for('screening.bulk_screening_upload') }}" class="btn btn-outline-info btn-sm me-1">
+                <i class="bi bi-upload"></i> Bulk Upload
+            </a>
+            <a href="{{ url_for('screening.manual_screen') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-search"></i> New Screening
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ stats.total or 0 }}</div>
+                    <small class="text-muted">Total Cases</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center border-start border-warning border-3">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">{{ stats.pending or 0 }}</div>
+                    <small class="text-muted">Pending</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center border-start border-info border-3">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-info">{{ stats.in_review or 0 }}</div>
+                    <small class="text-muted">In Review</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center border-start border-success border-3">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">{{ stats.resolved or 0 }}</div>
+                    <small class="text-muted">Resolved</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm text-center border-start border-danger border-3">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-danger">{{ stats.aging or 0 }}</div>
+                    <small class="text-muted">Aging (>24h)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-2">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Status</label>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        <option value="Pending" {{ 'selected' if status_filter=='Pending' }}>Pending</option>
+                        <option value="In Review" {{ 'selected' if status_filter=='In Review' }}>In Review</option>
+                        <option value="Resolved" {{ 'selected' if status_filter=='Resolved' }}>Resolved</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Priority</label>
+                    <select name="priority" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        <option value="High" {{ 'selected' if priority_filter=='High' }}>High</option>
+                        <option value="Medium" {{ 'selected' if priority_filter=='Medium' }}>Medium</option>
+                        <option value="Low" {{ 'selected' if priority_filter=='Low' }}>Low</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">List Source</label>
+                    <input type="text" name="list_source" class="form-control form-control-sm"
+                        value="{{ source_filter }}" placeholder="e.g. OFAC">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Show</label>
+                    <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="25" {{ 'selected' if per_page==25 }}>25 per page</option>
+                        <option value="50" {{ 'selected' if per_page==50 }}>50 per page</option>
+                        <option value="100" {{ 'selected' if per_page==100 }}>100 per page</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> Filter</button>
+                    <a href="{{ url_for('screening.screening_queue') }}"
+                        class="btn btn-sm btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Queue Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light"
+                        style="position: sticky; top: 0; z-index: 1020; box-shadow: 0 2px 4px rgba(0,0,0,0.05); background-color: #f8f9fa !important;">
+                        {% macro sort_link(label, field) %}
+                        {% set new_order = 'desc' if sort == field and order == 'asc' else 'asc' %}
+                        <a href="{{ url_for('screening.screening_queue', sort=field, order=new_order, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, per_page=per_page) }}"
+                            class="text-dark text-decoration-none d-flex align-items-center gap-1 bg-light">
+                            {{ label }}
+                            {% if sort == field %}
+                            <i class="bi bi-sort-{{ 'down' if order == 'asc' else 'up' }}"></i>
+                            {% else %}
+                            <i class="bi bi-arrow-down-up text-secondary small opacity-50"></i>
+                            {% endif %}
+                        </a>
+                        {% endmacro %}
+                        <tr>
+                            <th scope="col" width="40" class="text-center bg-light">
+                                <input type="checkbox" class="form-check-input" id="selectAllCheckbox"
+                                    onchange="toggleSelectAll()">
+                            </th>
+                            <th class="bg-light">{{ sort_link('Entity', 'entity') }}</th>
+                            <th class="bg-light">Matches</th>
+                            <th class="bg-light">{{ sort_link('Highest Score', 'score') }}</th>
+                            <th class="bg-light">{{ sort_link('Priority', 'priority') }}</th>
+                            <th class="bg-light">Age</th>
+                            <th class="text-end bg-light">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if items %}
+                        {% set grouped_items = items | groupby('entity_name') %}
+                        {% for entity_name, group in grouped_items %}
+                        {% set highest_score = group | map(attribute='match_score') | max %}
+                        {% set max_priority = group | map(attribute='priority') | list %}
+                        {% if 'High' in max_priority %}
+                        {% set display_priority = 'High' %}
+                        {% elif 'Medium' in max_priority %}
+                        {% set display_priority = 'Medium' %}
+                        {% else %}
+                        {% set display_priority = 'Low' %}
+                        {% endif %}
+                        {% set outer_index = loop.index %}
+
+                        <tr class="accordion-toggle" data-bs-toggle="collapse"
+                            data-bs-target="#collapse{{ loop.index }}" style="cursor: pointer;">
+                            <td class="text-center" onclick="event.stopPropagation()">
+                                <input type="checkbox" class="form-check-input group-checkbox" value="{{ loop.index }}"
+                                    onchange="toggleGroupSelect('{{ loop.index }}')">
+                            </td>
+                            <td>
+                                <strong>{{ entity_name }}</strong>
+                                <br><small class="text-muted">{{ group[0].entity_type or 'Individual' }}</small>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ group|length }} Matches</span></td>
+                            <td>
+                                <span
+                                    class="badge {% if highest_score >= 90 %}bg-danger{% elif highest_score >= 80 %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                    {{ "%.1f"|format(highest_score) }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if display_priority == 'High' %}bg-danger{% elif display_priority == 'Medium' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                    {{ display_priority }}
+                                </span>
+                            </td>
+                            <td>
+                                {% set critical_count = group|selectattr('age_status', 'equalto',
+                                'critical')|list|length %}
+                                {% set overdue_count = group|selectattr('age_status', 'equalto', 'overdue')|list|length
+                                %}
+                                {% set aging_count = group|selectattr('age_status', 'equalto', 'aging')|list|length %}
+                                {% if critical_count > 0 %}
+                                <span class="badge bg-danger">72h+</span>
+                                {% elif overdue_count > 0 %}
+                                <span class="badge bg-warning text-dark">48h+</span>
+                                {% elif aging_count > 0 %}
+                                <span class="badge bg-info">24h+</span>
+                                {% else %}
+                                <span class="text-muted small">New</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <i class="bi bi-chevron-down"></i>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="7" class="p-0 border-0">
+                                <div id="collapse{{ loop.index }}"
+                                    class="collapse mt-2 mb-2 p-2 mx-3 shadow-sm bg-light rounded accordion-body"
+                                    data-bs-parent="#queueTableAccordion">
+                                    <table class="table table-sm table-borderless table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th width="30"></th>
+                                                <th>ID</th>
+                                                <th>Hit Match</th>
+                                                <th>Score</th>
+                                                <th>Source</th>
+                                                <th>Status</th>
+                                                <th>Assigned To</th>
+                                                <th>Resolution</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in group %}
+                                            <tr class="clickable-row {% if item.resolution and 'False Positive' in item.resolution %}row-false-positive{% elif item.resolution and 'True Match' in item.resolution %}row-true-match{% elif item.age_status == 'critical' %}table-danger{% elif item.age_status == 'overdue' %}table-warning{% endif %}"
+                                                data-href="{{ url_for('screening.queue_review', id=item.id) }}">
+                                                <td class="text-center" onclick="event.stopPropagation()">
+                                                    <input type="checkbox"
+                                                        class="form-check-input item-checkbox group-item-{{ outer_index }}"
+                                                        value="{{ item.id }}" onchange="updateBulkActionState()">
+                                                </td>
+                                                <td>#{{ item.id }}</td>
+                                                <td><small>{{ item.match_name or '-' }}</small></td>
+                                                <td><span
+                                                        class="badge {% if item.match_score >= 90 %}bg-danger{% elif item.match_score >= 80 %}bg-warning text-dark{% else %}bg-info{% endif %}">{{
+                                                        "%.1f"|format(item.match_score) }}%</span></td>
+                                                <td><small class="badge bg-secondary">{{ item.list_source or '-'
+                                                        }}</small></td>
+                                                <td>
+                                                    <span
+                                                        class="badge {% if item.status == 'Pending' %}bg-warning text-dark{% elif item.status == 'In Review' %}bg-info{% elif item.status == 'Resolved' %}bg-success{% endif %}">
+                                                        {{ item.status }}
+                                                    </span>
+                                                </td>
+                                                <td><small>{{ item.assigned_email or 'Unassigned' }}</small></td>
+                                                <td><small>{{ item.resolution or '-' }}</small></td>
+                                                <td class="text-end" onclick="event.stopPropagation()">
+                                                    {% if item.status != 'Resolved' %}
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="{{ url_for('screening.queue_review', id=item.id) }}"
+                                                            class="btn btn-outline-primary py-0 px-1" title="Review">
+                                                            <i class="bi bi-eye" style="font-size: 0.8rem;"></i>
+                                                        </a>
+                                                        <button type="button"
+                                                            class="btn btn-outline-secondary py-0 px-1" title="Assign"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#assignModal{{ item.id }}">
+                                                            <i class="bi bi-person-plus" style="font-size: 0.8rem;"></i>
+                                                        </button>
+                                                    </div>
+                                                    {% else %}
+                                                    <span class="text-success small"><i
+                                                            class="bi bi-check-circle-fill"></i></span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            <!-- Assign Modal -->
+                                            <div class="modal fade" id="assignModal{{ item.id }}" tabindex="-1">
+                                                <div class="modal-dialog modal-sm">
+                                                    <div class="modal-content">
+                                                        <form method="POST"
+                                                            action="{{ url_for('screening.queue_assign', id=item.id) }}">
+                                                            <input type="hidden" name="csrf_token"
+                                                                value="{{ csrf_token() }}">
+                                                            <div class="modal-header">
+                                                                <h6 class="modal-title">Assign Case #{{ item.id }}</h6>
+                                                                <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <select name="assigned_to"
+                                                                    class="form-select form-select-sm" required>
+                                                                    <option value="">Select Officer</option>
+                                                                    {% for officer in officers %}
+                                                                    <option value="{{ officer.id }}">{{
+                                                                        officer.full_name or officer.email }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="submit"
+                                                                    class="btn btn-primary btn-sm">Assign</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="11" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 opacity-25"></i><br>
+                                No items in the queue.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Action Bar (Fixed Bottom) -->
+    <div id="bulkActionBar"
+        class="bg-white text-dark d-none d-flex align-items-center justify-content-between shadow-lg p-3"
+        style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 80%; max-width: 800px; border-radius: 12px; border: 1px solid #dee2e6; box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;">
+        <div class="d-flex align-items-center">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                style="width: 24px; height: 24px;">
+                <span id="selectedCount" class="small fw-bold">0</span>
+            </div>
+            <span class="fw-bold me-2">Selected</span>
+            <button class="btn btn-sm btn-link text-decoration-none p-0" onclick="deselectAll()">Deselect</button>
+        </div>
+        <form action="{{ url_for('screening.queue_bulk_resolve') }}" method="POST"
+            class="d-flex gap-2 align-items-center">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="selected_ids" id="selectedIdsInput">
+
+            <input type="text" name="resolution_notes" class="form-control form-control-sm"
+                placeholder="Resolution note..." required style="width: 200px;">
+
+            <button type="submit" name="action" value="false_positive"
+                class="btn btn-sm btn-success d-flex align-items-center gap-1">
+                <i class="bi bi-check-circle"></i> Clear
+            </button>
+            <button type="submit" name="action" value="true_match"
+                class="btn btn-sm btn-danger d-flex align-items-center gap-1"
+                onclick="return confirm('Are you sure you want to block these entities?')">
+                <i class="bi bi-x-octagon"></i> Block
+            </button>
+        </form>
+    </div>
+
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <nav class="mt-4 mb-5 pb-4">
+        <ul class="pagination pagination-sm justify-content-center">
+            <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                <a class="page-link"
+                    href="{{ url_for('screening.screening_queue', page=page-1, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, sort=sort, order=order, per_page=per_page) }}">«</a>
+            </li>
+            {% for p in range(1, total_pages + 1) %}
+            {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %} <li
+                class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link"
+                    href="{{ url_for('screening.screening_queue', page=p, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, sort=sort, order=order, per_page=per_page) }}">{{
+                    p
+                    }}</a>
+                </li>
+                {% elif p == 2 and page > 4 %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% elif p == total_pages - 1 and page < total_pages - 3 %} <li class="page-item disabled"><span
+                        class="page-link">…</span></li>
+                    {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('screening.screening_queue', page=page+1, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, sort=sort, order=order, per_page=per_page) }}">»</a>
+                    </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+
+        // Make rows clickable
+        const rows = document.querySelectorAll('.clickable-row');
+        rows.forEach(row => {
+            row.addEventListener('click', function (e) {
+                if (!e.target.closest('a') && !e.target.closest('button') && !e.target.closest('input')) {
+                    window.location.href = this.dataset.href;
+                }
+            });
+        });
+
+        // Chevron toggle logic
+        const toggleRows = document.querySelectorAll('.accordion-toggle');
+        toggleRows.forEach(row => {
+            row.addEventListener('click', function (e) {
+                if (!e.target.closest('input')) {
+                    const icon = this.querySelector('i.bi-chevron-down, i.bi-chevron-up');
+                    if (icon) {
+                        if (icon.classList.contains('bi-chevron-down')) {
+                            icon.classList.remove('bi-chevron-down');
+                            icon.classList.add('bi-chevron-up');
+                        } else {
+                            icon.classList.remove('bi-chevron-up');
+                            icon.classList.add('bi-chevron-down');
+                        }
+                    }
+                }
+            });
+        });
+    });
+
+    // Bulk Action Logic
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('selectAllCheckbox');
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        const groupCheckboxes = document.querySelectorAll('.group-checkbox');
+
+        groupCheckboxes.forEach(cb => cb.checked = selectAll.checked);
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateBulkActionState();
+    }
+
+    function toggleGroupSelect(groupIndex) {
+        const groupCheckbox = document.querySelector(`.group-checkbox[value="${groupIndex}"]`);
+        const itemCheckboxes = document.querySelectorAll(`.group-item-${groupIndex}`);
+        itemCheckboxes.forEach(cb => cb.checked = groupCheckbox.checked);
+        updateBulkActionState();
+    }
+
+    function deselectAll() {
+        document.getElementById('selectAllCheckbox').checked = false;
+        document.querySelectorAll('.group-checkbox').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
+        updateBulkActionState();
+    }
+
+    function updateBulkActionState() {
+        const selected = document.querySelectorAll('.item-checkbox:checked');
+        const count = selected.length;
+        const bar = document.getElementById('bulkActionBar');
+
+        document.getElementById('selectedCount').innerText = count;
+
+        // Update hidden input with IDs
+        const ids = Array.from(selected).map(cb => cb.value).join(',');
+        document.getElementById('selectedIdsInput').value = ids;
+
+        if (count > 0) {
+            bar.classList.remove('d-none');
+        } else {
+            bar.classList.add('d-none');
+        }
+    }
+</script>
+{% endblock %}

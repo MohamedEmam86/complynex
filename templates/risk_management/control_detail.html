@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}{{ control.control_code }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>{{ control.control_code }} - {{ control.control_name }}</h3>
+        {% if current_user.can_edit('risk_management') %}
+        <a href="{{ url_for('risk_management.controls_test', control_id=control.id) }}" class="btn btn-outline-primary btn-sm">{{ _('Log Test Result') }}</a>
+        {% endif %}
+    </div>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <p>{{ control.control_description or _('No description.') }}</p>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">{{ _('Type') }}</dt><dd class="col-sm-9">{{ control.control_type }}</dd>
+                        <dt class="col-sm-3">{{ _('Nature') }}</dt><dd class="col-sm-9">{{ control.control_nature }}</dd>
+                        <dt class="col-sm-3">{{ _('Testing Frequency') }}</dt><dd class="col-sm-9">{{ control.testing_frequency }}</dd>
+                        <dt class="col-sm-3">{{ _('Last Test') }}</dt><dd class="col-sm-9">{{ control.last_test_result or '-' }} ({{ control.last_tested_date or '-' }})</dd>
+                    </dl>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><strong>{{ _('Test History') }}</strong></div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>{{ _('Date') }}</th><th>{{ _('Result') }}</th><th>{{ _('Exceptions') }}</th></tr></thead>
+                        <tbody>
+                        {% for t in test_results %}
+                            <tr><td>{{ t.test_date }}</td><td><span class="badge {{ 'bg-success' if t.result == 'EFFECTIVE' else ('bg-warning text-dark' if t.result == 'PARTIALLY_EFFECTIVE' else 'bg-danger') }}">{{ t.result }}</span></td><td class="small">{{ t.exceptions_noted or '-' }}</td></tr>
+                        {% else %}
+                            <tr><td colspan="3" class="text-center text-muted">{{ _('No tests recorded yet.') }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Linked Risks') }}</strong></div>
+                <ul class="list-group list-group-flush">
+                    {% for r in linked_risks %}
+                    <li class="list-group-item"><a href="{{ url_for('risk_management.register_detail', risk_pk=r.id) }}">{{ r.risk_id }} - {{ r.risk_title }}</a></li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('No risks linked yet.') }}</li>
+                    {% endfor %}
+                </ul>
+                {% if current_user.can_edit('risk_management') %}
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('risk_management.controls_link_risk', control_id=control.id) }}" class="d-flex gap-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <select name="risk_pk" class="form-select form-select-sm">
+                            {% for r in all_risks %}<option value="{{ r.id }}">{{ r.risk_id }}</option>{% endfor %}
+                        </select>
+                        <select name="reliance_level" class="form-select form-select-sm">
+                            <option value="PRIMARY">{{ _('PRIMARY') }}</option>
+                            <option value="SECONDARY">{{ _('SECONDARY') }}</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">{{ _('Link') }}</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

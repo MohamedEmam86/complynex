@@ -1,0 +1,63 @@
+/* =============================================================================
+ * Shared styles for the Corporate Governance and Regulatory Reporting modules.
+ * Purely additive: only defines classes that pages opt into, so it cannot
+ * change the appearance of pages that don't use them.
+ * ============================================================================= */
+
+/* ---- Soft badge palette --------------------------------------------------
+   Several existing templates (e.g. reporting/regulator_list.html) reference
+   bg-*-soft classes without defining them anywhere, so those badges render
+   with no color at all. Defining the full set here once fixes that
+   everywhere it's used, instead of re-declaring a partial set per template. */
+.bg-primary-soft { background-color: rgba(13, 110, 253, 0.12); }
+.bg-secondary-soft { background-color: rgba(108, 117, 125, 0.12); }
+.bg-success-soft { background-color: rgba(25, 135, 84, 0.12); }
+.bg-danger-soft { background-color: rgba(220, 53, 69, 0.12); }
+.bg-warning-soft { background-color: rgba(255, 193, 7, 0.18); }
+.bg-info-soft { background-color: rgba(13, 202, 240, 0.14); }
+
+/* ---- KPI stat-tile row ----------------------------------------------------
+   Adapted from the bento design language already used on the main dashboard
+   (templates/index.html: --bento-navy/--bento-card/.modtile), reused here
+   under its own namespace so this file can be linked from base.html without
+   redefining or colliding with index.html's own inline <style> block. */
+.gr-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.gr-kpi-tile {
+    background: #fff;
+    border: 1px solid #e8e9ed;
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 1px 3px rgba(20, 20, 30, .04);
+    border-left: 4px solid #123E5F;
+}
+
+.gr-kpi-tile .gr-kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #071E36;
+}
+
+.gr-kpi-tile .gr-kpi-label {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: #6b7280;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.gr-kpi-tile.gr-ok { border-left-color: #198754; }
+.gr-kpi-tile.gr-ok .gr-kpi-value { color: #198754; }
+.gr-kpi-tile.gr-warn { border-left-color: #fd7e14; }
+.gr-kpi-tile.gr-warn .gr-kpi-value { color: #fd7e14; }
+.gr-kpi-tile.gr-bad { border-left-color: #CC0000; }
+.gr-kpi-tile.gr-bad .gr-kpi-value { color: #CC0000; }
+.gr-kpi-tile.gr-neutral { border-left-color: #00A6B4; }
+.gr-kpi-tile.gr-neutral .gr-kpi-value { color: #00A6B4; }

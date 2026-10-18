@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% macro sortlink(key, label) %}
+  {%- set d = 'asc' if (sort == key and dir == 'desc') else 'desc' -%}
+  <a href="{{ url_for(request.endpoint, **dict(args, sort=key, dir=d)) }}"
+     class="text-decoration-none text-body">
+    {{ label }}
+    {%- if sort == key %} <i class="bi bi-caret-{{ 'up' if dir == 'asc' else 'down' }}-fill text-primary"></i>
+    {%- else %} <i class="bi bi-arrow-down-up text-muted" style="font-size:10px"></i>{% endif %}
+  </a>
+{% endmacro %}
+{% block title %}{{ _('Confirmed Matches') }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div>
+    <h1 class="h2"><i class="bi bi-exclamation-octagon me-2"></i>{{ _('Confirmed Matches') }}</h1>
+    <p class="text-muted small mb-0">
+      {{ _('Subjects confirmed as genuine matches — who matched what, on which list, who decided, and what was done. This is the register a regulator asks to see.') }}
+    </p>
+  </div>
+  <a href="{{ url_for('screening.manage_whitelist') }}" class="btn btn-sm btn-outline-secondary">
+    {{ _('Whitelist') }} <i class="bi bi-arrow-right"></i></a>
+</div>
+
+<div class="row g-3 mb-3">
+  {% for label, val, cls in [
+      (_('Confirmed'), summary.total, 'danger'), (_('Subjects'), summary.subjects, 'dark'),
+      (_('Open'), summary.open, 'warning'), (_('Reported'), summary.reported, 'info'),
+      (_('With STR reference'), summary.with_str, 'success')] %}
+  <div class="col"><div class="card text-center h-100"><div class="card-body py-3">
+    <div class="h3 mb-0 text-{{ cls }}">{{ val or 0 }}</div>
+    <div class="small text-muted">{{ label }}</div></div></div></div>
+  {% endfor %}
+</div>
+
+{% if summary.open and not summary.with_str %}
+<div class="alert alert-danger d-flex"><i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+  <div><strong>{{ summary.open }} {{ _('confirmed match(es) with no STR reference recorded.') }}</strong><br>
+  <span class="small">{{ _('A confirmed match against a sanctions or PEP list normally requires a report to EMLCU. Record the reference here once filed.') }}</span></div>
+</div>
+{% endif %}
+
+<div class="card mb-3"><div class="card-body py-2">
+  <form method="GET" class="row g-2 align-items-end">
+    <div class="col-md-3"><label class="form-label small mb-0">{{ _('Search name') }}</label>
+      <input name="q" value="{{ args.get('q','') }}" class="form-control form-control-sm"></div>
+    <div class="col-md-2"><label class="form-label small mb-0">{{ _('List source') }}</label>
+      <select name="source" class="form-select form-select-sm">
+        <option value="">{{ _('All') }}</option>
+        {% for s in sources %}<option value="{{ s.source }}" {% if args.get('source')==s.source %}selected{% endif %}>{{ s.source }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-2"><label class="form-label small mb-0">{{ _('Type') }}</label>
+      <select name="list_type" class="form-select form-select-sm">
+        <option value="">{{ _('All') }}</option>
+        {% for t in ['sanctions','pep','internal','adverse_media'] %}
+        <option value="{{ t }}" {% if args.get('list_type')==t %}selected{% endif %}>{{ t|title }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-1"><label class="form-label small mb-0">{{ _('Min score') }}</label>
+      <input name="min_score" type="number" min="0" max="100" value="{{ args.get('min_score','') }}" class="form-control form-control-sm"></div>
+    <div class="col-md-1"><label class="form-label small mb-0" title="{{ _('Minimum score for sanctions hits') }}">{{ _('Sanctions min') }}</label>
+      <input name="min_sanctions" type="number" min="0" max="100" value="{{ args.get('min_sanctions','') }}" class="form-control form-control-sm" placeholder="90"></div>
+    <div class="col-md-1"><label class="form-label small mb-0" title="{{ _('Minimum score for PEP hits') }}">{{ _('PEP min') }}</label>
+      <input name="min_pep" type="number" min="0" max="100" value="{{ args.get('min_pep','') }}" class="form-control form-control-sm" placeholder="80"></div>
+    <div class="col-md-2 d-flex gap-1">
+      <button class="btn btn-sm btn-primary flex-grow-1"><i class="bi bi-funnel"></i> {{ _('Filter') }}</button>
+      <a href="{{ url_for('screening.confirmed_matches') }}" class="btn btn-sm btn-outline-secondary">{{ _('Clear') }}</a>
+    </div>
+  </form>
+  <div class="form-text mt-1">
+    {{ _('The two right-hand fields apply different floors per list type — for example sanctions above 90 percent but PEPs above 80 percent.') }}
+  </div>
+</div></div>
+
+<div class="card"><div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="table-light"><tr>
+      <th>{{ sortlink('name', _('Subject')) }}</th>
+      <th>{{ sortlink('matched', _('Matched listing')) }}</th>
+      <th>{{ sortlink('source', _('List')) }}</th>
+      <th>{{ sortlink('type', _('Type')) }}</th>
+      <th>{{ sortlink('score', _('Score')) }}</th>
+      <th>{{ sortlink('confirmed', _('Confirmed')) }}</th>
+      <th>{{ sortlink('action', _('Action')) }}</th>
+      <th>{{ sortlink('status', _('Status')) }}</th>
+      <th class="text-end"></th>
+    </tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr class="{% if r.status == 'open' %}table-warning{% endif %}">
+        <td><strong>{{ r.entity_name }}</strong></td>
+        <td class="small">{{ (r.matched_name or '—')[:38] }}</td>
+        <td><span class="badge bg-dark">{{ r.list_source or '—' }}</span></td>
+        <td><span class="badge bg-{{ 'danger' if r.list_type=='sanctions' else ('warning text-dark' if r.list_type=='pep' else 'secondary') }}">{{ r.list_type or '—' }}</span></td>
+        <td>{% if r.match_score %}<span class="badge bg-secondary">{{ '%.0f'|format(r.match_score) }}%</span>{% else %}—{% endif %}</td>
+        <td class="small">
+          {{ r.confirmed_at.strftime('%d %b %Y') if r.confirmed_at else '—' }}
+          <div class="text-muted" style="font-size:11px">{{ r.confirmed_by_name or _('System') }}</div>
+        </td>
+        <td class="small">{{ r.action_taken or '—' }}
+          {% if r.str_reference %}<div class="text-success" style="font-size:11px">
+            <i class="bi bi-file-earmark-check"></i> {{ r.str_reference }}</div>{% endif %}</td>
+        <td><span class="badge bg-{{ 'warning text-dark' if r.status=='open' else ('info' if r.status=='reported' else 'secondary') }}">{{ r.status }}</span></td>
+        <td class="text-end">
+          {% if can_edit %}
+          <button class="btn btn-sm btn-outline-primary js-cm" data-id="{{ r.id }}"
+                  data-name="{{ r.entity_name }}" data-action="{{ r.action_taken or '' }}"
+                  data-str="{{ r.str_reference or '' }}" data-status="{{ r.status }}"
+                  data-notes="{{ r.notes or '' }}">{{ _('Update') }}</button>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="9" class="text-center text-muted py-5">
+        <i class="bi bi-shield-check fs-1 opacity-25"></i><br>{{ _('No confirmed matches.') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+
+<div class="modal fade" id="cmModal" tabindex="-1"><div class="modal-dialog">
+  <form method="POST" id="cmForm"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">{{ _('Update confirmed match') }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p><strong id="cmName"></strong></p>
+        <div class="mb-2"><label class="form-label small">{{ _('Action taken') }}</label>
+          <select name="action_taken" id="cmAction" class="form-select form-select-sm">
+            <option value="">{{ _('— none yet —') }}</option>
+            {% for a in ['blocked','frozen','reported','exited','monitoring'] %}
+            <option value="{{ a }}">{{ a|title }}</option>{% endfor %}
+          </select></div>
+        <div class="mb-2"><label class="form-label small">{{ _('STR / goAML reference') }}</label>
+          <input name="str_reference" id="cmStr" class="form-control form-control-sm"
+                 placeholder="{{ _('Reference returned by goAML or EMLCU') }}"></div>
+        <div class="mb-2"><label class="form-label small">{{ _('Status') }}</label>
+          <select name="status" id="cmStatus" class="form-select form-select-sm">
+            {% for st in ['open','reported','closed'] %}<option value="{{ st }}">{{ st|title }}</option>{% endfor %}
+          </select></div>
+        <div class="mb-0"><label class="form-label small">{{ _('Notes') }}</label>
+          <textarea name="notes" id="cmNotes" class="form-control form-control-sm" rows="3"></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+        <button class="btn btn-primary">{{ _('Save') }}</button></div>
+    </div>
+  </form>
+</div></div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var el = document.getElementById('cmModal');
+  if (!el) return;
+  var modal = new bootstrap.Modal(el), form = document.getElementById('cmForm');
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.js-cm');
+    if (!b) return;
+    form.action = '{{ url_for("screening.confirmed_match_update", match_id=987654321) }}'
+                    .replace('987654321', b.dataset.id);
+    document.getElementById('cmName').textContent   = b.dataset.name;
+    document.getElementById('cmAction').value       = b.dataset.action;
+    document.getElementById('cmStr').value          = b.dataset.str;
+    document.getElementById('cmStatus').value       = b.dataset.status;
+    document.getElementById('cmNotes').value        = b.dataset.notes;
+    modal.show();
+  });
+}());
+</script>
+{% endblock %}

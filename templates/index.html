@@ -1,0 +1,435 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Dashboard') }} - ComplyNex CMS{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --bento-navy: #123E5F; --bento-navy-dark: #071E36; --bento-cyan: #00A6B4;
+    --bento-red: #CC0000; --bento-green: #198754; --bento-amber: #fd7e14;
+    --bento-bg: #f4f5f7; --bento-line: #e8e9ed; --bento-sub: #6b7280;
+  }
+  body { background: var(--bento-bg); }
+
+  .bento-topbar { display:flex; align-items:center; gap:20px; margin-bottom:22px; flex-wrap:wrap; }
+  .bento-greeting h4 { margin:0; font-weight:700; color:var(--bento-navy-dark); }
+  .bento-greeting .sub { color:var(--bento-sub); font-size:13.5px; }
+  .bento-search { flex:1; min-width:260px; max-width:460px; }
+  .bento-search .input-group-text { background:#fff; border-right:none; color:var(--bento-sub); }
+  .bento-search input { border-left:none; }
+  .bento-search input:focus { box-shadow:none; border-color:var(--bento-line); }
+
+  .bento-card { background:#fff; border:1px solid var(--bento-line); border-radius:14px; padding:20px 22px;
+                box-shadow:0 1px 3px rgba(20,20,30,.04); height:100%; }
+  .bento-card h6 { font-size:12px; text-transform:uppercase; letter-spacing:.9px; color:var(--bento-sub);
+                    font-weight:700; margin:0 0 14px; display:flex; justify-content:space-between; align-items:center; }
+  .bento-card h6 .pill { background:var(--bento-bg); color:var(--bento-sub); font-size:10.5px; padding:3px 10px;
+                          border-radius:20px; font-weight:700; text-transform:none; letter-spacing:.2px; }
+
+  /* My Tasks */
+  .task-row { display:flex; align-items:flex-start; gap:11px; padding:9px 0; border-bottom:1px solid var(--bento-line); }
+  .task-row:last-child { border:none; }
+  .task-row .mod-tag { font-size:9.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:700;
+                        color:var(--bento-navy); background:#eef2f8; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .task-row .txt { font-size:13px; font-weight:500; flex:1; }
+  .task-row .due { font-size:11px; color:var(--bento-sub); }
+  .task-row .due.overdue { color:var(--bento-red); font-weight:700; }
+  .sev-tag { font-size:9.5px; padding:2px 8px; border-radius:10px; font-weight:700; white-space:nowrap; }
+  .sev-tag.crit, .sev-tag.critical { background:#fdecec; color:var(--bento-red); }
+  .sev-tag.high { background:#fff2e2; color:#b8621a; }
+  .sev-tag.other { background:#eef0f4; color:var(--bento-sub); }
+
+  /* Compliance health ring */
+  .health-ring-wrap { display:flex; align-items:center; gap:16px; }
+  .health-ring { width:80px; height:80px; border-radius:50%; flex:0 0 auto;
+                 background:conic-gradient(var(--ring-color, var(--bento-green)) calc(var(--score,0)*1%), var(--bento-line) 0); }
+  .health-ring .inner { width:62px; height:62px; margin:9px; background:#fff; border-radius:50%;
+                        display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px; }
+
+  /* Suggested risks / lists */
+  .list-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--bento-line); font-size:13px; }
+  .list-row:last-child { border:none; }
+
+  /* KRI dots */
+  .kri-line { display:flex; align-items:center; gap:9px; padding:7px 0; font-size:12.5px; }
+  .kri-dot { width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+
+  /* Heat map */
+  .heat-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; margin-top:6px; }
+  .heat-cell { aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center;
+               font-weight:700; font-size:11.5px; color:#fff; }
+  .heat-cell.empty { background:#eef0f4; color:#9aa0ab; }
+
+  /* Audit stat row */
+  .audit-stat-row { display:flex; gap:10px; }
+  .audit-stat { flex:1; text-align:center; background:var(--bento-bg); border-radius:10px; padding:12px 4px; }
+  .audit-stat .n { font-size:22px; font-weight:700; }
+  .audit-stat .l { font-size:10.5px; color:var(--bento-sub); }
+
+  /* Module tiles */
+  .modtile { display:block; text-decoration:none; border-radius:12px; padding:14px 16px; color:#fff;
+             transition:transform .15s ease; }
+  .modtile:hover { transform:translateY(-2px); color:#fff; }
+  .modtile .n { font-size:22px; font-weight:700; }
+  .modtile .name { font-size:11.5px; opacity:.9; }
+  .modtile .flag { font-size:10px; background:rgba(255,255,255,.25); border-radius:8px; padding:1px 7px; margin-top:4px; display:inline-block; }
+  .mt-ok { background:var(--bento-green); }
+  .mt-warn { background:var(--bento-amber); }
+  .mt-bad { background:var(--bento-red); }
+  .mt-neutral { background:var(--bento-navy); }
+
+  /* Secondary panels (portal/quick actions) reused from the previous dashboard design */
+  .info-panel { background:#fff; border:1px solid var(--bento-line); border-radius:14px; padding:20px; }
+  .info-panel-title { font-weight:700; font-size:13px; color:var(--bento-navy-dark); margin-bottom:12px; }
+  .portal-hero { background:linear-gradient(135deg, var(--bento-navy), var(--bento-navy-dark)); border-radius:14px;
+                 padding:20px; color:#fff; text-align:center; margin-bottom:14px; }
+  .portal-hero h6 { color:#fff; font-size:14px; margin:6px 0 4px; }
+  .portal-hero p { font-size:11.5px; opacity:.85; margin:0 0 12px; }
+  .portal-hero .btn { background:#fff; color:var(--bento-navy-dark); font-weight:600; font-size:12.5px; }
+  .portal-link-card { display:flex; gap:8px; align-items:flex-end; margin-bottom:10px; }
+  .portal-link-card label { font-size:10.5px; color:var(--bento-sub); display:block; margin-bottom:3px; }
+  .copy-btn { border:1px solid var(--bento-line); background:#fff; border-radius:8px; padding:6px 10px; }
+  .quick-action-btn { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:10px;
+                      text-decoration:none; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .qa-policies { background:#eef2f8; color:var(--bento-navy); }
+  .qa-training { background:#e8f6f0; color:var(--bento-green); }
+  .qa-wb { background:#f1eefb; color:#6f42c1; }
+  .qa-cp { background:#e3f6fa; color:#0aa2c0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <div class="bento-topbar">
+    <div class="bento-greeting">
+      <h4>{{ greeting }}, {{ current_user.first_name }}</h4>
+      <div class="sub"><span id="dashboardDateTime">{{ dashboard_datetime.strftime('%A, %d %B %Y • %I:%M %p') }}</span> — {{ _("here's what needs your attention today") }}</div>
+    </div>
+    <form class="bento-search" method="get" action="{{ url_for('search') }}">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" name="q" class="form-control" placeholder="{{ _('Jump to a risk, finding, or policy…') }}">
+      </div>
+    </form>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <!-- My Tasks Today -->
+    <div class="col-lg-5">
+      <div class="bento-card">
+        <h6><span><i class="bi bi-check2-square me-1"></i> {{ _('My Tasks Today') }}</span>
+          <span class="pill">{{ _('%(n)s open', n=my_pending_items|length) }}</span></h6>
+        {% for item in my_pending_items[:8] %}
+        <div class="task-row">
+          <span class="mod-tag">{{ item.module }}</span>
+          <div class="txt">
+            {% if item.link %}<a href="{{ item.link }}" class="text-decoration-none text-dark">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}
+            {% if item.due_date %}<div class="due {{ 'overdue' if item.due_date|string < today_str }}">{{ _('Overdue: ') if item.due_date|string < today_str }}{{ item.due_date }}</div>{% endif %}
+          </div>
+          {% if item.severity %}
+          <span class="sev-tag {{ 'crit' if item.severity|upper in ['CRITICAL'] else ('high' if item.severity|upper in ['HIGH'] else 'other') }}">{{ item.severity }}</span>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4"><i class="bi bi-check-circle fs-3 d-block mb-2 text-success"></i>{{ _('All clear — nothing needs your attention right now.') }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Compliance Health + Suggested Risks stacked -->
+    <div class="col-lg-3">
+      <div class="bento-card mb-3">
+        <h6>{{ _('Compliance Health') }}</h6>
+        <div class="health-ring-wrap">
+          <div class="health-ring" style="--score: {{ compliance_health_score }}; --ring-color: {{ 'var(--bento-green)' if compliance_health_score >= 75 else ('var(--bento-amber)' if compliance_health_score >= 50 else 'var(--bento-red)') }};">
+            <div class="inner">{{ compliance_health_score }}</div>
+          </div>
+          <div>
+            <div class="text-muted" style="font-size:11.5px;">{{ _('Blended score') }}</div>
+            <div style="font-size:11.5px;">{{ _('Policy ack · Training · Alert closure') }}</div>
+          </div>
+        </div>
+      </div>
+      {% if current_user.can_edit('risk_management') %}
+      <div class="bento-card">
+        <h6><span><i class="bi bi-lightbulb me-1"></i> {{ _('Suggested Risks') }}</span>
+          {% if risk_suggestion_count %}<span class="pill">{{ _('%(n)s new', n=risk_suggestion_count) }}</span>{% endif %}</h6>
+        {% if risk_suggestion_count %}
+        <p class="mb-2" style="font-size:13px;">{{ _('%(n)s high-severity record(s) from other modules aren\'t linked to a risk yet.', n=risk_suggestion_count) }}</p>
+        <a href="{{ url_for('risk_management.suggestions') }}" class="btn btn-sm btn-outline-dark w-100">{{ _('Review Suggestions') }}</a>
+        {% else %}
+        <div class="text-muted" style="font-size:12.5px;">{{ _('No pending suggestions.') }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- KRIs -->
+    {% if current_user.can_view('risk_management') %}
+    <div class="col-lg-4">
+      <div class="bento-card">
+        <h6><span><i class="bi bi-graph-up me-1"></i> {{ _('Key Risk Indicators') }}</span></h6>
+        {% for entry in kri_snapshot[:5] %}
+        <div class="kri-line">
+          {% set st = entry.latest.status if entry.latest else None %}
+          <span class="kri-dot" style="background:{{ '#dc3545' if st=='RED' else ('#fd7e14' if st=='AMBER' else ('#198754' if st=='GREEN' else '#ced4da')) }};"></span>
+          <span class="flex-grow-1">{{ entry.kri.kri_name }}</span>
+          <span class="fw-semibold">{{ entry.latest.actual_value if entry.latest else '—' }}</span>
+        </div>
+        {% else %}
+        <div class="text-muted" style="font-size:12.5px;">{{ _('No KRIs defined yet.') }} <a href="{{ url_for('risk_management.kris_dashboard') }}">{{ _('Set one up →') }}</a></div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="row g-3 mb-3">
+    <!-- Risk Heat Map -->
+    {% if current_user.can_view('risk_management') %}
+    <div class="col-lg-5">
+      <div class="bento-card">
+        <h6><span><i class="bi bi-grid-3x3 me-1"></i> {{ _('Enterprise Risk Heat Map') }}</span>
+          <span class="pill">{{ _('%(n)s active', n=risk_total_active) }}</span></h6>
+        <div class="heat-grid">
+          {% for impact in range(5, 0, -1) %}
+            {% for likelihood in range(1, 6) %}
+              {% set score = likelihood * impact %}
+              {% set band = risk_bands | selectattr('min_score', 'le', score) | selectattr('max_score', 'ge', score) | first %}
+              {% set count = risk_heat_map.get((likelihood, impact), 0) %}
+              <div class="heat-cell {{ 'empty' if count == 0 }}" {% if count > 0 %}style="background:{{ band.color_hex if band else '#adb5bd' }};"{% endif %}>{{ count }}</div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+        <div class="d-flex justify-content-between mt-2" style="font-size:10.5px; color:var(--bento-sub);">
+          <span>{{ _('Likelihood →') }}</span><span>{{ _('↑ Impact') }}</span>
+        </div>
+        <a href="{{ url_for('risk_management.dashboard') }}" class="d-block text-center mt-2" style="font-size:12px;">{{ _('Open Risk Register →') }}</a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Internal Audit -->
+    {% if current_user.can_view('internal_audit') %}
+    <div class="col-lg-3">
+      <div class="bento-card">
+        <h6><span><i class="bi bi-clipboard2-check me-1"></i> {{ _('Internal Audit') }}</span></h6>
+        <div class="audit-stat-row">
+          <div class="audit-stat"><div class="n">{{ ia_open_findings }}</div><div class="l">{{ _('Open') }}</div></div>
+          <div class="audit-stat"><div class="n" style="color:var(--bento-red)">{{ ia_overdue_findings }}</div><div class="l">{{ _('Overdue') }}</div></div>
+          <div class="audit-stat"><div class="n">{{ ia_fieldwork_count }}</div><div class="l">{{ _('In Fieldwork') }}</div></div>
+        </div>
+        <a href="{{ url_for('internal_audit.dashboard') }}" class="d-block text-center mt-3" style="font-size:12px;">{{ _('Open Internal Audit →') }}</a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- All Modules -->
+    <div class="col-lg-4">
+      <div class="bento-card" style="padding-bottom:14px;">
+        <h6><i class="bi bi-grid me-1"></i> {{ _('All Modules') }}</h6>
+        <div class="row g-2">
+          {% if not current_user.role == 'employee' %}
+          <div class="col-6">
+            <a href="{{ url_for('ghe.pending_approval') if current_user.is_manager() or current_user.is_compliance_officer() else '#' }}" class="modtile {{ 'mt-warn' if pending_ghe_count else 'mt-ok' }}">
+              <div class="n">{{ pending_ghe_count }}</div><div class="name">{{ _('GHE Pending') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          <div class="col-6">
+            <a href="{{ url_for('coi.pending_review') if current_user.is_manager() or current_user.is_compliance_officer() else url_for('coi.my_declarations') }}" class="modtile {{ 'mt-warn' if (coi_pending_reviews if current_user.is_manager() or current_user.is_compliance_officer() else pending_coi_count) else 'mt-ok' }}">
+              <div class="n">{{ coi_pending_reviews if current_user.is_manager() or current_user.is_compliance_officer() else pending_coi_count }}</div><div class="name">{{ _('COI Pending') }}</div>
+            </a>
+          </div>
+          {% if current_user.can_view('cobec') and not current_user.role == 'employee' %}
+          <div class="col-6">
+            <a href="{{ url_for('cobec.pending_review') }}" class="modtile {{ 'mt-warn' if cobec_pending_count else 'mt-ok' }}">
+              <div class="n">{{ cobec_pending_count }}</div><div class="name">{{ _('COBEC Pending') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          <div class="col-6">
+            <a href="{{ url_for('policies.my_reviews') if current_user.can_edit('policies') else url_for('policies.pending_acknowledgment') }}" class="modtile {{ 'mt-warn' if (policy_reviews_count if current_user.can_edit('policies') else pending_policies_count) else 'mt-ok' }}">
+              <div class="n">{{ policy_reviews_count if current_user.can_edit('policies') else pending_policies_count }}</div>
+              <div class="name">{{ _('Policy Reviews') if current_user.can_edit('policies') else _('Pending Policies') }}</div>
+            </a>
+          </div>
+          {% if current_user.can_view('reports') %}
+          <div class="col-6">
+            <a href="{{ url_for('reporting.dashboard') }}" class="modtile mt-neutral">
+              <div class="n">{{ upcoming_reports_count }}</div><div class="name">{{ _('Reg. Reports Due') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          <div class="col-6">
+            <a href="{{ url_for('training.list_courses') }}" class="modtile {{ 'mt-warn' if training_due_count else 'mt-ok' }}">
+              <div class="n">{{ training_due_count }}</div><div class="name">{{ _('My Training') }}</div>
+            </a>
+          </div>
+          {% if current_user.can_view('policies') %}
+          <div class="col-6">
+            <a href="{{ url_for('policies.gap_analysis') }}" class="modtile mt-neutral">
+              <div class="n">{{ gap_score }}%</div><div class="name">{{ _('Compliance Gap') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.can_view('consumer_protection') %}
+          <div class="col-6">
+            <a href="{{ url_for('consumer_protection.dashboard') }}" class="modtile {{ 'mt-warn' if cp_open_count else 'mt-ok' }}">
+              <div class="n">{{ cp_open_count }}</div><div class="name">{{ _('Open Complaints') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.can_view('whistleblowing') and not current_user.role == 'employee' %}
+          <div class="col-6">
+            <a href="{{ url_for('whistleblowing.dashboard') }}" class="modtile {{ 'mt-warn' if wb_open_count else 'mt-ok' }}">
+              <div class="n">{{ wb_open_count }}</div><div class="name">{{ _('Whistleblowing') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.can_view('esg') %}
+          <div class="col-6">
+            <a href="{{ url_for('esg.dashboard') }}" class="modtile mt-neutral">
+              <div class="n">{{ esg_overall_score if esg_overall_score is not none else '—' }}</div><div class="name">{{ _('ESG Score /5') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.can_view('carbon') %}
+          <div class="col-6">
+            <a href="{{ url_for('carbon.dashboard') }}" class="modtile mt-neutral">
+              <div class="n">{{ carbon_total_tco2e if carbon_total_tco2e is not none else '—' }}</div><div class="name">{{ _('tCO2e This Period') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.can_view('aml') %}
+          <div class="col-6">
+            <a href="{{ url_for('aml.alert_list') }}" class="modtile {{ 'mt-bad' if tm_high_alerts else ('mt-warn' if tm_open_alerts else 'mt-ok') }}">
+              <div class="n">{{ tm_open_alerts }}</div><div class="name">{{ _('AML/TM Alerts') }}</div>
+              {% if tm_high_alerts %}<div class="flag">{{ _('%(n)s HIGH', n=tm_high_alerts) }}</div>{% endif %}
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.can_view('screening') %}
+          <div class="col-6">
+            <a href="{{ url_for('screening.history') }}" class="modtile {{ 'mt-warn' if screening_queue_count else 'mt-ok' }}">
+              <div class="n">{{ screening_queue_count }}</div><div class="name">{{ _('Screening Queue') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.can_view('merchant_kyc') %}
+          <div class="col-6">
+            <a href="{{ url_for('merchant_kyc.merchant_list') }}" class="modtile {{ 'mt-warn' if merchant_pending_count else 'mt-ok' }}">
+              <div class="n">{{ merchant_pending_count }}</div><div class="name">{{ _('Merchant KYC') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.can_view('cyber') %}
+          <div class="col-6">
+            <a href="{{ url_for('cyber.dashboard') }}" class="modtile {{ 'mt-bad' if cyber_open_count else 'mt-ok' }}">
+              <div class="n">{{ cyber_open_count }}</div><div class="name">{{ _('Cyber Incidents') }}</div>
+            </a>
+          </div>
+          {% endif %}
+          {% if current_user.can_view('pdpl') %}
+          <div class="col-6">
+            <a href="{{ url_for('dp.breach_list') }}" class="modtile {{ 'mt-bad' if breach_open_count else 'mt-ok' }}">
+              <div class="n">{{ breach_open_count }}</div><div class="name">{{ _('Data Breaches') }}</div>
+            </a>
+          </div>
+          {% endif %}
+        </div>
+        {% if current_user.is_compliance_officer() or current_user.is_admin() %}
+        <a href="{{ url_for('compliance_operations') }}" class="d-block text-center mt-3" style="font-size:12px;">{{ _('View Compliance Operations Detail →') }}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Secondary row: Employee Portal / Shareable Links / Quick Actions -->
+  <div class="row g-3 mb-3">
+    <div class="col-lg-4">
+      <div class="portal-hero">
+        <i class="bi bi-person-badge fs-4 mb-2 d-block"></i>
+        <h6>{{ _('Employee Portal') }}</h6>
+        <p>{{ _('Share with employees for declarations and training') }}</p>
+        <a href="{{ url_for('portal.dashboard') }}" class="btn btn-sm">{{ _('Launch Portal') }} <i class="bi bi-box-arrow-up-right ms-1"></i></a>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="info-panel">
+        <div class="info-panel-title"><i class="bi bi-share me-1"></i> {{ _('Shareable Links') }}</div>
+        <div class="portal-link-card">
+          <div style="flex:1; min-width:0;">
+            <label>{{ _('Main Portal') }}</label>
+            <input type="text" class="form-control form-control-sm" value="https://complynex.online/portal" readonly id="portalLink">
+          </div>
+          <button class="copy-btn" data-copy-target="portalLink"><i class="bi bi-clipboard"></i></button>
+        </div>
+        <div class="portal-link-card mb-0">
+          <div style="flex:1; min-width:0;">
+            <label>{{ _('Incident Reporting (GHE)') }}</label>
+            <input type="text" class="form-control form-control-sm" value="https://complynex.online/portal/incident/ghe" readonly id="gheLink">
+          </div>
+          <button class="copy-btn" data-copy-target="gheLink"><i class="bi bi-clipboard"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="info-panel">
+        <div class="info-panel-title"><i class="bi bi-lightning me-1"></i> {{ _('Quick Actions') }}</div>
+        <a href="{{ url_for('policies.list_policies') }}" class="quick-action-btn qa-policies"><i class="bi bi-file-text"></i> {{ _('View Policies') }}</a>
+        <a href="{{ url_for('training.list_courses') }}" class="quick-action-btn qa-training"><i class="bi bi-book"></i> {{ _('My Training') }}</a>
+        <a href="{{ url_for('whistleblowing.public_report') }}" target="_blank" class="quick-action-btn qa-wb"><i class="bi bi-megaphone"></i> {{ _('Public Whistleblowing') }}</a>
+        <a href="{{ url_for('consumer_protection.public_form') }}" target="_blank" class="quick-action-btn qa-cp"><i class="bi bi-shield-check"></i> {{ _('Consumer Protection') }}</a>
+      </div>
+    </div>
+  </div>
+
+  {% if training_due_count > 0 %}
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-warning d-flex align-items-center" role="alert">
+        <i class="bi bi-mortarboard me-3 fs-4"></i>
+        <div>
+          <strong>{{ _('Training Due!') }}</strong> {{ _('You have %(n)s training course(s) to complete.', n=training_due_count) }}
+          <a href="{{ url_for('training.list_courses') }}" class="alert-link ms-2">{{ _('View Training') }} <i class="bi bi-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script nonce="{{ csp_nonce }}">
+document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
+    btn.addEventListener('click', function () { copyLink(btn.dataset.copyTarget, btn); });
+});
+
+function copyLink(id, btn) {
+    var el = document.getElementById(id);
+    el.select();
+    navigator.clipboard.writeText(el.value);
+    btn.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(function () { btn.innerHTML = '<i class="bi bi-clipboard"></i>'; }, 2000);
+}
+
+// Keep the dashboard date/time live if the page is left open, using the
+// visitor's local clock (matches the server-rendered Cairo time for Egypt-based users).
+// Locale follows the page's own language so the live-updating clock doesn't
+// revert to English day/month names once the initial server-rendered value ticks over.
+(function () {
+    var el = document.getElementById('dashboardDateTime');
+    if (!el) return;
+    var jsLocale = {{ ('ar-EG' if get_locale() == 'ar' else 'en-US') | tojson }};
+    function tick() {
+        var now = new Date();
+        var datePart = now.toLocaleDateString(jsLocale, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+        var timePart = now.toLocaleTimeString(jsLocale, { hour: '2-digit', minute: '2-digit', hour12: true });
+        el.textContent = datePart + ' • ' + timePart;
+    }
+    tick();
+    setInterval(tick, 30000);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Review Policy - {{ policy.policy_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Policy Review: {{ policy.policy_name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('policies.view_policy', id=policy.id) }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-eye"></i> {{ _('VIEW FULL POLICY') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Review Content') }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-uppercase small text-muted mb-2">{{ _('Policy Metadata') }}</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted d-block">{{ _('Number') }}</small>
+                            <span>{{ policy.policy_number }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">{{ _('Version') }}</small>
+                            <span>{{ policy.version }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="policy-content" style="max-height: 500px; overflow-y: auto;">
+                    {{ policy.content | safe }}
+                </div>
+
+                {% if policy.attachment_path %}
+                <div class="mt-4 p-3 border rounded bg-light">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <i class="bi bi-file-earmark-pdf text-danger fs-3 me-2"></i>
+                            <span class="fw-bold">{{ _('Supporting Document Attached') }}</span>
+                        </div>
+                        <a href="{{ url_for('policies.download_policy_document', id=policy.id) }}"
+                            class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="bi bi-download"></i> {{ _('DOWNLOAD') }}
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Submit Your Decision') }}</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('policies.review_policy', id=policy.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Status') }}</label>
+                        <select class="form-select" name="status" required>
+                            <option value="">{{ _('Select status...') }}</option>
+                            <option value="approved">{{ _('Approve') }}</option>
+                            <option value="rejected">{{ _('Reject / Needs Revision') }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Comments') }}</label>
+                        <textarea class="form-control" name="comments" rows="5"
+                            placeholder="{{ _('Provide feedback or justification...') }}" required></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">{{ _('SUBMIT REVIEW') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Workflow Timeline') }}</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for review in reviews %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0 fw-bold">{{ review.stage_name }}</h6>
+                            {% if review.status == 'approved' %}
+                            <span class="badge bg-success">{{ _('Approved') }}</span>
+                            {% elif review.status == 'rejected' %}
+                            <span class="badge bg-danger">{{ _('Rejected') }}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{{ _('Pending') }}</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted d-block">{{ review.reviewer_name }}</small>
+                        {% if review.review_date %}
+                        <small class="text-muted">{{ review.review_date }}</small>
+                        {% endif %}
+                        {% if review.comments %}
+                        <div class="mt-2 p-2 bg-light small rounded italic-text">
+                            "{{ review.comments }}"
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .italic-text {
+        font-style: italic;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}eKYC{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('eKYC Verification Sessions') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="dropdown me-2">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-download"></i> {{ _('Export CSV') }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{{ url_for('ekyc.export_sessions', status='all') }}">{{ _('All') }}</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('ekyc.export_sessions', status='approved') }}">{{ _('Approved') }}</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('ekyc.export_sessions', status='rejected') }}">{{ _('Rejected') }}</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('ekyc.export_sessions', status='pending') }}">{{ _('Pending') }}</a></li>
+                </ul>
+            </div>
+            {% if current_user.can_edit('ekyc') %}
+            <a href="{{ url_for('ekyc.new_session') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i> {{ _('New Session') }}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <a href="{{ url_for('ekyc.review_queue') }}" class="card text-decoration-none h-100 {{ 'border-warning' if needs_review_count else '' }}">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">{{ _('Needs Review') }}</div>
+                        <div class="text-muted small">{{ _('Data correction / OCR review queue') }}</div>
+                    </div>
+                    <span class="badge bg-{{ 'warning' if needs_review_count else 'secondary' }} fs-5">{{ needs_review_count }}</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{{ url_for('ekyc.decision_pending_queue') }}" class="card text-decoration-none h-100 {{ 'border-primary' if decision_pending_count else '' }}">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">{{ _('Decision Pending') }}</div>
+                        <div class="text-muted small">{{ _('Cleared sessions awaiting Approve/Reject') }}</div>
+                    </div>
+                    <span class="badge bg-{{ 'primary' if decision_pending_count else 'secondary' }} fs-5">{{ decision_pending_count }}</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>{{ _('ID') }}</th>
+                        <th>{{ _('Customer Reference') }}</th>
+                        <th>{{ _('Document Type') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>
+                            <div class="d-flex align-items-center gap-1">
+                                <span>{{ _('Decision') }}</span>
+                                <div class="btn-group btn-group-sm ms-1" role="group">
+                                    <button type="button" class="btn btn-outline-secondary active" style="padding:.05rem .35rem;font-size:.7rem" id="decisionToggleFinal" data-decision-toggle="final">{{ _('Final') }}</button>
+                                    <button type="button" class="btn btn-outline-secondary" style="padding:.05rem .35rem;font-size:.7rem" id="decisionToggleAuto" data-decision-toggle="auto">{{ _('Auto') }}</button>
+                                </div>
+                            </div>
+                        </th>
+                        <th>{{ _('Created') }}</th>
+                        <th>{{ _('Created By') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sessions %}
+                    <tr style="cursor:pointer" data-href="{{ url_for('ekyc.view_session', session_id=s.id) }}">
+                        <td>{{ s.id }}</td>
+                        <td>{{ s.customer_reference or '-' }}</td>
+                        <td>{{ s.document_type }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if s.status == 'COMPLETED' else ('danger' if s.status == 'FAILED' else 'secondary') }}">
+                                {{ s.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="decision-final">
+                                {% if s.final_decision %}
+                                <span class="badge bg-{{ 'success' if s.final_decision == 'APPROVED' else 'danger' }}">{{ s.final_decision }}</span>
+                                {% elif s.decision %}
+                                <span class="badge bg-{{ 'success' if s.decision == 'PASS' else ('danger' if s.decision == 'FAIL' else 'warning') }}">{{ s.decision }}</span>
+                                {% else %}-{% endif %}
+                            </span>
+                            <span class="decision-auto d-none">
+                                {% if s.decision %}
+                                <span class="badge bg-{{ 'success' if s.decision == 'PASS' else ('danger' if s.decision == 'FAIL' else 'warning') }}">{{ s.decision }}</span>
+                                {% else %}-{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ s.created_at }}</td>
+                        <td>{{ s.created_by_name or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">{{ _('No eKYC sessions yet.') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

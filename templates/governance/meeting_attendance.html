@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">{{ _('Record Attendance') }}: {{ meeting.meeting_reference or
+                meeting.meeting_date }}</h6>
+            <span class="badge bg-info text-dark">{{ meeting.meeting_type }}</span>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>{{ _('Member Name') }}</th>
+                                <th class="text-center">{{ _('Attended') }}</th>
+                                <th class="text-center">{{ _('Apology Received') }}</th>
+                                <th>{{ _('Proxy (if any)') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            <tr>
+                                <td>
+                                    {{ member.member_name }}
+                                    <input type="hidden" name="member_id_{{ member.id }}" value="{{ member.id }}">
+                                </td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input" type="checkbox" name="attended_{{ member.id }}"
+                                            checked>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input" type="checkbox" name="apology_{{ member.id }}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text" name="proxy_{{ member.id }}" class="form-control form-control-sm"
+                                        placeholder="Proxy Name">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> {{ _('Save Attendance') }}
+                    </button>
+                    <a href="{{ url_for('governance.list_meetings') }}" class="btn btn-secondary">
+                        {{ _('Back') }}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

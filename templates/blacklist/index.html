@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Internal Blacklist{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-ban text-danger"></i> {{ _('Internal Blacklist') }}</h2>
+                <div>
+                    <a href="{{ url_for('blacklist.add') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> {{ _('Add Entry') }}
+                    </a>
+                    <a href="{{ url_for('blacklist.bulk_upload') }}" class="btn btn-info">
+                        <i class="fas fa-upload"></i> {{ _('Bulk Upload') }}
+                    </a>
+                    <a href="{{ url_for('blacklist.export') }}" class="btn btn-success">
+                        <i class="fas fa-download"></i> {{ _('Export') }}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h3 class="text-primary">{{ stats.total_active }}</h3>
+                            <p class="text-muted mb-0">{{ _('Total Active Entries') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h3 class="text-danger">{{ stats.by_risk_level.get('HIGH', 0) }}</h3>
+                            <p class="text-muted mb-0">{{ _('High Risk') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h3 class="text-info">{{ stats.by_entity_type.get('INDIVIDUAL', 0) }}</h3>
+                            <p class="text-muted mb-0">{{ _('Individuals') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h3 class="text-success">{{ stats.added_last_30_days }}</h3>
+                            <p class="text-muted mb-0">{{ _('Added (30 days)') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <input type="hidden" name="sort" value="{{ sort_by }}">
+                        <input type="hidden" name="dir" value="{{ sort_dir }}">
+                        <div class="col-md-3">
+                            <input type="text" name="search" class="form-control" placeholder="{{ _('Search name...') }}"
+                                value="{{ filters.get('search', '') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <select name="entity_type" class="form-select">
+                                <option value="">{{ _('All Types') }}</option>
+                                <option value="INDIVIDUAL" {% if filters.get('entity_type')=='INDIVIDUAL' %}selected{%
+                                    endif %}>{{ _('Individual') }}</option>
+                                <option value="ORGANIZATION" {% if filters.get('entity_type')=='ORGANIZATION'
+                                    %}selected{% endif %}>{{ _('Organization') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="risk_level" class="form-select">
+                                <option value="">{{ _('All Risk Levels') }}</option>
+                                <option value="HIGH" {% if filters.get('risk_level')=='HIGH' %}selected{% endif %}>{{ _('High') }}
+                                </option>
+                                <option value="MEDIUM" {% if filters.get('risk_level')=='MEDIUM' %}selected{% endif %}>
+                                    {{ _('Medium') }}</option>
+                                <option value="LOW" {% if filters.get('risk_level')=='LOW' %}selected{% endif %}>{{ _('Low') }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" name="category" class="form-control" placeholder="{{ _('Category...') }}"
+                                value="{{ filters.get('category', '') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i> {{ _('Filter') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Entries Table -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>{{ _('Name') }}</th>
+                                    <th>{{ _('Type') }}</th>
+                                    <th>{{ _('Risk Level') }}</th>
+                                    <th>{{ _('Category') }}</th>
+                                    <th>{{ _('Reason') }}</th>
+                                    <th>
+                                        <a class="text-decoration-none text-dark"
+                                           href="?sort=added_date&dir={{ 'asc' if sort_by=='added_date' and sort_dir=='desc' else 'desc' }}{% for key, value in filters.items() %}&{{ key }}={{ value }}{% endfor %}">
+                                            Added Date
+                                            {% if sort_by == 'added_date' %}
+                                            <i class="fas fa-sort-{{ 'up' if sort_dir=='asc' else 'down' }}"></i>
+                                            {% else %}
+                                            <i class="fas fa-sort text-muted"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>{{ _('Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in entries %}
+                                <tr>
+                                    <td>{{ entry.id }}</td>
+                                    <td>
+                                        <strong>{{ entry.full_name }}</strong>
+                                        {% if entry.original_name %}
+                                        <br><small class="text-muted">{{ entry.original_name }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="badge bg-{% if entry.entity_type == 'INDIVIDUAL' %}info{% else %}secondary{% endif %}">
+                                            {{ entry.entity_type }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="badge bg-{% if entry.risk_level == 'HIGH' %}danger{% elif entry.risk_level == 'MEDIUM' %}warning{% else %}success{% endif %}">
+                                            {{ entry.risk_level }}
+                                        </span>
+                                    </td>
+                                    <td>{{ entry.category or '-' }}</td>
+                                    <td>{{ (entry.reason or "")[:50] }}{% if (entry.reason or "")|length > 50 %}...{% endif %}</td>
+                                    <td>{{ entry.added_date[:10] if entry.added_date else "—" }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('blacklist.view', entry_id=entry.id) }}"
+                                                class="btn btn-sm btn-outline-info" title="{{ _('View') }}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('blacklist.edit', entry_id=entry.id) }}"
+                                                class="btn btn-sm btn-outline-warning" title="{{ _('Edit') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                data-delete-id="{{ entry.id }}" data-delete-name="{{ entry.full_name }}"
+                                                title="{{ _('Delete') }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        {{ _('No blacklist entries found') }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if total_pages > 1 %}
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                                <a class="page-link"
+                                    href="?page={{ page - 1 }}{% for key, value in filters.items() %}&{{ key }}={{ value }}{% endfor %}&sort={{ sort_by }}&dir={{ sort_dir }}">{{ _('Previous') }}</a>
+                            </li>
+                            {% for p in range(1, total_pages + 1) %}
+                            {% if p == page or (p >= page - 2 and p <= page + 2) or p==1 or p==total_pages %} <li
+                                class="page-item {% if p == page %}active{% endif %}">
+                                <a class="page-link"
+                                    href="?page={{ p }}{% for key, value in filters.items() %}&{{ key }}={{ value }}{% endfor %}&sort={{ sort_by }}&dir={{ sort_dir }}">{{
+                                    p }}</a>
+                                </li>
+                                {% elif p == page - 3 or p == page + 3 %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                                {% endfor %}
+                                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                                    <a class="page-link"
+                                        href="?page={{ page + 1 }}{% for key, value in filters.items() %}&{{ key }}={{ value }}{% endfor %}&sort={{ sort_by }}&dir={{ sort_dir }}">{{ _('Next') }}</a>
+                                </li>
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">{{ _('Confirm Delete') }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="deleteForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="modal-body">
+                    <p>{{ _('Are you sure you want to delete this blacklist entry?') }}</p>
+                    <p><strong id="deleteName"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Reason for deletion:') }}</label>
+                        <textarea name="reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-danger">{{ _('Delete Entry') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-delete-id]');
+        if (btn) confirmDelete(btn.dataset.deleteId, btn.dataset.deleteName);
+    });
+
+    function confirmDelete(entryId, name) {
+        document.getElementById('deleteForm').action = '/blacklist/delete/' + entryId;
+        document.getElementById('deleteName').textContent = name;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+</script>
+{% endblock %}

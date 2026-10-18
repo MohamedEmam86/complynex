@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Risk Treatments') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>{{ _('Risk Treatments') }}</h3>
+        <div class="btn-group">
+            <a href="{{ url_for('risk_management.treatments_list') }}" class="btn btn-sm btn-outline-secondary {{ 'active' if not mine }}">{{ _('All') }}</a>
+            <a href="{{ url_for('risk_management.treatments_list', mine=1) }}" class="btn btn-sm btn-outline-secondary {{ 'active' if mine }}">{{ _('My Treatments') }}</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead><tr>
+                    <th>{{ _('Risk') }}</th><th>{{ _('Description') }}</th><th>{{ _('Owner') }}</th>
+                    <th>{{ _('Target Date') }}</th><th>{{ _('Status') }}</th><th></th>
+                </tr></thead>
+                <tbody>
+                {% for t in treatments %}
+                    {% set risk = risks_by_id.get(t.risk_id) %}
+                    {% set owner = owners_by_id.get(t.treatment_owner_id) %}
+                    {% set is_overdue = t.target_date and t.target_date < today and t.status in ['PROPOSED', 'APPROVED', 'IN_PROGRESS'] %}
+                    <tr class="{{ 'table-danger' if is_overdue else '' }}">
+                        <td class="small">{% if risk %}<a href="{{ url_for('risk_management.register_detail', risk_pk=risk.id) }}">{{ risk.risk_id }}</a>{% else %}-{% endif %}</td>
+                        <td>{{ t.treatment_description[:80] }}</td>
+                        <td class="small">{{ (owner.first_name ~ ' ' ~ owner.last_name) if owner else '-' }}</td>
+                        <td>{{ t.target_date or '-' }} {% if is_overdue %}<i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="{{ _('Overdue') }}"></i>{% endif %}</td>
+                        <td><span class="badge {{ 'bg-success' if t.status in ('VERIFIED', 'CLOSED') else ('bg-info text-dark' if t.status == 'COMPLETED' else 'bg-secondary') }}">{{ t.status }}</span></td>
+                        <td><a href="{{ url_for('risk_management.treatment_detail', treatment_id=t.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('View') }}</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">{{ _('No treatments found.') }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}View Blacklist Entry{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Summary Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> {{ _('Entry Summary') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="display-6 mb-2">
+                            <i
+                                class="fas {% if entry.entity_type == 'INDIVIDUAL' %}fa-user-secret{% else %}fa-building{% endif %} text-secondary"></i>
+                        </div>
+                        <h4 class="mb-1">{{ entry.full_name }}</h4>
+                        <span
+                            class="badge bg-{% if entry.risk_level == 'HIGH' %}danger{% elif entry.risk_level == 'MEDIUM' %}warning{% else %}success{% endif %} fs-6 mb-2">
+                            {{ entry.risk_level }} RISK
+                        </span>
+                        <p class="text-muted">{{ entry.category or 'No Category' }}</p>
+                    </div>
+
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>{{ _('Status') }}</strong>
+                            <span
+                                class="badge {% if entry.is_active %}bg-success{% else %}bg-danger{% endif %} badge-pill">
+                                {{ 'ACTIVE' if entry.is_active else 'DEACTIVATED' }}
+                            </span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>{{ _('Added By') }}</strong>
+                            <span>{{ entry.added_by_username or 'System' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>{{ _('Added On') }}</strong>
+                            <span>{{ entry.added_date[:10] }}</span>
+                        </li>
+                        {% if entry.modified_by_username %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>{{ _('Last Modified') }}</strong>
+                            <span>{{ entry.modified_by_username }} ({{ entry.modified_date[:10] }})</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{{ url_for('blacklist.edit', entry_id=entry.id) }}" class="btn btn-warning fw-bold">
+                            <i class="fas fa-edit"></i> {{ _('Edit Entry') }}
+                        </a>
+                        <a href="{{ url_for('blacklist.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> {{ _('Back to List') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <!-- Full Details Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0"><i class="fas fa-list-alt text-primary"></i> {{ _('Detailed Information') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h6 class="text-muted fw-bold mb-3 border-bottom pb-1">{{ _('IDENTIFICATION') }}</h6>
+                            <div class="row">
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">{{ _('Original Name') }}</small>
+                                    <span>{{ entry.original_name or '-' }}</span>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">{{ _('Entity Type') }}</small>
+                                    <span>{{ entry.entity_type }}</span>
+                                </div>
+                                {% if entry.entity_type == 'INDIVIDUAL' %}
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">{{ _('National ID') }}</small>
+                                    <code>{{ entry.national_id or '-' }}</code>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">{{ _('Passport') }}</small>
+                                    <code>{{ entry.passport_number or '-' }}</code>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">DOB</small>
+                                    <span>{{ entry.date_of_birth or '-' }}</span>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">{{ _('Nationality') }}</small>
+                                    <span>{{ entry.nationality or '-' }}</span>
+                                </div>
+                                {% else %}
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">{{ _('Registration Number') }}</small>
+                                    <code>{{ entry.registration_number or '-' }}</code>
+                                </div>
+                                {% endif %}
+                                <div class="col-sm-12 mb-3">
+                                    <small class="text-muted d-block">{{ _('Aliases') }}</small>
+                                    <span>{{ entry.aliases|join(', ') if entry.aliases else '-' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <h6 class="text-muted fw-bold mb-3 border-bottom pb-1 mt-3">{{ _('BLACKLIST JUSTIFICATION') }}</h6>
+                            <div class="mb-3">
+                                <small class="text-muted d-block">{{ _('Reason') }}</small>
+                                <div class="p-3 bg-light rounded border-start border-4 border-danger">
+                                    {{ entry.reason }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted d-block">{{ _('Internal Notes') }}</small>
+                                <p class="mb-0">{{ entry.notes or 'No additional notes provided.' }}</p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <h6 class="text-muted fw-bold mb-3 border-bottom pb-1 mt-3">{{ _('CONTACT & LOCATION') }}</h6>
+                            <div class="row">
+                                <div class="col-sm-12 mb-3">
+                                    <small class="text-muted d-block">{{ _('Address') }}</small>
+                                    <span>{{ entry.address or '-' }}</span>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">{{ _('Phone / Email') }}</small>
+                                    <span>{{ entry.phone_number or '-' }} / {{ entry.email or '-' }}</span>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">{{ _('City / Country') }}</small>
+                                    <span>{{ entry.city or '-' }}, {{ entry.country or '-' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Log Card -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0"><i class="fas fa-history text-secondary"></i> {{ _('Change Audit Trail') }}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">{{ _('Date') }}</th>
+                                    <th>{{ _('Action') }}</th>
+                                    <th>{{ _('Field') }}</th>
+                                    <th>By</th>
+                                    <th class="pe-3">{{ _('Reason / Details') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="small">
+                                {% for audit in audit_log %}
+                                <tr>
+                                    <td class="ps-3">{{ audit.changed_at[:16] if audit.changed_at else 'N/A' }}</td>
+                                    <td>
+                                        <span
+                                            class="badge {% if audit.action == 'ADDED' %}bg-success{% elif audit.action == 'MODIFIED' %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ audit.action }}
+                                        </span>
+                                    </td>
+                                    <td>{{ audit.field_changed or '-' }}</td>
+                                    <td>{{ audit.changed_by_username or 'System' }}</td>
+                                    <td class="pe-3 text-muted">{{ audit.reason or '-' }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3 text-muted">{{ _('No audit records found') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

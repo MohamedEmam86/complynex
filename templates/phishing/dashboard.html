@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Phishing Awareness — {{ super() }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-1"><i class="bi bi-envelope-exclamation text-danger me-2"></i>{{ _('Phishing Awareness') }}</h1>
+      <small class="text-muted">{{ _('Cybersecurity awareness simulation campaigns') }}</small>
+    </div>
+    {% if current_user.can_edit('phishing') %}
+    <a href="{{ url_for('phishing.create_campaign') }}" class="btn btn-danger">
+      <i class="bi bi-plus-circle me-1"></i> {{ _('New Campaign') }}
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="fs-1 fw-bold text-primary">{{ stats.total_campaigns or 0 }}</div>
+          <div class="text-muted small">{{ _('Total Campaigns') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="fs-1 fw-bold text-secondary">{{ stats.total_recipients or 0 }}</div>
+          <div class="text-muted small">{{ _('Emails Sent') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="fs-1 fw-bold text-warning">{{ stats.total_clicks or 0 }}</div>
+          <div class="text-muted small">{{ _('Links Clicked') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <div class="fs-1 fw-bold text-danger">{{ stats.total_submits or 0 }}</div>
+          <div class="text-muted small">{{ _('Forms Submitted') }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent border-bottom">
+      <h6 class="mb-0 fw-bold">{{ _('All Campaigns') }}</h6>
+    </div>
+    <div class="card-body p-0">
+      {% if campaigns %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>{{ _('Campaign Name') }}</th><th>{{ _('Status') }}</th><th class="text-center">{{ _('Sent') }}</th>
+              <th class="text-center">{{ _('Clicked') }}</th><th class="text-center">{{ _('Submitted') }}</th>
+              <th class="text-center">{{ _('Click Rate') }}</th><th>{{ _('Sent On') }}</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in campaigns %}
+            {% set click_rate = ((c.click_count / c.recipient_count * 100) | round(1)) if c.recipient_count else 0 %}
+            <tr>
+              <td>
+                <a href="{{ url_for('phishing.campaign_detail', campaign_id=c.id) }}" class="fw-semibold text-decoration-none">{{ c.name }}</a>
+                {% if c.description %}<div class="text-muted small">{{ c.description[:60] }}{% if c.description|length > 60 %}…{% endif %}</div>{% endif %}
+              </td>
+              <td>
+                {% if c.status == 'sent' %}<span class="badge bg-success">{{ _('Sent') }}</span>
+                {% elif c.status == 'archived' %}<span class="badge bg-secondary">{{ _('Archived') }}</span>
+                {% else %}<span class="badge bg-warning text-dark">{{ _('Draft') }}</span>{% endif %}
+              </td>
+              <td class="text-center">{{ c.recipient_count or 0 }}</td>
+              <td class="text-center"><span class="{% if c.click_count %}text-warning fw-bold{% else %}text-muted{% endif %}">{{ c.click_count or 0 }}</span></td>
+              <td class="text-center"><span class="{% if c.submit_count %}text-danger fw-bold{% else %}text-muted{% endif %}">{{ c.submit_count or 0 }}</span></td>
+              <td class="text-center">
+                {% if click_rate >= 30 %}<span class="badge bg-danger">{{ click_rate }}%</span>
+                {% elif click_rate >= 10 %}<span class="badge bg-warning text-dark">{{ click_rate }}%</span>
+                {% else %}<span class="badge bg-success">{{ click_rate }}%</span>{% endif %}
+              </td>
+              <td class="text-muted small">{{ c.sent_at.strftime('%d %b %Y') if c.sent_at else '—' }}</td>
+              <td class="text-end"><a href="{{ url_for('phishing.campaign_detail', campaign_id=c.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-envelope-slash fs-1 mb-3 d-block opacity-25"></i>
+        <p class="mb-0">{{ _('No campaigns yet.') }}</p>
+        {% if current_user.can_edit('phishing') %}
+        <a href="{{ url_for('phishing.create_campaign') }}" class="btn btn-danger mt-3">{{ _('Create First Campaign') }}</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% if campaigns %}
+  <div class="mt-3 text-end">
+    <a href="{{ url_for('phishing.reports') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-bar-chart me-1"></i> {{ _('Full Analytics Report') }}</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

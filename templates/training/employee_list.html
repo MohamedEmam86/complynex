@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}My Training - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('My Learning & Development') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('training.my_certificates') }}" class="btn btn-sm btn-outline-success me-2">
+            <i class="bi bi-award"></i> {{ _('My Certificates') }}
+        </a>
+        <a href="{{ url_for('training.course_library') }}" class="btn btn-sm btn-primary ripple">
+            <i class="bi bi-journal-plus"></i> Browse Course Library
+            {% if available_count %}
+            <span class="badge bg-white text-primary ms-1">{{ available_count }}</span>
+            {% endif %}
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Active Enrollments') }}</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if enrollments %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">{{ _('Course') }}</th>
+                                <th>{{ _('Type') }}</th>
+                                <th>{{ _('Due Date') }}</th>
+                                <th>{{ _('Progress') }}</th>
+                                <th class="text-end pe-4">{{ _('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for enrollment in enrollments %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ enrollment.course_name }}</div>
+                                    <small class="text-muted">{{ enrollment.course_code }}</small>
+                                </td>
+                                <td>
+                                    {% if enrollment.is_mandatory %}
+                                    <span class="badge bg-danger-soft text-danger">{{ _('Mandatory') }}</span>
+                                    {% else %}
+                                    <span class="badge bg-light text-dark border">{{ _('Optional') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span
+                                        class="{% if enrollment.status != 'completed' and (enrollment.due_date|string) < (now.date()|string) %}text-danger fw-bold{% endif %}">
+                                        {{ enrollment.due_date }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if enrollment.status == 'completed' %}
+                                    <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Completed
+                                        ({{ enrollment.score }}%)</span>
+                                    {% elif enrollment.status == 'in_progress' %}
+                                    <span class="text-primary"><i class="bi bi-play-circle-fill me-1"></i> {{ _('In
+                                        Progress') }}</span>
+                                    {% else %}
+                                    <span class="text-muted"><i class="bi bi-clock me-1"></i> {{ _('Not Started') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if enrollment.status == 'completed' %}
+                                    <a href="{{ url_for('training.view_course', id=enrollment.course_id) }}"
+                                        class="btn btn-sm btn-outline-success">{{ _('Review') }}</a>
+                                    {% else %}
+                                    <a href="{{ url_for('training.view_course', id=enrollment.course_id) }}"
+                                        class="btn btn-sm btn-primary px-3">{{ _('Start Course') }}</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <p class="text-muted">{{ _('You have no active enrollments at this time.') }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="mb-0 fw-bold">{{ _('Recent Achievements') }}</h5>
+            </div>
+            <div class="card-body">
+                {% if certificates %}
+                <ul class="list-group list-group-flush">
+                    {% for cert in certificates[:3] %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <h6 class="mb-0 fw-bold">{{ cert.course_name }}</h6>
+                            <small class="text-muted">Issued on {{ cert.issue_date }}</small>
+                        </div>
+                        <i class="bi bi-award text-warning fs-3"></i>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <div class="mt-3 text-center">
+                    <a href="{{ url_for('training.my_certificates') }}" class="btn btn-link btn-sm">{{ _('View All
+                        Certificates') }}</a>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">{{ _('Complete your first course to earn a certificate!') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="mb-0 fw-bold">{{ _('Browse Courses') }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">{{ _('Explore other compliance topics available for self-enrollment.') }}</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('training.course_library') }}" class="btn btn-outline-primary">{{ _('Open Course
+                        Library') }}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-danger-soft {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+</style>
+{% endblock %}

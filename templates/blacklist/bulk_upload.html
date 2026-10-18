@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Upload Blacklist{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-white py-3">
+                    <h4 class="mb-0"><i class="fas fa-file-import"></i> {{ _('Bulk Upload Blacklist Entries') }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Instructions -->
+                    <div class="alert alert-info border-0 shadow-sm">
+                        <h5 class="alert-heading fw-bold"><i class="fas fa-info-circle"></i> {{ _('Instructions:') }}</h5>
+                        <p>{{ _('To import multiple entries at once, follow these steps:') }}</p>
+                        <ol class="mb-3">
+                            <li><strong>{{ _('Download') }}</strong> {{ _('the provided CSV template below.') }}</li>
+                            <li><strong>{{ _('Fill in') }}</strong> {{ _('the data.') }} <code>{{ _('full_name') }}</code> {{ _('and') }} <code>{{ _('reason') }}</code> {{ _('are
+                                mandatory.') }}</li>
+                            <li><strong>{{ _('Save') }}</strong> {{ _('the file in') }} <code>{{ _('.csv') }}</code> or <code>{{ _('.xlsx') }}</code> {{ _('format.') }}</li>
+                            <li><strong>{{ _('Upload') }}</strong> {{ _('the file using the form below.') }}</li>
+                        </ol>
+                        <p class="mb-0 fs-7">{{ _('Note: Date of birth should be in') }} <code>{{ _('YYYY-MM-DD') }}</code> {{ _('format.') }}</p>
+                    </div>
+
+                    <!-- Template Download -->
+                    <div class="card mb-4 border shadow-none bg-light">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="mb-1 fw-bold">{{ _('Need a starting point?') }}</h6>
+                                <p class="text-muted small mb-0">{{ _('Download our standardized template with examples.') }}</p>
+                            </div>
+                            <a href="{{ url_for('blacklist.download_template') }}"
+                                class="btn btn-primary d-flex align-items-center gap-2">
+                                <i class="fas fa-download"></i> {{ _('Download Template') }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Upload Form -->
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ _('Select File (CSV or Excel)') }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i
+                                        class="fas fa-file-excel text-success"></i></span>
+                                <input type="file" name="file" class="form-control" accept=".csv,.xlsx" required>
+                            </div>
+                            <div class="form-text mt-2">
+                                {{ _('Supported formats: Standard CSV, Excel (.xlsx).') }}
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded mb-4">
+                            <div class="d-flex gap-3">
+                                <i class="fas fa-exclamation-triangle text-warning fs-4"></i>
+                                <div>
+                                    <strong class="d-block mb-1">{{ _('Verify your data') }}</strong>
+                                    <span class="small text-muted">{{ _('All uploaded entries will be marked as') }} <strong>{{ _('HIGH
+                                            RISK') }}</strong> {{ _('and active immediately. Errors in formatting will result in
+                                        partially failed imports.') }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <a href="{{ url_for('blacklist.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> {{ _('Cancel') }}
+                            </a>
+                            <button type="submit" class="btn btn-info text-white px-5 fw-bold shadow-sm">
+                                <i class="fas fa-upload"></i> {{ _('Upload and Import') }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Import Errors (if any) -->
+                    {% if session.get('import_errors') %}
+                    <div class="mt-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="text-danger mb-0"><i class="fas fa-times-circle"></i> {{ _('Import Issues Detected') }}</h5>
+                            <span class="badge bg-danger">{{ session.get('import_errors')|length }} errors found</span>
+                        </div>
+                        <div class="alert alert-danger p-0 overflow-hidden border-0 shadow-sm">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped mb-0 small">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th class="ps-3 py-2">{{ _('Row') }}</th>
+                                            <th class="py-2">{{ _('Entity Name') }}</th>
+                                            <th class="pe-3 py-2">{{ _('Error Description') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for error in session.get('import_errors')[:15] %}
+                                        <tr>
+                                            <td class="ps-3">{{ error.row }}</td>
+                                            <td><code>{{ error.name }}</code></td>
+                                            <td class="pe-3">{{ error.error }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% if session.get('import_errors')|length > 15 %}
+                                <div class="p-2 text-center bg-light text-muted small">
+                                    And {{ session.get('import_errors')|length - 15 }} more errors...
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

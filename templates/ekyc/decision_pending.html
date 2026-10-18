@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('eKYC Decision Queue') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('eKYC Decision Queue') }}</h1>
+        <p class="text-muted mb-0">{{ _('Sessions cleared by automated verification and screening — awaiting an officer\'s final Approve/Reject.') }}</p>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>{{ _('ID') }}</th>
+                        <th>{{ _('Customer Reference') }}</th>
+                        <th>{{ _('System Decision') }}</th>
+                        <th>{{ _('Risk Score') }}</th>
+                        <th>{{ _('Screening') }}</th>
+                        <th>{{ _('Waiting Since') }}</th>
+                        <th class="text-end">{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sessions %}
+                    <tr>
+                        <td><a href="{{ url_for('ekyc.view_session', session_id=s.id) }}">{{ s.id }}</a></td>
+                        <td>{{ s.customer_reference or '-' }}</td>
+                        <td>
+                            {% if s.ai_decision %}
+                            <span class="badge bg-{{ 'success' if s.ai_decision == 'PASS' else ('danger' if s.ai_decision == 'FAIL' else 'warning') }}">
+                                {{ s.ai_decision }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{{ s.risk_score if s.risk_score is not none else '-' }}</td>
+                        <td>{{ s.screening_result or '-' }}</td>
+                        <td>{{ s.updated_at }}</td>
+                        <td class="text-end">
+                            <form method="POST" action="{{ url_for('ekyc.session_decision', session_id=s.id) }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <input type="hidden" name="action" value="approve"/>
+                                <button type="submit" class="btn btn-sm btn-success" data-confirm="{{ _('Approve this session?') }}">
+                                    {{ _('Approve') }}
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('ekyc.session_decision', session_id=s.id) }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <input type="hidden" name="action" value="reject"/>
+                                <button type="submit" class="btn btn-sm btn-danger" data-confirm="{{ _('Reject this session?') }}">
+                                    {{ _('Reject') }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">{{ _('Nothing waiting for a decision.') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}{{ finding.finding_number }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>{{ finding.finding_number }} - {{ finding.finding_title }}</h3>
+        <span class="badge fs-6 {{ 'bg-danger' if finding.severity == 'CRITICAL' else ('bg-warning text-dark' if finding.severity == 'HIGH' else 'bg-secondary') }}">{{ finding.severity }}</span>
+    </div>
+    <p class="text-muted">{{ _('Engagement:') }}
+        {% if project %}<a href="{{ url_for('internal_audit.project_detail', project_id=project.id) }}">{{ project.audit_number }}</a>
+        {% else %}<span class="text-danger">{{ _('Linked audit engagement no longer exists') }}</span>{% endif %}
+    </p>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3"><div class="card-body">
+                <p>{{ finding.finding_description or '' }}</p>
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">{{ _('Root Cause') }}</dt><dd class="col-sm-9">{{ finding.root_cause or '-' }}</dd>
+                    <dt class="col-sm-3">{{ _('Recommendation') }}</dt><dd class="col-sm-9">{{ finding.recommendation or '-' }}</dd>
+                    <dt class="col-sm-3">{{ _('Responsible Person') }}</dt><dd class="col-sm-9">{{ (responsible.first_name ~ ' ' ~ responsible.last_name) if responsible else '-' }}</dd>
+                    <dt class="col-sm-3">{{ _('Status') }}</dt><dd class="col-sm-9"><span class="badge bg-secondary">{{ finding.status.replace('_', ' ') }}</span></dd>
+                    <dt class="col-sm-3">{{ _('Target Date') }}</dt><dd class="col-sm-9">{{ finding.target_date or '-' }}</dd>
+                    <dt class="col-sm-3">{{ _('Management Response') }}</dt><dd class="col-sm-9">{{ finding.management_response or '-' }}</dd>
+                    <dt class="col-sm-3">{{ _('Agreed Action') }}</dt><dd class="col-sm-9">{{ finding.agreed_action or '-' }}</dd>
+                    {% if verifier %}
+                    <dt class="col-sm-3">{{ _('Verified By') }}</dt><dd class="col-sm-9">{{ verifier.first_name }} {{ verifier.last_name }} ({{ finding.verified_at }})</dd>
+                    <dt class="col-sm-3">{{ _('Verification Notes') }}</dt><dd class="col-sm-9">{{ finding.verification_notes or '-' }}</dd>
+                    {% endif %}
+                </dl>
+            </div></div>
+
+            {% if current_user.can_edit('internal_audit') %}
+            {% if finding.status == 'OPEN' %}
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Record Management Response') }}</strong></div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('internal_audit.finding_management_response', finding_id=finding.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-2"><textarea name="management_response" class="form-control" rows="2" placeholder="{{ _('Management response') }}" required></textarea></div>
+                        <div class="mb-2"><textarea name="agreed_action" class="form-control" rows="2" placeholder="{{ _('Agreed action') }}" required></textarea></div>
+                        <button type="submit" class="btn btn-sm btn-primary">{{ _('Save') }}</button>
+                    </form>
+                </div>
+            </div>
+            {% elif finding.status == 'MANAGEMENT_RESPONSE_RECEIVED' %}
+            <form method="post" action="{{ url_for('internal_audit.finding_remediate', finding_id=finding.id) }}" class="mb-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-primary">{{ _('Mark Remediation Complete') }}</button>
+            </form>
+            {% elif finding.status == 'REMEDIATED_PENDING_VERIFICATION' %}
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Independent Verification') }}</strong></div>
+                <div class="card-body">
+                    <p class="text-muted small">{{ _('Must be performed by an auditor on the engagement team, not the responsible person.') }}</p>
+                    <form method="post" action="{{ url_for('internal_audit.finding_verify', finding_id=finding.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-2"><textarea name="verification_notes" class="form-control" rows="2" placeholder="{{ _('Verification notes') }}"></textarea></div>
+                        <button type="submit" class="btn btn-sm btn-success">{{ _('Verify & Close') }}</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><strong>{{ _('Risk Register Link') }}</strong></div>
+                <div class="card-body">
+                    {% if linked_risk %}
+                    <p>{{ _('Linked to') }} <a href="{{ url_for('risk_management.register_detail', risk_pk=linked_risk.id) }}">{{ linked_risk.risk_id }} - {{ linked_risk.risk_title }}</a></p>
+                    {% else %}
+                    <p class="text-muted">{{ _('Not linked to a risk yet.') }}</p>
+                    {% endif %}
+                    {% if current_user.can_edit('internal_audit') %}
+                    <a href="{{ url_for('internal_audit.finding_link_risk', finding_id=finding.id) }}" class="btn btn-sm btn-outline-primary">{{ _('Link to Risk Register') }}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Optional supporting evidence for this finding #}
+{% include 'partials/attachment_widget.html' %}
+
+{% endblock %}

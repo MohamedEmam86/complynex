@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}DPIA Assessments - PDPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Data Protection Impact Assessments (DPIA)') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('dp.create_dpia') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-file-earmark-medical"></i> {{ _('New Assessment') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-info">
+                        <tr>
+                            <th>{{ _('Ref Number') }}</th>
+                            <th>{{ _('Project Name') }}</th>
+                            <th>{{ _('Risk Level') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Created Date') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dpia in dpias %}
+                        <tr>
+                            <td><code>{{ dpia.dpia_number }}</code></td>
+                            <td>{{ dpia.project_name }}</td>
+                            <td>
+                                <span
+                                    class="badge {% if dpia.risk_level == 'VERY_HIGH' %}bg-dark{% elif dpia.risk_level == 'HIGH' %}bg-danger{% elif dpia.risk_level == 'MEDIUM' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                    {{ dpia.risk_level }}
+                                </span>
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if dpia.status == 'APPROVED' %}bg-success{% elif dpia.status == 'REJECTED' %}bg-danger{% else %}bg-primary{% endif %}">
+                                    {{ dpia.status }}
+                                </span>
+                            </td>
+                            <td>{{ dpia.created_at[:10] if dpia.created_at else 'N/A' }}</td>
+                            <td>
+                                <a href="{{ url_for('dp.dpia_detail', id=dpia.id) }}"
+                                    class="btn btn-sm btn-outline-primary">{{ _('Assess / Review') }}</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">{{ _('No assessments registered') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

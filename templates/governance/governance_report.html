@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Governance Attendance Report') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ _('Governance Attendance Report') }}</h1>
+        <button data-action="print" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-print"></i> {{ _('Print Report') }}
+        </button>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">{{ _('Board of Directors') }}</h6>
+            <span class="badge bg-primary">{{ members | length }} {{ _('Members') }}</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>{{ _('Name') }}</th>
+                            <th>{{ _('Role') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Type') }}</th>
+                            <th>{{ _('Appointment') }}</th>
+                            <th>{{ _('Documents') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in members %}
+                        <tr>
+                            <td>{{ member.member_name }}</td>
+                            <td>{{ member.role }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if member.status == 'ACTIVE' else 'secondary' }}">
+                                    {{ member.status }}
+                                </span>
+                            </td>
+                            <td>{{ member.member_type }}</td>
+                            <td>{{ member.appointment_date }}</td>
+                            <td>
+                                {% if member.document_path %}
+                                <a href="{{ url_for('governance.member_document', id=member.id) }}" target="_blank"
+                                    class="btn btn-sm btn-outline-info p-1">
+                                    <i class="bi bi-file-earmark-pdf"></i> {{ _('View') }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted small">{{ _('No doc') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">{{ _('Committees') }}</h6>
+            <span class="badge bg-primary">{{ committees | length }} {{ _('Committees') }}</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>{{ _('Committee Name') }}</th>
+                            <th>{{ _('Type') }}</th>
+                            <th>{{ _('Chairman') }}</th>
+                            <th>{{ _('Frequency') }}</th>
+                            <th>{{ _('Charter') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for committee in committees %}
+                        <tr>
+                            <td>{{ committee.committee_name }}</td>
+                            <td>{{ committee.committee_type }}</td>
+                            <td>
+                                {% set chairman = members | selectattr('id', 'equalto', committee.chairman_id) | first
+                                %}
+                                {{ chairman.member_name if chairman else _('Not Assigned') }}
+                            </td>
+                            <td>{{ committee.meeting_frequency }}</td>
+                            <td>
+                                {% if committee.charter_file %}
+                                <a href="{{ url_for('governance.committee_charter', id=committee.id) }}" target="_blank"
+                                    class="btn btn-sm btn-outline-info p-1">
+                                    <i class="bi bi-file-text"></i> {{ _('ToR') }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted small">{{ _('No ToR') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{{ _('Meeting Attendance Summary') }}</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>{{ _('Meeting Date') }}</th>
+                            <th>{{ _('Meeting Type') }}</th>
+                            <th>{{ _('Reference') }}</th>
+                            <th>{{ _('Attendance Summary') }}</th>
+                            <th class="text-center">{{ _('Rate') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in summary_data %}
+                        <tr>
+                            <td>{{ item.meeting.meeting_date }}</td>
+                            <td>{{ item.meeting.meeting_type }}</td>
+                            <td>{{ item.meeting.meeting_reference or '-' }}</td>
+                            <td>
+                                {% set present = item.attendance | selectattr('attended') | list | length %}
+                                {% set total = item.attendance | length %}
+                                {% if total > 0 %}
+                                {{ present }} / {{ total }} {{ _('Present') }}
+                                <div class="progress mt-1" style="height: 5px;">
+                                    <div class="progress-bar bg-{{ 'success' if (present/total) >= 0.75 else ('warning' if (present/total) >= 0.5 else 'danger') }}"
+                                        role="progressbar" style="width: {{ (present/total)*100 }}%"></div>
+                                </div>
+                                {% else %}
+                                <span class="text-muted small">{{ _('No attendance records') }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if total > 0 %}
+                                <strong>{{ ((present/total)*100) | round(1) }}%</strong>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('governance.meeting_summary', id=item.meeting.id) }}"
+                                    class="btn btn-sm btn-link text-primary p-0">
+                                    <i class="fas fa-eye"></i> {{ _('Details') }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

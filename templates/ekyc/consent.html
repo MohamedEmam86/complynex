@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Identity Verification') }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px;">
+    <div class="card mt-4">
+        <div class="card-body">
+            <h3 class="mb-3">
+                {% if session.locale == 'ar' %}التحقق من الهوية{% else %}Identity Verification{% endif %}
+            </h3>
+            <p class="text-muted">
+                {% if session.locale == 'ar' %}
+                قبل المتابعة، يرجى قراءة والموافقة على ما يلي:
+                {% else %}
+                Before continuing, please read and agree to the following:
+                {% endif %}
+            </p>
+            <div class="border rounded p-3 mb-3 bg-light" style="white-space: pre-wrap;">{{ consent_text }}</div>
+
+            <form method="POST" action="{{ url_for('ekyc.give_consent', token=session.session_token) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="agree" required>
+                    <label class="form-check-label" for="agree">
+                        {% if session.locale == 'ar' %}أوافق وأود الاستمرار{% else %}I agree and want to continue{% endif %}
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    {% if session.locale == 'ar' %}متابعة{% else %}Continue{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

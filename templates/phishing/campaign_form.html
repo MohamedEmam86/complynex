@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% block title %}New Phishing Campaign — {{ super() }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center mb-4">
+        <a href="{{ url_for('phishing.dashboard') }}" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+        <h1 class="h3 mb-0"><i class="bi bi-envelope-plus text-danger me-2"></i>{{ _('New Phishing Awareness Campaign') }}</h1>
+      </div>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-transparent border-bottom"><h6 class="mb-0 fw-bold">{{ _('Campaign Details') }}</h6></div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">{{ _('Campaign Name') }} <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" placeholder="{{ _('e.g. Carrefour Coupon Simulation — June 2026') }}" required>
+              <div class="form-text">{{ _('Internal name. Not shown to employees.') }}</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">{{ _('Description') }}</label>
+              <textarea name="description" class="form-control" rows="2" placeholder="{{ _('Brief notes about the objective…') }}"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="card border-0 shadow-sm mb-4 border-start border-primary border-4">
+          <div class="card-header bg-transparent border-bottom">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-magic me-1"></i> {{ _('Guided Design Generator') }}</h6>
+            <small class="text-muted">{{ _('Answer a few questions and get a professionally designed email + landing page automatically — no HTML needed.') }}</small>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ _('Scenario') }}</label>
+                <select id="gen-scenario" class="form-select">
+                  <option value="coupon">{{ _('Exclusive discount / coupon') }}</option>
+                  <option value="delivery">{{ _('Package delivery notification') }}</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ _('Brand Color') }}</label>
+                <input type="color" id="gen-brand-color" class="form-control form-control-color w-100" value="#c0392b">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ _('Company Name Being Impersonated') }}</label>
+                <input type="text" id="gen-company-name" class="form-control" placeholder="{{ _('e.g. Btech, Carrefour, Talabat') }}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ _('Company Logo (optional)') }}</label>
+                <div class="d-flex gap-2 align-items-start">
+                  <input type="file" id="gen-logo-upload" class="form-control" accept="image/png,image/jpeg,image/gif">
+                  <button type="button" id="gen-logo-upload-btn" class="btn btn-outline-secondary text-nowrap">{{ _('Upload') }}</button>
+                </div>
+                <div id="gen-logo-result" class="form-text"></div>
+              </div>
+
+              <div id="gen-fields-coupon" class="col-12">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">{{ _('Discount Amount') }}</label>
+                    <input type="text" id="gen-discount-amount" class="form-control" placeholder="{{ _('e.g. 500 EGP or 20%%') }}" value="500 EGP">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">{{ _('Expiry Text') }}</label>
+                    <input type="text" id="gen-expiry-text" class="form-control" dir="rtl" value="حتى 30 يونيو 2026">
+                  </div>
+                </div>
+              </div>
+              <div id="gen-fields-delivery" class="col-12 d-none">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">{{ _('Tracking Number') }}</label>
+                    <input type="text" id="gen-tracking-number" class="form-control" placeholder="{{ _('e.g. TRK-983421105') }}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">{{ _('Rescheduled Delivery Date') }}</label>
+                    <input type="text" id="gen-delivery-date" class="form-control" dir="rtl" value="غداً بين 10 ص - 6 م">
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold">{{ _('CTA Button Text') }}</label>
+                <input type="text" id="gen-cta-text" class="form-control" dir="rtl" value="استفد من العرض الآن ←">
+              </div>
+              <div class="col-12">
+                <button type="button" id="gen-generate-btn" class="btn btn-primary">
+                  <i class="bi bi-stars me-1"></i> {{ _('Generate Design') }}
+                </button>
+                <span id="gen-status" class="form-text ms-2"></span>
+              </div>
+              <div id="gen-preview-wrap" class="col-12 d-none">
+                <label class="form-label fw-semibold">{{ _('Landing Page Preview') }}</label>
+                <iframe id="gen-preview-frame" style="width:100%;height:420px;border:1px solid #dee2e6;border-radius:8px;"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-transparent border-bottom">
+            <h6 class="mb-0 fw-bold">{{ _('Email Content') }}</h6>
+            <small class="text-muted">{{ _('Only used if the generator above isn\'t used, or as a starting point to fine-tune manually.') }}</small>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ _('Sender Display Name') }}</label>
+                <input type="text" name="sender_display" class="form-control" value="Carrefour Egypt" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ _('Email Subject') }} <span class="text-danger">*</span></label>
+                <input type="text" name="email_subject" class="form-control" value="🎟️ كوبونات ليك انت وبس من كارفور!" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">{{ _('Offer Heading (Arabic)') }}</label>
+                <input type="text" name="offer_title" class="form-control" dir="rtl" value="عروض ماي كلوب — مختارة لك">
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">{{ _('Email Body Text (Arabic)') }}</label>
+                <textarea name="offer_body" class="form-control" rows="3" dir="rtl">بناءً على تعاونك معنا، اخترنا لك هذه الصفقات المميزة بشكل خاص.</textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ _('Expiry Text') }}</label>
+                <input type="text" name="expiry_text" class="form-control" dir="rtl" value="حتى 30 يونيو 2026">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ _('CTA Button Text') }}</label>
+                <input type="text" name="cta_text" class="form-control" dir="rtl" value="استفد من العرض الآن ←">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-transparent border-bottom">
+            <h6 class="mb-0 fw-bold">{{ _('Advanced: Custom HTML Design (optional)') }}</h6>
+            <small class="text-muted">{{ _('Paste your own complete email HTML to fully replace the template above — useful for mimicking a real brand email exactly.') }}</small>
+          </div>
+          <div class="card-body">
+            <details class="mb-3 border rounded p-2 bg-light">
+              <summary class="fw-semibold" style="cursor:pointer;">{{ _('Guidance: what should this HTML contain?') }}</summary>
+              <div class="small text-muted mt-2">
+                <p class="mb-2">
+                  {{ _('This box is the') }} <strong>{{ _('email message only') }}</strong> {{ _('— one single, self-contained HTML
+                  document. It is') }} <strong>{{ _('not') }}</strong> {{ _('a multi-page template: the page a recipient lands
+                  on after clicking, and the "you got caught" awareness page shown afterward, are fixed
+                  pages used for every campaign and can\'t be edited here.') }}
+                </p>
+                <p class="mb-1 fw-semibold text-dark">{{ _('It must:') }}</p>
+                <ul class="mb-2">
+                  <li>{{ _('Be a complete HTML document —') }} <code>{{ _('&lt;!DOCTYPE html&gt;') }}</code>, <code>{{ _('&lt;html&gt;') }}</code>, <code>{{ _('&lt;head&gt;') }}</code>, <code>{{ _('&lt;body&gt;') }}</code>.</li>
+                  <li>{{ _('Include') }} <code>{{TRACKING_URL}}</code> {{ _('as the') }} <code>{{ _('href') }}</code> {{ _('of at least one link/button — this is what records a click for the campaign\'s metrics. Without it, clicks aren\'t tracked.') }}</li>
+                  <li>{{ _('Optionally use') }} <code>{{RECIPIENT_NAME}}</code> {{ _('anywhere you want the recipient\'s name inserted.') }}</li>
+                </ul>
+                <p class="mb-1 fw-semibold text-dark">{{ _('Because it\'s sent as a real email, not a web page, follow email-HTML rules, not normal web conventions:') }}</p>
+                <ul class="mb-2">
+                  <li>{{ _('Lay out with nested') }} <code>{{ _('&lt;table&gt;') }}</code> {{ _('elements, not') }} <code>{{ _('&lt;div&gt;') }}</code>{{ _('/flexbox/grid — many mail clients (Outlook especially) ignore modern CSS layout.') }}</li>
+                  <li>{{ _('Style every element with inline') }} <code>{{ _('style="..."') }}</code> {{ _('attributes. Don\'t rely on a') }} <code>{{ _('&lt;style&gt;') }}</code> {{ _('block or external CSS — clients strip or ignore them inconsistently.') }}</li>
+                  <li>No <code>{{ _('&lt;script&gt;') }}</code> {{ _('— it will never run, and including it raises spam/phishing-filter scores.') }}</li>
+                  <li>{{ _('Reference images by full absolute URL (') }}<code>{{ _('https://yourdomain/...') }}</code>{{ _('), not a relative path — mail clients fetch images directly and don\'t resolve relative paths against any page. Use "Upload an image" below; it inserts a ready-to-use absolute') }} <code>{{ _('&lt;img&gt;') }}</code> {{ _('tag for you.') }}</li>
+                  <li>{{ _('Keep the total HTML modest in size (well under ~100KB) — Gmail and others clip very large HTML emails.') }}</li>
+                  <li>{{ _('Design as a single column, ~600px wide — that\'s the width every major mail client renders consistently, on desktop and mobile alike.') }}</li>
+                </ul>
+                <p class="mb-0">
+                  {{ _('Leave this blank and the structured fields above (sender name, subject, offer heading/body, CTA)
+                  build the email automatically — that built-in template already follows every rule above, so
+                  it\'s a safe starting point to copy and adapt if you want a custom look.') }}
+                </p>
+              </div>
+            </details>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">{{ _('Upload an image') }}</label>
+              <div class="d-flex gap-2 align-items-start">
+                <input type="file" id="phishing-image-upload" class="form-control" accept="image/png,image/jpeg,image/gif">
+                <button type="button" id="phishing-image-upload-btn" class="btn btn-outline-secondary text-nowrap">{{ _('Upload') }}</button>
+              </div>
+              <div id="phishing-image-upload-result" class="form-text"></div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">{{ _('Custom HTML — Email') }}</label>
+              <textarea name="custom_html" id="phishing-custom-html" class="form-control" rows="10"
+                        placeholder="<html>...&#10;Use {{TRACKING_URL}} for the click-tracking link and {{RECIPIENT_NAME}} for the recipient's name.&#10;e.g. &lt;a href=&quot;{{TRACKING_URL}}&quot;&gt;View offer&lt;/a&gt;"></textarea>
+              <div class="form-text">
+                {{ _('If filled in, this raw HTML is sent as-is (with the placeholders substituted) instead of the structured template above.
+                Must include') }} <code>{{TRACKING_URL}}</code> {{ _('somewhere as a link so clicks are tracked. Auto-filled by the generator above.') }}
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label fw-semibold">{{ _('Custom HTML — Landing Page') }}</label>
+              <textarea name="custom_landing_html" id="phishing-custom-landing-html" class="form-control" rows="10"
+                        placeholder="The page shown after the employee clicks the link. Use {{SUBMIT_URL}}, {{TOKEN}}, {{CSRF_TOKEN}} in the form action/hidden fields."></textarea>
+              <div class="form-text">
+                {{ _('If filled in, this replaces the default generic landing page for this campaign. Auto-filled by the generator above.') }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" name="scenario_type" id="gen-scenario-type-field">
+        <input type="hidden" name="company_name" id="gen-company-name-field">
+        <input type="hidden" name="logo_url" id="gen-logo-url-field">
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-danger"><i class="bi bi-check-circle me-1"></i> {{ _('Create Campaign') }}</button>
+          <a href="{{ url_for('phishing.dashboard') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script nonce="{{ csp_nonce }}">
+document.getElementById('phishing-image-upload-btn').addEventListener('click', async () => {
+  const fileInput = document.getElementById('phishing-image-upload');
+  const resultEl = document.getElementById('phishing-image-upload-result');
+  if (!fileInput.files.length) {
+    resultEl.textContent = 'Choose an image first.';
+    resultEl.className = 'form-text text-danger';
+    return;
+  }
+  const formData = new FormData();
+  formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
+  formData.append('image', fileInput.files[0]);
+
+  resultEl.textContent = 'Uploading…';
+  resultEl.className = 'form-text';
+  try {
+    const response = await fetch("{{ url_for('phishing.upload_image') }}", { method: 'POST', body: formData });
+    const data = await response.json();
+    if (!response.ok) {
+      resultEl.textContent = data.error || 'Upload failed.';
+      resultEl.className = 'form-text text-danger';
+      return;
+    }
+    const textarea = document.getElementById('phishing-custom-html');
+    textarea.value += (textarea.value ? '\n' : '') + `<img src="${location.origin}${data.url}" alt="" style="max-width:100%;">`;
+    resultEl.textContent = `Uploaded — image tag inserted into the HTML box below (${data.url}).`;
+    resultEl.className = 'form-text text-success';
+  } catch (err) {
+    resultEl.textContent = 'Upload failed.';
+    resultEl.className = 'form-text text-danger';
+  }
+});
+
+// ── Guided Design Generator ─────────────────────────────────────────────────
+const genScenario = document.getElementById('gen-scenario');
+const genFieldsCoupon = document.getElementById('gen-fields-coupon');
+const genFieldsDelivery = document.getElementById('gen-fields-delivery');
+let genLogoUrl = '';
+
+genScenario.addEventListener('change', () => {
+  const isCoupon = genScenario.value === 'coupon';
+  genFieldsCoupon.classList.toggle('d-none', !isCoupon);
+  genFieldsDelivery.classList.toggle('d-none', isCoupon);
+});
+
+document.getElementById('gen-logo-upload-btn').addEventListener('click', async () => {
+  const fileInput = document.getElementById('gen-logo-upload');
+  const resultEl = document.getElementById('gen-logo-result');
+  if (!fileInput.files.length) {
+    resultEl.textContent = 'Choose a logo image first.';
+    resultEl.className = 'form-text text-danger';
+    return;
+  }
+  const formData = new FormData();
+  formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
+  formData.append('image', fileInput.files[0]);
+
+  resultEl.textContent = 'Uploading…';
+  resultEl.className = 'form-text';
+  try {
+    const response = await fetch("{{ url_for('phishing.upload_image') }}", { method: 'POST', body: formData });
+    const data = await response.json();
+    if (!response.ok) {
+      resultEl.textContent = data.error || 'Upload failed.';
+      resultEl.className = 'form-text text-danger';
+      return;
+    }
+    genLogoUrl = `${location.origin}${data.url}`;
+    document.getElementById('gen-logo-url-field').value = genLogoUrl;
+    resultEl.innerHTML = `Logo uploaded <img src="${genLogoUrl}" alt="" style="height:24px;vertical-align:middle;margin-left:6px;">`;
+    resultEl.className = 'form-text text-success';
+  } catch (err) {
+    resultEl.textContent = 'Upload failed.';
+    resultEl.className = 'form-text text-danger';
+  }
+});
+
+document.getElementById('gen-generate-btn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('gen-status');
+  const scenario = genScenario.value;
+  const payload = {
+    scenario: scenario,
+    company_name: document.getElementById('gen-company-name').value,
+    logo_url: genLogoUrl,
+    brand_color: document.getElementById('gen-brand-color').value,
+    cta_text: document.getElementById('gen-cta-text').value,
+  };
+  if (scenario === 'coupon') {
+    payload.discount_amount = document.getElementById('gen-discount-amount').value;
+    payload.expiry_text = document.getElementById('gen-expiry-text').value;
+  } else {
+    payload.tracking_number = document.getElementById('gen-tracking-number').value;
+    payload.delivery_date = document.getElementById('gen-delivery-date').value;
+  }
+
+  statusEl.textContent = 'Generating…';
+  statusEl.className = 'form-text ms-2';
+  try {
+    const response = await fetch("{{ url_for('phishing.generate_design') }}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      statusEl.textContent = data.error || 'Generation failed.';
+      statusEl.className = 'form-text ms-2 text-danger';
+      return;
+    }
+    document.getElementById('phishing-custom-html').value = data.email_html;
+    document.getElementById('phishing-custom-landing-html').value = data.landing_html;
+    document.getElementById('gen-scenario-type-field').value = scenario;
+    document.getElementById('gen-company-name-field').value = payload.company_name;
+
+    const frame = document.getElementById('gen-preview-frame');
+    frame.srcdoc = data.landing_html;
+    document.getElementById('gen-preview-wrap').classList.remove('d-none');
+
+    statusEl.textContent = 'Design generated — filled into the Email Content HTML boxes below. Scroll down to review, or send as-is.';
+    statusEl.className = 'form-text ms-2 text-success';
+  } catch (err) {
+    statusEl.textContent = 'Generation failed.';
+    statusEl.className = 'form-text ms-2 text-danger';
+  }
+});
+</script>
+{% endblock %}

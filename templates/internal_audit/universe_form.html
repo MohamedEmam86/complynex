@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('New Auditable Area') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('New Auditable Area') }}</h3>
+    <div class="card"><div class="card-body">
+        <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="form-label">{{ _('Auditable Area') }}</label>
+                <input type="text" name="auditable_area" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ _('Description') }}</label>
+                <textarea name="area_description" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Risk Level') }}</label>
+                    <select name="risk_level" class="form-select">
+                        {% for l in ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Department') }}</label>
+                    <select name="department_id" class="form-select">
+                        <option value="">-</option>
+                        {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Audit Frequency') }}</label>
+                    <select name="audit_frequency" class="form-select">
+                        {% for f in ['QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL', 'BIENNIAL'] %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+            <a href="{{ url_for('internal_audit.universe') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+        </form>
+    </div></div>
+</div>
+{% endblock %}

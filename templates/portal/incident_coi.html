@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Ad-hoc COI Disclosure - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% if session.get('dir') == 'rtl' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+</head>
+
+<body class="complynex-public">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8 col-md-10">
+                <!-- Brand Header -->
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        class="logo">
+                    <h1><i class="bi bi-people"></i> {{ _('Ad-hoc COI Disclosure') }}</h1>
+                    <p>{{ _('Report a New Conflict of Interest') }}</p>
+                </div>
+
+                <!-- Form Card -->
+                <div class="complynex-form-card">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="complynex-info-box mb-4">
+                        <h6><i class="bi bi-info-circle"></i> {{ _('When to Use This Form') }}</h6>
+                        <p class="mb-0">{{ _('Use this form to report a new conflict of interest that has arisen since
+                            your last annual declaration. This could include new business relationships, family
+                            connections, or other situations that may create a conflict.') }}</p>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('portal.incident_coi') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <!-- Your Information -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-person"></i> {{ _('Your Information') }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Email Address') }} <span
+                                    class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" required
+                                placeholder="{{ _('your.email@company.com') }}">
+                            <small class="text-muted">{{ _('Must be your company email address') }}</small>
+                        </div>
+
+                        <!-- Conflict Details -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-exclamation-circle"></i> {{ _('Conflict Details') }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Type of Conflict') }} <span
+                                    class="text-danger">*</span></label>
+                            <select name="conflict_type" class="form-select" required>
+                                <option value="">{{ _('Select type...') }}</option>
+                                <option value="financial">{{ _('Financial Interest') }}</option>
+                                <option value="employment">{{ _('Outside Employment') }}</option>
+                                <option value="family">{{ _('Family Relationship') }}</option>
+                                <option value="gifts">{{ _('Gifts & Hospitality') }}</option>
+                                <option value="other">{{ _('Other') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Description of Conflict') }} <span
+                                    class="text-danger">*</span></label>
+                            <textarea name="conflict_description" class="form-control" rows="4" required
+                                placeholder="{{ _('Please describe the potential conflict of interest in detail...') }}"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Parties Involved') }}</label>
+                            <textarea name="parties_involved" class="form-control" rows="2"
+                                placeholder="{{ _('Names and relationships of parties involved...') }}"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Proposed Mitigation') }}</label>
+                            <textarea name="mitigation" class="form-control" rows="2"
+                                placeholder="{{ _('Any steps you propose to mitigate this conflict...') }}"></textarea>
+                        </div>
+
+                        <!-- Mark all conflict types as yes for ad-hoc -->
+                        <input type="hidden" name="has_other_conflicts" value="1">
+                        <input type="hidden" name="other_conflicts_details" id="hidden_details">
+
+                        <!-- Digital Signature -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-pen"></i> {{ _('Digital Signature') }}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">{{ _('Type your full name as signature') }} <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" name="digital_signature" class="form-control" required
+                                placeholder="{{ _('Your full legal name') }}">
+                            <small class="text-muted">{{ _('By typing your name, you certify that all information
+                                provided is true and accurate.') }}</small>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-complynex btn-lg">
+                                <i class="bi bi-send"></i> {{ _('Submit Disclosure') }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('portal.dashboard') }}" class="complynex-link">
+                            <i class="bi bi-arrow-left"></i> {{ _('Back to Portal') }}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="complynex-footer">
+                    <p>{{ _('&copy; 2026 ComplyNex. All rights reserved. &nbsp;|&nbsp; Powered by Mohamed Emam &nbsp;|&nbsp;') }} <a href="mailto:info@complynex.online">{{ _('info@complynex.online') }}</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+    <script nonce="{{ csp_nonce }}">
+        // Combine conflict description into hidden field for COI model
+        document.querySelector('form').addEventListener('submit', function () {
+            const type = document.querySelector('[name="conflict_type"]').value;
+            const desc = document.querySelector('[name="conflict_description"]').value;
+            const parties = document.querySelector('[name="parties_involved"]').value;
+            const mitigation = document.querySelector('[name="mitigation"]').value;
+
+            document.getElementById('hidden_details').value =
+                `Type: ${type}\nDescription: ${desc}\nParties: ${parties}\nMitigation: ${mitigation}`;
+        });
+    </script>
+</body>
+
+</html>

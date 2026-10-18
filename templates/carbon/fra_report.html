@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('FRA Annual Carbon Footprint Report') }} — ComplyNex{% endblock %}
+{% block extra_css %}
+<style nonce="{{ csp_nonce }}">
+  .fra-report { max-width: 900px; margin: 0 auto; background: #fff; padding: 2.5rem; }
+  .fra-report h2 { color: #14532d; border-bottom: 2px solid #14532d; padding-bottom: .3rem; margin-top: 1.6rem; }
+  .fra-report .rpt-head { text-align: center; border-bottom: 3px double #14532d; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .fra-sig { border-top: 1px solid #999; margin-top: 4rem; padding-top: .3rem; width: 260px; display: inline-block; }
+  @media print {
+    .sidebar, .sidebar-container, nav, .navbar, .no-print, .site-footer, .btn { display: none !important; }
+    .main-content, .fra-report { margin: 0 !important; padding: 0.5cm !important; width: 100% !important; max-width: 100% !important; }
+    body { background: #fff !important; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+<div class="no-print d-flex justify-content-between align-items-center mb-3">
+  <a href="{{ url_for('carbon.fra_compliance') }}" class="btn btn-secondary btn-sm">&larr; {{ _('Back') }}</a>
+  {% if readiness.total and (readiness.reviewed_pct < 100 or readiness.evidence_pct < 100) %}
+  <span class="alert alert-warning py-1 px-3 mb-0 small">
+    {{ _('Completeness: %(r)s%% reviewed, %(e)s%% with evidence — the verifier may query unreviewed or unevidenced entries.', r=readiness.reviewed_pct, e=readiness.evidence_pct) }}
+  </span>
+  {% endif %}
+  <button class="btn btn-success btn-sm" data-action="print"><i class="bi bi-printer me-1"></i>{{ _('Print / Save as PDF') }}</button>
+</div>
+
+<div class="fra-report shadow-sm">
+  <div class="rpt-head">
+    <h1 class="h3 mb-1">{{ _('Annual Carbon Footprint Report') }}</h1>
+    <div class="text-muted">{{ _('Prepared pursuant to FRA Board Decision No. 36 of 2026') }}</div>
+    <div class="text-muted">{{ _('تقرير البصمة الكربونية السنوي — إعمالاً لقرار مجلس إدارة الهيئة العامة للرقابة المالية رقم ٣٦ لسنة ٢٠٢٦') }}</div>
+    <div class="mt-2"><strong>{{ _('Reporting period:') }}</strong> {{ period.label }} ({{ period.start_date }} — {{ period.end_date }})</div>
+    <div class="small text-muted">{{ _('Generated:') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+  </div>
+
+  <h2>{{ _('1. Summary of results') }}</h2>
+  <table class="table table-bordered">
+    <thead class="table-light">
+      <tr><th>{{ _('Scope') }}</th><th>{{ _('Description') }}</th><th class="text-end">{{ _('Emissions (tCO2e)') }}</th></tr>
+    </thead>
+    <tbody>
+      {% if 'scope1' in enabled %}
+      <tr><td>{{ _('Scope 1') }}</td><td>{{ _('Direct emissions — fuel combustion, owned vehicles, operations') }}</td><td class="text-end">{{ totals.scope1 }}</td></tr>
+      {% endif %}
+      {% if 'scope2' in enabled %}
+      <tr><td>{{ _('Scope 2') }}</td><td>{{ _('Indirect emissions — purchased electricity, cooling and heating (location-based)') }}</td><td class="text-end">{{ totals.scope2_location }}</td></tr>
+      {% endif %}
+      {% if 'scope3' in enabled %}
+      <tr><td>{{ _('Scope 3') }}</td><td>{{ _('Value-chain emissions (assessed categories)') }}</td><td class="text-end">{{ totals.scope3 }}</td></tr>
+      {% endif %}
+      <tr class="table-light"><th colspan="2">{{ _('Total gross emissions') }}</th><th class="text-end">{{ totals.total_location_based }}</th></tr>
+    </tbody>
+  </table>
+
+  <h2>{{ _('2. Organizational and operational boundary') }}</h2>
+  <p>{{ _('This inventory was prepared following the GHG Protocol Corporate Accounting and Reporting Standard (operational control approach) and the measurement scope required by FRA Decision 36/2026.') }}</p>
+  <ul>
+    <li>{{ _('Scope 1 (direct emissions): %(s)s', s=_('INCLUDED') if 'scope1' in enabled else _('EXCLUDED')) }}</li>
+    <li>{{ _('Scope 2 (purchased energy): %(s)s', s=_('INCLUDED') if 'scope2' in enabled else _('EXCLUDED')) }}</li>
+    <li>
+      {% if 'scope3' in enabled %}
+        {{ _('Scope 3 (value chain): INCLUDED — assessed categories are listed in the annex. Categories not listed were not assessed in this period.') }}
+      {% else %}
+        <strong>{{ _('Scope 3 (value chain): EXCLUDED from the reporting boundary for this period.') }}</strong>
+        {{ _('This exclusion is declared explicitly in line with GHG Protocol boundary-setting guidance. FRA Decision 36/2026 requires Scope 1 and Scope 2 only.') }}
+      {% endif %}
+    </li>
+  </ul>
+
+  <h2>{{ _('3. Emissions by category (annex)') }}</h2>
+  <table class="table table-sm table-bordered">
+    <thead class="table-light">
+      <tr><th>{{ _('Scope') }}</th><th>{{ _('Category') }}</th><th class="text-end">{{ _('Entries') }}</th><th class="text-end">{{ _('tCO2e') }}</th></tr>
+    </thead>
+    <tbody>
+      {% for r in category_rows %}
+      <tr><td>{{ r.scope }}</td><td>{{ r.category }}</td><td class="text-end">{{ r.count }}</td><td class="text-end">{{ r.tco2e }}</td></tr>
+      {% else %}
+      <tr><td colspan="4" class="text-center text-muted">{{ _('No activity entries recorded for this period.') }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _('4. Methodology and emission factors') }}</h2>
+  <p>{{ _('Emissions were calculated as activity quantity × emission factor, in tonnes of CO2 equivalent (tCO2e). Every figure in this report is traceable in ComplyNex to the underlying activity entry, its supporting evidence, and the exact emission factor (source and vintage) applied.') }}</p>
+  <p class="mb-1"><strong>{{ _('Factor sources used:') }}</strong></p>
+  <ul>
+    {% for fsrc in factor_sources %}
+    <li>{{ fsrc.source }} ({{ _('vintage') }} {{ fsrc.vintage_year }})</li>
+    {% endfor %}
+  </ul>
+
+  <h2>{{ _('5. Verification') }}</h2>
+  <table class="table table-bordered">
+    <tbody>
+      <tr><th style="width:35%">{{ _('Report status') }}</th><td>{{ period.fra_status }}</td></tr>
+      <tr><th>{{ _('Accredited verification body') }}</th><td>{{ period.verifier_name or _('— to be engaged (must be FRA-accredited) —') }}</td></tr>
+      <tr><th>{{ _('Certification date') }}</th><td>{{ period.certified_at or '—' }}</td></tr>
+      <tr><th>{{ _('Submitted to FRA') }}</th><td>{{ period.submitted_to_fra_at or '—' }}</td></tr>
+    </tbody>
+  </table>
+
+  <h2>{{ _('6. Offset commitment') }}</h2>
+  {% if obligation %}
+  <p>{{ _('Pursuant to FRA Decision 36/2026, the company commits to purchasing certified emission-reduction certificates equal to 20%% of the total emissions declared above (%(req)s tCO2e) through the FRA Climate Project Registry within 90 days of report submission (deadline: %(dl)s).', req=obligation.required_tco2e, dl=obligation.deadline_date) }}</p>
+  {% else %}
+  <p>{{ _('Upon submission of this report, the company will purchase certified emission-reduction certificates equal to 20%% of the total declared emissions (%(est)s tCO2e estimated) through the FRA Climate Project Registry within the 90-day statutory window.', est=((totals.total_location_based or 0) * 0.2) | round(3)) }}</p>
+  {% endif %}
+
+  <div class="mt-5">
+    <div class="row">
+      <div class="col-6"><span class="fra-sig">{{ _('Prepared by (Compliance)') }}</span></div>
+      <div class="col-6"><span class="fra-sig">{{ _('Approved by (Executive Management)') }}</span></div>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

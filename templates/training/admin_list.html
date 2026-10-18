@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}Training Management - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Training Management') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('training.training_report') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-bar-chart"></i> {{ _('Reports') }}
+        </a>
+        <a href="#" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-gear-wide-connected"></i> {{ _('Assignment Rules') }}
+        </a>
+        <a href="{{ url_for('training.course_library') }}" class="btn btn-sm btn-outline-primary me-2">
+            <i class="bi bi-eye"></i> {{ _('View Library (Self)') }}
+        </a>
+        <a href="{{ url_for('training.edit_course') }}" class="btn btn-sm btn-primary ripple">
+            <i class="bi bi-plus-circle"></i> {{ _('Create New Course') }}
+        </a>
+    </div>
+</div>
+
+<!-- Role Switcher Tabs -->
+<ul class="nav nav-pills mb-4" id="roleTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="management-tab" data-bs-toggle="pill" data-bs-target="#management"
+            type="button" role="tab">
+            <i class="bi bi-shield-check me-2"></i> {{ _('System Management') }}
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link position-relative" id="personal-tab" data-bs-toggle="pill" data-bs-target="#personal"
+            type="button" role="tab">
+            <i class="bi bi-person-badge me-2"></i> My Learning Path
+            {% if personal_enrollments %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {{ personal_enrollments|length }}
+            </span>
+            {% endif %}
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="roleTabsContent">
+    <!-- Management Tab -->
+    <div class="tab-pane fade show active" id="management" role="tabpanel">
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">{{ _('Active Courses') }}</h5>
+                        <span class="badge bg-primary rounded-pill">{{ courses|length }} Courses</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">{{ _('Code') }}</th>
+                                        <th>{{ _('Course Name') }}</th>
+                                        <th>{{ _('Category') }}</th>
+                                        <th>{{ _('Mandatory') }}</th>
+                                        <th>{{ _('Questions') }}</th>
+                                        <th>{{ _('Enrollments') }}</th>
+                                        <th class="text-end pe-4">{{ _('Actions') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for course in courses %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <small class="font-monospace text-muted">{{ course.course_code }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">{{ course.course_name }}</div>
+                                            <small class="text-muted">{{ course.duration_minutes }} mins</small>
+                                        </td>
+                                        <td>{{ course.category }}</td>
+                                        <td>
+                                            {% if course.is_mandatory %}
+                                            <span class="badge bg-danger">{{ _('Mandatory') }}</span>
+                                            {% else %}
+                                            <span class="badge bg-light text-dark border">{{ _('Optional') }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ course.get_questions()|length }}</td>
+                                        <td>
+                                            <span class="badge bg-info-soft text-info">--</span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <div class="btn-group">
+                                                <a href="{{ url_for('training.edit_course', id=course.id) }}"
+                                                    class="btn btn-sm btn-outline-primary" title="{{ _('Edit Course') }}">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{{ url_for('training.manage_questions', id=course.id) }}"
+                                                    class="btn btn-sm btn-outline-secondary" title="{{ _('Manage Questions') }}">
+                                                    <i class="bi bi-question-circle"></i>
+                                                </a>
+                                                <button class="btn btn-sm btn-outline-danger" title="{{ _('Delete Course') }}"
+                                                    disabled>
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0 fw-bold">{{ _('Question Bank Quick View') }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">{{ _('Select a course above to manage its dedicated quiz assessment questions.') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0 fw-bold">{{ _('Global Enrollment Stats') }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="enrollmentChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Tab -->
+    <div class="tab-pane fade" id="personal" role="tabpanel">
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card border-0 shadow-sm overflow-hidden">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0 fw-bold">{{ _('My Active Enrollments') }}</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if personal_enrollments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">{{ _('Course') }}</th>
+                                        <th>{{ _('Type') }}</th>
+                                        <th>{{ _('Due Date') }}</th>
+                                        <th>{{ _('Status') }}</th>
+                                        <th class="text-end pe-4">{{ _('Action') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for enrollment in personal_enrollments %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="fw-bold">{{ enrollment.course_name }}</div>
+                                            <small class="text-muted">{{ enrollment.course_code }}</small>
+                                        </td>
+                                        <td>
+                                            {% if enrollment.is_mandatory %}
+                                            <span class="badge bg-danger-soft text-danger">{{ _('Mandatory') }}</span>
+                                            {% else %}
+                                            <span class="badge bg-light text-dark border">{{ _('Optional') }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ enrollment.due_date }}</td>
+                                        <td>
+                                            {% if enrollment.status == 'completed' %}
+                                            <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>
+                                                Completed ({{ enrollment.score }}%)</span>
+                                            {% else %}
+                                            <span class="text-primary"><i class="bi bi-play-circle-fill me-1"></i> {{ _('In
+                                                Progress') }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <a href="{{ url_for('training.view_course', id=enrollment.course_id) }}"
+                                                class="btn btn-sm btn-primary px-3">
+                                                {{ 'Review' if enrollment.status == 'completed' else 'Continue' }}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <p class="text-muted">{{ _('You have no active personal enrollments.') }}</p>
+                            <a href="{{ url_for('training.course_library') }}"
+                                class="btn btn-outline-primary btn-sm">{{ _('Browse Library') }}</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 fw-bold">{{ _('My Recent Achievements') }}</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if personal_certificates %}
+                        <ul class="list-group list-group-flush">
+                            {% for cert in personal_certificates[:3] %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <div>
+                                    <h6 class="mb-0 fw-bold">{{ cert.course_name }}</h6>
+                                    <small class="text-muted">Issued on {{ cert.issue_date }}</small>
+                                </div>
+                                <i class="bi bi-award text-warning fs-3"></i>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        <div class="mt-3 text-center">
+                            <a href="{{ url_for('training.my_certificates') }}" class="btn btn-link btn-sm">{{ _('View My
+                                Certificates') }}</a>
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-3">{{ _('No certificates earned yet.') }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100 bg-light border">
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                        <i class="bi bi-journal-text text-muted fs-1 mb-3"></i>
+                        <h5>{{ _('Need a new course?') }}</h5>
+                        <p class="text-muted small">{{ _('Access the full library to self-enroll in optional training modules.') }}
+                        </p>
+                        <a href="{{ url_for('training.course_library') }}" class="btn btn-primary">{{ _('Course Library') }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-info-soft {
+        background-color: rgba(13, 202, 240, 0.1);
+    }
+
+    .bg-danger-soft {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+
+    .nav-pills .nav-link {
+        border-radius: 10px;
+        padding: 10px 20px;
+        color: #6c757d;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #f8f9fa;
+        color: #d21f3c;
+        /* ComplyNex Red */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(210, 31, 60, 0.2);
+    }
+
+    .nav-pills .nav-link:hover:not(.active) {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}

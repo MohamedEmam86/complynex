@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Report Potential Conflict - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/complynex-public-brand.css') }}">
+</head>
+
+<body class="complynex-public">
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <!-- Brand Header -->
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex Logo') }}"
+                        class="logo">
+                    <h1>{{ _('Conflict Reporting') }}</h1>
+                    <p>{{ _('Secure & Confidential Disclosure Channel') }}</p>
+                </div>
+
+                <!-- Form Card -->
+                <div class="complynex-form-card">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-4 text-center">
+                            <div class="p-3 bg-light rounded-3">
+                                <h5 class="text-secondary mb-2"><i class="bi bi-person-badge me-2"></i>{{ _('Link to Employee
+                                    Profile') }}</h5>
+                                <p class="text-muted small mb-3">{{ _('Please enter your official ComplyNex email address to
+                                    proceed.') }}</p>
+                                <div class="mx-auto" style="max-width: 400px;">
+                                    <input type="email" name="email" class="form-control text-center"
+                                        placeholder="{{ _('name@complynex.online') }}" required value="{{ email if email else '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="complynex-section-title">
+                            <i class="bi bi-clipboard-check me-2"></i>{{ _('Nature of Disclosure') }}
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input conflict-trigger" id="financial"
+                                name="has_financial_interests">
+                            <label class="form-check-label" for="financial">{{ _('Financial interests in competitors,
+                                suppliers, or customers') }}</label>
+                        </div>
+                        <div class="mb-3 ms-4 collapse" id="financial-details">
+                            <textarea class="form-control" name="financial_interests_details"
+                                placeholder="{{ _('Please provide details about the financial interest...') }}"></textarea>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input conflict-trigger" id="gifts"
+                                name="has_received_gifts">
+                            <label class="form-check-label" for="gifts">{{ _('Receipt of gifts exceeding nominal value') }}</label>
+                        </div>
+                        <div class="mb-3 ms-4 collapse" id="gifts-details">
+                            <textarea class="form-control" name="gifts_details"
+                                placeholder="{{ _('Please describe the gifts received...') }}"></textarea>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input conflict-trigger" id="employment"
+                                name="has_outside_employment">
+                            <label class="form-check-label" for="employment">{{ _('Outside employment or consulting
+                                arrangements') }}</label>
+                        </div>
+                        <div class="mb-3 ms-4 collapse" id="employment-details">
+                            <textarea class="form-control" name="outside_employment_details"
+                                placeholder="{{ _('Please describe the outside employment...') }}"></textarea>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input conflict-trigger" id="other"
+                                name="has_other_conflicts">
+                            <label class="form-check-label" for="other">{{ _('Any other potential conflicts to declare') }}</label>
+                        </div>
+                        <div class="mb-3 ms-4 collapse" id="other-details">
+                            <textarea class="form-control" name="other_conflicts_details"
+                                placeholder="{{ _('Please describe any other potential conflicts...') }}"></textarea>
+                        </div>
+
+                        <div class="complynex-section-title">
+                            <i class="bi bi-pen me-2"></i>{{ _('Digital Attestation') }}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">{{ _('Full Legal Name') }}</label>
+                            <input type="text" class="form-control" name="digital_signature"
+                                placeholder="{{ _('Type your full name to sign') }}" required>
+                            <div class="form-text mt-2">{{ _('By submitting this form, I certify that the information provided
+                                is true and complete to the best of my knowledge.') }}</div>
+                        </div>
+
+                        <div class="d-grid mt-5">
+                            <button type="submit" class="btn btn-complynex btn-lg shadow-sm">
+                                {{ _('Submit Declaration') }} <i class="bi bi-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="complynex-footer mt-4">
+                    &copy; {{ current_year }} ComplyNex Compliance Office. Confidential.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+    <script nonce="{{ csp_nonce }}">
+        document.querySelectorAll('.conflict-trigger').forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                const targetId = this.id + '-details';
+                const targetEl = document.getElementById(targetId);
+                if (this.checked) {
+                    new bootstrap.Collapse(targetEl, { toggle: false }).show();
+                } else {
+                    new bootstrap.Collapse(targetEl, { toggle: false }).hide();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Regulators - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Manage Regulators') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        {% if show_inactive %}
+        <a href="{{ url_for('reporting.list_regulators') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-eye-slash"></i> {{ _('Hide Inactive') }}
+        </a>
+        {% else %}
+        <a href="{{ url_for('reporting.list_regulators', include_inactive=1) }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-eye"></i> {{ _('Show Inactive') }}
+        </a>
+        {% endif %}
+        <a href="{{ url_for('reporting.manage_regulator') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle"></i> {{ _('Add Regulator') }}
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">{{ _('Name') }}</th>
+                        <th>{{ _('Code') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Contact') }}</th>
+                        <th class="text-end pe-4">{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in regulators %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ reg.regulator_name }}</div>
+                            <small class="text-muted">{{ reg.website or '' }}</small>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ reg.regulator_code }}</span></td>
+                        <td>
+                            {% if reg.is_active %}
+                            <span class="badge bg-success-soft text-success">{{ _('Active') }}</span>
+                            {% else %}
+                            <span class="badge bg-danger-soft text-danger">{{ _('Inactive') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="small">{{ reg.contact_email }}</div>
+                            <div class="small text-muted">{{ reg.contact_phone }}</div>
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="{{ url_for('reporting.manage_regulator', id=reg.id) }}"
+                                class="btn btn-sm btn-outline-secondary">
+                                {{ _('Edit') }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">{{ _('No regulators found.') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

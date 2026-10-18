@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Carbon Footprint & Climate') }} — ComplyNex{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">
+{% endblock %}
+{% block content %}
+<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+
+  <div class="ecx-hero ecx-carbon">
+    <div class="ecx-eyebrow">{{ _('Carbon Footprint & Climate') }}</div>
+    <h1><i class="bi bi-cloud-haze2 me-2"></i>{{ _('GHG Emissions Inventory') }} — {{ period.label if period else _('No period set') }}</h1>
+    <p>{{ _('A full Scope 1, 2 and 3 greenhouse-gas inventory built on the GHG Protocol Corporate Standard — the first carbon calculator purpose-built for an Egyptian payment service provider, with every figure traceable to the activity and emission factor behind it.') }}</p>
+    <span class="ecx-pioneer-badge"><i class="bi bi-stars"></i> {{ _('First of its kind for Egyptian PSPs') }}</span>
+  </div>
+
+  {% if enabled_scopes is defined and 'scope3' not in enabled_scopes %}
+  <div class="alert alert-light border small py-2 mb-3">
+    <i class="bi bi-bounding-box me-1"></i>
+    {{ _('Reporting boundary: Scope 1 + Scope 2 (FRA 36/2026). Scope 3 is excluded — enable it in Carbon Settings if this engagement requires full GHG Protocol coverage.') }}
+  </div>
+  {% endif %}
+  <ul class="nav ecx-nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link active ecx-carbon" href="{{ url_for('carbon.dashboard') }}">{{ _('Dashboard') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('carbon.entries_list') }}">{{ _('Activity Log') }}</a></li>
+    {% if current_user.can_edit('carbon') %}<li class="nav-item"><a class="nav-link" href="{{ url_for('carbon.entry_new') }}">{{ _('Log Activity') }}</a></li>{% endif %}
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('carbon.factors_library') }}">{{ _('Emission Factor Library') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('carbon.targets') }}">{{ _('Reduction Targets') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('carbon.methodology') }}"><i class="bi bi-info-circle me-1"></i>{{ _('Methodology') }}</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('carbon.fra_compliance') }}"><i class="bi bi-bank me-1"></i>{{ _('FRA Compliance') }}</a></li>
+  </ul>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3">
+      <div class="ecx-card ecx-stat ecx-carbon-accent">
+        <div class="n">{{ totals.total_location_based }}</div>
+        <div class="l">{{ _('tCO2e — Total (location-based)') }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="ecx-card ecx-stat">
+        <div class="n">{{ totals.scope1 }}</div>
+        <div class="l">{{ _('tCO2e — Scope 1') }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="ecx-card ecx-stat">
+        <div class="n">{{ totals.scope2_location }}</div>
+        <div class="l">{{ _('tCO2e — Scope 2') }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="ecx-card ecx-stat">
+        <div class="n">{{ totals.scope3 }}</div>
+        <div class="l">{{ _('tCO2e — Scope 3') }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-7">
+      <div class="ecx-card">
+        <h6><span><i class="bi bi-bar-chart-steps me-1"></i>{{ _('Emissions by Scope') }}</span>
+          {% if yoy.available %}
+          <span class="ecx-rating-pill" style="background:{{ '#198754' if yoy.direction=='down' else ('#dc3545' if yoy.direction=='up' else '#6c757d') }};">
+            <i class="bi bi-{{ 'arrow-down' if yoy.direction=='down' else ('arrow-up' if yoy.direction=='up' else 'dash') }}"></i>
+            {{ yoy.pct_change }}% {{ _('YoY') }}
+          </span>
+          {% endif %}
+        </h6>
+        {% set s1 = totals.scope1 %}{% set s2 = totals.scope2_location %}{% set s3 = totals.scope3 %}
+        {% set tot = (s1 + s2 + s3) or 1 %}
+        <div class="ecx-scope-bar">
+          <span style="width:{{ (s1/tot*100)|round(1) }}%; background:#E67E22;" title="{{ _('Scope 1') }}"></span>
+          <span style="width:{{ (s2/tot*100)|round(1) }}%; background:#0D6EFD;" title="{{ _('Scope 2') }}"></span>
+          <span style="width:{{ (s3/tot*100)|round(1) }}%; background:#198754;" title="{{ _('Scope 3') }}"></span>
+        </div>
+        <div class="ecx-scope-legend">
+          <span><i class="dot" style="background:#E67E22;"></i>{{ _('Scope 1 — Direct') }} ({{ s1 }} t)</span>
+          <span><i class="dot" style="background:#0D6EFD;"></i>{{ _('Scope 2 — Purchased Energy') }} ({{ s2 }} t)</span>
+          <span><i class="dot" style="background:#198754;"></i>{{ _('Scope 3 — Value Chain') }} ({{ s3 }} t)</span>
+        </div>
+
+        {% if scope3_breakdown %}
+        <hr>
+        <div class="small fw-semibold mb-2 text-muted text-uppercase" style="font-size:11px;letter-spacing:.04em;">{{ _('Scope 3 by category') }}</div>
+        <table class="ecx-table-clean">
+          <thead><tr><th>{{ _('Category') }}</th><th>{{ _('tCO2e') }}</th></tr></thead>
+          <tbody>
+          {% for cat_no, d in scope3_breakdown.items() %}
+            <tr><td>{{ _('Cat.') }} {{ cat_no }} — {{ d.label }}</td><td>{{ d.tco2e }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+
+        <div class="ecx-methodology-box">
+          <strong><i class="bi bi-calculator me-1"></i>{{ _('How this is calculated') }}</strong>
+          {{ _('Every entry follows one formula:') }} <code>tCO2e = ({{ _('quantity') }} × {{ _('emission factor') }}) ÷ 1000</code>.
+          {{ _('Factors are sourced from DEFRA, IPCC AR6 and IEA, each dated and cited. See the') }}
+          <a href="{{ url_for('carbon.methodology') }}">{{ _('full methodology page') }}</a>.
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="ecx-card mb-3">
+        <h6><i class="bi bi-flag me-1"></i>{{ _('Reduction Target Progress') }}</h6>
+        {% if target_progress %}
+        <div class="d-flex justify-content-between small text-muted mb-1">
+          <span>{{ target.baseline_year }} {{ _('baseline') }}: {{ target_progress.baseline_tco2e }} t</span>
+          <span>2030 {{ _('target') }}: {{ target_progress.target_tco2e }} t</span>
+        </div>
+        <div class="progress" style="height:10px; border-radius:999px;">
+          <div class="progress-bar" style="width:{{ [target_progress.pct_of_path_walked, 100]|min if target_progress.pct_of_path_walked else 0 }}%; background:var(--ecx-carbon-2);"></div>
+        </div>
+        <div class="text-center mt-2 fw-semibold" style="color:var(--ecx-carbon-3);">{{ target_progress.pct_of_path_walked }}% {{ _('of the way to target') }}</div>
+        {% else %}
+        <div class="ecx-empty-state py-3">
+          <i class="bi bi-flag"></i>
+          <div>{{ _('No baseline set yet.') }} <a href="{{ url_for('carbon.targets') }}">{{ _('Set a reduction target →') }}</a></div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="ecx-card">
+        <h6><i class="bi bi-clock-history me-1"></i>{{ _('Recent Activity') }} <span class="text-muted small">({{ entry_count }} {{ _('total') }})</span></h6>
+        {% for e in recent_entries %}
+        <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid #f1f4f5;">
+          <div>
+            <span class="ecx-scope-tag {{ e.scope }}">{{ e.scope|upper }}</span>
+            <span class="ms-2 small">{{ e.activity }}</span>
+          </div>
+          <span class="fw-semibold small">{{ e.tco2e }} t</span>
+        </div>
+        {% else %}
+        <div class="ecx-empty-state">
+          <i class="bi bi-inbox"></i>
+          <div>{{ _('No activity logged yet.') }}
+          {% if current_user.can_edit('carbon') %}<a href="{{ url_for('carbon.entry_new') }}">{{ _('Log the first entry →') }}</a>{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

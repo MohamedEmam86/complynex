@@ -1,0 +1,13 @@
+{# ComplyNex introduction shown before every lesson video (marketing partnership Integrys × ComplyNex). #}
+<div class="ia-cnx-head">
+  <img src="{{ url_for('static', filename='images/academy/complynex-logo.png') }}" alt="ComplyNex" class="ia-cnx-logo">
+  <span class="ia-tag">{{ t('Before the video', 'قبل الفيديو') }}</span>
+</div>
+<h3 class="ia-cnx-title">{{ t('Meet ComplyNex — where this lesson becomes a daily workflow', 'تعرّف على ComplyNex — حيث يتحول هذا الدرس إلى عمل يومي') }}</h3>
+<p>{{ t('This series is brought to you by Integrys Consulting in partnership with ComplyNex, a compliance management platform built in Egypt for banks, fintechs and payment service providers. It brings screening, KYC, AML cases, risk, governance and training into one place, with Arabic and English throughout.',
+       'هذه السلسلة مقدمة من إنتيجريس للاستشارات بالشراكة مع ComplyNex، منصة إدارة الالتزام المبنية في مصر للبنوك وشركات التكنولوجيا المالية ومقدمي خدمات الدفع. تجمع الفحص واعرف عميلك وحالات مكافحة غسل الأموال والمخاطر والحوكمة والتدريب في مكان واحد، بالعربي والإنجليزي.') }}</p>
+{% if L(current, 'intro') %}
+  <p class="ia-cnx-sub">{{ t('How ComplyNex supports what you are about to learn:', 'كيف يدعم ComplyNex ما ستتعلمه الآن:') }}</p>
+  <div class="ia-prose ia-cnx-points">{{ L(current, 'intro')|ia_body }}</div>
+{% endif %}
+<p class="ia-small"><a href="{{ url_for('academy.complynex_demo', src=c.slug ~ '-' ~ current.position) }}" target="_blank" rel="noopener">{{ t('Request a free ComplyNex demo →', 'اطلب عرضًا مجانيًا لـ ComplyNex ←') }}</a></p>

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _("Submit Consumer Protection Complaint") }} - ComplyNex{% endblock %}
+
+{% block body_class %}complynex-public{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <!-- Brand Header -->
+            <div class="complynex-brand-header">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}" class="logo">
+                <h1>{{ _("Consumer Protection") }}</h1>
+                <p>{{ _("Official Complaint Form") }}</p>
+            </div>
+
+            <!-- Form Card -->
+            <div class="complynex-form-card">
+
+                <div class="alert alert-light border-0 shadow-sm mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle text-danger me-3 fs-4"></i>
+                        <small class="text-muted">
+                            {{ _("Compliant with Central Bank of Egypt Banking Law No. 194 of 2020. All information is
+                            confidential.") }}
+                        </small>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('consumer_protection.submit_complaint') }}"
+                    enctype="multipart/form-data" id="complaintForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Customer Details -->
+                    <div class="complynex-section-title">
+                        {{ _("1. Your Information") }}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="customer_name" class="form-label">{{ _("Full Name") }} <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="customer_name" name="full_name" required
+                                autocomplete="name">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="customer_id_number" class="form-label">{{ _("National ID / Passport Number")
+                                }}</label>
+                            <input type="text" class="form-control" id="customer_id_number" name="national_id"
+                                autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="customer_email" class="form-label">{{ _("Email Address") }}</label>
+                            <input type="email" class="form-control" id="customer_email" name="email"
+                                autocomplete="email">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="customer_phone" class="form-label">{{ _("Phone Number") }} <span
+                                    class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="customer_phone" name="phone" required
+                                autocomplete="tel">
+                        </div>
+                    </div>
+
+                    <!-- Complaint Details -->
+                    <div class="complynex-section-title">
+                        {{ _("2. Complaint Details") }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="complaint_category" class="form-label">{{ _("Category") }} <span
+                                class="text-danger">*</span></label>
+                        <select class="form-select" id="complaint_category" name="category_id" required>
+                            <option value="">{{ _("-- Select Category --") }}</option>
+                            {% for category in categories %}
+                            <option value="{{ category.category_code }}">
+                                {% if get_locale() == 'ar' %}{{ category.category_name_ar }}{% else %}{{
+                                category.category_name_en }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="complaint_subject" class="form-label">{{ _("Subject") }} <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="complaint_subject" name="subject" required
+                            placeholder="{{ _('Brief summary of the issue') }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="complaint_description" class="form-label">{{ _("Detailed Description") }} <span
+                                class="text-danger">*</span></label>
+                        <textarea class="form-control" id="complaint_description" name="description" rows="5" required
+                            placeholder="{{ _('Please describe what happened, when it occurred, and any financial impact...') }}"></textarea>
+                    </div>
+
+                    <!-- Attachments -->
+                    <div class="complynex-section-title">
+                        {{ _("3. Evidence (Optional)") }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="attachments" class="form-label">{{ _("Upload Files") }}</label>
+                        <input type="file" class="form-control" id="attachments" name="attachments" multiple
+                            accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+                        <small class="text-muted">{{ _("Supported: PDF, Images, Word (Max 5MB)") }}</small>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="mt-5">
+                        <div class="form-check mb-4">
+                            <input type="checkbox" class="form-check-input" id="declaration" required>
+                            <label class="form-check-label small" for="declaration">
+                                {{ _("I declare that the information provided is accurate to the best of my knowledge.")
+                                }}
+                            </label>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-complynex btn-lg shadow-sm">
+                                {{ _("Submit Complaint") }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="text-center mt-4 small">
+                        <a href="{{ url_for('consumer_protection.track_case') }}" class="complynex-link">
+                            {{ _("Already submitted? Track your complaint") }}
+                        </a>
+                    </p>
+                </form>
+            </div>
+
+            <!-- Footer -->
+            <div class="complynex-footer">
+                <p>&copy; {{ now.year }} ComplyNex. {{ _("Consumer Protection Rights Reserved.") }}</p>
+                <a href="#">{{ _("Privacy Policy") }}</a> | <a href="#">{{ _("Terms of Service") }}</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

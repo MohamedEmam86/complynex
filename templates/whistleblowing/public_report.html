@@ -1,0 +1,630 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4" dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+    <!-- Privacy Banner -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-success border-0 shadow-sm" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle fa-2x me-3"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1">
+                            <i class="fas fa-lock me-1"></i>{{ _('100%% Anonymous & Secure') }}
+                        </h5>
+                        <p class="mb-0 small">{{ _('No login required. No tracking. No IP logging. Your identity is
+                            completely protected.') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Tips (Collapsible) -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <button
+                        class="btn btn-link w-100 text-decoration-none p-0 {{ 'text-end' if get_locale() == 'ar' else 'text-start' }}"
+                        type="button" data-bs-toggle="collapse" data-bs-target="#privacyTips">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-user-shield text-primary me-2"></i>
+                                {{ _('Privacy & Safety Tips (Click to expand)') }}
+                            </h6>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </button>
+                </div>
+                <div class="collapse" id="privacyTips">
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            <strong>{{ _('For maximum privacy, we recommend:') }}</strong>
+                        </p>
+                        <div class="row g-3">
+                            {% for key, tip in privacy_tips.items() %}
+                            <div class="col-12 col-md-6">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <div class="bg-primary-subtle rounded p-2">
+                                            <i class="fas {{ tip.icon }} fa-lg text-primary"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1">{{ tip.title }}</h6>
+                                        <p class="small text-muted mb-0">{{ tip.description }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-1"></i>{{ _("What We DON'T Collect") }}
+                            </h6>
+                            <ul class="mb-0 small">
+                                {% for item in no_collection %}
+                                <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submission Form -->
+    <div class="row">
+        <div class="col-12 col-lg-8 mx-auto">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>{{ _('Anonymous Report Submission') }}
+                    </h5>
+                    <small>{{ _('All fields are anonymous. No personal information will be collected.') }}</small>
+                </div>
+                <div class="card-body p-4">
+                    <form id="publicReportForm" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <!-- Anonymity Confirmation -->
+                        <div class="alert alert-info border-0 mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="acknowledgeAnonymous" required>
+                                <label class="form-check-label fw-bold" for="acknowledgeAnonymous">
+                                    <i class="fas fa-user-secret me-1"></i>
+                                    {{ _('I understand this report is completely anonymous and I cannot be identified')
+                                    }}
+                                </label>
+                                <p class="small mb-0 mt-1 text-muted">
+                                    {{ _('You will receive a tracking code (e.g., WB-ABC-123-XYZ) to follow your case.')
+                                    }}
+                                    <strong>{{ _("Save this code - it's the only way to access your report.")
+                                        }}</strong>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Incident Type -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                {{ _('Type of Misconduct') }} <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select form-select-lg" name="incident_type" required>
+                                <option value="">-- {{ _('Select Type') }} --</option>
+                                {% for category in categories %}
+                                <option value="{{ category.category_code }}"
+                                    data-severity="{{ category.severity_default }}">
+                                    {{ category.category_name_en if get_locale() == 'en' else category.category_name_ar
+                                    }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">{{ _('Choose the category that best matches your
+                                concern') }}</small>
+                        </div>
+
+                        <!-- Severity -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('How serious is this issue?') }}</label>
+                            <select class="form-select" name="severity">
+                                <option value="LOW">{{ _('Low - Minor policy violation') }}</option>
+                                <option value="MEDIUM" selected>{{ _('Medium - Significant concern') }}</option>
+                                <option value="HIGH">{{ _('High - Serious violation') }}</option>
+                                <option value="CRITICAL">{{ _('Critical - Immediate danger or illegal activity') }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Incident Date & Location -->
+                        <div class="row mb-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold">{{ _('When did this occur?') }}</label>
+                                <input type="date" class="form-control" name="incident_date"
+                                    max="{{ now.strftime('%Y-%m-%d') }}">
+                                <small class="form-text text-muted">{{ _('Approximate date is fine') }}</small>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold">{{ _('Where did this occur?') }}</label>
+                                <input type="text" class="form-control" name="incident_location"
+                                    placeholder="{{ _('e.g., Head Office, 3rd Floor (optional)') }}" autocomplete="off">
+                                <small class="form-text text-muted">{{ _('General location only (optional)') }}</small>
+                            </div>
+                        </div>
+
+                        <!-- Title -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                {{ _('Brief Summary') }} <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control form-control-lg" name="title" required
+                                placeholder="{{ _('e.g., Manager accepting bribes from vendors') }}" maxlength="200"
+                                autocomplete="off">
+                            <small class="form-text text-muted">{{ _('One sentence summary (max 200 characters)')
+                                }}</small>
+                        </div>
+
+                        <!-- Detailed Description -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                {{ _('Detailed Description') }} <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" name="description" rows="8" required
+                                placeholder="{{ _('Please provide a detailed description of what happened:\n\n• What occurred?\n• Who was involved? (Names or descriptions)\n• When did it happen?\n• How did you become aware of it?\n• Why do you believe this is wrong?\n\nBe as specific as possible. Include dates, times, amounts, locations, and any other relevant details.') }}"></textarea>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">{{ _('Minimum 50 characters') }}</small>
+                                <small class="text-muted" id="charCount">0 {{ _('characters') }}</small>
+                            </div>
+                        </div>
+
+                        <!-- Evidence Description -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Evidence (if any)') }}</label>
+                            <textarea class="form-control" name="evidence_description" rows="3"
+                                placeholder="{{ _('Describe any evidence you have:\n• Documents (emails, contracts, invoices)\n• Photos or screenshots\n• Recordings (audio or video)\n• Financial records\n• Witness statements') }}"></textarea>
+                            <small class="form-text text-muted">{{ _('Describe what evidence exists, even if you don\'t
+                                have it') }}</small>
+                        </div>
+
+                        <!-- Witnesses -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Witnesses (if any)') }}</label>
+                            <input type="text" class="form-control" name="witnesses"
+                                placeholder="{{ _('Names or descriptions of people who witnessed the incident (optional)') }}"
+                                autocomplete="off">
+                        </div>
+
+                        <!-- Suspected Individuals -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Who is involved?') }}</label>
+                            <input type="text" class="form-control" name="suspected_individuals"
+                                placeholder="{{ _('Names, job titles, or descriptions of people involved (optional)') }}"
+                                autocomplete="off">
+                        </div>
+
+                        <!-- File Attachments -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-paperclip me-1"></i>{{ _('Attach Evidence Files (Optional)') }}
+                            </label>
+                            <input type="file" class="form-control" name="attachments" multiple
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" id="fileInput">
+                            <small class="form-text text-muted">
+                                {{ _('Max 10MB per file. Supported: PDF, Word, Images, Text files.') }}
+                                <strong>{{ _('Files are encrypted for security.') }}</strong>
+                            </small>
+                            <div id="fileList" class="mt-2"></div>
+                        </div>
+
+                        <!-- Urgency -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isUrgent" name="is_urgent"
+                                    value="true">
+                                <label class="form-check-label fw-bold" for="isUrgent">
+                                    <i class="fas fa-exclamation-triangle text-danger me-1"></i>
+                                    {{ _('This is URGENT and requires immediate attention') }}
+                                </label>
+                                <p class="small text-muted mb-0 ms-4">
+                                    {{ _("Check this if there's immediate danger, ongoing illegal activity, or risk of
+                                    evidence destruction") }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Important Notice -->
+                        <div class="alert alert-warning border-0 mb-3">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-info-circle me-1"></i>{{ _('Before You Submit') }}
+                            </h6>
+                            <ul class="mb-0 small">
+                                <li>{{ _('Your report will be reviewed by the Compliance Department within 2-3 business
+                                    days') }}</li>
+                                <li>{{ _('Investigations typically take 10-30 business days depending on complexity') }}
+                                </li>
+                                <li>{{ _('You will receive a tracking code to monitor progress') }}</li>
+                                <li>{{ _('False or malicious reports may result in legal action') }}</li>
+                                <li><strong>{{ _('IMPORTANT: Save your tracking code - we cannot recover it if lost')
+                                        }}</strong></li>
+                            </ul>
+                        </div>
+
+                        <!-- Acknowledgment Checkbox -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="acknowledgeAnonymous" required>
+                                <label class="form-check-label small" for="acknowledgeAnonymous">
+                                    {{ _('I understand that this report is anonymous and I have saved my tracking code
+                                    if provided.') }}
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="fas fa-shield-alt me-2"></i>{{ _('Submit Anonymous Report Securely') }}
+                            </button>
+                            <a href="{{ url_for('whistleblowing.anonymous_info') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>{{ _('Back to Information') }}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i>{{ _('Report Submitted Successfully') }}
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <i class="fas fa-check-circle fa-5x text-success mb-3"></i>
+                    <h4>{{ _('Thank You for Your Report') }}</h4>
+                    <p class="text-muted">{{ _('Your anonymous report has been submitted securely.') }}</p>
+                </div>
+
+                <div class="alert alert-danger border-0 alert-permanent">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ _('IMPORTANT: Save Your Tracking Code') }}
+                    </h5>
+                    <p><strong>{{ _('Case Number') }}:</strong> <span id="caseNumber" class="font-monospace"></span></p>
+                    <div class="complynex-tracking-box bg-white p-4 rounded border border-3 border-danger">
+                        <p class="text-center text-muted mb-2"><small>{{ _('Your Tracking Code') }}:</small></p>
+                        <h2 class="complynex-tracking-id text-center mb-0 text-danger" id="trackingCode"></h2>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-outline-danger btn-sm" data-onclick-fn="copyTrackingCode">
+                            <i class="fas fa-copy me-1"></i>{{ _('Copy Code') }}
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" data-onclick-fn="printCode">
+                            <i class="fas fa-print me-1"></i>{{ _('Print Code') }}
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" data-onclick-fn="downloadCode">
+                            <i class="fas fa-download me-1"></i>{{ _('Download as Text') }}
+                        </button>
+                    </div>
+                    <p class="mb-0 mt-3 small">
+                        <strong>⚠️ {{ _('This code is shown only once!') }}</strong> {{ _('We cannot recover it if lost.
+                        Save it now in a secure place (NOT on your work computer).') }}
+                    </p>
+                </div>
+
+                <div class="bg-light p-3 rounded">
+                    <h6><i class="fas fa-clock me-1"></i>{{ _('What Happens Next?') }}</h6>
+                    <ol class="small mb-0">
+                        <li>{{ _('Compliance team will review your report within 2-3 business days') }}</li>
+                        <li>{{ _('Investigation will be conducted (typically 10-30 days)') }}</li>
+                        <li>{{ _('Use your tracking code to check status anytime') }}</li>
+                        <li>{{ _("You'll see updates and final resolution when complete") }}</li>
+                    </ol>
+                </div>
+
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="fas fa-shield-alt me-1"></i>
+                    <strong>{{ _('Your anonymity is protected.') }}</strong>
+                    {{ _('Only you know your tracking code. We have no way to identify you.') }}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('whistleblowing.track_case') }}" class="btn btn-primary">
+                    <i class="fas fa-search me-1"></i>{{ _('Track My Case Now') }}
+                </a>
+                <a href="{{ url_for('whistleblowing.anonymous_info') }}" class="btn btn-secondary">
+                    <i class="fas fa-home me-1"></i>{{ _('Done') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('publicReportForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const descriptionTextarea = document.querySelector('textarea[name="description"]');
+        const charCount = document.getElementById('charCount');
+
+        // Translations for JS
+        const msgCopied = "{{ _('Tracking code copied to clipboard!') }}";
+        const labelCaseNum = "{{ _('Case Number') }}";
+        const labelTrackingCode = "{{ _('Tracking Code') }}";
+        const msgSubmitBtnOrig = "{{ _('Submit Anonymous Report Securely') }}";
+        const labelCharacters = "{{ _('characters') }}";
+        const msgSubmitting = "{{ _('Submitting...') }}";
+        const msgMinChars = "{{ _('Please provide at least 50 characters in the description.') }}";
+        const msgConfirmAnon = "{{ _('Please acknowledge the anonymity of this report.') }}";
+        const msgError = "{{ _('Error: ') }}";
+        const msgGenericError = "{{ _('Failed to submit report. Please try again.') }}";
+        const msgNetworkError = "{{ _('Network error. Please check your connection and try again.') }}";
+
+        // Character counter
+        descriptionTextarea.addEventListener('input', function () {
+            charCount.textContent = this.value.length + ' ' + labelCharacters;
+            if (this.value.length < 50) {
+                charCount.classList.add('text-danger');
+            } else {
+                charCount.classList.remove('text-danger');
+            }
+        });
+
+        // File list preview
+        document.getElementById('fileInput').addEventListener('change', function () {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            if (this.files.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = 'list-group list-group-sm';
+
+                Array.from(this.files).forEach(file => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    li.innerHTML = `
+                    <span><i class="fas fa-file me-2"></i>${file.name}</span>
+                    <span class="badge bg-secondary">${formatBytes(file.size)}</span>
+                `;
+                    ul.appendChild(li);
+                });
+
+                fileList.appendChild(ul);
+            }
+        });
+
+        // Auto-set severity based on incident type
+        document.querySelector('select[name="incident_type"]').addEventListener('change', function () {
+            const selectedOption = this.options[this.selectedIndex];
+            const defaultSeverity = selectedOption.dataset.severity;
+            if (defaultSeverity) {
+                document.querySelector('select[name="severity"]').value = defaultSeverity;
+            }
+        });
+
+        // Form submission
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // Validate description length
+            const description = descriptionTextarea.value;
+            if (description.length < 50) {
+                alert(msgMinChars);
+                descriptionTextarea.focus();
+                return;
+            }
+
+            // Validate acknowledgment
+            const ackCheckbox = document.getElementById('acknowledgeAnonymous');
+            if (ackCheckbox && !ackCheckbox.checked) {
+                alert(msgConfirmAnon);
+                return;
+            }
+
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>' + msgSubmitting;
+
+            const formData = new FormData(form);
+
+            fetch('{{ url_for("whistleblowing.public_report") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(text || 'Server error ' + response.status);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Show success modal
+                        const caseNumEl = document.getElementById('caseNumber');
+                        const trackingCodeEl = document.getElementById('trackingCode');
+
+                        if (caseNumEl) caseNumEl.textContent = data.case_number;
+                        if (trackingCodeEl) trackingCodeEl.textContent = data.anonymous_code;
+
+                        // Store for helper functions
+                        window.trackingCodeValue = data.anonymous_code;
+                        window.caseNumberValue = data.case_number;
+
+                        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                        successModal.show();
+
+                        // Reset form
+                        form.reset();
+                        document.getElementById('fileList').innerHTML = '';
+                        charCount.textContent = '0 ' + labelCharacters;
+                    } else {
+                        alert(msgError + (data.error || msgGenericError));
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-shield-alt me-2"></i>' + msgSubmitBtnOrig;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(msgNetworkError);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-shield-alt me-2"></i>' + msgSubmitBtnOrig;
+                });
+        });
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    });
+
+    // Helper functions for tracking code
+    function copyTrackingCode() {
+        const code = window.trackingCodeValue;
+        navigator.clipboard.writeText(code).then(() => {
+            alert("{{ _('Tracking code copied to clipboard!') }}");
+        });
+    }
+
+    function printCode() {
+        const code = window.trackingCodeValue;
+        const caseNum = window.caseNumberValue;
+
+        // Pre-define all translation strings
+        const titleSave = "{{ _('SAVE THIS CODE') }}";
+        const labelCaseNum = "{{ _('Case Number') }}";
+        const labelTrackingCode = "{{ _('Tracking Code') }}";
+        const msgHowToUse = "{{ _('How to use: Visit the tracking page and enter this code to check your case status.') }}";
+        const warningKeepSecure = "{{ _('Keep this code secure and private.') }}";
+        const currentDir = "{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}";
+        const fontFamily = "{{ 'Arial, sans-serif' if get_locale() == 'en' else 'Arial, Tahoma, sans-serif' }}";
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+        <html dir="${currentDir}">
+        <head>
+            <title>${titleSave}</title>
+            <style>
+                body { 
+                    font-family: ${fontFamily}; 
+                    padding: 40px; 
+                    text-align: center;
+                    direction: ${currentDir};
+                }
+            </style>
+        </head>
+        <body>
+            <h1>${titleSave}</h1>
+            <p><strong>${labelCaseNum}:</strong> ${caseNum}</p>
+            <p><strong>${labelTrackingCode}:</strong></p>
+            <h2 style="background: #ffff00; padding: 20px; border: 3px solid #ff0000; font-family: monospace;">${code}</h2>
+            <p>${msgHowToUse}</p>
+            <p><strong>⚠️ ${warningKeepSecure}</strong></p>
+        </body>
+        </html>
+    `);
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    function downloadCode() {
+        const code = window.trackingCodeValue;
+        const caseNum = window.caseNumberValue;
+        const titleFile = "{{ _('WHISTLEBLOWING TRACKING CODE') }}";
+        const labelCaseNum = "{{ _('Case Number') }}";
+        const labelTrackingCode = "{{ _('Tracking Code') }}";
+        const warningKeepSecure = "{{ _('IMPORTANT: Keep this code secure and private.') }}";
+        const msgTrackAt = "{{ _('Use this code to track your case at:') }}";
+
+        const text = `${titleFile}\n\n${labelCaseNum}: ${caseNum}\n${labelTrackingCode}: ${code}\n\n⚠️ ${warningKeepSecure}\n\n${msgTrackAt}\n${window.location.origin}/whistleblowing/track`;
+
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tracking-code-${caseNum}.txt`;
+        a.click();
+    }
+</script>
+
+<style>
+    /* RTL Support */
+    [dir="rtl"] {
+        text-align: right;
+    }
+
+    [dir="rtl"] .form-label {
+        text-align: right;
+    }
+
+    [dir="rtl"] .text-start {
+        text-align: right !important;
+    }
+
+    [dir="rtl"] .text-end {
+        text-align: left !important;
+    }
+
+    [dir="rtl"] .me-2,
+    [dir="rtl"] .me-3,
+    [dir="rtl"] .me-1 {
+        margin-right: 0 !important;
+        margin-left: 0.5rem !important;
+    }
+
+    [dir="rtl"] .ms-2,
+    [dir="rtl"] .ms-3,
+    [dir="rtl"] .ms-4 {
+        margin-left: 0 !important;
+        margin-right: 0.5rem !important;
+    }
+
+    [dir="rtl"] .alert {
+        text-align: right;
+    }
+
+    [dir="rtl"] .form-check-label {
+        padding-right: 1.5rem;
+        padding-left: 0;
+    }
+
+    [dir="rtl"] .form-check-input {
+        float: right;
+        margin-right: -1.5rem;
+        margin-left: 0;
+    }
+
+    /* Fix for flex alignment in RTL */
+    [dir="rtl"] .d-flex {
+        flex-direction: row-reverse;
+    }
+
+    [dir="rtl"] .modal-footer,
+    [dir="rtl"] .card-header .d-flex {
+        flex-direction: row-reverse;
+    }
+
+    [dir="rtl"] .modal-header .btn-close {
+        margin: -0.5rem auto -0.5rem -0.5rem;
+    }
+
+    /* No tracking scripts, no cookies, no analytics */
+    /* Pure privacy-focused design */
+</style>
+{% endblock %}

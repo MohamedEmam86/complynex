@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Transaction Monitoring Alerts') }}{% endblock %}
+{% block extra_css %}
+<style>
+.severity-HIGH { background:#f8d7da;color:#842029;padding:2px 8px;border-radius:4px;font-size:.8em;font-weight:600; }
+.severity-MEDIUM { background:#fff3cd;color:#664d03;padding:2px 8px;border-radius:4px;font-size:.8em;font-weight:600; }
+.severity-LOW { background:#d1ecf1;color:#0c5460;padding:2px 8px;border-radius:4px;font-size:.8em;font-weight:600; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-bell text-warning"></i> {{ _('Alerts Queue') }}</h2>
+    <a href="{{ url_for('aml.tm_dashboard') }}" class="btn btn-outline-secondary"><i class="fas fa-tachometer-alt"></i> {{ _('TM Dashboard') }}</a>
+  </div>
+
+  <!-- Stats -->
+  <div class="row g-2 mb-3">
+    <div class="col-auto"><div class="card px-3 py-2 text-center"><div class="text-danger fw-bold fs-5">{{ stats.total_open }}</div><small>{{ _('New') }}</small></div></div>
+    <div class="col-auto"><div class="card px-3 py-2 text-center"><div class="text-warning fw-bold fs-5">{{ stats.total_investigating }}</div><small>{{ _('Investigating') }}</small></div></div>
+    <div class="col-auto"><div class="card px-3 py-2 text-center"><div class="text-danger fw-bold fs-5">{{ stats.high_severity }}</div><small>{{ _('High Severity') }}</small></div></div>
+    <div class="col-auto"><div class="card px-3 py-2 text-center"><div class="text-info fw-bold fs-5">{{ stats.total_escalated }}</div><small>{{ _('Escalated') }}</small></div></div>
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" class="row g-2 mb-3">
+    <div class="col-auto">
+      <select name="status" class="form-select form-select-sm">
+        <option value="OPEN" {% if status_filter=='OPEN' %}selected{% endif %}>{{ _('Open (unresolved)') }}</option>
+        <option value="ALL" {% if status_filter=='ALL' %}selected{% endif %}>{{ _('All Statuses') }}</option>
+        {% for s in ['NEW','ASSIGNED','INVESTIGATING','ESCALATED','FALSE_POSITIVE','SAR_CREATED','CLOSED'] %}
+        <option value="{{ s }}" {% if status_filter==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <select name="severity" class="form-select form-select-sm">
+        <option value="">{{ _('All Severities') }}</option>
+        {% for s in ['HIGH','MEDIUM','LOW'] %}
+        <option value="{{ s }}" {% if severity_filter==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto"><button class="btn btn-primary btn-sm">{{ _('Filter') }}</button></div>
+    <div class="col-auto"><a href="{{ url_for('aml.alert_list') }}" class="btn btn-outline-secondary btn-sm">{{ _('Reset') }}</a></div>
+  </form>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead class="table-dark">
+          <tr><th>{{ _('Reference') }}</th><th>{{ _('Customer') }}</th><th>{{ _('Rule Triggered') }}</th><th>{{ _('Severity') }}</th><th>{{ _('Status') }}</th><th>{{ _('Assigned To') }}</th><th>{{ _('Date') }}</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for a in alerts %}
+          <tr>
+            <td><code>{{ a.alert_reference }}</code></td>
+            <td>
+              <strong>{{ a.full_name or a.company_name or 'Unknown' }}</strong>
+              <br><small class="text-muted">{{ a.customer_reference }}</small>
+            </td>
+            <td>{{ a.rule_name }}<br><small class="text-muted">{{ a.rule_code }}</small></td>
+            <td><span class="severity-{{ a.alert_severity }}">{{ a.alert_severity }}</span></td>
+            <td><span class="badge bg-secondary">{{ a.status }}</span></td>
+            <td>{{ a.assigned_name or '-' }}</td>
+            <td>{{ a.alert_date[:10] if a.alert_date else '-' }}</td>
+            <td><a href="{{ url_for('aml.view_alert', alert_id=a.id) }}" class="btn btn-sm btn-outline-primary">{{ _('Review') }}</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="text-center text-muted py-4">{{ _('No alerts found') }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <nav class="mt-3">
+    <ul class="pagination pagination-sm">
+      {% for p in range(1, total_pages+1) %}
+      <li class="page-item {% if p==page %}active{% endif %}">
+        <a class="page-link" href="?page={{ p }}&status={{ status_filter }}&severity={{ severity_filter }}">{{ p }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Review eKYC Session') }} #{{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2 mb-0">{{ _('Review eKYC Session') }} #{{ session.id }}</h1>
+        <a href="{{ url_for('ekyc.view_session', session_id=session.id) }}" class="btn btn-sm btn-outline-secondary">
+            {{ _('Back to Session') }}
+        </a>
+    </div>
+
+    <form method="POST" id="reviewForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="row g-3">
+            <!-- Left: documents -->
+            <div class="col-md-5">
+                <div class="card mb-3">
+                    <div class="card-header">{{ _('ID Images') }}</div>
+                    <div class="card-body">
+                        {% set roles = {'ID_FRONT_VIDEO': _('ID Front'), 'ID_BACK_VIDEO': _('ID Back'), 'SELFIE_VIDEO': _('Selfie')} %}
+                        {% for role, label in roles.items() %}
+                            {% set doc = (documents | selectattr('doc_role', 'equalto', role) | list | first) %}
+                            <div class="mb-3">
+                                <div class="small text-muted mb-1">{{ label }}</div>
+                                {% if doc and not doc.purged_at %}
+                                <img src="{{ url_for('ekyc.view_document', doc_id=doc.id) }}"
+                                     class="img-fluid border rounded" style="max-height:220px;cursor:zoom-in;"
+                                     data-bs-toggle="modal" data-bs-target="#zoomModal"
+                                     data-zoom-target="zoomImg">
+                                {% else %}
+                                <div class="text-muted small border rounded p-3 text-center">{{ _('Not available') }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <p class="text-muted small mb-0">{{ _('Click an image to zoom. Viewing is logged in the audit trail.') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: editable extracted fields -->
+            <div class="col-md-7">
+                <div class="card mb-3">
+                    <div class="card-header">{{ _('Extracted Data (editable)') }}</div>
+                    <div class="card-body">
+                        {% for field, label in [
+                            ('extracted_full_name_ar', _('Full Name')),
+                            ('national_id', _('National ID')),
+                            ('dob', _('Date of Birth (YYYY-MM-DD)')),
+                            ('gender', _('Gender')),
+                            ('governorate_name', _('Governorate')),
+                            ('extracted_address', _('Address')),
+                            ('extracted_occupation', _('Occupation')),
+                            ('extracted_marital_status', _('Marital Status')),
+                            ('id_expiry_raw', _('ID Expiry')),
+                        ] %}
+                        <div class="mb-3">
+                            <label class="form-label">
+                                {{ label }}
+                                {% set src = field_sources.get(field) %}
+                                {% if src == 'manual' %}
+                                <span class="badge bg-primary">{{ _('Manual') }}</span>
+                                {% elif src == 'confirmed' %}
+                                <span class="badge bg-success">{{ _('Confirmed') }}</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">{{ _('Auto / Unverified') }}</span>
+                                {% endif %}
+                            </label>
+                            <input type="text" name="{{ field }}" id="field_{{ field }}" class="form-control"
+                                   value="{{ form_values.get(field) or '' }}">
+                            {% if field == 'national_id' %}
+                            <div id="national_id_feedback" class="form-text"></div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="face_match_confirmed" id="face_match_confirmed">
+                            <label class="form-check-label" for="face_match_confirmed">
+                                {{ _('I visually confirmed the selfie matches the ID photo') }}
+                            </label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Review Notes') }}</label>
+                            <textarea name="review_notes" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">{{ _('Submit Review') }}</button>
+                    </div>
+                </div>
+
+                {% if result %}
+                <div class="card">
+                    <div class="card-header">{{ _('Automated Verification Signals (read-only)') }}</div>
+                    <div class="card-body small">
+                        <p class="mb-1"><strong>{{ _('Face Match Score') }}:</strong> {{ result.get('face_match_score') if result.get('face_match_score') is not none else '-' }}</p>
+                        <p class="mb-1"><strong>{{ _('Passive Liveness') }}:</strong> {{ result.get('passive_liveness_score') if result.get('passive_liveness_score') is not none else '-' }}</p>
+                        <p class="mb-1"><strong>{{ _('Risk Score') }}:</strong> {{ result.get('risk_score') if result.get('risk_score') is not none else '-' }}</p>
+                        {% if result.get('decision_reasons') %}
+                        <p class="mb-1"><strong>{{ _('System Reasons') }}:</strong></p>
+                        <ul class="mb-0">{% for r in result.get('decision_reasons') %}<li>{{ r }}</li>{% endfor %}</ul>
+                        {% endif %}
+                        {# Draft-only browser hint vs. the authoritative server OCR read — see
+                           ekyc/pipeline.py's raw_signals['ocr_hint'] and static/ekyc/js/capture.js's
+                           readIdHint(). Shown only on disagreement; never affects the decision above. #}
+                        {% set raw_signals = result.get('raw_signals') or {} %}
+                        {% set hint = raw_signals.get('ocr_hint') %}
+                        {% if hint and raw_signals.get('ocr_hint_agrees_national_id') == False %}
+                        <p class="mb-0 mt-2">
+                            <span class="badge bg-warning text-dark">{{ _('Unverified') }}</span>
+                            {{ _('Browser quick-read disagreed on the national ID') }}:
+                            <code>{{ hint.get('national_id') or hint.get('raw_text') }}</code>
+                            {{ _('vs. server read') }}
+                            <code>{{ result.get('national_id') }}</code> —
+                            {{ _('verify against the document image.') }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Zoom modal -->
+<div class="modal fade" id="zoomModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-1">
+                <img id="zoomImg" src="" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+(function() {
+    const input = document.getElementById('field_national_id');
+    const feedback = document.getElementById('national_id_feedback');
+    let timer = null;
+    input.addEventListener('input', function() {
+        clearTimeout(timer);
+        const value = input.value;
+        timer = setTimeout(function() {
+            if (!value) { feedback.textContent = ''; return; }
+            const body = new URLSearchParams();
+            body.set('national_id', value);
+            body.set('csrf_token', document.querySelector('input[name=csrf_token]').value);
+            fetch("{{ url_for('ekyc.validate_national_id') }}", { method: 'POST', body: body })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.is_valid === null) { feedback.textContent = ''; return; }
+                    if (data.is_valid) {
+                        feedback.className = 'form-text text-success';
+                        feedback.textContent = '✓ Valid — DOB ' + (data.dob || '-') + ', ' + (data.governorate_name_ar || '-') + ', ' + (data.gender || '-');
+                    } else {
+                        feedback.className = 'form-text text-danger';
+                        feedback.textContent = (data.errors || []).join('; ');
+                    }
+                })
+                .catch(() => { feedback.textContent = ''; });
+        }, 400);
+    });
+})();
+</script>
+{% endblock %}

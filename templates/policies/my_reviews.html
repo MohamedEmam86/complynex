@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}My Pending Reviews - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('My Pending Reviews') }}</h1>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">{{ _('Policy') }}</th>
+                        <th>{{ _('Stage') }}</th>
+                        <th>{{ _('Assigned On') }}</th>
+                        <th class="text-end pe-4">{{ _('Action') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for review in reviews %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-primary">{{ review.policy_name }}</div>
+                            <small class="text-muted">{{ review.policy_number }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-info-soft text-info">{{ review.stage_name }}</span>
+                        </td>
+                        <td>{{ review.created_at }}</td>
+                        <td class="text-end pe-4">
+                            <a href="{{ url_for('policies.review_policy', id=review.policy_id) }}"
+                                class="btn btn-sm btn-primary">
+                                <i class="bi bi-pencil-square"></i> {{ _('REVIEW') }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-check-circle text-success display-4 d-block mb-3"></i>
+                            {{ _('No pending reviews for you at the moment.') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-info-soft {
+        background-color: rgba(13, 202, 240, 0.1);
+    }
+</style>
+{% endblock %}

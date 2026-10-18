@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Course Library - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Course Library') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('training.list_courses') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('My Training') }}
+        </a>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+    {% for course in courses %}
+    <div class="col">
+        <div class="card h-100 border-0 shadow-sm hover-elevate transition-all">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span
+                        class="badge {{ 'bg-danger-soft text-danger' if course.is_mandatory else 'bg-light text-dark border' }}">
+                        {{ 'Mandatory' if course.is_mandatory else 'Optional' }}
+                    </span>
+                    <small class="text-muted"><i class="bi bi-clock me-1"></i> {{ course.duration_minutes }}
+                        mins</small>
+                </div>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title fw-bold mb-2">{{ course.course_name }}</h5>
+                <p class="card-text text-muted small mb-4 line-clamp-3">
+                    {{ course.description or 'Explore this compliance topic to enhance your knowledge and
+                    certification.' }}
+                </p>
+                <div class="d-flex align-items-center mb-4">
+                    <div class="flex-shrink-0">
+                        <span class="badge bg-info-soft text-info rounded-pill px-3">{{ course.category }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 pb-4">
+                {% if course.is_enrolled %}
+                {% if course.enrollment_status == 'completed' %}
+                <div class="d-grid">
+                    <a href="{{ url_for('training.view_course', id=course.id) }}" class="btn btn-success ripple">
+                        <i class="bi bi-check-circle-fill me-2"></i> {{ _('Completed') }}
+                    </a>
+                </div>
+                {% else %}
+                <div class="d-grid">
+                    <a href="{{ url_for('training.view_course', id=course.id) }}"
+                        class="btn btn-outline-primary ripple">
+                        <i class="bi bi-play-circle-fill me-2"></i> {{ _('Resume Course') }}
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <form method="POST" action="{{ url_for('training.enroll_user') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="course_id" value="{{ course.id }}">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary ripple">
+                            <i class="bi bi-plus-circle me-2"></i> {{ _('Enroll Now') }}
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <i class="bi bi-book text-muted opacity-25" style="font-size: 5rem;"></i>
+        <p class="text-muted mt-3">{{ _('No courses are available in the library at this time.') }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .hover-elevate:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, .1) !important;
+    }
+
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .bg-danger-soft {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+
+    .bg-info-soft {
+        background-color: rgba(13, 202, 240, 0.1);
+    }
+</style>
+{% endblock %}

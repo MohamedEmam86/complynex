@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Send KYB Link — {{ merchant.merchant_name }}{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:700px">
+  <div class="d-flex align-items-center mb-4 gap-3">
+    <a href="{{ url_for('merchant_kyc.view_merchant', id=merchant.id) }}" class="btn btn-outline-secondary btn-sm">{{ _('← Back') }}</a>
+    <h2 class="mb-0 fw-bold"><i class="bi bi-share text-success me-2"></i>{{ _('Send KYB Form Link') }}</h2>
+  </div>
+
+  <!-- Merchant Info -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="fw-bold fs-5">{{ merchant.merchant_name }}</div>
+          <div class="text-muted small">{{ merchant.contact_phone or 'No phone registered' }}</div>
+        </div>
+        <span class="badge bg-warning text-dark px-3 py-2">{{ merchant.kyc_status }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KYB Link Box -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-light fw-semibold py-3 rounded-top-4">
+      <i class="bi bi-link-45deg text-primary me-2"></i>{{ _('KYB Form Link') }}
+    </div>
+    <div class="card-body">
+      <div class="input-group mb-3">
+        <input type="text" id="kybLink" class="form-control font-monospace small"
+               value="{{ public_url }}" readonly>
+        <button class="btn btn-outline-primary" data-onclick-fn="copyLink">
+          <i class="bi bi-clipboard" id="copyIcon"></i> {{ _('Copy') }}
+        </button>
+      </div>
+      <div class="text-muted small">
+        <i class="bi bi-info-circle me-1"></i>
+        {{ _('This link is unique to this merchant. They can open it on any device — no login required.
+        It includes GPS location capture when they submit.') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- WhatsApp Send -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4" style="border-left: 4px solid #25D366 !important;">
+    <div class="card-header fw-semibold py-3 rounded-top-4" style="background:#f0fdf4">
+      <i class="bi bi-whatsapp text-success me-2" style="font-size:1.2em"></i>{{ _('Send via WhatsApp') }}
+    </div>
+    <div class="card-body">
+      {% if wa_url %}
+      <div class="mb-3 p-3 rounded-3 small" style="background:#f0fdf4;border:1px solid #d1fae5;font-family:monospace;white-space:pre-wrap;color:#1B2631">{{ wa_message }}</div>
+      <a href="{{ wa_url }}" target="_blank"
+         class="btn btn-success btn-lg w-100 rounded-pill fw-bold"
+         style="background:#25D366;border-color:#25D366">
+        <i class="bi bi-whatsapp me-2"></i>Open WhatsApp & Send to {{ phone }}
+      </a>
+      <div class="text-muted small mt-2 text-center">
+        <i class="bi bi-info-circle me-1"></i>
+        {{ _('Clicking this opens WhatsApp with the message pre-filled. Just press Send.') }}
+      </div>
+      {% else %}
+      <div class="alert alert-warning mb-3">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ _('No phone number registered for this merchant. Add a contact phone number first, then resend.') }}
+      </div>
+      <a href="{{ url_for('merchant_kyc.edit_merchant', id=merchant.id) }}" class="btn btn-warning">
+        <i class="bi bi-pencil me-2"></i>{{ _('Add Phone Number') }}
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Manual Share Options -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-light fw-semibold py-3 rounded-top-4">
+      <i class="bi bi-share me-2 text-secondary"></i>{{ _('Other Share Options') }}
+    </div>
+    <div class="card-body d-flex gap-3 flex-wrap">
+      <a href="sms:{{ merchant.contact_phone }}?body=Please complete your KYB form: {{ public_url }}"
+         class="btn btn-outline-secondary rounded-pill">
+        <i class="bi bi-chat-dots me-2"></i>{{ _('SMS') }}
+      </a>
+      <a href="mailto:{{ merchant.contact_email }}?subject=ComplyNex KYB Form&body=Dear {{ merchant.merchant_name }},%0D%0A%0D%0APlease complete your KYB form:%0D%0A{{ public_url }}"
+         class="btn btn-outline-secondary rounded-pill">
+        <i class="bi bi-envelope me-2"></i>{{ _('Email') }}
+      </a>
+      <button data-onclick-fn="copyLink" class="btn btn-outline-primary rounded-pill">
+        <i class="bi bi-clipboard me-2"></i>{{ _('Copy Link') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- QR Code option -->
+  <div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body text-center">
+      <div id="qrcode" class="d-flex justify-content-center mb-3"></div>
+      <div class="text-muted small">{{ _('QR Code — merchant can scan with phone camera') }}</div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/qrcodejs/1.0.0/qrcode.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+// Generate QR Code
+new QRCode(document.getElementById("qrcode"), {
+  text: "{{ public_url }}",
+  width: 180, height: 180,
+  colorDark: "#C0392B", colorLight: "#ffffff",
+  correctLevel: QRCode.CorrectLevel.H
+});
+
+// Copy link
+function copyLink() {
+  const input = document.getElementById('kybLink');
+  input.select();
+  document.execCommand('copy');
+  const icon = document.getElementById('copyIcon');
+  icon.className = 'bi bi-clipboard-check';
+  setTimeout(() => icon.className = 'bi bi-clipboard', 2000);
+}
+</script>
+{% endblock %}

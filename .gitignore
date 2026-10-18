@@ -1,0 +1,57 @@
+venv/
+venv_deploy/
+*.pyc
+__pycache__/
+*.db
+.env*
+uploads/
+logs/
+.cache/
+scripts/debug_*
+scripts/check_*
+scripts/verify_*
+scripts/test_*
+screening/ml_model*.pkl
+screening/watchlist_semantic*
+screening/semantic_index_state.json
+screening/model_metadata_master_unified_backup_*.json
+server_log.txt
+*.bak
+*.backup
+ekyc_storage/
+backups/
+complynex_database_full.sql
+nohup.out
+pyarmor.bug.log
+gunicorn.ctl
+
+# Debug/temp images from OCR/eKYC processing
+debug_*.jpg
+debug_*.png
+temp_*.png
+
+# Vendored ML models / third-party binaries (large, pip/CDN-fetchable, not source)
+ekyc/models/
+static/ekyc/vendor/
+static/ekyc/ocr/
+static/ekyc/models/
+data/cache/
+
+# Machine-specific deployment fingerprint (regenerated per-deployment, not portable)
+.fingerprint
+
+# Claude Code local session tooling (not app code)
+.claude/
+provenance/manifest_2*.json
+*.jsonl
+*.xlsx
+merchant_*.json
+
+# --- GitHub (code only) — never push data, backups or personal data
+*.bak*
+*.orig
+*.swp
+data/egypt_peps.*
+screening/data/name_idf.json
+static/images/_archived_pre_rebrand/
+deploy_logs/

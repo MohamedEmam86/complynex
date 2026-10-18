@@ -1,0 +1,172 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}{{ _('Company Policies - ComplyNex Portal') }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">{{ _('Policy Portal') }}</h2>
+                    <p class="text-muted">{{ _('Access public company policies') }}</p>
+                </div>
+                <a href="{{ url_for('portal.dashboard') }}" class="btn btn-outline-secondary btn-sm ripple">
+                    <i class="bi bi-arrow-left"></i> {{ _('BACK TO PORTAL') }}
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold">{{ _('Available Policies') }}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">{{ _('Policy Name') }}</th>
+                                    <th>{{ _('Category') }}</th>
+                                    <th>{{ _('Status') }}</th>
+                                    <th class="text-end pe-4">{{ _('Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for policy in policies %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold">{{ policy.policy_name }}</div>
+                                        <small class="text-muted">{{ policy.policy_number }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">{{ policy.category_name }}</span>
+                                    </td>
+                                    <td>
+                                        {% if policy.is_signed %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <i class="bi bi-check-circle-fill me-1"></i>{{ _('Signed') }}
+                                        </span>
+                                        {% elif policy.is_mandatory %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                            <i class="bi bi-exclamation-circle-fill me-1"></i>{{ _('Required') }}
+                                        </span>
+                                        {% else %}
+                                        <span
+                                            class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                            {{ _('Optional') }}
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group">
+                                            {% if policy.attachment_path %}
+                                            <a href="{{ url_for('policies.download_policy_document', id=policy.id) }}"
+                                                class="btn btn-sm btn-outline-primary" target="_blank"
+                                                title="{{ _('View/Download') }}">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% endif %}
+
+                                            {% if not policy.is_signed and policy.is_mandatory %}
+                                            <button type="button" class="btn btn-sm btn-danger ms-2 acknowledge-btn"
+                                                data-bs-toggle="modal" data-bs-target="#ackModal"
+                                                data-policy-id="{{ policy.id }}"
+                                                data-policy-name="{{ policy.policy_name }}">
+                                                {{ _('Sign Now') }}
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-muted">
+                                        <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
+                                        {{ _('No public policies available at this time.') }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info border-0 shadow-sm">
+                <div class="d-flex">
+                    <i class="bi bi-info-circle-fill fs-4 me-3 text-info"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">{{ _('Need help?') }}</h6>
+                        <p class="mb-0 small">
+                            {{ _('If you cannot find a specific policy or have questions about interpretation, please
+                            contact the Compliance Department or your direct manager.') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acknowledgment Modal -->
+<div class="modal fade" id="ackModal" tabindex="-1" aria-labelledby="ackModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="ackModalLabel">{{ _('Policy Acknowledgment') }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="{{ _('Close') }}"></button>
+            </div>
+            <form id="ackForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body">
+                    <p class="mb-3">
+                        {{ _('I hereby acknowledge that I have received, read, and understood the following policy:') }}
+                    </p>
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <strong id="modalPolicyName"></strong>
+                    </div>
+                    <p class="text-muted small mb-4">
+                        {{ _('By clicking "Confirm Signature", you are providing a digital signature and agreeing to
+                        comply with the terms of this policy.') }}
+                    </p>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" value="" id="confirmCheck" required>
+                        <label class="form-check-label" for="confirmCheck">
+                            {{ _('I confirm my understanding and compliance.') }}
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ _('Cancel')
+                        }}</button>
+                    <button type="submit" class="btn btn-danger fw-bold shadow-sm" id="submitBtn">
+                        {{ _('Confirm Signature') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce }}">
+    document.addEventListener('DOMContentLoaded', function () {
+        const ackModal = document.getElementById('ackModal');
+        if (ackModal) {
+            ackModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const policyId = button.getAttribute('data-policy-id');
+                const policyName = button.getAttribute('data-policy-name');
+
+                const form = document.getElementById('ackForm');
+                const nameSpan = document.getElementById('modalPolicyName');
+
+                form.action = "{{ url_for('portal.acknowledge_policy', id=0) }}".replace('0', policyId);
+                nameSpan.textContent = policyName;
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

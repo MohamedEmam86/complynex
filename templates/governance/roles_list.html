@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Manage Board Roles') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Manage board Roles') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('governance.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Dashboard') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-primary">{{ _('Add New Role') }}</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Role Name') }}</label>
+                        <input type="text" name="role_name" class="form-control" required
+                            placeholder="{{ _('e.g. Independent Director') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Description (Optional)') }}</label>
+                        <textarea name="description" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">{{ _('Add Role') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-primary">{{ _('Current Board Roles') }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ _('Role Name') }}</th>
+                                <th>{{ _('Description') }}</th>
+                                <th class="text-end">{{ _('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for role in roles %}
+                            <tr>
+                                <td><strong>{{ role.role_name }}</strong></td>
+                                <td class="text-muted">{{ role.description or _('No description') }}</td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('governance.delete_role', id=role.id) }}"
+                                        class="btn btn-sm btn-outline-danger"
+                                        data-confirm="{{ _('Are you sure you want to remove this role? Active board members with this role will not be affected until their profile is updated.') }}">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted">{{ _('No roles defined.') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

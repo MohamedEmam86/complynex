@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _("Track Complaint Status") }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-dark text-white p-4">
+                    <h3 class="font-weight-light my-2">
+                        <i class="fas fa-search mr-2"></i>{{ _("Track Status") }}
+                    </h3>
+                </div>
+                <div class="card-body p-5">
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="{{ _('Close') }}">
+                            <span aria-hidden="true">{{ _('&times;') }}</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" class="mb-5">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group">
+                            <label for="reference_number" class="font-weight-bold">{{ _("Enter Reference Number or
+                                Email")
+                                }}</label>
+                            <input type="text" class="form-control form-control-lg mb-3" id="reference_number"
+                                name="reference_number" placeholder="{{ _('CP-YYYY-XXXXXX or email@example.com') }}"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pin" class="font-weight-bold">{{ _("Enter PIN") }}</label>
+                            <input type="text" class="form-control form-control-lg mb-4 text-center font-monospace"
+                                id="pin" name="pin" placeholder="{{ _('8-character PIN') }}" required>
+                        </div>
+                        <div class="d-grid">
+                            <button class="btn btn-primary btn-lg" type="submit">{{ _("Track Status") }}</button>
+                        </div>
+                    </form>
+
+                    {% if complaint %}
+                    <div class="mt-5 border-top pt-4">
+                        <h4 class="text-primary mb-3">{{ _("Complaint Details") }}</h4>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4 font-weight-bold text-muted">{{ _("Status") }}:</div>
+                            <div class="col-md-8">
+                                {% if complaint.status == 'NEW' %}
+                                <span class="badge bg-primary">{{ _("New") }}</span>
+                                {% elif complaint.status == 'IN_PROGRESS' %}
+                                <span class="badge bg-info text-dark">{{ _("In Progress") }}</span>
+                                {% elif complaint.status == 'RESOLVED' %}
+                                <span class="badge bg-success">{{ _("Resolved") }}</span>
+                                {% elif complaint.status == 'CLOSED' %}
+                                <span class="badge bg-secondary">{{ _("Closed") }}</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">{{ complaint.status }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4 font-weight-bold text-muted">{{ _("Complaint Date") }}:</div>
+                            <div class="col-md-8">
+                                {{ complaint.created_at.strftime('%Y-%m-%d') if complaint.created_at is not string else
+                                complaint.created_at[:10] }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4 font-weight-bold text-muted">{{ _("Category") }}:</div>
+                            <div class="col-md-8">{{ _(complaint.complaint_category) }}</div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4 font-weight-bold text-muted">{{ _("Statutory Deadline") }}:</div>
+                            <div class="col-md-8">
+                                {{ complaint.statutory_deadline_date.strftime('%Y-%m-%d') if
+                                complaint.statutory_deadline_date is not string else
+                                complaint.statutory_deadline_date[:10] }}
+                                <span class="text-muted small">({{ complaint.days_remaining_to_deadline }} {{ _("days
+                                    remaining") }})</span>
+                            </div>
+                        </div>
+
+                        {% if complaint.resolution_summary %}
+                        <div class="alert alert-success mt-4">
+                            <h5 class="alert-heading">{{ _("Resolution Summary") }}</h5>
+                            <p class="mb-0">{{ complaint.resolution_summary }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

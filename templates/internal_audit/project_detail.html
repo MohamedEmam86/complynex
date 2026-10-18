@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.audit_number }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="mb-1">{{ project.audit_number }} - {{ project.audit_name }}</h3>
+            <div class="d-flex flex-wrap gap-3 small text-muted">
+                <span><i class="bi bi-person-badge me-1"></i>{{ _('Lead Auditor') }}:
+                    {% set lead = users_by_id.get(project.lead_auditor_id) %}
+                    {{ (lead.first_name ~ ' ' ~ lead.last_name) if lead else '-' }}</span>
+                {% if area %}<span><i class="bi bi-diagram-3 me-1"></i>{{ _('Auditable Area') }}: {{ area.auditable_area }}</span>{% endif %}
+                {% if plan %}<span><i class="bi bi-calendar-check me-1"></i>{{ _('Plan') }}: {{ plan.plan_year }} - {{ plan.plan_name or '' }}</span>{% endif %}
+                <span><i class="bi bi-calendar-range me-1"></i>{{ project.planned_start_date or '-' }} &rarr; {{ project.planned_end_date or '-' }}</span>
+                {% if project.actual_start_date or project.actual_end_date %}
+                <span><i class="bi bi-calendar-event me-1"></i>{{ _('Actual') }}: {{ project.actual_start_date or '-' }} &rarr; {{ project.actual_end_date or '-' }}</span>
+                {% endif %}
+            </div>
+        </div>
+        {% if current_user.can_edit('internal_audit') %}
+        <form method="post" action="{{ url_for('internal_audit.project_status', project_id=project.id) }}" class="d-flex gap-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="status" class="form-select form-select-sm">
+                {% for s in ['PLANNED', 'FIELDWORK', 'REPORTING', 'MANAGEMENT_RESPONSE', 'FOLLOW_UP', 'CLOSED'] %}
+                <option value="{{ s }}" {{ 'selected' if project.status == s }}>{{ s.replace('_', ' ') | title }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-outline-primary">{{ _('Update Status') }}</button>
+        </form>
+        {% endif %}
+    </div>
+    <p class="text-muted">{{ project.audit_scope or '' }}</p>
+
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#team">{{ _('Team') }} <span class="badge bg-secondary">{{ team | length }}</span></a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#program">{{ _('Program') }} <span class="badge bg-secondary">{{ program | length }}</span></a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#findings">{{ _('Findings') }} <span class="badge bg-secondary">{{ findings | length }}</span></a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#papers">{{ _('Working Papers') }} <span class="badge bg-secondary">{{ papers | length }}</span></a></li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="team">
+            <ul class="list-group mb-3">
+                {% for m in team %}
+                {% set u = users_by_id.get(m.user_id) %}
+                <li class="list-group-item">{{ (u.first_name ~ ' ' ~ u.last_name) if u else ('User #' ~ m.user_id) }} - <span class="badge bg-info">{{ m.role_on_engagement }}</span> {{ (m.allocated_hours ~ ' hrs') if m.allocated_hours else '' }}</li>
+                {% else %}
+                <li class="list-group-item text-muted">{{ _('No team members added yet.') }}</li>
+                {% endfor %}
+            </ul>
+            {% if current_user.can_edit('internal_audit') %}
+            <form method="post" action="{{ url_for('internal_audit.project_team_add', project_id=project.id) }}" class="row g-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-auto">
+                    <select name="user_id" class="form-select form-select-sm">
+                        {% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <select name="role_on_engagement" class="form-select form-select-sm">
+                        {% for r in ['LEAD', 'AUDITOR', 'REVIEWER', 'OBSERVER'] %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto"><input type="number" step="0.5" name="allocated_hours" class="form-control form-control-sm" placeholder="{{ _('Hours') }}"></div>
+                <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary">{{ _('Add') }}</button></div>
+            </form>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="program">
+            <table class="table table-sm mb-3">
+                <thead><tr><th>#</th><th>{{ _('Procedure') }}</th><th>{{ _('Control') }}</th><th>{{ _('Result') }}</th><th></th></tr></thead>
+                <tbody>
+                {% for p in program %}
+                    {% set control = controls_by_id.get(p.control_id) %}
+                    <tr>
+                        <td>{{ p.step_number }}</td><td>{{ p.procedure_description }}</td>
+                        <td>{{ control.control_code if control else '-' }}</td>
+                        <td>
+                            {% if p.test_result %}
+                            <span class="badge {{ 'bg-success' if p.test_result == 'EFFECTIVE' else ('bg-warning text-dark' if p.test_result == 'PARTIALLY_EFFECTIVE' else ('bg-danger' if p.test_result == 'INEFFECTIVE' else 'bg-secondary')) }}">{{ p.test_result }}</span>
+                            {% else %}
+                            <span class="text-muted small">{{ _('Not tested') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                        {% if current_user.can_edit('internal_audit') and not p.test_result %}
+                        <form method="post" action="{{ url_for('internal_audit.project_program_result', project_id=project.id, program_id=p.id) }}" class="d-flex gap-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="test_result" class="form-select form-select-sm">
+                                {% for r in ['EFFECTIVE', 'PARTIALLY_EFFECTIVE', 'INEFFECTIVE', 'N/A'] %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+                            </select>
+                            <input type="text" name="workpaper_reference" class="form-control form-control-sm" placeholder="{{ _('WP ref') }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">{{ _('Save') }}</button>
+                        </form>
+                        {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="text-center text-muted">{{ _('No procedure steps added yet.') }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% if current_user.can_edit('internal_audit') %}
+            <form method="post" action="{{ url_for('internal_audit.project_program_add', project_id=project.id) }}" class="row g-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-md-6"><input type="text" name="procedure_description" class="form-control form-control-sm" placeholder="{{ _('Procedure description') }}" required></div>
+                <div class="col-md-4">
+                    <select name="control_id" class="form-select form-select-sm">
+                        <option value="">{{ _('(no control tested)') }}</option>
+                        {% for c in controls %}<option value="{{ c.id }}">{{ c.control_code }} - {{ c.control_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary">{{ _('Add Step') }}</button></div>
+            </form>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="findings">
+            <ul class="list-group mb-3">
+                {% for f in findings %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{{ url_for('internal_audit.finding_detail', finding_id=f.id) }}">{{ f.finding_number }} - {{ f.finding_title }}</a>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-secondary">{{ f.status.replace('_', ' ') }}</span>
+                        <span class="badge {{ 'bg-danger' if f.severity == 'CRITICAL' else ('bg-warning text-dark' if f.severity == 'HIGH' else ('bg-info text-dark' if f.severity == 'MEDIUM' else 'bg-secondary')) }}">{{ f.severity }}</span>
+                    </div>
+                </li>
+                {% else %}
+                <li class="list-group-item text-muted">{{ _('No findings raised yet.') }}</li>
+                {% endfor %}
+            </ul>
+            {% if current_user.can_edit('internal_audit') %}
+            <a href="{{ url_for('internal_audit.finding_new', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">{{ _('Raise Finding') }}</a>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="papers">
+            <ul class="list-group mb-3">
+                {% for p in papers %}
+                <li class="list-group-item"><a href="{{ url_for('internal_audit.working_paper_download', paper_id=p.id) }}" target="_blank">{{ p.description or p.file_path }}</a></li>
+                {% else %}
+                <li class="list-group-item text-muted">{{ _('No working papers uploaded yet.') }}</li>
+                {% endfor %}
+            </ul>
+            {% if current_user.can_edit('internal_audit') %}
+            <form method="post" action="{{ url_for('internal_audit.project_working_papers', project_id=project.id) }}" enctype="multipart/form-data" class="row g-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-md-6"><input type="file" name="evidence_file" class="form-control form-control-sm" required></div>
+                <div class="col-md-4"><input type="text" name="description" class="form-control form-control-sm" placeholder="{{ _('Description') }}"></div>
+                <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary">{{ _('Upload') }}</button></div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

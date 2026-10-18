@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Customer Directory') }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Customer Directory (CDD/KYC)') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('aml.export_customers') }}" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-download"></i> {{ _('Export CSV') }}
+            </a>
+            <a href="{{ url_for('aml.create_customer') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-person-plus"></i> {{ _('Onboard New Customer') }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <input type="text" class="form-control form-control-sm" id="customerSearch"
+                        placeholder="{{ _('Search by name, reference, or nationality...') }}">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select form-select-sm" id="typeFilter">
+                        <option value="">{{ _('All Types') }}</option>
+                        <option value="INDIVIDUAL">{{ _('Individual') }}</option>
+                        <option value="CORPORATE">{{ _('Corporate') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select form-select-sm" id="riskFilter">
+                        <option value="">{{ _('All Risk Levels') }}</option>
+                        <option value="LOW">{{ _('Low') }}</option>
+                        <option value="MEDIUM">{{ _('Medium') }}</option>
+                        <option value="HIGH">{{ _('High') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select form-select-sm" id="statusFilter">
+                        <option value="">{{ _('All Statuses') }}</option>
+                        <option value="ACTIVE">{{ _('Active') }}</option>
+                        <option value="PENDING">{{ _('Pending') }}</option>
+                        <option value="SUSPENDED">{{ _('Suspended') }}</option>
+                        <option value="CLOSED">{{ _('Closed') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-2 text-end">
+                    <span class="badge bg-primary" id="customerCount">{{ customers|length }}</span>
+                    <small class="text-muted">{{ _('records') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="customerTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ _('Number') }}</th>
+                            <th>{{ _('Name/Entity') }}</th>
+                            <th>{{ _('Nationality') }}</th>
+                            <th>{{ _('ID/Reg Details') }}</th>
+                            <th>{{ _('Risk Level') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                        <tr data-type="{{ customer.customer_type }}" data-risk="{{ customer.risk_classification }}"
+                            data-status="{{ customer.status }}">
+                            <td><code>{{ customer.customer_reference }}</code></td>
+                            <td>
+                                <div class="fw-bold">{{ customer.full_name or customer.company_name }}</div>
+                                <small class="text-muted">{{ customer.customer_type }}</small>
+                            </td>
+                            <td>{{ customer.nationality or 'N/A' }}</td>
+                            <td>
+                                <small class="d-block">{{ customer.id_type or 'N/A' }}</small>
+                                <code>{{ customer.id_number or 'N/A' }}</code>
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if customer.risk_classification == 'HIGH' %}bg-danger{% elif customer.risk_classification == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                    {{ customer.risk_classification }}
+                                </span>
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if customer.status == 'ACTIVE' %}bg-success{% elif customer.status == 'BLOCKED' %}bg-dark{% else %}bg-info{% endif %}">
+                                    {{ customer.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('aml.view_customer', id=customer.id) }}"
+                                        class="btn btn-sm btn-outline-primary" title="{{ _('View CDD Profile') }}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('aml.edit_customer', id=customer.id) }}"
+                                        class="btn btn-sm btn-outline-secondary" title="{{ _('Edit Identity Info') }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">{{ _('No customers found in directory') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    ['customerSearch'].forEach(function(id) {
+        document.getElementById(id).addEventListener('input', filterCustomers);
+    });
+    ['typeFilter', 'riskFilter', 'statusFilter'].forEach(function(id) {
+        document.getElementById(id).addEventListener('change', filterCustomers);
+    });
+
+    function filterCustomers() {
+        const search = document.getElementById('customerSearch').value.toLowerCase();
+        const typeFilter = document.getElementById('typeFilter').value;
+        const riskFilter = document.getElementById('riskFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+
+        const rows = document.querySelectorAll('#customerTable tbody tr[data-type]');
+        let count = 0;
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const type = row.getAttribute('data-type');
+            const risk = row.getAttribute('data-risk');
+            const status = row.getAttribute('data-status');
+
+            const matchSearch = !search || text.includes(search);
+            const matchType = !typeFilter || type === typeFilter;
+            const matchRisk = !riskFilter || risk === riskFilter;
+            const matchStatus = !statusFilter || status === statusFilter;
+
+            if (matchSearch && matchType && matchRisk && matchStatus) {
+                row.style.display = '';
+                count++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        document.getElementById('customerCount').textContent = count;
+    }
+</script>
+{% endblock %}

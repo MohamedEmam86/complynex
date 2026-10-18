@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Check Status - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+</head>
+
+<body class="complynex-public">
+    <div class="container min-vh-100 d-flex align-items-center justify-content-center py-5">
+        <div class="col-md-6 col-lg-4">
+            <div class="complynex-form-card text-center" style="border-radius: 20px;">
+                <!-- Logo -->
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                    style="max-height: 50px; margin-bottom: 25px;">
+
+                <i class="bi bi-search" style="font-size: 50px; color: var(--complynex-red);"></i>
+                <h2 class="mt-3">{{ _('Check Declaration Status') }}</h2>
+                <p class="text-muted">{{ _('Enter your tracking ID to view your declaration status') }}</p>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show text-start">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('public_ghe.status_lookup') }}" class="mt-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-4">
+                        <input type="text" name="tracking_id" class="form-control" placeholder="{{ _('XXXXXXXX') }}" required
+                            maxlength="8" pattern="[A-Za-z0-9]{8}"
+                            style="font-size: 1.5rem; text-align: center; letter-spacing: 4px; text-transform: uppercase;">
+                        <small class="text-muted">{{ _('8-character tracking ID from your confirmation') }}</small>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-complynex btn-lg">
+                            <i class="bi bi-search"></i> {{ _('Check Status') }}
+                        </button>
+                    </div>
+                </form>
+
+                <hr class="my-4">
+
+                <p class="text-muted mb-0">
+                    {{ _('Need to submit a new declaration?') }}<br>
+                    <a href="{{ url_for('public_ghe.public_submit') }}" class="complynex-link">{{ _('Submit GHE Declaration') }}</a>
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="complynex-footer">
+                <p>{{ _('© 2026 ComplyNex. All rights reserved.') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+</body>
+
+</html>

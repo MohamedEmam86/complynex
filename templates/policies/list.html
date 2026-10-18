@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Policies - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Policies & Procedures') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0 gap-2">
+        {% if current_user.can_edit('policies') %}
+        <div class="btn-group me-2">
+            <a href="{{ url_for('policies.categories') }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-tags"></i> {{ _('Taxonomy') }}
+            </a>
+            <a href="{{ url_for('policies.gap_analysis') }}" class="btn btn-sm btn-outline-info">
+                <i class="bi bi-shield-check"></i> {{ _('Gap Analysis') }}
+            </a>
+            <a href="{{ url_for('policies.my_reviews') }}" class="btn btn-sm btn-outline-warning">
+                <i class="bi bi-calendar-event"></i> {{ _('My Reviews') }}
+            </a>
+        </div>
+        <a href="{{ url_for('policies.create_policy') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus"></i> {{ _('New Policy') }}
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pending Acknowledgment Alert -->
+{% if pending_count > 0 %}
+<div class="alert alert-warning mb-4 shadow-sm border-0 animate__animated animate__shakeX">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle-fill fs-3 me-3"></i>
+        <div>
+            <h5 class="alert-heading mb-1 fw-bold">{{ _('Action Required: Policy Acknowledgment') }}</h5>
+            <p class="mb-0">{{ _('You have') }} <strong>{{ pending_count }}</strong> {{ _('policy(ies) awaiting your review and
+                acknowledgment. This is a mandatory compliance requirement.') }}</p>
+        </div>
+        <a href="{{ url_for('policies.pending_acknowledgment') }}"
+            class="btn btn-warning ms-auto rounded-pill px-4 fw-bold">
+            {{ _('Review Now') }}
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Policies by Category -->
+{% for category in categories %}
+{% set category_policies = policies | selectattr('category_id', 'equalto', category.id | int) | list %}
+{% if category_policies %}
+<div class="card mb-4 shadow-sm border-0 overflow-hidden">
+    <div class="card-header bg-white py-3 border-bottom-0">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi {{ category.icon or 'bi-folder' }} text-primary me-2"></i>
+                    {{ category.name_en if current_user.language == 'en' else category.name_ar }}
+                </h5>
+                {% if category.description_en %}
+                <small class="text-muted">{{ category.description_en if current_user.language == 'en' else
+                    category.description_ar }}</small>
+                {% endif %}
+            </div>
+            <span class="badge bg-light text-dark rounded-pill border">{{ category_policies|length }} {{ _('Policies')
+                }}</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">No.</th>
+                        <th>{{ _('Policy Name') }}</th>
+                        <th>{{ _('Function/Owner') }}</th>
+                        <th>{{ _('Ver.') }}</th>
+                        <th>{{ _('Effective Date') }}</th>
+                        <th>{{ _('Visibility') }}</th>
+                        <th>{{ _('Status') }}</th>
+                        <th>{{ _('Acknowledgment') }}</th>
+                        <th class="text-end pe-4">{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for policy in category_policies if policy.is_public or not current_user.role == 'employee' %}
+                    <tr>
+                        <td class="ps-4">
+                            <small class="font-monospace text-muted">{{ policy.policy_number }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold">
+                                <a href="{{ url_for('policies.view_policy', id=policy.id) }}"
+                                    class="text-decoration-none">
+                                    {{ policy.policy_name }}
+                                </a>
+                            </div>
+                        </td>
+                        <td>{{ policy.responsible_function }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ policy.version_number }}</span></td>
+                        <td>{{ policy.effective_date }}</td>
+                        <td>
+                            {% if policy.is_public %}
+                            <span class="badge bg-info-soft text-info"><i class="bi bi-globe"></i> {{ _('Public') }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary-soft text-secondary"><i class="bi bi-lock-fill"></i>
+                                {{ _('Internal') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if policy.status == 'published' %}
+                            <span class="badge bg-success-soft text-success">{{ _('Published') }}</span>
+                            {% elif 'pending' in policy.status %}
+                            <span class="badge bg-warning-soft text-warning">{{ _('Pending') }}</span>
+                            {% elif policy.status == 'draft' %}
+                            <span class="badge bg-secondary-soft text-secondary">{{ _('Draft') }}</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark">{{ policy.status|capitalize }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if policy.is_acknowledged_by(current_user.id) %}
+                            <span class="text-success small fw-bold"><i class="bi bi-check-circle-fill me-1"></i>
+                                {{ _('Acknowledged') }}</span>
+                            {% else %}
+                            <span class="text-warning small fw-bold"><i class="bi bi-clock me-1"></i> {{ _('Pending') }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <a href="{{ url_for('policies.view_policy', id=policy.id) }}"
+                                    class="btn btn-sm btn-outline-primary shadow-none">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if current_user.can_edit('policies') %}
+                                <a href="{{ url_for('policies.edit_policy', id=policy.id) }}"
+                                    class="btn btn-sm btn-outline-secondary shadow-none">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% if policies|length == 0 %}
+<div class="text-center py-5 animate__animated animate__fadeIn">
+    <div class="mb-4">
+        <div class="bg-light d-inline-block rounded-circle p-4">
+            <i class="bi bi-folder2-open text-muted" style="font-size: 3rem;"></i>
+        </div>
+    </div>
+    <h4 class="text-muted fw-bold">{{ _('No policies found') }}</h4>
+    <p class="text-muted">{{ _('There are currently no policies visible to your account in this section.') }}</p>
+    {% if current_user.can_edit('policies') %}
+    <a href="{{ url_for('policies.create_policy') }}" class="btn btn-primary rounded-pill px-4 mt-2">
+        <i class="bi bi-plus-lg me-2"></i>{{ _('Create First Policy') }}
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<style>
+    .bg-success-soft {
+        background-color: rgba(25, 135, 84, 0.1);
+    }
+
+    .bg-secondary-soft {
+        background-color: rgba(108, 117, 125, 0.1);
+    }
+
+    .bg-warning-soft {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+
+    .bg-info-soft {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+</style>
+{% endblock %}

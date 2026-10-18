@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Login to ComplyNex Full Compliance Platform">
+    <title>{{ _('Login') }} - ComplyNex</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    {% if session.get('dir') == 'rtl' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/fonts/quicksand/quicksand.css') }}" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            font-family: 'Quicksand', 'Segoe UI', system-ui, sans-serif;
+            background: #F8F8F8;
+        }
+
+        .login-wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+            width: 440px;
+            min-width: 440px;
+            background: linear-gradient(160deg, #123E5F 0%, #071E36 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            top: -80px;
+            right: -80px;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: rgba(0,226,209,0.08);
+        }
+
+        .left-panel::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            left: -60px;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: rgba(0,226,209,0.05);
+        }
+
+        .brand-logo-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 22px 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+        }
+
+        .brand-logo {
+            width: 230px;
+            height: auto;
+            object-fit: contain;
+            display: block;
+        }
+
+        .brand-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #FFFFFF;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            text-align: center;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        .brand-sub {
+            font-size: 13px;
+            color: rgba(255,255,255,0.75);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .divider {
+            width: 48px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00E2D1, transparent);
+            margin: 0 auto 32px;
+        }
+
+        .tagline {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            margin-bottom: 36px;
+            line-height: 1.6;
+        }
+
+        .feature-list {
+            list-style: none;
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            color: rgba(255,255,255,0.75);
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00E2D1;
+            flex-shrink: 0;
+        }
+
+        .left-footer {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+            position: absolute;
+            bottom: 16px;
+            left: 0;
+            right: 0;
+            line-height: 1.6;
+            padding: 0 24px;
+        }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 40px;
+            background: #F8F8F8;
+        }
+
+        .form-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 48px 44px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            border: 1px solid rgba(18,62,95,0.08);
+        }
+
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 32px;
+        }
+
+        .form-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #123E5F;
+            margin-bottom: 6px;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        .form-subtitle {
+            font-size: 14px;
+            color: #9CA3AF;
+            margin-bottom: 32px;
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            border: 1.5px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 11px 14px;
+            font-size: 14px;
+            color: #1F2937;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: #00A6B4;
+            box-shadow: 0 0 0 3px rgba(0,166,180,0.12);
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: #D1D5DB;
+        }
+
+        .input-group .form-control {
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .input-group .btn-outline-secondary {
+            border: 1.5px solid #E5E7EB;
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+            color: #9CA3AF;
+            background: #FFFFFF;
+        }
+
+        .input-group .btn-outline-secondary:hover {
+            background: #F9FAFB;
+            color: #123E5F;
+        }
+
+        .form-check-input:checked {
+            background-color: #123E5F;
+            border-color: #123E5F;
+        }
+
+        .form-check-label {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .btn-signin {
+            background: linear-gradient(135deg, #123E5F 0%, #00A6B4 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 13px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #FFFFFF;
+            width: 100%;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            margin-top: 8px;
+            font-family: 'Quicksand', sans-serif;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-signin:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        .btn-signin:active {
+            transform: translateY(0);
+        }
+
+        .security-note {
+            text-align: center;
+            font-size: 12px;
+            color: #9CA3AF;
+            margin-top: 20px;
+        }
+
+        .security-note i {
+            color: #00A6B4;
+        }
+
+        .form-card-footer {
+            border-top: 1px solid #E2E8F0;
+            margin-top: 28px;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #123E5F;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .alert {
+            border-radius: 8px;
+            font-size: 13px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .login-wrapper { flex-direction: column; }
+            .left-panel {
+                width: 100%;
+                min-width: unset;
+                padding: 32px 24px;
+                min-height: unset;
+            }
+            .brand-logo-card { padding: 14px 18px; margin-bottom: 16px; }
+            .brand-logo { width: 150px; }
+            .brand-name { font-size: 22px; }
+            .feature-list { display: none; }
+            .left-footer { position: static; margin-top: 20px; }
+            .right-panel { padding: 32px 20px; }
+            .form-card { padding: 32px 24px; }
+        }
+    </style>
+</head>
+<body>
+<div class="login-wrapper">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+        <div class="brand-logo-card">
+            <img src="{{ url_for('static', filename='images/logo.png') }}"
+                 alt="{{ _('ComplyNex') }}" class="brand-logo">
+        </div>
+        <div class="brand-name">{{ _('ComplyNex') }}</div>
+        <div class="brand-sub">{{ _('Full Compliance Platform') }}</div>
+        <div class="divider"></div>
+        <div class="tagline">{{ _('Secure. Compliant. Digital.') }}</div>
+        <ul class="feature-list">
+            <li><span class="feature-dot"></span>{{ _('Unified compliance command center — screening, AML, governance &amp; reporting in one platform') }}</li>
+            <li><span class="feature-dot"></span>{{ _('Sanctions &amp; PEP screening with native Arabic name normalization') }}</li>
+            <li><span class="feature-dot"></span>{{ _('Integrated digital eKYC, GHE, COI &amp; whistleblowing workflows') }}</li>
+            <li><span class="feature-dot"></span>{{ _('Built ground-up for CBE &amp; EMLCU regulatory alignment') }}</li>
+            <li><span class="feature-dot"></span>{{ _('End-to-end audit trails &amp; risk-based decisioning, module to module') }}</li>
+        </ul>
+        <div class="left-footer">
+            {{ _('&copy; 2026 ComplyNex&trade;. All rights reserved.') }}<br>
+            {{ _('Powered by Mohamed Emam &mdash; GRC &amp; Compliance Expert') }}<br>
+            <a href="mailto:f.mohemam85@gmail.com" style="color:rgba(255,255,255,0.6); text-decoration:none;">{{ _('f.mohemam85@gmail.com') }}</a> {{ _('&middot;') }}
+            <a href="mailto:admin@complynex.online" style="color:rgba(255,255,255,0.6); text-decoration:none;">{{ _('admin@complynex.online') }}</a>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+        <div class="form-card">
+
+            <!-- Language switcher -->
+            <div class="lang-switcher">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown">
+                        <i class="bi bi-globe me-1"></i>
+                        {{ 'العربية' if session.get('lang') == 'ar' else 'English' }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{{ url_for('set_language', lang='en') }}">{{ _('English') }}</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('set_language', lang='ar') }}">{{ _('العربية') }}</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="form-title">{{ _('Welcome back') }}</div>
+            <div class="form-subtitle">{{ _('Sign in to your ComplyNex account') }}</div>
+
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {% if category == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>
+                {% elif category == 'danger' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>
+                {% elif category == 'warning' %}<i class="bi bi-exclamation-circle-fill me-2"></i>
+                {% else %}<i class="bi bi-info-circle-fill me-2"></i>{% endif %}
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <!-- Login form -->
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">
+                        <i class="bi bi-envelope me-1"></i>{{ _('Email Address') }}
+                    </label>
+                    <input type="email" class="form-control" id="email" name="email"
+                        placeholder="{{ _('Enter your email address') }}"
+                        required autofocus autocomplete="email">
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">
+                        <i class="bi bi-lock me-1"></i>{{ _('Password') }}
+                    </label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="password" name="password"
+                            placeholder="{{ _('Enter your password') }}"
+                            required autocomplete="current-password">
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-4 form-check">
+                    <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                    <label class="form-check-label" for="remember">{{ _('Remember me') }}</label>
+                </div>
+
+                <button type="submit" class="btn-signin">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>{{ _('Sign In') }}
+                </button>
+            </form>
+
+            <div class="security-note">
+                <i class="bi bi-shield-lock-fill me-1"></i>
+                {{ _('Secure access for authorized personnel only') }}
+            </div>
+
+            <div class="form-card-footer">
+                {{ _('&nbsp; ComplyNex Full Compliance Platform V3.1.1 &nbsp;|&nbsp; CBE Compliant &nbsp;|&nbsp;
+                Secure &amp; Trusted') }}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+    document.getElementById('togglePassword').addEventListener('click', function () {
+        const password = document.getElementById('password');
+        const icon = this.querySelector('i');
+        if (password.type === 'password') {
+            password.type = 'text';
+            icon.classList.replace('bi-eye', 'bi-eye-slash');
+        } else {
+            password.type = 'password';
+            icon.classList.replace('bi-eye-slash', 'bi-eye');
+        }
+    });
+</script>
+</body>
+</html>

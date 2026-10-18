@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+
+{% block title %}Training Audit Report - ComplyNex CMS{% endblock %}
+
+{% block extra_js %}
+<!-- Enrollment Modal -->
+<div class="modal fade" id="enrollModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('Manually Enroll User') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('training.enroll_user') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <p class="text-muted small mb-4">{{ _('Assign a training course to a specific employee. The list of
+                        courses will filter to show only those the user is not yet enrolled in.') }}</p>
+
+                    <div class="mb-3">
+                        <label for="enroll_user_id" class="form-label">{{ _('Select Employee') }}</label>
+                        <select class="form-select select2" name="user_id" id="enroll_user_id" required>
+                            <option value="">{{ _('-- Select User --') }}</option>
+                            {% for u in users %}
+                            <option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }} ({{ u.department or 'No
+                                Dept' }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="enroll_course_id" class="form-label">{{ _('Select Course') }}</label>
+                        <select class="form-select" name="course_id" id="enroll_course_id" required disabled>
+                            <option value="">{{ _('-- Select Employee First --') }}</option>
+                        </select>
+                        <div id="course-loader" class="spinner-border spinner-border-sm text-primary d-none mt-2"
+                            role="status">
+                            <span class="visually-hidden">{{ _('Loading...') }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="due_days" class="form-label">{{ _('Due in (Days)') }}</label>
+                        <input type="number" class="form-control" name="due_days" id="due_days" value="30" min="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary" id="btn-enroll-submit" disabled>{{ _('Assign
+                        Training') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Assign Modal -->
+<div class="modal fade" id="bulkAssignModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('Bulk Assign Training') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('training.bulk_enroll_users') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <p class="text-muted small mb-4">{{ _('Select one or more courses and one or more employees to
+                        enroll every selected employee in every selected course. Employees already enrolled in
+                        a given course are skipped automatically.') }}</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="bulk_course_ids" class="form-label">{{ _('Select Courses') }}</label>
+                            <select class="form-select" name="course_ids" id="bulk_course_ids" multiple required
+                                size="8">
+                                {% for c in courses %}
+                                <option value="{{ c.id }}">{{ '[M] ' if c.is_mandatory else '' }}{{ c.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="bulk_user_ids" class="form-label">{{ _('Select Employees') }}</label>
+                            <select class="form-select" name="user_ids" id="bulk_user_ids" multiple required
+                                size="8">
+                                {% for u in users %}
+                                <option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }} ({{ u.department or 'No
+                                    Dept' }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 mt-3">
+                        <label for="bulk_due_days" class="form-label">{{ _('Due in (Days)') }}</label>
+                        <input type="number" class="form-control" name="due_days" id="bulk_due_days" value="30"
+                            min="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('Assign to Selected') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    document.getElementById('enroll_user_id').addEventListener('change', function () {
+        filterCourses(this.value);
+    });
+
+    function filterCourses(userId) {
+        const courseSelect = document.getElementById('enroll_course_id');
+        const submitBtn = document.getElementById('btn-enroll-submit');
+        const loader = document.getElementById('course-loader');
+
+        if (!userId) {
+            courseSelect.innerHTML = '<option value="">-- Select Employee First --</option>';
+            courseSelect.disabled = true;
+            submitBtn.disabled = true;
+            return;
+        }
+
+        // Reset and show loader
+        courseSelect.disabled = true;
+        loader.classList.remove('d-none');
+        courseSelect.innerHTML = '<option value="">Loading available courses...</option>';
+
+        fetch(`/training/api/unassigned-courses/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                loader.classList.add('d-none');
+                courseSelect.innerHTML = '';
+
+                if (data.error) {
+                    courseSelect.innerHTML = `<option value="">Error: ${data.error}</option>`;
+                    return;
+                }
+
+                if (data.courses.length === 0) {
+                    courseSelect.innerHTML = '<option value="">All courses already assigned</option>';
+                    submitBtn.disabled = true;
+                } else {
+                    courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+                    data.courses.forEach(course => {
+                        const opt = document.createElement('option');
+                        opt.value = course.id;
+                        opt.textContent = (course.mandatory ? '[M] ' : '') + course.name;
+                        courseSelect.appendChild(opt);
+                    });
+                    courseSelect.disabled = false;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                loader.classList.add('d-none');
+                courseSelect.innerHTML = '<option value="">Failed to load courses</option>';
+                console.error(err);
+            });
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Training Audit Log') }}</h1>
+        <div class="btn-toolbar gap-2">
+            {% if current_user.is_compliance_officer() or current_user.can_assign_training %}
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#enrollModal">
+                <i class="bi bi-person-plus"></i> {{ _('Enroll User') }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                data-bs-target="#bulkAssignModal">
+                <i class="bi bi-people"></i> {{ _('Bulk Assign Training') }}
+            </button>
+            {% endif %}
+            {% if current_user.is_compliance_officer() %}
+            <form action="{{ url_for('training.send_reminders') }}" method="POST"
+                data-confirm="Send email reminders to all users with incomplete training?">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-warning">
+                    <i class="bi bi-bell"></i> {{ _('Send Reminders') }}
+                </button>
+            </form>
+            <a href="{{ url_for('training.training_export_report') }}" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Export CSV') }}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="course_id" class="form-label">{{ _('Filter by Course') }}</label>
+                    <select class="form-select" id="course_id" name="course_id">
+                        <option value="">{{ _('All Courses') }}</option>
+                        {% for c in courses %}
+                        <option value="{{ c.id }}" {{ 'selected' if request.args.get('course_id')==c.id|string }}>
+                            {{ c.course_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">{{ _('Filter by Status') }}</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">{{ _('All Statuses') }}</option>
+                        <option value="enrolled" {{ 'selected' if request.args.get('status')=='enrolled' }}>{{ _('Enrolled
+                            (Pending)') }}</option>
+                        <option value="completed" {{ 'selected' if request.args.get('status')=='completed' }}>{{ _('Completed') }}
+                        </option>
+                        <option value="overdue" {{ 'selected' if request.args.get('status')=='overdue' }}>{{ _('Overdue') }}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">{{ _('Filter') }}</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ url_for('training.training_report') }}"
+                        class="btn btn-outline-secondary w-100">{{ _('Reset') }}</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">{{ _('Date') }}</th>
+                            <th>{{ _('Employee') }}</th>
+                            <th>{{ _('Department') }}</th>
+                            <th>{{ _('Course') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Score') }}</th>
+                            <th>{{ _('Action') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in enrollments %}
+                        <tr>
+                            <td class="ps-4 text-nowrap">{{ (e.enrolled_date|string)[:10] }}</td>
+                            <td>
+                                <div class="fw-bold">{{ e.employee_name }}</div>
+                            </td>
+                            <td>{{ e.department or '-' }}</td>
+                            <td>
+                                <div>{{ e.course_name }}</div>
+                                <small class="text-muted">{{ e.course_code }}</small>
+                            </td>
+                            <td>
+                                {% if e.status == 'completed' %}
+                                <span class="badge bg-success">{{ _('Completed') }}</span>
+                                <div class="small text-muted">{{ (e.completion_date|string)[:10] }}</div>
+                                {% elif e.status == 'overdue' %}
+                                <span class="badge bg-danger">{{ _('Overdue') }}</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">{{ _('Pending') }}</span>
+                                <div class="small text-muted">Due: {{ e.due_date }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if e.score is not none %}
+                                <span class="fw-bold {{ 'text-success' if e.score >= 70 else 'text-danger' }}">
+                                    {{ e.score }}%
+                                </span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if e.status != 'completed' %}
+                                <form method="POST"
+                                    action="{{ url_for('training.send_single_reminder', enrollment_id=e.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-xs btn-link text-decoration-none"
+                                        title="{{ _('Send Reminder') }}">
+                                        <i class="bi bi-envelope"></i> {{ _('Remind') }}
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                {{ _('No records found matching your filters.') }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

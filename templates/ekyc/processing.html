@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Identity Verification') }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px;">
+    <div class="card mt-4">
+        <div class="card-body text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <h5>
+                {% if session.locale == 'ar' %}جاري معالجة طلبك...{% else %}Processing your verification...{% endif %}
+            </h5>
+            <p class="text-muted">
+                {% if session.locale == 'ar' %}قد يستغرق هذا بضع لحظات. لا تغلق هذه الصفحة.{% else %}This may take a few moments. Please don't close this page.{% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+<script nonce="{{ csp_nonce }}">
+(function poll() {
+    fetch("{{ url_for('ekyc.capture_status', token=session.session_token) }}")
+        .then((r) => r.json())
+        .then((data) => {
+            // Stop polling on anything other than the in-flight states this
+            // page is shown for — covers COMPLETED/FAILED as before, plus
+            // NEEDS_REVIEW/DECISION_PENDING/APPROVED/ONBOARDED/REJECTED now
+            // that the pipeline can land a session directly in any of those.
+            if (data.status === 'CAPTURED' || data.status === 'QUEUED' || data.status === 'PROCESSING') {
+                setTimeout(poll, 2000);
+            } else {
+                window.location.reload();
+            }
+        })
+        .catch(() => setTimeout(poll, 3000));
+})();
+</script>
+{% endblock %}

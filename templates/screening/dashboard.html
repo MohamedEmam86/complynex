@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-search-dollar me-2"></i>{{ _('Screening Dashboard') }}</h1>
+        <div>
+            <a href="{{ url_for('screening.screening_queue') }}" class="btn btn-danger me-1">
+                <i class="bi bi-inbox-fill me-1"></i> {{ _('Review Queue') }}
+            </a>
+            <a href="{{ url_for('screening.manual_screen') }}" class="btn btn-primary">
+                <i class="fas fa-search me-1"></i> {{ _('New Screening') }}
+            </a>
+            <a href="{{ url_for('screening.reports_dashboard') }}" class="btn btn-outline-info me-1">
+                <i class="fas fa-file-invoice me-1"></i> {{ _('Reports') }}
+            </a>
+            <a href="{{ url_for('screening.config') }}" class="btn btn-secondary">
+                <i class="fas fa-cog me-1"></i> {{ _('Config') }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{{ _('Total Screenings') }}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_screenings }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">{{ _('Confirmed Hits') }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.confirmed_hits or 0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-ban fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">{{ _('Potential Matches') }}
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.potential_matches or 0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{{ _('Clear') }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.clear_results or 0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Screenings -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ _('Recent Screenings') }}</h6>
+                    <a href="{{ url_for('screening.screening_history_full') }}"
+                        class="btn btn-sm btn-info shadow-sm">{{ _('Full History') }}</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>{{ _('Date') }}</th>
+                                    <th>{{ _('Name') }}</th>
+                                    <th>{{ _('Type') }}</th>
+                                    <th>{{ _('Result') }}</th>
+                                    <th>{{ _('Score') }}</th>
+                                    <th>{{ _('Action') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in recent_screenings %}
+                                <tr>
+                                    <td>{{ s.created_at }}</td>
+                                    <td>{{ s.screened_name }}</td>
+                                    <td>{{ s.screening_type }}</td>
+                                    <td>
+                                        {% if s.screening_result == 'CONFIRMED_HIT' %}
+                                        <span class="badge bg-danger">{{ _('HIT') }}</span>
+                                        {% elif s.screening_result == 'POTENTIAL_MATCH' %}
+                                        <span class="badge bg-warning">{{ _('MATCH') }}</span>
+                                        {% else %}
+                                        <span class="badge bg-success">{{ _('CLEAR') }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ "%.2f"|format(s.highest_match_score) }}</td>
+                                    <td>
+                                        <a href="{{ url_for('screening.view_result', id=s.id) }}"
+                                            class="btn btn-sm btn-info">{{ _('View') }}</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="col-lg-4 mb-4">
+            <!-- Workflow Quick Links -->
+            <div class="card shadow mb-4 border-left-danger">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger"><i class="bi bi-lightning-charge"></i> {{ _('Workflow') }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('screening.screening_queue') }}"
+                            class="btn btn-outline-danger btn-sm text-start">
+                            <i class="bi bi-inbox-fill me-2"></i> {{ _('Review Queue') }}
+                        </a>
+                        <a href="{{ url_for('screening.screening_history_full') }}"
+                            class="btn btn-outline-primary btn-sm text-start">
+                            <i class="bi bi-clock-history me-2"></i> {{ _('Full History') }}
+                        </a>
+                        <a href="{{ url_for('screening.manage_whitelist') }}"
+                            class="btn btn-outline-success btn-sm text-start">
+                            <i class="bi bi-shield-check me-2"></i> {{ _('Whitelist Management') }}
+                        </a>
+                        <a href="{{ url_for('screening.alerts_list') }}"
+                            class="btn btn-outline-warning btn-sm text-start">
+                            <i class="bi bi-bell-fill me-2"></i> {{ _('AML Alerts') }}
+                            {% if open_alerts %}<span class="badge bg-danger">{{ open_alerts }}</span>{% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Watchlist Info -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ _('Data Status') }}</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>{{ _('Total Records:') }}</strong> {{ watchlist_count }}</p>
+                    {% if source_freshness %}
+                    <div class="table-responsive">
+                    <table class="table table-sm small mb-2">
+                        <thead><tr><th>{{ _('List') }}</th><th>{{ _('Last Update') }}</th><th>{{ _('Status') }}</th></tr></thead>
+                        <tbody>
+                        {% for s in source_freshness %}
+                        <tr>
+                            <td>{{ s.name }}</td>
+                            <td>{{ s.last }}{% if s.age_h is not none %} <span class="text-muted">({{ s.age_h }}h)</span>{% endif %}</td>
+                            <td>
+                                <span class="badge bg-{{ s.badge }}">{{ s.status }}</span>
+                                {% if s.failures > 0 %}<span class="badge bg-danger">{{ s.failures }} {{ _('fails') }}</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                    {% else %}
+                    <p><strong>{{ _('Last Updated:') }}</strong> {{ last_update or 'Never' }}</p>
+                    {% endif %}
+                    <p class="small text-muted mb-0">{{ _('Lists refresh automatically. Red rows need attention.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

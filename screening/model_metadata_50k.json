@@ -1,0 +1,33 @@
+{
+  "version": "202602242236",
+  "trained": "2026-02-24T22:36:00",
+  "type": "VotingClassifier (RF + GradientBoosting) - 50K Dataset",
+  "bundle_type": "dict",
+  "training_data": {
+    "total_scenarios": 50000,
+    "name_coverage": "165+ unique names"
+  },
+  "features": [
+    "fuzzy_ratio",
+    "partial_ratio",
+    "token_set_ratio",
+    "jaro_winkler",
+    "phonetic_score",
+    "soundex_score",
+    "has_arabic_cust",
+    "has_arabic_wtch",
+    "mixed_script",
+    "translit_score",
+    "known_pair",
+    "first_name_sim",
+    "last_name_sim",
+    "name_len_ratio",
+    "dob_exact",
+    "dob_days_diff",
+    "dob_year_match",
+    "dob_bonus"
+  ],
+  "estimators": ["RandomForestClassifier", "GradientBoostingClassifier"],
+  "voting": "soft",
+  "includes": ["model", "feature_names", "translit_map", "last_name_map", "reverse_map"]
+}

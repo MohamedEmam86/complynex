@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Employee Compliance Portal - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% if session.get('dir') == 'rtl' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+    <style>
+        body {
+            background-color: #F8F8F8;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .welcome-card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .brand-logo {
+            height: 60px;
+            margin-bottom: 1.5rem;
+        }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(18, 62, 95, 0.1);
+            color: #123E5F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container py-5">
+        <div class="welcome-card animate-up">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}" class="brand-logo">
+
+            <div class="icon-circle">
+                <i class="bi bi-shield-lock"></i>
+            </div>
+
+            <h2 class="mb-3 fw-bold">{{ _('Employee Portal') }}</h2>
+            <p class="text-muted mb-4">
+                {{ _('Please log in to access your compliance declarations, policies, and training modules.') }}
+            </p>
+
+            <div class="d-grid gap-3">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-lg" style="background:linear-gradient(135deg,#123E5F,#00A6B4);color:#fff;border:none;border-radius:10px;font-weight:600;">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> {{ _('Log In') }}
+                </a>
+
+                <div class="text-muted small mt-3">
+                    {{ _("Don't have an account?") }} <a href="{{ url_for('auth.register') }}">{{ _('Register here')
+                        }}</a>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-top">
+                <small class="text-muted">{{ _('&copy; 2026') }} <strong style="color:#123E5F;">{{ _('ComplyNex') }}</strong>{{ _('. All rights reserved.') }} <a href="mailto:info@complynex.online">{{ _('info@complynex.online') }}</a></small>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+</body>
+
+</html>

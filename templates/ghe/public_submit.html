@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Submit GHE Declaration - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+</head>
+
+<body class="complynex-public">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <!-- Brand Header -->
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        class="logo">
+                    <h1><i class="bi bi-gift"></i> {{ _('GHE Declaration') }}</h1>
+                    <p>{{ _('Gift, Hospitality & Entertainment Submission') }}</p>
+                </div>
+
+                <!-- Form Card -->
+                <div class="complynex-form-card">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <!-- Threshold Information -->
+                    <div class="complynex-info-box">
+                        <h6><i class="bi bi-info-circle"></i> {{ _('Approval Thresholds') }}</h6>
+                        <ul class="mb-0">
+                            <li><strong>{{ _('Below 500 EGP:') }}</strong> {{ _('Auto-approved instantly') }}</li>
+                            <li><strong>{{ _('500 - 2,000 EGP:') }}</strong> {{ _('Requires manager approval') }}</li>
+                            <li><strong>{{ _('Above 2,000 EGP:') }}</strong> {{ _('Requires compliance approval') }}</li>
+                            <li><strong>{{ _('Government Official:') }}</strong> {{ _('Always requires manager approval') }}</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('public_ghe.public_submit') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <!-- Your Information -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-person"></i> {{ _('Your Information') }}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Full Name') }} <span class="text-danger">*</span></label>
+                                <input type="text" name="submitter_name" class="form-control" required
+                                    placeholder="{{ _('Enter your full name') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Email Address') }} <span class="text-danger">*</span></label>
+                                <input type="email" name="submitter_email" class="form-control" required
+                                    placeholder="{{ _('your.email@company.com') }}">
+                                <small class="text-muted">{{ _('You\'ll receive notifications at this email') }}</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Department') }}</label>
+                            <input type="text" name="submitter_department" class="form-control"
+                                placeholder="{{ _('e.g., Finance, HR, Operations') }}">
+                        </div>
+
+                        <!-- GHE Details -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-gift"></i> {{ _('GHE Details') }}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Type') }} <span class="text-danger">*</span></label>
+                                <select name="ghe_type" class="form-select" required>
+                                    <option value="">{{ _('Select type...') }}</option>
+                                    <option value="Gift">{{ _('Gift') }}</option>
+                                    <option value="Hospitality">{{ _('Hospitality') }}</option>
+                                    <option value="Entertainment">{{ _('Entertainment') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Direction') }} <span class="text-danger">*</span></label>
+                                <select name="direction" class="form-select" required>
+                                    <option value="">{{ _('Select direction...') }}</option>
+                                    <option value="Given">{{ _('Given (by me to someone)') }}</option>
+                                    <option value="Received">{{ _('Received (by me from someone)') }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Event Date') }} <span class="text-danger">*</span></label>
+                                <input type="date" name="event_date" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Estimated Value (EGP)') }} <span
+                                        class="text-danger">*</span></label>
+                                <input type="number" name="estimated_value_egp" class="form-control" step="0.01"
+                                    min="0.01" required placeholder="0.00" id="valueInput">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Description') }} <span class="text-danger">*</span></label>
+                            <textarea name="description" class="form-control" rows="3" required
+                                placeholder="{{ _('Describe the gift, hospitality, or entertainment') }}"></textarea>
+                        </div>
+
+                        <!-- Provider/Recipient -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-building"></i> {{ _('Provider/Recipient Information') }}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Name') }} <span class="text-danger">*</span></label>
+                                <input type="text" name="provider_recipient_name" class="form-control" required
+                                    placeholder="{{ _('Person\'s name') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Company/Organization') }}</label>
+                                <input type="text" name="provider_recipient_company" class="form-control"
+                                    placeholder="{{ _('Company name') }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Business Purpose') }}</label>
+                            <textarea name="business_purpose" class="form-control" rows="2"
+                                placeholder="{{ _('Business reason for this GHE') }}"></textarea>
+                        </div>
+
+                        <!-- Government Official -->
+                        <div class="complynex-section-title">
+                            <i class="bi bi-exclamation-triangle"></i> {{ _('Government Official Declaration') }}
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="is_government_official" class="form-check-input"
+                                id="govtCheck">
+                            <label class="form-check-label" for="govtCheck">
+                                {{ _('This involves a government official or public sector employee') }}
+                            </label>
+                        </div>
+
+                        <div class="complynex-warning-box mb-3" id="govtWarning">
+                            <i class="bi bi-exclamation-triangle text-warning"></i>
+                            <strong>{{ _('Important:') }}</strong> {{ _('GHE involving government officials always requires manager
+                            approval.') }}
+                            <div class="mt-2">
+                                <label class="form-label">{{ _('Government Official Name & Agency') }}</label>
+                                <textarea name="government_official_details" class="form-control" rows="2"
+                                    placeholder="{{ _('Name and agency of the government official') }}"></textarea>
+                            </div>
+                            <div class="mt-2">
+                                <label class="form-label">{{ _('Government Official Position') }}</label>
+                                <input type="text" name="government_official_position" class="form-control"
+                                    placeholder="{{ _('e.g., Director, Head of Dept...') }}">
+                            </div>
+                        </div>
+
+                        <!-- Privacy Agreement -->
+                        <div class="mb-4 form-check">
+                            <input type="checkbox" class="form-check-input" id="privacyCheck" required>
+                            <label class="form-check-label" for="privacyCheck">
+                                {{ _('You agree to our') }} <a href="#" class="complynex-link">{{ _('friendly privacy policy') }}</a>.
+                            </label>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-complynex btn-lg">
+                                <i class="bi bi-send"></i> {{ _('Submit') }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <hr>
+                        <p class="text-muted">{{ _('Already submitted?') }}
+                            <a href="{{ url_for('public_ghe.status_lookup') }}" class="complynex-link">{{ _('Check your
+                                declaration status') }}</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="complynex-footer">
+                    <p>{{ _('© 2026 ComplyNex. All rights reserved. |') }}
+                        <a href="tel:16233">16233</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+    <script nonce="{{ csp_nonce }}">
+        // Toggle government official details
+        document.getElementById('govtCheck').addEventListener('change', function () {
+            document.getElementById('govtWarning').style.display = this.checked ? 'block' : 'none';
+        });
+    </script>
+</body>
+
+</html>

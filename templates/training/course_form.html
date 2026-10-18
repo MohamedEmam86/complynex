@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Edit' if course else 'New' }} Course - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ 'Edit' if course else 'Create New' }} Course</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('training.list_courses') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to List') }}
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('training.save_course', id=course.id if course else 0) }}"
+                    enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="course_code" class="form-label">{{ _('Course Code') }}</label>
+                            <input type="text" class="form-control" id="course_code" name="course_code"
+                                value="{{ course.course_code if course else '' }}" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label for="course_name" class="form-label">{{ _('Course Name') }}</label>
+                            <input type="text" class="form-control" id="course_name" name="course_name"
+                                value="{{ course.course_name if course else '' }}" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="description" class="form-label">{{ _('Description') }}</label>
+                            <textarea class="form-control" id="description" name="description"
+                                rows="3">{{ course.description if course else '' }}</textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="category" class="form-label">{{ _('Category') }}</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="Compliance" {{ 'selected' if course and course.category=='Compliance' }}>
+                                    {{ _('Compliance') }}</option>
+                                <option value="Technical" {{ 'selected' if course and course.category=='Technical' }}>
+                                    {{ _('Technical') }}</option>
+                                <option value="Soft Skills" {{ 'selected' if course and course.category=='Soft Skills'
+                                    }}>{{ _('Soft Skills') }}</option>
+                                <option value="Onboarding" {{ 'selected' if course and course.category=='Onboarding' }}>
+                                    {{ _('Onboarding') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="content_type" class="form-label">{{ _('Content Type') }}</label>
+                            <select class="form-select" id="content_type" name="content_type">
+                                <option value="Video" {{ 'selected' if course and course.content_type=='Video' }}>{{ _('Video') }}
+                                </option>
+                                <option value="Document" {{ 'selected' if course and course.content_type=='Document' }}>
+                                    {{ _('Document (PDF)') }}</option>
+                                <option value="Presentation" {{ 'selected' if course and
+                                    course.content_type=='Presentation' }}>{{ _('Presentation') }}</option>
+                                <option value="Hybrid" {{ 'selected' if course and course.content_type=='Hybrid' }}>
+                                    {{ _('Hybrid (Video + Doc)') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="duration_minutes" class="form-label">{{ _('Duration (minutes)') }}</label>
+                            <input type="number" class="form-control" id="duration_minutes" name="duration_minutes"
+                                value="{{ course.duration_minutes if course else 30 }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="passing_score" class="form-label">{{ _('Passing Score (%%)') }}</label>
+                            <input type="number" class="form-control" id="passing_score" name="passing_score" min="1"
+                                max="100" value="{{ course.passing_score if course else 70 }}">
+                        </div>
+
+                        <!-- Video Section -->
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mt-3">{{ _('Video Content') }}</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="video_file" class="form-label">{{ _('Upload Video (MP4)') }}</label>
+                            <input type="file" class="form-control" id="video_file" name="video_file"
+                                accept=".mp4,.webm,.ogg">
+                            {% if course and course.video_file_path %}
+                            <div class="form-text text-success">Current: {{ course.video_file_path }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="video_url" class="form-label">{{ _('Or Video URL (YouTube/Ext)') }}</label>
+                            <input type="url" class="form-control" id="video_url" name="video_url"
+                                value="{{ course.video_url if course else '' }}" placeholder="{{ _('https://youtube.com/...') }}">
+                        </div>
+
+                        <!-- Documents Section -->
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mt-3">{{ _('Documents & Presentations') }}</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="presentation_file" class="form-label">{{ _('Upload Presentation (PPT/PDF)') }}</label>
+                            <input type="file" class="form-control" id="presentation_file" name="presentation_file"
+                                accept=".pdf,.ppt,.pptx">
+                            {% if course and course.presentation_path %}
+                            <div class="form-text text-success">Current: {{ course.presentation_path }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="document_file" class="form-label">{{ _('Upload Document (PDF)') }}</label>
+                            <input type="file" class="form-control" id="document_file" name="document_file"
+                                accept=".pdf,.doc,.docx">
+                            {% if course and course.document_path %}
+                            <div class="form-text text-success">Current: {{ course.document_path }}</div>
+                            {% endif %}
+                            <!-- Hidden input to keep old path if not replaced, handled in backend but good for clarity -->
+                            <input type="hidden" name="existing_document_path"
+                                value="{{ course.document_path if course else '' }}">
+                        </div>
+
+                        <div class="col-12">
+                            <label for="document_path" class="form-label">{{ _('Or Document Path (Manual/Legacy)') }}</label>
+                            <input type="text" class="form-control" id="document_path" name="document_path"
+                                value="{{ course.document_path if course else '' }}" placeholder="{{ _('documents/policy.pdf') }}">
+                        </div>
+
+                        <div class="col-12">
+                            <label for="external_link" class="form-label">{{ _('External Link (Optional)') }}</label>
+                            <input type="url" class="form-control" id="external_link" name="external_link"
+                                value="{{ course.external_link if course else '' }}"
+                                placeholder="{{ _('https://external-resource.com') }}">
+                        </div>
+
+                        <div class="col-12">
+                            <label for="content" class="form-label mt-3">{{ _('HTML Content / Notes') }}</label>
+                            <textarea class="form-control" id="content" name="content"
+                                rows="5">{{ course.content if course else '' }}</textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-4">
+                                <input class="form-check-input" type="checkbox" id="is_mandatory" name="is_mandatory"
+                                    {{ 'checked' if course and course.is_mandatory }}>
+                                <label class="form-check-label" for="is_mandatory">{{ _('Mandatory Course') }}</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-4">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active"
+                                    {{ 'checked' if not course or course.is_active }}>
+                                <label class="form-check-label" for="is_active">{{ _('Active (Visible)') }}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-save me-2"></i> {{ _('Save Course') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

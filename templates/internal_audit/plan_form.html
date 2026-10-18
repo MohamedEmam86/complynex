@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('New Annual Audit Plan') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('New Annual Audit Plan') }}</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card"><div class="card-body">
+                <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Plan Year') }}</label>
+                        <input type="number" name="plan_year" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Plan Name') }}</label>
+                        <input type="text" name="plan_name" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary">{{ _('Create Plan') }}</button>
+                    <a href="{{ url_for('internal_audit.plans') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+                </form>
+            </div></div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><strong>{{ _('Risk-Based Prioritization Reference') }}</strong></div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>{{ _('Area') }}</th><th>{{ _('Manual Level') }}</th><th>{{ _('Derived Score') }}</th></tr></thead>
+                        <tbody>
+                        {% for a in areas | sort(attribute='id', reverse=true) %}
+                            <tr><td>{{ a.auditable_area }}</td><td>{{ a.risk_level }}</td><td>{{ derived_scores.get(a.id) or '-' }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

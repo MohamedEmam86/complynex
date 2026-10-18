@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Governance Dashboard') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div class="d-flex justify-content-between align-items-center w-100 mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ _('Corporate Governance Dashboard') }}</h1>
+        <div class="row g-2">
+            <div class="col-auto">
+                <a href="{{ url_for('governance.list_committees') }}" class="btn btn-info">
+                    <i class="fas fa-sitemap"></i> {{ _('Committees') }}
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('governance.add_member') }}" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> {{ _('Add Board Member') }}
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('governance.schedule_meeting') }}" class="btn btn-secondary">
+                    <i class="fas fa-calendar-plus"></i> {{ _('Schedule Meeting') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="gr-kpi-row">
+    <div class="gr-kpi-tile gr-neutral">
+        <div class="gr-kpi-value">{{ members|length }}</div>
+        <div class="gr-kpi-label">{{ _('Board Members') }}</div>
+    </div>
+    <div class="gr-kpi-tile {{ 'gr-ok' if independent_pct >= 33 else 'gr-warn' }}">
+        <div class="gr-kpi-value">{{ independent_pct }}%</div>
+        <div class="gr-kpi-label">{{ _('Independent') }}</div>
+    </div>
+    <div class="gr-kpi-tile gr-neutral">
+        <div class="gr-kpi-value">{{ upcoming_meetings|length }}</div>
+        <div class="gr-kpi-label">{{ _('Upcoming Meetings') }}</div>
+    </div>
+    <div class="gr-kpi-tile {{ 'gr-ok' if compliance_pct >= 80 else ('gr-warn' if compliance_pct >= 50 else 'gr-bad') }}">
+        <div class="gr-kpi-value">{{ compliance_pct }}%</div>
+        <div class="gr-kpi-label">{{ _('Compliance Rate') }}</div>
+    </div>
+    <div class="gr-kpi-tile {{ 'gr-bad' if fit_proper_due > 0 else 'gr-ok' }}">
+        <div class="gr-kpi-value">{{ fit_proper_due }}</div>
+        <div class="gr-kpi-label">{{ _('Fit & Proper Due') }}</div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Board Members -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Board of Directors') }}</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">{{ _('Member Name') }}</th>
+                                <th>{{ _('Role') }}</th>
+                                <th>{{ _('Type') }}</th>
+                                <th>{{ _('Appointment') }}</th>
+                                <th class="text-end pe-4">{{ _('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold"><a href="{{ url_for('governance.view_member', id=member.id) }}"
+                                            class="text-decoration-none">{{ member.member_name }}</a></div>
+                                    <small class="text-muted">{{ member.email }}</small>
+                                </td>
+                                <td>{{ member.role }}</td>
+                                <td>
+                                    {% if member.is_independent %}
+                                    <span class="badge bg-info-soft text-info">{{ _('Independent') }}</span>
+                                    {% endif %}
+                                    {% if member.is_executive %}
+                                    <span class="badge bg-warning-soft text-warning">{{ _('Executive') }}</span>
+                                    {% elif not member.is_independent %}
+                                    <span class="badge bg-secondary-soft text-secondary">{{ _('Non-Exec') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ member.appointment_date }}</td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('governance.edit_member', id=member.id) }}"
+                                        class="btn btn-sm btn-outline-secondary">{{ _('Edit') }}</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">{{ _('No board members found.') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Meetings -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Upcoming Meetings') }}</h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_meetings %}
+                <ul class="list-group list-group-flush">
+                    {% for meeting in upcoming_meetings %}
+                    <li class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge bg-primary rounded-pill">{{ meeting.meeting_date }}</span>
+                            <small class="text-muted">{{ meeting.meeting_time }}</small>
+                        </div>
+                        <h6 class="mb-1">{{ meeting.meeting_type|replace('_', ' ')|title }}</h6>
+                        <small class="text-muted"><i class="bi bi-geo-alt"></i> {{ meeting.location }}</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center py-3">{{ _('No upcoming meetings scheduled.') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}File SAR{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">{{ _('Suspicious Activity Report (SAR) Filing') }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Subject Customer') }}</label>
+                            <select class="form-select" name="customer_id" required>
+                                <option value="">{{ _('Select Customer...') }}</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}">{{ customer.full_name }} ({{
+                                    customer.customer_reference
+                                    }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Activity Date') }}</label>
+                                <input type="date" class="form-control" name="activity_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Discovery Date') }}</label>
+                                <input type="date" class="form-control" name="discovery_date" value="{{ now_date }}"
+                                    required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Amount Involved (EGP Equivalent)') }}</label>
+                            <input type="number" step="0.01" class="form-control" name="amount" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Suspicion Description') }}</label>
+                            <textarea class="form-control" name="description" rows="5"
+                                placeholder="{{ _('Detailed description of suspicious patterns, red flags identified, and rationale for suspicion.') }}"
+                                required></textarea>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <small><i class="bi bi-shield-lock"></i> {{ _('All SAR filings are strictly confidential and
+                                protected by tipping-off provisions in AML Law 80/2002.') }}</small>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('aml.sar_list') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+                            <button type="submit" class="btn btn-danger">{{ _('Submit for Compliance Review') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

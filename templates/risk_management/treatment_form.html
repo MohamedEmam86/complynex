@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Propose Treatment') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('Propose Treatment') }} - {{ risk.risk_id }}</h3>
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Treatment Description') }}</label>
+                    <textarea name="treatment_description" class="form-control" rows="3" required></textarea>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Type') }}</label>
+                        <select name="treatment_type" class="form-select">
+                            {% for t in ['ACCEPT', 'MITIGATE', 'TRANSFER', 'AVOID'] %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Owner') }}</label>
+                        <select name="treatment_owner_id" class="form-select" required>
+                            {% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ _('Target Date') }}</label>
+                        <input type="date" name="target_date" class="form-control" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Estimated Cost (EGP)') }}</label>
+                    <input type="number" step="0.01" name="estimated_cost" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+                <a href="{{ url_for('risk_management.register_detail', risk_pk=risk.id) }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

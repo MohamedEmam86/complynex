@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block title %}Policy Acknowledgment Dashboard - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Acknowledgment Analytics') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('policies.list_policies') }}" class="btn btn-sm btn-outline-secondary me-2">{{ _('Go to
+            Policies') }}</a>
+        <button type="button" class="btn btn-sm btn-primary" data-action="print">
+            <i class="bi bi-printer me-1"></i> {{ _('Export Report') }}
+        </button>
+    </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0 bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                        <i class="bi bi-check-all text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle text-muted mb-1">{{ _('Overall Compliance') }}</h6>
+                        <h3 class="card-title mb-0">{{ stats.rate }}%</h3>
+                    </div>
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.rate }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded-circle me-3">
+                        <i class="bi bi-person-check text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle text-muted mb-1">{{ _('Total Acknowledged') }}</h6>
+                        <h3 class="card-title mb-0">{{ stats.actual_acks }}</h3>
+                    </div>
+                </div>
+                <small class="text-muted">{{ _('Out of') }} {{ stats.total_required_acks }} {{ _('required ones')
+                    }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0 bg-warning bg-opacity-10 p-3 rounded-circle me-3">
+                        <i class="bi bi-file-earmark-text text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle text-muted mb-1">{{ _('Mandatory Policies') }}</h6>
+                        <h3 class="card-title mb-0">{{ stats.total_mandatory_policies }}</h3>
+                    </div>
+                </div>
+                <small class="text-muted">{{ _('Active mandatory documents') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0 bg-info bg-opacity-10 p-3 rounded-circle me-3">
+                        <i class="bi bi-people text-info fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle text-muted mb-1">{{ _('Target Employees') }}</h6>
+                        <h3 class="card-title mb-0">{{ stats.total_employees }}</h3>
+                    </div>
+                </div>
+                <small class="text-muted">{{ _('Active non-admin users') }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Chart: Compliance by Department -->
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="card-title mb-0"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>{{ _('Compliance by
+                    Department') }}</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="deptChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Critical Policies List (Lowest rates) -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between">
+                <h5 class="card-title mb-0">{{ _('Critical Focus') }}</h5>
+                <span class="badge bg-danger rounded-pill">{{ _('Low Rates') }}</span>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for p in policies[:5] %}
+                    <li class="list-group-item border-0 border-bottom px-3 py-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold small">{{ p.policy_name or _('Untitled Policy') }}</span>
+                            <span
+                                class="badge {{ 'bg-danger' if (p.ack_count / stats.total_employees * 100) < 50 else 'bg-warning' }} text-white">
+                                {{ (p.ack_count / stats.total_employees * 100) | int }}%
+                            </span>
+                        </div>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar {{ 'bg-danger' if (p.ack_count / stats.total_employees * 100) < 50 else 'bg-warning' }}"
+                                role="progressbar"
+                                style="width: {{ (p.ack_count / stats.total_employees * 100) | int }}%"></div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 py-3">
+        <h5 class="card-title mb-0">{{ _('Policy Acknowledgment breakdown') }}</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-3">{{ _('Policy') }}</th>
+                        <th>{{ _('Category') }}</th>
+                        <th>{{ _('Mandatory') }}</th>
+                        <th class="text-center">{{ _('Acknowledged') }}</th>
+                        <th>{{ _('Compliance Rate') }}</th>
+                        <th class="text-end pe-3">{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in policies %}
+                    {% set rate = (p.ack_count / stats.total_employees * 100) | int %}
+                    <tr>
+                        <td class="ps-3">
+                            <div class="fw-bold">{{ p.policy_name or _('Untitled Policy') }}</div>
+                            <small class="text-muted">{{ p.policy_number or '—' }}</small>
+                        </td>
+                        <td>{{ p.category_name_en or _('Uncategorized') }}</td>
+                        <td>
+                            {% if p.is_mandatory %}
+                            <span class="badge bg-danger-soft text-danger">{{ _('Yes') }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary-soft text-secondary">{{ _('No') }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="fw-bold">{{ p.ack_count }}</span> / {{ stats.total_employees }}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">{{ rate }}%</span>
+                                <div class="progress flex-grow-1" style="height: 6px; max-width: 100px;">
+                                    <div class="progress-bar {{ 'bg-success' if rate > 80 else 'bg-warning' if rate > 50 else 'bg-danger' }}"
+                                        role="progressbar" style="width: {{ rate }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-end pe-3">
+                            <a href="{{ url_for('policies.policy_acknowledgments', id=p.id) }}"
+                                class="btn btn-sm btn-outline-primary" title="{{ _('See who acknowledged') }}">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.latest.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('deptChart').getContext('2d');
+
+        const labels = [{% for d in dept_stats %}"{{ d.department or 'General' }}"{% if not loop.last %}, {% endif %} {% endfor %}];
+    const data = [{% for d in dept_stats %}{{ (d.ack_count / (d.user_count * stats.total_published_policies) * 100) | int if (d.user_count * stats.total_published_policies) > 0 else 0 }} {% if not loop.last %}, {% endif %} {% endfor %}];
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '{{ _("Compliance Rate (%%)") }}',
+                data: data,
+                backgroundColor: 'rgba(230, 57, 70, 0.7)',
+                borderColor: 'rgb(230, 57, 70)',
+                borderWidth: 1,
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function (value) { return value + '%'; }
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+    });
+</script>
+<style>
+    .bg-danger-soft {
+        background-color: rgba(230, 57, 70, 0.1);
+    }
+
+    .bg-secondary-soft {
+        background-color: rgba(108, 117, 125, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% endblock %}

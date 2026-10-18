@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}" dir="{{ session.get('dir', 'ltr') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Already Submitted - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% if session.get('dir') == 'rtl' %}
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+    <style>
+        .info-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .info-icon i {
+            font-size: 3rem;
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="complynex-public">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-6 col-md-8">
+                <!-- Brand Header -->
+                <div class="complynex-brand-header">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        class="logo">
+                </div>
+
+                <!-- Info Card -->
+                <div class="complynex-form-card text-center">
+                    <div class="info-icon">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+
+                    <h2 class="mb-3">{{ _('Already Submitted') }}</h2>
+
+                    <p class="text-muted mb-4">
+                        {{ _('You have already submitted your') }}
+                        <strong>{{ declaration_type|upper }}</strong> {{ _('declaration for') }}
+                        <strong>{{ year }}</strong>.
+                    </p>
+
+                    <div class="complynex-info-box text-start mb-4">
+                        <h6><i class="bi bi-info-circle"></i> {{ _('Need to Make Changes?') }}</h6>
+                        <p class="mb-0">{{ _('If you need to update your declaration or report additional information,
+                            please contact the Compliance department at') }}
+                            <a href="mailto:compliance@complynex.online">{{ _('compliance@complynex.online') }}</a>.
+                        </p>
+                    </div>
+
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('portal.dashboard') }}" class="btn btn-complynex">
+                            <i class="bi bi-house"></i> {{ _('Back to Portal') }}
+                        </a>
+                        <a href="{{ url_for('portal.status') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-search"></i> {{ _('View My Submissions') }}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="complynex-footer">
+                    <p>{{ _('&copy; 2026 ComplyNex. All rights reserved. &nbsp;|&nbsp; Powered by Mohamed Emam &nbsp;|&nbsp;') }} <a href="mailto:info@complynex.online">{{ _('info@complynex.online') }}</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Corporate Governance Disclosure Report') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div
+    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom noprint">
+    <h1 class="h2">{{ _('Corporate Governance Disclosure Report') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0 align-items-center">
+        <form method="GET" class="d-inline-flex align-items-center me-2">
+            <select name="regulator_id" class="form-select form-select-sm me-2" data-auto-submit style="width: auto;">
+                <option value="">{{ _('All Regulators') }}</option>
+                {% for reg in regulators %}
+                <option value="{{ reg.id }}" {{ 'selected' if selected_regulator and selected_regulator.id == reg.id }}>{{ reg.regulator_name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <button data-action="print" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-print"></i> {{ _('Print Report') }}
+        </button>
+    </div>
+</div>
+
+<div class="report-container bg-white p-5 shadow-sm">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">{{ company_name }}</h2>
+        <h4 class="text-muted">{{ _('Corporate Governance Disclosure Report') }}</h4>
+        {% if selected_regulator %}
+        <h6 class="text-muted">{{ _('Prepared for: ') }} {{ selected_regulator.regulator_name }}</h6>
+        {% endif %}
+        <p class="text-muted">{{ _('Report Date: ') }} {{ today.strftime('%Y-%m-%d') }}</p>
+    </div>
+
+    <!-- 1. Board Composition -->
+    <div class="mb-5">
+        <h4 class="border-bottom pb-2">{{ _('1. Board Composition') }}</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="bg-light">
+                <tr>
+                    <th>{{ _('Member Name') }}</th>
+                    <th>{{ _('Role') }}</th>
+                    <th>{{ _('Type') }}</th>
+                    <th>{{ _('Independent') }}</th>
+                    <th>{{ _('Appointment Date') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in board_members %}
+                <tr>
+                    <td>{{ member.member_name }}</td>
+                    <td>{{ member.role }}</td>
+                    <td>{{ _('Executive') if member.is_executive else _('Non-Executive') }}</td>
+                    <td>{{ _('Yes') if member.is_independent else _('No') }}</td>
+                    <td>{{ member.appointment_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 2. Committees -->
+    <div class="mb-5">
+        <h4 class="border-bottom pb-2">{{ _('2. Board Committees') }}</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="bg-light">
+                <tr>
+                    <th>{{ _('Committee Name') }}</th>
+                    <th>{{ _('Type') }}</th>
+                    <th>{{ _('Meeting Freq') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for comm in committees %}
+                <tr>
+                    <td>{{ comm.committee_name }}</td>
+                    <td>{{ comm.committee_type }}</td>
+                    <td>{{ comm.meeting_frequency }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 3. Meetings -->
+    <div class="mb-5">
+        <h4 class="border-bottom pb-2">{{ _('3. Meeting Schedule') }}</h4>
+        <ul>
+            {% for meeting in meetings %}
+            <li>
+                <strong>{{ meeting.meeting_date }}</strong>: {{ meeting.meeting_type }}
+                ({{ meeting.status }})
+            </li>
+            {% else %}
+            <li>{{ _('No meetings scheduled for this period.') }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- 4. Compliance Status -->
+    <div class="mb-5">
+        <h4 class="border-bottom pb-2">
+            {{ _('4. Regulatory Compliance') }}
+            {% if selected_regulator %}<small class="text-muted">— {{ selected_regulator.regulator_name }}</small>{% endif %}
+        </h4>
+        <div class="row">
+            {% for req in compliance %}
+            <div class="col-md-6 mb-2">
+                <div class="d-flex justify-content-between border p-2">
+                    <span>
+                        <strong>{{ req.requirement_code }}</strong>
+                        {% if req.regulator_name %}<span class="text-muted">({{ req.regulator_name }})</span>{% endif %}:
+                        {{ req.requirement_description|truncate(40) }}
+                    </span>
+                    <span class="badge {{ 'bg-success' if req.compliance_status == 'COMPLIANT' else 'bg-danger' }}">
+                        {{ req.compliance_status }}
+                    </span>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-muted text-center py-3">{{ _('No compliance requirements for this filter.') }}</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Signatures -->
+    <div class="row mt-5 pt-5">
+        <div class="col-6 text-center">
+            <hr class="w-50 mx-auto">
+            <p>{{ _('Chairman of the Board') }}</p>
+        </div>
+        <div class="col-6 text-center">
+            <hr class="w-50 mx-auto">
+            <p>{{ _('Governance Officer') }}</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .noprint {
+            display: none !important;
+        }
+
+        .report-container {
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+
+        body {
+            background: white !important;
+        }
+    }
+</style>
+{% endblock %}

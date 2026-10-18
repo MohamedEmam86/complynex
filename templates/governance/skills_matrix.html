@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Board Skills Matrix - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Board Skills Matrix') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button data-action="print" class="btn btn-sm btn-outline-primary me-2">
+            <i class="fas fa-print"></i> {{ _('Print Report') }}
+        </button>
+        <a href="{{ url_for('governance.dashboard') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left"></i> {{ _('Back to Dashboard') }}
+        </a>
+    </div>
+</div>
+
+<!-- Skills Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h6 class="card-title">{{ _('Financial Experts') }}</h6>
+                <h2 class="mb-0">{{ summary.expert_financial|default(0) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h6 class="card-title">{{ _('Risk Management') }}</h6>
+                <h2 class="mb-0">{{ summary.expert_risk|default(0) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <h6 class="card-title">{{ _('Compliance & Reg') }}</h6>
+                <h2 class="mb-0">{{ summary.expert_compliance|default(0) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <h6 class="card-title">{{ _('Tech & Digital') }}</h6>
+                <h2 class="mb-0">{{ summary.avg_technology|default(0, true)|round(1) }} <small class="fs-6">{{
+                        _('(Avg)')
+                        }}</small></h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">{{ _('Member Skills Assessments') }}</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">{{ _('Member Name') }}</th>
+                                <th>{{ _('Role') }}</th>
+                                <th>{{ _('Last Assessment') }}</th>
+                                <th class="text-end pe-4">{{ _('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ member.member_name }}</div>
+                                </td>
+                                <td>{{ member.role }}</td>
+                                <td>
+                                    {% set last_assessment = BoardSkillsMatrix.get_by_member(member.id)[0] if
+                                    BoardSkillsMatrix.get_by_member(member.id) else none %}
+                                    {% if last_assessment %}
+                                    <span class="badge bg-light text-dark">{{ last_assessment.assessment_date }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('governance.assess_skills', member_id=member.id) }}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        {{ _('Update Skills') }}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

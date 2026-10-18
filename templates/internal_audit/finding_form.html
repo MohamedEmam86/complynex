@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Raise Finding') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('Raise Finding') }} - {{ project.audit_number }}</h3>
+    <div class="card"><div class="card-body">
+        <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="form-label">{{ _('Finding Title') }}</label>
+                <input type="text" name="finding_title" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ _('Description') }}</label>
+                <textarea name="finding_description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Severity') }}</label>
+                    <select name="severity" class="form-select" required>
+                        {% for s in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Responsible Person') }}</label>
+                    <select name="responsible_person_id" class="form-select">
+                        <option value="">-</option>
+                        {% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ _('Target Date') }}</label>
+                    <input type="date" name="target_date" class="form-control">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ _('Root Cause') }}</label>
+                <textarea name="root_cause" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ _('Recommendation') }}</label>
+                <textarea name="recommendation" class="form-control" rows="2"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+            <a href="{{ url_for('internal_audit.project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+        </form>
+    </div></div>
+</div>
+{% endblock %}

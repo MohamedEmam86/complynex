@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}DPIA Review - {{ dpia.dpia_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">DPIA Review: {{ dpia.dpia_number }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('dp.dpia_list') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> {{ _('Back to List') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- left Column: Assessment -->
+        <div class="col-md-9">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Project: {{ dpia.project_name }}</h5>
+                    <span
+                        class="badge {% if dpia.status == 'APPROVED' %}bg-success{% elif dpia.status == 'REJECTED' %}bg-danger{% else %}bg-primary{% endif %}">
+                        {{ dpia.status }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p class="lead text-muted">{{ dpia.project_description }}</p>
+                    <hr>
+
+                    <form action="{{ url_for('dp.dpia_detail', id=dpia.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold"><i class="bi bi-info-circle text-primary"></i> {{ _('1. Processing Description') }}
+                            </h6>
+                            <textarea name="processing" class="form-control" rows="4"
+                                placeholder="{{ _('Detail the data flows, storage, and third-party involved...') }}">{{ dpia.processing_description or '' }}</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold"><i class="bi bi-exclamation-triangle text-danger"></i> {{ _('2. Risks
+                                Identified') }}</h6>
+                            <textarea name="risks" class="form-control" rows="4"
+                                placeholder="{{ _('Identify potential harms to data subjects (Identity theft, discrimination, loss of privacy)...') }}">{{ dpia.risks_identified or '' }}</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold"><i class="bi bi-shield-check text-success"></i> {{ _('3. Mitigation Measures') }}
+                            </h6>
+                            <textarea name="mitigations" class="form-control" rows="4"
+                                placeholder="{{ _('Security controls, data minimization, pseudonymization...') }}">{{ dpia.mitigation_measures or '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">{{ _('Update Workflow Status') }}</label>
+                                <select name="status" class="form-select form-select-sm">
+                                    <option value="DRAFT" {% if dpia.status=='DRAFT' %}selected{% endif %}>{{ _('Draft') }}
+                                    </option>
+                                    <option value="IN_PROGRESS" {% if dpia.status=='IN_PROGRESS' %}selected{% endif %}>
+                                        {{ _('In Progress') }}</option>
+                                    <option value="PENDING_APPROVAL" {% if dpia.status=='PENDING_APPROVAL' %}selected{%
+                                        endif %}>{{ _('Submit for Approval') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end justify-content-end">
+                                {% if current_user.has_permission('pdpl', 'edit') and dpia.status != 'APPROVED' %}
+                                <button type="submit" class="btn btn-primary">{{ _('Save Assessment') }}</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Status & Approval -->
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-4 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ _('Approval Workflow') }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if dpia.status == 'APPROVED' %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-check-circle text-success display-4"></i>
+                        <h6 class="mt-2 fw-bold">{{ _('APPROVED') }}</h6>
+                        <p class="small text-muted mb-0">{{ _('By: [Approved User]') }}</p>
+                        <p class="small text-muted">On: {{ dpia.approval_date }}</p>
+                    </div>
+                    {% elif dpia.status == 'PENDING_APPROVAL' %}
+                    {% if current_user.has_permission('pdpl', 'approve') %}
+                    <form action="{{ url_for('dp.approve_dpia', id=dpia.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label small">{{ _('Decision') }}</label>
+                            <select name="decision" class="form-select form-select-sm">
+                                <option value="approve">{{ _('Approve') }}</option>
+                                <option value="reject">{{ _('Reject / Needs Revision') }}</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">{{ _('Conditions / Feedback') }}</label>
+                            <textarea name="conditions" class="form-control form-control-sm" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm w-100">{{ _('Submit Decision') }}</button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning small px-2 py-2">
+                        {{ _('Awaiting review by Compliance Manager.') }}
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-3 text-muted">
+                        <i class="bi bi-clock-history display-4"></i>
+                        <p class="small mt-2">{{ _('DPIA must be marked as \'Pending Approval\' to initiate review.') }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light small fw-bold uppercase">{{ _('Assessment Metadata') }}</div>
+                <div class="card-body small">
+                    <div class="mb-2"><strong>{{ _('Risk Level:') }}</strong> {{ dpia.risk_level }}</div>
+                    <div class="mb-2"><strong>{{ _('Created:') }}</strong> {{ dpia.created_at[:10] if dpia.created_at else 'N/A' }}</div>
+                    <div class="mb-0"><strong>{{ _('Last Updated:') }}</strong> {{ dpia.updated_at or 'N/A' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

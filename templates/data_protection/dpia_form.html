@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Initiate DPIA - PDPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Initiate DPIA') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('dp.dpia_list') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> {{ _('Back to List') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ _('New Impact Assessment') }}</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('dp.create_dpia') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Project / Activity Name') }}</label>
+                            <input type="text" name="project_name" class="form-control"
+                                placeholder="{{ _('e.g. New Mobile Banking App Launch') }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Initial Risk Level') }}</label>
+                            <select name="risk_level" class="form-select" required>
+                                <option value="LOW">{{ _('Low Risk') }}</option>
+                                <option value="MEDIUM" selected>{{ _('Medium Risk') }}</option>
+                                <option value="HIGH">{{ _('High Risk') }}</option>
+                                <option value="VERY_HIGH">{{ _('Very High Risk (Automated / Large Scale Sensitive)') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Project Description') }}</label>
+                            <textarea name="description" class="form-control" rows="4"
+                                placeholder="{{ _('Describe the project and why personal data is involved...') }}"
+                                required></textarea>
+                        </div>
+
+                        <div class="alert alert-info py-2 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            {{ _('This is an initial registration. You will be able to perform the full necessity and
+                            proportionality assessment in the next step.') }}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">{{ _('Register Assessment') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

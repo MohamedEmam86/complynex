@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Consent Purposes - PDPL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ _('Consent Purposes') }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <button class="btn btn-sm btn-primary" disabled>
+                <i class="bi bi-plus-square"></i> {{ _('Define New Purpose') }}
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>{{ _('Code') }}</th>
+                            <th>{{ _('Purpose Name (EN)') }}</th>
+                            <th>{{ _('Purpose Name (AR)') }}</th>
+                            <th>{{ _('Legal Basis') }}</th>
+                            <th>{{ _('Mandatory') }}</th>
+                            <th>{{ _('Status') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for purp in purposes %}
+                        <tr>
+                            <td><code>{{ purp.purpose_code }}</code></td>
+                            <td>{{ purp.purpose_name }}</td>
+                            <td class="text-end">{{ purp.purpose_name_arabic or '-' }}</td>
+                            <td>{{ purp.legal_basis }}</td>
+                            <td>
+                                {% if purp.is_required %}
+                                <span class="badge bg-danger">{{ _('YES') }}</span>
+                                {% else %}
+                                <span class="badge bg-info">NO</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if purp.is_active %}
+                                <span class="badge bg-success">{{ _('ACTIVE') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ _('INACTIVE') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">{{ _('No consent purposes defined') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

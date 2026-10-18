@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Screening Configuration</h1>
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> These settings affect the Hybrid Matching Engine in real-time.
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Algorithm Parameters</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Exact Match Favoritism</label>
+                    <select name="exact_match_favoritism" class="form-select">
+                        <option value="0.1" {% if config.EXACT_MATCH_FAVORITISM==0.1 %}selected{% endif %}>0.1 -
+                            Conservative (OFAC default)</option>
+                        <option value="0.25" {% if config.EXACT_MATCH_FAVORITISM==0.25 %}selected{% endif %}>0.25 -
+                            Balanced (Recommended)</option>
+                        <option value="0.5" {% if config.EXACT_MATCH_FAVORITISM==0.5 %}selected{% endif %}>0.5 -
+                            Aggressive (Fewer false negatives)</option>
+                    </select>
+                    <div class="form-text text-muted">
+                        Higher values give more weight to exact token matches (e.g., "John Smith" vs "Smith John").
+                        Increase if you are missing obvious matches.
+                    </div>
+                </div>
+
+                <hr>
+
+                <label class="form-label fw-bold mb-3">Ensemble Weights</label>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Jaro-Winkler Weight (Primary)</label>
+                        <div class="input-group">
+                            <input type="number" name="jw_weight" value="{{ config.JARO_WINKLER_WEIGHT }}" step="0.05"
+                                min="0" max="1" class="form-control">
+                            <span class="input-group-text">0.0 - 1.0</span>
+                        </div>
+                        <div class="form-text">Best for short strings like names. Handles typos well.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Levenshtein Weight (Validation)</label>
+                        <div class="input-group">
+                            <input type="number" name="lev_weight" value="{{ config.LEVENSHTEIN_WEIGHT }}" step="0.05"
+                                min="0" max="1" class="form-control">
+                            <span class="input-group-text">0.0 - 1.0</span>
+                        </div>
+                        <div class="form-text">Best for overall edit distance. Validates the primary match.</div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Thresholds (Read Only - OFAC Standards)</label>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Confirmed Hit (Block)
+                            <span class="badge bg-danger rounded-pill">&ge; {{ config.HIGH_MATCH_MIN }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Potential Match (Review)
+                            <span class="badge bg-warning text-dark rounded-pill">&ge; {{ config.MEDIUM_MATCH_MIN
+                                }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Low Match (Log)
+                            <span class="badge bg-info text-dark rounded-pill">&ge; {{ config.LOW_MATCH_MIN }}</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i>Save Configuration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="card shadow mb-4 border-left-warning">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-warning">Data Management</h6>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="font-weight-bold">Update Watchlist Data</h5>
+                    <p class="mb-0">
+                        Manually trigger an update from OpenSanctions. This will fetch the latest sanctions, PEPs, and
+                        watchlist data.
+                        <br><small class="text-muted">Last successful update: {{ last_update or 'Never' }}</small>
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <form action="{{ url_for('screening.update_watchlist') }}" method="POST"
+                        onsubmit="return confirm('This process may take a few minutes. Are you sure?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="fas fa-sync-alt me-2"></i> Update Now
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

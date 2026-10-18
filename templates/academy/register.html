@@ -1,0 +1,45 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('Register', 'التسجيل') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow">
+  <h1>{{ t('Register — free', 'التسجيل — مجانًا') }}</h1>
+  <p class="ia-muted">{{ t('Use your work email. We will send a 6-digit code to confirm it.', 'استخدم بريد العمل. سنرسل لك رمزًا من 6 أرقام للتأكيد.') }}</p>
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="ia-hp" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div>
+
+    <label>{{ t('Full name', 'الاسم بالكامل') }}
+      <input name="full_name" required maxlength="120" value="{{ form.get('full_name','') }}" autocomplete="name"></label>
+
+    <label>{{ t('Name on certificate (English letters)', 'الاسم على الشهادة (بحروف إنجليزية)') }}
+      <input name="certificate_name" required maxlength="80" value="{{ form.get('certificate_name','') }}" placeholder="e.g. Ahmed Mostafa" dir="ltr"></label>
+
+    <label>{{ t('Work email', 'بريد العمل') }}
+      <input type="email" name="email" required maxlength="254" value="{{ form.get('email','') }}" autocomplete="email" dir="ltr" placeholder="name@company.com"></label>
+
+    <div class="ia-row">
+      <label>{{ t('Company', 'الشركة') }}
+        <input name="company" required maxlength="160" value="{{ form.get('company','') }}" autocomplete="organization"></label>
+      <label>{{ t('Job title', 'المسمى الوظيفي') }}
+        <input name="job_title" maxlength="120" value="{{ form.get('job_title','') }}" autocomplete="organization-title"></label>
+    </div>
+    <label>{{ t('Country', 'الدولة') }}
+      <select name="country">
+        {% for c in ['Egypt','Saudi Arabia','United Arab Emirates','Kuwait','Qatar','Bahrain','Oman','Jordan','Other'] %}
+        <option {% if form.get('country', 'Egypt') == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select></label>
+
+    <label class="ia-check"><input type="checkbox" name="consent_training" value="1" {% if form.get('consent_training') %}checked{% endif %}>
+      <span>{{ t('I agree that Integrys Consulting processes my details to provide this training and issue certificates, as described in the', 'أوافق على أن تعالج إنتيجريس للاستشارات بياناتي لتقديم هذا التدريب وإصدار الشهادات، كما هو موضح في') }}
+        <a href="{{ url_for('academy.privacy_notice') }}" target="_blank" rel="noopener">{{ t('Academy privacy notice', 'إشعار الخصوصية') }}</a>. <em>{{ t('(required)', '(مطلوب)') }}</em></span></label>
+
+    <label class="ia-check"><input type="checkbox" name="consent_marketing" value="1" {% if form.get('consent_marketing') %}checked{% endif %}>
+      <span>{{ t('I would also like to receive occasional emails from Integrys about new courses, regulatory updates and services. I can withdraw at any time.', 'أرغب أيضًا في تلقي رسائل من إنتيجريس عن الدورات الجديدة والمستجدات التنظيمية والخدمات. يمكنني إلغاء ذلك في أي وقت.') }} <em>{{ t('(optional)', '(اختياري)') }}</em></span></label>
+
+    <button class="ia-btn ia-btn--block">{{ t('Send my code', 'أرسل الرمز') }}</button>
+  </form>
+  <p class="ia-muted ia-small">{{ t('Already registered?', 'مسجل بالفعل؟') }} <a href="{{ url_for('academy.login') }}">{{ t('Sign in', 'ادخل') }}</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Blacklist Entry{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h4 class="mb-0"><i class="fas fa-edit"></i> Edit Blacklist Entry: {{ entry.full_name }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+                        <!-- Basic Information -->
+                        <h5 class="mb-3 text-warning border-bottom pb-2">{{ _('Basic Information') }}</h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Full Name') }} <span class="text-danger">*</span></label>
+                                <input type="text" name="full_name" class="form-control" required
+                                    value="{{ entry.full_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Original Name (Arabic/Other)') }}</label>
+                                <input type="text" name="original_name" class="form-control"
+                                    value="{{ entry.original_name or '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Entity Type') }} <span class="text-danger">*</span></label>
+                                <select name="entity_type" class="form-select" required id="entityType">
+                                    <option value="INDIVIDUAL" {% if entry.entity_type=='INDIVIDUAL' %}selected{% endif
+                                        %}>{{ _('Individual') }}</option>
+                                    <option value="ORGANIZATION" {% if entry.entity_type=='ORGANIZATION' %}selected{%
+                                        endif %}>{{ _('Organization') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Risk Level') }} <span class="text-danger">*</span></label>
+                                <select name="risk_level" class="form-select" required>
+                                    <option value="HIGH" {% if entry.risk_level=='HIGH' %}selected{% endif %}>{{ _('High') }}
+                                    </option>
+                                    <option value="MEDIUM" {% if entry.risk_level=='MEDIUM' %}selected{% endif %}>{{ _('Medium') }}
+                                    </option>
+                                    <option value="LOW" {% if entry.risk_level=='LOW' %}selected{% endif %}>{{ _('Low') }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Individual Fields -->
+                        <div id="individualFields" {% if entry.entity_type !='INDIVIDUAL' %}style="display: none;" {%
+                            endif %}>
+                            <h5 class="mb-3 mt-4 text-warning border-bottom pb-2">{{ _('Individual Information') }}</h5>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">{{ _('National ID') }}</label>
+                                    <input type="text" name="national_id" class="form-control"
+                                        value="{{ entry.national_id or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">{{ _('Passport Number') }}</label>
+                                    <input type="text" name="passport_number" class="form-control"
+                                        value="{{ entry.passport_number or '' }}">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">{{ _('Date of Birth') }}</label>
+                                    <input type="date" name="date_of_birth" class="form-control"
+                                        value="{{ entry.date_of_birth or '' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">{{ _('Place of Birth') }}</label>
+                                    <input type="text" name="place_of_birth" class="form-control"
+                                        value="{{ entry.place_of_birth or '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Organization Fields -->
+                        <div id="organizationFields" {% if entry.entity_type !='ORGANIZATION' %}style="display: none;"
+                            {% endif %}>
+                            <h5 class="mb-3 mt-4 text-warning border-bottom pb-2">{{ _('Organization Information') }}</h5>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ _('Registration Number') }}</label>
+                                <input type="text" name="registration_number" class="form-control"
+                                    value="{{ entry.registration_number or '' }}">
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <h5 class="mb-3 mt-4 text-warning border-bottom pb-2">{{ _('Location & Identification') }}</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Address') }}</label>
+                            <textarea name="address" class="form-control" rows="2">{{ entry.address or '' }}</textarea>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">{{ _('City') }}</label>
+                                <input type="text" name="city" class="form-control" value="{{ entry.city or '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">{{ _('Country') }}</label>
+                                <input type="text" name="country" class="form-control"
+                                    value="{{ entry.country or '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">{{ _('Nationality') }}</label>
+                                <input type="text" name="nationality" class="form-control"
+                                    value="{{ entry.nationality or '' }}">
+                            </div>
+                        </div>
+
+                        <!-- Blacklist Details -->
+                        <h5 class="mb-3 mt-4 text-warning border-bottom pb-2">{{ _('Blacklist Details') }}</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Reason for Blacklisting') }} <span
+                                    class="text-danger">*</span></label>
+                            <textarea name="reason" class="form-control" rows="3" required>{{ entry.reason }}</textarea>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Category') }}</label>
+                                <select name="category" class="form-select">
+                                    <option value="">{{ _('Select category...') }}</option>
+                                    <option value="Fraud" {% if entry.category=='Fraud' %}selected{% endif %}>{{ _('Fraud') }}
+                                    </option>
+                                    <option value="Money Laundering" {% if entry.category=='Money Laundering'
+                                        %}selected{% endif %}>{{ _('Money Laundering') }}</option>
+                                    <option value="Terrorism" {% if entry.category=='Terrorism' %}selected{% endif %}>
+                                        {{ _('Terrorism') }}</option>
+                                    <option value="Sanctions Violation" {% if entry.category=='Sanctions Violation'
+                                        %}selected{% endif %}>{{ _('Sanctions Violation') }}</option>
+                                    <option value="Corruption" {% if entry.category=='Corruption' %}selected{% endif %}>
+                                        {{ _('Corruption') }}</option>
+                                    <option value="Tax Evasion" {% if entry.category=='Tax Evasion' %}selected{% endif
+                                        %}>{{ _('Tax Evasion') }}</option>
+                                    <option value="Internal Policy" {% if entry.category=='Internal Policy' %}selected{%
+                                        endif %}>{{ _('Internal Policy') }}</option>
+                                    <option value="Other" {% if entry.category=='Other' %}selected{% endif %}>{{ _('Other') }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Aliases (comma-separated)') }}</label>
+                                <input type="text" name="aliases" class="form-control"
+                                    value="{{ entry.aliases|join(',') if entry.aliases else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ _('Additional Notes') }}</label>
+                            <textarea name="notes" class="form-control" rows="3">{{ entry.notes or '' }}</textarea>
+                        </div>
+
+                        <!-- Contact -->
+                        <h5 class="mb-3 mt-4 text-warning border-bottom pb-2">{{ _('Contact Information') }}</h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Phone Number') }}</label>
+                                <input type="text" name="phone_number" class="form-control"
+                                    value="{{ entry.phone_number or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">{{ _('Email') }}</label>
+                                <input type="email" name="email" class="form-control" value="{{ entry.email or '' }}">
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="d-flex justify-content-between mt-5 border-top pt-4">
+                            <a href="{{ url_for('blacklist.index') }}" class="btn btn-outline-secondary px-4">
+                                <i class="fas fa-times"></i> {{ _('Cancel') }}
+                            </a>
+                            <button type="submit" class="btn btn-warning px-5 fw-bold">
+                                <i class="fas fa-save"></i> {{ _('Update Entry') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+    document.getElementById('entityType').addEventListener('change', function () {
+        const individualFields = document.getElementById('individualFields');
+        const organizationFields = document.getElementById('organizationFields');
+
+        if (this.value === 'INDIVIDUAL') {
+            individualFields.style.display = 'block';
+            organizationFields.style.display = 'none';
+        } else {
+            individualFields.style.display = 'none';
+            organizationFields.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}

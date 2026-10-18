@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Register DSR{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">{{ _('Register Data Subject Request (DSR)') }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Data Subject Name') }}</label>
+                            <input type="text" class="form-control" name="subject_name" required
+                                placeholder="{{ _('Full name of the requesting individual') }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Request Type (PDPL Rights)') }}</label>
+                            <select class="form-select" name="request_type" required>
+                                <option value="ACCESS">{{ _('Right of Access') }}</option>
+                                <option value="RECTIFICATION">{{ _('Right to Rectification') }}</option>
+                                <option value="ERASURE">{{ _('Right to Erasure (To be Forgotten)') }}</option>
+                                <option value="RESTRICTION">{{ _('Right to Restriction of Processing') }}</option>
+                                <option value="PORTABILITY">{{ _('Right to Data Portability') }}</option>
+                                <option value="OBJECTION">{{ _('Right to Object') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="alert alert-secondary py-2">
+                            <small><i class="bi bi-clock"></i> {{ _('Regulatory Deadline: 30 days from registration.') }}</small>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('dp.dsr_list') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+                            <button type="submit" class="btn btn-info">{{ _('Register Request') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

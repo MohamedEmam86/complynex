@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Edit Report' if report else 'New Report Template' }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ 'Edit Report Template' if report else 'Create New Report Template' }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('reporting.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Dashboard') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Report Name') }} <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="report_name"
+                            value="{{ report.report_name if report else '' }}" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Report Code') }}</label>
+                            <input type="text" class="form-control" name="report_code"
+                                value="{{ report.report_code if report else '' }}"
+                                placeholder="{{ _('Auto-generated if empty') }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Regulator') }} <span class="text-danger">*</span></label>
+                            <select class="form-select" name="regulator_id" required>
+                                <option value="">{{ _('Select Regulator...') }}</option>
+                                {% for reg in regulators %}
+                                <option value="{{ reg.id }}" {% if report and report.regulator_id==reg.id %}selected{%
+                                    endif %}>{{ reg.regulator_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Frequency') }} <span class="text-danger">*</span></label>
+                            <select class="form-select" name="frequency" required>
+                                <option value="daily" {% if report and report.frequency=='daily' %}selected{% endif %}>
+                                    {{ _('Daily') }}</option>
+                                <option value="weekly" {% if report and report.frequency=='weekly' %}selected{% endif
+                                    %}>{{ _('Weekly') }}</option>
+                                <option value="monthly" {% if report and report.frequency=='monthly' %}selected{% endif
+                                    %}>{{ _('Monthly') }}</option>
+                                <option value="quarterly" {% if report and report.frequency=='quarterly' %}selected{%
+                                    endif %}>{{ _('Quarterly') }}</option>
+                                <option value="semi_annual" {% if report and report.frequency=='semi_annual'
+                                    %}selected{% endif %}>{{ _('Semi-Annual') }}</option>
+                                <option value="annual" {% if report and report.frequency=='annual' %}selected{% endif
+                                    %}>{{ _('Annual') }}</option>
+                                <option value="adhoc" {% if report and report.frequency=='adhoc' %}selected{% endif %}>
+                                    {{ _('Adhoc') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Responsible Department') }}</label>
+                            <input type="text" class="form-control" name="responsible_department"
+                                value="{{ report.responsible_department if report else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Due Day (e.g. 15th of month)') }}</label>
+                            <input type="number" class="form-control" name="due_day"
+                                value="{{ report.due_day if report else '' }}" min="1" max="31">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Due Month (for Annual)') }}</label>
+                            <input type="number" class="form-control" name="due_month"
+                                value="{{ report.due_month if report else '' }}" min="1" max="12">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Description') }}</label>
+                        <textarea class="form-control" name="description"
+                            rows="3">{{ report.description if report else '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Regulatory Reference / Circular No.') }}</label>
+                        <input type="text" class="form-control" name="regulatory_reference"
+                            value="{{ report.regulatory_reference if report else '' }}"
+                            placeholder="{{ _('e.g. circular number, gazette reference, notice number') }}">
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('reporting.dashboard') }}" class="btn btn-secondary me-md-2">{{ _('Cancel') }}</a>
+                        <button type="submit" class="btn btn-primary">{{ 'Update Report' if report else 'Create Report'
+                            }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

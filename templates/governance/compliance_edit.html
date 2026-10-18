@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Update Compliance') }} - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Update Compliance Requirement') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('governance.compliance_dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> {{ _('Back to Tracker') }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0">
+                    <span class="text-primary fw-bold">{{ req.requirement_code }}</span>: {{ req.compliance_area }}
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-light border-start border-4 border-info mb-4">
+                    <p class="mb-1"><strong>{{ _('Regulatory Source') }}:</strong> {{ req.regulator_name or req.regulatory_source or '-' }}</p>
+                    <p class="mb-0 text-muted">{{ req.requirement_description }}</p>
+                </div>
+
+                <form action="{{ url_for('governance.update_compliance', id=req.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">{{ _('Compliance Status') }}</label>
+                        <select name="compliance_status" class="form-select form-select-lg">
+                            <option value="COMPLIANT" {{ 'selected' if req.compliance_status=='COMPLIANT' }}>{{
+                                _('Compliant') }}</option>
+                            <option value="PARTIAL" {{ 'selected' if req.compliance_status=='PARTIAL' }}>{{ _('Partial')
+                                }}</option>
+                            <option value="NON_COMPLIANT" {{ 'selected' if req.compliance_status=='NON_COMPLIANT' }}>{{
+                                _('Non-Compliant') }}</option>
+                            <option value="IN_PROGRESS" {{ 'selected' if req.compliance_status=='IN_PROGRESS' }}>{{
+                                _('In Progress') }}</option>
+                        </select>
+                        <div class="form-text mt-2">
+                            {{ _('Select the current state of fulfillment for this requirement.') }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">{{ _('Evidence Description / Documentation') }}</label>
+                        <textarea name="evidence_description" class="form-control" rows="4"
+                            placeholder="{{ _('Describe the specific evidence or documents supporting this status...') }}">{{ req.evidence_description }}</textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">{{ _('Internal Compliance Notes') }}</label>
+                        <textarea name="notes" class="form-control" rows="5"
+                            placeholder="{{ _('Add internal observations, follow-up actions, or justifications here...') }}">{{ req.notes }}</textarea>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('governance.compliance_dashboard') }}"
+                            class="btn btn-outline-secondary px-4">{{ _('Cancel') }}</a>
+                        <button type="submit" class="btn btn-primary px-5">{{ _('Save Changes') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

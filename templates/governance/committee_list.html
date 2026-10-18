@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ _('Board Committees') }}</h1>
+        <a href="{{ url_for('governance.add_committee') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> {{ _('Create Committee') }}
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>{{ _('Committee Name') }}</th>
+                            <th>{{ _('Type') }}</th>
+                            <th>{{ _('Frequency') }}</th>
+                            <th>{{ _('Status') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for committee in committees %}
+                        <tr>
+                            <td>{{ committee.committee_name }}</td>
+                            <td><span class="badge bg-info text-dark">{{ committee.committee_type }}</span></td>
+                            <td>{{ committee.meeting_frequency }}</td>
+                            <td>
+                                {% if committee.is_active %}
+                                <span class="badge bg-success">{{ _('Active') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ _('Inactive') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('governance.manage_committee_members', id=committee.id) }}"
+                                    class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-users"></i> {{ _('Members') }}
+                                </a>
+                                <button class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Create Risk from Suggestion') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4">{{ _('Create Draft Risk') }}</h3>
+    <p class="text-muted">{{ _('Source:') }} <strong>{{ source_module }} / {{ source_table }}#{{ source_record_id }}</strong></p>
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Risk Title') }}</label>
+                    <input type="text" name="risk_title" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ _('Description') }}</label>
+                    <textarea name="risk_description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Category') }}</label>
+                        <select name="category_code" class="form-select">
+                            {% for c in categories %}<option value="{{ c.category_code }}">{{ c.category_name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ _('Risk Owner') }}</label>
+                        <select name="risk_owner_id" class="form-select" required>
+                            {% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <p class="text-muted small">{{ _('The risk will be created in DRAFT status with a neutral 3x3 score — please re-score it after review.') }}</p>
+                <button type="submit" class="btn btn-primary">{{ _('Create Draft Risk') }}</button>
+                <a href="{{ url_for('risk_management.suggestions') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

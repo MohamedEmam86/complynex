@@ -1,0 +1,21 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('Enter your code', 'أدخل الرمز') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow">
+  <h1>{{ t('Check your inbox', 'راجع بريدك') }}</h1>
+  <p class="ia-muted">{{ t('If the address is registered, we have sent a 6-digit code from Integrys Academy. It expires in 10 minutes. Check your junk folder if you do not see it.',
+                          'إذا كان العنوان مسجلًا، فقد أرسلنا رمزًا من 6 أرقام من أكاديمية إنتيجريس. صالح لمدة 10 دقائق. راجع البريد غير المرغوب فيه إن لم تجده.') }}</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>{{ t('6-digit code', 'الرمز المكون من 6 أرقام') }}
+      <input name="code" class="ia-otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" required dir="ltr" autofocus></label>
+    <button class="ia-btn ia-btn--block">{{ t('Verify', 'تحقق') }}</button>
+  </form>
+  <form method="post" class="ia-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="resend" value="1">
+    <button class="ia-link">{{ t('Send a new code', 'أرسل رمزًا جديدًا') }}</button>
+  </form>
+</div>
+{% endblock %}

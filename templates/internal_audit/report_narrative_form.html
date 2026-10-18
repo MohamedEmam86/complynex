@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} - ComplyNex CMS{% endblock %}
+
+{#
+  Shared edit form for the narrative sections of the Internal Audit reports.
+  Figures always stay computed from live data; only the written commentary
+  is editable here.
+#}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mt-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">{{ _('Dashboard') }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('internal_audit.dashboard') }}">{{ _('Internal Audit') }}</a></li>
+        <li class="breadcrumb-item active">{{ title }}</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>{{ title }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-light border small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {{ _('All figures in the report are calculated from live audit data and cannot be edited. Use the sections below to add the narrative that accompanies those figures.') }}
+                </div>
+
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {% for key, label, value in fields %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" for="{{ key }}">{{ label }}</label>
+                        <textarea class="form-control" id="{{ key }}" name="{{ key }}" rows="5"
+                                  placeholder="{{ _('Optional. Leave blank to omit this section from the report.') }}">{{ value }}</textarea>
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>{{ _('Save Narrative') }}
+                        </button>
+                        <a href="{{ back_url }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

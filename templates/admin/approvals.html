@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Approvals - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Pending Approvals') }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('reporting.export_pending_approvals') }}"
+                class="btn btn-sm btn-outline-secondary">{{ _('Export') }}</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- GHE Approvals -->
+    <div class="col-md-12 mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-primary"><i class="bi bi-gift me-2"></i>{{ _('GHE Declarations') }}</h5>
+                <span class="badge bg-primary rounded-pill">{{ ghe_pending|length }} Pending</span>
+            </div>
+            <div class="card-body p-0">
+                {% if ghe_pending %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">{{ _('Date') }}</th>
+                                <th>{{ _('Employee') }}</th>
+                                <th>{{ _('Type') }}</th>
+                                <th>{{ _('Value') }}</th>
+                                <th>{{ _('Description') }}</th>
+                                <th class="text-end pe-4">{{ _('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for decl in ghe_pending %}
+                            <tr>
+                                <td class="ps-4">{{ decl.declaration_date }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ decl.employee_name }}</div>
+                                    <small class="text-muted">{{ decl.department }}</small>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ decl.type|capitalize }}</span></td>
+                                <td>{{ decl.estimated_value }} {{ decl.currency }}</td>
+                                <td>{{ (decl.description or '') | truncate(50) }}</td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('ghe.view_declaration', id=decl.id) }}"
+                                        class="btn btn-sm btn-primary">{{ _('Review') }}</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-check-circle fs-2 mb-2 d-block"></i>
+                    {{ _('No pending GHE declarations.') }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- COI Approvals -->
+    <div class="col-md-12 mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-warning"><i class="bi bi-exclamation-triangle me-2"></i>{{ _('Conflict Interest') }}</h5>
+                <span class="badge bg-warning text-dark rounded-pill">{{ coi_pending|length }} Pending</span>
+            </div>
+            <div class="card-body p-0">
+                {% if coi_pending %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">{{ _('Date') }}</th>
+                                <th>{{ _('Employee') }}</th>
+                                <th>{{ _('Campaign') }}</th>
+                                <th>{{ _('Disclosure') }}</th>
+                                <th class="text-end pe-4">{{ _('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for decl in coi_pending %}
+                            <tr>
+                                <td class="ps-4">{{ decl.created_at or decl.declaration_date or "—" }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ decl.employee_name }}</div>
+                                    <small class="text-muted">{{ decl.department }}</small>
+                                </td>
+                                <td>{{ decl.campaign_name }}</td>
+                                <td>
+                                    {% if decl.has_conflict %}
+                                    <span class="badge bg-danger">{{ _('Conflict Declared') }}</span>
+                                    {% else %}
+                                    <span class="badge bg-success">{{ _('No Conflict') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('coi.review_declaration', id=decl.id) }}"
+                                        class="btn btn-sm btn-primary">{{ _('Review') }}</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-check-circle fs-2 mb-2 d-block"></i>
+                    {{ _('No pending COI reviews.') }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- COBEC Approvals -->
+    <div class="col-md-12 mb-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-success"><i class="bi bi-shield-check me-2"></i>{{ _('Code of Ethics') }}</h5>
+                <span class="badge bg-success rounded-pill">{{ cobec_pending|length }} Pending</span>
+            </div>
+            <div class="card-body p-0">
+                {% if cobec_pending %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">{{ _('Date') }}</th>
+                                <th>{{ _('Employee') }}</th>
+                                <th>{{ _('Status') }}</th>
+                                <th class="text-end pe-4">{{ _('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for decl in cobec_pending %}
+                            <tr>
+                                <td class="ps-4">{{ decl.declaration_date }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ decl.employee_name or decl.employee_id }}</div>
+                                </td>
+                                <td><span class="badge bg-info text-dark">{{ decl.status }}</span></td>
+                                <td class="text-end pe-4">
+                                    <!-- Add link to review -->
+                                    <button class="btn btn-sm btn-primary" disabled>{{ _('Review') }}</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-check-circle fs-2 mb-2 d-block"></i>
+                    {{ _('No pending COBEC declarations.') }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

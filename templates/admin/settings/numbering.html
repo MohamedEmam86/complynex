@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Numbering Sequences') }} - {{ company_name }} CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-123 me-2"></i>{{ _('Numbering Sequences') }}</h1>
+    <a href="{{ url_for('admin.settings') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> {{ _('Back to Settings') }}
+    </a>
+</div>
+
+<p class="text-muted small">{{ _('Configure the prefix and zero-padding used when the system auto-generates document IDs. The running number itself is always derived from existing records, so changing these is safe at any time.') }}</p>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>{{ _('Sequence') }}</th>
+                <th>{{ _('Description') }}</th>
+                <th>{{ _('Prefix') }}</th>
+                <th>{{ _('Padding') }}</th>
+                <th>{{ _('Example') }}</th>
+                <th class="text-end">{{ _('Actions') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for seq in sequences %}
+            <tr>
+                <td><code>{{ seq.sequence_key }}</code></td>
+                <td>{{ seq.description or '-' }}</td>
+                <td><span class="badge bg-secondary">{{ seq.prefix }}</span></td>
+                <td>{{ seq.padding }}</td>
+                <td class="text-muted">{{ seq.prefix }}-2026-{{ ('%0' ~ seq.padding ~ 'd') % 1 }}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editSeq{{ seq.id }}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </td>
+            </tr>
+
+            <div class="modal fade" id="editSeq{{ seq.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form method="POST" action="{{ url_for('admin.settings_numbering') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="id" value="{{ seq.id }}">
+                            <div class="modal-header">
+                                <h5 class="modal-title">{{ _('Edit') }} {{ seq.sequence_key }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('Prefix') }}</label>
+                                    <input type="text" name="prefix" class="form-control" value="{{ seq.prefix }}" maxlength="10" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('Zero-padding digits') }}</label>
+                                    <input type="number" name="padding" class="form-control" value="{{ seq.padding }}" min="2" max="10" required>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                                <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <tr><td colspan="6" class="text-center py-4 text-muted">{{ _('No sequences configured.') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

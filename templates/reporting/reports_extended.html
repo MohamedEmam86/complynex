@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Extended Reports - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>{{ _('Advanced Reporting') }}</h1>
+        <p class="text-muted">{{ _('System-wide compliance audit and progress tracking') }}</p>
+    </div>
+    <div class="d-print-none">
+        <button data-action="print" class="btn btn-outline-primary">
+            <i class="bi bi-printer"></i> {{ _('Print Full Report') }}
+        </button>
+    </div>
+</div>
+
+<div class="card content-card mb-4">
+    <div class="card-header">
+        <nav>
+            <div class="nav nav-tabs card-header-tabs" id="nav-tab" role="tablist">
+                <button class="nav-link active" id="nav-audit-tab" data-bs-toggle="tab" data-bs-target="#nav-audit"
+                    type="button" role="tab">{{ _('Audit Log') }}</button>
+                <button class="nav-link" id="nav-policy-tab" data-bs-toggle="tab" data-bs-target="#nav-policy"
+                    type="button" role="tab">{{ _('Policy Tracking') }}</button>
+                <button class="nav-link" id="nav-training-tab" data-bs-toggle="tab" data-bs-target="#nav-training"
+                    type="button" role="tab">{{ _('Training Progress') }}</button>
+            </div>
+        </nav>
+    </div>
+    <div class="card-body">
+        <div class="tab-content" id="nav-tabContent">
+            <!-- Audit Log Tab -->
+            <div class="tab-pane fade show active" id="nav-audit" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ _('Timestamp') }}</th>
+                                <th>{{ _('User') }}</th>
+                                <th>{{ _('Action') }}</th>
+                                <th>{{ _('Resource') }}</th>
+                                <th>{{ _('IP Address') }}</th>
+                                <th>{{ _('Details') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in audit_logs %}
+                            <tr>
+                                <td class="small">
+                                    {% if log.created_at %}
+                                    {{ log.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold">{{ log.user_name }}</td>
+                                <td><span class="badge bg-light text-dark">{{ log.action }}</span></td>
+                                <td><small>{{ log.resource_type }} #{{ log.resource_id }}</small></td>
+                                <td class="small text-muted">{{ log.ip_address }}</td>
+                                <td class="small">{{ log.details }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">{{ _('No audit logs found.') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Policy Status Tab -->
+            <div class="tab-pane fade" id="nav-policy" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ _('Policy Name') }}</th>
+                                <th>{{ _('Status') }}</th>
+                                <th>{{ _('Acknowledgments') }}</th>
+                                <th>{{ _('Compliance Rate') }}</th>
+                                <th>{{ _('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in policy_stats %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ stat.name }}</div>
+                                    <small class="text-muted">{{ stat.number }}</small>
+                                </td>
+                                <td>
+                                    {% if stat.status == 'published' %}
+                                    <span class="badge bg-success">{{ _('Published') }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ stat.status | title }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ stat.ack_count }}</td>
+                                <td style="width: 200px;">
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                            <div class="progress-bar {{ 'bg-success' if stat.ack_rate >= 80 else 'bg-warning' if stat.ack_rate >= 50 else 'bg-danger' }}"
+                                                role="progressbar" style="width: {{ stat.ack_rate }}%"></div>
+                                        </div>
+                                        <span class="small fw-bold">{{ stat.ack_rate }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('reporting.policy_acknowledgments', id=stat.id) }}"
+                                        class="btn btn-sm btn-outline-primary">{{ _('View Records') }}</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Training Progress Tab -->
+            <div class="tab-pane fade" id="nav-training" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ _('Course') }}</th>
+                                <th>{{ _('Enrolled') }}</th>
+                                <th>{{ _('Completed') }}</th>
+                                <th>{{ _('Progress') }}</th>
+                                <th>{{ _('Status') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in training_stats %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ stat.name }}</div>
+                                    <small class="text-muted">{{ stat.code }}</small>
+                                </td>
+                                <td>{{ stat.total_enrolled }}</td>
+                                <td>{{ stat.completed }}</td>
+                                <td style="width: 200px;">
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                            <div class="progress-bar bg-primary" role="progressbar"
+                                                style="width: {{ stat.progress }}%"></div>
+                                        </div>
+                                        <span class="small fw-bold">{{ "%.1f"|format(stat.progress) }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if stat.progress == 100 %}
+                                    <span class="badge bg-success-soft text-success">{{ _('Compliant') }}</span>
+                                    {% else %}
+                                    <span class="badge bg-warning-soft text-warning">{{ _('In Progress') }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-success-soft {
+        background-color: rgba(37, 181, 126, 0.1);
+    }
+
+    .bg-warning-soft {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ _('Manual Screening') }}</h1>
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">{{ _('Full Name') }} <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="dob" class="form-label">{{ _('Date of Birth') }}</label>
+                        <input type="date" class="form-control" id="dob" name="dob">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="country" class="form-label">{{ _('Country') }}</label>
+                        <input type="text" class="form-control" id="country" name="country">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="gender" class="form-label">{{ _('Gender') }}</label>
+                        <select class="form-select" id="gender" name="gender">
+                            <option value="">{{ _('Select Gender') }}</option>
+                            <option value="male">{{ _('Male') }}</option>
+                            <option value="female">{{ _('Female') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="entity_type" class="form-label">{{ _('Entity Type') }} <span
+                                class="text-danger">*</span></label>
+                        <select class="form-select" id="entity_type" name="entity_type" required>
+                            <option value="INDIVIDUAL" selected>{{ _('Individual') }}</option>
+                            <option value="ENTITY">{{ _('Company / Entity') }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="national_id" class="form-label">{{ _('National ID (optional)') }}</label>
+                        <input type="text" class="form-control" id="national_id" name="national_id"
+                               placeholder="{{ _('Egyptian National ID if known') }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="employer" class="form-label">{{ _('Employer / Organisation (optional)') }}</label>
+                        <input type="text" class="form-control" id="employer" name="employer"
+                               placeholder="{{ _('Company or organisation name if known') }}">
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card bg-light border-0 rounded-3">
+                            <div class="card-body p-3">
+                                <label for="threshold" class="form-label mb-1">
+                                    <i class="fas fa-sliders-h me-2 text-primary"></i>
+                                    <strong>{{ _('Machine Learning Sensitivity (Threshold)') }}</strong>
+                                </label>
+                                <div class="d-flex align-items-center mb-2">
+                                    <input type="range" class="form-range flex-grow-1 me-3" id="threshold"
+                                        name="threshold" min="40" max="90" step="1" value="{{ current_threshold }}">
+                                    <span class="badge rounded-pill fs-6 px-3 py-2" id="thresholdValueBadge"
+                                        style="min-width: 60px;">{{ current_threshold }}%</span>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted fs-7">
+                                    <small><span class="text-danger fw-bold">{{ _('High Risk') }}</span> {{ _('(Loose matches)') }}</small>
+                                    <small><span class="text-success fw-bold">{{ _('Low Risk') }}</span> {{ _('(Strict matches)') }}</small>
+                                </div>
+                                <div class="alert alert-warning py-2 mt-3 mb-0" id="thresholdWarning"
+                                    style="display: none;">
+                                    <small><i class="fas fa-exclamation-triangle me-1"></i> Thresholds below 50%
+                                        increase false positives exponentially.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-info py-2">
+                    <small><i class="fas fa-info-circle me-1"></i> {{ _('This screening includes:') }}
+                        <strong>{{ _('Sanctions Lists') }}</strong> {{ _('(OFAC, UN, EU, HMT),') }}
+                        <strong>{{ _('PEP Databases') }}</strong> {{ _('(Egypt & Global), and') }}
+                        <strong>{{ _('Adverse Media Monitoring') }}</strong> {{ _('(Egyptian News & International Sources).') }}
+                    </small>
+                </div>
+
+                <script nonce="{{ csp_nonce }}">
+                    document.addEventListener("DOMContentLoaded", function () {
+                        const slider = document.getElementById("threshold");
+                        const badge = document.getElementById("thresholdValueBadge");
+                        const warning = document.getElementById("thresholdWarning");
+
+                        function updateSliderUI() {
+                            const val = parseInt(slider.value);
+                            badge.innerText = val + "%";
+
+                            // Color coding
+                            if (val < 50) {
+                                badge.className = "badge rounded-pill fs-6 px-3 py-2 bg-danger text-white";
+                                warning.style.display = "block";
+                            } else if (val <= 70) {
+                                badge.className = "badge rounded-pill fs-6 px-3 py-2 bg-warning text-dark";
+                                warning.style.display = "none";
+                            } else {
+                                badge.className = "badge rounded-pill fs-6 px-3 py-2 bg-success text-white";
+                                warning.style.display = "none";
+                            }
+                        }
+
+                        slider.addEventListener("input", updateSliderUI);
+                        updateSliderUI(); // initial run
+                    });
+                </script>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> {{ _('Screen') }}</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

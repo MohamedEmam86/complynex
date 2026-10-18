@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Review COBEC Declaration - ComplyNex CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Review COBEC Declaration') }}</h1>
+    <div>
+        <a href="{{ url_for('cobec.pending_review') }}" class="btn btn-outline-secondary">{{ _('Back to List') }}</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ _('Declaration Data') }}</h5>
+                <span class="badge bg-info">{{ _('Review Mode') }}</span>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">{{ _('Employee') }}</dt>
+                    <dd class="col-sm-8">{{ declaration.employee_name }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Department') }}</dt>
+                    <dd class="col-sm-8">{{ declaration.department }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Declaration Year') }}</dt>
+                    <dd class="col-sm-8">{{ declaration.declaration_year }}</dd>
+
+                    <dt class="col-sm-4">{{ _('Submission Date') }}</dt>
+                    <dd class="col-sm-8">{{ declaration.declaration_date }}</dd>
+                </dl>
+
+                <hr>
+
+                <!-- Acknowledgments (Read-only view for reviewer) -->
+                <div class="mb-3 p-2 bg-light rounded">
+                    <strong>{{ _('1. Read and Understood Code:') }}</strong>
+                    <span class="badge bg-{{ 'success' if declaration.has_read_code else 'danger' }} ms-2">
+                        {{ 'Yes' if declaration.has_read_code else 'No' }}
+                    </span>
+                </div>
+
+                <div class="mb-3 p-2 bg-light rounded">
+                    <strong>{{ _('2. Understands Responsibilities:') }}</strong>
+                    <span
+                        class="badge bg-{{ 'success' if declaration.understands_responsibilities else 'danger' }} ms-2">
+                        {{ 'Yes' if declaration.understands_responsibilities else 'No' }}
+                    </span>
+                </div>
+
+                <div class="mb-3 p-2 bg-light rounded">
+                    <strong>{{ _('3. Commits to Compliance:') }}</strong>
+                    <span class="badge bg-{{ 'success' if declaration.commits_to_compliance else 'danger' }} ms-2">
+                        {{ 'Yes' if declaration.commits_to_compliance else 'No' }}
+                    </span>
+                </div>
+
+                <div class="mb-3 p-2 bg-light rounded">
+                    <strong>{{ _('4. Will Report Violations:') }}</strong>
+                    <span class="badge bg-{{ 'success' if declaration.will_report_violations else 'danger' }} ms-2">
+                        {{ 'Yes' if declaration.will_report_violations else 'No' }}
+                    </span>
+                </div>
+
+                <div class="mb-3 p-2 {{ 'bg-warning' if declaration.has_known_violations else 'bg-light' }} rounded">
+                    <strong>{{ _('5. Known Violations:') }}</strong>
+                    <span class="badge bg-{{ 'danger' if declaration.has_known_violations else 'success' }} ms-2">
+                        {{ 'Yes' if declaration.has_known_violations else 'No' }}
+                    </span>
+                    {% if declaration.has_known_violations and declaration.violation_details %}
+                    <p class="mt-2 mb-0 text-dark"><strong>{{ _('Details:') }}</strong> {{ declaration.violation_details }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3 p-2 {{ 'bg-warning' if declaration.has_prior_misconduct else 'bg-light' }} rounded">
+                    <strong>{{ _('6. Prior Misconduct:') }}</strong>
+                    <span class="badge bg-{{ 'danger' if declaration.has_prior_misconduct else 'success' }} ms-2">
+                        {{ 'Yes' if declaration.has_prior_misconduct else 'No' }}
+                    </span>
+                    {% if declaration.has_prior_misconduct and declaration.misconduct_details %}
+                    <p class="mt-2 mb-0 text-dark"><strong>{{ _('Details:') }}</strong> {{ declaration.misconduct_details }}</p>
+                    {% endif %}
+                </div>
+
+                <hr>
+                <div class="text-muted small">
+                    <p class="mb-1"><strong>{{ _('Digital Signature:') }}</strong> {{ declaration.digital_signature }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Sidebar -->
+    <div class="col-md-4">
+        <div class="card border-primary mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-check2-circle"></i> {{ _('Review Actions') }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('cobec.review_declaration', id=declaration.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Review Comments') }}</label>
+                        <textarea name="comments" class="form-control" rows="3"
+                            placeholder="{{ _('Enter comments or feedback requests...') }}"></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="action" value="approve" class="btn btn-success">
+                            <i class="bi bi-check-lg"></i> {{ _('Approve Declaration') }}
+                        </button>
+                        <button type="submit" name="action" value="clarify" class="btn btn-warning text-dark">
+                            <i class="bi bi-question-circle"></i> {{ _('Request Feedback') }}
+                        </button>
+                        <button type="submit" name="action" value="escalate" class="btn btn-danger">
+                            <i class="bi bi-exclamation-triangle"></i> {{ _('Escalate to Compliance') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> {{ _('Review Guidelines') }}</h5>
+            </div>
+            <div class="card-body small text-muted">
+                <ul class="ps-3 mb-0">
+                    <li>{{ _('Verify all acknowledgments are \'Yes\'.') }}</li>
+                    <li>{{ _('Review details for any known violations.') }}</li>
+                    <li>{{ _('If clarification is needed, use \'Request Feedback\'.') }}</li>
+                    <li>{{ _('Status will update to \'Approved\' or \'Requires Clarification\'.') }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

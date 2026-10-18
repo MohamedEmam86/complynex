@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Department Management') }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ _('Departments, Business Units & Branches') }}</h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDeptModal">
+        <i class="bi bi-plus-lg"></i> {{ _('New') }}
+    </button>
+</div>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if not active_unit_type }}" href="{{ url_for('admin.list_departments') }}">{{ _('All') }}</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if active_unit_type == 'department' }}" href="{{ url_for('admin.list_departments', unit_type='department') }}">{{ _('Departments') }}</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if active_unit_type == 'business_unit' }}" href="{{ url_for('admin.list_departments', unit_type='business_unit') }}">{{ _('Business Units') }}</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if active_unit_type == 'branch' }}" href="{{ url_for('admin.list_departments', unit_type='branch') }}">{{ _('Branches') }}</a>
+    </li>
+</ul>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>{{ _('Code') }}</th>
+                <th>{{ _('Name') }}</th>
+                <th>{{ _('Type') }}</th>
+                <th>{{ _('Parent') }}</th>
+                <th>{{ _('Description') }}</th>
+                <th>{{ _('Status') }}</th>
+                <th class="text-end">{{ _('Actions') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dept in departments %}
+            <tr class="{{ '' if dept.is_active else 'text-muted' }}">
+                <td><span class="badge bg-secondary">{{ dept.code }}</span></td>
+                <td class="fw-bold">{{ dept.name }}</td>
+                <td>
+                    {% if dept.unit_type == 'business_unit' %}
+                        <span class="badge bg-info-subtle text-info-emphasis">{{ _('Business Unit') }}</span>
+                    {% elif dept.unit_type == 'branch' %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis">{{ _('Branch') }}</span>
+                    {% else %}
+                        <span class="badge bg-primary-subtle text-primary-emphasis">{{ _('Department') }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set parent = (all_units | selectattr('id', 'equalto', dept.parent_id) | first) if dept.parent_id else None %}
+                    {{ parent.name if parent else '-' }}
+                </td>
+                <td>{{ dept.description or '-' }}</td>
+                <td>
+                    {% if dept.is_active %}
+                        <span class="badge bg-success">{{ _('Active') }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ _('Archived') }}</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
+                        data-bs-target="#editDeptModal{{ dept.id }}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <form action="{{ url_for('admin.toggle_department_active', id=dept.id) }}" method="POST" class="d-inline me-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="{{ _('Archive/Reactivate') }}">
+                            <i class="bi bi-{{ 'arrow-counterclockwise' if not dept.is_active else 'archive' }}"></i>
+                        </button>
+                    </form>
+                    <form action="{{ url_for('admin.delete_department', id=dept.id) }}" method="POST" class="d-inline"
+                        data-confirm="{{ _('Are you sure?') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+
+            <!-- Edit Modal -->
+            <div class="modal fade" id="editDeptModal{{ dept.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form action="{{ url_for('admin.edit_department', id=dept.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-header">
+                                <h5 class="modal-title">{{ _('Edit') }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('Name') }}</label>
+                                    <input type="text" name="name" class="form-control" value="{{ dept.name }}"
+                                        required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('Code') }}</label>
+                                    <input type="text" name="code" class="form-control" value="{{ dept.code }}"
+                                        required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('Type') }}</label>
+                                    <select name="unit_type" class="form-select">
+                                        <option value="department" {{ 'selected' if dept.unit_type == 'department' }}>{{ _('Department') }}</option>
+                                        <option value="business_unit" {{ 'selected' if dept.unit_type == 'business_unit' }}>{{ _('Business Unit') }}</option>
+                                        <option value="branch" {{ 'selected' if dept.unit_type == 'branch' }}>{{ _('Branch') }}</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('Parent') }}</label>
+                                    <select name="parent_id" class="form-select">
+                                        <option value="">{{ _('None (top-level)') }}</option>
+                                        {% for u in all_units %}
+                                        {% if u.id != dept.id %}
+                                        <option value="{{ u.id }}" {{ 'selected' if dept.parent_id == u.id }}>{{ u.name }}</option>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ _('Description') }}</label>
+                                    <textarea name="description" class="form-control"
+                                        rows="3">{{ dept.description }}</textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel')
+                                    }}</button>
+                                <button type="submit" class="btn btn-primary">{{ _('Save Changes') }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-center py-4 text-muted">
+                    {{ _('No entries found.') }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Create Modal -->
+<div class="modal fade" id="createDeptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('admin.create_department') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ _('New Entry') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Name') }}</label>
+                        <input type="text" name="name" class="form-control" required placeholder="{{ _('e.g. Human Resources') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Code') }}</label>
+                        <input type="text" name="code" class="form-control" required placeholder="e.g. HR">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Type') }}</label>
+                        <select name="unit_type" class="form-select">
+                            <option value="department">{{ _('Department') }}</option>
+                            <option value="business_unit">{{ _('Business Unit') }}</option>
+                            <option value="branch">{{ _('Branch') }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Parent') }}</label>
+                        <select name="parent_id" class="form-select">
+                            <option value="">{{ _('None (top-level)') }}</option>
+                            {% for u in all_units %}
+                            <option value="{{ u.id }}">{{ u.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Description') }}</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('Create') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

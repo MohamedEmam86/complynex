@@ -1,0 +1,16 @@
+{% extends 'academy/base.html' %}
+{% block title %}{{ t('Sign in', 'الدخول') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow">
+  <h1>{{ t('Sign in', 'الدخول') }}</h1>
+  <p class="ia-muted">{{ t('Enter the work email you registered with. We will send you a one-time code.', 'أدخل بريد العمل الذي سجلت به. سنرسل لك رمزًا لمرة واحدة.') }}</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>{{ t('Work email', 'بريد العمل') }}
+      <input type="email" name="email" required dir="ltr" autocomplete="email" placeholder="name@company.com"></label>
+    <button class="ia-btn ia-btn--block">{{ t('Send my code', 'أرسل الرمز') }}</button>
+  </form>
+  <p class="ia-muted ia-small">{{ t('New here?', 'جديد؟') }} <a href="{{ url_for('academy.register') }}">{{ t('Register free', 'سجّل مجانًا') }}</a></p>
+</div>
+{% endblock %}

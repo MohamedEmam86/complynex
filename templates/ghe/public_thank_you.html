@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Submission Confirmed - ComplyNex') }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
+    <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/complynex-public-brand.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+    </style>
+</head>
+
+<body class="complynex-public" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-5">
+                <div class="complynex-form-card text-center" style="border-radius: 20px;">
+                    <!-- Logo -->
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ _('ComplyNex') }}"
+                        style="max-height: 50px; margin-bottom: 20px;">
+
+                    <!-- Success Icon -->
+                    <i class="bi bi-check-circle-fill complynex-success-icon"></i>
+                    <h1 class="text-success mt-3">{{ _('Submission Confirmed!') }}</h1>
+                    <p class="text-muted">{{ _('Your GHE declaration has been received and is being reviewed.') }}</p>
+
+                    <!-- Tracking Box -->
+                    <div class="complynex-tracking-box">
+                        <p class="mb-2 text-muted">{{ _('Your Tracking ID:') }}</p>
+                        <div class="complynex-tracking-id">{{ declaration.tracking_id }}</div>
+                        <p class="mt-2 mb-0"><small class="text-muted">
+                                <i class="bi bi-exclamation-circle"></i> {{ _('Save this ID to check your declaration status') }}
+                            </small></p>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="text-start bg-light p-3 rounded mb-4">
+                        <h6><i class="bi bi-file-text"></i> {{ _('Submission Details') }}</h6>
+                        <table class="table table-sm mb-0">
+                            <tr>
+                                <td><strong>{{ _('Declaration #:') }}</strong></td>
+                                <td>{{ declaration.declaration_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>{{ _('Type:') }}</strong></td>
+                                <td>{{ declaration.ghe_type }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>{{ _('Value:') }}</strong></td>
+                                <td>{{ "{:,.2f}".format(declaration.estimated_value_egp) }} EGP</td>
+                            </tr>
+                            <tr>
+                                <td><strong>{{ _('Status:') }}</strong></td>
+                                <td>
+                                    {% if declaration.auto_approved %}
+                                    <span class="badge bg-success">{{ _('Auto-Approved') }}</span>
+                                    {% elif declaration.status == 'manager_review' %}
+                                    <span class="badge bg-warning text-dark">{{ _('Pending Manager Review') }}</span>
+                                    {% elif declaration.status == 'compliance_review' %}
+                                    <span class="badge bg-info">{{ _('Pending Compliance Review') }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ declaration.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-envelope"></i>
+                        {{ _('A confirmation email has been sent to your email address.') }}
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-center mt-4">
+                        <a href="{{ url_for('public_ghe.check_status', tracking_id=declaration.tracking_id) }}"
+                            class="btn btn-complynex-outline">
+                            <i class="bi bi-search"></i> {{ _('Check Status') }}
+                        </a>
+                        <a href="{{ url_for('public_ghe.public_submit') }}" class="btn btn-complynex">
+                            <i class="bi bi-plus-circle"></i> {{ _('Submit Another') }}
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="complynex-footer">
+                    <p>{{ _('© 2026 ComplyNex. All rights reserved.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>
+</body>
+
+</html>
