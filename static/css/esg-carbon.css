@@ -58,7 +58,7 @@
 .ecx-card {
     background: #fff; border-radius: var(--ecx-card-radius);
     box-shadow: var(--ecx-card-shadow); border: 1px solid rgba(15,42,61,0.05);
-    padding: 20px; height: 100%; transition: box-shadow .2s ease;
+    padding: 20px; height: auto; transition: box-shadow .2s ease;
 }
 .ecx-card:hover { box-shadow: var(--ecx-card-shadow-hover); }
 .ecx-card h6 { font-weight: 700; color: var(--ecx-ink); font-size: 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
@@ -123,3 +123,7 @@
 [dir="rtl"] .ecx-hero .ecx-pioneer-badge i { transform: scaleX(-1); }
 [dir="rtl"] .ecx-scope-legend .dot { margin-inline-start: 5px; margin-inline-end: 0; }
 [dir="rtl"] .ecx-table-clean th { text-align: end; }
+
+/* A card fills its column only when it is the column's only child; stacked cards keep their natural height
+   (two height:100% cards in one column overflowed the page and slid under the footer). */
+.row > [class*="col"] > .ecx-card:only-child { height: 100%; }
