@@ -1,10 +1,15 @@
-{% extends 'base.html' %}
-{% import 'carbon/acc/_nav.html' as cn with context %}
-{% block title %}{{ _('Intensity & initiatives') }} — ComplyNex{% endblock %}
-{% block content %}
-<div class="container-fluid">
-  <h3 class="mb-2">{{ _('Intensity, targets & reduction initiatives') }} — {{ p.label }}</h3>
-  {{ cn.nav('carbon.intensity', p) }}
+{% extends 'carbon/_layout.html' %}
+{% set cx_active = 'carbon.intensity' %}
+{% set cx_period = p %}
+{% block title %}{{ _('Targets & intensity') }} — ComplyNex{% endblock %}
+{% block cx_icon %}bi-graph-down-arrow{% endblock %}
+{% block cx_title %}{{ _('Targets, intensity & reduction initiatives') }} — {{ p.label }}{% endblock %}
+{% block cx_lead %}{{ _('Emissions per employee, per m² and per revenue, the reduction target and the initiatives that deliver it.') }}{% endblock %}
+{% block cx_about %}{{ cx.about(
+    _('Intensity ratios (emissions divided by a measure of size), your reduction target and the list of reduction initiatives.'),
+    _('Totals grow with the business; intensity shows whether you are becoming more efficient. Disclosure standards ask for both, plus the actions behind the target.'),
+    _('The denominators for the period (revenue, employees, floor area, financed portfolio) and each initiative with its expected reduction.')) }}{% endblock %}
+{% block cx_body %}
   {% set m = inv.metrics %}{% set i = inv.intensity %}
   <div class="row g-3 mb-3">{% for l, k in [(_('tCO2e per employee'), 'per_employee'), (_('tCO2e per m²'), 'per_m2'), (_('tCO2e per EGP million revenue'), 'per_egp_m_revenue'), (_('Financed tCO2e per EGP million financed'), 'per_egp_m_financed')] %}
     <div class="col-md-3"><div class="card"><div class="card-body"><div class="small text-muted">{{ l }}</div><div class="fs-5 fw-bold">{{ i[k] if k in i else '-' }}</div></div></div></div>{% endfor %}</div>
@@ -14,21 +19,21 @@
       <label class="form-label mb-0">{{ l }}{% if hint %} <span class="text-muted">({{ _('from sites/exposures') }}: {{ hint }})</span>{% endif %}</label><input name="{{ k }}" class="form-control form-control-sm mb-2" value="{{ m[k] if m[k] is not none else '' }}" {{ 'disabled' if not cb_can_edit }}>{% endfor %}
       {% if cb_can_edit %}<button class="btn btn-sm btn-primary">{{ _('Save') }}</button>{% endif %}</div></form>
     <div class="card"><div class="card-header"><strong>{{ _('Target progress (operational: Scope 1 + 2)') }}</strong></div><div class="card-body small">
-      {% if progress %}<p class="mb-1">{{ _('Baseline') }} {{ progress.baseline_year }}: {{ cn.t(progress.baseline_tco2e) }} → {{ _('target') }} {{ progress.target_year }}: {{ cn.t(progress.target_tco2e) }} (-{{ progress.target_pct }}%)</p>
-        <p class="mb-0">{{ _('Current') }}: {{ cn.t(progress.current_tco2e) }} · {{ _('path walked') }}: <strong>{{ progress.pct_of_path_walked }}%</strong></p>
-      {% else %}<p class="mb-0"><a href="{{ url_for('carbon.targets') }}">{{ _('Set a baseline and target') }}</a></p>{% endif %}</div></div>
+      {% if progress %}<p class="mb-1">{{ _('Baseline') }} {{ progress.baseline_year }}: {{ cx.t(progress.baseline_tco2e) }} → {{ _('target') }} {{ progress.target_year }}: {{ cx.t(progress.target_tco2e) }} (-{{ progress.target_pct }}%)</p>
+        <p class="mb-0">{{ _('Current') }}: {{ cx.t(progress.current_tco2e) }} · {{ _('path walked') }}: <strong>{{ progress.pct_of_path_walked }}%</strong></p>
+      {% else %}<p class="mb-0">{{ _('No target yet.') }} <a href="{{ url_for('carbon.targets') }}">{{ _('Set a baseline and target') }}</a></p>{% endif %}
+      {% if progress %}<a class="small" href="{{ url_for('carbon.targets') }}">{{ _('Edit the target') }} →</a>{% endif %}</div></div>
   </div><div class="col-lg-8">
-    <div class="card mb-3"><div class="card-header"><strong>{{ _('Reduction initiatives') }}</strong> <span class="small text-muted">{{ _('planned / in progress') }}: {{ cn.t(planned_reduction) }} tCO2e</span></div>
+    <div class="card mb-3"><div class="card-header"><strong>{{ _('Reduction initiatives') }}</strong> <span class="small text-muted">{{ _('planned / in progress') }}: {{ cx.t(planned_reduction) }} tCO2e</span></div>
       <table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Initiative') }}</th><th>{{ _('Scope') }}</th><th>{{ _('Target date') }}</th><th class="text-end">{{ _('Expected') }}</th><th class="text-end">{{ _('Achieved') }}</th><th>{{ _('Status') }}</th></tr></thead><tbody>
-      {% for x in initiatives %}<tr><td>{{ x.title }}</td><td>{{ x.scope or '-' }}</td><td>{{ x.target_date or '-' }}</td><td class="text-end">{{ cn.t(x.expected_reduction_tco2e) }}</td>
-        <td class="text-end">{% if cb_can_edit %}<form method="post" class="d-flex gap-1 justify-content-end"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="initiative"><input type="hidden" name="initiative_id" value="{{ x.id }}"><input name="achieved_reduction_tco2e" value="{{ x.achieved_reduction_tco2e or '' }}" class="form-control form-control-sm" style="width: 90px"><select name="status" class="form-select form-select-sm" style="width: 120px">{% for s in ['planned', 'in_progress', 'done', 'cancelled'] %}<option {{ 'selected' if x.status == s }}>{{ s }}</option>{% endfor %}</select><button class="btn btn-sm btn-outline-secondary">{{ _('Update') }}</button></form>{% else %}{{ cn.t(x.achieved_reduction_tco2e) }}{% endif %}</td><td>{{ x.status }}</td></tr>
-      {% else %}<tr><td colspan="6" class="text-muted">{{ _('No initiative yet.') }}</td></tr>{% endfor %}</tbody></table>
+      {% for x in initiatives %}<tr><td>{{ x.title }}</td><td>{{ x.scope or '-' }}</td><td>{{ x.target_date or '-' }}</td><td class="text-end">{{ cx.t(x.expected_reduction_tco2e) }}</td>
+        <td class="text-end">{% if cb_can_edit %}<form method="post" class="d-flex gap-1 justify-content-end"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="initiative"><input type="hidden" name="initiative_id" value="{{ x.id }}"><input name="achieved_reduction_tco2e" value="{{ x.achieved_reduction_tco2e or '' }}" class="form-control form-control-sm" style="width: 90px"><select name="status" class="form-select form-select-sm" style="width: 120px">{% for s in ['planned', 'in_progress', 'done', 'cancelled'] %}<option {{ 'selected' if x.status == s }}>{{ s }}</option>{% endfor %}</select><button class="btn btn-sm btn-outline-secondary">{{ _('Update') }}</button></form>{% else %}{{ cx.t(x.achieved_reduction_tco2e) }}{% endif %}</td><td>{{ x.status }}</td></tr>
+      {% else %}<tr><td colspan="6">{{ cx.empty('bi-lightbulb', _('No initiative yet.'), _('LED retrofit in branches — Scope 2 — expected 35 tCO2e a year')) }}</td></tr>{% endfor %}</tbody></table>
       {% if cb_can_edit %}<form method="post" class="card-body border-top row g-1 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="initiative">
         <div class="col-md-4"><input name="title" class="form-control form-control-sm" placeholder="{{ _('e.g. LED retrofit in branches') }}" required></div>
-        <div class="col-md-2"><select name="scope" class="form-select form-select-sm"><option value="scope1">Scope 1</option><option value="scope2">Scope 2</option><option value="scope3">Scope 3</option></select></div>
+        <div class="col-md-2"><select name="scope" class="form-select form-select-sm"><option value="scope1">{{ _('Scope 1') }}</option><option value="scope2">{{ _('Scope 2') }}</option><option value="scope3">{{ _('Scope 3') }}</option></select></div>
         <div class="col-md-2"><input type="date" name="target_date" class="form-control form-control-sm"></div>
         <div class="col-md-2"><input name="expected_reduction_tco2e" class="form-control form-control-sm" placeholder="tCO2e"></div>
         <div class="col-md-2"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Add') }}</button></div></form>{% endif %}</div>
   </div></div>
-</div>
 {% endblock %}

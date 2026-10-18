@@ -1,20 +1,17 @@
-{% extends 'base.html' %}
+{% extends 'esg/_layout.html' %}
+{% set esg_active = 'esg.disclosures' %}
 {% block title %}{{ _('Disclosure Tracker') }} — {{ _('ESG Management') }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
-{% block content %}
-<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
-  <div class="ecx-hero ecx-esg">
-    <div class="ecx-eyebrow">{{ _('ESG Management') }}</div>
-    <h1><i class="bi bi-list-check me-2"></i>{{ _('Disclosure Tracker') }}</h1>
-    <p>{{ _('Track readiness against GRI, IFRS S1/S2, TCFD and EGX disclosure requirements — assign an owner, record evidence, and mark progress per item.') }}</p>
-  </div>
-
-  <ul class="nav ecx-nav-pills mb-3">
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.dashboard') }}">{{ _('Dashboard') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.materiality') }}">{{ _('Materiality Assessment') }}</a></li>
-    <li class="nav-item"><a class="nav-link active ecx-esg" href="{{ url_for('esg.disclosures') }}">{{ _('Disclosure Tracker') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.framework_view') }}">{{ _('Framework & Weights') }}</a></li>
-  </ul>
+{% block esg_icon %}bi-list-check{% endblock %}
+{% block esg_title %}{{ _('Disclosure Tracker') }}{% endblock %}
+{% block esg_lead %}{{ _('Track readiness against each disclosure framework that applies to you (for example GRI, IFRS S1/S2, TCFD or a regulator template): assign an owner, record evidence, and mark progress per item.') }}{% endblock %}
+{% block esg_about %}{{ cx.about(
+    _('A checklist of the disclosure requirements of each framework that applies to you (for example GRI, IFRS S1/S2, TCFD or a regulator template), with an owner and a status.'),
+    _('It shows how ready the sustainability report is. Items that Carbon can answer show the carbon value, period and inventory status next to them.'),
+    _('For each item: the owner, the status and the evidence or note. Use the carbon value shown when the inventory is approved.'), cls='ecx-esg') }}{% endblock %}
+{% block esg_body %}
+  {% set metric_labels = {'total': _('Total GHG emissions'), 'scope1': _('Scope 1 emissions'), 'scope2': _('Scope 2 emissions (location-based)'),
+                          'scope3': _('Scope 3 emissions'), 'intensity_employee': _('tCO2e per employee')} %}
+  {% set status_labels = {'preparing': _('Preparing'), 'in_review': _('In review'), 'reviewed': _('Reviewed'), 'approved': _('Approved & locked')} %}
 
   <div class="row g-3 mb-3">
     <div class="col-lg-3">
@@ -71,6 +68,12 @@
           <td>
             <div class="fw-semibold small">{{ it.title }}</div>
             <div class="text-muted small">{{ it.requirement }}</div>
+            {% set f = it.carbon_feed %}
+            {% if f %}<div class="ecx-feed"><i class="bi bi-cloud-haze2"></i> {{ _('Auto-filled from Carbon') }} — {{ metric_labels[f.metric] }}:
+              {% if f.in_boundary %}<strong>{{ cx.t(f.value) if f.value is not none else '-' }}</strong> {{ '' if f.metric == 'intensity_employee' else 'tCO2e' }}{% else %}<span class="ecx-outside">{{ _('outside the reporting boundary') }}</span>{% endif %}
+              · {{ carbon_values.period.label }} · {{ status_labels.get(carbon_values.status, carbon_values.status) }}
+              {% if carbon_values.status != 'approved' %}<span class="text-warning">({{ _('not final until the inventory is approved') }})</span>{% endif %}
+              <a href="{{ url_for('carbon.disclosure', period=carbon_values.period.id) }}">{{ _('open') }}</a></div>{% endif %}
           </td>
           <td class="small">{{ it.owner_name or '—' }}</td>
           <td>
@@ -107,6 +110,14 @@
                   {% for u in users %}<option value="{{ u.id }}" {{ 'selected' if it.owner_id == u.id }}>{{ u.full_name }}</option>{% endfor %}
                 </select>
               </div>
+              {% if carbon_values is not none %}<div>
+                <label class="small text-muted d-block">{{ _('Value from Carbon') }}</label>
+                <select name="carbon_metric" class="form-select form-select-sm">
+                  <option value="" {{ 'selected' if not it.carbon_metric }}>{{ _('Automatic (from the reference)') }}</option>
+                  {% for m in carbon_metrics %}<option value="{{ m }}" {{ 'selected' if it.carbon_metric == m }}>{{ metric_labels[m] }}</option>{% endfor %}
+                  <option value="none" {{ 'selected' if it.carbon_metric == 'none' }}>{{ _('No carbon value') }}</option>
+                </select>
+              </div>{% endif %}
               <div style="flex:1; min-width:220px;">
                 <label class="small text-muted d-block">{{ _('Evidence / Notes') }}</label>
                 <input type="text" name="evidence_notes" class="form-control form-control-sm" value="{{ it.evidence_notes or '' }}">
@@ -117,10 +128,9 @@
         </tr>
         {% endif %}
         {% else %}
-        <tr><td colspan="6"><div class="ecx-empty-state"><i class="bi bi-list-check"></i><div>{{ _('No disclosure items match this filter.') }}</div></div></td></tr>
+        <tr><td colspan="6">{{ cx.empty('bi-list-check', _('No disclosure items match this filter.'), _('GRI 305-1 — Direct (Scope 1) GHG emissions — owner: Head of Sustainability')) }}</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-</div>
 {% endblock %}

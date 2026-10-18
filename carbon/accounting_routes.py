@@ -22,7 +22,7 @@ intensity & initiatives, and the bilingual disclosure (page / PDF / Excel)."""
 import io
 from datetime import datetime
 
-from flask import Response, abort, flash, redirect, render_template, request, url_for
+from flask import Response, abort, current_app, flash, g, redirect, render_template, request, url_for
 from flask_babel import gettext as _
 from flask_login import current_user, login_required
 
@@ -32,6 +32,7 @@ from models.audit import AuditLog
 from utils.decorators import permission_required
 
 from . import accounting as A
+from . import journey as J
 from . import service as S
 from .engine import SCOPE3_CATEGORIES
 from .routes import carbon_bp as bp
@@ -64,11 +65,35 @@ def _period():
     return p
 
 
+def _journey():
+    """Journey status for the page's period, computed once per request (see carbon/journey.py)."""
+    if 'carbon_journey' not in g:
+        try:
+            pid = request.values.get('period', type=int)
+            g.carbon_journey = J.journey(pid if pid and S.period(pid) else None)
+        except Exception:
+            get_db().rollback()
+            current_app.logger.exception('carbon journey')
+            g.carbon_journey = None
+    return g.carbon_journey
+
+
+def _boundary():
+    if 'carbon_boundary' not in g:
+        try:
+            g.carbon_boundary = S.enabled_scopes(S.config())
+        except Exception:
+            get_db().rollback()
+            g.carbon_boundary = ['scope1', 'scope2', 'scope3']
+    return g.carbon_boundary
+
+
 @bp.context_processor
 def _ctx():
     authed = getattr(current_user, 'is_authenticated', False)
     return {'cb_can_edit': authed and current_user.can_edit(MODULE), 'cb_periods': (S.periods() if authed else []),
-            'scope3_labels': SCOPE3_CATEGORIES}
+            'scope3_labels': SCOPE3_CATEGORIES, 'carbon_journey': _journey, 'carbon_boundary': _boundary,
+            'carbon_page_step': J.PAGE_STEP}
 
 
 @bp.route('/boundary', methods=['GET', 'POST'])
@@ -112,7 +137,10 @@ def factor_versions():
         return redirect(url_for('carbon.factor_versions', code=code or None))
     codes = S.factor_codes()
     sel = request.args.get('code')
-    return render_template('carbon/acc/factor_versions.html', codes=codes, sel=sel, versions=codes.get(sel, []))
+    scope = request.args.get('scope') if request.args.get('scope') in ('scope1', 'scope2', 'scope3') else None
+    shown = {c: v for c, v in codes.items() if not scope or (v and v[-1]['scope'] == scope)}
+    return render_template('carbon/acc/factor_versions.html', codes=shown, sel=sel, versions=codes.get(sel, []), scope=scope,
+                           enabled=S.enabled_scopes(S.config()))
 
 
 @bp.route('/activity', methods=['GET', 'POST'])
@@ -129,6 +157,10 @@ def activity():
             if request.form.get('action') == 'delete':
                 S.delete_entry(request.form.get('entry_id', type=int))
                 flash(_('Entry deleted.'), 'info')
+            elif request.form.get('action') == 'set_month':
+                S.set_entry_month(request.form.get('entry_id', type=int), request.form.get('activity_month'))
+                _log('carbon_activity_month', request.form.get('entry_id', type=int), request.form.get('activity_month'))
+                flash(_('Month added; the recorded figure is unchanged.'), 'success')
             else:
                 eid, res = S.add_entry(p['id'], request.form, current_user.id)
                 _log('carbon_activity_add', eid, f"{res['tco2e']} tCO2e")
@@ -144,8 +176,14 @@ def activity():
     rows = S.entries(p['id'])
     for e in rows:
         e['evidence'] = S.has_evidence(e)
-    return render_template('carbon/acc/activity.html', p=p, rows=rows, codes=codes, sites=S.sites(),
-                           wf=S.workflow(p['id']), locked=A.is_locked(S.workflow(p['id'])))
+        e['in_boundary'] = e['scope'] in en
+    scope = request.args.get('scope') if request.args.get('scope') in ('scope1', 'scope2', 'scope3') else None
+    shown = [e for e in rows if not scope or e['scope'] == scope]
+    inside, outside = J.boundary_split(rows, en)
+    return render_template('carbon/acc/activity.html', p=p, rows=shown, codes=codes, sites=S.sites(),
+                           wf=S.workflow(p['id']), locked=A.is_locked(S.workflow(p['id'])), scope=scope, enabled=en,
+                           in_total=round(sum(float(e['tco2e'] or 0) for e in inside), 3),
+                           out_total=round(sum(float(e['tco2e'] or 0) for e in outside), 3), out_count=len(outside))
 
 
 @bp.route('/activity/<int:entry_id>/files')

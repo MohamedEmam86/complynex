@@ -348,6 +348,26 @@ def add_entry(period_id, data, user_id, db=None):
     return rid, res
 
 
+def set_entry_month(entry_id, month, db=None):
+    """Add the missing activity month to an entry. Allowed only when the factor version in
+    force in that month is the one the entry already used, so the recorded figure is unchanged."""
+    db = db or get_db()
+    e = db.execute("SELECT * FROM carbon_activity_entries WHERE id = %s", (entry_id,)).fetchone()
+    if not e:
+        raise CarbonError(N_('entry not found'))
+    ensure_unlocked(e['reporting_period_id'], db)
+    m = _date((month or '') + ('-01' if len(month or '') == 7 else ''))
+    p = period(e['reporting_period_id'], db)
+    if not m or (p and not (date(p['start_date'].year, p['start_date'].month, 1) <= m <= p['end_date'])):
+        raise CarbonError(N_('choose a month inside the reporting period'))
+    f = factor_for(e['factor_code'], m, db) if e['factor_code'] else None
+    if f and f['id'] != e['factor_id']:
+        raise CarbonError(N_('a different factor version applies to that month — delete the entry and record it again'))
+    db.execute("UPDATE carbon_activity_entries SET activity_month = %s, updated_at = %s WHERE id = %s",
+               (m, datetime.now(), entry_id))
+    db.commit()
+
+
 def delete_entry(entry_id, db=None):
     db = db or get_db()
     e = db.execute("SELECT reporting_period_id FROM carbon_activity_entries WHERE id = %s", (entry_id,)).fetchone()
@@ -465,6 +485,10 @@ def data_quality(period_id, db=None):
     monthly = {e['factor_code'] for e in cur if e.get('scope') in ('scope1', 'scope2') and e.get('activity_month')}
     issues = A.dq_issues(cur, p['start_date'], p['end_date'], prev, param('carbon.outlier_pct', 50), monthly,
                          lambda e: has_evidence(e, db))
+    for e in cur:   # Scope 1/2 are recorded month by month; a whole-period entry hides gaps
+        if not e.get('activity_month') and e.get('scope') in ('scope1', 'scope2'):
+            issues.append({'severity': 'warning', 'code': 'no_month', 'entry_id': e['id'],
+                           'message': f"{e.get('activity')}: recorded for the whole period, no month"})
     for x in exposures(period_id, db):
         if x['error']:
             issues.append({'severity': 'warning', 'code': 'pcaf', 'message': f"PCAF {x['reference'] or x['id']}: {x['error']}"})

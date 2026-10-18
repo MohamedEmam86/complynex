@@ -1,11 +1,21 @@
-{% extends 'base.html' %}
+{% extends 'carbon/_layout.html' %}
+{% set cx_active = 'carbon.activity_files' %}
 {% block title %}{{ e.activity }} — ComplyNex{% endblock %}
-{% block content %}
-<div class="container-fluid">
-  <h3 class="mb-1">{{ e.activity }} <span class="small text-muted">{{ e.scope }} · {{ '{:,.3f}'.format(e.tco2e|float) }} tCO2e</span></h3>
-  <p class="small"><a href="{{ url_for('carbon.activity', period=e.reporting_period_id) }}">{{ _('Back to activity data') }}</a></p>
-  <div class="row"><div class="col-lg-6"><div class="card mb-3"><table class="table table-sm mb-0 small">
-    {% for k in ['activity_month', 'quantity', 'unit', 'factor_code', 'factor_kgco2e_used', 'factor_source_used', 'factor_vintage_used', 'boundary_share', 'gross_tco2e', 'basis', 'instrument_type', 'instrument_ref', 'helper_inputs', 'notes'] if e[k] not in (none, '') %}<tr><th style="width: 40%">{{ k }}</th><td>{{ e[k] }}</td></tr>{% endfor %}</table></div></div>
+{% block cx_icon %}bi-paperclip{% endblock %}
+{% block cx_title %}{{ _('Evidence') }} · {{ e.activity }}{% endblock %}
+{% block cx_lead %}{{ cx.scope_name(e.scope) }} · {{ '{:,.3f}'.format(e.tco2e|float) }} tCO2e{% endblock %}
+{% block cx_about %}{{ cx.about(
+    _('The documents that prove one activity entry: the invoice, utility bill, meter reading, fuel receipt or travel ticket.'),
+    _('An entry without evidence is a critical data-quality issue and blocks the review. The verifier samples entries and opens these files.'),
+    _('Upload one or more files. Prefer the original PDF or a clear photo; the file name should say what it is (for example "Jan-2026 electricity bill").')) }}{% endblock %}
+{% block cx_body %}
+  <p class="small"><a href="{{ url_for('carbon.activity', period=e.reporting_period_id, _anchor='e' ~ e.id) }}">← {{ _('Back to activity data') }}</a></p>
+  {% set labels = {'activity_month': _('Activity month'), 'quantity': _('Quantity'), 'unit': _('Unit'), 'factor_code': _('Factor code'),
+                   'factor_kgco2e_used': _('Factor used (kgCO2e per unit)'), 'factor_source_used': _('Factor source'), 'factor_vintage_used': _('Factor vintage'),
+                   'boundary_share': _('Boundary share'), 'gross_tco2e': _('Gross tCO2e (before the share)'), 'basis': _('Scope 2 basis'),
+                   'instrument_type': _('Contractual instrument'), 'instrument_ref': _('Instrument ref.'), 'helper_inputs': _('Calculation helper inputs'), 'notes': _('Note')} %}
+  <div class="row g-3"><div class="col-lg-6"><div class="card mb-3"><table class="table table-sm mb-0 small">
+    {% for k in labels if e[k] not in (none, '') %}<tr><th style="width: 40%">{{ labels[k] }}</th><td>{{ e[k] }}</td></tr>{% endfor %}
+    {% if not e.activity_month %}<tr><th>{{ _('Activity month') }}</th><td>{{ _('Whole period') }}{% if e.scope in ('scope1', 'scope2') %} <span class="badge bg-warning text-dark">{{ _('no month') }}</span>{% endif %}</td></tr>{% endif %}</table></div></div>
     <div class="col-lg-6">{% include 'partials/attachment_widget.html' %}</div></div>
-</div>
 {% endblock %}

@@ -5,8 +5,8 @@
    Design intent: a distinct, purpose-built "climate & governance" look that
    stays inside ComplyNex's existing brand palette (--primary-color #123E5F,
    --accent-color #00A6B4) rather than clashing with it, while being
-   immediately recognizable as its own thing — the first ESG/Carbon module
-   built for the Egyptian PSP market. Carbon uses a teal->emerald gradient
+   immediately recognizable as the Sustainability area (ESG + Carbon), used by
+   every page of both modules. Carbon uses a teal->emerald gradient
    (climate/nature). ESG uses an indigo->amber gradient (governance/value).
    ============================================================================= */
 
@@ -127,3 +127,86 @@
 /* A card fills its column only when it is the column's only child; stacked cards keep their natural height
    (two height:100% cards in one column overflowed the page and slid under the footer). */
 .row > [class*="col"] > .ecx-card:only-child { height: 100%; }
+
+/* =============================================================================
+   One visual language for every Sustainability page (.ecx-page wrapper):
+   the newer Bootstrap cards/tables pick up the ecx look, plus the journey
+   stepper, the "what is this" panel, the unified navigation and boundary tags.
+   ============================================================================= */
+.ecx-hero.ecx-compact { padding: 18px 24px; margin-bottom: 14px; }
+.ecx-hero.ecx-compact h1 { font-size: 21px; }
+.ecx-hero .ecx-pack-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.35); border-radius: 999px; padding: 3px 11px; font-size: 11.5px; font-weight: 700; margin-top: 8px; }
+.ecx-page .card { border-radius: var(--ecx-card-radius); box-shadow: var(--ecx-card-shadow); border: 1px solid rgba(15,42,61,0.05); overflow: hidden; }
+.ecx-page .card > .card-header { background: #fff; border-bottom: 1px solid #eef2f4; font-size: 14px; color: var(--ecx-ink); }
+.ecx-page .card > .card-footer { background: #fbfdfd; }
+.ecx-page .table > thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ecx-muted);
+    font-weight: 700; border-bottom-width: 2px; border-bottom-color: #eef2f4; white-space: nowrap; }
+.ecx-page .table td { border-color: #f1f4f5; }
+
+/* unified navigation (workflow order) */
+.ecx-flow-nav { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 12px; }
+.ecx-flow-nav a { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 12px; font-size: 12.5px;
+    font-weight: 600; color: var(--ecx-ink); text-decoration: none; border: 1px solid transparent; }
+.ecx-flow-nav a:hover { background: #eef7f7; }
+.ecx-flow-nav a.active { background: var(--ecx-carbon-1); color: #fff; }
+.ecx-flow-nav.ecx-esg a.active { background: var(--ecx-esg-1); }
+.ecx-flow-nav .num { display: inline-flex; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; align-items: center; justify-content: center;
+    font-size: 10.5px; background: rgba(15,42,61,0.08); white-space: nowrap; }
+.ecx-flow-nav a.active .num { background: rgba(255,255,255,0.25); }
+.ecx-flow-nav .sep { width: 1px; height: 20px; background: #dfe7ea; margin: 0 4px; }
+.ecx-flow-nav .ecx-pack { font-size: 9.5px; font-weight: 700; background: #fff4d6; color: #7a5a00; border-radius: 4px; padding: 0 4px; }
+
+/* journey stepper */
+.ecx-stepper { display: flex; gap: 6px; overflow-x: auto; padding: 10px 12px; background: #fff; border-radius: var(--ecx-card-radius);
+    box-shadow: var(--ecx-card-shadow); margin-bottom: 14px; align-items: stretch; }
+.ecx-step { flex: 1 0 112px; display: block; text-decoration: none; color: var(--ecx-ink); border-radius: 10px; padding: 6px 8px;
+    border: 1px solid #eef2f4; font-size: 11.5px; line-height: 1.25; position: relative; }
+.ecx-step:hover { background: #f6fbfb; }
+.ecx-step .t { font-weight: 700; display: block; }
+.ecx-step .s { font-size: 10.5px; }
+.ecx-step.here { outline: 2px solid var(--ecx-carbon-1); }
+.ecx-step.st-done { background: #ecfaf3; border-color: #bfe9d3; }
+.ecx-step.st-done .s { color: #11784a; }
+.ecx-step.st-in_progress { background: #fff8e6; border-color: #f5dc9a; }
+.ecx-step.st-in_progress .s { color: #8a6100; }
+.ecx-step.st-blocked { background: #f6f6f7; color: #8b96a0; }
+.ecx-step.st-not_applicable { background: repeating-linear-gradient(135deg, #fafafa, #fafafa 6px, #f2f3f4 6px, #f2f3f4 12px); color: #9aa5ad; }
+.ecx-step .dot { display: inline-flex; width: 18px; height: 18px; border-radius: 50%; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800; background: #dfe7ea; margin-inline-end: 4px; }
+.ecx-step.st-done .dot { background: #10b981; color: #fff; }
+.ecx-step.st-in_progress .dot { background: #f0b429; color: #fff; }
+.ecx-next { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #f4fbfb, #eef7f2);
+    border: 1px solid #bfe3dc; border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
+
+/* setup checklist (dashboard) */
+.ecx-checklist { list-style: none; padding: 0; margin: 0; }
+.ecx-checklist li { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid #f1f4f5; font-size: 13px; }
+.ecx-checklist li:last-child { border-bottom: none; }
+.ecx-checklist .ic { font-size: 18px; line-height: 1; }
+.ecx-checklist .st-done .ic { color: #10b981; } .ecx-checklist .st-in_progress .ic { color: #f0b429; }
+.ecx-checklist .st-blocked .ic, .ecx-checklist .st-not_applicable .ic, .ecx-checklist .st-not_started .ic { color: #adb8bf; }
+.ecx-checklist .miss { font-size: 12px; color: var(--ecx-muted); }
+
+/* "what is this / why it matters / what to enter" */
+.ecx-about { border: 1px solid #d6ece8; background: #fbfefd; border-radius: 12px; margin-bottom: 14px; font-size: 13px; }
+.ecx-about.ecx-esg { border-color: #ddd6f3; background: #fcfbff; }
+.ecx-about summary { cursor: pointer; padding: 9px 14px; font-weight: 700; color: var(--ecx-carbon-3); list-style: none; }
+.ecx-about.ecx-esg summary { color: var(--ecx-esg-1); }
+.ecx-about summary::-webkit-details-marker { display: none; }
+.ecx-about .body { padding: 0 14px 12px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.ecx-about .body h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ecx-muted); margin: 0 0 3px; font-weight: 700; }
+.ecx-about .body p { margin: 0; }
+
+/* technical terms */
+.ecx-term { border-bottom: 1px dotted currentColor; cursor: help; text-decoration: none; }
+.ecx-term .bi { font-size: .8em; opacity: .6; margin-inline-start: 2px; }
+
+/* reporting boundary */
+.ecx-outside { display: inline-block; font-size: 10.5px; font-weight: 700; background: #f1f3f5; color: #6c757d; border: 1px dashed #c4ccd2;
+    border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+tr.ecx-row-outside td { color: #8b96a0; background: #fafbfb; }
+.ecx-boundary { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12.5px; background: #fff; border: 1px solid #e3ecef;
+    border-radius: 12px; padding: 8px 12px; margin-bottom: 14px; }
+.ecx-feed { font-size: 12px; background: #eef9f6; border: 1px solid #c9ebe2; color: #1d5e50; border-radius: 8px; padding: 4px 8px; display: inline-block; margin-top: 4px; }
+[dir="rtl"] .ecx-flow-nav .bi-arrow-right, [dir="rtl"] .ecx-next .bi-arrow-right { transform: scaleX(-1); }

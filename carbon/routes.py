@@ -17,10 +17,11 @@
 
 """Carbon Footprint & Climate module — routes.
 
-First-of-kind in the Egyptian PSP/fintech market: a GHG Protocol-aligned
-Scope 1/2/3 carbon calculator embedded directly inside the compliance
+A GHG Protocol-aligned Scope 1/2/3 carbon inventory inside the compliance
 platform, with every figure traceable to the exact activity quantity and
-emission factor (source + vintage year) that produced it.
+emission factor (source + vintage year) that produced it. Regulator-specific
+rules (thresholds, offset share and deadline) come from the parameter
+registry, installed by the relevant regulatory pack.
 """
 import os
 from datetime import datetime
@@ -145,7 +146,9 @@ def dashboard():
     period = _current_period()
     scope_cfg = _scope_config()
     enabled = _enabled_scopes(scope_cfg)
-    entries = _filter_by_scopes(_entries_for_period(period['id']) if period else [], enabled)
+    all_entries = _entries_for_period(period['id']) if period else []
+    entries = _filter_by_scopes(all_entries, enabled)
+    outside = [e for e in all_entries if e['scope'] not in enabled]
     totals = compute_scope_totals(entries)
     scope3_breakdown = compute_scope3_breakdown(entries) if 'scope3' in enabled else {}
 
@@ -174,6 +177,9 @@ def dashboard():
         recent_entries=recent_entries, scope_labels=SCOPE_LABELS,
         entry_count=len(entries),
         scope_cfg=scope_cfg, enabled_scopes=enabled,
+        outside_count=len(outside), outside_tco2e=round(sum(float(e['tco2e'] or 0) for e in outside), 3),
+        outside_by_scope={sc: round(sum(float(e['tco2e'] or 0) for e in outside if e['scope'] == sc), 3)
+                          for sc in ('scope1', 'scope2', 'scope3') if any(e['scope'] == sc for e in outside)},
     )
 
 
@@ -185,18 +191,8 @@ def dashboard():
 @login_required
 @permission_required('carbon')
 def entries_list():
-    period = _current_period()
-    enabled = _enabled_scopes()
-    scope = request.args.get('scope') or None
-    entries = _filter_by_scopes(_entries_for_period(period['id']) if period else [], enabled)
-    if scope:
-        entries = [e for e in entries if e['scope'] == scope]
-    entries = sorted(entries, key=lambda e: e['created_at'], reverse=True)
-    return render_template(
-        'carbon/entries_list.html', period=period, entries=entries,
-        current_scope=scope, scope_labels=SCOPE_LABELS, scope3_categories=SCOPE3_CATEGORIES,
-        enabled_scopes=enabled,
-    )
+    """Old activity log: merged into Activity data (one list for the whole journey)."""
+    return redirect(url_for('carbon.activity', scope=request.args.get('scope') or None))
 
 
 @carbon_bp.route('/entries/new', methods=['GET', 'POST'])
@@ -263,8 +259,8 @@ def entry_new():
         flash(_('Activity logged: %(tco2e)s tCO2e recorded.', tco2e=tco2e), 'success')
         return redirect(url_for('carbon.entries_list'))
 
-    return render_template('carbon/entry_form.html', period=period, factors=factors,
-                            scope3_categories=SCOPE3_CATEGORIES)
+    # The entry form now lives on Activity data (same calculation, plus month, site and evidence).
+    return redirect(url_for('carbon.activity', _anchor='add'))
 
 
 @carbon_bp.route('/entries/<int:entry_id>/delete', methods=['POST'])
@@ -291,18 +287,8 @@ def entry_delete(entry_id):
 @login_required
 @permission_required('carbon')
 def factors_library():
-    scope = request.args.get('scope') or None
-    enabled = _enabled_scopes()
-    q = "SELECT * FROM carbon_emission_factors WHERE effective_to IS NULL"
-    params = []
-    if scope:
-        q += " AND scope = %s"
-        params.append(scope)
-    q += " ORDER BY scope, category, activity"
-    factors = query_db(q, tuple(params)) or []
-    factors = [f for f in factors if f['scope'] in enabled]
-    return render_template('carbon/factors.html', factors=factors, current_scope=scope,
-                            scope3_categories=SCOPE3_CATEGORIES)
+    """Old factor library: merged into Emission factors (current values + version history)."""
+    return redirect(url_for('carbon.factor_versions', scope=request.args.get('scope') or None))
 
 
 # ---------------------------------------------------------------------------
@@ -412,7 +398,7 @@ def settings():
                              f"capital={capital} equity={equity} fye={fye}")
 
         if not (s1 and s2):
-            flash(_('Warning: FRA Decision 36/2026 requires Scope 1 and Scope 2 for obligated companies. Disabling them breaks FRA compliance - only do this for a company that is not FRA-obligated.'), 'warning')
+            flash(_('Warning: carbon-reporting rules (for example the FRA framework) require Scope 1 and Scope 2 for obligated companies. Switch them off only if no such rule applies to you.'), 'warning')
         flash(_('Carbon settings saved.'), 'success')
         return redirect(url_for('carbon.settings'))
 
@@ -428,13 +414,15 @@ def settings():
             'esg_107': basis >= esg_t,      # ESG report threshold (parameter)
             'tcfd_108': basis >= tcfd_t,    # TCFD layer threshold (parameter)
             'carbon_36': basis >= carb_t,   # carbon report + offsets threshold (parameter)
+            'thresholds': {'esg': esg_t, 'tcfd': tcfd_t, 'carbon': carb_t},
         }
 
     entry_counts = {r['scope']: r['cnt'] for r in (query_db(
         "SELECT scope, COUNT(*) AS cnt FROM carbon_activity_entries GROUP BY scope") or [])}
 
+    from carbon.journey import legal_basis
     return render_template('carbon/settings.html', cfg=cfg,
-                           applicability=applicability, entry_counts=entry_counts)
+                           applicability=applicability, entry_counts=entry_counts, legal=legal_basis())
 
 
 # ---------------------------------------------------------------------------
@@ -524,8 +512,10 @@ def _fra_context():
 @login_required
 @permission_required('carbon')
 def fra_compliance():
+    from carbon.journey import legal_basis
     ctx = _fra_context()
-    return render_template('carbon/fra_compliance.html', **ctx)
+    return render_template('carbon/fra_compliance.html', **ctx, legal=legal_basis(),
+                           offset_pct=_param('carbon.offset_pct', 20), offset_days=_param('carbon.offset_deadline_days', 90))
 
 
 @carbon_bp.route('/fra/status', methods=['POST'])
@@ -654,6 +644,11 @@ def fra_report():
         "SELECT DISTINCT source, vintage_year FROM carbon_emission_factors "
         "WHERE effective_to IS NULL ORDER BY source") or []
 
+    from carbon.journey import legal_basis
+    refs = {r['key']: r['legal_reference'] for r in legal_basis() if r.get('legal_reference')}
     return render_template('carbon/fra_report.html', **ctx,
                            category_rows=category_rows, factor_sources=factor_sources,
-                           generated_at=datetime.now())
+                           generated_at=datetime.now(),
+                           carbon_ref=refs.get('carbon.report_threshold_egp') or refs.get('carbon.offset_pct')
+                           or _('the FRA carbon-footprint decision (reference to be recorded in the regulatory parameters)'),
+                           offset_pct=_param('carbon.offset_pct', 20), offset_days=_param('carbon.offset_deadline_days', 90))

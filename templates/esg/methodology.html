@@ -1,21 +1,14 @@
-{% extends 'base.html' %}
+{% extends 'esg/_layout.html' %}
+{% set esg_active = 'esg.methodology' %}
 {% block title %}{{ _('Methodology') }} — {{ _('ESG Management') }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
-{% block content %}
-<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
-  <div class="ecx-hero ecx-esg">
-    <div class="ecx-eyebrow">{{ _('ESG Management') }}</div>
-    <h1><i class="bi bi-journal-richtext me-2"></i>{{ _('Scoring Methodology') }}</h1>
-    <p>{{ _('How the ESG score behind every pillar and every ring on the dashboard is actually calculated.') }}</p>
-  </div>
-
-  <ul class="nav ecx-nav-pills mb-3">
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.dashboard') }}">{{ _('Dashboard') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.materiality') }}">{{ _('Materiality Assessment') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.disclosures') }}">{{ _('Disclosure Tracker') }}</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('esg.framework_view') }}">{{ _('Framework & Weights') }}</a></li>
-    <li class="nav-item"><a class="nav-link active ecx-esg" href="{{ url_for('esg.methodology') }}"><i class="bi bi-info-circle me-1"></i>{{ _('Methodology') }}</a></li>
-  </ul>
+{% block esg_icon %}bi-journal-richtext{% endblock %}
+{% block esg_title %}{{ _('Scoring Methodology') }}{% endblock %}
+{% block esg_lead %}{{ _('How the ESG score behind every pillar and every ring on the dashboard is actually calculated.') }}{% endblock %}
+{% block esg_about %}{{ cx.about(
+    _('How the ESG scores are calculated, in plain language.'),
+    _('So anyone can explain a score to management, an auditor or a regulator.'),
+    _('Nothing; this page is a reference.'), cls='ecx-esg') }}{% endblock %}
+{% block esg_body %}
 
   <div class="row g-3">
     <div class="col-lg-7">
@@ -33,11 +26,11 @@
           <code>{{ _('Pillar Score') }} = Σ(indicator_weight × indicator_score) ÷ Σ(indicator_weight)</code><br><br>
           <code>{{ _('Overall Score') }} = Σ(pillar_weight × pillar_score) ÷ Σ(pillar_weight)</code>
         </div>
-        <p class="small mt-3 mb-0">{{ _('Unanswered indicators (and unscored pillars) are excluded from both the numerator and denominator — never treated as a zero. This keeps a partially completed assessment honest rather than artificially deflated, which was a specific bug pattern found in the earlier consultant spreadsheets whenever a row was left blank.') }}</p>
+        <p class="small mt-3 mb-0">{{ _('Unanswered indicators (and unscored pillars) are excluded from both the numerator and denominator — never treated as a zero. This keeps a partially completed assessment honest rather than artificially deflated.') }}</p>
       </div>
       <div class="ecx-card">
-        <h6><i class="bi bi-3-circle me-1"></i>{{ _('Why a fourth "Regulatory" pillar') }}</h6>
-        <p class="small mb-0">{{ _('Global ESG frameworks (GRI, IFRS S1/S2, TCFD) are built for listed multinationals and don\'t weight CBE/FRA supervisory standing at all. For an Egyptian PSP, AML/CFT programme maturity, licensing standing, and regulatory reporting track record are as material to stakeholders as the classic E/S/G pillars — so I-ESG Egypt gives them their own 15%% weight rather than burying them inside Governance.') }}</p>
+        <h6><i class="bi bi-3-circle me-1"></i>{{ _('Pillars beyond E, S and G') }}</h6>
+        <p class="small mb-0">{{ _('A framework may add its own pillars, for example a regulatory pillar for a supervised institution (AML/CFT programme maturity, licensing standing, regulatory reporting record). Each extra pillar has its own weight, shown on the Framework & Weights page, rather than being buried inside Governance.') }}</p>
       </div>
     </div>
     <div class="col-lg-5">
@@ -61,5 +54,4 @@
       </div>
     </div>
   </div>
-</div>
 {% endblock %}

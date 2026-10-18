@@ -1,13 +1,36 @@
-{% extends 'base.html' %}
-{% import 'carbon/acc/_nav.html' as cn with context %}
+{% extends 'carbon/_layout.html' %}
+{% set cx_active = 'carbon.quality' %}
+{% set cx_period = p %}
 {% block title %}{{ _('Data quality') }} — ComplyNex{% endblock %}
-{% block content %}
-<div class="container-fluid">
-  <h3 class="mb-2">{{ _('Data-quality controls') }} — {{ p.label }}</h3>
-  {{ cn.nav('carbon.quality', p) }}
+{% block cx_icon %}bi-shield-check{% endblock %}
+{% block cx_title %}{{ _('Step 5 · Data-quality checks') }} — {{ p.label }}{% endblock %}
+{% block cx_lead %}{{ _('Automatic checks on the activity data before it goes to review.') }}{% endblock %}
+{% block cx_about %}{{ cx.about(
+    _('A list of problems the system found in the activity data: units that do not match the factor, entries without evidence, missing months, unusual changes against the previous period.'),
+    _('Critical issues block submission for review. Warnings may stay, but the verifier will ask about each one, so explain or fix them.'),
+    _('Nothing here. Use the Fix link on each line to correct the entry on the activity page.')) }}{% endblock %}
+{% block cx_body %}
   <p class="small text-muted">{{ _('Critical issues (unit mismatch, entry without evidence, negative quantity) block submission for review. Warnings (missing months, outliers vs the previous period, PCAF gaps) must be explained to the verifier.') }}</p>
-  <div class="card"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Severity') }}</th><th>{{ _('Check') }}</th><th>{{ _('Detail') }}</th><th></th></tr></thead><tbody>
-    {% for i in dq.issues %}<tr class="{{ 'table-danger' if i.severity == 'critical' else 'table-warning' }}"><td>{{ i.severity }}</td><td>{{ i.code }}</td><td>{{ i.message }}</td><td>{% if i.entry_id %}<a href="{{ url_for('carbon.activity_files', entry_id=i.entry_id) }}">{{ _('Open') }}</a>{% endif %}</td></tr>
-    {% else %}<tr><td colspan="4" class="text-success">{{ _('No data-quality issue in') }} {{ dq.entries }} {{ _('entries.') }}</td></tr>{% endfor %}</tbody></table></div>
-</div>
+  {% set names = {'unit_mismatch': _('Unit does not match the factor'), 'unsupported': _('No evidence attached'), 'negative': _('Negative quantity'),
+                  'missing_months': _('Months without data'), 'outlier': _('Unusual change against the previous period'),
+                  'pcaf': _('Financed-emissions gap'), 'no_month': _('Recorded without a month')} %}
+  {% set fixes = {'unit_mismatch': _('Delete the entry and record it again in the factor unit'), 'unsupported': _('Attach the invoice, meter reading or ticket'),
+                  'negative': _('Delete the entry and record it again'), 'missing_months': _('Record the missing months'),
+                  'outlier': _('Check the quantity or explain the change to the verifier'), 'pcaf': _('Complete the exposure'),
+                  'no_month': _('Set the month on the entry')} %}
+  {% set crit = dq.issues|selectattr('severity', 'equalto', 'critical')|list|length %}
+  <div class="row g-3 mb-3">{% for l, v, c in [(_('Entries checked'), dq.entries, ''), (_('Critical (block review)'), crit, 'text-danger' if crit else 'text-success'), (_('Warnings (explain)'), dq.issues|length - crit, '')] %}
+    <div class="col-md-4"><div class="ecx-card ecx-stat"><div class="n {{ c }}">{{ v }}</div><div class="l">{{ l }}</div></div></div>{% endfor %}</div>
+  <div class="card"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Severity') }}</th><th>{{ _('Check') }}</th><th>{{ _('Detail') }}</th><th>{{ _('How to fix') }}</th></tr></thead><tbody>
+    {% for i in dq.issues %}<tr class="{{ 'table-danger' if i.severity == 'critical' else 'table-warning' }}">
+      <td>{{ _('Critical') if i.severity == 'critical' else _('Warning') }}</td><td>{{ names.get(i.code, i.code) }}</td><td>{{ i.message }}</td>
+      <td>{% set fx = fixes.get(i.code) %}
+        {% if i.code == 'unsupported' and i.entry_id %}<a href="{{ url_for('carbon.activity_files', entry_id=i.entry_id) }}">{{ fx }} →</a>
+        {% elif i.code == 'pcaf' %}<a href="{{ url_for('carbon.financed', period=p.id) }}">{{ fx }} →</a>
+        {% elif i.entry_id %}<a href="{{ url_for('carbon.activity', period=p.id, _anchor='e' ~ i.entry_id) }}">{{ fx }} →</a>
+        {% elif i.code == 'missing_months' %}<a href="{{ url_for('carbon.activity', period=p.id, _anchor='add') }}">{{ fx }} →</a>
+        {% else %}{{ fx or '' }}{% endif %}</td></tr>
+    {% else %}<tr><td colspan="4">{% if dq.entries %}<div class="text-success py-2"><i class="bi bi-check2-circle"></i> {{ _('No data-quality issue in') }} {{ dq.entries }} {{ _('entries.') }}</div>
+      {% else %}{{ cx.empty('bi-inbox', _('There is no activity data to check yet.'), none, 'carbon.activity', _('Record activity data'), {'period': p.id}) }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+  {% if dq.entries and not crit %}<div class="ecx-next mt-3"><span>{{ _('No critical issue: the inventory can be submitted for review.') }}</span><a class="btn btn-sm btn-success" href="{{ url_for('carbon.workflow', period=p.id) }}">{{ _('Review & approval') }} <i class="bi bi-arrow-right"></i></a></div>{% endif %}
 {% endblock %}

@@ -1,17 +1,15 @@
-{% extends 'base.html' %}
-{% block title %}{{ _('FRA Compliance') }} — ComplyNex{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">
-{% endblock %}
-{% block content %}
-<div dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
-
-  <div class="ecx-hero ecx-carbon">
-    <div class="ecx-eyebrow">{{ _('Carbon Footprint & Climate') }}</div>
-    <h1><i class="bi bi-bank me-2"></i>{{ _('FRA Decision 36/2026 Compliance') }} — {{ period.label if period else _('No period') }}</h1>
-    <p>{{ _('Annual carbon report, accredited verification, and the 20%% offset obligation — the full legal cycle in one place.') }}</p>
-  </div>
-
+{% extends 'carbon/_layout.html' %}
+{% set cx_active = 'carbon.fra_compliance' %}
+{% block title %}{{ _('Regulator submission & offsets') }} — ComplyNex{% endblock %}
+{% block cx_icon %}bi-bank{% endblock %}
+{% block cx_title %}{{ _('Steps 8–9 · Regulator submission, verification & offsets') }} — {{ period.label if period else _('No period') }}{% endblock %}
+{% block cx_lead %}{{ _('The annual carbon report, its independent verification, submission to the regulator, and the offset obligation that follows.') }}{% endblock %}
+{% block cx_badge %}<span class="ecx-pack-badge"><i class="bi bi-box-seam"></i> {{ _('FRA framework (Egypt) · content pack') }}</span>{% endblock %}
+{% block cx_about %}{{ cx.about(
+    _('The regulator-specific end of the journey, as defined by the FRA carbon-footprint rules: the report goes to an accredited verifier, is certified and submitted, and an offset obligation is then created.'),
+    _('Where these rules apply, compliance is a licence condition. If they do not apply to you (see the applicability check), steps 8 and 9 are shown as not applicable.'),
+    _('Move the report status as it progresses, with the verifier name and notes. After submission, log each certificate purchase with its registry reference.')) }}{% endblock %}
+{% block cx_body %}
   {% if not period %}
   <div class="alert alert-warning">{{ _('No reporting period exists yet. Create one in the ESG module first.') }}</div>
   {% else %}
@@ -120,7 +118,7 @@
           {% if 'scope1' in enabled %}<li>{{ _('Scope 1:') }} <strong>{{ totals.scope1 }}</strong> {{ _('tCO2e') }}</li>{% endif %}
           {% if 'scope2' in enabled %}<li>{{ _('Scope 2 (location):') }} <strong>{{ totals.scope2_location }}</strong> {{ _('tCO2e') }}</li>{% endif %}
           {% if 'scope3' in enabled %}<li>{{ _('Scope 3:') }} <strong>{{ totals.scope3 }}</strong> {{ _('tCO2e') }}</li>
-          {% else %}<li class="text-muted">{{ _('Scope 3: excluded from reporting boundary') }}</li>{% endif %}
+          {% else %}<li class="text-muted">{{ _('Scope 3: recorded but outside the reporting boundary (not declared)') }}</li>{% endif %}
         </ul>
       </div>
     </div>
@@ -128,7 +126,7 @@
 
   <!-- Offset obligation -->
   <div class="ecx-card p-4 mb-4">
-    <h5><i class="bi bi-arrow-repeat me-1"></i>{{ _('Offset obligation (20%% of declared emissions, within 90 days of submission)') }}</h5>
+    <h5><i class="bi bi-arrow-repeat me-1"></i>{{ _('Offset obligation') }} <span class="small text-muted fw-normal">({{ _('%(p)s per cent of declared emissions, within %(d)s days of submission', p=offset_pct, d=offset_days) }})</span></h5>
     {% if obligation %}
       <div class="row g-3 align-items-center mb-3">
         <div class="col-auto">
@@ -202,9 +200,10 @@
       </form>
       {% endif %}
     {% else %}
-      <p class="text-muted small mb-0">{{ _("The obligation is created automatically the moment the report status is moved to Submitted: 20%% of the declared total, due within 90 days. Certificates are purchased through the FRA Climate Project Registry in the regulated voluntary carbon market.") }}</p>
+      {{ cx.empty('bi-hourglass', _('No offset obligation yet.'), none) }}
+      <p class="text-muted small mb-0">{{ _('It is created automatically when the report status is moved to Submitted: %(p)s per cent of the declared total, due within %(d)s days. Certificates are bought through the climate-project registry named by the regulator.', p=offset_pct, d=offset_days) }}</p>
     {% endif %}
   </div>
   {% endif %}
-</div>
+  <div class="row g-3 mb-3"><div class="col-lg-7">{{ cx.legal_table(legal) }}</div></div>
 {% endblock %}

@@ -1,0 +1,26 @@
+{#- Layout of every ESG page (same visual language as Carbon): hero, one ESG navigation,
+    the "what is this page" panel, then the body. A page sets esg_active and fills
+    esg_title, esg_icon, esg_lead, esg_about and esg_body. -#}
+{% extends 'base.html' %}
+{% import 'carbon/_ui.html' as cx with context %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/esg-carbon.css') }}">{% endblock %}
+{% block content %}
+<div class="ecx-page" dir="{{ 'rtl' if get_locale()|string == 'ar' else 'ltr' }}">
+  <div class="ecx-hero ecx-esg {{ 'ecx-compact' if esg_active != 'esg.dashboard' }}">
+    <div class="ecx-eyebrow">{{ _('Sustainability') }} · {{ _('ESG Management') }}{% block esg_eyebrow %}{% endblock %}</div>
+    <h1><i class="bi {% block esg_icon %}bi-globe-americas{% endblock %} me-2"></i>{% block esg_title %}{% endblock %}</h1>
+    <p>{% block esg_lead %}{% endblock %}</p>
+  </div>
+  {% set act = {'esg.scoring': 'esg.dashboard'}.get(esg_active, esg_active) %}
+  <nav class="ecx-flow-nav ecx-esg no-print" aria-label="{{ _('ESG Management') }}">
+    {% for ep, icon, label in [('esg.dashboard', 'bi-speedometer2', _('Dashboard')), ('esg.materiality', 'bi-bullseye', _('Materiality Assessment')),
+                               ('esg.disclosures', 'bi-list-check', _('Disclosure Tracker')), ('esg.framework_view', 'bi-diagram-3', _('Framework & Weights')),
+                               ('esg.methodology', 'bi-info-circle', _('Methodology'))] %}
+    <a class="{{ 'active' if act == ep }}" href="{{ url_for(ep) }}"><i class="bi {{ icon }}"></i>{{ label }}</a>
+    {% endfor %}
+    {% if current_user.can_view('carbon') %}<span class="sep"></span><a href="{{ url_for('carbon.dashboard') }}"><i class="bi bi-cloud-haze2"></i>{{ _('Carbon reporting') }} <i class="bi bi-arrow-right"></i></a>{% endif %}
+  </nav>
+  {% block esg_about %}{% endblock %}
+  {% block esg_body %}{% endblock %}
+</div>
+{% endblock %}
