@@ -319,8 +319,10 @@ def install_regulatory_report(code, name, frequency, *, due_day=None, due_month=
     r = db.execute("SELECT id FROM regulatory_reports WHERE report_code = %s", (code,)).fetchone()
     if r:
         return r['id']
+    # '1' (a quoted literal, not TRUE or a bound int): the legacy is_active column is INTEGER on
+    # migrated installations and BOOLEAN on others; PostgreSQL casts '1' to either.
     return db.execute("""INSERT INTO regulatory_reports (report_code, report_name, regulator_id, frequency, due_day,
                          due_month, description, submission_method, responsible_department, is_active)
-                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,TRUE) RETURNING id""",
+                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'1') RETURNING id""",
                       (code, name, regulator_id, frequency, due_day, due_month, description, submission_method,
                        responsible_department)).fetchone()['id']

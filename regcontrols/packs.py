@@ -147,8 +147,13 @@ def enable(code, user_id=None, db=None):
                (code, pack.version, datetime.now(), user_id, datetime.now()))
     db.commit()
     _reset_cache()
-    from . import engine
-    engine.load_checks(force=True)
+    # The pack is enabled once committed; anything after this (reloading checks)
+    # must never fail the request — log and continue, checks load on next use.
+    try:
+        from . import engine
+        engine.load_checks(force=True)
+    except Exception:
+        logger.warning('regcontrols: pack %s enabled, check reload deferred', code, exc_info=True)
     return summary
 
 
