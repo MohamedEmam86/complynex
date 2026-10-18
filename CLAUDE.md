@@ -4,6 +4,19 @@ ComplyNex is a Flask compliance-management platform (sanctions & PEP screening, 
 risk, governance, policies, declarations, whistleblowing, training, ESG/carbon, Integrys Academy) built for
 Egyptian banks, fintechs and payment service providers (CBE / FRA context). Owner: Mohamed Emam.
 
+## Product principle (most important)
+ComplyNex is a **general, configurable Compliance Management System** that any organisation can adopt to meet
+**any** regulatory or internal requirement — banks, PSPs, fintechs, NBFIs, insurers, listed companies or
+non-financial firms, under any regulator (CBE, FRA, EMLCU, PDPL, ITIDA, or foreign frameworks).
+- Never build features tied to one company, sector or regulator. Model them as **configuration**:
+  regulators, frameworks and regulations as data; requirements → controls → tests → evidence; parameters
+  (limits, thresholds, deadlines) per jurisdiction / licence type with legal references; sector-specific
+  logic as optional **packs** that can be enabled per tenant (e.g. an "FRA NBFI pack", a "CBE PSP pack").
+- A specific source (e.g. docs/regulatory/FRA_NBFI_CONTROL_MAP.md) is **one example pack** used to prove the
+  framework — the engine, screens and data model must work unchanged for a different regulator's pack.
+- Industry-specific data (loans, merchants, policies…) enters through generic import/API adapters into
+  pack-owned tables; core modules must not depend on any pack.
+
 ## How work flows
 - You work on **code only**. This repository never contains data: no `.env`, databases, uploads, backups,
   watchlists or personal data. Never add such files, and never commit secrets, real names or customer data.
