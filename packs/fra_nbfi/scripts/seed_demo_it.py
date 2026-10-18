@@ -20,7 +20,7 @@ Demo data for IT / cyber / business-continuity evidence — FICTIONAL company
 "Nile Microfinance S.A.E.". Every name, domain and figure is invented. Use
 only on demo / test installations. Enables the fra_nbfi pack if needed.
 
-    python packs/fra_nbfi/scripts/seed_demo_it.py [--with-demo-parameters]
+    python packs/fra_nbfi/scripts/seed_demo_it.py [--no-demo-parameters]
 
 Deliberate gaps: last DR test older than the limit and partial, one system
 backed up on-site only and one stale backup, the freeze-order integration not
@@ -37,13 +37,12 @@ from datetime import date, datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-DEMO_PARAMS = {'it.dr_test_max_age_months': '12', 'it.offsite_backup_max_age_days': '7',
-               'it.risk_register_max_age_days': '180'}
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--with-demo-parameters', action='store_true')
+    ap.add_argument('--with-demo-parameters', action='store_true', help='(default; kept for compatibility)')
+    ap.add_argument('--no-demo-parameters', action='store_true', help='leave the regulatory parameters empty')
     args = ap.parse_args()
     from app import create_app
     from database.db import get_db
@@ -57,12 +56,15 @@ def main():
             return 0
         if not packs.is_enabled('fra_nbfi'):
             print('enabling the fra_nbfi pack:', packs.enable('fra_nbfi'))
-        if args.with_demo_parameters:
-            for key, value in DEMO_PARAMS.items():
-                db.execute("""UPDATE rc_parameters SET value_text = %s, needs_review = TRUE,
-                              review_note = 'DEMO VALUE — illustrative only, not a regulatory value'
-                              WHERE param_key = %s AND value_text IS NULL AND status = 'active'""", (value, key))
-            db.commit()
+        prof = db.execute("SELECT legal_name_en FROM corp_profile WHERE id = 1").fetchone()
+        if prof and prof['legal_name_en'] and prof['legal_name_en'] != 'Nile Microfinance S.A.E.':
+            print('A real corporate profile exists — refusing to add demo data to this installation.')
+            return 1
+        from packs.fra_nbfi import demo
+        demo.mark_demo_tenant()
+        if not args.no_demo_parameters:
+            filled = demo.apply_demo_parameters(db)
+            print(f"  demo parameter values: {sum(v == 'set' for v in filled.values())} set (marked 'DEMO VALUE')")
         uid = db.execute("SELECT id FROM users ORDER BY id LIMIT 1").fetchone()['id']
         t, now = date.today(), datetime.now()
         R.save_site({'name': 'Head office data room (demo)', 'site_type': 'primary', 'location': 'Cairo'}, uid, db)
