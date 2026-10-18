@@ -40,7 +40,18 @@ ALLOWED_MODULES = {
     'governance': 'governance',
     'internal_audit': 'internal_audit',
     'aml': 'aml',
+    'regcontrols': 'regcontrols',
+    'prudential': 'prudential',
+    'cyber': 'cyber',
+    'carbon': 'carbon',
 }
+
+
+def register_module(module, perm_module=None):
+    """Let another module or a content pack use the attachment widget for its
+    records. perm_module is the permission module checked on upload/download
+    (defaults to `module`)."""
+    ALLOWED_MODULES[module] = perm_module or module
 
 
 def _check_module(module):

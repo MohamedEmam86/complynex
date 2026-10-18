@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('KYC files') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('KYC files') }}</h3>
+    {{ aa.nav('amlkyc.kyc_home') }}
+    <ul class="nav nav-tabs small mb-2">{% for c, s in aa_subjects.items() %}<li class="nav-item"><a class="nav-link {{ 'active' if c == code }}" href="{{ url_for('amlkyc.kyc_home', subject=c) }}">{{ s.label_ar if get_locale() == 'ar' else s.label_en }}</a></li>{% endfor %}</ul>
+    <div class="btn-group btn-group-sm mb-2">{% for v, l in [('', _('All')), ('incomplete', _('Incomplete')), ('unrated', _('Not rated')), ('high', _('High risk'))] %}
+        <a class="btn btn-outline-secondary {{ 'active' if f_filter == v }}" href="{{ url_for('amlkyc.kyc_home', subject=code, filter=v or None) }}">{{ l }}</a>{% endfor %}</div>
+    <div class="card mb-3"><div class="table-responsive" style="max-height: 560px"><table class="table table-sm table-hover mb-0 small align-middle">
+        <thead><tr><th>{{ _('Name') }}</th><th>{{ _('Type') }}</th><th class="text-end">{{ _('Complete') }}</th><th>{{ _('Missing') }}</th><th>{{ _('Risk') }}</th><th>{{ _('Next review') }}</th><th>{{ _('BO declaration') }}</th><th>{{ _('Onboarding') }}</th></tr></thead><tbody>
+        {% for r in rows %}<tr class="{{ 'text-muted' if not r.active }}"><td><a href="{{ url_for('amlkyc.kyc_file', code=code, subject_id=r.id) }}">{{ r.name }}</a></td>
+            <td>{{ _('Entity') if r.kind == 'entity' else _('Individual') }}</td>
+            <td class="text-end {{ 'text-danger' if r.score < 100 }}">{{ r.score }}%</td><td>{{ r.missing|join(', ')|truncate(60) or '-' }}</td>
+            <td>{% if r.rating %}<span class="badge bg-{{ {'high': 'danger', 'medium': 'warning text-dark', 'low': 'success'}.get(r.rating.band, 'secondary') }}">{{ r.rating.band }} {{ r.rating.score }}</span>{% else %}<span class="text-danger">{{ _('not rated') }}</span>{% endif %}</td>
+            <td class="{{ 'text-danger' if r.rating and r.rating.next_review_date and r.rating.next_review_date < today }}">{{ r.rating.next_review_date if r.rating and r.rating.next_review_date else '-' }}</td>
+            <td>{% if r.kind == 'entity' %}{{ _('Yes') if r.declaration else _('No') }}{% else %}-{% endif %}</td>
+            <td>{{ r.onboarding.status if r.onboarding else _('pending') }}</td></tr>
+        {% else %}<tr><td colspan="8" class="text-muted text-center py-3">{{ _('No records.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    <div class="card"><div class="card-header"><strong>{{ _('Required KYC fields') }}</strong> <span class="small text-muted">{{ _('(the catalogue the completeness score uses; editable)') }}</span></div>
+        <div class="table-responsive"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Key') }}</th><th>{{ _('Label') }}</th><th>{{ _('Source') }}</th><th>{{ _('Applies to') }}</th><th>{{ _('Required') }}</th><th>{{ _('Pack') }}</th></tr></thead><tbody>
+        {% for f in fields %}<tr><td><code>{{ f.field_key }}</code></td><td>{{ f.label_ar if get_locale() == 'ar' and f.label_ar else f.label_en }}</td>
+            <td>{{ f.column_names|join(', ') if f.source == 'column' else _('captured in ComplyNex') }}</td><td>{{ f.applies_to }}</td><td>{{ _('Yes') if f.is_required else _('No') }}</td><td>{{ f.pack_code or '-' }}</td></tr>{% endfor %}</tbody></table></div>
+        {% if aa_can_edit %}<form method="post" action="{{ url_for('amlkyc.kyc_fields_save') }}" class="card-body border-top row g-1 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="subject" value="{{ code }}">
+            <div class="col-md-2"><input name="field_key" class="form-control form-control-sm" placeholder="{{ _('key') }}" required></div>
+            <div class="col-md-2"><input name="label_en" class="form-control form-control-sm" placeholder="{{ _('Label (English)') }}" required></div>
+            <div class="col-md-2"><input name="label_ar" class="form-control form-control-sm" placeholder="{{ _('Label (Arabic)') }}" dir="rtl"></div>
+            <div class="col-md-3"><input name="column_names" class="form-control form-control-sm" placeholder="{{ _('Record columns, comma separated (empty = captured here)') }}"></div>
+            <div class="col-md-1"><select name="applies_to" class="form-select form-select-sm"><option value="all">{{ _('All') }}</option><option value="individual">{{ _('Individual') }}</option><option value="entity">{{ _('Entity') }}</option></select></div>
+            <div class="col-md-1 form-check pt-1"><input type="checkbox" name="is_required" value="1" class="form-check-input" checked id="fr"><label for="fr" class="form-check-label">{{ _('Required') }}</label></div>
+            <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">{{ _('Save') }}</button></div></form>{% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('Content packs') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Content packs') }}</h3>
+    {{ rc.nav('regcontrols.packs_list') }}
+    <p class="small text-muted">{{ _('A content pack adds ready-made content for one regulator or sector: its framework and requirements, controls, parameters and, where needed, sector modules with automated checks. The core works without any pack. Disabling a pack switches its controls off and hides its pages; its data is kept and comes back when the pack is enabled again.') }}</p>
+    <div class="row g-3">
+    {% for item in packs %}{% set p = item.pack %}{% set st = item.state %}
+        <div class="col-lg-6"><div class="card h-100 {{ 'border-success' if st.enabled }}">
+            <div class="card-header d-flex justify-content-between"><strong>{{ rc_loc(p.name_en, p.name_ar) }}</strong>
+                <span class="badge bg-{{ 'success' if st.enabled else 'secondary' }}">{{ _('Enabled') if st.enabled else _('Disabled') }}</span></div>
+            <div class="card-body small">
+                <p>{{ rc_loc(p.description_en, p.description_ar) }}</p>
+                <p class="text-muted mb-2"><code>{{ p.code }}</code> · {{ _('version') }} {{ p.version }}{% if st.installed_at %} · {{ _('installed') }} {{ st.installed_at.strftime('%Y-%m-%d') }} (v{{ st.installed_version }}){% endif %}</p>
+                {% if p.check_modules %}<p class="mb-1">{{ _('Automated checks from') }}: <code>{{ p.check_modules|join(', ') }}</code></p>{% endif %}
+                {% if p.permissions %}<p class="mb-1">{{ _('Module permissions') }}: {% for m, en, ar, lv in p.permissions %}{{ rc_loc(en, ar) }}{{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+                {% if rc_can_admin %}
+                <form method="post" action="{{ url_for('regcontrols.pack_action', code=p.code, action='disable' if st.enabled else 'enable') }}" class="mt-2"
+                      data-confirm="{{ _('Disable this pack? Its controls will be switched off.') if st.enabled else _('Enable this pack? Its content will be installed (existing edits are kept).') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-sm {{ 'btn-outline-danger' if st.enabled else 'btn-primary' }}">{{ _('Disable') if st.enabled else _('Enable') }}</button>
+                    {% if st.enabled %}<button formaction="{{ url_for('regcontrols.pack_action', code=p.code, action='enable') }}" class="btn btn-sm btn-outline-secondary">{{ _('Re-install / update content') }}</button>{% endif %}
+                </form>
+                {% endif %}
+            </div>
+        </div></div>
+    {% else %}
+        <div class="col-12 text-muted">{{ _('No content packs are installed on this server.') }}</div>
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}

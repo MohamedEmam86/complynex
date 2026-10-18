@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('Edit control') }} {{ control.control_code }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-3">{{ _('Edit control') }} {{ control.control_code }}</h3>
+    <form method="post" class="card"><div class="card-body">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">{{ _('Title (English)') }}</label>
+                <input name="title_en" class="form-control" value="{{ control.title_en }}" required></div>
+            <div class="col-md-6"><label class="form-label">{{ _('Title (Arabic)') }}</label>
+                <input name="title_ar" class="form-control" dir="rtl" value="{{ control.title_ar or '' }}"></div>
+            <div class="col-md-6"><label class="form-label">{{ _('Requirement (English)') }}</label>
+                <textarea name="requirement_en" class="form-control" rows="3">{{ control.requirement_en or '' }}</textarea></div>
+            <div class="col-md-6"><label class="form-label">{{ _('Requirement (Arabic)') }}</label>
+                <textarea name="requirement_ar" class="form-control" dir="rtl" rows="3">{{ control.requirement_ar or '' }}</textarea></div>
+            <div class="col-md-6"><label class="form-label">{{ _('Test procedure (English)') }}</label>
+                <textarea name="test_procedure_en" class="form-control" rows="3">{{ control.test_procedure_en or '' }}</textarea></div>
+            <div class="col-md-6"><label class="form-label">{{ _('Test procedure (Arabic)') }}</label>
+                <textarea name="test_procedure_ar" class="form-control" dir="rtl" rows="3">{{ control.test_procedure_ar or '' }}</textarea></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Area') }}</label>
+                <select name="area" class="form-select"><option value="">-</option>{% for k in rc_vocab.AREAS %}<option value="{{ k }}" {{ 'selected' if control.area == k }}>{{ rc_label('AREAS', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Control type') }}</label>
+                <select name="control_type" class="form-select">{% for k in rc_vocab.CONTROL_TYPES %}<option value="{{ k }}" {{ 'selected' if control.control_type == k }}>{{ rc_label('CONTROL_TYPES', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-6"><label class="form-label">{{ _('Automated check') }}</label>
+                <select name="check_key" class="form-select"><option value="">{{ _('None — tested by evidence or manual test') }}</option>
+                    {% for key, name, module in checks %}<option value="{{ key }}" {{ 'selected' if control.check_key == key }}>{{ name }} ({{ key }})</option>{% endfor %}
+                    {% if control.check_key and control.check_key not in checks|map(attribute=0)|list %}<option value="{{ control.check_key }}" selected>{{ control.check_key }} — {{ _('not available') }}</option>{% endif %}
+                </select>
+                <div class="form-text">{{ _('Checks come with the core and with enabled content packs.') }}</div></div>
+            <div class="col-md-12"><label class="form-label">{{ _('Check settings (JSON)') }}</label>
+                <textarea name="check_config" class="form-control font-monospace small" rows="2" dir="ltr">{{ (control.check_config or {})|tojson }}</textarea>
+                <div class="form-text">{{ _('Optional settings read by the check, e.g. which fields are required or which list sources are mandatory.') }}</div></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Frequency') }}</label>
+                <select name="frequency" class="form-select">{% for k in rc_vocab.FREQUENCIES %}<option value="{{ k }}" {{ 'selected' if control.frequency == k }}>{{ rc_label('FREQUENCIES', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Criticality') }}</label>
+                <select name="criticality" class="form-select">{% for k in rc_vocab.CRITICALITY %}<option value="{{ k }}" {{ 'selected' if control.criticality == k }}>{{ rc_label('CRITICALITY', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Owner role') }}</label>
+                <select name="owner_role" class="form-select"><option value="">-</option>{% for k in rc_vocab.OWNER_ROLES %}<option value="{{ k }}" {{ 'selected' if control.owner_role == k }}>{{ rc_label('OWNER_ROLES', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Owner (receives alerts)') }}</label>
+                <select name="owner_user_id" class="form-select"><option value="">{{ _('Not assigned') }}</option>{% for u in users %}<option value="{{ u.id }}" {{ 'selected' if control.owner_user_id == u.id }}>{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Linked module') }}</label>
+                <input name="linked_module" class="form-control" value="{{ control.linked_module or '' }}"></div>
+            <div class="col-md-5"><label class="form-label">{{ _('Linked parameters (comma separated keys)') }}</label>
+                <input name="linked_params" class="form-control" value="{{ (control.linked_params or [])|join(', ') }}"></div>
+            <div class="col-md-4"><label class="form-label">{{ _('Linked ERM control (Risk Management)') }}</label>
+                <select name="erm_control_id" class="form-select"><option value="">-</option>{% for e in erm_controls %}<option value="{{ e.id }}" {{ 'selected' if control.erm_control_id == e.id }}>{{ e.control_code }} — {{ e.control_name }}</option>{% endfor %}</select></div>
+            <div class="col-md-6"><label class="form-label d-block">{{ _('Applies to licence types') }}</label>
+                {% for k in rc_vocab.LICENCE_TYPES %}
+                <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="licence_types" value="{{ k }}" id="lic_{{ k }}" {{ 'checked' if k in (control.licence_types or []) }}>
+                    <label class="form-check-label" for="lic_{{ k }}">{{ rc_label('LICENCE_TYPES', k) }}</label></div>
+                {% endfor %}</div>
+            <div class="col-md-3"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="auto_create_case" id="auto_case" {{ 'checked' if control.auto_create_case }}>
+                <label class="form-check-label" for="auto_case">{{ _('Open a case when this control fails') }}</label></div></div>
+            <div class="col-md-3"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="is_active" id="is_active" {{ 'checked' if control.is_active }}>
+                <label class="form-check-label" for="is_active">{{ _('Active') }}</label></div></div>
+        </div>
+    </div>
+    <div class="card-footer d-flex gap-2">
+        <button class="btn btn-primary">{{ _('Save') }}</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('regcontrols.control_detail', control_id=control.id) }}">{{ _('Cancel') }}</a>
+    </div></form>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('New client') if kind == 'clients' else _('New loan') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{{ _('New client') if kind == 'clients' else _('New loan') }}</h3>
+    <p class="small text-muted">{{ _('Manual entry for small portfolios. Larger portfolios: use Import data.') }}{% if kind == 'clients' %} {{ _('The national ID is stored only as a secure hash.') }}{% endif %}</p>
+    <form method="post" class="card"><div class="card-body"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+        {% for col in cols[0] + cols[1] %}
+            <div class="col-md-4"><label class="form-label small mb-0">{{ col }}{% if col in cols[0] %} *{% endif %}</label>
+            {% if col == 'product_code' %}<select name="product_code" class="form-select form-select-sm"><option value="">-</option>{% for p in products %}<option value="{{ p.code }}" {{ 'selected' if form.get(col) == p.code }}>{{ p.code }} — {{ rc_loc(p.name_en, p.name_ar) }}</option>{% endfor %}</select>
+            {% elif col == 'status' %}<select name="status" class="form-select form-select-sm">{% for s in ['application', 'approved'] %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select>
+            {% elif col == 'client_type' %}<select name="client_type" class="form-select form-select-sm"><option value="individual">individual</option><option value="entity">entity</option></select>
+            {% elif col.endswith('_date') %}<input type="date" name="{{ col }}" class="form-control form-control-sm" value="{{ form.get(col, '') }}">
+            {% else %}<input name="{{ col }}" class="form-control form-control-sm" value="{{ form.get(col, '') }}" {{ 'required' if col in cols[0] }}>{% endif %}</div>
+        {% endfor %}
+        </div>
+        {% if kind == 'loans' %}<p class="small text-muted mt-3 mb-0">{{ _('New loans start as application / approved. Mark them disbursed from the loan page once the file is complete.') }}</p>{% endif %}
+    </div><div class="card-footer"><button class="btn btn-primary">{{ _('Save') }}</button> <a class="btn btn-outline-secondary" href="{{ url_for('lending.loans') }}">{{ _('Cancel') }}</a></div></form>
+</div>
+{% endblock %}

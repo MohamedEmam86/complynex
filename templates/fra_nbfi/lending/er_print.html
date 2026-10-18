@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="{{ get_locale() }}" dir="{{ 'rtl' if get_locale()|string == 'ar' else 'ltr' }}">
+<head><meta charset="utf-8"><title>{{ _('Early repayment disclosure') }} — {{ b.loan.loan_ref }}</title>
+<style>body{font-family:Arial,sans-serif;margin:40px;color:#111} table{border-collapse:collapse;width:100%;margin:16px 0} td,th{border:1px solid #999;padding:6px 8px;text-align:start} .sig{margin-top:60px;display:flex;justify-content:space-between} .sig div{width:40%;border-top:1px solid #000;padding-top:6px}</style></head>
+<body>
+<h2>{{ company_name }}</h2>
+<h3>{{ _('Early repayment disclosure') }}</h3>
+<p>{{ _('Loan') }}: {{ b.loan.loan_ref }} · {{ _('Client') }}: {{ b.client.full_name }} ({{ b.client.client_ref }}) · {{ _('Date') }}: {{ er.disclosed_at.strftime('%Y-%m-%d') if er.disclosed_at else '' }}</p>
+<table>
+<tr><th>{{ _('Remaining cost under the original schedule') }}</th><td>EGP {{ er.original_remaining_cost }}</td></tr>
+<tr><th>{{ _('Settlement amount') }}</th><td>EGP {{ er.settlement_amount }}</td></tr>
+<tr><th>{{ _('Early-repayment fee') }}</th><td>EGP {{ er.prepayment_fee }}</td></tr>
+<tr><th>{{ _('New total cost') }}</th><td>EGP {{ er.new_total_cost }}</td></tr>
+</table>
+<p>{{ er.disclosure_text_ar }}</p>
+<p dir="ltr">{{ er.disclosure_text_en }}</p>
+<p>{{ _('I confirm that I received this disclosure, understand the cost impact of repaying early, and consent to the early repayment.') }}</p>
+<div class="sig"><div>{{ _('Client signature') }}</div><div>{{ _('Company representative') }}</div></div>
+<script nonce="{{ csp_nonce }}">window.print();</script>
+</body></html>

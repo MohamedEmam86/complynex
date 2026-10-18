@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('Evidence') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Evidence') }}</h3>
+    {{ rc.nav('regcontrols.evidence_list') }}
+    <form method="get" class="row g-2 mb-3 align-items-end">
+        <div class="col-auto">
+            <label class="form-label small mb-0">{{ _('State') }}</label>
+            <select name="state" class="form-select form-select-sm" data-auto-submit>
+                <option value="">{{ _('All') }}</option>
+                {% for s, l in [('valid', _('Valid')), ('expiring', _('Expiring soon')), ('expired', _('Expired')), ('pending', _('Pending review')), ('rejected', _('Rejected'))] %}
+                <option value="{{ s }}" {{ 'selected' if f_state == s }}>{{ l }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-auto small text-muted">{{ _('To add evidence, open the control and choose "Add evidence".') }}</div>
+    </form>
+    <div class="card"><div class="table-responsive">
+        <table class="table table-hover table-sm mb-0 align-middle">
+            <thead><tr><th>{{ _('Control') }}</th><th>{{ _('Evidence') }}</th><th>{{ _('Reference') }}</th><th>{{ _('Valid from') }}</th><th>{{ _('Valid to') }}</th><th>{{ _('State') }}</th></tr></thead>
+            <tbody>
+            {% for e in items %}
+            <tr>
+                <td class="text-nowrap"><a href="{{ url_for('regcontrols.control_detail', control_id=e.control_id) }}">{{ e.control_code }}</a></td>
+                <td><a href="{{ url_for('regcontrols.evidence_detail', evidence_id=e.id) }}">{{ e.title }}</a></td>
+                <td class="small">{{ e.reference_no or '-' }}</td>
+                <td class="small">{{ e.valid_from or '-' }}</td><td class="small">{{ e.valid_to or _('no expiry') }}</td>
+                <td>{{ rc.evidence_state(e.state) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-4">{{ _('No evidence recorded yet.') }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div></div>
+</div>
+{% endblock %}

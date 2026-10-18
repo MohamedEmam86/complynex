@@ -23127,6 +23127,4583 @@ msgstr "فشل تنزيل المرفق."
 
 # ============================================
 # WHISTLEBLOWING FORM TRANSLATIONS
+
+# --- regcontrols (generic compliance control framework) ---
+msgid "Admin (approve parameters, edit library)"
+msgstr "مسؤول (اعتماد المعايير وتعديل المكتبة)"
+
+
+msgid "Compliance Dashboard"
+msgstr "لوحة الالتزام"
+
+
+msgid "Findings & Corrective Actions"
+msgstr "الملاحظات والإجراءات التصحيحية"
+
+msgid "Control Alerts"
+msgstr "تنبيهات الضوابط"
+
+msgid "Regulatory Parameters"
+msgstr "المعايير الرقابية"
+
+msgid "Pass"
+msgstr "ناجح"
+
+msgid "Fail"
+msgstr "فاشل"
+
+msgid "No check"
+msgstr "لا يوجد فحص"
+
+msgid "Not applicable"
+msgstr "لا ينطبق"
+
+msgid "Not run yet"
+msgstr "لم يُشغَّل بعد"
+
+msgid "Action plan"
+msgstr "خطة عمل"
+
+msgid "In progress"
+msgstr "قيد التنفيذ"
+
+msgid "Pending verification"
+msgstr "بانتظار التحقق"
+
+msgid "Reopened"
+msgstr "أعيد فتحها"
+
+msgid "Expiring soon"
+msgstr "قارب على الانتهاء"
+
+msgid "Expired"
+msgstr "منتهي الصلاحية"
+
+msgid "Pending review"
+msgstr "بانتظار المراجعة"
+
+
+msgid "Internal audit"
+msgstr "المراجعة الداخلية"
+
+msgid "Self-identified"
+msgstr "مكتشفة ذاتيًا"
+
+msgid "External audit"
+msgstr "المراجعة الخارجية"
+
+msgid "Control failure"
+msgstr "فشل ضابط رقابي"
+
+msgid "Control failed"
+msgstr "فشل الضابط"
+
+msgid "Evidence expiring"
+msgstr "دليل قارب على الانتهاء"
+
+msgid "Evidence expired"
+msgstr "دليل منتهي الصلاحية"
+
+msgid "Finding overdue"
+msgstr "ملاحظة متأخرة"
+
+msgid "Repeated violation"
+msgstr "مخالفة متكررة"
+
+msgid "Controls"
+msgstr "الضوابط"
+
+msgid "Parameters"
+msgstr "المعايير"
+
+msgid "Scheduled"
+msgstr "مجدول"
+
+msgid "Verification"
+msgstr "التحقق"
+
+msgid "API"
+msgstr "واجهة برمجية"
+
+msgid "Event"
+msgstr "واقعة"
+
+msgid "Open and acknowledged"
+msgstr "المفتوحة والمستلمة"
+
+msgid "Raised"
+msgstr "تاريخ الإصدار"
+
+msgid "Escalated on"
+msgstr "تم التصعيد في"
+
+msgid "Head of Compliance"
+msgstr "رئيس إدارة الالتزام"
+
+msgid "Acknowledge"
+msgstr "تأكيد الاستلام"
+
+msgid "Resolution note"
+msgstr "ملاحظة المعالجة"
+
+msgid "No alerts."
+msgstr "لا توجد تنبيهات."
+
+msgid "Alerts that pass their control on the next run close automatically. Open alerts are escalated to the Head of Compliance after the number of days set in parameter rc.escalation_days."
+msgstr "تُغلق التنبيهات تلقائيًا عند نجاح الضابط في التشغيل التالي. وتُصعَّد التنبيهات المفتوحة إلى رئيس إدارة الالتزام بعد عدد الأيام المحدد في المعيار rc.escalation_days."
+
+msgid "Run now"
+msgstr "تشغيل الآن"
+
+msgid "Add evidence"
+msgstr "إضافة دليل"
+
+msgid "Raise finding"
+msgstr "تسجيل ملاحظة"
+
+msgid "Requirement and expected system behaviour"
+msgstr "المتطلب والسلوك المتوقع من النظام"
+
+msgid "Test procedure"
+msgstr "إجراء الاختبار"
+
+msgid "Run history"
+msgstr "سجل التشغيل"
+
+msgid "Affected"
+msgstr "المتأثر"
+
+msgid "Trigger"
+msgstr "سبب التشغيل"
+
+msgid "This control has not been run yet."
+msgstr "لم يتم تشغيل هذا الضابط بعد."
+
+msgid "Warning window"
+msgstr "فترة التنبيه"
+
+msgid "no expiry"
+msgstr "بدون انتهاء"
+
+msgid "No evidence recorded yet."
+msgstr "لم يتم تسجيل أي دليل بعد."
+
+msgid "Findings linked to this control"
+msgstr "الملاحظات المرتبطة بهذا الضابط"
+
+msgid "Repeated"
+msgstr "متكررة"
+
+msgid "No findings linked."
+msgstr "لا توجد ملاحظات مرتبطة."
+
+msgid "Owner role"
+msgstr "دور المسؤول"
+
+msgid "Not assigned — alerts go to the Head of Compliance"
+msgstr "غير محدد — تُرسل التنبيهات إلى رئيس إدارة الالتزام"
+
+msgid "Linked module"
+msgstr "الوحدة المرتبطة"
+
+msgid "Licence types"
+msgstr "أنواع التراخيص"
+
+msgid "Not applicable to your licence"
+msgstr "لا ينطبق على ترخيصكم"
+
+msgid "Automated check"
+msgstr "الفحص الآلي"
+
+msgid "Generic evidence check"
+msgstr "فحص الأدلة العام"
+
+
+msgid "Last run"
+msgstr "آخر تشغيل"
+
+msgid "Next scheduled run"
+msgstr "التشغيل المجدول التالي"
+
+msgid "Auto-open case on failure"
+msgstr "فتح حالة تلقائيًا عند الفشل"
+
+msgid "ERM control"
+msgstr "ضابط إدارة المخاطر"
+
+msgid "Regulatory parameters used"
+msgstr "المعايير الرقابية المستخدمة"
+
+msgid "not set"
+msgstr "غير محدد"
+
+msgid "Needs review"
+msgstr "يحتاج مراجعة"
+
+msgid "Not defined"
+msgstr "غير معرَّف"
+
+msgid "None."
+msgstr "لا يوجد."
+
+msgid "Edit control"
+msgstr "تعديل الضابط"
+
+msgid "Title (English)"
+msgstr "العنوان (بالإنجليزية)"
+
+msgid "Title (Arabic)"
+msgstr "العنوان (بالعربية)"
+
+msgid "Requirement (English)"
+msgstr "المتطلب (بالإنجليزية)"
+
+msgid "Requirement (Arabic)"
+msgstr "المتطلب (بالعربية)"
+
+msgid "Test procedure (English)"
+msgstr "إجراء الاختبار (بالإنجليزية)"
+
+msgid "Test procedure (Arabic)"
+msgstr "إجراء الاختبار (بالعربية)"
+
+msgid "Criticality"
+msgstr "درجة الأهمية"
+
+msgid "Owner (receives alerts)"
+msgstr "المسؤول (يستلم التنبيهات)"
+
+msgid "Not assigned"
+msgstr "غير محدد"
+
+msgid "Linked parameters (comma separated keys)"
+msgstr "المعايير المرتبطة (مفاتيح مفصولة بفواصل)"
+
+msgid "Linked ERM control (Risk Management)"
+msgstr "ضابط إدارة المخاطر المرتبط"
+
+msgid "Applies to licence types"
+msgstr "ينطبق على أنواع التراخيص"
+
+msgid "Open a case when this control fails"
+msgstr "فتح حالة عند فشل هذا الضابط"
+
+msgid "Last result"
+msgstr "آخر نتيجة"
+
+msgid "Search"
+msgstr "بحث"
+
+msgid "Code or title"
+msgstr "الرمز أو العنوان"
+
+msgid "Monitoring"
+msgstr "المتابعة"
+
+msgid "Open findings"
+msgstr "الملاحظات المفتوحة"
+
+msgid "Automated"
+msgstr "آلي"
+
+msgid "Manual / pending module"
+msgstr "يدوي / بانتظار الوحدة"
+
+msgid "No controls match."
+msgstr "لا توجد ضوابط مطابقة."
+
+msgid "Licence type"
+msgstr "نوع الترخيص"
+
+msgid "Run due controls now"
+msgstr "تشغيل الضوابط المستحقة الآن"
+
+msgid "%(n)s regulatory parameter(s) still need Compliance review."
+msgstr "%(n)s معيار رقابي ما زال يحتاج مراجعة إدارة الالتزام."
+
+msgid "%(n)s parameter change(s) waiting for approval."
+msgstr "%(n)s تعديل على المعايير بانتظار الاعتماد."
+
+msgid "Open parameters"
+msgstr "فتح المعايير"
+
+msgid "Passing"
+msgstr "ناجحة"
+
+msgid "Failing"
+msgstr "فاشلة"
+
+msgid "Warnings"
+msgstr "تحذيرات"
+
+msgid "Check errors"
+msgstr "أخطاء الفحص"
+
+msgid "Not monitored yet"
+msgstr "غير مراقبة بعد"
+
+msgid "Open alerts"
+msgstr "التنبيهات المفتوحة"
+
+msgid "Controls by area"
+msgstr "الضوابط حسب المجال"
+
+msgid "Open findings by age (days)"
+msgstr "الملاحظات المفتوحة حسب العمر (بالأيام)"
+
+msgid "All findings"
+msgstr "جميع الملاحظات"
+
+msgid "Repeated violations"
+msgstr "المخالفات المتكررة"
+
+msgid "Overdue findings"
+msgstr "الملاحظات المتأخرة"
+
+msgid "Evidence waiting for review"
+msgstr "أدلة بانتظار المراجعة"
+
+msgid "Failing controls"
+msgstr "الضوابط الفاشلة"
+
+msgid "No failing controls."
+msgstr "لا توجد ضوابط فاشلة."
+
+msgid "Evidence expiring or expired"
+msgstr "أدلة قاربت على الانتهاء أو منتهية"
+
+msgid "Nothing expiring in the warning window."
+msgstr "لا يوجد ما ينتهي خلال فترة التنبيه."
+
+msgid "Reference number"
+msgstr "الرقم المرجعي"
+
+msgid "Valid from"
+msgstr "صالح من"
+
+msgid "Valid to (expiry)"
+msgstr "صالح حتى (الانتهاء)"
+
+msgid "Submitted by"
+msgstr "مقدم من"
+
+msgid "Reviewed by"
+msgstr "تمت المراجعة بواسطة"
+
+msgid "Review comment"
+msgstr "تعليق المراجعة"
+
+msgid "You submitted this evidence. Another user must review it."
+msgstr "أنت من قدّم هذا الدليل. يجب أن يراجعه مستخدم آخر."
+
+msgid "Comment (required when rejecting)"
+msgstr "تعليق (إلزامي عند الرفض)"
+
+msgid "No file attached — the original is held elsewhere (state where in the comment)"
+msgstr "لا يوجد ملف مرفق — الأصل محفوظ في مكان آخر (اذكر المكان في التعليق)"
+
+msgid "e.g. Board minutes approving the AML policy"
+msgstr "مثال: محضر مجلس الإدارة باعتماد سياسة مكافحة غسل الأموال"
+
+msgid "Leave empty only if the evidence never expires."
+msgstr "اتركه فارغًا فقط إذا كان الدليل لا تنتهي صلاحيته."
+
+msgid "Company / unit"
+msgstr "الشركة / الوحدة"
+
+msgid "After saving you can attach the file. A different user must then approve it."
+msgstr "بعد الحفظ يمكنك إرفاق الملف، ثم يجب أن يعتمده مستخدم آخر."
+
+msgid "State"
+msgstr "الحالة"
+
+msgid "To add evidence, open the control and choose \"Add evidence\"."
+msgstr "لإضافة دليل، افتح الضابط واختر \"إضافة دليل\"."
+
+msgid "Valid to"
+msgstr "صالح حتى"
+
+msgid "Identified on"
+msgstr "تاريخ الرصد"
+
+msgid "Due date"
+msgstr "تاريخ الاستحقاق"
+
+msgid "Edit finding"
+msgstr "تعديل الملاحظة"
+
+msgid "Source reference"
+msgstr "مرجع المصدر"
+
+msgid "Corrective action plan"
+msgstr "خطة الإجراءات التصحيحية"
+
+msgid "Cancelled"
+msgstr "ملغى"
+
+msgid "Note"
+msgstr "ملاحظة"
+
+msgid "Attach evidence"
+msgstr "إرفاق دليل"
+
+msgid "No corrective actions yet."
+msgstr "لا توجد إجراءات تصحيحية بعد."
+
+msgid "New corrective action"
+msgstr "إجراء تصحيحي جديد"
+
+msgid "run"
+msgstr "تشغيل"
+
+msgid "Linked controls"
+msgstr "الضوابط المرتبطة"
+
+msgid "Unlink this control?"
+msgstr "إلغاء ربط هذا الضابط؟"
+
+msgid "No controls linked — verification and repeat detection need at least one."
+msgstr "لا توجد ضوابط مرتبطة — يحتاج التحقق ورصد التكرار إلى ضابط واحد على الأقل."
+
+msgid "When every corrective action is done, send the finding for verification."
+msgstr "عند الانتهاء من جميع الإجراءات التصحيحية، أرسل الملاحظة للتحقق."
+
+msgid "Request verification"
+msgstr "طلب التحقق"
+
+msgid "Verification re-runs every linked control. The finding closes only if they all pass."
+msgstr "يعيد التحقق تشغيل كل الضوابط المرتبطة، ولا تُغلق الملاحظة إلا إذا نجحت جميعها."
+
+msgid "Only for controls without an automated check: how was the fix verified?"
+msgstr "للضوابط التي ليس لها فحص آلي فقط: كيف تم التحقق من المعالجة؟"
+
+msgid "Verify now"
+msgstr "تحقق الآن"
+
+msgid "Close without remediation"
+msgstr "إغلاق بدون معالجة"
+
+msgid "Close this finding without remediation?"
+msgstr "إغلاق هذه الملاحظة بدون معالجة؟"
+
+msgid "Risk accepted"
+msgstr "قبول المخاطر"
+
+msgid "Justification (required)"
+msgstr "المبرر (إلزامي)"
+
+msgid "New finding"
+msgstr "ملاحظة جديدة"
+
+msgid "e.g. inspection letter number"
+msgstr "مثال: رقم خطاب التفتيش"
+
+msgid "Needed for verification and repeat detection."
+msgstr "مطلوب للتحقق ورصد التكرار."
+
+msgid "Import CSV"
+msgstr "استيراد ملف CSV"
+
+msgid "Import all open internal-audit findings that are not yet in this tracker?"
+msgstr "استيراد جميع ملاحظات المراجعة الداخلية المفتوحة غير المسجلة في هذا المتتبع؟"
+
+msgid "Import from Internal Audit"
+msgstr "استيراد من المراجعة الداخلية"
+
+msgid "All open"
+msgstr "جميع المفتوحة"
+
+msgid "Repeated violations only"
+msgstr "المخالفات المتكررة فقط"
+
+msgid "Import findings"
+msgstr "استيراد الملاحظات"
+
+msgid "Import findings (CSV)"
+msgstr "استيراد الملاحظات (CSV)"
+
+msgid "Use one row per finding. Required column: title. Separate several control codes with a semicolon."
+msgstr "استخدم صفًا واحدًا لكل ملاحظة. العمود الإلزامي: title. افصل بين رموز الضوابط بفاصلة منقوطة."
+
+msgid "Download template"
+msgstr "تحميل النموذج"
+
+msgid "Import"
+msgstr "استيراد"
+
+msgid "Nothing is imported if any row has an error. Rows already imported (same source and reference) are skipped."
+msgstr "لا يتم استيراد أي شيء إذا كان في أي صف خطأ. ويتم تخطي الصفوف المستوردة سابقًا (نفس المصدر والمرجع)."
+
+msgid "The file was not imported. Fix these rows and upload again:"
+msgstr "لم يتم استيراد الملف. صحح هذه الصفوف ثم أعد الرفع:"
+
+msgid "Line"
+msgstr "السطر"
+
+msgid "Propose a change"
+msgstr "اقتراح تعديل"
+
+msgid "Value in force today"
+msgstr "القيمة السارية اليوم"
+
+msgid "open-ended"
+msgstr "مفتوح المدة"
+
+msgid "Legal reference"
+msgstr "المرجع القانوني"
+
+msgid "No version of this parameter is in force today."
+msgstr "لا يوجد إصدار سارٍ من هذا المعيار اليوم."
+
+msgid "To"
+msgstr "إلى"
+
+msgid "Used by controls"
+msgstr "تستخدمه الضوابط"
+
+msgid "Change history"
+msgstr "سجل التعديلات"
+
+msgid "from"
+msgstr "من"
+
+msgid "Requested by"
+msgstr "مقدم الطلب"
+
+msgid "No changes recorded."
+msgstr "لا توجد تعديلات مسجلة."
+
+msgid "Parameter change"
+msgstr "تعديل معيار"
+
+msgid "New parameter"
+msgstr "معيار جديد"
+
+msgid "Your change is saved as a request. It takes effect only after a different administrator approves it."
+msgstr "يُحفظ التعديل كطلب، ولا يسري إلا بعد اعتماده من مسؤول آخر."
+
+msgid "Type of change"
+msgstr "نوع التعديل"
+
+msgid "Correct the current version (same effective date)"
+msgstr "تصحيح الإصدار الحالي (نفس تاريخ السريان)"
+
+msgid "New value from a new effective date"
+msgstr "قيمة جديدة من تاريخ سريان جديد"
+
+msgid "Confirm review only (no value change)"
+msgstr "تأكيد المراجعة فقط (بدون تغيير القيمة)"
+
+msgid "Retire this version"
+msgstr "إيقاف هذا الإصدار"
+
+msgid "Lower case, dots and underscores. Checks refer to this key."
+msgstr "حروف إنجليزية صغيرة ونقاط وشرطات سفلية. تستخدم الفحوصات هذا المفتاح."
+
+msgid "Leave empty if not known yet."
+msgstr "اتركه فارغًا إذا لم تكن القيمة معروفة بعد."
+
+msgid "Value type"
+msgstr "نوع القيمة"
+
+msgid "Effective from"
+msgstr "ساري من"
+
+msgid "Only used for a new version."
+msgstr "يُستخدم للإصدار الجديد فقط."
+
+msgid "Effective to"
+msgstr "ساري حتى"
+
+
+msgid "Description (English)"
+msgstr "الوصف (بالإنجليزية)"
+
+msgid "Description (Arabic)"
+msgstr "الوصف (بالعربية)"
+
+msgid "Still needs Compliance review"
+msgstr "ما زال يحتاج مراجعة إدارة الالتزام"
+
+msgid "Review note"
+msgstr "ملاحظة المراجعة"
+
+msgid "Reason for the change"
+msgstr "سبب التعديل"
+
+msgid "Submit for approval"
+msgstr "إرسال للاعتماد"
+
+
+msgid "Changes waiting for approval"
+msgstr "تعديلات بانتظار الاعتماد"
+
+msgid "Licence"
+msgstr "الترخيص"
+
+msgid "Change"
+msgstr "التعديل"
+
+msgid "Old value"
+msgstr "القيمة السابقة"
+
+msgid "New value"
+msgstr "القيمة الجديدة"
+
+msgid "Reason for rejection"
+msgstr "سبب الرفض"
+
+msgid "Waiting for another approver"
+msgstr "بانتظار معتمد آخر"
+
+msgid "Search key or description"
+msgstr "ابحث بالمفتاح أو الوصف"
+
+msgid "All licence types"
+msgstr "جميع أنواع التراخيص"
+
+msgid "Needs review only"
+msgstr "التي تحتاج مراجعة فقط"
+
+msgid "not in force"
+msgstr "غير سارٍ"
+
+msgid "No parameters match."
+msgstr "لا توجد معايير مطابقة."
+
+
+msgid "Selects which licence-specific parameter values the checks use."
+msgstr "يحدد قيم المعايير الخاصة بالترخيص التي تستخدمها الفحوصات."
+
+msgid "Head(s) of Compliance — receive escalations"
+msgstr "رئيس/رؤساء إدارة الالتزام — يستلمون التصعيدات"
+
+msgid "If none is selected, every administrator and compliance officer is notified."
+msgstr "إذا لم يتم اختيار أحد، يتم إخطار جميع مسؤولي النظام ومسؤولي الالتزام."
+
+msgid "Save settings"
+msgstr "حفظ الإعدادات"
+
+msgid "Control run"
+msgstr "تشغيل الضابط"
+
+msgid "Run by"
+msgstr "شغّله"
+
+msgid "Check"
+msgstr "الفحص"
+
+msgid "Affected records"
+msgstr "السجلات المتأثرة"
+
+msgid "Verification of"
+msgstr "تحقق من"
+
+msgid "first 500 shown"
+msgstr "يتم عرض أول 500"
+
+msgid "You do not have permission for this Regulatory Compliance action."
+msgstr "ليست لديك صلاحية لتنفيذ هذا الإجراء في الالتزام الرقابي."
+
+msgid "Scheduled run queued. Results appear as each control finishes."
+msgstr "تمت جدولة التشغيل. ستظهر النتائج عند انتهاء كل ضابط."
+
+msgid "Due controls run: %(n)s."
+msgstr "تم تشغيل الضوابط المستحقة: %(n)s."
+
+msgid "Control run finished: %(status)s"
+msgstr "انتهى تشغيل الضابط: %(status)s"
+
+msgid "Control run queued. Refresh in a moment to see the result."
+msgstr "تمت جدولة تشغيل الضابط. حدّث الصفحة بعد قليل لرؤية النتيجة."
+
+msgid "Invalid frequency or criticality."
+msgstr "الدورية أو درجة الأهمية غير صحيحة."
+
+msgid "Control updated."
+msgstr "تم تحديث الضابط."
+
+msgid "Evidence recorded. Attach the supporting file below, then ask a reviewer to approve it."
+msgstr "تم تسجيل الدليل. أرفق الملف المؤيد أدناه ثم اطلب من مراجع اعتماده."
+
+msgid "No file is attached. Attach the evidence file, or tick the box to confirm it is held elsewhere."
+msgstr "لا يوجد ملف مرفق. أرفق ملف الدليل أو حدد الخانة لتأكيد أنه محفوظ في مكان آخر."
+
+msgid "Evidence review saved."
+msgstr "تم حفظ مراجعة الدليل."
+
+msgid "Finding recorded. Add the corrective action plan next."
+msgstr "تم تسجيل الملاحظة. أضف خطة الإجراءات التصحيحية."
+
+msgid "Invalid severity."
+msgstr "درجة الخطورة غير صحيحة."
+
+msgid "Finding updated."
+msgstr "تم تحديث الملاحظة."
+
+msgid "Controls linked."
+msgstr "تم ربط الضوابط."
+
+msgid "Corrective action added."
+msgstr "تمت إضافة الإجراء التصحيحي."
+
+msgid "Action updated."
+msgstr "تم تحديث الإجراء."
+
+msgid "Sent for verification."
+msgstr "تم الإرسال للتحقق."
+
+msgid "All linked controls passed. The finding is closed."
+msgstr "نجحت جميع الضوابط المرتبطة. تم إغلاق الملاحظة."
+
+msgid "Closed on manual verification."
+msgstr "تم الإغلاق بناءً على تحقق يدوي."
+
+msgid "The linked controls have no automated or evidence check. Enter how you verified the fix and verify again."
+msgstr "الضوابط المرتبطة ليس لها فحص آلي أو فحص أدلة. اكتب كيف تحققت من المعالجة ثم أعد التحقق."
+
+msgid "A linked control still fails. The finding stays open."
+msgstr "ما زال أحد الضوابط المرتبطة فاشلًا. تظل الملاحظة مفتوحة."
+
+msgid "Re-test inconclusive (warnings). Resolve them and verify again."
+msgstr "نتيجة إعادة الاختبار غير حاسمة (تحذيرات). عالجها ثم أعد التحقق."
+
+msgid "Finding closed."
+msgstr "تم إغلاق الملاحظة."
+
+msgid "Choose a CSV file."
+msgstr "اختر ملف CSV."
+
+msgid "The file is larger than 2 MB."
+msgstr "حجم الملف أكبر من 2 ميجابايت."
+
+msgid "The file must be UTF-8 encoded CSV."
+msgstr "يجب أن يكون الملف CSV بترميز UTF-8."
+
+msgid "%(c)s finding(s) imported, %(s)s already existed."
+msgstr "تم استيراد %(c)s ملاحظة، و%(s)s كانت موجودة مسبقًا."
+
+msgid "%(n)s internal-audit finding(s) imported."
+msgstr "تم استيراد %(n)s ملاحظة من المراجعة الداخلية."
+
+msgid "Enter a short resolution note."
+msgstr "اكتب ملاحظة معالجة مختصرة."
+
+msgid "Change submitted. A second administrator must approve it before it takes effect."
+msgstr "تم إرسال التعديل. يجب أن يعتمده مسؤول ثانٍ قبل أن يسري."
+
+msgid "Change approved and applied."
+msgstr "تم اعتماد التعديل وتطبيقه."
+
+msgid "Change rejected."
+msgstr "تم رفض التعديل."
+
+msgid "Settings saved."
+msgstr "تم حفظ الإعدادات."
+
+msgid "a comment is required when rejecting a change"
+msgstr "التعليق إلزامي عند رفض التعديل"
+
+msgid "a comment is required when rejecting evidence"
+msgstr "التعليق إلزامي عند رفض الدليل"
+
+msgid "a justification is required"
+msgstr "المبرر إلزامي"
+
+msgid "a parameter change must be approved by a different user (four-eyes rule)"
+msgstr "يجب أن يعتمد تعديل المعيار مستخدم آخر (مبدأ العينين الأربع)"
+
+msgid "a reason is required for every parameter change"
+msgstr "يجب ذكر سبب لكل تعديل على المعايير"
+
+msgid "action description is required"
+msgstr "وصف الإجراء إلزامي"
+
+msgid "action not found"
+msgstr "الإجراء غير موجود"
+
+msgid "add at least one corrective action before asking for verification"
+msgstr "أضف إجراءً تصحيحيًا واحدًا على الأقل قبل طلب التحقق"
+
+msgid "all corrective actions must be done (or cancelled) first"
+msgstr "يجب إنجاز (أو إلغاء) جميع الإجراءات التصحيحية أولًا"
+
+msgid "change not found or already decided"
+msgstr "التعديل غير موجود أو تم البت فيه"
+
+msgid "change not found"
+msgstr "التعديل غير موجود"
+
+msgid "control not found"
+msgstr "الضابط غير موجود"
+
+msgid "decision must be approved or rejected"
+msgstr "يجب أن يكون القرار اعتمادًا أو رفضًا"
+
+msgid "effective from date is required"
+msgstr "تاريخ السريان إلزامي"
+
+msgid "effective to must not be before effective from"
+msgstr "لا يجوز أن يسبق تاريخ نهاية السريان تاريخ بدايته"
+
+msgid "evidence must be reviewed by someone other than the person who submitted it"
+msgstr "يجب أن يراجع الدليل شخص غير من قدّمه"
+
+msgid "evidence not found"
+msgstr "الدليل غير موجود"
+
+msgid "finding is already closed"
+msgstr "الملاحظة مغلقة بالفعل"
+
+msgid "finding not found"
+msgstr "الملاحظة غير موجودة"
+
+msgid "only pending evidence can be reviewed"
+msgstr "يمكن مراجعة الأدلة المعلقة فقط"
+
+msgid "parameter key is required"
+msgstr "مفتاح المعيار إلزامي"
+
+msgid "the finding owner cannot verify their own remediation"
+msgstr "لا يجوز لمسؤول الملاحظة التحقق من معالجته بنفسه"
+
+msgid "this change has already been decided"
+msgstr "تم البت في هذا التعديل بالفعل"
+
+msgid "this change needs an existing parameter version"
+msgstr "هذا التعديل يتطلب إصدارًا قائمًا من المعيار"
+
+msgid "title is required"
+msgstr "العنوان إلزامي"
+
+msgid "unknown action status"
+msgstr "حالة الإجراء غير معروفة"
+
+msgid "unknown closure type"
+msgstr "نوع الإغلاق غير معروف"
+
+msgid "valid to must not be before valid from"
+msgstr "لا يجوز أن يسبق تاريخ نهاية الصلاحية تاريخ بدايتها"
+
+msgid "invalid parameter key"
+msgstr "مفتاح المعيار غير صحيح"
+
+# --- regcontrols generic core (frameworks, library, packs) ---
+msgid "Unknown check."
+msgstr "فحص غير معروف."
+
+msgid "Test result recorded."
+msgstr "تم تسجيل نتيجة الاختبار."
+
+msgid "Control created. Complete its settings below."
+msgstr "تم إنشاء الضابط. أكمل إعداداته أدناه."
+
+msgid "Framework saved."
+msgstr "تم حفظ الإطار."
+
+msgid "Requirement saved."
+msgstr "تم حفظ المتطلب."
+
+msgid "Saved."
+msgstr "تم الحفظ."
+
+msgid "Pack enabled."
+msgstr "تم تفعيل الحزمة."
+
+msgid "Pack disabled. Its controls are inactive and its pages hidden; its data is kept."
+msgstr "تم إيقاف الحزمة. ضوابطها غير مفعلة وصفحاتها مخفية، وبياناتها محفوظة."
+
+msgid "Library"
+msgstr "المكتبة"
+
+msgid "Content packs"
+msgstr "حزم المحتوى"
+
+msgid "not available (pack disabled?)"
+msgstr "غير متاح (هل الحزمة موقوفة؟)"
+
+msgid "None — evidence or manual test"
+msgstr "لا يوجد — دليل أو اختبار يدوي"
+
+msgid "Content pack"
+msgstr "حزمة المحتوى"
+
+msgid "Requirements satisfied"
+msgstr "المتطلبات المستوفاة"
+
+msgid "Unlink"
+msgstr "إلغاء الربط"
+
+msgid "Not mapped to any requirement yet."
+msgstr "غير مرتبط بأي متطلب بعد."
+
+msgid "Map"
+msgstr "ربط"
+
+msgid "Record a manual test"
+msgstr "تسجيل اختبار يدوي"
+
+msgid "How was it tested? Sample, period, result"
+msgstr "كيف تم الاختبار؟ العينة والفترة والنتيجة"
+
+msgid "Save test result"
+msgstr "حفظ نتيجة الاختبار"
+
+msgid "A failed test raises an alert and reopens closed findings, like an automated check."
+msgstr "الاختبار الفاشل يصدر تنبيهًا ويعيد فتح الملاحظات المغلقة، مثل الفحص الآلي."
+
+msgid "Control type"
+msgstr "نوع الضابط"
+
+msgid "None — tested by evidence or manual test"
+msgstr "لا يوجد — يُختبر بالأدلة أو اختبار يدوي"
+
+msgid "not available"
+msgstr "غير متاح"
+
+msgid "Checks come with the core and with enabled content packs."
+msgstr "تأتي الفحوصات مع النظام الأساسي ومع حزم المحتوى المفعلة."
+
+msgid "New control"
+msgstr "ضابط جديد"
+
+msgid "For requirement"
+msgstr "للمتطلب"
+
+msgid "What the control does"
+msgstr "ما يقوم به الضابط"
+
+msgid "Compliance Controls"
+msgstr "ضوابط الالتزام"
+
+msgid "Frameworks"
+msgstr "الأطر"
+
+msgid "Requirements"
+msgstr "المتطلبات"
+
+msgid "No framework yet. Add one in the Library, or enable a content pack."
+msgstr "لا يوجد إطار بعد. أضف إطارًا من المكتبة أو فعّل حزمة محتوى."
+
+msgid "No regulator"
+msgstr "بدون جهة رقابية"
+
+msgid "requirements mapped to controls"
+msgstr "متطلبات مرتبطة بضوابط"
+
+msgid "No control"
+msgstr "بدون ضابط"
+
+msgid "Add control"
+msgstr "إضافة ضابط"
+
+msgid "No requirements yet."
+msgstr "لا توجد متطلبات بعد."
+
+msgid "Add a requirement"
+msgstr "إضافة متطلب"
+
+msgid "Ref (e.g. Art. 12)"
+msgstr "المرجع (مثل المادة 12)"
+
+msgid "Requirement text (English)"
+msgstr "نص المتطلب (بالإنجليزية)"
+
+msgid "Requirement text (Arabic)"
+msgstr "نص المتطلب (بالعربية)"
+
+msgid "Edit framework"
+msgstr "تعديل الإطار"
+
+msgid "New framework"
+msgstr "إطار جديد"
+
+msgid "Name (English)"
+msgstr "الاسم (بالإنجليزية)"
+
+msgid "Name (Arabic)"
+msgstr "الاسم (بالعربية)"
+
+msgid "Jurisdiction"
+msgstr "الولاية القضائية"
+
+msgid "Source document / legal basis"
+msgstr "المستند المصدر / الأساس القانوني"
+
+msgid "Frameworks & Library"
+msgstr "الأطر والمكتبة"
+
+msgid "Any regulator, regulation or standard is set up here as data: a framework with its requirements, mapped to controls. Content packs install ready-made frameworks; you can also build your own."
+msgstr "تُعرَّف هنا أي جهة رقابية أو لائحة أو معيار كبيانات: إطار بمتطلباته المرتبطة بالضوابط. تثبّت حزم المحتوى أطرًا جاهزة، ويمكنك أيضًا بناء إطارك الخاص."
+
+msgid "custom"
+msgstr "مخصص"
+
+msgid "No framework yet. Add one, or enable a content pack."
+msgstr "لا يوجد إطار بعد. أضف إطارًا أو فعّل حزمة محتوى."
+
+msgid "Regulators"
+msgstr "الجهات الرقابية"
+
+msgid "Areas"
+msgstr "المجالات"
+
+msgid "Owner roles"
+msgstr "أدوار المسؤولين"
+
+msgid "Code (lower case)"
+msgstr "الرمز (حروف صغيرة)"
+
+msgid "A content pack adds ready-made content for one regulator or sector: its framework and requirements, controls, parameters and, where needed, sector modules with automated checks. The core works without any pack. Disabling a pack switches its controls off and hides its pages; its data is kept and comes back when the pack is enabled again."
+msgstr "تضيف حزمة المحتوى محتوى جاهزًا لجهة رقابية أو قطاع: الإطار والمتطلبات والضوابط والمعايير، وعند الحاجة وحدات قطاعية بفحوص آلية. يعمل النظام الأساسي دون أي حزمة. إيقاف الحزمة يوقف ضوابطها ويخفي صفحاتها، وتبقى بياناتها وتعود عند إعادة التفعيل."
+
+msgid "version"
+msgstr "الإصدار"
+
+msgid "installed"
+msgstr "تم التثبيت"
+
+msgid "Automated checks from"
+msgstr "الفحوص الآلية من"
+
+msgid "Module permissions"
+msgstr "صلاحيات الوحدات"
+
+msgid "Disable this pack? Its controls will be switched off."
+msgstr "إيقاف هذه الحزمة؟ سيتم إيقاف ضوابطها."
+
+msgid "Enable this pack? Its content will be installed (existing edits are kept)."
+msgstr "تفعيل هذه الحزمة؟ سيتم تثبيت محتواها (مع الاحتفاظ بالتعديلات الحالية)."
+
+msgid "Re-install / update content"
+msgstr "إعادة التثبيت / تحديث المحتوى"
+
+msgid "No content packs are installed on this server."
+msgstr "لا توجد حزم محتوى مثبتة على هذا الخادم."
+
+msgid "e.g. decree / circular no., year, article"
+msgstr "مثال: رقم القرار / المنشور، السنة، المادة"
+
+msgid "Every regulatory limit used by the controls is read from this list. Changes need a reason and are applied only after a second administrator approves them. Values marked \"Needs review\" must be confirmed by Compliance against the current regulation."
+msgstr "تُقرأ كل الحدود الرقابية التي تستخدمها الضوابط من هذه القائمة. يتطلب كل تعديل سببًا ولا يُطبق إلا بعد اعتماد مسؤول ثانٍ. ويجب أن تؤكد إدارة الالتزام القيم المميزة بـ \"يحتاج مراجعة\" مقابل اللائحة السارية."
+
+msgid "Our licence type"
+msgstr "نوع ترخيصنا"
+
+msgid "Content pack modules"
+msgstr "وحدات حزم المحتوى"
+
+msgid "code and English name are required"
+msgstr "الرمز والاسم بالإنجليزية إلزاميان"
+
+msgid "regulator name is required"
+msgstr "اسم الجهة الرقابية إلزامي"
+
+msgid "framework code and English name are required"
+msgstr "رمز الإطار واسمه بالإنجليزية إلزاميان"
+
+msgid "requirement reference and English title are required"
+msgstr "مرجع المتطلب وعنوانه بالإنجليزية إلزاميان"
+
+msgid "control code and English title are required"
+msgstr "رمز الضابط وعنوانه بالإنجليزية إلزاميان"
+
+msgid "unknown control type"
+msgstr "نوع ضابط غير معروف"
+
+msgid "a control with this code already exists"
+msgstr "يوجد ضابط بهذا الرمز بالفعل"
+
+msgid "describe how the control was tested"
+msgstr "اشرح كيف تم اختبار الضابط"
+
+msgid "unknown test result"
+msgstr "نتيجة اختبار غير معروفة"
+
+msgid "unknown pack"
+msgstr "حزمة غير معروفة"
+
+# --- FRA NBFI pack — lending conduct & portfolio ---
+msgid "You do not have permission for this Lending action."
+msgstr "ليست لديك صلاحية لتنفيذ هذا الإجراء في وحدة التمويل."
+
+msgid "Portfolio data refreshed."
+msgstr "تم تحديث بيانات المحفظة."
+
+msgid "Loan marked as disbursed."
+msgstr "تم تسجيل صرف التمويل."
+
+msgid "Exception requested. Another user must approve it."
+msgstr "تم طلب الاستثناء. يجب أن يعتمده مستخدم آخر."
+
+msgid "Exception decision saved."
+msgstr "تم حفظ قرار الاستثناء."
+
+msgid "Code and name are required."
+msgstr "الرمز والاسم إلزاميان."
+
+msgid "Product saved."
+msgstr "تم حفظ المنتج."
+
+msgid "QA decision saved."
+msgstr "تم حفظ قرار مراجعة الجودة."
+
+msgid "Choose the data type and a CSV or Excel file."
+msgstr "اختر نوع البيانات وملف CSV أو Excel."
+
+msgid "The file is larger than 20 MB."
+msgstr "حجم الملف أكبر من 20 ميجابايت."
+
+msgid "The file could not be read:"
+msgstr "تعذرت قراءة الملف:"
+
+msgid "Import finished: %(ok)s row(s) saved, %(bad)s with errors."
+msgstr "انتهى الاستيراد: تم حفظ %(ok)s صف، و%(bad)s بها أخطاء."
+
+msgid "Portfolio"
+msgstr "المحفظة"
+
+msgid "Loans"
+msgstr "التمويلات"
+
+msgid "Pricing & fees"
+msgstr "التسعير والرسوم"
+
+msgid "Credit-study QA"
+msgstr "جودة الدراسات الائتمانية"
+
+msgid "Pricing disclosure"
+msgstr "الإفصاح عن التسعير"
+
+msgid "Products"
+msgstr "المنتجات"
+
+msgid "Import data"
+msgstr "استيراد البيانات"
+
+msgid "Lending Conduct & Portfolio"
+msgstr "سلوكيات التمويل والمحفظة"
+
+msgid "Refresh portfolio data"
+msgstr "تحديث بيانات المحفظة"
+
+msgid "Active loans"
+msgstr "التمويلات القائمة"
+
+msgid "Outstanding (EGP)"
+msgstr "الرصيد القائم (جنيه)"
+
+msgid "pts vs last month"
+msgstr "نقطة مقارنة بالشهر السابق"
+
+msgid "PAR30 threshold"
+msgstr "حد المحفظة المعرضة للخطر 30 يومًا"
+
+msgid "not set — Regulatory Parameters"
+msgstr "غير محدد — المعايير الرقابية"
+
+msgid "FRA lending controls"
+msgstr "ضوابط الهيئة للتمويل"
+
+msgid "Attention needed"
+msgstr "يحتاج إلى اهتمام"
+
+msgid "Disbursed loans with incomplete files"
+msgstr "تمويلات مصروفة بملفات غير مكتملة"
+
+msgid "Open credit-study QA flags"
+msgstr "ملاحظات جودة مفتوحة على الدراسات الائتمانية"
+
+msgid "Exceptions waiting for approval"
+msgstr "استثناءات بانتظار الاعتماد"
+
+msgid "Early repayments in progress"
+msgstr "طلبات سداد معجل قيد التنفيذ"
+
+msgid "Fee breaches"
+msgstr "مخالفات الرسوم"
+
+msgid "AML candidates from lending"
+msgstr "حالات مرشحة لمكافحة غسل الأموال من التمويل"
+
+msgid "Follow-up visits overdue"
+msgstr "زيارات متابعة متأخرة"
+
+msgid "Fee checks are not complete until these parameters are set:"
+msgstr "لن تكتمل فحوصات الرسوم حتى يتم تحديد هذه المعايير:"
+
+msgid "Ageing buckets (days past due)"
+msgstr "شرائح أعمار المتأخرات (أيام التأخير)"
+
+msgid "Bucket"
+msgstr "الشريحة"
+
+msgid "PAR by branch"
+msgstr "المحفظة المعرضة للخطر حسب الفرع"
+
+msgid "PAR by loan officer"
+msgstr "المحفظة المعرضة للخطر حسب مسؤول الائتمان"
+
+msgid "PAR by product"
+msgstr "المحفظة المعرضة للخطر حسب المنتج"
+
+msgid "No data yet."
+msgstr "لا توجد بيانات بعد."
+
+msgid "Loans without a follow-up visit"
+msgstr "تمويلات بدون زيارة متابعة"
+
+msgid "within"
+msgstr "خلال"
+
+msgid "days of disbursement"
+msgstr "يومًا من الصرف"
+
+msgid "due by"
+msgstr "مستحقة قبل"
+
+msgid "Responsible-pricing disclosure"
+msgstr "الإفصاح عن التسعير المسؤول"
+
+msgid "Product"
+msgstr "المنتج"
+
+msgid "Rate avg / min / max"
+msgstr "متوسط / أدنى / أعلى سعر"
+
+msgid "APR avg / max"
+msgstr "متوسط / أعلى معدل سنوي فعلي"
+
+msgid "Admin fee avg / max"
+msgstr "متوسط / أعلى مصروفات إدارية"
+
+msgid "Penalty rate / cap"
+msgstr "معدل / حد الغرامة"
+
+msgid "No loans disbursed in this period."
+msgstr "لم يتم صرف تمويلات في هذه الفترة."
+
+msgid "Submissions in the regulatory calendar"
+msgstr "التقديمات في الأجندة الرقابية"
+
+msgid "Open FRA-RPD in Regulatory Reports"
+msgstr "فتح FRA-RPD في التقارير الرقابية"
+
+msgid "No submissions scheduled yet. Open FRA-RPD in Regulatory Reports and generate the schedule."
+msgstr "لا توجد تقديمات مجدولة بعد. افتح FRA-RPD في التقارير الرقابية وأنشئ الجدول."
+
+msgid "Early repayment"
+msgstr "السداد المعجل"
+
+msgid "Written cost disclosure"
+msgstr "الإفصاح الكتابي عن التكلفة"
+
+msgid "Remaining cost under the original schedule"
+msgstr "التكلفة المتبقية وفق الجدول الأصلي"
+
+msgid "Settlement amount"
+msgstr "مبلغ السداد"
+
+msgid "Early-repayment fee"
+msgstr "مصروفات السداد المعجل"
+
+msgid "New total cost"
+msgstr "إجمالي التكلفة الجديدة"
+
+msgid "Print disclosure for client signature"
+msgstr "طباعة الإفصاح لتوقيع العميل"
+
+msgid "No disclosure generated yet."
+msgstr "لم يتم إصدار الإفصاح بعد."
+
+msgid "Generate disclosure"
+msgstr "إصدار الإفصاح"
+
+msgid "Signed consent and cost acknowledgement"
+msgstr "الموافقة الموقعة والإقرار بالتكلفة"
+
+msgid "Signed consent"
+msgstr "موافقة موقعة"
+
+msgid "Cost impact acknowledged"
+msgstr "تم الإقرار بأثر التكلفة"
+
+msgid "The client signed the consent (scan attached below)"
+msgstr "وقّع العميل الموافقة (النسخة الممسوحة مرفقة أدناه)"
+
+msgid "The client confirmed they understand the cost impact"
+msgstr "أكد العميل فهمه لأثر التكلفة"
+
+msgid "Execute"
+msgstr "التنفيذ"
+
+msgid "Executed on"
+msgstr "تم التنفيذ في"
+
+msgid "Execute the early repayment and close the loan?"
+msgstr "تنفيذ السداد المعجل وإغلاق التمويل؟"
+
+msgid "Execute early repayment"
+msgstr "تنفيذ السداد المعجل"
+
+msgid "Available once the disclosure, signed consent and acknowledgement are recorded."
+msgstr "متاح بعد تسجيل الإفصاح والموافقة الموقعة والإقرار."
+
+msgid "Early repayment disclosure"
+msgstr "إفصاح السداد المعجل"
+
+msgid "Loan"
+msgstr "التمويل"
+
+msgid "Client"
+msgstr "العميل"
+
+msgid "I confirm that I received this disclosure, understand the cost impact of repaying early, and consent to the early repayment."
+msgstr "أقر بأنني استلمت هذا الإفصاح وفهمت أثر السداد المعجل على التكلفة، وأوافق على السداد المعجل."
+
+msgid "Client signature"
+msgstr "توقيع العميل"
+
+msgid "Company representative"
+msgstr "ممثل الشركة"
+
+msgid "Pricing & fee breaches"
+msgstr "مخالفات التسعير والرسوم"
+
+msgid "These parameters are not set, so the related checks cannot run:"
+msgstr "هذه المعايير غير محددة، لذلك لا يمكن تشغيل الفحوصات المرتبطة بها:"
+
+msgid "Over-charge by client (refund list)"
+msgstr "المبالغ المحصلة بالزيادة لكل عميل (قائمة الرد)"
+
+msgid "Items"
+msgstr "البنود"
+
+msgid "Total over-charge (EGP)"
+msgstr "إجمالي الزيادة (جنيه)"
+
+msgid "No over-charges found."
+msgstr "لا توجد مبالغ محصلة بالزيادة."
+
+msgid "Admin fee above the cap"
+msgstr "مصروفات إدارية أعلى من الحد"
+
+msgid "Admin fee above the tier"
+msgstr "مصروفات إدارية أعلى من الشريحة"
+
+msgid "Late penalty above the formula"
+msgstr "غرامة تأخير أعلى من المعادلة"
+
+msgid "Transfer fee above the cap"
+msgstr "رسوم نقل أعلى من الحد"
+
+msgid "Rescheduling fee above the cap"
+msgstr "رسوم إعادة جدولة أعلى من الحد"
+
+msgid "Detail"
+msgstr "التفاصيل"
+
+msgid "Charged"
+msgstr "المحصل"
+
+msgid "Allowed"
+msgstr "المسموح"
+
+msgid "Over-charge"
+msgstr "الزيادة"
+
+msgid "Late-penalty limit used: rate per started month of delay on the overdue instalment, capped at the cap percentage. Confirm this method with Compliance."
+msgstr "حد غرامة التأخير المستخدم: المعدل عن كل شهر تأخير بدأ على القسط المتأخر، بحد أقصى نسبة الحد. يجب تأكيد هذه الطريقة مع إدارة الالتزام."
+
+msgid "Import lending data"
+msgstr "استيراد بيانات التمويل"
+
+msgid "Data type"
+msgstr "نوع البيانات"
+
+msgid "CSV or Excel file"
+msgstr "ملف CSV أو Excel"
+
+msgid "Import in this order: clients, loans, then contracts, documents, credit studies, instalments, visits, early repayments, reschedulings, transfers. Rows are matched on their reference, so sending a file again updates them."
+msgstr "استورد بهذا الترتيب: العملاء ثم التمويلات ثم العقود والمستندات والدراسات الائتمانية والأقساط والزيارات والسداد المعجل وإعادة الجدولة والنقل. تتم مطابقة الصفوف بمرجعها، لذلك يؤدي إعادة إرسال الملف إلى تحديثها."
+
+msgid "Templates and columns"
+msgstr "النماذج والأعمدة"
+
+msgid "Dates as YYYY-MM-DD. Yes/no columns accept yes, no, 1, 0. cost_lines is a JSON list, e.g. [{\"label\": \"rent\", \"amount\": 1500}]. The same data can be sent to the JSON API: POST /api/v1/fra-nbfi/lending/import with an API key that has the lending:write scope."
+msgstr "التواريخ بصيغة YYYY-MM-DD. أعمدة نعم/لا تقبل yes وno و1 و0. عمود cost_lines قائمة JSON مثل [{\"label\": \"rent\", \"amount\": 1500}]. ويمكن إرسال نفس البيانات إلى واجهة JSON: POST /api/v1/fra-nbfi/lending/import بمفتاح API له صلاحية lending:write."
+
+msgid "Batch"
+msgstr "الدفعة"
+
+msgid "Recent imports"
+msgstr "عمليات الاستيراد الأخيرة"
+
+msgid "When"
+msgstr "التوقيت"
+
+msgid "OK"
+msgstr "سليم"
+
+msgid "No imports yet."
+msgstr "لا توجد عمليات استيراد بعد."
+
+msgid "Officer"
+msgstr "مسؤول الائتمان"
+
+msgid "file gap(s)"
+msgstr "نقص في الملف"
+
+msgid "File complete"
+msgstr "الملف مكتمل"
+
+msgid "Tenor"
+msgstr "المدة"
+
+msgid "months"
+msgstr "شهر"
+
+msgid "Interest rate"
+msgstr "سعر العائد"
+
+msgid "Admin fee"
+msgstr "المصروفات الإدارية"
+
+msgid "over by"
+msgstr "زيادة بمقدار"
+
+msgid "Outstanding"
+msgstr "الرصيد القائم"
+
+msgid "Disbursed on"
+msgstr "تاريخ الصرف"
+
+msgid "Days past due"
+msgstr "أيام التأخير"
+
+msgid "mandatory above EGP"
+msgstr "إلزامي فوق مبلغ (جنيه)"
+
+msgid "Client revenue / project size"
+msgstr "إيرادات العميل / حجم المشروع"
+
+msgid "Origination file"
+msgstr "ملف منح التمويل"
+
+msgid "All required items are on file."
+msgstr "جميع المتطلبات موجودة في الملف."
+
+msgid "No documents recorded."
+msgstr "لا توجد مستندات مسجلة."
+
+msgid "Contract"
+msgstr "العقد"
+
+msgid "Lender signature"
+msgstr "توقيع الشركة"
+
+msgid "Penalty clause"
+msgstr "بند الغرامة"
+
+msgid "cap"
+msgstr "الحد"
+
+msgid "Contract no."
+msgstr "رقم العقد"
+
+msgid "Lender signed"
+msgstr "وقّعت الشركة"
+
+msgid "Client signed"
+msgstr "وقّع العميل"
+
+msgid "Penalty rate"
+msgstr "معدل الغرامة"
+
+msgid "Penalty cap"
+msgstr "حد الغرامة"
+
+msgid "Credit study"
+msgstr "الدراسة الائتمانية"
+
+msgid "Revenue"
+msgstr "الإيرادات"
+
+msgid "Costs"
+msgstr "التكاليف"
+
+msgid "Household"
+msgstr "مصروفات الأسرة"
+
+msgid "Other debt service"
+msgstr "أعباء ديون أخرى"
+
+msgid "Net income"
+msgstr "صافي الدخل"
+
+msgid "Cost lines"
+msgstr "بنود التكاليف"
+
+msgid "Record / update the credit study"
+msgstr "تسجيل / تحديث الدراسة الائتمانية"
+
+msgid "Monthly revenue"
+msgstr "الإيرادات الشهرية"
+
+msgid "Monthly costs"
+msgstr "التكاليف الشهرية"
+
+msgid "Household expenses"
+msgstr "مصروفات الأسرة"
+
+msgid "Study date"
+msgstr "تاريخ الدراسة"
+
+msgid "Cost lines — one per line as \"label: amount\""
+msgstr "بنود التكاليف — بند في كل سطر بصيغة \"البيان: المبلغ\""
+
+msgid "Instalments"
+msgstr "الأقساط"
+
+msgid "Principal"
+msgstr "أصل"
+
+msgid "Interest"
+msgstr "عائد"
+
+msgid "Paid"
+msgstr "المسدد"
+
+msgid "Paid on"
+msgstr "تاريخ السداد"
+
+msgid "Penalty"
+msgstr "الغرامة"
+
+msgid "No schedule imported."
+msgstr "لم يتم استيراد جدول أقساط."
+
+msgid "Disbursement"
+msgstr "الصرف"
+
+msgid "Cannot be marked disbursed until:"
+msgstr "لا يمكن تسجيل الصرف حتى:"
+
+msgid "Complete the file, or request an exception approved by a second person."
+msgstr "استكمل الملف أو اطلب استثناءً يعتمده شخص آخر."
+
+msgid "Mark disbursed"
+msgstr "تسجيل الصرف"
+
+msgid "Incomplete file"
+msgstr "ملف غير مكتمل"
+
+msgid "Eligibility (licence ceiling)"
+msgstr "الأهلية (حد الترخيص)"
+
+msgid "Reason (required)"
+msgstr "السبب (إلزامي)"
+
+msgid "Request exception"
+msgstr "طلب استثناء"
+
+msgid "Follow-up visits"
+msgstr "زيارات المتابعة"
+
+msgid "Planned"
+msgstr "مخططة"
+
+msgid "No visits recorded."
+msgstr "لا توجد زيارات مسجلة."
+
+msgid "Done on"
+msgstr "تمت في"
+
+msgid "Outcome"
+msgstr "النتيجة"
+
+msgid "Start early repayment"
+msgstr "بدء السداد المعجل"
+
+msgid "Reschedulings & transfers"
+msgstr "إعادة الجدولة ونقل الأقساط"
+
+msgid "Rescheduling"
+msgstr "إعادة جدولة"
+
+msgid "fee"
+msgstr "رسوم"
+
+msgid "Transfer"
+msgstr "نقل"
+
+msgid "New client"
+msgstr "عميل جديد"
+
+msgid "New loan"
+msgstr "تمويل جديد"
+
+msgid "Loan, client reference or name"
+msgstr "رقم التمويل أو مرجع العميل أو الاسم"
+
+msgid "All statuses"
+msgstr "جميع الحالات"
+
+msgid "All branches"
+msgstr "جميع الفروع"
+
+msgid "Incomplete files only"
+msgstr "الملفات غير المكتملة فقط"
+
+msgid "DPD"
+msgstr "أيام التأخير"
+
+msgid "gap(s)"
+msgstr "نقص"
+
+msgid "No loans yet. Import data or add a loan."
+msgstr "لا توجد تمويلات بعد. استورد البيانات أو أضف تمويلًا."
+
+msgid "Manual entry for small portfolios. Larger portfolios: use Import data."
+msgstr "إدخال يدوي للمحافظ الصغيرة. للمحافظ الأكبر استخدم استيراد البيانات."
+
+msgid "The national ID is stored only as a secure hash."
+msgstr "يُحفظ الرقم القومي كقيمة مشفرة آمنة فقط."
+
+msgid "New loans start as application / approved. Mark them disbursed from the loan page once the file is complete."
+msgstr "تبدأ التمويلات الجديدة كطلب أو معتمد. سجل الصرف من صفحة التمويل بعد اكتمال الملف."
+
+msgid "Required documents per product are checked before a loan can be disbursed (in addition to the contract, receipt acknowledgement and credit study required for every loan)."
+msgstr "يتم التحقق من المستندات المطلوبة لكل منتج قبل الصرف (بالإضافة إلى العقد وإقرار الاستلام والدراسة الائتمانية المطلوبة لكل تمويل)."
+
+msgid "Required documents"
+msgstr "المستندات المطلوبة"
+
+msgid "No products yet."
+msgstr "لا توجد منتجات بعد."
+
+msgid "Add or update a product"
+msgstr "إضافة أو تحديث منتج"
+
+msgid "Credit-study QA queue"
+msgstr "قائمة مراجعة جودة الدراسات الائتمانية"
+
+msgid "Flags: identical figures across clients of one officer, mostly round numbers, too few cost lines, cost/revenue ratio far from the officer norm. Clear a flag when the study is genuine; confirm it when the study was templated or copied."
+msgstr "الملاحظات: أرقام متطابقة لعملاء نفس المسؤول، أرقام مقربة في معظمها، بنود تكاليف قليلة، نسبة تكاليف إلى إيرادات بعيدة عن معدل المسؤول. أغلق الملاحظة إذا كانت الدراسة حقيقية، وأكدها إذا كانت منسوخة أو نمطية."
+
+msgid "Flag"
+msgstr "الملاحظة"
+
+msgid "Confirm"
+msgstr "تأكيد"
+
+msgid "No QA flags."
+msgstr "لا توجد ملاحظات جودة."
+
+msgid "cannot disburse: "
+msgstr "لا يمكن الصرف: "
+
+msgid "an exception must be approved by someone other than the requester"
+msgstr "يجب أن يعتمد الاستثناء شخص غير مقدم الطلب"
+
+msgid "exception not found or already decided"
+msgstr "الاستثناء غير موجود أو تم البت فيه"
+
+msgid "attach the signed consent before recording it"
+msgstr "أرفق الموافقة الموقعة قبل تسجيلها"
+
+msgid "generate the disclosure first"
+msgstr "أصدر الإفصاح أولًا"
+
+msgid "signed client consent and cost acknowledgement are required before execution"
+msgstr "الموافقة الموقعة من العميل والإقرار بالتكلفة مطلوبان قبل التنفيذ"
+
+msgid "the written cost disclosure has not been generated"
+msgstr "لم يتم إصدار الإفصاح الكتابي عن التكلفة"
+
+msgid "early repayment is only possible on a disbursed loan"
+msgstr "السداد المعجل ممكن فقط على تمويل مصروف"
+
+msgid "settlement amount is required"
+msgstr "مبلغ السداد إلزامي"
+
+msgid "only an application or approved loan can be disbursed"
+msgstr "يمكن صرف الطلبات أو التمويلات المعتمدة فقط"
+
+msgid "a reason is required"
+msgstr "السبب إلزامي"
+
+msgid "unknown QA decision"
+msgstr "قرار المراجعة غير معروف"
+
+msgid "already executed"
+msgstr "تم التنفيذ بالفعل"
+
+msgid "loan not found"
+msgstr "التمويل غير موجود"
+
+msgid "early repayment not found"
+msgstr "طلب السداد المعجل غير موجود"
+
+# --- AML/KYC assurance ---
+msgid "You do not have permission for this AML assurance action."
+msgstr "ليست لديك صلاحية لهذا الإجراء في ضمان مكافحة غسل الأموال."
+
+msgid "Review recorded."
+msgstr "تم تسجيل المراجعة."
+
+msgid "A finding was opened for the issues."
+msgstr "تم فتح ملاحظة للمشكلات المكتشفة."
+
+msgid "%(n)s test case(s) added."
+msgstr "تمت إضافة %(n)s حالة اختبار."
+
+msgid "Synthetic negative cases added."
+msgstr "تمت إضافة حالات سلبية مُختلَقة."
+
+msgid "QA run finished: recall %(r)s, misses %(m)s."
+msgstr "انتهى اختبار الجودة: نسبة الاكتشاف %(r)s، الإخفاقات %(m)s."
+
+msgid "Screening failed:"
+msgstr "فشل الفحص:"
+
+msgid "%(n)s employee(s) screened, %(h)s potential match(es)."
+msgstr "تم فحص %(n)s موظف، %(h)s تطابق محتمل."
+
+msgid "Rated %(score)s (%(band)s)."
+msgstr "التصنيف %(score)s (%(band)s)."
+
+msgid "Onboarding approved."
+msgstr "تم اعتماد بدء العلاقة."
+
+msgid "Field key and English label are required."
+msgstr "مفتاح الحقل والتسمية بالإنجليزية مطلوبان."
+
+msgid "Check the values: category, weight and scoring JSON (e.g. {\"HIGH\": 80, \"*\": 20})."
+msgstr "راجع القيم: الفئة والوزن وصيغة JSON للتقييم (مثال {\"HIGH\": 80, \"*\": 20})."
+
+msgid "AML red flag updated."
+msgstr "تم تحديث مؤشر الاشتباه."
+
+msgid "Sent to the unusual-transactions register."
+msgstr "أُرسل إلى سجل العمليات غير العادية."
+
+msgid "Check settings must be a JSON object, e.g. {\"fields\": [\"gender\"]}."
+msgstr "يجب أن تكون إعدادات الفحص كائن JSON، مثال {\"fields\": [\"gender\"]}."
+
+msgid "Key roles"
+msgstr "الأدوار الرئيسية"
+
+msgid "Annual report"
+msgstr "التقرير السنوي"
+
+msgid "Board approvals"
+msgstr "اعتمادات مجلس الإدارة"
+
+msgid "Monitoring programme"
+msgstr "برنامج المتابعة"
+
+msgid "Screening assurance"
+msgstr "ضمان جودة الفحص"
+
+msgid "Employee screening"
+msgstr "فحص العاملين"
+
+msgid "Unusual transactions"
+msgstr "العمليات غير العادية"
+
+msgid "KYC files"
+msgstr "ملفات اعرف عميلك"
+
+msgid "Risk model"
+msgstr "نموذج المخاطر"
+
+msgid "Training coverage"
+msgstr "تغطية التدريب"
+
+msgid "Audit coverage"
+msgstr "تغطية المراجعة"
+
+msgid "Screenings performed"
+msgstr "عمليات الفحص المنفذة"
+
+msgid "Transaction-monitoring alerts (closed)"
+msgstr "تنبيهات مراقبة العمليات (المغلقة)"
+
+msgid "Unusual transactions registered / STRs / no STR / open"
+msgstr "العمليات غير العادية المسجلة / إخطارات الاشتباه / دون إخطار / مفتوحة"
+
+msgid "Current risk distribution"
+msgstr "التوزيع الحالي للمخاطر"
+
+msgid "Monitoring reviews planned / done"
+msgstr "مراجعات المتابعة المخططة / المنفذة"
+
+msgid "Employees screened"
+msgstr "العاملون الذين تم فحصهم"
+
+msgid "AML findings open / repeated"
+msgstr "ملاحظات مكافحة غسل الأموال المفتوحة / المتكررة"
+
+msgid "Annual AML report"
+msgstr "التقرير السنوي لمكافحة غسل الأموال"
+
+msgid "Narrative: assessment, issues, plan for next year"
+msgstr "السرد: التقييم والمشكلات وخطة العام القادم"
+
+msgid "Narrative"
+msgstr "السرد"
+
+msgid "Board approval"
+msgstr "اعتماد مجلس الإدارة"
+
+msgid "Submitted to board"
+msgstr "مقدم لمجلس الإدارة"
+
+msgid "Approved on"
+msgstr "تاريخ الاعتماد"
+
+msgid "Submit to the board"
+msgstr "تقديم لمجلس الإدارة"
+
+msgid "Board meeting ref."
+msgstr "مرجع اجتماع المجلس"
+
+msgid "Record board approval"
+msgstr "تسجيل اعتماد المجلس"
+
+msgid "approved by the board on"
+msgstr "اعتمده مجلس الإدارة في"
+
+msgid "The report is generated from system data (screening, alerts, unusual transactions, risk ratings, monitoring, employee screening, findings), completed with the officer's narrative, submitted to the board and recorded as approved."
+msgstr "يُنشأ التقرير من بيانات النظام (الفحص، التنبيهات، العمليات غير العادية، تصنيفات المخاطر، المتابعة، فحص العاملين، الملاحظات)، ويُستكمل بسرد المسؤول، ثم يُقدَّم لمجلس الإدارة ويُسجَّل اعتماده."
+
+msgid "Generate / refresh"
+msgstr "إنشاء / تحديث"
+
+msgid "Generated"
+msgstr "تاريخ الإنشاء"
+
+msgid "No report yet."
+msgstr "لا يوجد تقرير بعد."
+
+msgid "Internal-audit coverage of controls"
+msgstr "تغطية المراجعة الداخلية للضوابط"
+
+msgid "controls covered by the audit plan"
+msgstr "ضوابط مشمولة بخطة المراجعة"
+
+msgid "critical/high controls not covered"
+msgstr "ضوابط حرجة/عالية غير مشمولة"
+
+msgid "Covered"
+msgstr "مشمول"
+
+msgid "Auditable areas"
+msgstr "مجالات المراجعة"
+
+msgid "Policy board approvals"
+msgstr "اعتماد السياسات من مجلس الإدارة"
+
+msgid "Mark the policies that need board approval (e.g. AML manual, information-security policies) and record the board decision for the current version. Unapproved drafts are alerted after the number of days set in the bound control's parameter."
+msgstr "حدد السياسات التي تحتاج اعتماد مجلس الإدارة (مثل دليل مكافحة غسل الأموال وسياسات أمن المعلومات) وسجّل قرار المجلس للإصدار الحالي. يُنبَّه على المسودات غير المعتمدة بعد عدد الأيام المحدد في معامل الضابط المرتبط."
+
+msgid "Needs board approval"
+msgstr "تحتاج اعتماد المجلس"
+
+msgid "Board approved (this version)"
+msgstr "معتمدة من المجلس (هذا الإصدار)"
+
+msgid "Record"
+msgstr "تسجيل"
+
+msgid "No policies."
+msgstr "لا توجد سياسات."
+
+msgid "AML & KYC Assurance"
+msgstr "ضمان مكافحة غسل الأموال واعرف عميلك"
+
+msgid "Key AML roles"
+msgstr "أدوار مكافحة غسل الأموال الرئيسية"
+
+msgid "conflict(s)"
+msgstr "تعارض"
+
+msgid "no board line"
+msgstr "لا يوجد خط تبعية للمجلس"
+
+msgid "No key role registered."
+msgstr "لا يوجد دور رئيسي مسجل."
+
+msgid "Add the MLRO"
+msgstr "إضافة مسؤول الإبلاغ"
+
+msgid "List sources"
+msgstr "مصادر القوائم"
+
+msgid "Last QA run"
+msgstr "آخر اختبار جودة"
+
+msgid "recall"
+msgstr "نسبة الاكتشاف"
+
+msgid "misses"
+msgstr "إخفاقات"
+
+msgid "The QA test set has never been run."
+msgstr "لم يُنفَّذ اختبار الجودة مطلقاً."
+
+msgid "Employees due for screening"
+msgstr "عاملون مستحق فحصهم"
+
+msgid "cycle not set"
+msgstr "الدورة غير محددة"
+
+msgid "Unusual transactions & monitoring"
+msgstr "العمليات غير العادية والمتابعة"
+
+msgid "Open studies"
+msgstr "دراسات مفتوحة"
+
+msgid "overdue"
+msgstr "متأخر"
+
+msgid "Monitoring plan"
+msgstr "خطة المتابعة"
+
+msgid "none"
+msgstr "لا يوجد"
+
+msgid "Risk model missing categories"
+msgstr "فئات ناقصة في نموذج المخاطر"
+
+msgid "Incomplete"
+msgstr "غير مكتمل"
+
+msgid "Not rated"
+msgstr "غير مصنف"
+
+msgid "High risk"
+msgstr "مخاطر مرتفعة"
+
+msgid "Screen every employee who is due now?"
+msgstr "فحص جميع العاملين المستحقين الآن؟"
+
+msgid "Screen all due employees"
+msgstr "فحص جميع العاملين المستحقين"
+
+msgid "Re-screening cycle"
+msgstr "دورة إعادة الفحص"
+
+msgid "not set (parameter aml.employee_rescreen_months)"
+msgstr "غير محددة (المعامل aml.employee_rescreen_months)"
+
+msgid "Results go to the normal screening review queue."
+msgstr "تذهب النتائج إلى قائمة مراجعة الفحص المعتادة."
+
+msgid "Job title"
+msgstr "المسمى الوظيفي"
+
+msgid "Last screened"
+msgstr "آخر فحص"
+
+msgid "never"
+msgstr "أبداً"
+
+msgid "Next review"
+msgstr "المراجعة القادمة"
+
+msgid "BO declaration"
+msgstr "إقرار المستفيد الحقيقي"
+
+msgid "not rated"
+msgstr "غير مصنف"
+
+msgid "No records."
+msgstr "لا توجد سجلات."
+
+msgid "Required KYC fields"
+msgstr "حقول اعرف عميلك المطلوبة"
+
+msgid "(the catalogue the completeness score uses; editable)"
+msgstr "(القائمة التي تُحسب بها نسبة الاكتمال؛ قابلة للتعديل)"
+
+msgid "Label"
+msgstr "التسمية"
+
+msgid "Applies to"
+msgstr "ينطبق على"
+
+msgid "Pack"
+msgstr "الحزمة"
+
+msgid "captured in ComplyNex"
+msgstr "يُسجَّل في ComplyNex"
+
+msgid "key"
+msgstr "المفتاح"
+
+msgid "Label (English)"
+msgstr "التسمية (إنجليزي)"
+
+msgid "Label (Arabic)"
+msgstr "التسمية (عربي)"
+
+msgid "Record columns, comma separated (empty = captured here)"
+msgstr "أعمدة السجل مفصولة بفواصل (فارغ = يُسجَّل هنا)"
+
+msgid "Open the source record"
+msgstr "فتح السجل المصدر"
+
+msgid "complete"
+msgstr "مكتمل"
+
+msgid "Onboarding cannot be approved yet"
+msgstr "لا يمكن اعتماد بدء العلاقة بعد"
+
+msgid "Onboarding approved"
+msgstr "تم اعتماد بدء العلاقة"
+
+msgid "KYC fields"
+msgstr "حقول اعرف عميلك"
+
+msgid "Save fields"
+msgstr "حفظ الحقول"
+
+msgid "Values held in the source system are shown read-only; others are captured here."
+msgstr "القيم الموجودة في النظام المصدر تُعرض للقراءة فقط؛ وغيرها يُسجَّل هنا."
+
+msgid "Beneficial owners"
+msgstr "المستفيدون الحقيقيون"
+
+msgid "Ownership"
+msgstr "الملكية"
+
+msgid "Basis"
+msgstr "الأساس"
+
+msgid "No beneficial owner recorded."
+msgstr "لم يُسجَّل مستفيد حقيقي."
+
+msgid "Full name"
+msgstr "الاسم الكامل"
+
+msgid "Senior manager"
+msgstr "مدير تنفيذي"
+
+msgid "Signed beneficial-owner declarations"
+msgstr "إقرارات المستفيد الحقيقي الموقعة"
+
+msgid "Self"
+msgstr "عن نفسه"
+
+msgid "On behalf of"
+msgstr "نيابة عن"
+
+msgid "signed"
+msgstr "تاريخ التوقيع"
+
+msgid "No signed declaration."
+msgstr "لا يوجد إقرار موقع."
+
+msgid "Another owner"
+msgstr "مستفيد آخر"
+
+msgid "Beneficial owner name"
+msgstr "اسم المستفيد الحقيقي"
+
+msgid "Then attach the signed copy to the declaration."
+msgstr "ثم أرفق النسخة الموقعة بالإقرار."
+
+msgid "Risk rating"
+msgstr "تصنيف المخاطر"
+
+msgid "Rate now"
+msgstr "تصنيف الآن"
+
+msgid "Weight"
+msgstr "الوزن"
+
+msgid "Not rated."
+msgstr "غير مصنف."
+
+msgid "Enhanced due diligence"
+msgstr "العناية الواجبة المعززة"
+
+msgid "Save EDD"
+msgstr "حفظ العناية المعززة"
+
+msgid "Senior management approval"
+msgstr "موافقة الإدارة العليا"
+
+msgid "not given"
+msgstr "لم تُمنح"
+
+msgid "Give senior approval"
+msgstr "منح موافقة الإدارة العليا"
+
+msgid "Approve onboarding"
+msgstr "اعتماد بدء العلاقة"
+
+msgid "AML monitoring programme"
+msgstr "برنامج متابعة مكافحة غسل الأموال"
+
+msgid "Reviews done / planned"
+msgstr "المراجعات المنفذة / المخططة"
+
+msgid "No plan yet."
+msgstr "لا توجد خطة بعد."
+
+msgid "Plan title"
+msgstr "عنوان الخطة"
+
+msgid "Save plan"
+msgstr "حفظ الخطة"
+
+msgid "Branch / department"
+msgstr "الفرع / الإدارة"
+
+msgid "Performed"
+msgstr "تاريخ التنفيذ"
+
+msgid "Finding"
+msgstr "الملاحظة"
+
+msgid "On-site"
+msgstr "ميدانية"
+
+msgid "Off-site"
+msgstr "مكتبية"
+
+msgid "No reviews scheduled."
+msgstr "لا توجد مراجعات مجدولة."
+
+msgid "Schedule a review"
+msgstr "جدولة مراجعة"
+
+msgid "Back to plan"
+msgstr "العودة للخطة"
+
+msgid "planned"
+msgstr "مخطط"
+
+msgid "Checklist item"
+msgstr "بند قائمة التحقق"
+
+msgid "Issue"
+msgstr "مشكلة"
+
+msgid "Conclusion"
+msgstr "الخلاصة"
+
+msgid "Complete review"
+msgstr "إتمام المراجعة"
+
+msgid "Any \"Issue\" opens a finding with a corrective-action plan."
+msgstr "أي \"مشكلة\" تفتح ملاحظة بخطة إجراءات تصحيحية."
+
+msgid "Customer risk model"
+msgstr "نموذج مخاطر العملاء"
+
+msgid "No active factor for"
+msgstr "لا يوجد عامل فعال لـ"
+
+msgid "A risk-based model should cover every category."
+msgstr "يجب أن يغطي النموذج المبني على المخاطر كل الفئات."
+
+msgid "Reads field"
+msgstr "يقرأ الحقل"
+
+msgid "Add or change a factor"
+msgstr "إضافة أو تعديل عامل"
+
+msgid "(same key = update)"
+msgstr "(نفس المفتاح = تحديث)"
+
+msgid "field it reads"
+msgstr "الحقل الذي يقرؤه"
+
+msgid "Risk bands"
+msgstr "شرائح المخاطر"
+
+msgid "from score"
+msgstr "من درجة"
+
+msgid "refresh-cycle parameter key"
+msgstr "مفتاح معامل دورة التحديث"
+
+msgid "The refresh cycle (months) of each band is a regulatory parameter, set on Compliance Controls → Parameters."
+msgstr "دورة التحديث (بالأشهر) لكل شريحة معامل رقابي يُضبط من الضوابط الرقابية ← المعاملات."
+
+msgid "Save bands"
+msgstr "حفظ الشرائح"
+
+msgid "Holder"
+msgstr "شاغل الدور"
+
+msgid "Reports to"
+msgstr "يتبع"
+
+msgid "Board line"
+msgstr "تبعية للمجلس"
+
+msgid "Other positions"
+msgstr "مناصب أخرى"
+
+msgid "Regulator notified"
+msgstr "إخطار الجهة الرقابية"
+
+msgid "Assessment"
+msgstr "التقييم"
+
+msgid "approval"
+msgstr "الموافقة"
+
+msgid "Combined role without approval reference"
+msgstr "دور مزدوج بدون مرجع موافقة"
+
+msgid "No conflict found"
+msgstr "لا يوجد تعارض"
+
+msgid "No key role registered yet."
+msgstr "لم يُسجَّل دور رئيسي بعد."
+
+msgid "Edit role"
+msgstr "تعديل الدور"
+
+msgid "Add a key role"
+msgstr "إضافة دور رئيسي"
+
+msgid "Role code"
+msgstr "رمز الدور"
+
+msgid "Holder (user)"
+msgstr "شاغل الدور (مستخدم)"
+
+msgid "or holder name"
+msgstr "أو اسم شاغل الدور"
+
+msgid "Reports to (title)"
+msgstr "يتبع (المسمى)"
+
+msgid "e.g. Board Audit Committee"
+msgstr "مثال: لجنة المراجعة بمجلس الإدارة"
+
+msgid "Reports to (user)"
+msgstr "يتبع (مستخدم)"
+
+msgid "Direct reporting line to the board"
+msgstr "تبعية مباشرة لمجلس الإدارة"
+
+msgid "Other positions held (incl. at group companies)"
+msgstr "مناصب أخرى (بما فيها شركات المجموعة)"
+
+msgid "Combined-role approval ref."
+msgstr "مرجع الموافقة على الدور المزدوج"
+
+msgid "Appointed on"
+msgstr "تاريخ التعيين"
+
+msgid "Regulator notified on"
+msgstr "تاريخ إخطار الجهة الرقابية"
+
+msgid "Regulator reference"
+msgstr "مرجع الجهة الرقابية"
+
+msgid "Conflict rules"
+msgstr "قواعد التعارض"
+
+msgid "Keyword"
+msgstr "الكلمة المفتاحية"
+
+msgid "must not report to"
+msgstr "لا يجوز أن يتبع"
+
+msgid "must not hold"
+msgstr "لا يجوز أن يشغل"
+
+msgid "keyword"
+msgstr "كلمة مفتاحية"
+
+msgid "Reason (English)"
+msgstr "السبب (إنجليزي)"
+
+msgid "Reason (Arabic)"
+msgstr "السبب (عربي)"
+
+msgid "Required list sources"
+msgstr "مصادر القوائم المطلوبة"
+
+msgid "(from the check settings of the bound controls)"
+msgstr "(من إعدادات الفحص للضوابط المرتبطة)"
+
+msgid "no matching source"
+msgstr "لا يوجد مصدر مطابق"
+
+msgid "not configured"
+msgstr "غير مُعد"
+
+msgid "never loaded"
+msgstr "لم يُحمَّل مطلقاً"
+
+msgid "stale"
+msgstr "قديم"
+
+msgid "No control defines required sources yet (enable a content pack or set the check settings)."
+msgstr "لا يوجد ضابط يحدد المصادر المطلوبة بعد (فعّل حزمة محتوى أو اضبط إعدادات الفحص)."
+
+msgid "All list sources"
+msgstr "جميع مصادر القوائم"
+
+msgid "freshness limit"
+msgstr "حد الحداثة"
+
+msgid "Last update"
+msgstr "آخر تحديث"
+
+msgid "No sources."
+msgstr "لا توجد مصادر."
+
+msgid "QA test set"
+msgstr "مجموعة اختبار الجودة"
+
+msgid "Run the test set"
+msgstr "تشغيل مجموعة الاختبار"
+
+msgid "precision"
+msgstr "الدقة"
+
+msgid "cases"
+msgstr "حالات"
+
+msgid "false positives"
+msgstr "إيجابيات خاطئة"
+
+msgid "Miss"
+msgstr "إخفاق"
+
+msgid "False positive"
+msgstr "إيجابي خاطئ"
+
+msgid "Never run."
+msgstr "لم يُشغَّل مطلقاً."
+
+msgid "Test names come from your own watchlist entries (with generated spelling variants, including Arabic letter forms) plus invented names that must not match. No list data is stored in the software."
+msgstr "أسماء الاختبار مأخوذة من قوائمكم (مع صيغ إملائية مولّدة، منها أشكال الحروف العربية) إضافة إلى أسماء مُختلَقة يجب ألا تتطابق. لا تُخزَّن بيانات القوائم في البرنامج."
+
+msgid "A name exactly as on the list"
+msgstr "اسم كما ورد في القائمة تماماً"
+
+msgid "List (e.g. UN)"
+msgstr "القائمة (مثال: الأمم المتحدة)"
+
+msgid "Add + variants"
+msgstr "إضافة + الصيغ"
+
+msgid "Add invented negative names"
+msgstr "إضافة أسماء سلبية مُختلَقة"
+
+msgid "Query"
+msgstr "الاستعلام"
+
+msgid "Must find"
+msgstr "يجب أن يجد"
+
+msgid "Variant"
+msgstr "الصيغة"
+
+msgid "(no match)"
+msgstr "(بدون تطابق)"
+
+msgid "No test cases yet."
+msgstr "لا توجد حالات اختبار بعد."
+
+msgid "AML training coverage"
+msgstr "تغطية تدريب مكافحة غسل الأموال"
+
+msgid "Overall"
+msgstr "الإجمالي"
+
+msgid "not set (parameter training.aml_coverage_target_pct)"
+msgstr "غير محدد (المعامل training.aml_coverage_target_pct)"
+
+msgid "course category"
+msgstr "فئة الدورة"
+
+msgid "all"
+msgstr "الكل"
+
+msgid "Trained"
+msgstr "تم تدريبهم"
+
+msgid "Staff"
+msgstr "العاملون"
+
+msgid "Coverage"
+msgstr "التغطية"
+
+msgid "No staff."
+msgstr "لا يوجد عاملون."
+
+msgid "Unusual-transactions register"
+msgstr "سجل العمليات غير العادية"
+
+msgid "detected event(s) are missing from the register"
+msgstr "حدث مكتشف غير موجود في السجل"
+
+msgid "Candidate"
+msgstr "مرشح"
+
+msgid "Under study"
+msgstr "قيد الدراسة"
+
+msgid "STR filed"
+msgstr "تم الإخطار"
+
+msgid "No STR"
+msgstr "دون إخطار"
+
+msgid "Dismissed"
+msgstr "مستبعد"
+
+msgid "Detected"
+msgstr "تاريخ الاكتشاف"
+
+msgid "Study due"
+msgstr "موعد الدراسة"
+
+msgid "Register is empty."
+msgstr "السجل فارغ."
+
+msgid "detected"
+msgstr "اكتُشف"
+
+msgid "study due"
+msgstr "موعد الدراسة"
+
+msgid "Study and decision"
+msgstr "الدراسة والقرار"
+
+msgid "Analysis: facts checked, customer profile, conclusion"
+msgstr "التحليل: الوقائع التي فُحصت، ملف العميل، الخلاصة"
+
+msgid "Save analysis only"
+msgstr "حفظ التحليل فقط"
+
+msgid "Decision: file an STR"
+msgstr "القرار: تقديم إخطار اشتباه"
+
+msgid "Decision: no STR"
+msgstr "القرار: دون إخطار"
+
+msgid "STR reference (if filed)"
+msgstr "مرجع الإخطار (إن وُجد)"
+
+msgid "A decision needs the written analysis and at least one supporting document."
+msgstr "يتطلب القرار تحليلاً مكتوباً ومستنداً داعماً واحداً على الأقل."
+
+msgid "AML red flag"
+msgstr "مؤشر اشتباه"
+
+msgid "(flagged findings are routed to the AML function as unusual-transaction candidates)"
+msgstr "(تُحال الملاحظات المؤشَّرة إلى وظيفة مكافحة غسل الأموال كعمليات غير عادية مرشحة)"
+
+msgid "Remove flag"
+msgstr "إزالة المؤشر"
+
+msgid "Flag as AML red flag"
+msgstr "تأشير كمؤشر اشتباه"
+
+msgid "AML assurance overview"
+msgstr "نظرة عامة على ضمان مكافحة غسل الأموال"
+
+msgid "AML annual report"
+msgstr "التقرير السنوي لمكافحة غسل الأموال"
+
+msgid "Check settings"
+msgstr "إعدادات الفحص"
+
+msgid "Check settings (JSON)"
+msgstr "إعدادات الفحص (JSON)"
+
+msgid "Optional settings read by the check, e.g. which fields are required or which list sources are mandatory."
+msgstr "إعدادات اختيارية يقرؤها الفحص، مثل الحقول المطلوبة أو مصادر القوائم الإلزامية."
+
+msgid "Source of funds verified"
+msgstr "التحقق من مصدر الأموال"
+
+msgid "Source of wealth verified"
+msgstr "التحقق من مصدر الثروة"
+
+msgid "Purpose and intended nature of the relationship"
+msgstr "الغرض من العلاقة وطبيعتها المتوقعة"
+
+msgid "Adverse media reviewed"
+msgstr "مراجعة الأخبار السلبية"
+
+msgid "Beneficial owners verified"
+msgstr "التحقق من المستفيدين الحقيقيين"
+
+msgid "Senior management approval obtained"
+msgstr "الحصول على موافقة الإدارة العليا"
+
+msgid "KYC files complete for a sample of new clients"
+msgstr "اكتمال ملفات اعرف عميلك لعينة من العملاء الجدد"
+
+msgid "Risk ratings present and current for the sample"
+msgstr "وجود تصنيفات مخاطر محدثة للعينة"
+
+msgid "Unusual transactions escalated to the AML function"
+msgstr "تصعيد العمليات غير العادية إلى وظيفة مكافحة غسل الأموال"
+
+msgid "Staff AML training up to date"
+msgstr "تدريب العاملين على مكافحة غسل الأموال محدث"
+
+msgid "Screening performed before onboarding"
+msgstr "إجراء الفحص قبل بدء العلاقة"
+
+msgid "Records kept and retrievable"
+msgstr "حفظ السجلات وإمكانية استرجاعها"
+
+# --- Prudential & governance ---
+msgid "You do not have permission for the prudential registers."
+msgstr "ليست لديك صلاحية على السجلات الاحترازية."
+
+msgid "Saved. Attach the supporting document (resolution, bank certificate, registry extract)."
+msgstr "تم الحفظ. أرفق المستند المؤيد (قرار، شهادة بنكية، مستخرج سجل)."
+
+msgid "Period approved."
+msgstr "تم اعتماد الفترة."
+
+msgid "%(n)s period(s) imported."
+msgstr "تم استيراد %(n)s فترة."
+
+msgid "Saved as draft; another user must approve the figures."
+msgstr "حُفظت كمسودة؛ يجب أن يعتمد الأرقام مستخدم آخر."
+
+msgid "%(n)s facility(ies) imported."
+msgstr "تم استيراد %(n)s تسهيل."
+
+msgid "Saved. Attach the supporting document (transfer, receipt, contract)."
+msgstr "تم الحفظ. أرفق المستند المؤيد (تحويل، إيصال، عقد)."
+
+msgid "Study approved."
+msgstr "تم اعتماد الدراسة."
+
+msgid "Saved. Attach the study, then record its approval."
+msgstr "تم الحفظ. أرفق الدراسة ثم سجّل اعتمادها."
+
+msgid "C.R."
+msgstr "س.ت."
+
+msgid "Corporate profile"
+msgstr "الملف التعريفي للشركة"
+
+msgid "Capital"
+msgstr "رأس المال"
+
+msgid "Regulatory deadlines"
+msgstr "المواعيد الرقابية"
+
+msgid "Solvency"
+msgstr "الملاءة"
+
+msgid "Key functions"
+msgstr "الوظائف الرئيسية"
+
+msgid "Facilities"
+msgstr "التسهيلات"
+
+msgid "Related parties"
+msgstr "الأطراف ذات العلاقة"
+
+msgid "Studies (ECL, tax)"
+msgstr "الدراسات (الخسائر المتوقعة، الضرائب)"
+
+msgid "Branch register & staffing"
+msgstr "سجل الفروع والعمالة"
+
+msgid "Manager vacancy limit"
+msgstr "حد شغور منصب المدير"
+
+msgid "not set (parameter branch.manager_vacancy_max_days)"
+msgstr "غير محدد (المعامل branch.manager_vacancy_max_days)"
+
+msgid "No-objection"
+msgstr "عدم الممانعة"
+
+msgid "Vacant since"
+msgstr "شاغر منذ"
+
+msgid "Issues"
+msgstr "المشكلات"
+
+msgid "No branches registered."
+msgstr "لا توجد فروع مسجلة."
+
+msgid "Staffing matrix"
+msgstr "مصفوفة العمالة"
+
+msgid "(headcount per role; red = below the minimum)"
+msgstr "(العدد لكل دور؛ الأحمر = أقل من الحد الأدنى)"
+
+msgid "Save staffing"
+msgstr "حفظ العمالة"
+
+msgid "Edit branch"
+msgstr "تعديل الفرع"
+
+msgid "Add a branch"
+msgstr "إضافة فرع"
+
+msgid "Opened on"
+msgstr "تاريخ الافتتاح"
+
+msgid "Manager (user)"
+msgstr "المدير (مستخدم)"
+
+msgid "or manager name"
+msgstr "أو اسم المدير"
+
+msgid "No-objection pending"
+msgstr "عدم الممانعة قيد الانتظار"
+
+msgid "No-objection granted"
+msgstr "تم منح عدم الممانعة"
+
+msgid "Refused"
+msgstr "مرفوض"
+
+msgid "Not required"
+msgstr "غير مطلوب"
+
+msgid "No-objection ref."
+msgstr "مرجع عدم الممانعة"
+
+msgid "No-objection date"
+msgstr "تاريخ عدم الممانعة"
+
+msgid "Save branch"
+msgstr "حفظ الفرع"
+
+msgid "A branch can be active only with a manager who has the regulator no-objection."
+msgstr "لا يكون الفرع نشطاً إلا بمدير حاصل على عدم ممانعة الجهة الرقابية."
+
+msgid "Required roles"
+msgstr "الأدوار المطلوبة"
+
+msgid "code"
+msgstr "الرمز"
+
+msgid "or parameter key"
+msgstr "أو مفتاح المعامل"
+
+msgid "Save role"
+msgstr "حفظ الدور"
+
+msgid "Capital register"
+msgstr "سجل رأس المال"
+
+msgid "Authorised"
+msgstr "المرخص به"
+
+msgid "Issued"
+msgstr "المصدر"
+
+msgid "Paid-up"
+msgstr "المدفوع"
+
+msgid "Registered"
+msgstr "المسجل"
+
+msgid "Minimum paid-up capital for this licence"
+msgstr "الحد الأدنى لرأس المال المدفوع لهذا الترخيص"
+
+msgid "not set (parameter capital.min_paid_up)"
+msgstr "غير محدد (المعامل capital.min_paid_up)"
+
+msgid "Figure"
+msgstr "البند"
+
+msgid "New level"
+msgstr "القيمة الجديدة"
+
+msgid "Files"
+msgstr "الملفات"
+
+msgid "No entries yet."
+msgstr "لا توجد قيود بعد."
+
+msgid "Record a new level"
+msgstr "تسجيل قيمة جديدة"
+
+msgid "Amount (new total)"
+msgstr "المبلغ (الإجمالي الجديد)"
+
+msgid "Resolution / bank certificate / registry reference"
+msgstr "مرجع القرار / الشهادة البنكية / السجل"
+
+msgid "Save and attach document"
+msgstr "حفظ وإرفاق المستند"
+
+msgid "Prudential & Governance"
+msgstr "الرقابة الاحترازية والحوكمة"
+
+msgid "Paid-up capital"
+msgstr "رأس المال المدفوع"
+
+msgid "minimum"
+msgstr "الحد الأدنى"
+
+msgid "Open regulatory deadlines"
+msgstr "المواعيد الرقابية المفتوحة"
+
+msgid "at risk"
+msgstr "معرضة للخطر"
+
+msgid "Latest approved period"
+msgstr "آخر فترة معتمدة"
+
+msgid "leverage"
+msgstr "الرافعة"
+
+msgid "Key functions with issues"
+msgstr "وظائف رئيسية بها مشكلات"
+
+msgid "Branches with issues"
+msgstr "فروع بها مشكلات"
+
+msgid "Facilities with issues"
+msgstr "تسهيلات بها مشكلات"
+
+msgid "data source"
+msgstr "مصدر البيانات"
+
+msgid "Related-party items with issues"
+msgstr "بنود أطراف ذات علاقة بها مشكلات"
+
+msgid "Documents with a wrong address"
+msgstr "مستندات بعنوان خاطئ"
+
+msgid "Controls tested on these registers"
+msgstr "الضوابط المختبرة على هذه السجلات"
+
+msgid "No control is bound to these checks yet (enable a content pack, or bind a control on Compliance Controls)."
+msgstr "لا يوجد ضابط مرتبط بهذه الفحوص بعد (فعّل حزمة محتوى أو اربط ضابطاً من الضوابط الرقابية)."
+
+msgid "due"
+msgstr "مستحق"
+
+msgid "escalated to the board"
+msgstr "تم التصعيد لمجلس الإدارة"
+
+msgid "finding"
+msgstr "ملاحظة"
+
+msgid "Extensions"
+msgstr "المهل الإضافية"
+
+msgid "Granted on"
+msgstr "تاريخ المنح"
+
+msgid "New due date"
+msgstr "تاريخ الاستحقاق الجديد"
+
+msgid "Letter"
+msgstr "خطاب"
+
+msgid "Original"
+msgstr "الأصلي"
+
+msgid "General"
+msgstr "عامة"
+
+msgid "Special"
+msgstr "خاصة"
+
+msgid "Letter ref."
+msgstr "مرجع الخطاب"
+
+msgid "Record extension"
+msgstr "تسجيل مهلة"
+
+msgid "Attach the regulator letter in the files panel."
+msgstr "أرفق خطاب الجهة الرقابية في لوحة الملفات."
+
+msgid "Mark as met"
+msgstr "تم الالتزام"
+
+msgid "Mark as missed"
+msgstr "تم التجاوز"
+
+msgid "Regulatory deadlines & extensions"
+msgstr "المواعيد الرقابية والمهل"
+
+msgid "Countdown alerts at"
+msgstr "تنبيهات العد التنازلي عند"
+
+msgid "days (parameter capital.deadline_alert_days); overdue or last-threshold deadlines are escalated to the board as a critical finding."
+msgstr "يوماً (المعامل capital.deadline_alert_days)؛ تُصعَّد المواعيد المتأخرة أو التي بلغت آخر حد لمجلس الإدارة كملاحظة حرجة."
+
+msgid "Due soon"
+msgstr "يستحق قريباً"
+
+msgid "On track"
+msgstr "في المسار"
+
+msgid "Met"
+msgstr "تم الالتزام"
+
+msgid "Missed"
+msgstr "فائت"
+
+msgid "Original due"
+msgstr "الاستحقاق الأصلي"
+
+msgid "Current due"
+msgstr "الاستحقاق الحالي"
+
+msgid "Days left"
+msgstr "الأيام المتبقية"
+
+msgid "Board"
+msgstr "المجلس"
+
+msgid "No deadlines registered."
+msgstr "لا توجد مواعيد مسجلة."
+
+msgid "Add a deadline"
+msgstr "إضافة موعد"
+
+msgid "e.g. Complete capital increase"
+msgstr "مثال: استكمال زيادة رأس المال"
+
+msgid "Capital increase"
+msgstr "زيادة رأس المال"
+
+msgid "Remediation"
+msgstr "المعالجة"
+
+msgid "Submission"
+msgstr "تقديم"
+
+msgid "Note / regulator letter reference"
+msgstr "ملاحظة / مرجع خطاب الجهة الرقابية"
+
+msgid "Borrowing facilities register"
+msgstr "سجل التسهيلات الائتمانية الممنوحة للشركة"
+
+msgid "Confirmation age limit"
+msgstr "الحد الأقصى لعمر المصادقة"
+
+msgid "accrual tolerance"
+msgstr "هامش الاستحقاق المسموح"
+
+msgid "Lender"
+msgstr "الجهة المقرضة"
+
+msgid "Balance"
+msgstr "الرصيد"
+
+msgid "Accrual expected / booked"
+msgstr "الاستحقاق المتوقع / المسجل"
+
+msgid "covenant breach"
+msgstr "إخلال بالتعهدات"
+
+msgid "accrued interest off by"
+msgstr "فرق الفوائد المستحقة"
+
+msgid "No facilities registered."
+msgstr "لا توجد تسهيلات مسجلة."
+
+msgid "Edit facility"
+msgstr "تعديل التسهيل"
+
+msgid "Add a facility"
+msgstr "إضافة تسهيل"
+
+msgid "(same reference = update)"
+msgstr "(نفس المرجع = تحديث)"
+
+msgid "Limit"
+msgstr "الحد"
+
+msgid "Balance (books)"
+msgstr "الرصيد (بالدفاتر)"
+
+msgid "Start date"
+msgstr "تاريخ البدء"
+
+msgid "Maturity date"
+msgstr "تاريخ الاستحقاق"
+
+msgid "Last balance confirmation"
+msgstr "آخر مصادقة على الرصيد"
+
+msgid "Confirmed balance"
+msgstr "الرصيد المصادق عليه"
+
+msgid "Accrual from (last interest date)"
+msgstr "الاستحقاق من (آخر تاريخ فائدة)"
+
+msgid "Accrual booked as of"
+msgstr "الاستحقاق مسجل حتى"
+
+msgid "Accrued interest booked"
+msgstr "الفوائد المستحقة المسجلة"
+
+msgid "Rescheduled on"
+msgstr "تاريخ إعادة الجدولة"
+
+msgid "Rescheduling approval ref."
+msgstr "مرجع اعتماد إعادة الجدولة"
+
+msgid "Escalated to board on"
+msgstr "تاريخ التصعيد للمجلس"
+
+msgid "Board escalation ref."
+msgstr "مرجع التصعيد للمجلس"
+
+msgid "Covenant breach"
+msgstr "إخلال بالتعهدات"
+
+msgid "Template"
+msgstr "النموذج"
+
+msgid "Key functions register"
+msgstr "سجل الوظائف الرئيسية"
+
+msgid "Function"
+msgstr "الوظيفة"
+
+msgid "Fit & proper"
+msgstr "الجدارة والملاءمة"
+
+msgid "optional"
+msgstr "اختياري"
+
+msgid "from governance"
+msgstr "من الحوكمة"
+
+msgid "Edit holder"
+msgstr "تعديل شاغل الوظيفة"
+
+msgid "Appoint a holder"
+msgstr "تعيين شاغل للوظيفة"
+
+msgid "Board member (fit & proper from governance)"
+msgstr "عضو مجلس (الجدارة والملاءمة من الحوكمة)"
+
+msgid "Passed"
+msgstr "اجتاز"
+
+msgid "Fit & proper date"
+msgstr "تاريخ تقييم الجدارة"
+
+msgid "Granted"
+msgstr "ممنوح"
+
+msgid "Vacated on"
+msgstr "تاريخ الشغور"
+
+msgid "Key function types"
+msgstr "أنواع الوظائف الرئيسية"
+
+msgid "(same code = update)"
+msgstr "(نفس الرمز = تحديث)"
+
+msgid "Notify regulator"
+msgstr "إخطار الجهة الرقابية"
+
+msgid "Needs no-objection"
+msgstr "تحتاج عدم ممانعة"
+
+msgid "Save type"
+msgstr "حفظ النوع"
+
+msgid "Single source of truth"
+msgstr "المصدر الوحيد للبيانات"
+
+msgid "(letterheads and reports read these values)"
+msgstr "(الترويسات والتقارير تقرأ هذه القيم)"
+
+msgid "Legal name (English)"
+msgstr "الاسم القانوني (إنجليزي)"
+
+msgid "Legal name (Arabic)"
+msgstr "الاسم القانوني (عربي)"
+
+msgid "Commercial register no."
+msgstr "رقم السجل التجاري"
+
+msgid "Tax card no."
+msgstr "رقم البطاقة الضريبية"
+
+msgid "Licence number"
+msgstr "رقم الترخيص"
+
+msgid "Registered address (English)"
+msgstr "العنوان المسجل (إنجليزي)"
+
+msgid "Registered address (Arabic)"
+msgstr "العنوان المسجل (عربي)"
+
+msgid "Accepted spellings of the same address (one per line)"
+msgstr "صيغ مقبولة لنفس العنوان (صيغة في كل سطر)"
+
+msgid "Save profile"
+msgstr "حفظ الملف"
+
+msgid "Official documents"
+msgstr "المستندات الرسمية"
+
+msgid "(board minutes, letters, contracts: the address they state is compared with the registered address)"
+msgstr "(محاضر المجلس والخطابات والعقود: يُقارن العنوان الوارد بها بالعنوان المسجل)"
+
+msgid "Address stated"
+msgstr "العنوان الوارد"
+
+msgid "not recorded"
+msgstr "غير مسجل"
+
+msgid "Mismatch"
+msgstr "غير مطابق"
+
+msgid "(reviewed)"
+msgstr "(تمت المراجعة)"
+
+msgid "Why it is acceptable"
+msgstr "سبب القبول"
+
+msgid "Accept"
+msgstr "قبول"
+
+msgid "No documents registered."
+msgstr "لا توجد مستندات مسجلة."
+
+msgid "Board minutes"
+msgstr "محضر مجلس الإدارة"
+
+msgid "Form"
+msgstr "نموذج"
+
+msgid "Address exactly as written on the document"
+msgstr "العنوان كما ورد في المستند تماماً"
+
+msgid "Related parties & capital contributions"
+msgstr "الأطراف ذات العلاقة ومساهمات رأس المال"
+
+msgid "Party"
+msgstr "الطرف"
+
+msgid "Relation"
+msgstr "العلاقة"
+
+msgid "No related parties."
+msgstr "لا توجد أطراف ذات علاقة."
+
+msgid "Add a related party"
+msgstr "إضافة طرف ذي علاقة"
+
+msgid "Shareholder"
+msgstr "مساهم"
+
+msgid "Exiting shareholder"
+msgstr "مساهم متخارج"
+
+msgid "Director"
+msgstr "عضو مجلس إدارة"
+
+msgid "Affiliate"
+msgstr "شركة شقيقة / تابعة"
+
+msgid "Key person"
+msgstr "شخص رئيسي"
+
+msgid "Exited on"
+msgstr "تاريخ التخارج"
+
+msgid "Item"
+msgstr "البند"
+
+msgid "Paid by"
+msgstr "المسدِّد"
+
+msgid "Classification"
+msgstr "التبويب"
+
+msgid "No items."
+msgstr "لا توجد بنود."
+
+msgid "Record a contribution, balance or due"
+msgstr "تسجيل مساهمة أو رصيد أو مستحق"
+
+msgid "Capital contribution"
+msgstr "مساهمة في رأس المال"
+
+msgid "Loan from the party"
+msgstr "قرض من الطرف"
+
+msgid "Loan to the party"
+msgstr "قرض للطرف"
+
+msgid "Current account"
+msgstr "حساب جارٍ"
+
+msgid "Dues"
+msgstr "مستحقات"
+
+msgid "Paid by (as on the transfer)"
+msgstr "المسدِّد (كما في التحويل)"
+
+msgid "Liability"
+msgstr "التزام"
+
+msgid "Equity"
+msgstr "حقوق ملكية"
+
+msgid "Receivable"
+msgstr "مدينون"
+
+msgid "Explanation if paid by someone else"
+msgstr "التفسير إذا سدد طرف آخر"
+
+msgid "Solvency calculator"
+msgstr "حاسبة الملاءة"
+
+msgid "Limits from parameters"
+msgstr "الحدود من المعاملات"
+
+msgid "max leverage"
+msgstr "الحد الأقصى للرافعة"
+
+msgid "min equity"
+msgstr "الحد الأدنى لحقوق الملكية"
+
+msgid "min capital base"
+msgstr "الحد الأدنى للقاعدة الرأسمالية"
+
+msgid "Total assets"
+msgstr "إجمالي الأصول"
+
+msgid "Total liabilities"
+msgstr "إجمالي الالتزامات"
+
+msgid "Capital base"
+msgstr "القاعدة الرأسمالية"
+
+msgid "Net profit"
+msgstr "صافي الربح"
+
+msgid "Loan portfolio"
+msgstr "محفظة التمويل"
+
+msgid "Period end"
+msgstr "نهاية الفترة"
+
+msgid "Assets"
+msgstr "الأصول"
+
+msgid "Liabilities"
+msgstr "الالتزامات"
+
+msgid "Leverage"
+msgstr "الرافعة المالية"
+
+msgid "Breaches"
+msgstr "المخالفات"
+
+msgid "No financial periods yet."
+msgstr "لا توجد فترات مالية بعد."
+
+msgid "Enter figures for a period"
+msgstr "إدخال أرقام فترة"
+
+msgid "(maker-checker: another user approves)"
+msgstr "(مُدخِل ومُراجِع: يعتمد مستخدم آخر)"
+
+msgid "Quarter"
+msgstr "ربع سنة"
+
+msgid "Half-year"
+msgstr "نصف سنة"
+
+msgid "Save draft"
+msgstr "حفظ كمسودة"
+
+msgid "Studies"
+msgstr "الدراسات"
+
+msgid "Approved studies (ECL, deferred tax …)"
+msgstr "الدراسات المعتمدة (الخسائر الائتمانية المتوقعة، الضريبة المؤجلة …)"
+
+msgid "current"
+msgstr "سارية"
+
+msgid "Next refresh"
+msgstr "التحديث القادم"
+
+msgid "Approved by (board / committee / auditor)"
+msgstr "اعتمدها (المجلس / اللجنة / مراقب الحسابات)"
+
+msgid "No studies."
+msgstr "لا توجد دراسات."
+
+msgid "Add a study"
+msgstr "إضافة دراسة"
+
+msgid "type (e.g. ecl)"
+msgstr "النوع (مثال ecl)"
+
+msgid "Prepared by"
+msgstr "أعدها"
+
+msgid "Prudential overview"
+msgstr "نظرة عامة احترازية"
+
+msgid "Branches & staffing"
+msgstr "الفروع والعمالة"
+
+msgid "Borrowing facilities"
+msgstr "التسهيلات الممنوحة للشركة"
+
+msgid "Approved studies"
+msgstr "الدراسات المعتمدة"
+
+msgid "title and due date are required"
+msgstr "العنوان وتاريخ الاستحقاق مطلوبان"
+
+msgid "grant date and new due date are required"
+msgstr "تاريخ المنح وتاريخ الاستحقاق الجديد مطلوبان"
+
+msgid "an extension must move the due date later"
+msgstr "يجب أن تؤخر المهلة تاريخ الاستحقاق"
+
+msgid "figures must be approved by someone other than the person who entered them"
+msgstr "يجب أن يعتمد الأرقام شخص غير الذي أدخلها"
+
+msgid "choose a CSV file"
+msgstr "اختر ملف CSV"
+
+msgid "choose a capital type"
+msgstr "اختر نوع رأس المال"
+
+msgid "amount and date are required"
+msgstr "المبلغ والتاريخ مطلوبان"
+
+msgid "choose a key function"
+msgstr "اختر الوظيفة الرئيسية"
+
+msgid "name the holder"
+msgstr "حدد شاغل الوظيفة"
+
+msgid "code and name are required"
+msgstr "الرمز والاسم مطلوبان"
+
+msgid "a branch can be active only with a manager who has the regulator no-objection"
+msgstr "لا يكون الفرع نشطاً إلا بمدير حاصل على عدم ممانعة الجهة الرقابية"
+
+msgid "reference and lender are required"
+msgstr "المرجع والجهة المقرضة مطلوبان"
+
+msgid "name is required"
+msgstr "الاسم مطلوب"
+
+msgid "choose an item type"
+msgstr "اختر نوع البند"
+
+msgid "type and title are required"
+msgstr "النوع والعنوان مطلوبان"
+
+msgid "approval date and approving body are required"
+msgstr "تاريخ الاعتماد وجهة الاعتماد مطلوبان"
+
+msgid "attach the approved study (or certificate) first"
+msgstr "أرفق الدراسة المعتمدة (أو الشهادة) أولاً"
+
+msgid "period end is required"
+msgstr "نهاية الفترة مطلوبة"
+
+# --- AML assurance messages ---
+msgid "role code is required"
+msgstr "رمز الدور مطلوب"
+
+msgid "role, rule type and keyword are required"
+msgstr "الدور ونوع القاعدة والكلمة المفتاحية مطلوبة"
+
+msgid "this report is already board-approved; it cannot be regenerated"
+msgstr "هذا التقرير معتمد من المجلس؛ لا يمكن إعادة إنشائه"
+
+msgid "report not found"
+msgstr "التقرير غير موجود"
+
+msgid "an approved report cannot be changed"
+msgstr "لا يمكن تعديل تقرير معتمد"
+
+msgid "only a draft can be submitted to the board"
+msgstr "يمكن تقديم المسودة فقط لمجلس الإدارة"
+
+msgid "submit the report to the board first"
+msgstr "قدّم التقرير لمجلس الإدارة أولاً"
+
+msgid "board meeting reference and approval date are required"
+msgstr "مرجع اجتماع المجلس وتاريخ الاعتماد مطلوبان"
+
+msgid "unknown action"
+msgstr "إجراء غير معروف"
+
+msgid "policy not found"
+msgstr "السياسة غير موجودة"
+
+msgid "unit and planned date are required"
+msgstr "الوحدة والتاريخ المخطط مطلوبان"
+
+msgid "review not found"
+msgstr "المراجعة غير موجودة"
+
+msgid "answer every checklist item (ok / issue / n.a.)"
+msgstr "أجب عن كل بنود قائمة التحقق (سليم / مشكلة / لا ينطبق)"
+
+msgid "query name is required"
+msgstr "اسم الاستعلام مطلوب"
+
+msgid "user not found"
+msgstr "المستخدم غير موجود"
+
+msgid "item not found"
+msgstr "البند غير موجود"
+
+msgid "this item is already decided"
+msgstr "تم اتخاذ قرار في هذا البند"
+
+msgid "write the analysis first"
+msgstr "اكتب التحليل أولاً"
+
+msgid "decision must be STR or no STR"
+msgstr "يجب أن يكون القرار إخطاراً أو دون إخطار"
+
+msgid "enter the STR reference"
+msgstr "أدخل مرجع الإخطار"
+
+msgid "attach the supporting documents before deciding"
+msgstr "أرفق المستندات المؤيدة قبل اتخاذ القرار"
+
+msgid "beneficial owner name is required"
+msgstr "اسم المستفيد الحقيقي مطلوب"
+
+msgid "choose self or another beneficial owner"
+msgstr "اختر عن نفسه أو مستفيد آخر"
+
+msgid "name the beneficial owner"
+msgstr "حدد المستفيد الحقيقي"
+
+msgid "signature date is required"
+msgstr "تاريخ التوقيع مطلوب"
+
+msgid "record not found"
+msgstr "السجل غير موجود"
+
+msgid "senior approval must be given by a manager or compliance officer"
+msgstr "يجب أن تُمنح موافقة الإدارة العليا من مدير أو مسؤول التزام"
+
+# --- IT resilience ---
+msgid "dates must be YYYY-MM-DD"
+msgstr "يجب أن تكون التواريخ بصيغة YYYY-MM-DD"
+
+msgid "not a number"
+msgstr "ليس رقماً"
+
+msgid "test date and result are required"
+msgstr "تاريخ الاختبار والنتيجة مطلوبان"
+
+msgid "system name is required"
+msgstr "اسم النظام مطلوب"
+
+msgid "last success must be an ISO date-time"
+msgstr "يجب أن يكون آخر نجاح تاريخاً ووقتاً بصيغة ISO"
+
+msgid "status must be success, failed or partial"
+msgstr "يجب أن تكون الحالة نجاح أو فشل أو جزئي"
+
+msgid "unknown integration code"
+msgstr "رمز ربط غير معروف"
+
+msgid "type, title and date are required"
+msgstr "النوع والعنوان والتاريخ مطلوبة"
+
+msgid "assessment not found"
+msgstr "التقييم غير موجود"
+
+msgid "attach the report before accepting it"
+msgstr "أرفق التقرير قبل قبوله"
+
+msgid "type and product are required"
+msgstr "النوع والمنتج مطلوبان"
+
+msgid "enter a domain name, e.g. portal.example.com"
+msgstr "أدخل اسم نطاق، مثال portal.example.com"
+
+msgid "domain not found"
+msgstr "النطاق غير موجود"
+
+msgid "this framework has no requirements yet"
+msgstr "لا توجد متطلبات في هذا الإطار بعد"
+
+msgid "a final assessment cannot be changed"
+msgstr "لا يمكن تعديل تقييم نهائي"
+
+msgid "rate every requirement before finalising"
+msgstr "قيّم كل المتطلبات قبل الاعتماد النهائي"
+
+msgid "DR test recorded. Attach the test report."
+msgstr "تم تسجيل اختبار التعافي. أرفق تقرير الاختبار."
+
+msgid "Assessment accepted."
+msgstr "تم قبول التقييم."
+
+msgid "Saved. Attach the report, then accept it."
+msgstr "تم الحفظ. أرفق التقرير ثم اقبله."
+
+msgid "Certificate valid until %(d)s."
+msgstr "الشهادة سارية حتى %(d)s."
+
+msgid "Domain added and checked."
+msgstr "تمت إضافة النطاق وفحصه."
+
+msgid "IT resilience"
+msgstr "مرونة تكنولوجيا المعلومات"
+
+msgid "Incidents"
+msgstr "الحوادث"
+
+msgid "BCP / DR"
+msgstr "استمرارية الأعمال / التعافي"
+
+msgid "Backups"
+msgstr "النسخ الاحتياطية"
+
+msgid "Security assessments"
+msgstr "التقييمات الأمنية"
+
+msgid "Security tools & licences"
+msgstr "الأدوات الأمنية والتراخيص"
+
+msgid "Domains & certificates"
+msgstr "النطاقات والشهادات"
+
+msgid "Maturity"
+msgstr "النضج"
+
+msgid "IT risks"
+msgstr "مخاطر تكنولوجيا المعلومات"
+
+msgid "Expiring"
+msgstr "قارب على الانتهاء"
+
+msgid "Not checked"
+msgstr "لم يُفحص"
+
+msgid "Stale"
+msgstr "قديم"
+
+msgid "No licence"
+msgstr "بدون ترخيص"
+
+msgid "Valid until"
+msgstr "سارٍ حتى"
+
+msgid "Open critical / high"
+msgstr "المفتوح حرج / عالٍ"
+
+msgid "No assessments."
+msgstr "لا توجد تقييمات."
+
+msgid "Add an assessment"
+msgstr "إضافة تقييم"
+
+msgid "type"
+msgstr "النوع"
+
+msgid "Provider accreditation"
+msgstr "اعتماد الجهة المنفذة"
+
+msgid "Open critical"
+msgstr "حرجة مفتوحة"
+
+msgid "Open high"
+msgstr "عالية مفتوحة"
+
+msgid "Save and attach report"
+msgstr "حفظ وإرفاق التقرير"
+
+msgid "Security tools, licences & data residency"
+msgstr "الأدوات الأمنية والتراخيص وتوطين البيانات"
+
+msgid "Licence expiry warning"
+msgstr "تنبيه انتهاء الترخيص"
+
+msgid "days (parameter it.licence_expiry_warning_days)"
+msgstr "يوماً (المعامل it.licence_expiry_warning_days)"
+
+msgid "Licence state"
+msgstr "حالة الترخيص"
+
+msgid "Data residency"
+msgstr "توطين البيانات"
+
+msgid "in country"
+msgstr "داخل البلد"
+
+msgid "attested"
+msgstr "تم الإقرار"
+
+msgid "No security tools registered."
+msgstr "لا توجد أدوات أمنية مسجلة."
+
+msgid "Edit tool"
+msgstr "تعديل الأداة"
+
+msgid "Add a security tool"
+msgstr "إضافة أداة أمنية"
+
+msgid "type (waf, epp, edr …)"
+msgstr "النوع (waf، epp، edr …)"
+
+msgid "Vendor"
+msgstr "المورد"
+
+msgid "Licence ref."
+msgstr "مرجع الترخيص"
+
+msgid "Licence expiry"
+msgstr "انتهاء الترخيص"
+
+msgid "Coverage (e.g. all endpoints / public portal)"
+msgstr "النطاق (مثال: كل الأجهزة / البوابة العامة)"
+
+msgid "Data abroad?"
+msgstr "بيانات خارج البلد؟"
+
+msgid "No — stays in country"
+msgstr "لا — تبقى داخل البلد"
+
+msgid "Yes — sent abroad"
+msgstr "نعم — تُرسل للخارج"
+
+msgid "Data location"
+msgstr "موقع البيانات"
+
+msgid "Attested on"
+msgstr "تاريخ الإقرار"
+
+msgid "Attested by"
+msgstr "المُقِر"
+
+msgid "Attach the licence certificate and the vendor data-residency attestation in Files."
+msgstr "أرفق شهادة الترخيص وإقرار المورد بتوطين البيانات في الملفات."
+
+msgid "Off-site backups"
+msgstr "النسخ الاحتياطية خارج الموقع"
+
+msgid "Last successful off-site backup must be within"
+msgstr "يجب أن يكون آخر نسخ احتياطي ناجح خارج الموقع خلال"
+
+msgid "day(s)"
+msgstr "يوم"
+
+msgid "— not set (parameter it.offsite_backup_max_age_days)"
+msgstr "— غير محدد (المعامل it.offsite_backup_max_age_days)"
+
+msgid "Backup jobs can report each run to POST /api/v1/cyber/backup-status (API key with scope cyber:write)."
+msgstr "يمكن لمهام النسخ الاحتياطي إرسال نتيجة كل تشغيل إلى POST /api/v1/cyber/backup-status (مفتاح API بصلاحية cyber:write)."
+
+msgid "Encrypted"
+msgstr "مشفر"
+
+msgid "Last success"
+msgstr "آخر نجاح"
+
+msgid "Restore test"
+msgstr "اختبار الاسترجاع"
+
+msgid "No backup registered."
+msgstr "لا يوجد نسخ احتياطي مسجل."
+
+msgid "Edit backup"
+msgstr "تعديل النسخ الاحتياطي"
+
+msgid "Register a backup"
+msgstr "تسجيل نسخ احتياطي"
+
+msgid "(same system name = update)"
+msgstr "(نفس اسم النظام = تحديث)"
+
+msgid "Where (site / provider)"
+msgstr "المكان (الموقع / المزود)"
+
+msgid "Last successful backup"
+msgstr "آخر نسخ احتياطي ناجح"
+
+msgid "Last restore test"
+msgstr "آخر اختبار استرجاع"
+
+msgid "Business continuity & disaster recovery"
+msgstr "استمرارية الأعمال والتعافي من الكوارث"
+
+msgid "DR test required at least every"
+msgstr "اختبار التعافي مطلوب على الأقل كل"
+
+msgid "— not set (parameter it.dr_test_max_age_months)"
+msgstr "— غير محدد (المعامل it.dr_test_max_age_months)"
+
+msgid "Site"
+msgstr "الموقع"
+
+msgid "RTO / RPO (h)"
+msgstr "RTO / RPO (ساعة)"
+
+msgid "Last test"
+msgstr "آخر اختبار"
+
+msgid "No site registered."
+msgstr "لا يوجد موقع مسجل."
+
+msgid "Add a site"
+msgstr "إضافة موقع"
+
+msgid "DR site"
+msgstr "موقع التعافي"
+
+msgid "Backup site"
+msgstr "موقع النسخ الاحتياطي"
+
+msgid "Cloud"
+msgstr "سحابي"
+
+msgid "Primary"
+msgstr "رئيسي"
+
+msgid "RTO (hours)"
+msgstr "RTO (ساعات)"
+
+msgid "RPO (hours)"
+msgstr "RPO (ساعات)"
+
+msgid "RTO / RPO achieved"
+msgstr "RTO / RPO المحقق"
+
+msgid "No DR test recorded."
+msgstr "لا يوجد اختبار تعافٍ مسجل."
+
+msgid "Record a DR test"
+msgstr "تسجيل اختبار تعافٍ"
+
+msgid "RTO achieved (h)"
+msgstr "RTO المحقق (ساعة)"
+
+msgid "Scope (systems switched over)"
+msgstr "النطاق (الأنظمة التي تم تحويلها)"
+
+msgid "Issues found (a partial/failed test opens a finding)"
+msgstr "المشكلات المكتشفة (الاختبار الجزئي/الفاشل يفتح ملاحظة)"
+
+msgid "IT, cyber & business continuity"
+msgstr "تكنولوجيا المعلومات والأمن السيبراني واستمرارية الأعمال"
+
+msgid "BCP / DR readiness"
+msgstr "جاهزية الاستمرارية / التعافي"
+
+msgid "Backups with issues"
+msgstr "نسخ احتياطية بها مشكلات"
+
+msgid "Integrations not live"
+msgstr "ربط غير فعال"
+
+msgid "Certificates needing attention"
+msgstr "شهادات تحتاج متابعة"
+
+msgid "Licences expired / expiring"
+msgstr "تراخيص منتهية / قاربت على الانتهاء"
+
+msgid "IT risks not reviewed"
+msgstr "مخاطر تقنية لم تُراجع"
+
+msgid "Latest maturity self-assessments"
+msgstr "أحدث تقييمات النضج الذاتية"
+
+msgid "avg"
+msgstr "المتوسط"
+
+msgid "None yet."
+msgstr "لا يوجد بعد."
+
+msgid "Domains & TLS certificates"
+msgstr "النطاقات وشهادات TLS"
+
+msgid "Each active domain is checked automatically (real TLS connection, every 12 hours via the scheduled run). Warning"
+msgstr "يُفحص كل نطاق فعال تلقائياً (اتصال TLS حقيقي كل 12 ساعة عبر التشغيل المجدول). التنبيه"
+
+msgid "days before expiry (parameter it.ssl_expiry_warning_days)."
+msgstr "يوماً قبل الانتهاء (المعامل it.ssl_expiry_warning_days)."
+
+msgid "Domain"
+msgstr "النطاق"
+
+msgid "Issuer"
+msgstr "جهة الإصدار"
+
+msgid "Last checked"
+msgstr "آخر فحص"
+
+msgid "Check now"
+msgstr "افحص الآن"
+
+msgid "No domain declared."
+msgstr "لا يوجد نطاق معلن."
+
+msgid "Add and check"
+msgstr "إضافة وفحص"
+
+msgid "External integrations"
+msgstr "الربط مع الجهات الخارجية"
+
+msgid "Links the regulation expects (e.g. a freeze-order / sanctions feed from the financial-intelligence unit). Systems can report each exchange to POST /api/v1/cyber/integration-exchange."
+msgstr "روابط تتطلبها اللوائح (مثل قوائم أوامر التجميد / العقوبات من وحدة التحريات المالية). يمكن للأنظمة إرسال كل تبادل إلى POST /api/v1/cyber/integration-exchange."
+
+msgid "Integration"
+msgstr "الربط"
+
+msgid "Record successful exchange"
+msgstr "تسجيل تبادل ناجح"
+
+msgid "No integration registered."
+msgstr "لا يوجد ربط مسجل."
+
+msgid "Add or change an integration"
+msgstr "إضافة أو تعديل ربط"
+
+msgid "Not connected"
+msgstr "غير متصل"
+
+msgid "Testing"
+msgstr "تحت الاختبار"
+
+msgid "Live"
+msgstr "فعال"
+
+msgid "Down"
+msgstr "متوقف"
+
+msgid "IT risks in the ERM register"
+msgstr "مخاطر تكنولوجيا المعلومات في سجل المخاطر المؤسسية"
+
+msgid "IT risks live in the enterprise risk register (Risk Management), category"
+msgstr "مخاطر تكنولوجيا المعلومات مسجلة في سجل المخاطر المؤسسية (إدارة المخاطر)، الفئة"
+
+msgid "Review age limit"
+msgstr "حد عمر المراجعة"
+
+msgid "not set (parameter it.risk_register_max_age_days)"
+msgstr "غير محدد (المعامل it.risk_register_max_age_days)"
+
+msgid "Inherent / residual"
+msgstr "الكامن / المتبقي"
+
+msgid "Last review"
+msgstr "آخر مراجعة"
+
+msgid "Freshness"
+msgstr "الحداثة"
+
+msgid "No risk in these categories."
+msgstr "لا توجد مخاطر في هذه الفئات."
+
+msgid "Maturity self-assessment"
+msgstr "تقييم النضج الذاتي"
+
+msgid "Framework maturity self-assessment"
+msgstr "التقييم الذاتي لنضج الإطار"
+
+msgid "Pick any framework of the control library (IT governance, IT risk, cybersecurity — from a content pack or built on Compliance Controls → Frameworks) and rate each requirement 0–5 against a target."
+msgstr "اختر أي إطار من مكتبة الضوابط (حوكمة تكنولوجيا المعلومات، مخاطرها، الأمن السيبراني — من حزمة محتوى أو مبني من الضوابط الرقابية ← الأطر) وقيّم كل متطلب من 0 إلى 5 مقابل هدف."
+
+msgid "Assessed"
+msgstr "تاريخ التقييم"
+
+msgid "Average"
+msgstr "المتوسط"
+
+msgid "Start a self-assessment"
+msgstr "بدء تقييم ذاتي"
+
+msgid "(the previous ratings are carried over)"
+msgstr "(تُنقل التقييمات السابقة)"
+
+msgid "Start"
+msgstr "بدء"
+
+msgid "average"
+msgstr "المتوسط"
+
+msgid "below target"
+msgstr "أقل من الهدف"
+
+msgid "Current (0-5)"
+msgstr "الحالي (0-5)"
+
+msgid "Target (0-5)"
+msgstr "المستهدف (0-5)"
+
+msgid "Evidence / note"
+msgstr "الدليل / ملاحظة"
+
+msgid "Save and finalise"
+msgstr "حفظ واعتماد نهائي"
+
+msgid "0 none · 1 initial · 2 repeatable · 3 defined · 4 managed · 5 optimised"
+msgstr "0 لا يوجد · 1 مبدئي · 2 قابل للتكرار · 3 محدد · 4 مُدار · 5 مُحسَّن"
+
+msgid "IT resilience (BCP, backups, certificates)"
+msgstr "مرونة تكنولوجيا المعلومات (الاستمرارية، النسخ، الشهادات)"
+
+# --- Carbon accounting ---
+msgid "factor code is required"
+msgstr "رمز المعامل مطلوب"
+
+msgid "New factor version published; earlier entries keep the version they used."
+msgstr "تم نشر إصدار جديد للمعامل؛ تحتفظ القيود السابقة بالإصدار الذي استخدمته."
+
+msgid "No reporting period exists yet."
+msgstr "لا توجد فترة تقرير بعد."
+
+msgid "Recorded %(t)s tCO2e. Attach the evidence (invoice, meter reading, ticket)."
+msgstr "تم تسجيل %(t)s طن مكافئ CO2. أرفق المستند (فاتورة، قراءة عداد، تذكرة)."
+
+msgid "Exposure saved: %(t)s tCO2e financed (PCAF score %(s)s)."
+msgstr "تم حفظ التعرض: %(t)s طن مكافئ CO2 ممولة (درجة PCAF %(s)s)."
+
+msgid "Inventory status: %(s)s."
+msgstr "حالة الجرد: %(s)s."
+
+msgid "This reporting period is approved and locked."
+msgstr "فترة التقرير هذه معتمدة ومقفلة."
+
+msgid "Report marked as submitted. Offset obligation created: %(req)s tCO2e (%(pct)s%%) due within %(days)s days."
+msgstr "تم تسجيل تقديم التقرير. أُنشئ التزام التعويض: %(req)s طن مكافئ CO2 (%(pct)s%%) خلال %(days)s يوماً."
+
+msgid "choose a consolidation approach"
+msgstr "اختر أسلوب التجميع"
+
+msgid "value, effective date and source are required"
+msgstr "القيمة وتاريخ السريان والمصدر مطلوبة"
+
+msgid "a new factor needs scope, activity and unit"
+msgstr "يحتاج المعامل الجديد إلى النطاق والنشاط والوحدة"
+
+msgid "the new version must start after the existing versions"
+msgstr "يجب أن يبدأ الإصدار الجديد بعد الإصدارات الحالية"
+
+msgid "this reporting period is approved and locked"
+msgstr "فترة التقرير هذه معتمدة ومقفلة"
+
+msgid "only an administrator can unlock an approved inventory"
+msgstr "يمكن لمسؤول النظام فقط فتح جرد معتمد"
+
+msgid "give the reason"
+msgstr "اذكر السبب"
+
+msgid "no factor version applies to that date"
+msgstr "لا يوجد إصدار معامل ينطبق على هذا التاريخ"
+
+msgid "quantity is required"
+msgstr "الكمية مطلوبة"
+
+msgid "entry not found"
+msgstr "القيد غير موجود"
+
+msgid "choose a PCAF method"
+msgstr "اختر طريقة PCAF"
+
+msgid "only an inventory under review can be returned"
+msgstr "لا يمكن إرجاع إلا جرد قيد المراجعة"
+
+msgid "only an approved inventory can be unlocked"
+msgstr "لا يمكن فتح إلا جرد معتمد"
+
+msgid "fix the critical data-quality issues before submitting"
+msgstr "عالج مشكلات جودة البيانات الحرجة قبل التقديم"
+
+msgid "the reviewer must be different from the preparer"
+msgstr "يجب أن يختلف المراجع عن المُعِد"
+
+msgid "the approver must be different from the preparer and the reviewer"
+msgstr "يجب أن يختلف المعتمد عن المُعِد والمراجع"
+
+msgid "Carbon accounting"
+msgstr "محاسبة الكربون"
+
+msgid "Boundary & sites"
+msgstr "الحدود والمواقع"
+
+msgid "Factor versions"
+msgstr "إصدارات المعاملات"
+
+msgid "Activity data"
+msgstr "بيانات الأنشطة"
+
+msgid "Financed emissions"
+msgstr "الانبعاثات الممولة"
+
+msgid "Data quality"
+msgstr "جودة البيانات"
+
+msgid "Review & approval"
+msgstr "المراجعة والاعتماد"
+
+msgid "Intensity & initiatives"
+msgstr "الكثافة والمبادرات"
+
+msgid "FRA compliance"
+msgstr "الالتزام بمتطلبات الهيئة"
+
+msgid "approved & locked"
+msgstr "معتمد ومقفل"
+
+msgid "Factor used"
+msgstr "المعامل المستخدم"
+
+msgid "Share"
+msgstr "الحصة"
+
+msgid "No activity data for this period."
+msgstr "لا توجد بيانات أنشطة لهذه الفترة."
+
+msgid "Record activity data"
+msgstr "تسجيل بيانات نشاط"
+
+msgid "(the factor version in force in the activity month is applied and stored)"
+msgstr "(يُطبَّق إصدار المعامل الساري في شهر النشاط ويُحفظ)"
+
+msgid "Activity month"
+msgstr "شهر النشاط"
+
+msgid "factor unit"
+msgstr "وحدة المعامل"
+
+msgid "Scope 2 basis"
+msgstr "أساس النطاق 2"
+
+msgid "Location-based (grid)"
+msgstr "على أساس الموقع (الشبكة)"
+
+msgid "Market-based (contract)"
+msgstr "على أساس السوق (تعاقدي)"
+
+msgid "Contractual instrument"
+msgstr "الأداة التعاقدية"
+
+msgid "e.g. I-REC, green tariff, PPA"
+msgstr "مثال: I-REC، تعريفة خضراء، عقد شراء طاقة"
+
+msgid "Instrument ref."
+msgstr "مرجع الأداة"
+
+msgid "Calculation helper"
+msgstr "أداة مساعدة للحساب"
+
+msgid "None (enter quantity)"
+msgstr "لا شيء (أدخل الكمية)"
+
+msgid "Employee commuting (Cat. 7)"
+msgstr "تنقل الموظفين (الفئة 7)"
+
+msgid "Business travel (Cat. 6)"
+msgstr "سفر العمل (الفئة 6)"
+
+msgid "Scope 2: record consumption once with the grid factor (location-based). If a contractual instrument covers it, add a market-based entry for the same site and month with the instrument factor; uncovered months fall back to the grid factor in the market-based total."
+msgstr "النطاق 2: سجّل الاستهلاك مرة واحدة بمعامل الشبكة (على أساس الموقع). إذا غطته أداة تعاقدية، أضف قيداً على أساس السوق لنفس الموقع والشهر بمعامل الأداة؛ الأشهر غير المغطاة تُحسب بمعامل الشبكة في إجمالي أساس السوق."
+
+msgid "Commuting: employees × days per year × one-way km × 2 = passenger-km. Travel: trips × distance km × travellers (× 2 for return)."
+msgstr "التنقل: عدد الموظفين × أيام السنة × كم الذهاب × 2 = راكب-كم. السفر: الرحلات × المسافة كم × المسافرون (× 2 للعودة)."
+
+msgid "Days per year"
+msgstr "أيام في السنة"
+
+msgid "One-way km"
+msgstr "كم في اتجاه واحد"
+
+msgid "Trips"
+msgstr "الرحلات"
+
+msgid "Distance km"
+msgstr "المسافة كم"
+
+msgid "Travellers"
+msgstr "المسافرون"
+
+msgid "Return trip"
+msgstr "ذهاب وعودة"
+
+msgid "Note (meter, invoice no.)"
+msgstr "ملاحظة (العداد، رقم الفاتورة)"
+
+msgid "Save and attach evidence"
+msgstr "حفظ وإرفاق المستند"
+
+msgid "Organisational boundary, entities & sites"
+msgstr "الحدود التنظيمية والكيانات والمواقع"
+
+msgid "Boundary & base year"
+msgstr "الحدود وسنة الأساس"
+
+msgid "Consolidation approach (GHG Protocol)"
+msgstr "أسلوب التجميع (بروتوكول غازات الاحتباس)"
+
+msgid "Operational control"
+msgstr "السيطرة التشغيلية"
+
+msgid "Financial control"
+msgstr "السيطرة المالية"
+
+msgid "Equity share"
+msgstr "حصة الملكية"
+
+msgid "Base year"
+msgstr "سنة الأساس"
+
+msgid "Base-year emissions (tCO2e)"
+msgstr "انبعاثات سنة الأساس (طن مكافئ CO2)"
+
+msgid "Recalculation threshold"
+msgstr "حد إعادة الاحتساب"
+
+msgid "Base-year recalculation policy"
+msgstr "سياسة إعادة احتساب سنة الأساس"
+
+msgid "e.g. recalculate when acquisitions, divestments or methodology changes move base-year emissions by more than the threshold"
+msgstr "مثال: إعادة الاحتساب عند الاستحواذ أو التخارج أو تغيير المنهجية بما يغير انبعاثات سنة الأساس بأكثر من الحد"
+
+msgid "Legal entities"
+msgstr "الكيانات القانونية"
+
+msgid "(share consolidated depends on the approach)"
+msgstr "(الحصة المجمعة تعتمد على الأسلوب)"
+
+msgid "Included"
+msgstr "مُدرج"
+
+msgid "No entity: everything is consolidated in full."
+msgstr "لا توجد كيانات: يُجمَّع كل شيء بالكامل."
+
+msgid "Op. control"
+msgstr "سيطرة تشغيلية"
+
+msgid "Fin. control"
+msgstr "سيطرة مالية"
+
+msgid "Sites"
+msgstr "المواقع"
+
+msgid "No sites yet."
+msgstr "لا توجد مواقع بعد."
+
+msgid "Office"
+msgstr "مكتب"
+
+msgid "Data centre"
+msgstr "مركز بيانات"
+
+msgid "Warehouse"
+msgstr "مستودع"
+
+msgid "Carbon footprint disclosure"
+msgstr "الإفصاح عن البصمة الكربونية"
+
+msgid "Draft — the inventory is not approved yet."
+msgstr "مسودة — لم يُعتمد الجرد بعد."
+
+msgid "Annual carbon footprint disclosure"
+msgstr "الإفصاح السنوي عن البصمة الكربونية"
+
+msgid "Reporting period"
+msgstr "فترة التقرير"
+
+msgid "Boundary and methodology"
+msgstr "الحدود والمنهجية"
+
+msgid "Calculated under the GHG Protocol Corporate Standard (Scope 2 guidance: location- and market-based), with Scope 3 Category 15 under the PCAF Global Standard. Consolidation approach"
+msgstr "محسوبة وفق المعيار المؤسسي لبروتوكول غازات الاحتباس الحراري (إرشادات النطاق 2: أساس الموقع والسوق)، والفئة 15 من النطاق 3 وفق معيار PCAF العالمي. أسلوب التجميع"
+
+msgid "Scopes reported"
+msgstr "النطاقات المفصح عنها"
+
+msgid "Recalculation policy"
+msgstr "سياسة إعادة الاحتساب"
+
+msgid "Entities and sites"
+msgstr "الكيانات والمواقع"
+
+msgid "ownership"
+msgstr "الملكية"
+
+msgid "included"
+msgstr "مُدرج"
+
+msgid "excluded"
+msgstr "مستبعد"
+
+msgid "staff"
+msgstr "موظف"
+
+msgid "Gross emissions (tCO2e)"
+msgstr "إجمالي الانبعاثات (طن مكافئ CO2)"
+
+msgid "Scope 1 — direct"
+msgstr "النطاق 1 — مباشرة"
+
+msgid "Scope 2 — location-based"
+msgstr "النطاق 2 — أساس الموقع"
+
+msgid "Scope 2 — market-based"
+msgstr "النطاق 2 — أساس السوق"
+
+msgid "Scope 3 — value chain"
+msgstr "النطاق 3 — سلسلة القيمة"
+
+msgid "Total gross, location-based"
+msgstr "الإجمالي، أساس الموقع"
+
+msgid "Total gross, market-based"
+msgstr "الإجمالي، أساس السوق"
+
+msgid "Scope 3 category"
+msgstr "فئة النطاق 3"
+
+msgid "PCAF data-quality score"
+msgstr "درجة جودة بيانات PCAF"
+
+msgid "Offsets (reported separately — not deducted from gross emissions)"
+msgstr "التعويضات (يُفصح عنها منفصلة — لا تُخصم من إجمالي الانبعاثات)"
+
+msgid "Registry ref."
+msgstr "مرجع السجل"
+
+msgid "Retired on"
+msgstr "تاريخ الإلغاء"
+
+msgid "None for this period."
+msgstr "لا يوجد لهذه الفترة."
+
+msgid "Total offsets"
+msgstr "إجمالي التعويضات"
+
+msgid "Intensity"
+msgstr "الكثافة"
+
+msgid "tCO2e per employee"
+msgstr "طن مكافئ CO2 لكل موظف"
+
+msgid "tCO2e per m²"
+msgstr "طن مكافئ CO2 لكل م²"
+
+msgid "tCO2e per EGP million revenue"
+msgstr "طن مكافئ CO2 لكل مليون جنيه إيرادات"
+
+msgid "Financed tCO2e per EGP million financed"
+msgstr "طن مكافئ CO2 ممول لكل مليون جنيه تمويل"
+
+msgid "Denominators not entered."
+msgstr "لم تُدخل المقامات."
+
+msgid "Emission-factor sources used"
+msgstr "مصادر معاملات الانبعاث المستخدمة"
+
+msgid "Vintage"
+msgstr "سنة الإصدار"
+
+msgid "Data quality and sign-off"
+msgstr "جودة البيانات والاعتماد"
+
+msgid "critical and"
+msgstr "حرجة و"
+
+msgid "warning issue(s) open."
+msgstr "تحذير مفتوح."
+
+msgid "By"
+msgstr "بواسطة"
+
+msgid "On"
+msgstr "بتاريخ"
+
+msgid "Not yet signed off."
+msgstr "لم يُعتمد بعد."
+
+msgid "TODO(compliance-review): align headings and wording with the FRA carbon-footprint disclosure template before submission."
+msgstr "TODO(compliance-review): مواءمة العناوين والصياغة مع نموذج الهيئة للإفصاح عن البصمة الكربونية قبل التقديم."
+
+msgid "Versioned emission-factor library"
+msgstr "مكتبة معاملات الانبعاث بالإصدارات"
+
+msgid "Each factor has a stable code and dated versions. An entry uses the version in force in its activity month and stores the value, source and vintage it used — a new version never changes a recorded figure. Example: the national grid electricity factor gets one version per year."
+msgstr "لكل معامل رمز ثابت وإصدارات مؤرخة. يستخدم القيد الإصدار الساري في شهر النشاط ويحفظ القيمة والمصدر وسنة الإصدار — الإصدار الجديد لا يغير رقماً مسجلاً. مثال: معامل كهرباء الشبكة القومية له إصدار لكل سنة."
+
+msgid "No factors yet."
+msgstr "لا توجد معاملات بعد."
+
+msgid "open"
+msgstr "مفتوح"
+
+msgid "Publish a new version"
+msgstr "نشر إصدار جديد"
+
+msgid "Add a factor"
+msgstr "إضافة معامل"
+
+msgid "Factor code"
+msgstr "رمز المعامل"
+
+msgid "unit"
+msgstr "الوحدة"
+
+msgid "Version label"
+msgstr "تسمية الإصدار"
+
+msgid "Source link"
+msgstr "رابط المصدر"
+
+msgid "Cat. no"
+msgstr "رقم الفئة"
+
+msgid "Publish"
+msgstr "نشر"
+
+msgid "Back to activity data"
+msgstr "العودة لبيانات الأنشطة"
+
+msgid "Financed emissions — Scope 3 Category 15 (PCAF)"
+msgstr "الانبعاثات الممولة — النطاق 3 الفئة 15 (PCAF)"
+
+msgid "Financed emissions (tCO2e)"
+msgstr "الانبعاثات الممولة (طن مكافئ CO2)"
+
+msgid "Weighted data-quality score (1 best – 5)"
+msgstr "درجة جودة البيانات المرجحة (1 الأفضل – 5)"
+
+msgid "Exposures"
+msgstr "التعرضات"
+
+msgid "Outstanding covered"
+msgstr "الأرصدة المغطاة"
+
+msgid "Attribution factor = outstanding ÷ borrower equity + debt (business loans) or ÷ vehicle value at origination (motor-vehicle loans). Financed emissions = attribution × borrower emissions. Score 1–2 reported emissions, 3 physical activity data, 4 revenue × sector factor, 5 outstanding × sector factor."
+msgstr "معامل الإسناد = الرصيد ÷ حقوق ملكية وديون المقترض (قروض الأعمال) أو ÷ قيمة المركبة عند المنح (قروض المركبات). الانبعاثات الممولة = معامل الإسناد × انبعاثات المقترض. الدرجة 1–2 انبعاثات مفصح عنها، 3 بيانات نشاط فعلية، 4 الإيرادات × معامل القطاع، 5 الرصيد × معامل القطاع."
+
+msgid "Borrower / segment"
+msgstr "المقترض / الشريحة"
+
+msgid "Asset class"
+msgstr "فئة الأصل"
+
+msgid "Attribution"
+msgstr "الإسناد"
+
+msgid "No exposures recorded."
+msgstr "لا توجد تعرضات مسجلة."
+
+msgid "Add an exposure or portfolio segment"
+msgstr "إضافة تعرض أو شريحة محفظة"
+
+msgid "Borrower or segment (e.g. micro loans – agriculture)"
+msgstr "المقترض أو الشريحة (مثال: قروض متناهية الصغر – زراعة)"
+
+msgid "Business loans"
+msgstr "قروض الأعمال"
+
+msgid "Motor-vehicle loans"
+msgstr "قروض المركبات"
+
+msgid "Leasing"
+msgstr "التأجير التمويلي"
+
+msgid "Consumer loans"
+msgstr "قروض استهلاكية"
+
+msgid "Sector"
+msgstr "القطاع"
+
+msgid "Equity + debt / vehicle value (EGP)"
+msgstr "حقوق الملكية + الديون / قيمة المركبة (جنيه)"
+
+msgid "Borrower tCO2e"
+msgstr "انبعاثات المقترض"
+
+msgid "Borrower revenue (EGP)"
+msgstr "إيرادات المقترض (جنيه)"
+
+msgid "Sector factor"
+msgstr "معامل القطاع"
+
+msgid "Sector factors: kgCO2e per EGP million (revenue or outstanding) in the factor library, Category 15."
+msgstr "معاملات القطاع: كجم مكافئ CO2 لكل مليون جنيه (إيرادات أو رصيد) في مكتبة المعاملات، الفئة 15."
+
+msgid "Intensity, targets & reduction initiatives"
+msgstr "الكثافة والأهداف ومبادرات الخفض"
+
+msgid "Denominators"
+msgstr "المقامات"
+
+msgid "Revenue (EGP)"
+msgstr "الإيرادات (جنيه)"
+
+msgid "Floor area (m²)"
+msgstr "المساحة (م²)"
+
+msgid "Financed portfolio (EGP)"
+msgstr "المحفظة الممولة (جنيه)"
+
+msgid "from sites/exposures"
+msgstr "من المواقع/التعرضات"
+
+msgid "Target progress (operational: Scope 1 + 2)"
+msgstr "التقدم نحو الهدف (التشغيلي: النطاق 1 + 2)"
+
+msgid "path walked"
+msgstr "المسار المقطوع"
+
+msgid "Set a baseline and target"
+msgstr "حدد خط الأساس والهدف"
+
+msgid "Reduction initiatives"
+msgstr "مبادرات الخفض"
+
+msgid "planned / in progress"
+msgstr "مخطط / قيد التنفيذ"
+
+msgid "Initiative"
+msgstr "المبادرة"
+
+msgid "Target date"
+msgstr "التاريخ المستهدف"
+
+msgid "Expected"
+msgstr "المتوقع"
+
+msgid "Achieved"
+msgstr "المحقق"
+
+msgid "No initiative yet."
+msgstr "لا توجد مبادرات بعد."
+
+msgid "e.g. LED retrofit in branches"
+msgstr "مثال: استبدال الإضاءة بـ LED في الفروع"
+
+msgid "Data-quality controls"
+msgstr "ضوابط جودة البيانات"
+
+msgid "Critical issues (unit mismatch, entry without evidence, negative quantity) block submission for review. Warnings (missing months, outliers vs the previous period, PCAF gaps) must be explained to the verifier."
+msgstr "المشكلات الحرجة (عدم تطابق الوحدة، قيد بلا مستند، كمية سالبة) تمنع التقديم للمراجعة. التحذيرات (أشهر ناقصة، قيم شاذة مقارنة بالفترة السابقة، فجوات PCAF) يجب شرحها لجهة التحقق."
+
+msgid "No data-quality issue in"
+msgstr "لا توجد مشكلات جودة بيانات في"
+
+msgid "entries."
+msgstr "قيد."
+
+msgid "Preparer → reviewer → approver, three different people. Approval locks the period: no entry can be added, changed or deleted until an administrator unlocks it with a reason."
+msgstr "مُعِد ← مراجع ← معتمد، ثلاثة أشخاص مختلفين. الاعتماد يقفل الفترة: لا يمكن إضافة أو تعديل أو حذف قيد حتى يفتحها مسؤول النظام مع ذكر السبب."
+
+msgid "Approved by"
+msgstr "اعتمده"
+
+msgid "critical data-quality issue(s) — fix them before submitting."
+msgstr "مشكلة جودة بيانات حرجة — عالجها قبل التقديم."
+
+msgid "Comment (required to return or unlock)"
+msgstr "تعليق (مطلوب للإرجاع أو الفتح)"
+
+msgid "Submit for review"
+msgstr "تقديم للمراجعة"
+
+msgid "Mark as reviewed"
+msgstr "تمت المراجعة"
+
+msgid "Approve and lock"
+msgstr "اعتماد وإقفال"
+
+msgid "Return to preparer"
+msgstr "إرجاع للمُعِد"
+
+msgid "Unlock (admin)"
+msgstr "فتح (مسؤول النظام)"
+
+msgid "Audit trail"
+msgstr "سجل التدقيق"
+
+msgid "Who"
+msgstr "من"
+
+msgid "Comment"
+msgstr "التعليق"
+
+msgid "No action yet."
+msgstr "لا يوجد إجراء بعد."
+
+# --- Inspection readiness ---
+msgid "All areas"
+msgstr "كل المجالات"
+
+msgid "Readiness snapshot saved (%(n)s scores)."
+msgstr "تم حفظ لقطة الجاهزية (%(n)s درجة)."
+
+msgid "Inspection readiness"
+msgstr "الجاهزية للتفتيش"
+
+msgid "Regulatory calendar"
+msgstr "التقويم الرقابي"
+
+msgid "Not assessed"
+msgstr "لم يُقيَّم"
+
+msgid "Ready"
+msgstr "جاهز"
+
+msgid "Partly ready"
+msgstr "جاهز جزئياً"
+
+msgid "Not ready"
+msgstr "غير جاهز"
+
+msgid "Evidence pack (ZIP)"
+msgstr "حزمة الأدلة (ZIP)"
+
+msgid "Back to readiness"
+msgstr "العودة للجاهزية"
+
+msgid "controls"
+msgstr "ضوابط"
+
+msgid "failing"
+msgstr "غير ملتزمة"
+
+msgid "No evidence."
+msgstr "لا توجد أدلة."
+
+msgid "No findings."
+msgstr "لا توجد ملاحظات."
+
+msgid "Compliance readiness — board report"
+msgstr "الجاهزية الرقابية — تقرير مجلس الإدارة"
+
+msgid "Compliance & inspection readiness — report to the board"
+msgstr "الالتزام والجاهزية للتفتيش — تقرير إلى مجلس الإدارة"
+
+msgid "Readiness score"
+msgstr "درجة الجاهزية"
+
+msgid "not assessed"
+msgstr "لم يُقيَّم"
+
+msgid "open findings"
+msgstr "ملاحظات مفتوحة"
+
+msgid "repeated violations"
+msgstr "مخالفات متكررة"
+
+msgid "By area"
+msgstr "حسب المجال"
+
+msgid "Most important gaps"
+msgstr "أهم الفجوات"
+
+msgid "No gap."
+msgstr "لا توجد فجوات."
+
+msgid "Findings ageing"
+msgstr "أعمار الملاحظات"
+
+msgid "Trend"
+msgstr "الاتجاه"
+
+msgid "No snapshot yet."
+msgstr "لا توجد لقطة بعد."
+
+msgid "Score = criticality-weighted average of the latest control results (pass 100, warning 50, fail / not assessed 0; critical 4, high 3, medium 2, low 1)."
+msgstr "الدرجة = متوسط مرجح بالأهمية لآخر نتائج الضوابط (ناجح 100، تحذير 50، فاشل / غير مقيَّم 0؛ حرج 4، عالٍ 3، متوسط 2، منخفض 1)."
+
+msgid "Export (.ics)"
+msgstr "تصدير (.ics)"
+
+msgid "Periodic submissions (regulatory reports), regulatory deadlines and extensions, carbon offsets, evidence expiry, findings and action plans in one list. Reminders go to the owner and the Head of Compliance at the days set in rc.calendar_reminder_days."
+msgstr "التقارير الدورية والمواعيد الرقابية والمهل وتعويضات الكربون وانتهاء الأدلة والملاحظات وخطط التصحيح في قائمة واحدة. تُرسل التذكيرات للمسؤول ورئيس الالتزام في الأيام المحددة في rc.calendar_reminder_days."
+
+msgid "Offsets"
+msgstr "التعويضات"
+
+msgid "Evidence expiry"
+msgstr "انتهاء الدليل"
+
+msgid "Finding due"
+msgstr "استحقاق ملاحظة"
+
+msgid "Action plan due"
+msgstr "استحقاق خطة تصحيح"
+
+msgid "Days"
+msgstr "الأيام"
+
+msgid "Nothing due in this window."
+msgstr "لا شيء مستحق في هذه الفترة."
+
+msgid "All frameworks"
+msgstr "كل الأطر"
+
+msgid "Board report"
+msgstr "تقرير المجلس"
+
+msgid "Full evidence pack (ZIP)"
+msgstr "حزمة الأدلة الكاملة (ZIP)"
+
+msgid "Overall readiness (weighted by criticality)"
+msgstr "الجاهزية الإجمالية (مرجحة بالأهمية)"
+
+msgid "The trend appears after the first daily snapshots (scheduled run, or the button below)."
+msgstr "يظهر الاتجاه بعد أولى اللقطات اليومية (التشغيل المجدول أو الزر أدناه)."
+
+msgid "Save a snapshot now"
+msgstr "حفظ لقطة الآن"
+
+msgid "Readiness by area"
+msgstr "الجاهزية حسب المجال"
+
+msgid "Evidence pack"
+msgstr "حزمة الأدلة"
+
+msgid "Top gaps (critical first)"
+msgstr "أهم الفجوات (الحرجة أولاً)"
+
+msgid "Evidence expiring / expired"
+msgstr "أدلة قاربت على الانتهاء / منتهية"
+
+msgid "Open findings by age"
+msgstr "الملاحظات المفتوحة حسب العمر"
+
+msgid "repeated"
+msgstr "متكررة"
+
+msgid "Top risks (ERM register)"
+msgstr "أهم المخاطر (سجل المخاطر المؤسسية)"
+
+msgid "No active risks."
+msgstr "لا توجد مخاطر فعالة."
+
+msgid "Inspection evidence pack"
+msgstr "حزمة أدلة التفتيش"
+
+msgid "Contents: this index, controls.csv (control list and latest result), run_history.csv (every automated run and manual test), evidence/<control>/ (approved evidence files)."
+msgstr "المحتويات: هذا الفهرس، controls.csv (قائمة الضوابط وآخر نتيجة)، run_history.csv (كل تشغيل آلي واختبار يدوي)، evidence/<control>/ (ملفات الأدلة المعتمدة)."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

@@ -369,6 +369,29 @@ def create_app(config_name=None):
     import cases.routes  # noqa: F401 — registers routes on cases_bp
     app.register_blueprint(cases_bp)
 
+    # FRA regulatory control framework (parameters, control library, engine,
+    # evidence, findings & corrective actions) — see regcontrols/
+    from regcontrols import regcontrols_bp
+    import regcontrols.routes  # noqa: F401 — registers routes on regcontrols_bp
+    app.register_blueprint(regcontrols_bp)
+
+    # AML/CFT & KYC assurance (key roles, annual report, monitoring programme,
+    # screening QA, unusual-transactions register, KYC files, risk model) — see amlkyc/
+    from amlkyc import amlkyc_bp
+    import amlkyc.routes  # noqa: F401 — registers routes on amlkyc_bp
+    app.register_blueprint(amlkyc_bp)
+
+    # Prudential, licensing, governance & financial-reporting registers — see prudential/
+    from prudential import prudential_bp
+    import prudential.routes  # noqa: F401 — registers routes on prudential_bp
+    app.register_blueprint(prudential_bp)
+
+    # Optional content packs (packs/<code>/): their pages exist only while the
+    # pack is enabled (Compliance Controls > Content packs). Core never
+    # imports a specific pack.
+    from regcontrols.packs import register_blueprints as _register_pack_blueprints
+    _register_pack_blueprints(app)
+
 
     # Phishing Awareness Module
     from phishing import phishing_bp

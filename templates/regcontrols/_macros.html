@@ -1,0 +1,61 @@
+{# Shared badges for regcontrols pages. Import with:
+   {% import 'regcontrols/_macros.html' as rc %} #}
+
+{% macro status_badge(s) -%}
+{%- set cls = {'pass': 'bg-success', 'warning': 'bg-warning text-dark', 'fail': 'bg-danger', 'error': 'bg-dark',
+               'no_check': 'bg-secondary', 'not_applicable': 'bg-light text-dark border'}.get(s, 'bg-light text-dark border') -%}
+{%- set lbl = {'pass': _('Pass'), 'warning': _('Warning'), 'fail': _('Fail'), 'error': _('Error'),
+               'no_check': _('No check'), 'not_applicable': _('Not applicable')}.get(s, _('Not run yet')) -%}
+<span class="badge {{ cls }}">{{ lbl }}</span>
+{%- endmacro %}
+
+{% macro crit_badge(c) -%}
+{%- set cls = {'critical': 'bg-danger', 'high': 'bg-warning text-dark', 'medium': 'bg-info text-dark', 'low': 'bg-secondary'}.get(c, 'bg-secondary') -%}
+<span class="badge {{ cls }}">{{ rc_label('CRITICALITY', c) }}</span>
+{%- endmacro %}
+
+{% macro finding_status(s) -%}
+{%- set lbl = {'open': _('Open'), 'action_plan': _('Action plan'), 'in_progress': _('In progress'),
+               'pending_verification': _('Pending verification'), 'closed': _('Closed'), 'reopened': _('Reopened')}.get(s, s) -%}
+{%- set cls = {'closed': 'bg-success', 'reopened': 'bg-danger', 'pending_verification': 'bg-info text-dark'}.get(s, 'bg-secondary') -%}
+<span class="badge {{ cls }}">{{ lbl }}</span>
+{%- endmacro %}
+
+{% macro evidence_state(s) -%}
+{%- set lbl = {'valid': _('Valid'), 'expiring': _('Expiring soon'), 'expired': _('Expired'), 'pending': _('Pending review'),
+               'rejected': _('Rejected'), 'draft': _('Draft')}.get(s, s) -%}
+{%- set cls = {'valid': 'bg-success', 'expiring': 'bg-warning text-dark', 'expired': 'bg-danger',
+               'pending': 'bg-info text-dark', 'rejected': 'bg-dark'}.get(s, 'bg-secondary') -%}
+<span class="badge {{ cls }}">{{ lbl }}</span>
+{%- endmacro %}
+
+{% macro source_label(s) -%}
+{{ {'regulator': _('Regulator'), 'internal_audit': _('Internal audit'), 'self_identified': _('Self-identified'),
+    'external_audit': _('External audit'), 'control_failure': _('Control failure')}.get(s, s) }}
+{%- endmacro %}
+
+{% macro alert_type(t) -%}
+{{ {'control_failed': _('Control failed'), 'evidence_expiring': _('Evidence expiring'), 'evidence_expired': _('Evidence expired'),
+    'finding_overdue': _('Finding overdue'), 'repeated_violation': _('Repeated violation')}.get(t, t) }}
+{%- endmacro %}
+
+{% macro nav(active) -%}
+<ul class="nav nav-pills mb-3 small flex-wrap no-print">
+    {% for ep, label in [('regcontrols.dashboard', _('Dashboard')), ('regcontrols.readiness', _('Inspection readiness')),
+                         ('regcontrols.reg_calendar', _('Regulatory calendar')), ('regcontrols.controls', _('Controls')),
+                         ('regcontrols.findings', _('Findings')), ('regcontrols.evidence_list', _('Evidence')),
+                         ('regcontrols.alerts', _('Alerts')), ('regcontrols.parameters', _('Parameters')),
+                         ('regcontrols.library_home', _('Library')), ('regcontrols.packs_list', _('Content packs'))] %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == ep }}" href="{{ url_for(ep) }}">{{ label }}</a></li>
+    {% endfor %}
+</ul>
+{%- endmacro %}
+
+{% macro alert_status(s) -%}
+{%- set cls = {'open': 'bg-danger', 'acknowledged': 'bg-warning text-dark', 'resolved': 'bg-success'}.get(s, 'bg-secondary') -%}
+<span class="badge {{ cls }}">{{ {'open': _('Open'), 'acknowledged': _('Acknowledged'), 'resolved': _('Resolved')}.get(s, s) }}</span>
+{%- endmacro %}
+
+{% macro trigger_label(t) -%}
+{{ {'schedule': _('Scheduled'), 'manual': _('Manual'), 'verification': _('Verification'), 'api': _('API'), 'event': _('Event')}.get(t, t) }}
+{%- endmacro %}

@@ -1,0 +1,12 @@
+{% macro nav(active) -%}
+<ul class="nav nav-pills mb-3 small flex-wrap no-print">
+    {% for ep, label in [('amlkyc.dashboard', _('Overview')), ('amlkyc.roles', _('Key roles')), ('amlkyc.annual_reports', _('Annual report')),
+                         ('amlkyc.board_approvals', _('Board approvals')), ('amlkyc.monitoring', _('Monitoring programme')),
+                         ('amlkyc.screening', _('Screening assurance')), ('amlkyc.employees', _('Employee screening')),
+                         ('amlkyc.unusual', _('Unusual transactions')), ('amlkyc.kyc_home', _('KYC files')),
+                         ('amlkyc.risk_model', _('Risk model')), ('amlkyc.training_coverage', _('Training coverage')),
+                         ('amlkyc.audit_coverage', _('Audit coverage'))] %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == ep }}" href="{{ url_for(ep) }}">{{ label }}</a></li>
+    {% endfor %}
+</ul>
+{%- endmacro %}

@@ -1,0 +1,23 @@
+{% extends 'carbon/acc/_pdf_base.html' if pdf else 'base.html' %}
+{% import 'regcontrols/readiness/_bits.html' as rb with context %}
+{% block title %}{{ _('Compliance readiness — board report') }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  {% if not pdf %}<div class="d-flex gap-2 mb-3 no-print"><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('regcontrols.readiness') }}">{{ _('Back') }}</a><a class="btn btn-sm btn-outline-primary" href="{{ url_for('regcontrols.readiness_board', format='pdf') }}">PDF</a><button class="btn btn-sm btn-outline-secondary" data-action="print">{{ _('Print') }}</button></div>{% endif %}
+  {% include 'partials/corp_letterhead.html' %}
+  <h2 class="h4">{{ _('Compliance & inspection readiness — report to the board') }}</h2>
+  <p class="small text-muted">{{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+  <h3 class="h6">1. {{ _('Overall') }}</h3>
+  <p>{{ _('Readiness score') }}: <strong>{{ d.overall.score if d.overall.score is not none else '-' }} / 100</strong> — {{ rb.band_label(d.overall.score) }}. {{ d.overall.controls }} {{ _('controls') }}, {{ d.overall.failing }} {{ _('failing') }}, {{ d.overall.not_assessed }} {{ _('not assessed') }}; {{ d.open_findings|length }} {{ _('open findings') }} ({{ d.repeated|length }} {{ _('repeated violations') }}).</p>
+  <h3 class="h6">2. {{ _('By area') }}</h3>
+  <table class="table table-sm table-bordered small"><thead><tr><th>{{ _('Area') }}</th><th class="text-end">{{ _('Score') }}</th><th class="text-end">{{ _('Failing') }}</th></tr></thead><tbody>
+    {% for a, s in d.area_list %}<tr><td>{{ rc_label('AREAS', a) }}</td><td class="text-end">{{ s.score if s.score is not none else '-' }}</td><td class="text-end">{{ s.failing }}</td></tr>{% endfor %}</tbody></table>
+  <h3 class="h6">3. {{ _('Most important gaps') }}</h3>
+  <table class="table table-sm table-bordered small"><tbody>{% for c in d.gaps[:10] %}<tr><td>{{ c.control_code }}</td><td>{{ rc_loc(c.title_en, c.title_ar) }}</td><td>{{ c.criticality }}</td><td>{{ c.last_status or _('not assessed') }}</td></tr>{% else %}<tr><td>{{ _('No gap.') }}</td></tr>{% endfor %}</tbody></table>
+  <h3 class="h6">4. {{ _('Findings ageing') }}</h3>
+  <table class="table table-sm table-bordered small"><tbody><tr>{% for label, n in d.ageing.items() %}<th>{{ label }}</th>{% endfor %}</tr><tr>{% for label, n in d.ageing.items() %}<td>{{ n }}</td>{% endfor %}</tr></tbody></table>
+  <h3 class="h6">5. {{ _('Trend') }}</h3>
+  <table class="table table-sm table-bordered small"><tbody>{% for t in d.trend[-8:] %}<tr><td>{{ t.snapshot_date }}</td><td class="text-end">{{ t.score }}</td></tr>{% else %}<tr><td>{{ _('No snapshot yet.') }}</td></tr>{% endfor %}</tbody></table>
+  <p class="small text-muted mt-4">{{ _('Score = criticality-weighted average of the latest control results (pass 100, warning 50, fail / not assessed 0; critical 4, high 3, medium 2, low 1).') }}</p>
+</div>
+{% endblock %}

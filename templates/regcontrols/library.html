@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('Frameworks & Library') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-2"><h3 class="mb-0">{{ _('Frameworks & Library') }}</h3>
+        {% if rc_can_admin %}<a class="btn btn-sm btn-primary" href="{{ url_for('regcontrols.framework_edit') }}"><i class="bi bi-plus-circle me-1"></i>{{ _('New framework') }}</a>{% endif %}</div>
+    {{ rc.nav('regcontrols.library_home') }}
+    <p class="small text-muted">{{ _('Any regulator, regulation or standard is set up here as data: a framework with its requirements, mapped to controls. Content packs install ready-made frameworks; you can also build your own.') }}</p>
+
+    <div class="card mb-4"><div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle">
+        <thead><tr><th>{{ _('Code') }}</th><th>{{ _('Framework') }}</th><th>{{ _('Regulator') }}</th><th>{{ _('Jurisdiction') }}</th><th>{{ _('Version') }}</th><th class="text-center">{{ _('Requirements') }}</th><th class="text-center">{{ _('Controls') }}</th><th>{{ _('Content pack') }}</th></tr></thead>
+        <tbody>{% for f in frameworks %}
+        <tr class="{{ 'text-muted' if not f.is_active }}"><td><a href="{{ url_for('regcontrols.framework_detail', framework_id=f.id) }}"><strong>{{ f.code }}</strong></a></td><td>{{ rc_loc(f.name_en, f.name_ar) }}</td>
+            <td class="small">{{ rc_loc(f.regulator_name, f.regulator_name_ar) or '-' }}</td><td>{{ f.jurisdiction or '-' }}</td><td>{{ f.version or '-' }}</td>
+            <td class="text-center">{{ f.requirement_count }}</td><td class="text-center">{{ f.control_count }}</td><td class="small">{{ f.pack_code or _('custom') }}</td></tr>
+        {% else %}<tr><td colspan="8" class="text-center text-muted py-4">{{ _('No framework yet. Add one, or enable a content pack.') }}</td></tr>{% endfor %}</tbody>
+    </table></div></div>
+
+    <h5 id="regulators">{{ _('Regulators') }}</h5>
+    <div class="card mb-4"><div class="table-responsive"><table class="table table-sm mb-0 small">
+        <thead><tr><th>{{ _('Code') }}</th><th>{{ _('Name') }}</th><th>{{ _('Jurisdiction') }}</th><th>{{ _('Website') }}</th></tr></thead>
+        <tbody>{% for r in regulators %}<tr><td>{{ r.regulator_code or '-' }}</td><td>{{ rc_loc(r.regulator_name, r.name_ar) }}</td><td>{{ r.jurisdiction or '-' }}</td><td>{{ r.website or '-' }}</td></tr>
+        {% else %}<tr><td colspan="4" class="text-muted">{{ _('None.') }}</td></tr>{% endfor %}</tbody></table></div>
+        {% if rc_can_admin %}<div class="card-body border-top"><form method="post" action="{{ url_for('regcontrols.reference_save', kind='regulators') }}" class="row g-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-md-2"><input name="code" class="form-control form-control-sm" placeholder="{{ _('Code') }}"></div>
+            <div class="col-md-3"><input name="name_en" class="form-control form-control-sm" placeholder="{{ _('Name (English)') }}" required></div>
+            <div class="col-md-3"><input name="name_ar" dir="rtl" class="form-control form-control-sm" placeholder="{{ _('Name (Arabic)') }}"></div>
+            <div class="col-md-1"><input name="jurisdiction" class="form-control form-control-sm" placeholder="EG" maxlength="10"></div>
+            <div class="col-md-2"><input name="website" class="form-control form-control-sm" placeholder="https://"></div>
+            <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div></form></div>{% endif %}
+    </div>
+
+    <div class="row g-3">
+    {% for kind, title in [('licence_types', _('Licence types')), ('areas', _('Areas')), ('owner_roles', _('Owner roles'))] %}
+        <div class="col-lg-4" id="{{ kind }}">
+            <div class="card h-100"><div class="card-header"><strong>{{ title }}</strong></div>
+                <ul class="list-group list-group-flush small">{% for r in refs[kind] %}
+                    <li class="list-group-item"><code>{{ r.code }}</code> · {{ rc_loc(r.name_en, r.name_ar) }}{% if r.pack_code %} <span class="badge bg-light text-dark border">{{ r.pack_code }}</span>{% endif %}</li>
+                {% else %}<li class="list-group-item text-muted">{{ _('None.') }}</li>{% endfor %}</ul>
+                {% if rc_can_admin %}<div class="card-body border-top"><form method="post" action="{{ url_for('regcontrols.reference_save', kind=kind) }}" class="row g-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="col-12"><input name="code" class="form-control form-control-sm" placeholder="{{ _('Code (lower case)') }}" required></div>
+                    <div class="col-6"><input name="name_en" class="form-control form-control-sm" placeholder="{{ _('Name (English)') }}" required></div>
+                    <div class="col-6"><input name="name_ar" dir="rtl" class="form-control form-control-sm" placeholder="{{ _('Name (Arabic)') }}"></div>
+                    {% if kind == 'licence_types' %}<div class="col-8"><select name="regulator_id" class="form-select form-select-sm"><option value="">{{ _('Regulator') }}</option>{% for r in regulators %}<option value="{{ r.id }}">{{ rc_loc(r.regulator_name, r.name_ar) }}</option>{% endfor %}</select></div>
+                    <div class="col-4"><input name="jurisdiction" class="form-control form-control-sm" placeholder="EG"></div>{% endif %}
+                    <div class="col-12"><button class="btn btn-sm btn-outline-primary">{{ _('Save') }}</button></div></form></div>{% endif %}
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}

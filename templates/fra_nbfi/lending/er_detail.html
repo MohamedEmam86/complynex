@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% import 'fra_nbfi/lending/_nav.html' as ln with context %}
+{% block title %}{{ _('Early repayment') }} #{{ er.id }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{{ _('Early repayment') }} #{{ er.id }} <span class="badge bg-secondary fs-6">{{ er.status }}</span></h3>
+    <p class="text-muted"><a href="{{ url_for('lending.loan_detail', loan_id=b.loan.id) }}">{{ b.loan.loan_ref }}</a> · {{ b.client.full_name }}</p>
+    {{ ln.nav('lending.loans') }}
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card mb-3"><div class="card-header d-flex justify-content-between"><strong>1. {{ _('Written cost disclosure') }}</strong> <span class="small">FRA-021</span></div><div class="card-body">
+                {% if er.disclosed_at %}
+                <table class="table table-sm small mb-2"><tr><th>{{ _('Remaining cost under the original schedule') }}</th><td class="text-end">EGP {{ er.original_remaining_cost }}</td></tr>
+                    <tr><th>{{ _('Settlement amount') }}</th><td class="text-end">EGP {{ er.settlement_amount }}</td></tr>
+                    <tr><th>{{ _('Early-repayment fee') }}</th><td class="text-end">EGP {{ er.prepayment_fee }}</td></tr>
+                    <tr><th>{{ _('New total cost') }}</th><td class="text-end fw-bold">EGP {{ er.new_total_cost }}</td></tr></table>
+                <p class="small">{{ er.disclosure_text_ar if get_locale()|string == 'ar' else er.disclosure_text_en }}</p>
+                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('lending.er_print', er_id=er.id) }}" target="_blank"><i class="bi bi-printer me-1"></i>{{ _('Print disclosure for client signature') }}</a>
+                {% else %}
+                <p class="text-danger small">{{ _('No disclosure generated yet.') }}</p>
+                {% if ln_can_edit %}<form method="post" action="{{ url_for('lending.er_action', er_id=er.id, action='disclose') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary">{{ _('Generate disclosure') }}</button></form>{% endif %}
+                {% endif %}
+            </div></div>
+            <div class="card mb-3"><div class="card-header d-flex justify-content-between"><strong>2. {{ _('Signed consent and cost acknowledgement') }}</strong> <span class="small">FRA-022 / FRA-024</span></div><div class="card-body small">
+                <p>{{ _('Signed consent') }}: {{ '✔' if er.consent_signed else '✘' }} · {{ _('Cost impact acknowledged') }}: {{ '✔' if er.cost_acknowledged else '✘' }}{% if er.consent_date %} · {{ er.consent_date }}{% endif %}</p>
+                {% if ln_can_edit and er.status in ('disclosed', 'consented') %}
+                <form method="post" action="{{ url_for('lending.er_action', er_id=er.id, action='consent') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="consent_signed" id="cs" {{ 'checked' if er.consent_signed }}><label class="form-check-label" for="cs">{{ _('The client signed the consent (scan attached below)') }}</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="cost_acknowledged" id="ca" {{ 'checked' if er.cost_acknowledged }}><label class="form-check-label" for="ca">{{ _('The client confirmed they understand the cost impact') }}</label></div>
+                    <div class="d-flex gap-2"><input type="date" name="consent_date" class="form-control form-control-sm w-auto" value="{{ er.consent_date or today }}"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div>
+                </form>{% endif %}
+            </div></div>
+            <div class="card mb-3"><div class="card-header"><strong>3. {{ _('Execute') }}</strong></div><div class="card-body small">
+                {% if er.status == 'executed' %}<p class="text-success mb-0">{{ _('Executed on') }} {{ er.executed_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                {% elif ln_can_edit %}<form method="post" action="{{ url_for('lending.er_action', er_id=er.id, action='execute') }}" data-confirm="{{ _('Execute the early repayment and close the loan?') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-sm btn-success" {{ 'disabled' if er.status != 'consented' }}>{{ _('Execute early repayment') }}</button>
+                    {% if er.status != 'consented' %}<div class="text-muted mt-1">{{ _('Available once the disclosure, signed consent and acknowledgement are recorded.') }}</div>{% endif %}</form>{% endif %}
+            </div></div>
+        </div>
+        <div class="col-lg-5">{% include 'partials/attachment_widget.html' %}</div>
+    </div>
+</div>
+{% endblock %}

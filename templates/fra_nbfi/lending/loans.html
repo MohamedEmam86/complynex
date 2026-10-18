@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% import 'fra_nbfi/lending/_nav.html' as ln with context %}
+{% block title %}{{ _('Loans') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+        <h3 class="mb-0">{{ _('Loans') }}</h3>
+        {% if ln_can_edit %}<div class="d-flex gap-2">
+            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('lending.client_new') }}">{{ _('New client') }}</a>
+            <a class="btn btn-sm btn-primary" href="{{ url_for('lending.loan_new') }}">{{ _('New loan') }}</a></div>{% endif %}
+    </div>
+    {{ ln.nav('lending.loans') }}
+    <form method="get" class="row g-2 mb-3 align-items-end">
+        <div class="col-md-3"><input type="search" name="q" value="{{ f.get('q', '') }}" class="form-control form-control-sm" placeholder="{{ _('Loan, client reference or name') }}"></div>
+        <div class="col-auto"><select name="status" class="form-select form-select-sm" data-auto-submit><option value="">{{ _('All statuses') }}</option>
+            {% for s in ['application', 'approved', 'disbursed', 'closed', 'written_off', 'rejected'] %}<option value="{{ s }}" {{ 'selected' if f.get('status') == s }}>{{ s }}</option>{% endfor %}</select></div>
+        <div class="col-auto"><select name="branch" class="form-select form-select-sm" data-auto-submit><option value="">{{ _('All branches') }}</option>
+            {% for b in branches %}<option value="{{ b }}" {{ 'selected' if f.get('branch') == b }}>{{ b }}</option>{% endfor %}</select></div>
+        <div class="col-auto"><div class="form-check"><input class="form-check-input" type="checkbox" name="incomplete" value="1" id="inc" data-auto-submit {{ 'checked' if f.get('incomplete') }}>
+            <label class="form-check-label small" for="inc">{{ _('Incomplete files only') }}</label></div></div>
+        <div class="col-auto"><button class="btn btn-sm btn-outline-primary">{{ _('Filter') }}</button></div>
+    </form>
+    <div class="card"><div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle">
+        <thead><tr><th>{{ _('Loan') }}</th><th>{{ _('Client') }}</th><th>{{ _('Product') }}</th><th class="text-end">{{ _('Amount') }}</th><th>{{ _('Branch') }}</th><th>{{ _('Officer') }}</th><th>{{ _('Status') }}</th><th class="text-end">{{ _('DPD') }}</th><th>{{ _('File') }}</th></tr></thead>
+        <tbody>{% for l in loans %}
+        <tr><td><a href="{{ url_for('lending.loan_detail', loan_id=l.id) }}">{{ l.loan_ref }}</a></td><td>{{ l.client_ref }} · {{ l.client_name }}</td>
+            <td>{{ l.product_code or '-' }}</td><td class="text-end">{{ '{:,.0f}'.format(l.amount) }}</td><td>{{ l.branch_code or '-' }}</td><td>{{ l.officer_code or '-' }}</td>
+            <td><span class="badge bg-secondary">{{ l.status }}</span></td><td class="text-end {{ 'text-danger fw-bold' if l.days_past_due > 30 }}">{{ l.days_past_due }}</td>
+            <td>{% if l.status in ('approved', 'disbursed') %}{% if l.file_complete %}<span class="badge bg-success">{{ _('Complete') }}</span>{% else %}<span class="badge bg-danger">{{ l.file_gaps|length }} {{ _('gap(s)') }}</span>{% endif %}{% else %}-{% endif %}</td></tr>
+        {% else %}<tr><td colspan="9" class="text-center text-muted py-4">{{ _('No loans yet. Import data or add a loan.') }}</td></tr>{% endfor %}</tbody>
+    </table></div></div>
+</div>
+{% endblock %}

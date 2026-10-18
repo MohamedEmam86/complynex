@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Board approvals') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Policy board approvals') }}</h3>
+    {{ aa.nav('amlkyc.board_approvals') }}
+    <p class="small text-muted">{{ _('Mark the policies that need board approval (e.g. AML manual, information-security policies) and record the board decision for the current version. Unapproved drafts are alerted after the number of days set in the bound control\'s parameter.') }}</p>
+    <div class="card"><div class="table-responsive"><table class="table table-sm mb-0 align-middle small">
+        <thead><tr><th>{{ _('Policy') }}</th><th>{{ _('Version') }}</th><th>{{ _('Status') }}</th><th>{{ _('Needs board approval') }}</th><th>{{ _('Board approved (this version)') }}</th><th></th></tr></thead><tbody>
+        {% for p in policies %}<tr class="{{ 'table-warning' if p.requires_board_approval and not p.board_approved_on }}">
+            <td>{{ p.policy_number or '' }} {{ p.policy_name }}</td><td>{{ p.version or '-' }}</td><td>{{ p.status }}</td>
+            <td>{% if aa_can_edit %}<form method="post" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="policy_id" value="{{ p.id }}"><input type="hidden" name="required" value="{{ '0' if p.requires_board_approval else '1' }}">
+                <button class="btn btn-sm {{ 'btn-primary' if p.requires_board_approval else 'btn-outline-secondary' }}">{{ _('Yes') if p.requires_board_approval else _('No') }}</button></form>{% else %}{{ _('Yes') if p.requires_board_approval else _('No') }}{% endif %}</td>
+            <td>{{ p.board_approved_on or '-' }}</td>
+            <td>{% if aa_can_edit and p.requires_board_approval %}<form method="post" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="policy_id" value="{{ p.id }}">
+                <input type="date" name="approved_on" class="form-control form-control-sm" required><input name="board_ref" class="form-control form-control-sm" placeholder="{{ _('Board meeting ref.') }}" required>
+                <button class="btn btn-sm btn-success">{{ _('Record') }}</button></form>{% endif %}</td></tr>
+        {% else %}<tr><td colspan="6" class="text-muted">{{ _('No policies.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ f.reference }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+        <div>
+            <h3 class="mb-1">{{ f.reference }} — {{ f.title }}</h3>
+            <div class="small text-muted">{{ rc.source_label(f.source) }}{% if f.source_ref %} · {{ f.source_ref }}{% endif %} · {{ _('Identified on') }} {{ f.identified_date }} · {{ _('Age') }} {{ f.age_bucket }} {{ _('days') }}</div>
+        </div>
+        <div>{% if f.is_repeated %}<span class="badge bg-danger fs-6">{{ _('Repeated violation') }} ×{{ f.repeat_count }}</span>{% endif %}
+            {{ rc.crit_badge(f.severity) }} {{ rc.finding_status(f.status) }}
+            {% if f.overdue %}<span class="badge bg-danger">{{ _('Overdue') }}</span>{% endif %}</div>
+    </div>
+    {{ rc.nav('regcontrols.findings') }}
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card mb-3"><div class="card-body">
+                <p style="white-space: pre-line">{{ f.description or '' }}</p>
+                <dl class="row small mb-0">
+                    <dt class="col-sm-3">{{ _('Owner') }}</dt><dd class="col-sm-9">{{ f.owner_name or '-' }}</dd>
+                    <dt class="col-sm-3">{{ _('Due date') }}</dt><dd class="col-sm-9">{{ f.due_date or '-' }}</dd>
+                    {% if f.status == 'closed' %}
+                    <dt class="col-sm-3">{{ _('Closed') }}</dt><dd class="col-sm-9">{{ f.closed_at.strftime('%Y-%m-%d') if f.closed_at }} · {{ f.closure_type }}</dd>
+                    <dt class="col-sm-3">{{ _('Verification') }}</dt><dd class="col-sm-9">{{ f.verification_note or '-' }}</dd>
+                    {% endif %}
+                </dl>
+                {% if rc_can_edit and f.status != 'closed' %}
+                <details class="mt-2"><summary class="small">{{ _('Edit finding') }}</summary>
+                    <form method="post" action="{{ url_for('regcontrols.finding_edit', finding_id=f.id) }}" class="row g-2 mt-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="col-md-8"><input name="title" class="form-control form-control-sm" value="{{ f.title }}" required></div>
+                        <div class="col-md-4"><select name="severity" class="form-select form-select-sm">{% for s in ['critical', 'high', 'medium', 'low'] %}<option value="{{ s }}" {{ 'selected' if f.severity == s }}>{{ rc_label('CRITICALITY', s) }}</option>{% endfor %}</select></div>
+                        <div class="col-md-4"><select name="owner_user_id" class="form-select form-select-sm"><option value="">{{ _('Owner') }}: -</option>{% for u in users %}<option value="{{ u.id }}" {{ 'selected' if f.owner_user_id == u.id }}>{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}</select></div>
+                        <div class="col-md-4"><input type="date" name="due_date" class="form-control form-control-sm" value="{{ f.due_date or '' }}"></div>
+                        <div class="col-md-4"><input name="source_ref" class="form-control form-control-sm" value="{{ f.source_ref or '' }}" placeholder="{{ _('Source reference') }}"></div>
+                        <div class="col-12"><textarea name="description" class="form-control form-control-sm" rows="3">{{ f.description or '' }}</textarea></div>
+                        <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div>
+                    </form>
+                </details>
+                {% endif %}
+            </div></div>
+
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Corrective action plan') }}</strong></div>
+                <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead><tr><th>{{ _('Action') }}</th><th>{{ _('Owner') }}</th><th>{{ _('Due') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+                    <tbody>
+                    {% for a in f.actions %}
+                    {% set late = a.due_date and a.due_date < today and a.status in ('open', 'in_progress') %}
+                    <tr class="{{ 'table-danger' if late }}">
+                        <td>{{ a.description }}{% if a.completion_note %}<div class="small text-muted">{{ a.completion_note }}</div>{% endif %}
+                            {% for file in action_files.get(a.id, []) %}<div class="small"><a href="{{ url_for('attachments.download', attachment_id=file.id) }}"><i class="bi bi-paperclip"></i> {{ file.filename }}</a></div>{% endfor %}</td>
+                        <td class="small">{{ a.owner_name or '-' }}</td>
+                        <td class="small text-nowrap">{{ a.due_date or '-' }}</td>
+                        <td><span class="badge bg-{{ 'success' if a.status == 'done' else ('secondary' if a.status == 'cancelled' else 'warning text-dark') }}">{{ {'open': _('Open'), 'in_progress': _('In progress'), 'done': _('Done'), 'cancelled': _('Cancelled')}[a.status] }}</span></td>
+                        <td class="text-nowrap">
+                            {% if rc_can_edit and f.status != 'closed' %}
+                            <form method="post" action="{{ url_for('regcontrols.action_status', action_id=a.id) }}" class="d-flex gap-1">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <select name="status" class="form-select form-select-sm">{% for s, l in [('open', _('Open')), ('in_progress', _('In progress')), ('done', _('Done')), ('cancelled', _('Cancelled'))] %}<option value="{{ s }}" {{ 'selected' if a.status == s }}>{{ l }}</option>{% endfor %}</select>
+                                <input name="note" class="form-control form-control-sm" placeholder="{{ _('Note') }}">
+                                <button class="btn btn-sm btn-outline-primary">{{ _('Save') }}</button>
+                            </form>
+                            <form method="post" action="{{ url_for('attachments.upload') }}" enctype="multipart/form-data" class="d-flex gap-1 mt-1">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="module" value="regcontrols"><input type="hidden" name="record_type" value="rc_action"><input type="hidden" name="record_id" value="{{ a.id }}">
+                                <input type="file" name="file" class="form-control form-control-sm" required>
+                                <button class="btn btn-sm btn-outline-secondary" title="{{ _('Attach evidence') }}"><i class="bi bi-paperclip"></i></button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-muted small text-center py-3">{{ _('No corrective actions yet.') }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                {% if rc_can_edit and f.status != 'closed' %}
+                <div class="card-body border-top">
+                    <form method="post" action="{{ url_for('regcontrols.action_add', finding_id=f.id) }}" class="row g-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="col-md-6"><input name="description" class="form-control form-control-sm" placeholder="{{ _('New corrective action') }}" required></div>
+                        <div class="col-md-3"><select name="owner_user_id" class="form-select form-select-sm"><option value="">{{ _('Owner') }}</option>{% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}</select></div>
+                        <div class="col-md-2"><input type="date" name="due_date" class="form-control form-control-sm"></div>
+                        <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            {% include 'partials/attachment_widget.html' %}
+
+            <div class="card mt-3">
+                <div class="card-header"><strong>{{ _('History') }}</strong></div>
+                <ul class="list-group list-group-flush small">
+                    {% for e in f.events %}
+                    <li class="list-group-item {{ 'list-group-item-danger' if e.event_type == 'repeated_violation' }}">
+                        <span class="text-muted">{{ e.created_at.strftime('%Y-%m-%d %H:%M') }}</span> · <strong>{{ e.event_type.replace('_', ' ') }}</strong>
+                        {% if e.user_name %} · {{ e.user_name }}{% endif %}
+                        {% if e.note %}<div>{{ e.note }}</div>{% endif %}
+                        {% if e.run_id %}<a href="{{ url_for('regcontrols.run_detail', run_id=e.run_id) }}">{{ _('run') }} #{{ e.run_id }}</a>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Linked controls') }}</strong></div>
+                <ul class="list-group list-group-flush">
+                    {% for c in f.controls %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}"><strong>{{ c.control_code }}</strong> <span class="small">{{ rc_loc(c.title_en, c.title_ar) }}</span></a>
+                        <span class="d-flex gap-1 align-items-center">{{ rc.status_badge(c.last_status) }}
+                        {% if rc_can_edit and f.status != 'closed' %}
+                        <form method="post" action="{{ url_for('regcontrols.finding_unlink', finding_id=f.id, control_id=c.id) }}" data-confirm="{{ _('Unlink this control?') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-x-lg"></i></button></form>
+                        {% endif %}</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item small text-warning">{{ _('No controls linked — verification and repeat detection need at least one.') }}</li>
+                    {% endfor %}
+                </ul>
+                {% if rc_can_edit and f.status != 'closed' %}
+                <div class="card-body border-top">
+                    <form method="post" action="{{ url_for('regcontrols.finding_link', finding_id=f.id) }}" class="d-flex gap-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input name="control_codes" class="form-control form-control-sm" placeholder="CTRL-001; CTRL-002" required>
+                        <button class="btn btn-sm btn-outline-primary">{{ _('Link') }}</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if rc_can_edit and f.status != 'closed' %}
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Verification') }}</strong></div><div class="card-body">
+                {% if f.status != 'pending_verification' %}
+                <p class="small text-muted">{{ _('When every corrective action is done, send the finding for verification.') }}</p>
+                <form method="post" action="{{ url_for('regcontrols.finding_request_verification', finding_id=f.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-sm btn-outline-primary">{{ _('Request verification') }}</button>
+                </form>
+                {% else %}
+                <p class="small text-muted">{{ _('Verification re-runs every linked control. The finding closes only if they all pass.') }}</p>
+                <form method="post" action="{{ url_for('regcontrols.finding_verify', finding_id=f.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <textarea name="manual_note" class="form-control form-control-sm mb-2" rows="2" placeholder="{{ _('Only for controls without an automated check: how was the fix verified?') }}"></textarea>
+                    <button class="btn btn-sm btn-success"><i class="bi bi-check2-circle me-1"></i>{{ _('Verify now') }}</button>
+                </form>
+                {% endif %}
+            </div></div>
+            {% endif %}
+
+            {% if rc_can_admin and f.status != 'closed' %}
+            <div class="card"><div class="card-header"><strong>{{ _('Close without remediation') }}</strong></div><div class="card-body">
+                <form method="post" action="{{ url_for('regcontrols.finding_close', finding_id=f.id) }}" data-confirm="{{ _('Close this finding without remediation?') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="closure_type" class="form-select form-select-sm mb-2"><option value="not_applicable">{{ _('Not applicable') }}</option><option value="risk_accepted">{{ _('Risk accepted') }}</option></select>
+                    <textarea name="note" class="form-control form-control-sm mb-2" rows="2" placeholder="{{ _('Justification (required)') }}" required></textarea>
+                    <button class="btn btn-sm btn-outline-danger">{{ _('Close') }}</button>
+                </form>
+            </div></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

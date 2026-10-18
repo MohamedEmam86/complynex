@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Key AML roles') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+{% set e = edit or {'is_active': True, 'role_code': 'mlro'} %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Key AML roles') }}</h3>
+    {{ aa.nav('amlkyc.roles') }}
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 align-middle small">
+        <thead><tr><th>{{ _('Role') }}</th><th>{{ _('Holder') }}</th><th>{{ _('Reports to') }}</th><th>{{ _('Board line') }}</th><th>{{ _('Other positions') }}</th><th>{{ _('Regulator notified') }}</th><th>{{ _('Assessment') }}</th><th></th></tr></thead><tbody>
+        {% for r in roles %}<tr class="{{ 'text-muted' if not r.is_active }}"><td><strong>{{ r.role_code|upper }}</strong><div>{{ r.title or '' }}</div></td>
+            <td>{{ r.holder_name or r.holder_user_name or '-' }}</td><td>{{ r.reports_to_title or '-' }}</td><td>{{ _('Yes') if r.reports_to_board else _('No') }}</td>
+            <td>{{ r.other_positions or '-' }}{% if r.combined_role_approval_ref %}<div class="text-muted">{{ _('approval') }} {{ r.combined_role_approval_ref }}</div>{% endif %}</td>
+            <td>{{ r.regulator_notified_on or '-' }} {{ r.regulator_ref or '' }}</td>
+            <td>{% for t, k, reason in r.conflicts %}<div class="text-danger">{{ reason or k }}</div>{% endfor %}{% if r.combined_unapproved %}<div class="text-danger">{{ _('Combined role without approval reference') }}</div>{% endif %}
+                {% if not r.conflicts and not r.combined_unapproved %}<span class="text-success">{{ _('No conflict found') }}</span>{% endif %}</td>
+            <td>{% if aa_can_edit %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('amlkyc.roles', edit=r.id) }}">{{ _('Edit') }}</a>{% endif %}</td></tr>
+        {% else %}<tr><td colspan="8" class="text-muted text-center py-3">{{ _('No key role registered yet.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% if aa_can_edit %}
+    <form method="post" class="card mb-4"><div class="card-header"><strong>{{ _('Edit role') if edit else _('Add a key role') }}</strong></div><div class="card-body row g-2 small">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="role_id" value="{{ e.id or '' }}">
+        <div class="col-md-2"><label class="form-label mb-0">{{ _('Role code') }}</label><input name="role_code" class="form-control form-control-sm" value="{{ e.role_code or '' }}" required></div>
+        <div class="col-md-4"><label class="form-label mb-0">{{ _('Title') }}</label><input name="title" class="form-control form-control-sm" value="{{ e.title or '' }}"></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('Holder (user)') }}</label><select name="holder_user_id" class="form-select form-select-sm"><option value="">-</option>{% for u in users %}<option value="{{ u.id }}" {{ 'selected' if e.holder_user_id == u.id }}>{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('or holder name') }}</label><input name="holder_name" class="form-control form-control-sm" value="{{ e.holder_name or '' }}"></div>
+        <div class="col-md-4"><label class="form-label mb-0">{{ _('Reports to (title)') }}</label><input name="reports_to_title" class="form-control form-control-sm" value="{{ e.reports_to_title or '' }}" placeholder="{{ _('e.g. Board Audit Committee') }}"></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('Reports to (user)') }}</label><select name="reports_to_user_id" class="form-select form-select-sm"><option value="">-</option>{% for u in users %}<option value="{{ u.id }}" {{ 'selected' if e.reports_to_user_id == u.id }}>{{ u.first_name }} {{ u.last_name }} {{ ('— ' ~ u.job_title) if u.job_title }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><div class="form-check mt-3"><input class="form-check-input" type="checkbox" name="reports_to_board" id="rb" {{ 'checked' if e.reports_to_board }}><label class="form-check-label" for="rb">{{ _('Direct reporting line to the board') }}</label></div></div>
+        <div class="col-md-2"><div class="form-check mt-3"><input class="form-check-input" type="checkbox" name="is_active" id="ia" {{ 'checked' if e.is_active }}><label class="form-check-label" for="ia">{{ _('Active') }}</label></div></div>
+        <div class="col-md-6"><label class="form-label mb-0">{{ _('Other positions held (incl. at group companies)') }}</label><input name="other_positions" class="form-control form-control-sm" value="{{ e.other_positions or '' }}"></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('Combined-role approval ref.') }}</label><input name="combined_role_approval_ref" class="form-control form-control-sm" value="{{ e.combined_role_approval_ref or '' }}"></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('Approved on') }}</label><input type="date" name="combined_role_approved_on" class="form-control form-control-sm" value="{{ e.combined_role_approved_on or '' }}"></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('Appointed on') }}</label><input type="date" name="appointed_on" class="form-control form-control-sm" value="{{ e.appointed_on or '' }}"></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('Regulator notified on') }}</label><input type="date" name="regulator_notified_on" class="form-control form-control-sm" value="{{ e.regulator_notified_on or '' }}"></div>
+        <div class="col-md-3"><label class="form-label mb-0">{{ _('Regulator reference') }}</label><input name="regulator_ref" class="form-control form-control-sm" value="{{ e.regulator_ref or '' }}"></div>
+        <div class="col-md-3 d-flex align-items-end"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div>
+    </div></form>
+    {% endif %}
+    <h6>{{ _('Conflict rules') }}</h6>
+    <div class="card"><div class="table-responsive"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Role') }}</th><th>{{ _('Rule') }}</th><th>{{ _('Keyword') }}</th><th>{{ _('Reason') }}</th></tr></thead><tbody>
+        {% for r in rules %}<tr><td>{{ r.role_code }}</td><td>{{ _('must not report to') if r.rule_type == 'reports_to' else _('must not hold') }}</td><td><code>{{ r.keyword }}</code></td><td>{{ rc_loc(r.reason_en, r.reason_ar) }}</td></tr>{% endfor %}</tbody></table></div>
+        {% if aa_can_edit %}<div class="card-body border-top"><form method="post" class="row g-1 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="rule">
+            <div class="col-md-2"><input name="role_code" class="form-control form-control-sm" value="mlro" required></div>
+            <div class="col-md-2"><select name="rule_type" class="form-select form-select-sm"><option value="reports_to">{{ _('must not report to') }}</option><option value="holds">{{ _('must not hold') }}</option></select></div>
+            <div class="col-md-2"><input name="keyword" class="form-control form-control-sm" placeholder="{{ _('keyword') }}" required></div>
+            <div class="col-md-3"><input name="reason_en" class="form-control form-control-sm" placeholder="{{ _('Reason (English)') }}"></div>
+            <div class="col-md-2"><input name="reason_ar" dir="rtl" class="form-control form-control-sm" placeholder="{{ _('Reason (Arabic)') }}"></div>
+            <div class="col-md-1"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Add') }}</button></div></form></div>{% endif %}
+    </div>
+</div>
+{% endblock %}

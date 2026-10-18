@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ r.unit_label }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{{ r.unit_label }} <span class="badge bg-secondary fs-6">{{ r.status }}</span></h3>
+    <p class="text-muted small"><a href="{{ url_for('amlkyc.monitoring_plan', plan_id=r.plan_id) }}">{{ _('Back to plan') }}</a> · {{ _('On-site') if r.review_type == 'onsite' else _('Off-site') }} · {{ _('planned') }} {{ r.planned_date }}</p>
+    {{ aa.nav('amlkyc.monitoring') }}
+    <form method="post" class="card"><div class="card-body small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <table class="table table-sm align-middle"><thead><tr><th>{{ _('Checklist item') }}</th><th>{{ _('Result') }}</th><th>{{ _('Note') }}</th></tr></thead><tbody>
+        {% for item in r.checklist %}<tr><td>{{ _(item.item) }}</td>
+            <td><select name="result_{{ loop.index0 }}" class="form-select form-select-sm" {{ 'disabled' if r.status == 'done' or not aa_can_edit }}>
+                <option value="">-</option>{% for v, l in [('ok', _('OK')), ('issue', _('Issue')), ('na', _('N/A'))] %}<option value="{{ v }}" {{ 'selected' if item.result == v }}>{{ l }}</option>{% endfor %}</select></td>
+            <td><input name="note_{{ loop.index0 }}" class="form-control form-control-sm" value="{{ item.note or '' }}" {{ 'disabled' if r.status == 'done' or not aa_can_edit }}></td></tr>{% endfor %}</tbody></table>
+        <label class="form-label">{{ _('Conclusion') }}</label><textarea name="conclusion" class="form-control mb-2" rows="3" {{ 'disabled' if r.status == 'done' or not aa_can_edit }}>{{ r.conclusion or '' }}</textarea>
+        {% if r.status != 'done' and aa_can_edit %}<div class="d-flex gap-2"><input type="date" name="performed_date" class="form-control form-control-sm w-auto" value="{{ today }}"><button class="btn btn-sm btn-primary">{{ _('Complete review') }}</button></div>
+        <p class="text-muted mt-2 mb-0">{{ _('Any "Issue" opens a finding with a corrective-action plan.') }}</p>{% endif %}
+    </div></form>
+</div>
+{% endblock %}

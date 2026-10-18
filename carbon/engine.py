@@ -88,7 +88,7 @@ def compute_scope_totals(entries):
     scope2_market = 0.0
     for e in entries:
         scope = e['scope']
-        tco2e = e['tco2e'] or 0.0
+        tco2e = float(e['tco2e'] or 0.0)   # NUMERIC or float column
         totals[scope] += tco2e
         if scope == 'scope2':
             if (e.get('basis') or 'location') == 'market':
@@ -120,7 +120,7 @@ def compute_scope3_breakdown(entries):
         cat_no = e.get('ghg_category_no')
         if cat_no is None:
             continue
-        breakdown[cat_no] += (e['tco2e'] or 0.0)
+        breakdown[cat_no] += float(e['tco2e'] or 0.0)
     return {
         cat_no: {
             'label': SCOPE3_CATEGORIES.get(cat_no, f'Category {cat_no}'),

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ fw.code }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+        <div><h3 class="mb-1">{{ fw.code }} — {{ rc_loc(fw.name_en, fw.name_ar) }}</h3>
+            <div class="small text-muted">{{ rc_loc(fw.regulator_name, fw.regulator_name_ar) or _('No regulator') }} · {{ fw.jurisdiction or '-' }}{% if fw.version %} · v{{ fw.version }}{% endif %}{% if fw.pack_code %} · {{ _('Content pack') }}: {{ fw.pack_code }}{% endif %}</div></div>
+        <div class="d-flex gap-2 align-items-center"><span class="badge bg-light text-dark border fs-6">{{ covered }}/{{ reqs|length }} {{ _('requirements mapped to controls') }}</span>
+            {% if rc_can_admin %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('regcontrols.framework_edit', framework_id=fw.id) }}">{{ _('Edit') }}</a>{% endif %}
+            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('regcontrols.controls', framework=fw.id) }}">{{ _('Controls') }}</a></div>
+    </div>
+    {{ rc.nav('regcontrols.library_home') }}
+    {% if fw.description or fw.source_document %}<p class="small">{{ fw.description or '' }}{% if fw.source_document %}<br><span class="text-muted">{{ fw.source_document }}</span>{% endif %}</p>{% endif %}
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle small">
+        <thead><tr><th>{{ _('Ref') }}</th><th>{{ _('Requirement') }}</th><th>{{ _('Area') }}</th><th>{{ _('Legal reference') }}</th><th>{{ _('Controls') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+        <tbody>{% for q in reqs %}
+        <tr><td class="text-nowrap"><strong>{{ q.ref_code }}</strong></td><td>{{ rc_loc(q.title_en, q.title_ar) }}{% if q.text_en or q.text_ar %}<div class="text-muted">{{ rc_loc(q.text_en, q.text_ar)|truncate(160) }}</div>{% endif %}</td>
+            <td>{{ rc_label('AREAS', q.area_code) if q.area_code else '-' }}</td><td>{{ q.legal_reference or '-' }}</td>
+            <td>{% if q.control_codes %}{{ q.control_codes }}{% else %}<span class="badge bg-warning text-dark">{{ _('No control') }}</span>{% endif %}</td>
+            <td>{{ rc.status_badge(q.status) if q.control_codes else '' }}</td>
+            <td>{% if rc_can_admin and not q.control_codes %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('regcontrols.control_new', requirement=q.id) }}">{{ _('Add control') }}</a>{% endif %}</td></tr>
+        {% else %}<tr><td colspan="7" class="text-center text-muted py-4">{{ _('No requirements yet.') }}</td></tr>{% endfor %}</tbody>
+    </table></div></div>
+    {% if rc_can_admin %}
+    <form method="post" action="{{ url_for('regcontrols.requirement_save', framework_id=fw.id) }}" class="card"><div class="card-header"><strong>{{ _('Add a requirement') }}</strong></div><div class="card-body row g-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-2"><input name="ref_code" class="form-control form-control-sm" placeholder="{{ _('Ref (e.g. Art. 12)') }}" required></div>
+        <div class="col-md-5"><input name="title_en" class="form-control form-control-sm" placeholder="{{ _('Title (English)') }}" required></div>
+        <div class="col-md-5"><input name="title_ar" dir="rtl" class="form-control form-control-sm" placeholder="{{ _('Title (Arabic)') }}"></div>
+        <div class="col-md-6"><textarea name="text_en" class="form-control form-control-sm" rows="2" placeholder="{{ _('Requirement text (English)') }}"></textarea></div>
+        <div class="col-md-6"><textarea name="text_ar" dir="rtl" class="form-control form-control-sm" rows="2" placeholder="{{ _('Requirement text (Arabic)') }}"></textarea></div>
+        <div class="col-md-6"><input name="legal_reference" class="form-control form-control-sm" placeholder="{{ _('Legal reference') }}"></div>
+        <div class="col-md-4"><select name="area_code" class="form-select form-select-sm"><option value="">{{ _('Area') }}</option>{% for k in rc_vocab.AREAS %}<option value="{{ k }}">{{ rc_label('AREAS', k) }}</option>{% endfor %}</select></div>
+        <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div>
+    </div></form>
+    {% endif %}
+</div>
+{% endblock %}

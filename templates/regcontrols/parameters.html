@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('Regulatory Parameters') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+        <h3 class="mb-0">{{ _('Regulatory Parameters') }}</h3>
+        {% if rc_can_admin %}<a class="btn btn-sm btn-primary" href="{{ url_for('regcontrols.parameter_change') }}"><i class="bi bi-plus-circle me-1"></i>{{ _('New parameter') }}</a>{% endif %}
+    </div>
+    {{ rc.nav('regcontrols.parameters') }}
+    <p class="small text-muted">{{ _('Every regulatory limit used by the controls is read from this list. Changes need a reason and are applied only after a second administrator approves them. Values marked "Needs review" must be confirmed by Compliance against the current regulation.') }}</p>
+
+    {% if pending %}
+    <div class="card border-warning mb-3">
+        <div class="card-header bg-warning-subtle"><strong>{{ _('Changes waiting for approval') }}</strong></div>
+        <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle small">
+            <thead><tr><th>{{ _('Parameter') }}</th><th>{{ _('Licence') }}</th><th>{{ _('Change') }}</th><th>{{ _('Old value') }}</th><th>{{ _('New value') }}</th><th>{{ _('Effective from') }}</th><th>{{ _('Reason') }}</th><th>{{ _('Requested by') }}</th><th></th></tr></thead>
+            <tbody>
+            {% for c in pending %}
+            <tr>
+                <td><code>{{ c.param_key }}</code></td><td>{{ rc_label('LICENCE_TYPES', c.licence_type) }}</td><td>{{ c.change_type }}</td>
+                <td>{{ c.old_value if c.old_value is not none else '-' }}</td><td><strong>{{ c.new_value if c.new_value is not none else '-' }}</strong> {{ c.unit or '' }}</td>
+                <td>{{ c.effective_from or '-' }}</td><td>{{ c.reason }}</td><td>{{ c.requested_by_name }}<div class="text-muted">{{ c.requested_at.strftime('%Y-%m-%d') }}</div></td>
+                <td class="text-nowrap">
+                    {% if rc_can_admin and c.requested_by != current_user.id %}
+                    <form method="post" action="{{ url_for('regcontrols.parameter_decide', change_id=c.id, decision='approve') }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-success">{{ _('Approve') }}</button></form>
+                    <form method="post" action="{{ url_for('regcontrols.parameter_decide', change_id=c.id, decision='reject') }}" class="d-inline-flex gap-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="comment" class="form-control form-control-sm" placeholder="{{ _('Reason for rejection') }}" required>
+                        <button class="btn btn-sm btn-outline-danger">{{ _('Reject') }}</button></form>
+                    {% elif c.requested_by == current_user.id %}<span class="text-muted">{{ _('Waiting for another approver') }}</span>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <form method="get" class="row g-2 mb-3 align-items-end">
+        <div class="col-md-4"><input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="{{ _('Search key or description') }}"></div>
+        <div class="col-auto"><select name="licence" class="form-select form-select-sm" data-auto-submit><option value="">{{ _('All licence types') }}</option>
+            {% for k in rc_vocab.LICENCE_TYPES %}<option value="{{ k }}" {{ 'selected' if f_licence == k }}>{{ rc_label('LICENCE_TYPES', k) }}</option>{% endfor %}</select></div>
+        <div class="col-auto"><div class="form-check"><input class="form-check-input" type="checkbox" name="review" value="1" id="review" data-auto-submit {{ 'checked' if f_review == '1' }}>
+            <label class="form-check-label small" for="review">{{ _('Needs review only') }}</label></div></div>
+        <div class="col-auto"><button class="btn btn-sm btn-outline-primary">{{ _('Filter') }}</button></div>
+    </form>
+
+    <div class="card mb-4"><div class="table-responsive">
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead><tr><th>{{ _('Key') }}</th><th>{{ _('Description') }}</th><th>{{ _('Licence') }}</th><th>{{ _('Value') }}</th><th>{{ _('Effective') }}</th><th>{{ _('Legal reference') }}</th><th></th></tr></thead>
+            <tbody>
+            {% for p in params %}
+            <tr class="{{ 'table-warning' if p.needs_review }}">
+                <td><a href="{{ url_for('regcontrols.parameter_detail', param_id=p.id) }}"><code>{{ p.param_key }}</code></a></td>
+                <td class="small">{{ rc_loc(p.description_en, p.description_ar) }}</td>
+                <td class="small">{{ rc_label('LICENCE_TYPES', p.licence_type) }}</td>
+                <td>{% if p.value_text is not none %}<strong>{{ p.value_text }}</strong> {{ p.unit or '' }}{% else %}<span class="badge bg-danger">{{ _('not set') }}</span>{% endif %}</td>
+                <td class="small text-nowrap">{{ p.effective_from }}{% if p.effective_to %} → {{ p.effective_to }}{% endif %}{% if not p.in_force %} <span class="badge bg-secondary">{{ _('not in force') }}</span>{% endif %}</td>
+                <td class="small">{{ p.legal_reference or '-' }}</td>
+                <td class="text-nowrap">{% if p.needs_review %}<span class="badge bg-warning text-dark">{{ _('Needs review') }}</span>{% endif %}
+                    {% if p.pending_changes %}<span class="badge bg-info text-dark">{{ _('Pending') }}: {{ p.pending_changes }}</span>{% endif %}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-center text-muted py-4">{{ _('No parameters match.') }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div></div>
+
+    {% if rc_can_admin %}
+    <div class="card"><div class="card-header"><strong>{{ _('Settings') }}</strong></div><div class="card-body">
+        <form method="post" action="{{ url_for('regcontrols.settings_save') }}" class="row g-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-md-4"><label class="form-label">{{ _('Our licence type') }}</label>
+                <select name="rc_licence_type" class="form-select">{% for k in rc_vocab.LICENCE_TYPES %}<option value="{{ k }}" {{ 'selected' if licence_type == k }}>{{ rc_label('LICENCE_TYPES', k) }}</option>{% endfor %}</select>
+                <div class="form-text">{{ _('Selects which licence-specific parameter values the checks use.') }}</div></div>
+            {% set head_ids = heads.split(',') %}
+            <div class="col-md-8"><label class="form-label">{{ _('Head(s) of Compliance — receive escalations') }}</label>
+                <select name="compliance_heads" class="form-select" multiple size="5">{% for u in users %}<option value="{{ u.id }}" {{ 'selected' if u.id|string in head_ids }}>{{ u.first_name }} {{ u.last_name }} ({{ u.email }})</option>{% endfor %}</select>
+                <div class="form-text">{{ _('If none is selected, every administrator and compliance officer is notified.') }}</div></div>
+            <div class="col-12"><button class="btn btn-primary btn-sm">{{ _('Save settings') }}</button></div>
+        </form>
+    </div></div>
+    {% endif %}
+</div>
+{% endblock %}

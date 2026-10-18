@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% import 'fra_nbfi/lending/_nav.html' as ln with context %}
+{% block title %}{{ _('Pricing & fees') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-2"><h3 class="mb-0">{{ _('Pricing & fee breaches') }}</h3>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('lending.fees', export='csv') }}"><i class="bi bi-download me-1"></i>{{ _('Export CSV') }}</a></div>
+    {{ ln.nav('lending.fees') }}
+    {% if br.missing_params %}<div class="alert alert-warning small">{{ _('These parameters are not set, so the related checks cannot run:') }} <code>{{ br.missing_params|join(', ') }}</code> — <a href="{{ url_for('regcontrols.parameters', q='lending') }}">{{ _('Regulatory Parameters') }}</a></div>{% endif %}
+    <div class="card mb-3"><div class="card-header"><strong>{{ _('Over-charge by client (refund list)') }}</strong></div><div class="table-responsive"><table class="table table-sm mb-0 small">
+        <thead><tr><th>{{ _('Client') }}</th><th class="text-end">{{ _('Items') }}</th><th class="text-end">{{ _('Total over-charge (EGP)') }}</th></tr></thead><tbody>
+        {% for c in by_client %}<tr><td>{{ c.client_ref }} · {{ c.client_name }}</td><td class="text-end">{{ c.count }}</td><td class="text-end fw-bold">{{ '{:,.2f}'.format(c.total) }}</td></tr>
+        {% else %}<tr><td colspan="3" class="text-muted">{{ _('No over-charges found.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% for code, title in [('FRA-017', _('Admin fee above the cap')), ('FRA-018', _('Admin fee above the tier')), ('FRA-020', _('Late penalty above the formula')), ('FRA-025', _('Transfer fee above the cap')), ('FRA-026', _('Rescheduling fee above the cap'))] %}
+    <div class="card mb-3"><div class="card-header"><strong>{{ code }}</strong> · {{ title }} <span class="badge bg-{{ 'danger' if br[code] else 'success' }}">{{ br[code]|length }}</span></div>
+        {% if br[code] %}<div class="table-responsive" style="max-height: 300px"><table class="table table-sm mb-0 small">
+            <thead><tr><th>{{ _('Loan') }}</th><th>{{ _('Client') }}</th><th>{{ _('Branch') }}</th><th>{{ _('Detail') }}</th><th class="text-end">{{ _('Charged') }}</th><th class="text-end">{{ _('Allowed') }}</th><th class="text-end">{{ _('Over-charge') }}</th></tr></thead><tbody>
+            {% for b in br[code] %}<tr><td><a href="{{ url_for('lending.loan_detail', loan_id=b.loan_id) }}">{{ b.loan_ref }}</a></td><td>{{ b.client_ref }}</td><td>{{ b.branch or '-' }}</td><td>{{ b.get('instalment') or b.get('date') or '' }}</td><td class="text-end">{{ b.charged }}</td><td class="text-end">{{ b.allowed }}</td><td class="text-end text-danger">{{ b.overcharge }}</td></tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+    </div>
+    {% endfor %}
+    <p class="small text-muted">{{ _('Late-penalty limit used: rate per started month of delay on the overdue instalment, capped at the cap percentage. Confirm this method with Compliance.') }}</p>
+</div>
+{% endblock %}

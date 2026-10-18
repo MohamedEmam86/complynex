@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Screening assurance') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Screening assurance') }}</h3>
+    {{ aa.nav('amlkyc.screening') }}
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Required list sources') }}</strong> <span class="small text-muted">{{ _('(from the check settings of the bound controls)') }}</span></div>
+                <ul class="list-group list-group-flush small">{% for s in required %}
+                    <li class="list-group-item d-flex justify-content-between"><span><strong>{{ s.label }}</strong><div class="text-muted">{{ s.sources|join(', ') or _('no matching source') }}</div></span>
+                        <span>{% if not s.configured %}<span class="badge bg-danger">{{ _('not configured') }}</span>{% elif not s.loaded %}<span class="badge bg-danger">{{ _('never loaded') }}</span>{% elif not s.fresh %}<span class="badge bg-warning text-dark">{{ _('stale') }}</span>{% else %}<span class="badge bg-success">{{ _('OK') }}</span>{% endif %}</span></li>
+                {% else %}<li class="list-group-item text-muted">{{ _('No control defines required sources yet (enable a content pack or set the check settings).') }}</li>{% endfor %}</ul></div>
+            <div class="card"><div class="card-header"><strong>{{ _('All list sources') }}</strong> <span class="small text-muted">{{ _('freshness limit') }}: {{ hours ~ ' h' if hours is not none else _('not set') }}</span></div>
+                <div class="table-responsive" style="max-height: 320px"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Source') }}</th><th>{{ _('Active') }}</th><th>{{ _('Last update') }}</th></tr></thead><tbody>
+                {% for s in sources %}<tr><td>{{ s.name }}</td><td>{{ _('Yes') if s.is_active not in (False, 0) else _('No') }}</td><td>{{ s.last_successful_update or '-' }}</td></tr>{% else %}<tr><td colspan="3" class="text-muted">{{ _('No sources.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card mb-3"><div class="card-header d-flex justify-content-between"><strong>{{ _('QA test set') }}</strong>
+                {% if aa_can_edit %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="run"><button class="btn btn-sm btn-primary">{{ _('Run the test set') }}</button></form>{% endif %}</div>
+                <div class="card-body small">
+                    {% if run %}<p class="mb-1">{{ _('Last run') }} {{ run.run_at.strftime('%Y-%m-%d %H:%M') }}: {{ _('recall') }} <strong>{{ run.recall_pct }}%</strong> · {{ _('precision') }} {{ run.precision_pct }}% · {{ run.cases }} {{ _('cases') }} · <span class="{{ 'text-danger' if run.misses }}">{{ run.misses }} {{ _('misses') }}</span> · {{ run.false_positives }} {{ _('false positives') }}</p>
+                        {% if run.error %}<p class="text-danger">{{ run.error }}</p>{% endif %}
+                        {% for d in run.details if (d.expect_match and not d.found) or (not d.expect_match and d.found) %}<div class="text-danger">{{ _('Miss') if d.expect_match else _('False positive') }}: {{ d.query }} ({{ d.variant }})</div>{% endfor %}
+                    {% else %}<p class="text-muted">{{ _('Never run.') }}</p>{% endif %}
+                    <p class="text-muted mb-0">{{ _('Test names come from your own watchlist entries (with generated spelling variants, including Arabic letter forms) plus invented names that must not match. No list data is stored in the software.') }}</p>
+                </div>
+                {% if aa_can_edit %}<div class="card-body border-top small">
+                    <form method="post" class="row g-1 mb-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="entry">
+                        <div class="col-6"><input name="name" class="form-control form-control-sm" placeholder="{{ _('A name exactly as on the list') }}" required></div>
+                        <div class="col-4"><input name="list_label" class="form-control form-control-sm" placeholder="{{ _('List (e.g. UN)') }}"></div>
+                        <div class="col-2"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Add + variants') }}</button></div></form>
+                    <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="negatives"><button class="btn btn-sm btn-outline-secondary">{{ _('Add invented negative names') }}</button></form>
+                </div>{% endif %}
+            </div>
+            <div class="card"><div class="table-responsive" style="max-height: 360px"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Query') }}</th><th>{{ _('Must find') }}</th><th>{{ _('Variant') }}</th><th>{{ _('List') }}</th><th></th></tr></thead><tbody>
+                {% for c in cases %}<tr class="{{ 'text-muted' if not c.is_active }}"><td>{{ c.query_name }}</td><td>{{ c.expected_name or _('(no match)') }}</td><td>{{ c.variant_type }}</td><td>{{ c.list_label or '-' }}</td>
+                    <td>{% if aa_can_edit %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="case_id" value="{{ c.id }}"><button class="btn btn-sm btn-link p-0">{{ _('Disable') if c.is_active else _('Enable') }}</button></form>{% endif %}</td></tr>
+                {% else %}<tr><td colspan="5" class="text-muted">{{ _('No test cases yet.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

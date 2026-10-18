@@ -1,0 +1,9 @@
+{% macro nav(active) -%}
+<ul class="nav nav-pills mb-3 small flex-wrap no-print">
+    {% for ep, label in [('lending.dashboard', _('Portfolio')), ('lending.loans', _('Loans')), ('lending.fees', _('Pricing & fees')),
+                         ('lending.qa', _('Credit-study QA')), ('lending.disclosure', _('Pricing disclosure')),
+                         ('lending.products', _('Products')), ('lending.import_data', _('Import data'))] %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == ep }}" href="{{ url_for(ep) }}">{{ label }}</a></li>
+    {% endfor %}
+</ul>
+{%- endmacro %}

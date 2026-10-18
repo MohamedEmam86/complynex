@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% import 'cyber/resilience/_nav.html' as cn with context %}
+{% block title %}{{ _('IT resilience') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('IT, cyber & business continuity') }}</h3>
+    {{ cn.nav('cyber.res_dashboard') }}
+    <div class="row g-3 mb-3">
+        {% for title, value, bad, ep in [
+            (_('BCP / DR readiness'), dr|join('; ') or _('OK'), dr|length > 0, 'cyber.res_bcp'),
+            (_('Backups with issues'), backups_bad ~ ' / ' ~ backups, backups_bad > 0, 'cyber.res_backups'),
+            (_('Integrations not live'), integ_bad ~ ' / ' ~ integ, integ_bad > 0, 'cyber.res_integrations'),
+            (_('Certificates needing attention'), certs_bad ~ ' / ' ~ certs, certs_bad > 0, 'cyber.res_domains'),
+            (_('Licences expired / expiring'), assets_bad ~ ' / ' ~ assets, assets_bad > 0, 'cyber.res_assets'),
+            (_('IT risks not reviewed'), risks_stale, risks_stale > 0, 'cyber.res_it_risks')] %}
+        <div class="col-md-4"><a href="{{ url_for(ep) }}" class="text-decoration-none"><div class="card h-100 border-{{ 'danger' if bad else 'success' }}"><div class="card-body">
+            <div class="small text-muted">{{ title }}</div><div class="fs-5 fw-bold text-{{ 'danger' if bad else 'body' }}">{{ value }}</div></div></div></a></div>{% endfor %}
+    </div>
+    <div class="row g-3"><div class="col-lg-7"><div class="card"><div class="card-header"><strong>{{ _('Controls tested on these registers') }}</strong></div>
+        <table class="table table-sm mb-0 small"><tbody>{% for c in controls %}<tr><td><a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}">{{ c.control_code }}</a> · {{ rc_loc(c.title_en, c.title_ar) }}</td><td><code>{{ c.check_key }}</code></td>
+            <td>{% if c.last_status %}<span class="badge bg-{{ {'pass': 'success', 'fail': 'danger', 'warning': 'warning text-dark', 'error': 'dark'}.get(c.last_status, 'secondary') }}">{{ c.last_status }}</span>{% else %}-{% endif %}</td></tr>
+        {% else %}<tr><td class="text-muted">{{ _('No control is bound to these checks yet (enable a content pack, or bind a control on Compliance Controls).') }}</td></tr>{% endfor %}</tbody></table></div></div>
+        <div class="col-lg-5"><div class="card"><div class="card-header"><strong>{{ _('Latest maturity self-assessments') }}</strong></div><ul class="list-group list-group-flush small">
+            {% for m in maturity %}<li class="list-group-item"><a href="{{ url_for('cyber.res_maturity_detail', assessment_id=m.id) }}">{{ m.framework_code }} · {{ m.title }}</a> <span class="text-muted">{{ m.assessed_on }} · {{ m.status }} · {{ _('avg') }} {{ m.avg_current or '-' }}</span></li>
+            {% else %}<li class="list-group-item text-muted">{{ _('None yet.') }}</li>{% endfor %}</ul></div></div></div>
+</div>
+{% endblock %}

@@ -25,6 +25,15 @@ non-financial firms, under any regulator (CBE, FRA, EMLCU, PDPL, ITIDA, or forei
   manual step (`deploy.sh`), so never assume your change is live.
 - You cannot reach the production server, its PostgreSQL, Elasticsearch or Redis. Do not try.
 
+## Generic core, optional packs (design rule)
+- ComplyNex is a **general, configurable** Compliance Management System for any organisation, sector and
+  regulator. Model regulators, frameworks, requirements, controls, tests, evidence and parameters as DATA
+  (regcontrols catalog, editable in the UI) — never as code tied to one regulator or company.
+- Regulator- or sector-specific content and logic go in an optional content pack under `packs/<code>/`
+  (see `docs/regulatory/REGCONTROLS_API.md` §5). Core modules must never import or mention a pack.
+- Demo / seed data uses a fictional company only. Never put a real client's name, figures, banks or branches
+  in code, seed data, docs or commit messages.
+
 ## Stack
 - Python 3.12, Flask (blueprints per module: `aml/`, `screening/`, `governance/`, `academy/`, …),
   Jinja templates in `templates/<module>/`, static assets in `static/`.

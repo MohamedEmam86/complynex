@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% import 'carbon/acc/_nav.html' as cn with context %}
+{% block title %}{{ _('Data quality') }} — ComplyNex{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <h3 class="mb-2">{{ _('Data-quality controls') }} — {{ p.label }}</h3>
+  {{ cn.nav('carbon.quality', p) }}
+  <p class="small text-muted">{{ _('Critical issues (unit mismatch, entry without evidence, negative quantity) block submission for review. Warnings (missing months, outliers vs the previous period, PCAF gaps) must be explained to the verifier.') }}</p>
+  <div class="card"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Severity') }}</th><th>{{ _('Check') }}</th><th>{{ _('Detail') }}</th><th></th></tr></thead><tbody>
+    {% for i in dq.issues %}<tr class="{{ 'table-danger' if i.severity == 'critical' else 'table-warning' }}"><td>{{ i.severity }}</td><td>{{ i.code }}</td><td>{{ i.message }}</td><td>{% if i.entry_id %}<a href="{{ url_for('carbon.activity_files', entry_id=i.entry_id) }}">{{ _('Open') }}</a>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="4" class="text-success">{{ _('No data-quality issue in') }} {{ dq.entries }} {{ _('entries.') }}</td></tr>{% endfor %}</tbody></table></div>
+</div>
+{% endblock %}

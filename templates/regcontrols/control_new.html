@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('New control') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{{ _('New control') }}</h3>
+    {% if req %}<p class="text-muted small">{{ _('For requirement') }} <strong>{{ req.framework_code }} · {{ req.ref_code }}</strong> — {{ rc_loc(req.title_en, req.title_ar) }}</p>{% endif %}
+    <form method="post" class="card"><div class="card-body"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if req %}<input type="hidden" name="requirement_id" value="{{ req.id }}">{% endif %}
+        <div class="row g-3">
+            <div class="col-md-3"><label class="form-label">{{ _('Code') }} *</label><input name="control_code" class="form-control" required value="{{ form.get('control_code', '') }}" placeholder="CTRL-001"></div>
+            <div class="col-md-5"><label class="form-label">{{ _('Title (English)') }} *</label><input name="title_en" class="form-control" required value="{{ form.get('title_en', req.title_en if req else '') }}"></div>
+            <div class="col-md-4"><label class="form-label">{{ _('Title (Arabic)') }}</label><input name="title_ar" dir="rtl" class="form-control" value="{{ form.get('title_ar', req.title_ar if req and req.title_ar else '') }}"></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Control type') }}</label><select name="control_type" class="form-select">{% for k in rc_vocab.CONTROL_TYPES %}<option value="{{ k }}">{{ rc_label('CONTROL_TYPES', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Area') }}</label><select name="area" class="form-select"><option value="">-</option>{% for k in rc_vocab.AREAS %}<option value="{{ k }}" {{ 'selected' if req and req.area_code == k }}>{{ rc_label('AREAS', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><label class="form-label">{{ _('Frequency') }}</label><select name="frequency" class="form-select">{% for k in rc_vocab.FREQUENCIES %}<option value="{{ k }}" {{ 'selected' if k == 'monthly' }}>{{ rc_label('FREQUENCIES', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><label class="form-label">{{ _('Criticality') }}</label><select name="criticality" class="form-select">{% for k in rc_vocab.CRITICALITY %}<option value="{{ k }}" {{ 'selected' if k == 'high' }}>{{ rc_label('CRITICALITY', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><label class="form-label">{{ _('Owner role') }}</label><select name="owner_role" class="form-select"><option value="">-</option>{% for k in rc_vocab.OWNER_ROLES %}<option value="{{ k }}">{{ rc_label('OWNER_ROLES', k) }}</option>{% endfor %}</select></div>
+            <div class="col-12"><label class="form-label">{{ _('What the control does') }}</label><textarea name="requirement_en" class="form-control" rows="2">{{ form.get('requirement_en', req.text_en if req and req.text_en else '') }}</textarea></div>
+        </div></div>
+        <div class="card-footer"><button class="btn btn-primary">{{ _('Create') }}</button> <a class="btn btn-outline-secondary" href="{{ url_for('regcontrols.controls') }}">{{ _('Cancel') }}</a></div></form>
+</div>
+{% endblock %}
