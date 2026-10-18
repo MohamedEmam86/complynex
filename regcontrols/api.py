@@ -78,3 +78,17 @@ def register_expected_source(name, fn):
     check core.aml.unusual_register reconciles them."""
     from amlkyc.service import register_expected_source as _reg
     return _reg(name, fn)
+
+
+# ---- Prudential vocabularies for packs (data, editable afterwards in the UI) ----
+
+def install_key_function_type(code, name_en, name_ar=None, **kwargs):
+    """Add a key-function type (Prudential > Key functions) if missing."""
+    from prudential.service import install_function_type
+    return install_function_type(code, name_en, name_ar, **kwargs)
+
+
+def install_branch_role(code, name_en, name_ar=None, **kwargs):
+    """Add a required branch role (Prudential > Branches) if missing."""
+    from prudential.service import install_branch_role as _ibr
+    return _ibr(code, name_en, name_ar, **kwargs)

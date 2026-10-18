@@ -381,6 +381,11 @@ def create_app(config_name=None):
     import amlkyc.routes  # noqa: F401 — registers routes on amlkyc_bp
     app.register_blueprint(amlkyc_bp)
 
+    # Prudential, licensing, governance & financial-reporting registers — see prudential/
+    from prudential import prudential_bp
+    import prudential.routes  # noqa: F401 — registers routes on prudential_bp
+    app.register_blueprint(prudential_bp)
+
     # Optional content packs (packs/<code>/): their pages exist only while the
     # pack is enabled (Compliance Controls > Content packs). Core never
     # imports a specific pack.

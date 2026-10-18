@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% import 'prudential/_nav.html' as pn with context %}
+{% block title %}{{ _('Branches') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Branch register & staffing') }}</h3>
+    {{ pn.nav('prudential.branches') }}
+    <p class="small text-muted">{{ _('Manager vacancy limit') }}: {{ (vacancy_days ~ ' ' ~ _('days')) if vacancy_days is not none else _('not set (parameter branch.manager_vacancy_max_days)') }}</p>
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Code') }}</th><th>{{ _('Branch') }}</th><th>{{ _('Status') }}</th><th>{{ _('Manager') }}</th><th>{{ _('No-objection') }}</th><th>{{ _('Vacant since') }}</th><th>{{ _('Issues') }}</th><th></th></tr></thead><tbody>
+        {% for b in rows %}<tr class="{{ 'table-danger' if b.issues|rejectattr(0, 'equalto', 'vacancy_within_limit')|list else ('table-warning' if b.issues else '') }}"><td>{{ b.code }}</td><td>{{ rc_loc(b.name_en, b.name_ar) }}</td><td>{{ b.status }}</td><td>{{ b.manager or '-' }}</td><td>{{ b.manager_no_objection }} {{ b.manager_no_objection_ref or '' }}</td><td>{{ b.manager_vacant_since or '-' }}</td>
+            <td>{% for c, msg in b.issues %}<div>{{ msg }}</div>{% else %}-{% endfor %}</td><td>{% if pr_can_edit %}<a href="{{ url_for('prudential.branches', edit=b.id) }}">{{ _('Edit') }}</a>{% endif %}</td></tr>
+        {% else %}<tr><td colspan="8" class="text-muted">{{ _('No branches registered.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    <form method="post" class="card mb-3"><div class="card-header"><strong>{{ _('Staffing matrix') }}</strong> <span class="small text-muted">{{ _('(headcount per role; red = below the minimum)') }}</span></div><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="staffing">
+        <div class="table-responsive"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Branch') }}</th>{% for r in roles if r.is_active %}<th class="text-center">{{ rc_loc(r.name_en, r.name_ar) }}<div class="text-muted fw-normal">{{ _('min') }} {{ mins[r.code] if mins[r.code] is not none else '?' }}</div></th>{% endfor %}</tr></thead><tbody>
+        {% for b in rows if b.status != 'closed' %}<tr><td>{{ b.code }}</td>{% for r in roles if r.is_active %}{% set have = staffing.get((b.id, r.code), 0) %}{% set need = mins[r.code] %}
+            <td class="text-center {{ 'table-danger' if b.status == 'active' and need is not none and have < need }}"><input type="number" min="0" name="s_{{ b.id }}_{{ r.code }}" value="{{ have }}" class="form-control form-control-sm text-center mx-auto" style="max-width: 80px" {{ 'disabled' if not pr_can_edit }}></td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+        {% if pr_can_edit and rows %}<div class="card-footer"><button class="btn btn-sm btn-primary">{{ _('Save staffing') }}</button></div>{% endif %}</form>
+    {% if pr_can_edit %}<div class="row g-3"><div class="col-lg-8"><form method="post" class="card"><div class="card-header"><strong>{{ _('Edit branch') if edit else _('Add a branch') }}</strong></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if edit %}<input type="hidden" name="branch_id" value="{{ edit.id }}">{% endif %}{% set e = edit or {} %}
+        <div class="col-md-2"><input name="code" class="form-control form-control-sm" placeholder="{{ _('Code') }}" value="{{ e.code or '' }}" required></div>
+        <div class="col-md-4"><input name="name_en" class="form-control form-control-sm" placeholder="{{ _('Name (English)') }}" value="{{ e.name_en or '' }}" required></div>
+        <div class="col-md-3"><input name="name_ar" dir="rtl" class="form-control form-control-sm" placeholder="{{ _('Name (Arabic)') }}" value="{{ e.name_ar or '' }}"></div>
+        <div class="col-md-3"><select name="status" class="form-select form-select-sm">{% for v, l in [('planned', _('Planned')), ('active', _('Active')), ('closed', _('Closed'))] %}<option value="{{ v }}" {{ 'selected' if e.status == v }}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="col-md-6"><input name="address" class="form-control form-control-sm" placeholder="{{ _('Address') }}" value="{{ e.address or '' }}"></div>
+        <div class="col-md-3"><input type="date" name="opened_on" class="form-control form-control-sm" title="{{ _('Opened on') }}" value="{{ e.opened_on or '' }}"></div>
+        <div class="col-md-3"><select name="manager_user_id" class="form-select form-select-sm"><option value="">{{ _('Manager (user)') }}</option>{% for u in users %}<option value="{{ u.id }}" {{ 'selected' if e.manager_user_id == u.id }}>{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><input name="manager_name" class="form-control form-control-sm" placeholder="{{ _('or manager name') }}" value="{{ e.manager_name or '' }}"></div>
+        <div class="col-md-3"><select name="manager_no_objection" class="form-select form-select-sm">{% for v, l in [('pending', _('No-objection pending')), ('granted', _('No-objection granted')), ('refused', _('Refused')), ('not_required', _('Not required'))] %}<option value="{{ v }}" {{ 'selected' if e.manager_no_objection == v }}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><input name="manager_no_objection_ref" class="form-control form-control-sm" placeholder="{{ _('No-objection ref.') }}" value="{{ e.manager_no_objection_ref or '' }}"></div>
+        <div class="col-md-3"><input type="date" name="manager_no_objection_on" class="form-control form-control-sm" title="{{ _('No-objection date') }}" value="{{ e.manager_no_objection_on or '' }}"></div>
+        <div class="col-md-3"><input type="date" name="manager_vacant_since" class="form-control form-control-sm" title="{{ _('Vacant since') }}" value="{{ e.manager_vacant_since or '' }}"></div>
+        <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save branch') }}</button> <span class="text-muted">{{ _('A branch can be active only with a manager who has the regulator no-objection.') }}</span></div></div></form></div>
+        <div class="col-lg-4"><form method="post" class="card"><div class="card-header"><strong>{{ _('Required roles') }}</strong></div><div class="card-body row g-1 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="role">
+            <div class="col-4"><input name="code" class="form-control form-control-sm" placeholder="{{ _('code') }}" required></div>
+            <div class="col-8"><input name="name_en" class="form-control form-control-sm" placeholder="{{ _('Name (English)') }}" required></div>
+            <div class="col-12"><input name="name_ar" dir="rtl" class="form-control form-control-sm" placeholder="{{ _('Name (Arabic)') }}"></div>
+            <div class="col-4"><input type="number" name="min_count" class="form-control form-control-sm" placeholder="{{ _('min') }}"></div>
+            <div class="col-8"><input name="param_key" class="form-control form-control-sm" placeholder="{{ _('or parameter key') }}"></div>
+            <div class="col-12 form-check ms-2"><input type="checkbox" name="is_active" value="1" class="form-check-input" id="ra" checked><label class="form-check-label" for="ra">{{ _('Active') }}</label></div>
+            <div class="col-12"><button class="btn btn-sm btn-outline-primary">{{ _('Save role') }}</button></div></div></form></div></div>{% endif %}
+</div>
+{% endblock %}

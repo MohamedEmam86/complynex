@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% import 'prudential/_nav.html' as pn with context %}
+{% block title %}{{ _('Studies') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Approved studies (ECL, deferred tax …)') }}</h3>
+    {{ pn.nav('prudential.studies') }}
+    <div class="mb-2 small">{% for t, issue in status.items() %}<span class="badge bg-{{ 'danger' if issue else 'success' }} me-1">{{ t }}: {{ issue or _('current') }}</span>{% endfor %}</div>
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Type') }}</th><th>{{ _('Title') }}</th><th>{{ _('Period') }}</th><th>{{ _('Status') }}</th><th>{{ _('Approved') }}</th><th>{{ _('Next refresh') }}</th><th></th></tr></thead><tbody>
+        {% for s in rows %}<tr class="{{ 'text-muted' if s.status == 'superseded' }}"><td>{{ s.study_type }}</td><td><a href="{{ url_for('prudential.files', rtype='pr_study', rid=s.id) }}">{{ s.title }}</a></td><td>{{ s.period_end or '-' }}</td><td>{{ s.status }}</td>
+            <td>{{ (s.approved_on ~ ' · ' ~ s.approved_by_body) if s.approved_on else '-' }}</td><td class="{{ 'text-danger' if s.status == 'approved' and s.next_refresh_date and s.next_refresh_date < today }}">{{ s.next_refresh_date or '-' }}</td>
+            <td>{% if pr_can_edit and s.status == 'draft' %}<form method="post" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="approve"><input type="hidden" name="study_id" value="{{ s.id }}">
+                <input type="date" name="approved_on" class="form-control form-control-sm" required><input name="approved_by_body" class="form-control form-control-sm" placeholder="{{ _('Approved by (board / committee / auditor)') }}" required><button class="btn btn-sm btn-outline-success">{{ _('Approve') }}</button></form>{% endif %}</td></tr>
+        {% else %}<tr><td colspan="7" class="text-muted text-center py-3">{{ _('No studies.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% if pr_can_edit %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Add a study') }}</strong></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="add">
+        <div class="col-md-2"><input name="study_type" list="stypes" class="form-control form-control-sm" placeholder="{{ _('type (e.g. ecl)') }}" required><datalist id="stypes"><option value="ecl"><option value="deferred_tax"><option value="impairment"></datalist></div>
+        <div class="col-md-4"><input name="title" class="form-control form-control-sm" placeholder="{{ _('Title') }}" required></div>
+        <div class="col-md-2"><input type="date" name="period_end" class="form-control form-control-sm" title="{{ _('Period') }}"></div>
+        <div class="col-md-2"><input name="prepared_by" class="form-control form-control-sm" placeholder="{{ _('Prepared by') }}"></div>
+        <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div></div></form>{% endif %}
+</div>
+{% endblock %}

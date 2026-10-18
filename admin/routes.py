@@ -211,6 +211,7 @@ def add_user():
             'perm_ongoing_screening': request.form.get('perm_ongoing_screening', 'none'),
             'perm_academy': request.form.get('perm_academy', 'none'),
             'perm_regcontrols': request.form.get('perm_regcontrols', 'none'),
+            'perm_prudential': request.form.get('perm_prudential', 'none'),
         }
         
         # Handle temporary user
@@ -476,6 +477,7 @@ def edit_user(id):
             'perm_ongoing_screening': request.form.get('perm_ongoing_screening', 'none'),
             'perm_academy': request.form.get('perm_academy', 'none'),
             'perm_regcontrols': request.form.get('perm_regcontrols', 'none'),
+            'perm_prudential': request.form.get('perm_prudential', 'none'),
                 'can_assign_training': bool(request.form.get('can_assign_training'))
             }
 

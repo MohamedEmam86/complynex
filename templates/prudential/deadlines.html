@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% import 'prudential/_nav.html' as pn with context %}
+{% block title %}{{ _('Regulatory deadlines') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Regulatory deadlines & extensions') }}</h3>
+    {{ pn.nav('prudential.deadlines') }}
+    <p class="small text-muted">{{ _('Countdown alerts at') }} {{ thresholds|join(' / ') }} {{ _('days (parameter capital.deadline_alert_days); overdue or last-threshold deadlines are escalated to the board as a critical finding.') }}</p>
+    {% set st = {'overdue': ('danger', _('Overdue')), 'due_soon': ('warning text-dark', _('Due soon')), 'ok': ('success', _('On track')), 'met': ('secondary', _('Met')), 'cancelled': ('secondary', _('Cancelled')), 'missed': ('dark', _('Missed'))} %}
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm table-hover mb-0 small">
+        <thead><tr><th>{{ _('Deadline') }}</th><th>{{ _('Category') }}</th><th>{{ _('Regulator') }}</th><th>{{ _('Original due') }}</th><th>{{ _('Current due') }}</th><th>{{ _('Extensions') }}</th><th class="text-end">{{ _('Days left') }}</th><th>{{ _('Status') }}</th><th>{{ _('Board') }}</th></tr></thead><tbody>
+        {% for d in rows %}{% set s = st.get(d.state if d.status == 'open' else d.status, ('secondary', d.status)) %}
+        <tr><td><a href="{{ url_for('prudential.deadline', deadline_id=d.id) }}">{{ d.title }}</a></td><td>{{ d.category }}</td><td>{{ d.regulator_name or '-' }}</td><td>{{ d.original_due_date }}</td><td>{{ d.due_date }}</td><td>{{ d.extensions }}</td>
+            <td class="text-end">{{ d.days_left if d.status == 'open' else '-' }}</td><td><span class="badge bg-{{ s[0] }}">{{ s[1] }}</span></td><td>{{ d.board_escalated_at.strftime('%Y-%m-%d') if d.board_escalated_at else '-' }}</td></tr>
+        {% else %}<tr><td colspan="9" class="text-muted text-center py-3">{{ _('No deadlines registered.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% if pr_can_edit %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Add a deadline') }}</strong></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-4"><input name="title" class="form-control form-control-sm" placeholder="{{ _('e.g. Complete capital increase') }}" required></div>
+        <div class="col-md-2"><select name="category" class="form-select form-select-sm">{% for v, l in [('capital_increase', _('Capital increase')), ('licence', _('Licence')), ('remediation', _('Remediation')), ('submission', _('Submission')), ('other', _('Other'))] %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+        <div class="col-md-2"><select name="regulator_id" class="form-select form-select-sm"><option value="">{{ _('Regulator') }}</option>{% for r in regulators %}<option value="{{ r.id }}">{{ r.regulator_name }}</option>{% endfor %}</select></div>
+        <div class="col-md-2"><input type="date" name="due_date" class="form-control form-control-sm" required></div>
+        <div class="col-md-2"><select name="owner_user_id" class="form-select form-select-sm"><option value="">{{ _('Owner') }}</option>{% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}</select></div>
+        <div class="col-md-10"><input name="note" class="form-control form-control-sm" placeholder="{{ _('Note / regulator letter reference') }}"></div>
+        <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div></div></form>{% endif %}
+</div>
+{% endblock %}

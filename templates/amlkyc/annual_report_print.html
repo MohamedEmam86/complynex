@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="{{ get_locale() }}" dir="{{ 'rtl' if get_locale()|string == 'ar' else 'ltr' }}"><head><meta charset="utf-8"><title>{{ _('Annual AML report') }} {{ r.report_year }}</title>
 <style>body{font-family:Arial,sans-serif;margin:40px;color:#111} table{border-collapse:collapse;width:100%} td,th{border:1px solid #999;padding:6px;text-align:start}</style></head>
-<body><h2>{{ company_name }}</h2><h3>{{ _('Annual AML report') }} {{ r.report_year }}</h3>
+<body>{% include 'partials/corp_letterhead.html' %}{% if not corp_profile().legal_name_en %}<h2>{{ company_name }}</h2>{% endif %}<h3>{{ _('Annual AML report') }} {{ r.report_year }}</h3>
 {% for k in roles if k.role_code == r.role_code %}<p>{{ r.role_code|upper }}: {{ k.holder_name or k.holder_user_name }}</p>{% endfor %}
 {% include 'amlkyc/_report_body.html' %}
 <h4>{{ _('Narrative') }}</h4><p style="white-space: pre-line">{{ r.narrative or '' }}</p>

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% import 'prudential/_nav.html' as pn with context %}
+{% block title %}{{ _('Capital register') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Capital register') }}</h3>
+    {{ pn.nav('prudential.capital') }}
+    {% set labels = {'authorised': _('Authorised'), 'issued': _('Issued'), 'paid_up': _('Paid-up'), 'registered': _('Registered')} %}
+    <div class="row g-3 mb-3">{% for t in types %}{% set l = pos.levels.get(t) %}<div class="col-md-3"><div class="card"><div class="card-body"><div class="small text-muted">{{ labels[t] }}</div><div class="fs-5 fw-bold">{{ pn.money(l.amount if l else none) }}</div><div class="small text-muted">{{ l.date if l else '' }}</div></div></div></div>{% endfor %}</div>
+    <div class="alert {{ 'alert-danger' if pos.issues else 'alert-success' }} small">{{ _('Minimum paid-up capital for this licence') }}: <strong>{{ pn.money(pos.minimum) if pos.minimum is not none else _('not set (parameter capital.min_paid_up)') }}</strong>
+        {% for code, msg in pos.issues %}<div>• {{ msg }}</div>{% endfor %}</div>
+    <div class="row g-3"><div class="col-lg-7">
+        <div class="card mb-3"><div class="card-body"><canvas id="capChart" height="120"></canvas></div></div>
+        <div class="card"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Date') }}</th><th>{{ _('Figure') }}</th><th class="text-end">{{ _('New level') }}</th><th>{{ _('Reference') }}</th><th>{{ _('Files') }}</th></tr></thead><tbody>
+            {% for e in events %}<tr><td>{{ e.effective_date }}</td><td>{{ labels[e.capital_type] }}</td><td class="text-end">{{ pn.money(e.amount) }} {{ e.currency }}</td><td>{{ e.reference or '-' }}</td><td><a href="{{ url_for('prudential.files', rtype='pr_capital_event', rid=e.id) }}">{{ _('Open') }}</a></td></tr>
+            {% else %}<tr><td colspan="5" class="text-muted">{{ _('No entries yet.') }}</td></tr>{% endfor %}</tbody></table></div>
+    </div><div class="col-lg-5">
+        {% if pr_can_edit %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Record a new level') }}</strong></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-6"><select name="capital_type" class="form-select form-select-sm">{% for t in types %}<option value="{{ t }}">{{ labels[t] }}</option>{% endfor %}</select></div>
+            <div class="col-6"><input type="date" name="effective_date" class="form-control form-control-sm" required></div>
+            <div class="col-8"><input name="amount" class="form-control form-control-sm" placeholder="{{ _('Amount (new total)') }}" required></div>
+            <div class="col-4"><input name="currency" class="form-control form-control-sm" value="EGP"></div>
+            <div class="col-12"><input name="reference" class="form-control form-control-sm" placeholder="{{ _('Resolution / bank certificate / registry reference') }}"></div>
+            <div class="col-12"><textarea name="note" class="form-control form-control-sm" rows="2" placeholder="{{ _('Note') }}"></textarea></div>
+            <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save and attach document') }}</button></div></div></form>{% endif %}
+    </div></div>
+</div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='vendor/chartjs/chart@3.9.1.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var s = {{ series|tojson }}, names = {{ labels|tojson }}, colors = {authorised: '#6c757d', issued: '#0d6efd', paid_up: '#198754', registered: '#fd7e14'};
+  var labelSet = {}; Object.keys(s).forEach(function (k) { s[k].forEach(function (p) { labelSet[p.x] = 1; }); });
+  var labels = Object.keys(labelSet).sort();
+  var ds = Object.keys(s).filter(function (k) { return s[k].length; }).map(function (k) {
+    var m = {}; s[k].forEach(function (p) { m[p.x] = p.y; }); var last = null;
+    return {label: names[k], borderColor: colors[k], backgroundColor: colors[k], stepped: true, fill: false,
+            data: labels.map(function (x) { if (x in m) { last = m[x]; } return last; })};
+  });
+  if (window.Chart && labels.length) { new Chart(document.getElementById('capChart'), {type: 'line', data: {labels: labels, datasets: ds}}); }
+})();
+</script>
+{% endblock %}

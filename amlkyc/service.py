@@ -28,6 +28,11 @@ from database.db import get_db
 from . import logic, subjects
 
 
+def N_(s):
+    """Mark a message for translation (shown translated by the page)."""
+    return s
+
+
 class AssuranceError(ValueError):
     pass
 
@@ -74,7 +79,7 @@ def conflict_rules(db=None):
 def save_key_role(data, user_id, role_id=None, db=None):
     db = db or get_db()
     if not (data.get('role_code') or '').strip():
-        raise AssuranceError('role code is required')
+        raise AssuranceError(N_('role code is required'))
     cols = ['role_code', 'title', 'holder_user_id', 'holder_name', 'reports_to_title', 'reports_to_user_id',
             'reports_to_board', 'other_positions', 'combined_role_approval_ref', 'combined_role_approved_on',
             'appointed_on', 'regulator_notified_on', 'regulator_ref', 'notes', 'is_active']
@@ -95,7 +100,7 @@ def save_key_role(data, user_id, role_id=None, db=None):
 def save_conflict_rule(role_code, rule_type, keyword, reason_en=None, reason_ar=None, db=None):
     db = db or get_db()
     if rule_type not in ('holds', 'reports_to') or not (keyword or '').strip() or not (role_code or '').strip():
-        raise AssuranceError('role, rule type and keyword are required')
+        raise AssuranceError(N_('role, rule type and keyword are required'))
     db.execute("""INSERT INTO aml_role_conflict_rules (role_code, rule_type, keyword, reason_en, reason_ar)
                   VALUES (%s,%s,%s,%s,%s) ON CONFLICT (role_code, rule_type, keyword)
                   DO UPDATE SET reason_en = EXCLUDED.reason_en, reason_ar = EXCLUDED.reason_ar, is_active = TRUE""",
@@ -155,7 +160,7 @@ def generate_annual_report(year, user_id, role_code='mlro', db=None):
     existing = db.execute("SELECT id, status FROM aml_annual_reports WHERE report_year = %s AND role_code = %s",
                           (year, role_code)).fetchone()
     if existing and existing['status'] == 'approved':
-        raise AssuranceError('this report is already board-approved; it cannot be regenerated')
+        raise AssuranceError(N_('this report is already board-approved; it cannot be regenerated'))
     if existing:
         db.execute("UPDATE aml_annual_reports SET data = %s, generated_at = %s, generated_by = %s WHERE id = %s",
                    (json.dumps(data, default=str), datetime.now(), user_id, existing['id']))
@@ -172,25 +177,25 @@ def annual_report_action(report_id, action, user_id, narrative=None, meeting_ref
     db = db or get_db()
     r = db.execute("SELECT * FROM aml_annual_reports WHERE id = %s", (report_id,)).fetchone()
     if not r:
-        raise AssuranceError('report not found')
+        raise AssuranceError(N_('report not found'))
     if action == 'narrative':
         if r['status'] == 'approved':
-            raise AssuranceError('an approved report cannot be changed')
+            raise AssuranceError(N_('an approved report cannot be changed'))
         db.execute("UPDATE aml_annual_reports SET narrative = %s WHERE id = %s", (narrative, report_id))
     elif action == 'submit':
         if r['status'] != 'draft':
-            raise AssuranceError('only a draft can be submitted to the board')
+            raise AssuranceError(N_('only a draft can be submitted to the board'))
         db.execute("UPDATE aml_annual_reports SET status = 'submitted', submitted_at = %s WHERE id = %s",
                    (datetime.now(), report_id))
     elif action == 'approve':
         if r['status'] != 'submitted':
-            raise AssuranceError('submit the report to the board first')
+            raise AssuranceError(N_('submit the report to the board first'))
         if not approved_on or not (meeting_ref or '').strip():
-            raise AssuranceError('board meeting reference and approval date are required')
+            raise AssuranceError(N_('board meeting reference and approval date are required'))
         db.execute("""UPDATE aml_annual_reports SET status = 'approved', board_approved_on = %s, board_meeting_ref = %s,
                       approval_recorded_by = %s WHERE id = %s""", (approved_on, meeting_ref.strip(), user_id, report_id))
     else:
-        raise AssuranceError('unknown action')
+        raise AssuranceError(N_('unknown action'))
     db.commit()
 
 
@@ -215,9 +220,9 @@ def record_board_approval(policy_id, approved_on, board_ref, user_id, notes=None
     db = db or get_db()
     p = db.execute("SELECT version FROM policies WHERE id = %s", (policy_id,)).fetchone()
     if not p:
-        raise AssuranceError('policy not found')
+        raise AssuranceError(N_('policy not found'))
     if not approved_on or not (board_ref or '').strip():
-        raise AssuranceError('board meeting reference and approval date are required')
+        raise AssuranceError(N_('board meeting reference and approval date are required'))
     db.execute("""INSERT INTO policy_board_approvals (policy_id, policy_version, approved_on, board_ref, notes, recorded_by)
                   VALUES (%s,%s,%s,%s,%s,%s)""", (policy_id, p['version'], approved_on, board_ref.strip(), notes, user_id))
     db.commit()
@@ -261,7 +266,7 @@ def save_plan(year, title, approved_on, user_id, db=None):
 def add_review(plan_id, unit_label, review_type, planned_date, reviewer_id=None, org_unit_id=None, db=None):
     db = db or get_db()
     if not (unit_label or '').strip() or not planned_date:
-        raise AssuranceError('unit and planned date are required')
+        raise AssuranceError(N_('unit and planned date are required'))
     db.execute("""INSERT INTO aml_monitoring_reviews (plan_id, unit_label, review_type, planned_date, reviewer_id,
                   org_unit_id, checklist) VALUES (%s,%s,%s,%s,%s,%s,%s)""",
                (plan_id, unit_label.strip(), review_type if review_type in ('offsite', 'onsite') else 'offsite',
@@ -275,13 +280,13 @@ def complete_review(review_id, results, conclusion, user_id, performed_date=None
     db = db or get_db()
     r = db.execute("SELECT * FROM aml_monitoring_reviews WHERE id = %s", (review_id,)).fetchone()
     if not r:
-        raise AssuranceError('review not found')
+        raise AssuranceError(N_('review not found'))
     checklist = r['checklist'] or []
     for i, item in enumerate(checklist):
         if i < len(results):
             item['result'], item['note'] = results[i]
     if any(item.get('result') not in ('ok', 'issue', 'na') for item in checklist):
-        raise AssuranceError('answer every checklist item (ok / issue / n.a.)')
+        raise AssuranceError(N_('answer every checklist item (ok / issue / n.a.)'))
     issues = [item for item in checklist if item['result'] == 'issue']
     finding_id = r['finding_id']
     if issues and not finding_id:
@@ -346,7 +351,7 @@ def qa_cases(db=None):
 def add_qa_case(query_name, expected_name, variant_type, expect_match, list_label, user_id, db=None):
     db = db or get_db()
     if not (query_name or '').strip():
-        raise AssuranceError('query name is required')
+        raise AssuranceError(N_('query name is required'))
     db.execute("""INSERT INTO screening_qa_cases (query_name, expected_name, variant_type, expect_match, list_label, created_by)
                   VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT (query_name, expected_name) DO NOTHING""",
                (query_name.strip(), (expected_name or '').strip() or None, variant_type or 'exact', bool(expect_match),
@@ -438,7 +443,7 @@ def screen_employee(user_id_to_screen, actor_id, trigger='manual', db=None, scre
     db = db or get_db()
     u = db.execute("SELECT id, first_name, last_name FROM users WHERE id = %s", (user_id_to_screen,)).fetchone()
     if not u:
-        raise AssuranceError('user not found')
+        raise AssuranceError(N_('user not found'))
     name = f"{u['first_name']} {u['last_name']}".strip()
     if screen_fn:
         res = screen_fn(name)
@@ -471,18 +476,18 @@ def unusual_study(item_id, user_id, analysis, decision=None, str_reference=None,
     from attachments.service import list_attachments
     u = db.execute("SELECT * FROM aml_unusual_transactions WHERE id = %s", (item_id,)).fetchone()
     if not u:
-        raise AssuranceError('item not found')
+        raise AssuranceError(N_('item not found'))
     if u['status'] in ('str_filed', 'no_str', 'dismissed'):
-        raise AssuranceError('this item is already decided')
+        raise AssuranceError(N_('this item is already decided'))
     if not (analysis or '').strip():
-        raise AssuranceError('write the analysis first')
+        raise AssuranceError(N_('write the analysis first'))
     if decision:
         if decision not in ('str', 'no_str'):
-            raise AssuranceError('decision must be STR or no STR')
+            raise AssuranceError(N_('decision must be STR or no STR'))
         if decision == 'str' and not (str_reference or '').strip():
-            raise AssuranceError('enter the STR reference')
+            raise AssuranceError(N_('enter the STR reference'))
         if not list_attachments('aml', 'aml_unusual', item_id):
-            raise AssuranceError('attach the supporting documents before deciding')
+            raise AssuranceError(N_('attach the supporting documents before deciding'))
         status = 'str_filed' if decision == 'str' else 'no_str'
         db.execute("""UPDATE aml_unusual_transactions SET analysis = %s, decision = %s, decision_by = %s, decision_at = %s,
                       str_reference = %s, status = %s WHERE id = %s""",
@@ -610,7 +615,7 @@ def portfolio(subject, db=None):
 def add_bo(subject, subject_id, data, user_id, db=None):
     db = db or get_db()
     if not (data.get('full_name') or '').strip():
-        raise AssuranceError('beneficial owner name is required')
+        raise AssuranceError(N_('beneficial owner name is required'))
     db.execute("""INSERT INTO kyc_beneficial_owners (subject, subject_id, full_name, nationality, ownership_pct, control_type,
                   is_pep, created_by) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
                (subject, subject_id, data['full_name'].strip(), data.get('nationality') or None,
@@ -635,11 +640,11 @@ def declarations(subject, subject_id, db=None):
 def add_declaration(subject, subject_id, declaration_type, bo_name, signed_on, user_id, db=None):
     db = db or get_db()
     if declaration_type not in ('self', 'other'):
-        raise AssuranceError('choose self or another beneficial owner')
+        raise AssuranceError(N_('choose self or another beneficial owner'))
     if declaration_type == 'other' and not (bo_name or '').strip():
-        raise AssuranceError('name the beneficial owner')
+        raise AssuranceError(N_('name the beneficial owner'))
     if not signed_on:
-        raise AssuranceError('signature date is required')
+        raise AssuranceError(N_('signature date is required'))
     did = db.execute("""INSERT INTO kyc_bo_declarations (subject, subject_id, declaration_type, bo_name, signed_on, recorded_by)
                         VALUES (%s,%s,%s,%s,%s,%s) RETURNING id""",
                      (subject, subject_id, declaration_type, (bo_name or '').strip() or None, signed_on, user_id)
@@ -663,7 +668,7 @@ def rate_subject(subject, subject_id, user_id, trigger='manual', db=None):
     s = subjects.SUBJECTS[subject]
     r = subjects.row(subject, subject_id, db)
     if not r:
-        raise AssuranceError('record not found')
+        raise AssuranceError(N_('record not found'))
     values = dict(r)
     values.update(profile(subject, subject_id, db))
     if s.risk_values:
@@ -732,7 +737,7 @@ def senior_approve(subject, subject_id, user_id, db=None):
     from models.user import User
     u = User.get_by_id(user_id)
     if not (u and (u.is_compliance_officer() or u.role in ('manager',))):
-        raise AssuranceError('senior approval must be given by a manager or compliance officer')
+        raise AssuranceError(N_('senior approval must be given by a manager or compliance officer'))
     db.execute("""INSERT INTO kyc_onboarding (subject, subject_id, senior_approved_by, senior_approved_at)
                   VALUES (%s,%s,%s,%s) ON CONFLICT (subject, subject_id)
                   DO UPDATE SET senior_approved_by = EXCLUDED.senior_approved_by, senior_approved_at = EXCLUDED.senior_approved_at""",

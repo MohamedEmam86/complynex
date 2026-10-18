@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% import 'prudential/_nav.html' as pn with context %}
+{% block title %}{{ _('Prudential & Governance') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Prudential & Governance') }}</h3>
+    {{ pn.nav('prudential.dashboard') }}
+    <div class="row g-3 mb-3">
+        {% set paid = (cap.levels.get('paid_up') or {}).get('amount') %}
+        {% for title, value, sub, bad, ep in [
+            (_('Paid-up capital'), pn.money(paid), _('minimum') ~ ' ' ~ (pn.money(cap.minimum) if cap.minimum is not none else _('not set')), cap.issues|length > 0, 'prudential.capital'),
+            (_('Open regulatory deadlines'), deadlines|length, (deadlines|selectattr('state', 'in', ['overdue', 'due_soon'])|list|length) ~ ' ' ~ _('at risk'), deadlines|selectattr('state', 'in', ['overdue', 'due_soon'])|list|length > 0, 'prudential.deadlines'),
+            (_('Latest approved period'), period.period_end if period else '-', (_('leverage') ~ ' ' ~ (period.ratios.leverage ~ 'x' if period and period.ratios.leverage is not none else '-')), not period or period.ratios.negative_equity, 'prudential.solvency'),
+            (_('Key functions with issues'), kf_issues ~ ' / ' ~ kf_total, '', kf_issues > 0, 'prudential.key_functions'),
+            (_('Branches with issues'), branch_issues ~ ' / ' ~ branches, '', branch_issues > 0, 'prudential.branches'),
+            (_('Facilities with issues'), fac_issues ~ ' / ' ~ facilities, _('data source') ~ ': ' ~ provider, fac_issues > 0, 'prudential.facilities'),
+            (_('Related-party items with issues'), rp_issues ~ ' / ' ~ rp_items, '', rp_issues > 0, 'prudential.related_parties'),
+            (_('Documents with a wrong address'), doc_issues, '', doc_issues > 0, 'prudential.profile')] %}
+        <div class="col-md-3"><a href="{{ url_for(ep) }}" class="text-decoration-none"><div class="card h-100 border-{{ 'danger' if bad else 'success' }}"><div class="card-body">
+            <div class="small text-muted">{{ title }}</div><div class="fs-4 fw-bold text-{{ 'danger' if bad else 'body' }}">{{ value }}</div><div class="small text-muted">{{ sub }}</div></div></div></a></div>
+        {% endfor %}
+    </div>
+    <div class="card"><div class="card-header"><strong>{{ _('Controls tested on these registers') }}</strong></div>
+        <table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Control') }}</th><th>{{ _('Check') }}</th><th>{{ _('Last result') }}</th></tr></thead><tbody>
+        {% for c in controls %}<tr><td><a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}">{{ c.control_code }}</a> · {{ rc_loc(c.title_en, c.title_ar) }}</td><td><code>{{ c.check_key }}</code></td>
+            <td>{% if c.last_status %}<span class="badge bg-{{ {'pass': 'success', 'fail': 'danger', 'warning': 'warning text-dark', 'error': 'dark'}.get(c.last_status, 'secondary') }}">{{ c.last_status }}</span>{% else %}-{% endif %}</td></tr>
+        {% else %}<tr><td colspan="3" class="text-muted">{{ _('No control is bound to these checks yet (enable a content pack, or bind a control on Compliance Controls).') }}</td></tr>{% endfor %}</tbody></table></div>
+</div>
+{% endblock %}
