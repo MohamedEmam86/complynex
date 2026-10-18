@@ -25665,6 +25665,848 @@ msgstr "إجراء الفحص قبل بدء العلاقة"
 msgid "Records kept and retrievable"
 msgstr "حفظ السجلات وإمكانية استرجاعها"
 
+# --- Prudential & governance ---
+msgid "You do not have permission for the prudential registers."
+msgstr "ليست لديك صلاحية على السجلات الاحترازية."
+
+msgid "Saved. Attach the supporting document (resolution, bank certificate, registry extract)."
+msgstr "تم الحفظ. أرفق المستند المؤيد (قرار، شهادة بنكية، مستخرج سجل)."
+
+msgid "Period approved."
+msgstr "تم اعتماد الفترة."
+
+msgid "%(n)s period(s) imported."
+msgstr "تم استيراد %(n)s فترة."
+
+msgid "Saved as draft; another user must approve the figures."
+msgstr "حُفظت كمسودة؛ يجب أن يعتمد الأرقام مستخدم آخر."
+
+msgid "%(n)s facility(ies) imported."
+msgstr "تم استيراد %(n)s تسهيل."
+
+msgid "Saved. Attach the supporting document (transfer, receipt, contract)."
+msgstr "تم الحفظ. أرفق المستند المؤيد (تحويل، إيصال، عقد)."
+
+msgid "Study approved."
+msgstr "تم اعتماد الدراسة."
+
+msgid "Saved. Attach the study, then record its approval."
+msgstr "تم الحفظ. أرفق الدراسة ثم سجّل اعتمادها."
+
+msgid "C.R."
+msgstr "س.ت."
+
+msgid "Corporate profile"
+msgstr "الملف التعريفي للشركة"
+
+msgid "Capital"
+msgstr "رأس المال"
+
+msgid "Regulatory deadlines"
+msgstr "المواعيد الرقابية"
+
+msgid "Solvency"
+msgstr "الملاءة"
+
+msgid "Key functions"
+msgstr "الوظائف الرئيسية"
+
+msgid "Facilities"
+msgstr "التسهيلات"
+
+msgid "Related parties"
+msgstr "الأطراف ذات العلاقة"
+
+msgid "Studies (ECL, tax)"
+msgstr "الدراسات (الخسائر المتوقعة، الضرائب)"
+
+msgid "Branch register & staffing"
+msgstr "سجل الفروع والعمالة"
+
+msgid "Manager vacancy limit"
+msgstr "حد شغور منصب المدير"
+
+msgid "not set (parameter branch.manager_vacancy_max_days)"
+msgstr "غير محدد (المعامل branch.manager_vacancy_max_days)"
+
+msgid "No-objection"
+msgstr "عدم الممانعة"
+
+msgid "Vacant since"
+msgstr "شاغر منذ"
+
+msgid "Issues"
+msgstr "المشكلات"
+
+msgid "No branches registered."
+msgstr "لا توجد فروع مسجلة."
+
+msgid "Staffing matrix"
+msgstr "مصفوفة العمالة"
+
+msgid "(headcount per role; red = below the minimum)"
+msgstr "(العدد لكل دور؛ الأحمر = أقل من الحد الأدنى)"
+
+msgid "Save staffing"
+msgstr "حفظ العمالة"
+
+msgid "Edit branch"
+msgstr "تعديل الفرع"
+
+msgid "Add a branch"
+msgstr "إضافة فرع"
+
+msgid "Opened on"
+msgstr "تاريخ الافتتاح"
+
+msgid "Manager (user)"
+msgstr "المدير (مستخدم)"
+
+msgid "or manager name"
+msgstr "أو اسم المدير"
+
+msgid "No-objection pending"
+msgstr "عدم الممانعة قيد الانتظار"
+
+msgid "No-objection granted"
+msgstr "تم منح عدم الممانعة"
+
+msgid "Refused"
+msgstr "مرفوض"
+
+msgid "Not required"
+msgstr "غير مطلوب"
+
+msgid "No-objection ref."
+msgstr "مرجع عدم الممانعة"
+
+msgid "No-objection date"
+msgstr "تاريخ عدم الممانعة"
+
+msgid "Save branch"
+msgstr "حفظ الفرع"
+
+msgid "A branch can be active only with a manager who has the regulator no-objection."
+msgstr "لا يكون الفرع نشطاً إلا بمدير حاصل على عدم ممانعة الجهة الرقابية."
+
+msgid "Required roles"
+msgstr "الأدوار المطلوبة"
+
+msgid "code"
+msgstr "الرمز"
+
+msgid "or parameter key"
+msgstr "أو مفتاح المعامل"
+
+msgid "Save role"
+msgstr "حفظ الدور"
+
+msgid "Capital register"
+msgstr "سجل رأس المال"
+
+msgid "Authorised"
+msgstr "المرخص به"
+
+msgid "Issued"
+msgstr "المصدر"
+
+msgid "Paid-up"
+msgstr "المدفوع"
+
+msgid "Registered"
+msgstr "المسجل"
+
+msgid "Minimum paid-up capital for this licence"
+msgstr "الحد الأدنى لرأس المال المدفوع لهذا الترخيص"
+
+msgid "not set (parameter capital.min_paid_up)"
+msgstr "غير محدد (المعامل capital.min_paid_up)"
+
+msgid "Figure"
+msgstr "البند"
+
+msgid "New level"
+msgstr "القيمة الجديدة"
+
+msgid "Files"
+msgstr "الملفات"
+
+msgid "No entries yet."
+msgstr "لا توجد قيود بعد."
+
+msgid "Record a new level"
+msgstr "تسجيل قيمة جديدة"
+
+msgid "Amount (new total)"
+msgstr "المبلغ (الإجمالي الجديد)"
+
+msgid "Resolution / bank certificate / registry reference"
+msgstr "مرجع القرار / الشهادة البنكية / السجل"
+
+msgid "Save and attach document"
+msgstr "حفظ وإرفاق المستند"
+
+msgid "Prudential & Governance"
+msgstr "الرقابة الاحترازية والحوكمة"
+
+msgid "Paid-up capital"
+msgstr "رأس المال المدفوع"
+
+msgid "minimum"
+msgstr "الحد الأدنى"
+
+msgid "Open regulatory deadlines"
+msgstr "المواعيد الرقابية المفتوحة"
+
+msgid "at risk"
+msgstr "معرضة للخطر"
+
+msgid "Latest approved period"
+msgstr "آخر فترة معتمدة"
+
+msgid "leverage"
+msgstr "الرافعة"
+
+msgid "Key functions with issues"
+msgstr "وظائف رئيسية بها مشكلات"
+
+msgid "Branches with issues"
+msgstr "فروع بها مشكلات"
+
+msgid "Facilities with issues"
+msgstr "تسهيلات بها مشكلات"
+
+msgid "data source"
+msgstr "مصدر البيانات"
+
+msgid "Related-party items with issues"
+msgstr "بنود أطراف ذات علاقة بها مشكلات"
+
+msgid "Documents with a wrong address"
+msgstr "مستندات بعنوان خاطئ"
+
+msgid "Controls tested on these registers"
+msgstr "الضوابط المختبرة على هذه السجلات"
+
+msgid "No control is bound to these checks yet (enable a content pack, or bind a control on Compliance Controls)."
+msgstr "لا يوجد ضابط مرتبط بهذه الفحوص بعد (فعّل حزمة محتوى أو اربط ضابطاً من الضوابط الرقابية)."
+
+msgid "due"
+msgstr "مستحق"
+
+msgid "escalated to the board"
+msgstr "تم التصعيد لمجلس الإدارة"
+
+msgid "finding"
+msgstr "ملاحظة"
+
+msgid "Extensions"
+msgstr "المهل الإضافية"
+
+msgid "Granted on"
+msgstr "تاريخ المنح"
+
+msgid "New due date"
+msgstr "تاريخ الاستحقاق الجديد"
+
+msgid "Letter"
+msgstr "خطاب"
+
+msgid "Original"
+msgstr "الأصلي"
+
+msgid "General"
+msgstr "عامة"
+
+msgid "Special"
+msgstr "خاصة"
+
+msgid "Letter ref."
+msgstr "مرجع الخطاب"
+
+msgid "Record extension"
+msgstr "تسجيل مهلة"
+
+msgid "Attach the regulator letter in the files panel."
+msgstr "أرفق خطاب الجهة الرقابية في لوحة الملفات."
+
+msgid "Mark as met"
+msgstr "تم الالتزام"
+
+msgid "Mark as missed"
+msgstr "تم التجاوز"
+
+msgid "Regulatory deadlines & extensions"
+msgstr "المواعيد الرقابية والمهل"
+
+msgid "Countdown alerts at"
+msgstr "تنبيهات العد التنازلي عند"
+
+msgid "days (parameter capital.deadline_alert_days); overdue or last-threshold deadlines are escalated to the board as a critical finding."
+msgstr "يوماً (المعامل capital.deadline_alert_days)؛ تُصعَّد المواعيد المتأخرة أو التي بلغت آخر حد لمجلس الإدارة كملاحظة حرجة."
+
+msgid "Due soon"
+msgstr "يستحق قريباً"
+
+msgid "On track"
+msgstr "في المسار"
+
+msgid "Met"
+msgstr "تم الالتزام"
+
+msgid "Missed"
+msgstr "فائت"
+
+msgid "Original due"
+msgstr "الاستحقاق الأصلي"
+
+msgid "Current due"
+msgstr "الاستحقاق الحالي"
+
+msgid "Days left"
+msgstr "الأيام المتبقية"
+
+msgid "Board"
+msgstr "المجلس"
+
+msgid "No deadlines registered."
+msgstr "لا توجد مواعيد مسجلة."
+
+msgid "Add a deadline"
+msgstr "إضافة موعد"
+
+msgid "e.g. Complete capital increase"
+msgstr "مثال: استكمال زيادة رأس المال"
+
+msgid "Capital increase"
+msgstr "زيادة رأس المال"
+
+msgid "Remediation"
+msgstr "المعالجة"
+
+msgid "Submission"
+msgstr "تقديم"
+
+msgid "Note / regulator letter reference"
+msgstr "ملاحظة / مرجع خطاب الجهة الرقابية"
+
+msgid "Borrowing facilities register"
+msgstr "سجل التسهيلات الائتمانية الممنوحة للشركة"
+
+msgid "Confirmation age limit"
+msgstr "الحد الأقصى لعمر المصادقة"
+
+msgid "accrual tolerance"
+msgstr "هامش الاستحقاق المسموح"
+
+msgid "Lender"
+msgstr "الجهة المقرضة"
+
+msgid "Balance"
+msgstr "الرصيد"
+
+msgid "Accrual expected / booked"
+msgstr "الاستحقاق المتوقع / المسجل"
+
+msgid "covenant breach"
+msgstr "إخلال بالتعهدات"
+
+msgid "accrued interest off by"
+msgstr "فرق الفوائد المستحقة"
+
+msgid "No facilities registered."
+msgstr "لا توجد تسهيلات مسجلة."
+
+msgid "Edit facility"
+msgstr "تعديل التسهيل"
+
+msgid "Add a facility"
+msgstr "إضافة تسهيل"
+
+msgid "(same reference = update)"
+msgstr "(نفس المرجع = تحديث)"
+
+msgid "Limit"
+msgstr "الحد"
+
+msgid "Balance (books)"
+msgstr "الرصيد (بالدفاتر)"
+
+msgid "Start date"
+msgstr "تاريخ البدء"
+
+msgid "Maturity date"
+msgstr "تاريخ الاستحقاق"
+
+msgid "Last balance confirmation"
+msgstr "آخر مصادقة على الرصيد"
+
+msgid "Confirmed balance"
+msgstr "الرصيد المصادق عليه"
+
+msgid "Accrual from (last interest date)"
+msgstr "الاستحقاق من (آخر تاريخ فائدة)"
+
+msgid "Accrual booked as of"
+msgstr "الاستحقاق مسجل حتى"
+
+msgid "Accrued interest booked"
+msgstr "الفوائد المستحقة المسجلة"
+
+msgid "Rescheduled on"
+msgstr "تاريخ إعادة الجدولة"
+
+msgid "Rescheduling approval ref."
+msgstr "مرجع اعتماد إعادة الجدولة"
+
+msgid "Escalated to board on"
+msgstr "تاريخ التصعيد للمجلس"
+
+msgid "Board escalation ref."
+msgstr "مرجع التصعيد للمجلس"
+
+msgid "Covenant breach"
+msgstr "إخلال بالتعهدات"
+
+msgid "Template"
+msgstr "النموذج"
+
+msgid "Key functions register"
+msgstr "سجل الوظائف الرئيسية"
+
+msgid "Function"
+msgstr "الوظيفة"
+
+msgid "Fit & proper"
+msgstr "الجدارة والملاءمة"
+
+msgid "optional"
+msgstr "اختياري"
+
+msgid "from governance"
+msgstr "من الحوكمة"
+
+msgid "Edit holder"
+msgstr "تعديل شاغل الوظيفة"
+
+msgid "Appoint a holder"
+msgstr "تعيين شاغل للوظيفة"
+
+msgid "Board member (fit & proper from governance)"
+msgstr "عضو مجلس (الجدارة والملاءمة من الحوكمة)"
+
+msgid "Passed"
+msgstr "اجتاز"
+
+msgid "Fit & proper date"
+msgstr "تاريخ تقييم الجدارة"
+
+msgid "Granted"
+msgstr "ممنوح"
+
+msgid "Vacated on"
+msgstr "تاريخ الشغور"
+
+msgid "Key function types"
+msgstr "أنواع الوظائف الرئيسية"
+
+msgid "(same code = update)"
+msgstr "(نفس الرمز = تحديث)"
+
+msgid "Notify regulator"
+msgstr "إخطار الجهة الرقابية"
+
+msgid "Needs no-objection"
+msgstr "تحتاج عدم ممانعة"
+
+msgid "Save type"
+msgstr "حفظ النوع"
+
+msgid "Single source of truth"
+msgstr "المصدر الوحيد للبيانات"
+
+msgid "(letterheads and reports read these values)"
+msgstr "(الترويسات والتقارير تقرأ هذه القيم)"
+
+msgid "Legal name (English)"
+msgstr "الاسم القانوني (إنجليزي)"
+
+msgid "Legal name (Arabic)"
+msgstr "الاسم القانوني (عربي)"
+
+msgid "Commercial register no."
+msgstr "رقم السجل التجاري"
+
+msgid "Tax card no."
+msgstr "رقم البطاقة الضريبية"
+
+msgid "Licence number"
+msgstr "رقم الترخيص"
+
+msgid "Registered address (English)"
+msgstr "العنوان المسجل (إنجليزي)"
+
+msgid "Registered address (Arabic)"
+msgstr "العنوان المسجل (عربي)"
+
+msgid "Accepted spellings of the same address (one per line)"
+msgstr "صيغ مقبولة لنفس العنوان (صيغة في كل سطر)"
+
+msgid "Save profile"
+msgstr "حفظ الملف"
+
+msgid "Official documents"
+msgstr "المستندات الرسمية"
+
+msgid "(board minutes, letters, contracts: the address they state is compared with the registered address)"
+msgstr "(محاضر المجلس والخطابات والعقود: يُقارن العنوان الوارد بها بالعنوان المسجل)"
+
+msgid "Address stated"
+msgstr "العنوان الوارد"
+
+msgid "not recorded"
+msgstr "غير مسجل"
+
+msgid "Mismatch"
+msgstr "غير مطابق"
+
+msgid "(reviewed)"
+msgstr "(تمت المراجعة)"
+
+msgid "Why it is acceptable"
+msgstr "سبب القبول"
+
+msgid "Accept"
+msgstr "قبول"
+
+msgid "No documents registered."
+msgstr "لا توجد مستندات مسجلة."
+
+msgid "Board minutes"
+msgstr "محضر مجلس الإدارة"
+
+msgid "Form"
+msgstr "نموذج"
+
+msgid "Address exactly as written on the document"
+msgstr "العنوان كما ورد في المستند تماماً"
+
+msgid "Related parties & capital contributions"
+msgstr "الأطراف ذات العلاقة ومساهمات رأس المال"
+
+msgid "Party"
+msgstr "الطرف"
+
+msgid "Relation"
+msgstr "العلاقة"
+
+msgid "No related parties."
+msgstr "لا توجد أطراف ذات علاقة."
+
+msgid "Add a related party"
+msgstr "إضافة طرف ذي علاقة"
+
+msgid "Shareholder"
+msgstr "مساهم"
+
+msgid "Exiting shareholder"
+msgstr "مساهم متخارج"
+
+msgid "Director"
+msgstr "عضو مجلس إدارة"
+
+msgid "Affiliate"
+msgstr "شركة شقيقة / تابعة"
+
+msgid "Key person"
+msgstr "شخص رئيسي"
+
+msgid "Exited on"
+msgstr "تاريخ التخارج"
+
+msgid "Item"
+msgstr "البند"
+
+msgid "Paid by"
+msgstr "المسدِّد"
+
+msgid "Classification"
+msgstr "التبويب"
+
+msgid "No items."
+msgstr "لا توجد بنود."
+
+msgid "Record a contribution, balance or due"
+msgstr "تسجيل مساهمة أو رصيد أو مستحق"
+
+msgid "Capital contribution"
+msgstr "مساهمة في رأس المال"
+
+msgid "Loan from the party"
+msgstr "قرض من الطرف"
+
+msgid "Loan to the party"
+msgstr "قرض للطرف"
+
+msgid "Current account"
+msgstr "حساب جارٍ"
+
+msgid "Dues"
+msgstr "مستحقات"
+
+msgid "Paid by (as on the transfer)"
+msgstr "المسدِّد (كما في التحويل)"
+
+msgid "Liability"
+msgstr "التزام"
+
+msgid "Equity"
+msgstr "حقوق ملكية"
+
+msgid "Receivable"
+msgstr "مدينون"
+
+msgid "Explanation if paid by someone else"
+msgstr "التفسير إذا سدد طرف آخر"
+
+msgid "Solvency calculator"
+msgstr "حاسبة الملاءة"
+
+msgid "Limits from parameters"
+msgstr "الحدود من المعاملات"
+
+msgid "max leverage"
+msgstr "الحد الأقصى للرافعة"
+
+msgid "min equity"
+msgstr "الحد الأدنى لحقوق الملكية"
+
+msgid "min capital base"
+msgstr "الحد الأدنى للقاعدة الرأسمالية"
+
+msgid "Total assets"
+msgstr "إجمالي الأصول"
+
+msgid "Total liabilities"
+msgstr "إجمالي الالتزامات"
+
+msgid "Capital base"
+msgstr "القاعدة الرأسمالية"
+
+msgid "Net profit"
+msgstr "صافي الربح"
+
+msgid "Loan portfolio"
+msgstr "محفظة التمويل"
+
+msgid "Period end"
+msgstr "نهاية الفترة"
+
+msgid "Assets"
+msgstr "الأصول"
+
+msgid "Liabilities"
+msgstr "الالتزامات"
+
+msgid "Leverage"
+msgstr "الرافعة المالية"
+
+msgid "Breaches"
+msgstr "المخالفات"
+
+msgid "No financial periods yet."
+msgstr "لا توجد فترات مالية بعد."
+
+msgid "Enter figures for a period"
+msgstr "إدخال أرقام فترة"
+
+msgid "(maker-checker: another user approves)"
+msgstr "(مُدخِل ومُراجِع: يعتمد مستخدم آخر)"
+
+msgid "Quarter"
+msgstr "ربع سنة"
+
+msgid "Half-year"
+msgstr "نصف سنة"
+
+msgid "Save draft"
+msgstr "حفظ كمسودة"
+
+msgid "Studies"
+msgstr "الدراسات"
+
+msgid "Approved studies (ECL, deferred tax …)"
+msgstr "الدراسات المعتمدة (الخسائر الائتمانية المتوقعة، الضريبة المؤجلة …)"
+
+msgid "current"
+msgstr "سارية"
+
+msgid "Next refresh"
+msgstr "التحديث القادم"
+
+msgid "Approved by (board / committee / auditor)"
+msgstr "اعتمدها (المجلس / اللجنة / مراقب الحسابات)"
+
+msgid "No studies."
+msgstr "لا توجد دراسات."
+
+msgid "Add a study"
+msgstr "إضافة دراسة"
+
+msgid "type (e.g. ecl)"
+msgstr "النوع (مثال ecl)"
+
+msgid "Prepared by"
+msgstr "أعدها"
+
+msgid "Prudential overview"
+msgstr "نظرة عامة احترازية"
+
+msgid "Branches & staffing"
+msgstr "الفروع والعمالة"
+
+msgid "Borrowing facilities"
+msgstr "التسهيلات الممنوحة للشركة"
+
+msgid "Approved studies"
+msgstr "الدراسات المعتمدة"
+
+msgid "title and due date are required"
+msgstr "العنوان وتاريخ الاستحقاق مطلوبان"
+
+msgid "grant date and new due date are required"
+msgstr "تاريخ المنح وتاريخ الاستحقاق الجديد مطلوبان"
+
+msgid "an extension must move the due date later"
+msgstr "يجب أن تؤخر المهلة تاريخ الاستحقاق"
+
+msgid "figures must be approved by someone other than the person who entered them"
+msgstr "يجب أن يعتمد الأرقام شخص غير الذي أدخلها"
+
+msgid "choose a CSV file"
+msgstr "اختر ملف CSV"
+
+msgid "choose a capital type"
+msgstr "اختر نوع رأس المال"
+
+msgid "amount and date are required"
+msgstr "المبلغ والتاريخ مطلوبان"
+
+msgid "choose a key function"
+msgstr "اختر الوظيفة الرئيسية"
+
+msgid "name the holder"
+msgstr "حدد شاغل الوظيفة"
+
+msgid "code and name are required"
+msgstr "الرمز والاسم مطلوبان"
+
+msgid "a branch can be active only with a manager who has the regulator no-objection"
+msgstr "لا يكون الفرع نشطاً إلا بمدير حاصل على عدم ممانعة الجهة الرقابية"
+
+msgid "reference and lender are required"
+msgstr "المرجع والجهة المقرضة مطلوبان"
+
+msgid "name is required"
+msgstr "الاسم مطلوب"
+
+msgid "choose an item type"
+msgstr "اختر نوع البند"
+
+msgid "type and title are required"
+msgstr "النوع والعنوان مطلوبان"
+
+msgid "approval date and approving body are required"
+msgstr "تاريخ الاعتماد وجهة الاعتماد مطلوبان"
+
+msgid "attach the approved study (or certificate) first"
+msgstr "أرفق الدراسة المعتمدة (أو الشهادة) أولاً"
+
+msgid "period end is required"
+msgstr "نهاية الفترة مطلوبة"
+
+# --- AML assurance messages ---
+msgid "role code is required"
+msgstr "رمز الدور مطلوب"
+
+msgid "role, rule type and keyword are required"
+msgstr "الدور ونوع القاعدة والكلمة المفتاحية مطلوبة"
+
+msgid "this report is already board-approved; it cannot be regenerated"
+msgstr "هذا التقرير معتمد من المجلس؛ لا يمكن إعادة إنشائه"
+
+msgid "report not found"
+msgstr "التقرير غير موجود"
+
+msgid "an approved report cannot be changed"
+msgstr "لا يمكن تعديل تقرير معتمد"
+
+msgid "only a draft can be submitted to the board"
+msgstr "يمكن تقديم المسودة فقط لمجلس الإدارة"
+
+msgid "submit the report to the board first"
+msgstr "قدّم التقرير لمجلس الإدارة أولاً"
+
+msgid "board meeting reference and approval date are required"
+msgstr "مرجع اجتماع المجلس وتاريخ الاعتماد مطلوبان"
+
+msgid "unknown action"
+msgstr "إجراء غير معروف"
+
+msgid "policy not found"
+msgstr "السياسة غير موجودة"
+
+msgid "unit and planned date are required"
+msgstr "الوحدة والتاريخ المخطط مطلوبان"
+
+msgid "review not found"
+msgstr "المراجعة غير موجودة"
+
+msgid "answer every checklist item (ok / issue / n.a.)"
+msgstr "أجب عن كل بنود قائمة التحقق (سليم / مشكلة / لا ينطبق)"
+
+msgid "query name is required"
+msgstr "اسم الاستعلام مطلوب"
+
+msgid "user not found"
+msgstr "المستخدم غير موجود"
+
+msgid "item not found"
+msgstr "البند غير موجود"
+
+msgid "this item is already decided"
+msgstr "تم اتخاذ قرار في هذا البند"
+
+msgid "write the analysis first"
+msgstr "اكتب التحليل أولاً"
+
+msgid "decision must be STR or no STR"
+msgstr "يجب أن يكون القرار إخطاراً أو دون إخطار"
+
+msgid "enter the STR reference"
+msgstr "أدخل مرجع الإخطار"
+
+msgid "attach the supporting documents before deciding"
+msgstr "أرفق المستندات المؤيدة قبل اتخاذ القرار"
+
+msgid "beneficial owner name is required"
+msgstr "اسم المستفيد الحقيقي مطلوب"
+
+msgid "choose self or another beneficial owner"
+msgstr "اختر عن نفسه أو مستفيد آخر"
+
+msgid "name the beneficial owner"
+msgstr "حدد المستفيد الحقيقي"
+
+msgid "signature date is required"
+msgstr "تاريخ التوقيع مطلوب"
+
+msgid "record not found"
+msgstr "السجل غير موجود"
+
+msgid "senior approval must be given by a manager or compliance officer"
+msgstr "يجب أن تُمنح موافقة الإدارة العليا من مدير أو مسؤول التزام"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

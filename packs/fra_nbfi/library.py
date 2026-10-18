@@ -137,6 +137,25 @@ CHECK_KEYS = {
     'FRA-053': 'core.aml.annual_report',
     'FRA-054': 'core.audit.plan_coverage',
     'OBS-01': 'core.training.coverage',
+    # Prudential, governance & financial reporting — generic core checks (prudential/).
+    'FRA-001': 'core.prudential.min_capital',
+    'FRA-002': 'core.prudential.deadlines',
+    'FRA-003': 'core.prudential.solvency',
+    'FRA-005': 'core.governance.registered_address',
+    'FRA-006': 'core.governance.key_functions',
+    'FRA-007': 'core.governance.branch_managers',
+    'FRA-008': 'core.governance.branch_staffing',
+    # FRA-055 (accounting system) and FRA-065 (auditor certificate) stay evidence controls.
+    'FRA-056': 'core.finance.balance_confirmations',
+    'FRA-057': 'core.finance.accrued_interest',
+    'FRA-058': 'core.finance.accrued_interest',
+    'FRA-059': 'core.finance.facility_status',
+    'FRA-060': 'core.finance.facility_status',
+    'FRA-061': 'core.finance.exiting_dues',
+    'FRA-062': 'core.finance.related_parties',
+    'FRA-063': 'core.finance.related_parties',
+    'FRA-064': 'core.finance.study',
+    'FRA-066': 'core.finance.study',
 }
 
 # Settings for the generic checks above (rc_controls.check_config, editable on
@@ -173,7 +192,35 @@ CHECK_CONFIG = {
     'FRA-053': {'role_code': 'mlro', 'approve_by_month': 6},
     'FRA-054': {'criticality': ['critical', 'high']},
     'OBS-01': {'category': 'AML', 'target_param': 'training.aml_coverage_target_pct'},
+    'FRA-001': {'min_param': 'capital.min_paid_up'},
+    'FRA-002': {'categories': ['capital_increase', 'licence']},
+    'FRA-003': {'max_leverage_param': 'solvency.max_leverage_ratio', 'min_equity_param': 'solvency.min_equity',
+                'max_age_days': 120},
+    'FRA-007': {'vacancy_param': 'branch.manager_vacancy_max_days'},
+    'FRA-056': {'max_age_param': 'finance.balance_confirmation_max_age_days'},
+    'FRA-057': {'tolerance_param': 'finance.accrual_tolerance_pct'},
+    'FRA-058': {'tolerance_param': 'finance.accrual_tolerance_pct'},
+    'FRA-059': {'statuses': ['default']},
+    'FRA-060': {'statuses': ['rescheduled']},
+    'FRA-062': {'item_types': ['capital_contribution']},
+    'FRA-063': {'item_types': ['loan_from', 'loan_to', 'current_account', 'dues', 'other']},
+    'FRA-064': {'study_type': 'deferred_tax'},
+    'FRA-066': {'study_type': 'ecl'},
 }
+
+# Key functions and branch roles the FRA expects (vocabulary rows in the
+# prudential registers; editable afterwards).
+# TODO(compliance-review): confirm which functions need prior FRA no-objection
+# versus notification only, and the minimum branch roles per licence type.
+KEY_FUNCTIONS = [
+    {'code': 'mlro', 'name_en': 'Money-laundering reporting officer', 'name_ar': 'مسؤول الإبلاغ عن غسل الأموال',
+     'needs_no_objection': True, 'sort_order': 35},
+    {'code': 'branch_operations_head', 'name_en': 'Head of branch operations', 'name_ar': 'رئيس عمليات الفروع',
+     'is_required': False, 'sort_order': 60},
+]
+BRANCH_ROLES = [
+    {'code': 'loan_officer', 'name_en': 'Loan officer', 'name_ar': 'مسؤول ائتمان', 'param_key': 'branch.min_loan_officers'},
+]
 
 _LENDING = ['microfinance', 'consumer_finance']
 

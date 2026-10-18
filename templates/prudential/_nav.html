@@ -1,0 +1,15 @@
+{% macro nav(active) -%}
+<ul class="nav nav-pills mb-3 small flex-wrap no-print">
+    {% for ep, label in [('prudential.dashboard', _('Overview')), ('prudential.profile', _('Corporate profile')), ('prudential.capital', _('Capital')),
+                         ('prudential.deadlines', _('Regulatory deadlines')), ('prudential.solvency', _('Solvency')),
+                         ('prudential.key_functions', _('Key functions')), ('prudential.branches', _('Branches')),
+                         ('prudential.facilities', _('Facilities')), ('prudential.related_parties', _('Related parties')),
+                         ('prudential.studies', _('Studies (ECL, tax)'))] %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == ep }}" href="{{ url_for(ep) }}">{{ label }}</a></li>
+    {% endfor %}
+</ul>
+{%- endmacro %}
+{% macro money(v) -%}{{ '{:,.0f}'.format(v) if v is not none else '-' }}{%- endmacro %}
+{% macro badge(ok, yes=_('OK'), no=_('Issue')) -%}
+<span class="badge {{ 'bg-success' if ok else 'bg-danger' }}">{{ yes if ok else no }}</span>
+{%- endmacro %}

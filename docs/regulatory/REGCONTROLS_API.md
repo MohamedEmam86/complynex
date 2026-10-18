@@ -39,6 +39,8 @@ from regcontrols.api import (
     Pack, register_pack, catalog,         # writing a content pack
     register_unusual_candidate,           # put a detected event on the AML unusual-transactions register
     register_expected_source,             # declare a detector whose events must all be on that register
+    install_key_function_type,            # pack vocabulary for Prudential > Key functions
+    install_branch_role,                  # pack vocabulary for Prudential > Branches (minimum staffing)
     ParameterNotFound, ParameterNotSet,
 )
 ```
@@ -124,7 +126,10 @@ read as `ctx.config`). Example: `core.kyc.fields` with
 `{"subjects": ["aml_customer"], "fields": ["gender"]}`. The AML/KYC core checks
 (`amlkyc/checks.py`, keys `core.aml.*`, `core.kyc.*`, `core.screening.*`,
 `core.audit.*`, `core.policies.*`, `core.training.*`) list their settings in the
-module docstring.
+module docstring. The prudential / governance / financial-reporting checks
+(`prudential/checks.py`: `core.prudential.*`, `core.governance.*`, `core.finance.*`)
+work the same way. Finance figures reach them through `prudential/providers.py`, so a
+future ERP / finance module can feed the same checks by registering a provider.
 
 Key prefixes: `core.` for checks shipped with the core (`regcontrols/builtin_checks.py`,
 always loaded), `<pack_code>.` for a pack's checks (loaded only while the pack is enabled).

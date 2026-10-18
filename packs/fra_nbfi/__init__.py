@@ -29,7 +29,7 @@ checks, sweep, pages and JSON API. Remove the package or disable the pack and th
 keeps working unchanged.
 """
 
-from regcontrols.api import Pack, catalog, register_pack
+from regcontrols.api import Pack, catalog, install_branch_role, install_key_function_type, register_pack
 
 from . import library as L
 
@@ -58,6 +58,10 @@ def install(db):
         description='Responsible-pricing disclosure forms for financing products (FRA-019). '
                     'Data: Lending > Pricing disclosure.',
         submission_method='FRA portal / letter', responsible_department='Compliance', db=db)
+    for f in L.KEY_FUNCTIONS:
+        install_key_function_type(pack_code=L.PACK_CODE, db=db, **f)
+    for r in L.BRANCH_ROLES:
+        install_branch_role(pack_code=L.PACK_CODE, db=db, **r)
     db.commit()
     return {'controls': len(L.CONTROLS), 'parameters': len(L.PARAMETERS)}
 
@@ -72,7 +76,7 @@ PACK = register_pack(Pack(
     description_ar=('متطلبات الهيئة العامة للرقابة المالية للمؤسسات المالية غير المصرفية: 80 متطلبًا وضابطًا '
                     '(رأس المال والترخيص ومنح التمويل والتسعير ومكافحة غسل الأموال والتقارير المالية '
                     'وتكنولوجيا المعلومات والمعالجة) والمعايير الرقابية المستخدمة (تؤكد قيمها إدارة الالتزام).'),
-    version='3',
+    version='4',
     install=install,
     check_modules=['packs.fra_nbfi.lending.checks'],
     blueprints=['packs.fra_nbfi.lending.routes:bp', 'packs.fra_nbfi.lending.api:api_bp'],

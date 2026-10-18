@@ -61,6 +61,7 @@ logger = logging.getLogger(__name__)
 CORE_CHECK_MODULES = [
     'regcontrols.builtin_checks',
     'amlkyc.checks',
+    'prudential.checks',
 ]
 
 _MISSING = object()

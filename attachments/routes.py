@@ -41,6 +41,7 @@ ALLOWED_MODULES = {
     'internal_audit': 'internal_audit',
     'aml': 'aml',
     'regcontrols': 'regcontrols',
+    'prudential': 'prudential',
 }
 
 

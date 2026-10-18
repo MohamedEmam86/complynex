@@ -1,0 +1,10 @@
+{# Letterhead from the corporate profile (Prudential & Governance > Corporate profile): the single source of truth
+   for the legal name and registered address on printed documents. #}
+{% set _cp = corp_profile() %}
+{% if _cp.legal_name_en or _cp.legal_name_ar %}
+<div class="d-flex justify-content-between border-bottom pb-2 mb-3 small">
+    <div><strong>{{ _cp.legal_name_en or '' }}</strong><div>{{ _cp.registered_address_en or '' }}</div>
+        {% if _cp.commercial_register_no %}<div>{{ _('C.R.') }} {{ _cp.commercial_register_no }}{% if _cp.licence_number %} · {{ _('Licence') }} {{ _cp.licence_number }}{% endif %}</div>{% endif %}</div>
+    <div dir="rtl" class="text-end"><strong>{{ _cp.legal_name_ar or '' }}</strong><div>{{ _cp.registered_address_ar or '' }}</div></div>
+</div>
+{% endif %}

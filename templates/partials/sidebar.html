@@ -676,6 +676,69 @@
     </li>
     {% endif %}
 
+    {# ======== Prudential & Governance (prudential) ======== #}
+    {% if current_user.can_view('prudential') %}
+    <li class="cnx-nav__item" data-area="prudential">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi bi-bank cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ _('Prudential & Governance') }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('prudential.dashboard') }}">
+              <span class="cnx-nav__label">{{ _('Prudential overview') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('prudential.profile') }}">
+              <span class="cnx-nav__label">{{ _('Corporate profile') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('prudential.capital') }}">
+              <span class="cnx-nav__label">{{ _('Capital register') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('prudential.deadlines') }}">
+              <span class="cnx-nav__label">{{ _('Regulatory deadlines') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('prudential.solvency') }}">
+              <span class="cnx-nav__label">{{ _('Solvency') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('prudential.key_functions') }}">
+              <span class="cnx-nav__label">{{ _('Key functions') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('prudential.branches') }}">
+              <span class="cnx-nav__label">{{ _('Branches & staffing') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('prudential.facilities') }}">
+              <span class="cnx-nav__label">{{ _('Borrowing facilities') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('prudential.related_parties') }}">
+              <span class="cnx-nav__label">{{ _('Related parties') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('prudential.studies') }}">
+              <span class="cnx-nav__label">{{ _('Approved studies') }}</span>
+            </a>
+          </li>
+      </ul></div>
+    </li>
+    {% endif %}
+
     {# ======== AML & KYC Assurance (amlkyc) ======== #}
     {% if current_user.can_view('aml') %}
     <li class="cnx-nav__item" data-area="amlkyc">
