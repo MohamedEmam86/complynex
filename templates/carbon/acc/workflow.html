@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% import 'carbon/acc/_nav.html' as cn with context %}
+{% block title %}{{ _('Review & approval') }} — ComplyNex{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <h3 class="mb-2">{{ _('Review & approval') }} — {{ p.label }} <span class="badge bg-{{ {'approved': 'success', 'reviewed': 'info', 'in_review': 'warning text-dark'}.get(wf.status, 'secondary') }} fs-6">{{ wf.status }}</span></h3>
+  {{ cn.nav('carbon.workflow', p) }}
+  <div class="row g-3"><div class="col-lg-5"><div class="card"><div class="card-body small">
+    <p>{{ _('Preparer → reviewer → approver, three different people. Approval locks the period: no entry can be added, changed or deleted until an administrator unlocks it with a reason.') }}</p>
+    <ol class="mb-3"><li>{{ _('Prepared by') }}: {{ wf.prepared_by or '-' }} {{ wf.prepared_at.strftime('%Y-%m-%d') if wf.prepared_at else '' }}</li>
+      <li>{{ _('Reviewed by') }}: {{ wf.reviewed_by or '-' }} {{ wf.reviewed_at.strftime('%Y-%m-%d') if wf.reviewed_at else '' }}</li>
+      <li>{{ _('Approved by') }}: {{ wf.approved_by or '-' }} {{ wf.approved_at.strftime('%Y-%m-%d') if wf.approved_at else '' }}</li></ol>
+    {% if critical %}<div class="alert alert-danger py-1">{{ critical }} {{ _('critical data-quality issue(s) — fix them before submitting.') }} <a href="{{ url_for('carbon.quality', period=p.id) }}">{{ _('Details') }}</a></div>{% endif %}
+    {% if cb_can_edit %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><textarea name="note" class="form-control form-control-sm mb-2" rows="2" placeholder="{{ _('Comment (required to return or unlock)') }}"></textarea>
+      <div class="d-flex flex-wrap gap-2">
+        {% if wf.status == 'preparing' %}<button class="btn btn-sm btn-primary" name="action" value="submit">{{ _('Submit for review') }}</button>{% endif %}
+        {% if wf.status == 'in_review' %}<button class="btn btn-sm btn-primary" name="action" value="review">{{ _('Mark as reviewed') }}</button>{% endif %}
+        {% if wf.status == 'reviewed' %}<button class="btn btn-sm btn-success" name="action" value="approve">{{ _('Approve and lock') }}</button>{% endif %}
+        {% if wf.status in ('in_review', 'reviewed') %}<button class="btn btn-sm btn-outline-secondary" name="action" value="return">{{ _('Return to preparer') }}</button>{% endif %}
+        {% if wf.status == 'approved' and current_user.is_admin() %}<button class="btn btn-sm btn-outline-danger" name="action" value="unlock">{{ _('Unlock (admin)') }}</button>{% endif %}
+      </div></form>{% endif %}
+  </div></div></div>
+  <div class="col-lg-7"><div class="card"><div class="card-header"><strong>{{ _('Audit trail') }}</strong></div><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('When') }}</th><th>{{ _('Who') }}</th><th>{{ _('Action') }}</th><th>{{ _('Status') }}</th><th>{{ _('Comment') }}</th></tr></thead><tbody>
+    {% for e in events %}<tr><td>{{ e.at.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ e.user_name }}</td><td>{{ e.action }}</td><td>{{ e.from_status }} → {{ e.to_status }}</td><td>{{ e.note or '' }}</td></tr>{% else %}<tr><td colspan="5" class="text-muted">{{ _('No action yet.') }}</td></tr>{% endfor %}</tbody></table></div></div></div>
+</div>
+{% endblock %}

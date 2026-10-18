@@ -16,3 +16,4 @@
 # =============================================================================
 
 from .routes import carbon_bp
+from . import accounting_routes  # noqa: E402,F401 — carbon accounting pages

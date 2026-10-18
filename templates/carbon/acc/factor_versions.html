@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% import 'carbon/acc/_nav.html' as cn with context %}
+{% block title %}{{ _('Factor versions') }} — ComplyNex{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <h3 class="mb-2">{{ _('Versioned emission-factor library') }}</h3>
+  {{ cn.nav('carbon.factor_versions') }}
+  <p class="small text-muted">{{ _('Each factor has a stable code and dated versions. An entry uses the version in force in its activity month and stores the value, source and vintage it used — a new version never changes a recorded figure. Example: the national grid electricity factor gets one version per year.') }}</p>
+  <div class="row g-3"><div class="col-lg-5"><div class="card"><div class="table-responsive" style="max-height: 560px"><table class="table table-sm table-hover mb-0 small"><thead><tr><th>{{ _('Code') }}</th><th>{{ _('Activity') }}</th><th>{{ _('Unit') }}</th><th class="text-end">{{ _('Versions') }}</th></tr></thead><tbody>
+    {% for c, v in codes.items() %}<tr class="{{ 'table-active' if c == sel }}"><td><a href="{{ url_for('carbon.factor_versions', code=c) }}">{{ c }}</a></td><td>{{ v[-1].activity }}</td><td>{{ v[-1].unit }}</td><td class="text-end">{{ v|length }}</td></tr>{% else %}<tr><td colspan="4" class="text-muted">{{ _('No factors yet.') }}</td></tr>{% endfor %}</tbody></table></div></div></div>
+  <div class="col-lg-7">
+    {% if sel %}<div class="card mb-3"><div class="card-header"><strong>{{ sel }}</strong> · {{ versions[-1].activity if versions else '' }}</div><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Version') }}</th><th>{{ _('From') }}</th><th>{{ _('To') }}</th><th class="text-end">kgCO2e / {{ versions[-1].unit if versions else '' }}</th><th>{{ _('Source') }}</th><th>{{ _('Vintage') }}</th></tr></thead><tbody>
+      {% for v in versions %}<tr><td>{{ v.version_label or '-' }}</td><td>{{ v.effective_from or '-' }}</td><td>{{ v.effective_to or _('open') }}</td><td class="text-end">{{ v.factor_kgco2e }}</td><td>{{ v.source }}{% if v.source_url %} <a href="{{ v.source_url }}" target="_blank" rel="noopener">↗</a>{% endif %}</td><td>{{ v.vintage_year or '-' }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+    {% if cb_can_edit %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Publish a new version') if sel else _('Add a factor') }}</strong></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Factor code') }}</label><input name="factor_code" class="form-control form-control-sm" value="{{ sel or '' }}" placeholder="EG_GRID_ELEC" required></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Effective from') }}</label><input type="date" name="effective_from" class="form-control form-control-sm" required></div>
+      <div class="col-md-4"><label class="form-label mb-0">kgCO2e / {{ _('unit') }}</label><input name="factor_kgco2e" class="form-control form-control-sm" required></div>
+      <div class="col-md-6"><label class="form-label mb-0">{{ _('Source') }}</label><input name="source" class="form-control form-control-sm" required></div>
+      <div class="col-md-3"><label class="form-label mb-0">{{ _('Vintage') }}</label><input name="vintage_year" type="number" class="form-control form-control-sm"></div>
+      <div class="col-md-3"><label class="form-label mb-0">{{ _('Version label') }}</label><input name="version_label" class="form-control form-control-sm"></div>
+      <div class="col-md-12"><label class="form-label mb-0">{{ _('Source link') }}</label><input name="source_url" class="form-control form-control-sm"></div>
+      {% if not sel %}<div class="col-md-3"><select name="scope" class="form-select form-select-sm"><option value="scope1">Scope 1</option><option value="scope2">Scope 2</option><option value="scope3">Scope 3</option></select></div>
+      <div class="col-md-3"><input name="category" class="form-control form-control-sm" placeholder="{{ _('Category') }}"></div>
+      <div class="col-md-2"><input name="ghg_category_no" type="number" min="1" max="15" class="form-control form-control-sm" placeholder="{{ _('Cat. no') }}"></div>
+      <div class="col-md-2"><input name="activity" class="form-control form-control-sm" placeholder="{{ _('Activity') }}"></div>
+      <div class="col-md-2"><input name="unit" class="form-control form-control-sm" placeholder="kWh / L / km"></div>{% endif %}
+      <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Publish') }}</button></div></div></form>{% endif %}
+  </div></div>
+</div>
+{% endblock %}

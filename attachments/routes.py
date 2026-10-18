@@ -43,6 +43,7 @@ ALLOWED_MODULES = {
     'regcontrols': 'regcontrols',
     'prudential': 'prudential',
     'cyber': 'cyber',
+    'carbon': 'carbon',
 }
 
 

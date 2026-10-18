@@ -79,6 +79,25 @@ def _entries_for_period(period_id):
     ) or []
 
 
+def _locked(period_id):
+    """An approved carbon inventory is locked (preparer → reviewer → approver workflow)."""
+    try:
+        from carbon.accounting import is_locked
+        from carbon.service import workflow
+        return is_locked(workflow(period_id))
+    except Exception:
+        get_db().rollback()
+        return False
+
+
+def _param(key, default):
+    """Regulatory numbers come from the parameter registry; the default keeps the
+    previous behaviour where the parameter is not installed."""
+    from carbon.service import param
+    v = param(key, default)
+    return default if v is None else v
+
+
 def _scope_config():
     """The company's Carbon Scope Profile (2026-07-21, Scope 1/2/3
     segregation feature). Defaults to Scope 1+2 enabled / Scope 3 disabled -
@@ -196,6 +215,9 @@ def entry_new():
         if not period:
             flash(_('No open reporting period exists yet — ask an admin to create one before logging activity.'), 'warning')
             return redirect(url_for('carbon.dashboard'))
+        if _locked(period['id']):
+            flash(_('This reporting period is approved and locked.'), 'danger')
+            return redirect(url_for('carbon.entries_list'))
 
         factor_id = request.form.get('factor_id', type=int)
         factor = query_db("SELECT * FROM carbon_emission_factors WHERE id = %s", (factor_id,), one=True)
@@ -216,13 +238,15 @@ def entry_new():
         cursor = db.execute(
             """INSERT INTO carbon_activity_entries
                (reporting_period_id, site_id, scope, category, ghg_category_no, activity,
-                calc_method, quantity, unit, factor_id, tco2e, basis, notes, created_by)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+                calc_method, quantity, unit, factor_id, tco2e, basis, notes, created_by,
+                factor_code, factor_kgco2e_used, factor_source_used, factor_vintage_used, gross_tco2e, boundary_share)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,1) RETURNING id""",
             (period['id'], request.form.get('site_id', type=int) or None, factor['scope'],
              factor['category'], factor['ghg_category_no'], factor['activity'],
              request.form.get('calc_method', 'activity_based'), quantity, factor['unit'],
              factor['id'], tco2e, request.form.get('basis', 'location'),
-             request.form.get('notes') or None, current_user.id),
+             request.form.get('notes') or None, current_user.id,
+             factor.get('factor_code'), factor['factor_kgco2e'], factor.get('source'), factor.get('vintage_year'), tco2e),
         )
         entry_id = cursor.fetchone()[0]
         db.commit()
@@ -248,6 +272,9 @@ def entry_new():
 @permission_required('carbon', level='edit')
 def entry_delete(entry_id):
     entry = query_db("SELECT * FROM carbon_activity_entries WHERE id = %s", (entry_id,), one=True)
+    if entry and _locked(entry['reporting_period_id']):
+        flash(_('This reporting period is approved and locked.'), 'danger')
+        return redirect(url_for('carbon.entries_list'))
     if entry:
         execute_db("DELETE FROM carbon_activity_entries WHERE id = %s", (entry_id,))
         AuditLog.log(current_user.id, 'DELETE', module='carbon', item_id=entry_id,
@@ -393,11 +420,14 @@ def settings():
     applicability = None
     basis = max(x for x in [cfg['issued_capital_egp'] or 0, cfg['net_equity_egp'] or 0])
     if basis > 0:
+        esg_t = float(_param('carbon.esg_report_threshold_egp', 100_000_000))
+        tcfd_t = float(_param('carbon.tcfd_threshold_egp', 500_000_000))
+        carb_t = float(_param('carbon.report_threshold_egp', 100_000_000))
         applicability = {
             'basis_egp': float(basis),
-            'esg_107': basis >= 100_000_000,      # FRA 107/2021 ESG report
-            'tcfd_108': basis >= 500_000_000,     # FRA TCFD layer
-            'carbon_36': basis >= 100_000_000,    # FRA 36/2026 carbon report + offsets
+            'esg_107': basis >= esg_t,      # ESG report threshold (parameter)
+            'tcfd_108': basis >= tcfd_t,    # TCFD layer threshold (parameter)
+            'carbon_36': basis >= carb_t,   # carbon report + offsets threshold (parameter)
         }
 
     entry_counts = {r['scope']: r['cnt'] for r in (query_db(
@@ -545,7 +575,9 @@ def fra_status():
     if new_status == 'Submitted':
         ctx = _fra_context()
         total = float(ctx['totals']['total_location_based'] or 0)
-        required = round(total * 0.20, 3)
+        pct = float(_param('carbon.offset_pct', 20))
+        days = int(_param('carbon.offset_deadline_days', 90))
+        required = round(total * pct / 100.0, 3)
         existing = query_db("SELECT id FROM carbon_offset_obligations WHERE reporting_period_id = %s",
                             (period['id'],), one=True)
         if not existing:
@@ -553,9 +585,10 @@ def fra_status():
                 INSERT INTO carbon_offset_obligations
                     (reporting_period_id, total_emissions_tco2e, offset_pct, required_tco2e,
                      report_submitted_date, deadline_date, created_by)
-                VALUES (%s, %s, 20, %s, CURRENT_DATE, CURRENT_DATE + INTERVAL '90 days', %s)
-            """, (period['id'], total, required, current_user.id))
-            flash(_('Report marked as submitted. Offset obligation created: %(req)s tCO2e (20%%) due within 90 days.', req=required), 'info')
+                VALUES (%s, %s, %s, %s, CURRENT_DATE, CURRENT_DATE + %s, %s)
+            """, (period['id'], total, pct, required, days, current_user.id))
+            flash(_('Report marked as submitted. Offset obligation created: %(req)s tCO2e (%(pct)s%%) due within %(days)s days.',
+                    req=required, pct=pct, days=days), 'info')
 
     AuditLog.log(current_user.id, 'UPDATE', module='carbon',
                  details=f"FRA report status -> {new_status} (period {period['label']})")

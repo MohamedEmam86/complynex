@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% import 'carbon/acc/_nav.html' as cn with context %}
+{% block title %}{{ _('Activity data') }} — ComplyNex{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <h3 class="mb-2">{{ _('Activity data') }} — {{ p.label }} {% if locked %}<span class="badge bg-success fs-6">{{ _('approved & locked') }}</span>{% endif %}</h3>
+  {{ cn.nav('carbon.activity', p) }}
+  <div class="card mb-3"><div class="table-responsive" style="max-height: 520px"><table class="table table-sm table-hover mb-0 small align-middle"><thead><tr><th>{{ _('Month') }}</th><th>{{ _('Scope') }}</th><th>{{ _('Activity') }}</th><th>{{ _('Site') }}</th><th class="text-end">{{ _('Quantity') }}</th><th class="text-end">{{ _('Factor used') }}</th><th class="text-end">{{ _('Share') }}</th><th class="text-end">tCO2e</th><th>{{ _('Evidence') }}</th><th></th></tr></thead><tbody>
+    {% for e in rows %}<tr class="{{ 'table-warning' if not e.evidence or (e.factor_unit and e.unit != e.factor_unit) }}"><td>{{ e.activity_month.strftime('%Y-%m') if e.activity_month else '-' }}</td><td>{{ e.scope }}{% if e.scope == 'scope2' %} <span class="text-muted">{{ e.basis }}</span>{% endif %}{% if e.ghg_category_no %} · {{ e.ghg_category_no }}{% endif %}</td><td>{{ e.activity }}</td><td>{{ e.site_name or '-' }}</td>
+      <td class="text-end">{{ '{:,.2f}'.format(e.quantity|float) }} {{ e.unit }}</td><td class="text-end">{{ e.factor_kgco2e_used if e.factor_kgco2e_used is not none else '-' }} <span class="text-muted">{{ e.factor_source_used or '' }} {{ e.factor_vintage_used or '' }}</span></td>
+      <td class="text-end">{{ e.boundary_share if e.boundary_share is not none else '-' }}</td><td class="text-end">{{ cn.t(e.tco2e) }}</td>
+      <td><a href="{{ url_for('carbon.activity_files', entry_id=e.id) }}">{{ _('Yes') if e.evidence else _('Add') }}</a></td>
+      <td>{% if cb_can_edit and not locked %}<form method="post" data-confirm="{{ _('Delete this entry?') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="entry_id" value="{{ e.id }}"><button class="btn btn-sm btn-link text-danger p-0">{{ _('Delete') }}</button></form>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="10" class="text-muted text-center py-3">{{ _('No activity data for this period.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+  {% if cb_can_edit and not locked %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Record activity data') }}</strong> <span class="small text-muted">{{ _('(the factor version in force in the activity month is applied and stored)') }}</span></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-4"><label class="form-label mb-0">{{ _('Factor') }}</label><select name="factor_code" class="form-select form-select-sm" required>{% for c, v in codes.items() %}{% set f = v[-1] %}<option value="{{ c }}">{{ f.scope }} · {{ f.activity }} ({{ f.unit }}){% if f.ghg_category_no %} · {{ _('Cat.') }} {{ f.ghg_category_no }}{% endif %}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Activity month') }}</label><input type="month" name="activity_month" class="form-control form-control-sm" required></div>
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Site') }}</label><select name="site_id" class="form-select form-select-sm"><option value="">-</option>{% for s in sites if s.is_active %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Quantity') }}</label><input name="quantity" class="form-control form-control-sm"></div>
+    <div class="col-md-1"><label class="form-label mb-0">{{ _('Unit') }}</label><input name="unit" class="form-control form-control-sm" placeholder="{{ _('factor unit') }}"></div>
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Scope 2 basis') }}</label><select name="basis" class="form-select form-select-sm"><option value="location">{{ _('Location-based (grid)') }}</option><option value="market">{{ _('Market-based (contract)') }}</option></select></div>
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Contractual instrument') }}</label><input name="instrument_type" class="form-control form-control-sm" placeholder="{{ _('e.g. I-REC, green tariff, PPA') }}"></div>
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Instrument ref.') }}</label><input name="instrument_ref" class="form-control form-control-sm"></div>
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Calculation helper') }}</label><select name="helper" class="form-select form-select-sm"><option value="">{{ _('None (enter quantity)') }}</option><option value="commuting">{{ _('Employee commuting (Cat. 7)') }}</option><option value="travel">{{ _('Business travel (Cat. 6)') }}</option></select></div>
+    <div class="col-12 text-muted">{{ _('Scope 2: record consumption once with the grid factor (location-based). If a contractual instrument covers it, add a market-based entry for the same site and month with the instrument factor; uncovered months fall back to the grid factor in the market-based total.') }}</div>
+    <div class="col-12 text-muted">{{ _('Commuting: employees × days per year × one-way km × 2 = passenger-km. Travel: trips × distance km × travellers (× 2 for return).') }}</div>
+    {% for k, l in [('employees', _('Employees')), ('days_per_year', _('Days per year')), ('one_way_km', _('One-way km')), ('trips', _('Trips')), ('distance_km', _('Distance km')), ('travellers', _('Travellers'))] %}<div class="col-md-2"><input name="{{ k }}" class="form-control form-control-sm" placeholder="{{ l }}"></div>{% endfor %}
+    <div class="col-md-2 form-check ms-2"><input type="checkbox" name="round_trip" value="1" class="form-check-input" id="rt" checked><label class="form-check-label" for="rt">{{ _('Return trip') }}</label></div>
+    <div class="col-md-10"><input name="notes" class="form-control form-control-sm" placeholder="{{ _('Note (meter, invoice no.)') }}"></div>
+    <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save and attach evidence') }}</button></div></div></form>{% endif %}
+</div>
+{% endblock %}

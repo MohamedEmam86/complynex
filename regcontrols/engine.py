@@ -63,6 +63,7 @@ CORE_CHECK_MODULES = [
     'amlkyc.checks',
     'prudential.checks',
     'cyber.checks',
+    'carbon.checks',
 ]
 
 _MISSING = object()
