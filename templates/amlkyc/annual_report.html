@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Annual AML report') }} {{ r.report_year }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-2"><h3 class="mb-0">{{ _('Annual AML report') }} {{ r.report_year }}</h3>
+        <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ url_for('amlkyc.annual_report', report_id=r.id, print=1) }}"><i class="bi bi-printer me-1"></i>{{ _('Print') }}</a></div>
+    {{ aa.nav('amlkyc.annual_reports') }}
+    <div class="row g-3">
+        <div class="col-lg-7"><div class="card"><div class="card-body">{% include 'amlkyc/_report_body.html' %}
+            {% if aa_can_edit and r.status != 'approved' %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="narrative">
+                <label class="form-label">{{ _('Narrative: assessment, issues, plan for next year') }}</label>
+                <textarea name="narrative" rows="8" class="form-control mb-2">{{ r.narrative or '' }}</textarea><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></form>
+            {% else %}<h6>{{ _('Narrative') }}</h6><p style="white-space: pre-line">{{ r.narrative or '-' }}</p>{% endif %}
+        </div></div></div>
+        <div class="col-lg-5"><div class="card"><div class="card-header"><strong>{{ _('Board approval') }}</strong></div><div class="card-body small">
+            <p>{{ _('Status') }}: <strong>{{ {'draft': _('Draft'), 'submitted': _('Submitted to board'), 'approved': _('Approved')}[r.status] }}</strong></p>
+            {% if r.status == 'approved' %}<p>{{ _('Approved on') }} {{ r.board_approved_on }} · {{ r.board_meeting_ref }}</p>{% endif %}
+            {% if aa_can_edit and r.status == 'draft' %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="submit"><button class="btn btn-sm btn-outline-primary">{{ _('Submit to the board') }}</button></form>{% endif %}
+            {% if aa_can_edit and r.status == 'submitted' %}<form method="post" class="row g-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="approve">
+                <div class="col-6"><input type="date" name="board_approved_on" class="form-control form-control-sm" required></div>
+                <div class="col-6"><input name="board_meeting_ref" class="form-control form-control-sm" placeholder="{{ _('Board meeting ref.') }}" required></div>
+                <div class="col-12"><button class="btn btn-sm btn-success">{{ _('Record board approval') }}</button></div></form>{% endif %}
+        </div></div></div>
+    </div>
+</div>
+{% endblock %}

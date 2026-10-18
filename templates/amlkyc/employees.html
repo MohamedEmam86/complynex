@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Employee screening') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-2"><h3 class="mb-0">{{ _('Employee screening') }}</h3>
+        {% if aa_can_edit %}<form method="post" data-confirm="{{ _('Screen every employee who is due now?') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="trigger" value="periodic"><button class="btn btn-sm btn-primary">{{ _('Screen all due employees') }}</button></form>{% endif %}</div>
+    {{ aa.nav('amlkyc.employees') }}
+    <p class="small text-muted">{{ _('Re-screening cycle') }}: {{ (months ~ ' ' ~ _('months')) if months is not none else _('not set (parameter aml.employee_rescreen_months)') }}. {{ _('Results go to the normal screening review queue.') }}</p>
+    <div class="card"><div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Employee') }}</th><th>{{ _('Job title') }}</th><th>{{ _('Last screened') }}</th><th>{{ _('Matches') }}</th><th></th></tr></thead><tbody>
+        {% for r in rows %}<tr class="{{ 'table-warning' if r.due }}"><td>{{ r.first_name }} {{ r.last_name }}</td><td>{{ r.job_title or '-' }}</td><td>{{ r.last_screened.strftime('%Y-%m-%d') if r.last_screened else _('never') }}</td>
+            <td>{% if r.last_hits %}<span class="badge bg-danger">{{ r.last_hits }}</span>{% else %}-{% endif %}</td>
+            <td>{% if aa_can_edit %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="user_id" value="{{ r.id }}"><input type="hidden" name="trigger" value="manual"><button class="btn btn-sm btn-outline-primary">{{ _('Screen') }}</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

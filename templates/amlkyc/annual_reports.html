@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Annual AML report') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Annual AML report') }}</h3>
+    {{ aa.nav('amlkyc.annual_reports') }}
+    <p class="small text-muted">{{ _('The report is generated from system data (screening, alerts, unusual transactions, risk ratings, monitoring, employee screening, findings), completed with the officer\'s narrative, submitted to the board and recorded as approved.') }}</p>
+    {% if aa_can_edit %}<form method="post" class="d-flex gap-2 mb-3"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="number" name="year" class="form-control form-control-sm w-auto" value="{{ today.year - 1 }}" min="2000" max="2100">
+        <button class="btn btn-sm btn-primary">{{ _('Generate / refresh') }}</button></form>{% endif %}
+    <div class="card"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Year') }}</th><th>{{ _('Role') }}</th><th>{{ _('Status') }}</th><th>{{ _('Generated') }}</th><th>{{ _('Board approval') }}</th></tr></thead><tbody>
+        {% for r in reports %}<tr><td><a href="{{ url_for('amlkyc.annual_report', report_id=r.id) }}">{{ r.report_year }}</a></td><td>{{ r.role_code|upper }}</td>
+            <td><span class="badge bg-{{ 'success' if r.status == 'approved' else ('info text-dark' if r.status == 'submitted' else 'secondary') }}">{{ {'draft': _('Draft'), 'submitted': _('Submitted to board'), 'approved': _('Approved')}[r.status] }}</span></td>
+            <td>{{ r.generated_at.strftime('%Y-%m-%d') if r.generated_at else '-' }}</td><td>{{ r.board_approved_on or '-' }} {{ r.board_meeting_ref or '' }}</td></tr>
+        {% else %}<tr><td colspan="5" class="text-muted">{{ _('No report yet.') }}</td></tr>{% endfor %}</tbody></table></div>
+</div>
+{% endblock %}

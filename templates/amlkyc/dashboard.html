@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('AML & KYC Assurance') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2"><i class="bi bi-shield-lock me-2"></i>{{ _('AML & KYC Assurance') }}</h3>
+    {{ aa.nav('amlkyc.dashboard') }}
+    <div class="row g-3">
+        <div class="col-lg-4"><div class="card h-100"><div class="card-header"><strong>{{ _('Key AML roles') }}</strong></div><ul class="list-group list-group-flush small">
+            {% for r in roles %}<li class="list-group-item d-flex justify-content-between"><span><strong>{{ r.role_code|upper }}</strong> · {{ r.holder_name or r.holder_user_name or '-' }}</span>
+                {% if r.conflicts %}<span class="badge bg-danger">{{ r.conflicts|length }} {{ _('conflict(s)') }}</span>{% elif not r.reports_to_board %}<span class="badge bg-warning text-dark">{{ _('no board line') }}</span>{% else %}<span class="badge bg-success">{{ _('OK') }}</span>{% endif %}</li>
+            {% else %}<li class="list-group-item text-danger">{{ _('No key role registered.') }} <a href="{{ url_for('amlkyc.roles') }}">{{ _('Add the MLRO') }}</a></li>{% endfor %}</ul></div></div>
+        <div class="col-lg-4"><div class="card h-100"><div class="card-header"><strong>{{ _('Screening assurance') }}</strong></div><div class="card-body small">
+            <p class="mb-1">{{ _('List sources') }}: {{ sources|length }}</p>
+            {% if qa %}<p class="mb-1">{{ _('Last QA run') }}: {{ qa.run_at.strftime('%Y-%m-%d') }} · {{ _('recall') }} <strong class="{{ 'text-danger' if qa.misses }}">{{ qa.recall_pct }}%</strong> · {{ _('misses') }} {{ qa.misses }}</p>
+            {% else %}<p class="text-danger mb-1">{{ _('The QA test set has never been run.') }}</p>{% endif %}
+            <p class="mb-0">{{ _('Employees due for screening') }}: {% if emp_due is none %}<span class="badge bg-warning text-dark">{{ _('cycle not set') }}</span>{% else %}<strong class="{{ 'text-danger' if emp_due }}">{{ emp_due }}</strong>{% endif %}</p>
+            <a href="{{ url_for('amlkyc.screening') }}">{{ _('Open') }}</a></div></div></div>
+        <div class="col-lg-4"><div class="card h-100"><div class="card-header"><strong>{{ _('Unusual transactions & monitoring') }}</strong></div><div class="card-body small">
+            <p class="mb-1">{{ _('Open studies') }}: <strong>{{ unusual_open }}</strong> · {{ _('overdue') }} <strong class="{{ 'text-danger' if unusual_late }}">{{ unusual_late }}</strong></p>
+            <p class="mb-1">{{ _('Monitoring plan') }} {{ today.year }}: {% if plan %}<a href="{{ url_for('amlkyc.monitoring_plan', plan_id=plan.id) }}">{{ plan.title or today.year }}</a>{% else %}<span class="text-danger">{{ _('none') }}</span>{% endif %}</p>
+            {% if model_gaps %}<p class="text-danger mb-0">{{ _('Risk model missing categories') }}: {{ model_gaps|join(', ') }}</p>{% endif %}</div></div></div>
+    </div>
+    <div class="card mt-3"><div class="card-header"><strong>{{ _('KYC files') }}</strong></div><div class="table-responsive"><table class="table table-sm mb-0 small">
+        <thead><tr><th>{{ _('Register') }}</th><th class="text-end">{{ _('Active') }}</th><th class="text-end">{{ _('Incomplete') }}</th><th class="text-end">{{ _('Not rated') }}</th><th class="text-end">{{ _('High risk') }}</th></tr></thead><tbody>
+        {% for code, k in kyc.items() %}<tr><td><a href="{{ url_for('amlkyc.kyc_home', subject=code) }}">{{ rc_loc(aa_subjects[code].label_en, aa_subjects[code].label_ar) }}</a></td><td class="text-end">{{ k.active }}</td>
+            <td class="text-end"><a class="{{ 'text-danger' if k.incomplete }}" href="{{ url_for('amlkyc.kyc_home', subject=code, filter='incomplete') }}">{{ k.incomplete }}</a></td>
+            <td class="text-end"><a class="{{ 'text-danger' if k.unrated }}" href="{{ url_for('amlkyc.kyc_home', subject=code, filter='unrated') }}">{{ k.unrated }}</a></td>
+            <td class="text-end"><a href="{{ url_for('amlkyc.kyc_home', subject=code, filter='high') }}">{{ k.high }}</a></td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

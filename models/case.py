@@ -89,6 +89,8 @@ class Case:
         'CONSUMER_COMPLAINT': {'NEW': 'OPEN', 'IN_PROGRESS': 'IN_PROGRESS', 'RESOLVED': 'RESOLVED', 'CLOSED': 'CLOSED'},
         'CYBER_INCIDENT': {'NEW': 'OPEN', 'IN_PROGRESS': 'IN_PROGRESS', 'RESOLVED': 'RESOLVED', 'CLOSED': 'CLOSED'},
         'REG_CONTROL': {'open': 'OPEN', 'acknowledged': 'IN_PROGRESS', 'resolved': 'RESOLVED'},
+        'UNUSUAL_TXN': {'candidate': 'OPEN', 'under_study': 'IN_PROGRESS', 'str_filed': 'CLOSED', 'no_str': 'CLOSED',
+                        'dismissed': 'CLOSED'},
     }
 
     @staticmethod
@@ -242,4 +244,28 @@ class Case:
             opened_at=opened_at,
             due_date=opened_at + timedelta(days=_get_sla_days(db, 'REG_CONTROL')),
             resolved_at=alert.get('resolved_at'),
+        )
+
+    @staticmethod
+    def _sync_unusual_txn(db, item_id):
+        """An unusual transaction / AML red flag waiting for study (aml_unusual_transactions)."""
+        row = db.execute("SELECT * FROM aml_unusual_transactions WHERE id = %s", (item_id,)).fetchone()
+        if not row:
+            return None
+        u = dict(row)
+        status = Case.STATUS_MAP['UNUSUAL_TXN'].get(u.get('status'), 'OPEN')
+        opened_at = u.get('detected_at') or datetime.now()
+        due = (datetime.combine(u['study_due_date'], datetime.min.time()) if u.get('study_due_date')
+               else opened_at + timedelta(days=_get_sla_days(db, 'UNUSUAL_TXN')))
+        return _upsert(
+            db, 'UNUSUAL_TXN', 'aml_unusual_transactions', item_id,
+            reference=u.get('reference'),
+            title=(u.get('description') or u.get('detection_rule') or '')[:250],
+            status=status,
+            priority='HIGH',
+            party_id=u.get('party_id'),
+            assigned_to=u.get('decision_by'),
+            opened_at=opened_at,
+            due_date=due,
+            resolved_at=u.get('decision_at') if status == 'CLOSED' else None,
         )

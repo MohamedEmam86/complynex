@@ -24845,6 +24845,826 @@ msgstr "التمويل غير موجود"
 msgid "early repayment not found"
 msgstr "طلب السداد المعجل غير موجود"
 
+# --- AML/KYC assurance ---
+msgid "You do not have permission for this AML assurance action."
+msgstr "ليست لديك صلاحية لهذا الإجراء في ضمان مكافحة غسل الأموال."
+
+msgid "Review recorded."
+msgstr "تم تسجيل المراجعة."
+
+msgid "A finding was opened for the issues."
+msgstr "تم فتح ملاحظة للمشكلات المكتشفة."
+
+msgid "%(n)s test case(s) added."
+msgstr "تمت إضافة %(n)s حالة اختبار."
+
+msgid "Synthetic negative cases added."
+msgstr "تمت إضافة حالات سلبية مُختلَقة."
+
+msgid "QA run finished: recall %(r)s, misses %(m)s."
+msgstr "انتهى اختبار الجودة: نسبة الاكتشاف %(r)s، الإخفاقات %(m)s."
+
+msgid "Screening failed:"
+msgstr "فشل الفحص:"
+
+msgid "%(n)s employee(s) screened, %(h)s potential match(es)."
+msgstr "تم فحص %(n)s موظف، %(h)s تطابق محتمل."
+
+msgid "Rated %(score)s (%(band)s)."
+msgstr "التصنيف %(score)s (%(band)s)."
+
+msgid "Onboarding approved."
+msgstr "تم اعتماد بدء العلاقة."
+
+msgid "Field key and English label are required."
+msgstr "مفتاح الحقل والتسمية بالإنجليزية مطلوبان."
+
+msgid "Check the values: category, weight and scoring JSON (e.g. {\"HIGH\": 80, \"*\": 20})."
+msgstr "راجع القيم: الفئة والوزن وصيغة JSON للتقييم (مثال {\"HIGH\": 80, \"*\": 20})."
+
+msgid "AML red flag updated."
+msgstr "تم تحديث مؤشر الاشتباه."
+
+msgid "Sent to the unusual-transactions register."
+msgstr "أُرسل إلى سجل العمليات غير العادية."
+
+msgid "Check settings must be a JSON object, e.g. {\"fields\": [\"gender\"]}."
+msgstr "يجب أن تكون إعدادات الفحص كائن JSON، مثال {\"fields\": [\"gender\"]}."
+
+msgid "Key roles"
+msgstr "الأدوار الرئيسية"
+
+msgid "Annual report"
+msgstr "التقرير السنوي"
+
+msgid "Board approvals"
+msgstr "اعتمادات مجلس الإدارة"
+
+msgid "Monitoring programme"
+msgstr "برنامج المتابعة"
+
+msgid "Screening assurance"
+msgstr "ضمان جودة الفحص"
+
+msgid "Employee screening"
+msgstr "فحص العاملين"
+
+msgid "Unusual transactions"
+msgstr "العمليات غير العادية"
+
+msgid "KYC files"
+msgstr "ملفات اعرف عميلك"
+
+msgid "Risk model"
+msgstr "نموذج المخاطر"
+
+msgid "Training coverage"
+msgstr "تغطية التدريب"
+
+msgid "Audit coverage"
+msgstr "تغطية المراجعة"
+
+msgid "Screenings performed"
+msgstr "عمليات الفحص المنفذة"
+
+msgid "Transaction-monitoring alerts (closed)"
+msgstr "تنبيهات مراقبة العمليات (المغلقة)"
+
+msgid "Unusual transactions registered / STRs / no STR / open"
+msgstr "العمليات غير العادية المسجلة / إخطارات الاشتباه / دون إخطار / مفتوحة"
+
+msgid "Current risk distribution"
+msgstr "التوزيع الحالي للمخاطر"
+
+msgid "Monitoring reviews planned / done"
+msgstr "مراجعات المتابعة المخططة / المنفذة"
+
+msgid "Employees screened"
+msgstr "العاملون الذين تم فحصهم"
+
+msgid "AML findings open / repeated"
+msgstr "ملاحظات مكافحة غسل الأموال المفتوحة / المتكررة"
+
+msgid "Annual AML report"
+msgstr "التقرير السنوي لمكافحة غسل الأموال"
+
+msgid "Narrative: assessment, issues, plan for next year"
+msgstr "السرد: التقييم والمشكلات وخطة العام القادم"
+
+msgid "Narrative"
+msgstr "السرد"
+
+msgid "Board approval"
+msgstr "اعتماد مجلس الإدارة"
+
+msgid "Submitted to board"
+msgstr "مقدم لمجلس الإدارة"
+
+msgid "Approved on"
+msgstr "تاريخ الاعتماد"
+
+msgid "Submit to the board"
+msgstr "تقديم لمجلس الإدارة"
+
+msgid "Board meeting ref."
+msgstr "مرجع اجتماع المجلس"
+
+msgid "Record board approval"
+msgstr "تسجيل اعتماد المجلس"
+
+msgid "approved by the board on"
+msgstr "اعتمده مجلس الإدارة في"
+
+msgid "The report is generated from system data (screening, alerts, unusual transactions, risk ratings, monitoring, employee screening, findings), completed with the officer's narrative, submitted to the board and recorded as approved."
+msgstr "يُنشأ التقرير من بيانات النظام (الفحص، التنبيهات، العمليات غير العادية، تصنيفات المخاطر، المتابعة، فحص العاملين، الملاحظات)، ويُستكمل بسرد المسؤول، ثم يُقدَّم لمجلس الإدارة ويُسجَّل اعتماده."
+
+msgid "Generate / refresh"
+msgstr "إنشاء / تحديث"
+
+msgid "Generated"
+msgstr "تاريخ الإنشاء"
+
+msgid "No report yet."
+msgstr "لا يوجد تقرير بعد."
+
+msgid "Internal-audit coverage of controls"
+msgstr "تغطية المراجعة الداخلية للضوابط"
+
+msgid "controls covered by the audit plan"
+msgstr "ضوابط مشمولة بخطة المراجعة"
+
+msgid "critical/high controls not covered"
+msgstr "ضوابط حرجة/عالية غير مشمولة"
+
+msgid "Covered"
+msgstr "مشمول"
+
+msgid "Auditable areas"
+msgstr "مجالات المراجعة"
+
+msgid "Policy board approvals"
+msgstr "اعتماد السياسات من مجلس الإدارة"
+
+msgid "Mark the policies that need board approval (e.g. AML manual, information-security policies) and record the board decision for the current version. Unapproved drafts are alerted after the number of days set in the bound control's parameter."
+msgstr "حدد السياسات التي تحتاج اعتماد مجلس الإدارة (مثل دليل مكافحة غسل الأموال وسياسات أمن المعلومات) وسجّل قرار المجلس للإصدار الحالي. يُنبَّه على المسودات غير المعتمدة بعد عدد الأيام المحدد في معامل الضابط المرتبط."
+
+msgid "Needs board approval"
+msgstr "تحتاج اعتماد المجلس"
+
+msgid "Board approved (this version)"
+msgstr "معتمدة من المجلس (هذا الإصدار)"
+
+msgid "Record"
+msgstr "تسجيل"
+
+msgid "No policies."
+msgstr "لا توجد سياسات."
+
+msgid "AML & KYC Assurance"
+msgstr "ضمان مكافحة غسل الأموال واعرف عميلك"
+
+msgid "Key AML roles"
+msgstr "أدوار مكافحة غسل الأموال الرئيسية"
+
+msgid "conflict(s)"
+msgstr "تعارض"
+
+msgid "no board line"
+msgstr "لا يوجد خط تبعية للمجلس"
+
+msgid "No key role registered."
+msgstr "لا يوجد دور رئيسي مسجل."
+
+msgid "Add the MLRO"
+msgstr "إضافة مسؤول الإبلاغ"
+
+msgid "List sources"
+msgstr "مصادر القوائم"
+
+msgid "Last QA run"
+msgstr "آخر اختبار جودة"
+
+msgid "recall"
+msgstr "نسبة الاكتشاف"
+
+msgid "misses"
+msgstr "إخفاقات"
+
+msgid "The QA test set has never been run."
+msgstr "لم يُنفَّذ اختبار الجودة مطلقاً."
+
+msgid "Employees due for screening"
+msgstr "عاملون مستحق فحصهم"
+
+msgid "cycle not set"
+msgstr "الدورة غير محددة"
+
+msgid "Unusual transactions & monitoring"
+msgstr "العمليات غير العادية والمتابعة"
+
+msgid "Open studies"
+msgstr "دراسات مفتوحة"
+
+msgid "overdue"
+msgstr "متأخر"
+
+msgid "Monitoring plan"
+msgstr "خطة المتابعة"
+
+msgid "none"
+msgstr "لا يوجد"
+
+msgid "Risk model missing categories"
+msgstr "فئات ناقصة في نموذج المخاطر"
+
+msgid "Incomplete"
+msgstr "غير مكتمل"
+
+msgid "Not rated"
+msgstr "غير مصنف"
+
+msgid "High risk"
+msgstr "مخاطر مرتفعة"
+
+msgid "Screen every employee who is due now?"
+msgstr "فحص جميع العاملين المستحقين الآن؟"
+
+msgid "Screen all due employees"
+msgstr "فحص جميع العاملين المستحقين"
+
+msgid "Re-screening cycle"
+msgstr "دورة إعادة الفحص"
+
+msgid "not set (parameter aml.employee_rescreen_months)"
+msgstr "غير محددة (المعامل aml.employee_rescreen_months)"
+
+msgid "Results go to the normal screening review queue."
+msgstr "تذهب النتائج إلى قائمة مراجعة الفحص المعتادة."
+
+msgid "Job title"
+msgstr "المسمى الوظيفي"
+
+msgid "Last screened"
+msgstr "آخر فحص"
+
+msgid "never"
+msgstr "أبداً"
+
+msgid "Next review"
+msgstr "المراجعة القادمة"
+
+msgid "BO declaration"
+msgstr "إقرار المستفيد الحقيقي"
+
+msgid "not rated"
+msgstr "غير مصنف"
+
+msgid "No records."
+msgstr "لا توجد سجلات."
+
+msgid "Required KYC fields"
+msgstr "حقول اعرف عميلك المطلوبة"
+
+msgid "(the catalogue the completeness score uses; editable)"
+msgstr "(القائمة التي تُحسب بها نسبة الاكتمال؛ قابلة للتعديل)"
+
+msgid "Label"
+msgstr "التسمية"
+
+msgid "Applies to"
+msgstr "ينطبق على"
+
+msgid "Pack"
+msgstr "الحزمة"
+
+msgid "captured in ComplyNex"
+msgstr "يُسجَّل في ComplyNex"
+
+msgid "key"
+msgstr "المفتاح"
+
+msgid "Label (English)"
+msgstr "التسمية (إنجليزي)"
+
+msgid "Label (Arabic)"
+msgstr "التسمية (عربي)"
+
+msgid "Record columns, comma separated (empty = captured here)"
+msgstr "أعمدة السجل مفصولة بفواصل (فارغ = يُسجَّل هنا)"
+
+msgid "Open the source record"
+msgstr "فتح السجل المصدر"
+
+msgid "complete"
+msgstr "مكتمل"
+
+msgid "Onboarding cannot be approved yet"
+msgstr "لا يمكن اعتماد بدء العلاقة بعد"
+
+msgid "Onboarding approved"
+msgstr "تم اعتماد بدء العلاقة"
+
+msgid "KYC fields"
+msgstr "حقول اعرف عميلك"
+
+msgid "Save fields"
+msgstr "حفظ الحقول"
+
+msgid "Values held in the source system are shown read-only; others are captured here."
+msgstr "القيم الموجودة في النظام المصدر تُعرض للقراءة فقط؛ وغيرها يُسجَّل هنا."
+
+msgid "Beneficial owners"
+msgstr "المستفيدون الحقيقيون"
+
+msgid "Ownership"
+msgstr "الملكية"
+
+msgid "Basis"
+msgstr "الأساس"
+
+msgid "No beneficial owner recorded."
+msgstr "لم يُسجَّل مستفيد حقيقي."
+
+msgid "Full name"
+msgstr "الاسم الكامل"
+
+msgid "Senior manager"
+msgstr "مدير تنفيذي"
+
+msgid "Signed beneficial-owner declarations"
+msgstr "إقرارات المستفيد الحقيقي الموقعة"
+
+msgid "Self"
+msgstr "عن نفسه"
+
+msgid "On behalf of"
+msgstr "نيابة عن"
+
+msgid "signed"
+msgstr "تاريخ التوقيع"
+
+msgid "No signed declaration."
+msgstr "لا يوجد إقرار موقع."
+
+msgid "Another owner"
+msgstr "مستفيد آخر"
+
+msgid "Beneficial owner name"
+msgstr "اسم المستفيد الحقيقي"
+
+msgid "Then attach the signed copy to the declaration."
+msgstr "ثم أرفق النسخة الموقعة بالإقرار."
+
+msgid "Risk rating"
+msgstr "تصنيف المخاطر"
+
+msgid "Rate now"
+msgstr "تصنيف الآن"
+
+msgid "Weight"
+msgstr "الوزن"
+
+msgid "Not rated."
+msgstr "غير مصنف."
+
+msgid "Enhanced due diligence"
+msgstr "العناية الواجبة المعززة"
+
+msgid "Save EDD"
+msgstr "حفظ العناية المعززة"
+
+msgid "Senior management approval"
+msgstr "موافقة الإدارة العليا"
+
+msgid "not given"
+msgstr "لم تُمنح"
+
+msgid "Give senior approval"
+msgstr "منح موافقة الإدارة العليا"
+
+msgid "Approve onboarding"
+msgstr "اعتماد بدء العلاقة"
+
+msgid "AML monitoring programme"
+msgstr "برنامج متابعة مكافحة غسل الأموال"
+
+msgid "Reviews done / planned"
+msgstr "المراجعات المنفذة / المخططة"
+
+msgid "No plan yet."
+msgstr "لا توجد خطة بعد."
+
+msgid "Plan title"
+msgstr "عنوان الخطة"
+
+msgid "Save plan"
+msgstr "حفظ الخطة"
+
+msgid "Branch / department"
+msgstr "الفرع / الإدارة"
+
+msgid "Performed"
+msgstr "تاريخ التنفيذ"
+
+msgid "Finding"
+msgstr "الملاحظة"
+
+msgid "On-site"
+msgstr "ميدانية"
+
+msgid "Off-site"
+msgstr "مكتبية"
+
+msgid "No reviews scheduled."
+msgstr "لا توجد مراجعات مجدولة."
+
+msgid "Schedule a review"
+msgstr "جدولة مراجعة"
+
+msgid "Back to plan"
+msgstr "العودة للخطة"
+
+msgid "planned"
+msgstr "مخطط"
+
+msgid "Checklist item"
+msgstr "بند قائمة التحقق"
+
+msgid "Issue"
+msgstr "مشكلة"
+
+msgid "Conclusion"
+msgstr "الخلاصة"
+
+msgid "Complete review"
+msgstr "إتمام المراجعة"
+
+msgid "Any \"Issue\" opens a finding with a corrective-action plan."
+msgstr "أي \"مشكلة\" تفتح ملاحظة بخطة إجراءات تصحيحية."
+
+msgid "Customer risk model"
+msgstr "نموذج مخاطر العملاء"
+
+msgid "No active factor for"
+msgstr "لا يوجد عامل فعال لـ"
+
+msgid "A risk-based model should cover every category."
+msgstr "يجب أن يغطي النموذج المبني على المخاطر كل الفئات."
+
+msgid "Reads field"
+msgstr "يقرأ الحقل"
+
+msgid "Add or change a factor"
+msgstr "إضافة أو تعديل عامل"
+
+msgid "(same key = update)"
+msgstr "(نفس المفتاح = تحديث)"
+
+msgid "field it reads"
+msgstr "الحقل الذي يقرؤه"
+
+msgid "Risk bands"
+msgstr "شرائح المخاطر"
+
+msgid "from score"
+msgstr "من درجة"
+
+msgid "refresh-cycle parameter key"
+msgstr "مفتاح معامل دورة التحديث"
+
+msgid "The refresh cycle (months) of each band is a regulatory parameter, set on Compliance Controls → Parameters."
+msgstr "دورة التحديث (بالأشهر) لكل شريحة معامل رقابي يُضبط من الضوابط الرقابية ← المعاملات."
+
+msgid "Save bands"
+msgstr "حفظ الشرائح"
+
+msgid "Holder"
+msgstr "شاغل الدور"
+
+msgid "Reports to"
+msgstr "يتبع"
+
+msgid "Board line"
+msgstr "تبعية للمجلس"
+
+msgid "Other positions"
+msgstr "مناصب أخرى"
+
+msgid "Regulator notified"
+msgstr "إخطار الجهة الرقابية"
+
+msgid "Assessment"
+msgstr "التقييم"
+
+msgid "approval"
+msgstr "الموافقة"
+
+msgid "Combined role without approval reference"
+msgstr "دور مزدوج بدون مرجع موافقة"
+
+msgid "No conflict found"
+msgstr "لا يوجد تعارض"
+
+msgid "No key role registered yet."
+msgstr "لم يُسجَّل دور رئيسي بعد."
+
+msgid "Edit role"
+msgstr "تعديل الدور"
+
+msgid "Add a key role"
+msgstr "إضافة دور رئيسي"
+
+msgid "Role code"
+msgstr "رمز الدور"
+
+msgid "Holder (user)"
+msgstr "شاغل الدور (مستخدم)"
+
+msgid "or holder name"
+msgstr "أو اسم شاغل الدور"
+
+msgid "Reports to (title)"
+msgstr "يتبع (المسمى)"
+
+msgid "e.g. Board Audit Committee"
+msgstr "مثال: لجنة المراجعة بمجلس الإدارة"
+
+msgid "Reports to (user)"
+msgstr "يتبع (مستخدم)"
+
+msgid "Direct reporting line to the board"
+msgstr "تبعية مباشرة لمجلس الإدارة"
+
+msgid "Other positions held (incl. at group companies)"
+msgstr "مناصب أخرى (بما فيها شركات المجموعة)"
+
+msgid "Combined-role approval ref."
+msgstr "مرجع الموافقة على الدور المزدوج"
+
+msgid "Appointed on"
+msgstr "تاريخ التعيين"
+
+msgid "Regulator notified on"
+msgstr "تاريخ إخطار الجهة الرقابية"
+
+msgid "Regulator reference"
+msgstr "مرجع الجهة الرقابية"
+
+msgid "Conflict rules"
+msgstr "قواعد التعارض"
+
+msgid "Keyword"
+msgstr "الكلمة المفتاحية"
+
+msgid "must not report to"
+msgstr "لا يجوز أن يتبع"
+
+msgid "must not hold"
+msgstr "لا يجوز أن يشغل"
+
+msgid "keyword"
+msgstr "كلمة مفتاحية"
+
+msgid "Reason (English)"
+msgstr "السبب (إنجليزي)"
+
+msgid "Reason (Arabic)"
+msgstr "السبب (عربي)"
+
+msgid "Required list sources"
+msgstr "مصادر القوائم المطلوبة"
+
+msgid "(from the check settings of the bound controls)"
+msgstr "(من إعدادات الفحص للضوابط المرتبطة)"
+
+msgid "no matching source"
+msgstr "لا يوجد مصدر مطابق"
+
+msgid "not configured"
+msgstr "غير مُعد"
+
+msgid "never loaded"
+msgstr "لم يُحمَّل مطلقاً"
+
+msgid "stale"
+msgstr "قديم"
+
+msgid "No control defines required sources yet (enable a content pack or set the check settings)."
+msgstr "لا يوجد ضابط يحدد المصادر المطلوبة بعد (فعّل حزمة محتوى أو اضبط إعدادات الفحص)."
+
+msgid "All list sources"
+msgstr "جميع مصادر القوائم"
+
+msgid "freshness limit"
+msgstr "حد الحداثة"
+
+msgid "Last update"
+msgstr "آخر تحديث"
+
+msgid "No sources."
+msgstr "لا توجد مصادر."
+
+msgid "QA test set"
+msgstr "مجموعة اختبار الجودة"
+
+msgid "Run the test set"
+msgstr "تشغيل مجموعة الاختبار"
+
+msgid "precision"
+msgstr "الدقة"
+
+msgid "cases"
+msgstr "حالات"
+
+msgid "false positives"
+msgstr "إيجابيات خاطئة"
+
+msgid "Miss"
+msgstr "إخفاق"
+
+msgid "False positive"
+msgstr "إيجابي خاطئ"
+
+msgid "Never run."
+msgstr "لم يُشغَّل مطلقاً."
+
+msgid "Test names come from your own watchlist entries (with generated spelling variants, including Arabic letter forms) plus invented names that must not match. No list data is stored in the software."
+msgstr "أسماء الاختبار مأخوذة من قوائمكم (مع صيغ إملائية مولّدة، منها أشكال الحروف العربية) إضافة إلى أسماء مُختلَقة يجب ألا تتطابق. لا تُخزَّن بيانات القوائم في البرنامج."
+
+msgid "A name exactly as on the list"
+msgstr "اسم كما ورد في القائمة تماماً"
+
+msgid "List (e.g. UN)"
+msgstr "القائمة (مثال: الأمم المتحدة)"
+
+msgid "Add + variants"
+msgstr "إضافة + الصيغ"
+
+msgid "Add invented negative names"
+msgstr "إضافة أسماء سلبية مُختلَقة"
+
+msgid "Query"
+msgstr "الاستعلام"
+
+msgid "Must find"
+msgstr "يجب أن يجد"
+
+msgid "Variant"
+msgstr "الصيغة"
+
+msgid "(no match)"
+msgstr "(بدون تطابق)"
+
+msgid "No test cases yet."
+msgstr "لا توجد حالات اختبار بعد."
+
+msgid "AML training coverage"
+msgstr "تغطية تدريب مكافحة غسل الأموال"
+
+msgid "Overall"
+msgstr "الإجمالي"
+
+msgid "not set (parameter training.aml_coverage_target_pct)"
+msgstr "غير محدد (المعامل training.aml_coverage_target_pct)"
+
+msgid "course category"
+msgstr "فئة الدورة"
+
+msgid "all"
+msgstr "الكل"
+
+msgid "Trained"
+msgstr "تم تدريبهم"
+
+msgid "Staff"
+msgstr "العاملون"
+
+msgid "Coverage"
+msgstr "التغطية"
+
+msgid "No staff."
+msgstr "لا يوجد عاملون."
+
+msgid "Unusual-transactions register"
+msgstr "سجل العمليات غير العادية"
+
+msgid "detected event(s) are missing from the register"
+msgstr "حدث مكتشف غير موجود في السجل"
+
+msgid "Candidate"
+msgstr "مرشح"
+
+msgid "Under study"
+msgstr "قيد الدراسة"
+
+msgid "STR filed"
+msgstr "تم الإخطار"
+
+msgid "No STR"
+msgstr "دون إخطار"
+
+msgid "Dismissed"
+msgstr "مستبعد"
+
+msgid "Detected"
+msgstr "تاريخ الاكتشاف"
+
+msgid "Study due"
+msgstr "موعد الدراسة"
+
+msgid "Register is empty."
+msgstr "السجل فارغ."
+
+msgid "detected"
+msgstr "اكتُشف"
+
+msgid "study due"
+msgstr "موعد الدراسة"
+
+msgid "Study and decision"
+msgstr "الدراسة والقرار"
+
+msgid "Analysis: facts checked, customer profile, conclusion"
+msgstr "التحليل: الوقائع التي فُحصت، ملف العميل، الخلاصة"
+
+msgid "Save analysis only"
+msgstr "حفظ التحليل فقط"
+
+msgid "Decision: file an STR"
+msgstr "القرار: تقديم إخطار اشتباه"
+
+msgid "Decision: no STR"
+msgstr "القرار: دون إخطار"
+
+msgid "STR reference (if filed)"
+msgstr "مرجع الإخطار (إن وُجد)"
+
+msgid "A decision needs the written analysis and at least one supporting document."
+msgstr "يتطلب القرار تحليلاً مكتوباً ومستنداً داعماً واحداً على الأقل."
+
+msgid "AML red flag"
+msgstr "مؤشر اشتباه"
+
+msgid "(flagged findings are routed to the AML function as unusual-transaction candidates)"
+msgstr "(تُحال الملاحظات المؤشَّرة إلى وظيفة مكافحة غسل الأموال كعمليات غير عادية مرشحة)"
+
+msgid "Remove flag"
+msgstr "إزالة المؤشر"
+
+msgid "Flag as AML red flag"
+msgstr "تأشير كمؤشر اشتباه"
+
+msgid "AML assurance overview"
+msgstr "نظرة عامة على ضمان مكافحة غسل الأموال"
+
+msgid "AML annual report"
+msgstr "التقرير السنوي لمكافحة غسل الأموال"
+
+msgid "Check settings"
+msgstr "إعدادات الفحص"
+
+msgid "Check settings (JSON)"
+msgstr "إعدادات الفحص (JSON)"
+
+msgid "Optional settings read by the check, e.g. which fields are required or which list sources are mandatory."
+msgstr "إعدادات اختيارية يقرؤها الفحص، مثل الحقول المطلوبة أو مصادر القوائم الإلزامية."
+
+msgid "Source of funds verified"
+msgstr "التحقق من مصدر الأموال"
+
+msgid "Source of wealth verified"
+msgstr "التحقق من مصدر الثروة"
+
+msgid "Purpose and intended nature of the relationship"
+msgstr "الغرض من العلاقة وطبيعتها المتوقعة"
+
+msgid "Adverse media reviewed"
+msgstr "مراجعة الأخبار السلبية"
+
+msgid "Beneficial owners verified"
+msgstr "التحقق من المستفيدين الحقيقيين"
+
+msgid "Senior management approval obtained"
+msgstr "الحصول على موافقة الإدارة العليا"
+
+msgid "KYC files complete for a sample of new clients"
+msgstr "اكتمال ملفات اعرف عميلك لعينة من العملاء الجدد"
+
+msgid "Risk ratings present and current for the sample"
+msgstr "وجود تصنيفات مخاطر محدثة للعينة"
+
+msgid "Unusual transactions escalated to the AML function"
+msgstr "تصعيد العمليات غير العادية إلى وظيفة مكافحة غسل الأموال"
+
+msgid "Staff AML training up to date"
+msgstr "تدريب العاملين على مكافحة غسل الأموال محدث"
+
+msgid "Screening performed before onboarding"
+msgstr "إجراء الفحص قبل بدء العلاقة"
+
+msgid "Records kept and retrievable"
+msgstr "حفظ السجلات وإمكانية استرجاعها"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

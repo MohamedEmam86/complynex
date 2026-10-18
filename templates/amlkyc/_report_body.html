@@ -1,0 +1,11 @@
+{% set d = r.data %}
+<table class="table table-sm small">
+    <tr><th class="w-50">{{ _('Period') }}</th><td>{{ d.period|join(' → ') }}</td></tr>
+    <tr><th>{{ _('Screenings performed') }}</th><td>{{ d.screening.screenings if d.screening else '-' }}</td></tr>
+    <tr><th>{{ _('Transaction-monitoring alerts (closed)') }}</th><td>{{ d.tm_alerts.alerts if d.tm_alerts else '-' }} ({{ d.tm_alerts.closed if d.tm_alerts else '-' }})</td></tr>
+    <tr><th>{{ _('Unusual transactions registered / STRs / no STR / open') }}</th><td>{% set u = d.unusual_transactions or {} %}{{ u.registered or 0 }} / {{ u.strs or 0 }} / {{ u.no_strs or 0 }} / {{ u.open or 0 }}</td></tr>
+    <tr><th>{{ _('Current risk distribution') }}</th><td>{% for b, n in (d.risk_distribution or {}).items() %}{{ b }}: {{ n }}{{ ', ' if not loop.last }}{% else %}-{% endfor %}</td></tr>
+    <tr><th>{{ _('Monitoring reviews planned / done') }}</th><td>{{ (d.monitoring_reviews or {}).planned or 0 }} / {{ (d.monitoring_reviews or {}).done or 0 }}</td></tr>
+    <tr><th>{{ _('Employees screened') }}</th><td>{{ (d.employee_screenings or {}).employees or 0 }}</td></tr>
+    <tr><th>{{ _('AML findings open / repeated') }}</th><td>{{ (d.findings or {}).open or 0 }} / {{ (d.findings or {}).repeated or 0 }}</td></tr>
+</table>

@@ -25,6 +25,7 @@ install_* helpers are idempotent and never overwrite what a user has since
 changed in the UI: they insert missing rows and only fill a pack_code.
 """
 
+import json
 from datetime import datetime
 
 from database.db import get_db
@@ -265,6 +266,9 @@ def install_control(c, pack_code=None, requirement_ids=(), db=None):
         # A newer pack version may add a check to a control installed earlier.
         if not r['check_key'] and c.get('check_key'):
             db.execute("UPDATE rc_controls SET check_key = %s WHERE id = %s", (c['check_key'], cid))
+        if c.get('check_config'):
+            db.execute("UPDATE rc_controls SET check_config = %s WHERE id = %s AND check_config = '{}'::jsonb",
+                       (json.dumps(c['check_config']), cid))
     else:
         cid = db.execute("""
             INSERT INTO rc_controls (control_code, area, title_en, title_ar, requirement_en, control_type, type_codes,
@@ -276,6 +280,8 @@ def install_control(c, pack_code=None, requirement_ids=(), db=None):
                           c.get('criticality', 'high'), c.get('owner_role'), c.get('linked_module'),
                           list(c.get('linked_params') or []), list(c.get('licence_types') or ['all']),
                           c.get('test_procedure_en'), c.get('check_key'), pack_code)).fetchone()['id']
+        if c.get('check_config'):
+            db.execute("UPDATE rc_controls SET check_config = %s WHERE id = %s", (json.dumps(c['check_config']), cid))
     for rid in requirement_ids:
         db.execute("INSERT INTO rc_control_requirements (control_id, requirement_id) VALUES (%s,%s) "
                    "ON CONFLICT DO NOTHING", (cid, rid))

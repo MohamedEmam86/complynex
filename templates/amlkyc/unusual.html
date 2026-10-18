@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Unusual transactions') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Unusual-transactions register') }}</h3>
+    {{ aa.nav('amlkyc.unusual') }}
+    {% if missing %}<div class="alert alert-danger small"><strong>{{ missing|length }} {{ _('detected event(s) are missing from the register') }}</strong>{% for m in missing[:10] %}<div>{{ m.source }} · {{ m.label }}</div>{% endfor %}</div>{% endif %}
+    <form method="get" class="mb-2"><select name="status" class="form-select form-select-sm w-auto" data-auto-submit><option value="">{{ _('All') }}</option>
+        {% for s, l in [('candidate', _('Candidate')), ('under_study', _('Under study')), ('str_filed', _('STR filed')), ('no_str', _('No STR')), ('dismissed', _('Dismissed'))] %}<option value="{{ s }}" {{ 'selected' if f_status == s }}>{{ l }}</option>{% endfor %}</select></form>
+    <div class="card"><div class="table-responsive"><table class="table table-sm table-hover mb-0 small">
+        <thead><tr><th>{{ _('Reference') }}</th><th>{{ _('Detected') }}</th><th>{{ _('Source') }}</th><th>{{ _('Subject') }}</th><th>{{ _('Description') }}</th><th>{{ _('Study due') }}</th><th>{{ _('Status') }}</th></tr></thead><tbody>
+        {% for u in rows %}{% set late = u.status in ('candidate', 'under_study') and u.study_due_date and u.study_due_date < today %}
+        <tr class="{{ 'table-danger' if late }}"><td><a href="{{ url_for('amlkyc.unusual_item', item_id=u.id) }}">{{ u.reference }}</a></td><td>{{ u.detected_at.strftime('%Y-%m-%d') }}</td>
+            <td>{{ u.source_module }} · {{ u.detection_rule }}</td><td>{{ u.subject_name or '-' }} {{ u.subject_ref or '' }}</td><td>{{ (u.description or '')|truncate(90) }}</td>
+            <td>{{ u.study_due_date or '-' }}</td><td>{{ u.status }}</td></tr>
+        {% else %}<tr><td colspan="7" class="text-muted text-center py-3">{{ _('Register is empty.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

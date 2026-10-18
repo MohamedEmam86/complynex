@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ name }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-1">{{ name }} <span class="badge bg-secondary fs-6">{{ _('Entity') if st.kind == 'entity' else _('Individual') }}</span></h3>
+    <p class="small text-muted"><a href="{{ url_for('amlkyc.kyc_home', subject=code) }}">{{ s.label_ar if get_locale() == 'ar' else s.label_en }}</a>{% if source_link %} · <a href="{{ source_link }}">{{ _('Open the source record') }}</a>{% endif %} · {{ _('complete') }} {{ st.score }}%</p>
+    {{ aa.nav('amlkyc.kyc_home') }}
+    {% if blockers %}<div class="alert alert-warning small"><strong>{{ _('Onboarding cannot be approved yet') }}</strong><ul class="mb-0">{% for b in blockers %}<li>{{ b }}</li>{% endfor %}</ul></div>
+    {% elif onb.status == 'approved' %}<div class="alert alert-success small">{{ _('Onboarding approved') }} {{ onb.approved_at.strftime('%Y-%m-%d') if onb.approved_at }}</div>{% endif %}
+    <div class="row g-3"><div class="col-lg-7">
+        <form method="post" class="card mb-3"><div class="card-header"><strong>{{ _('KYC fields') }}</strong></div><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="profile">
+            <table class="table table-sm mb-0 small align-middle"><tbody>
+            {% for fr in field_rows %}<tr class="{{ 'table-danger' if fr.value is none and fr.f.is_required }}"><td style="width: 35%">{{ fr.f.label_ar if get_locale() == 'ar' and fr.f.label_ar else fr.f.label_en }}{% if fr.f.is_required %} *{% endif %}</td>
+                <td>{% if fr.f.source == 'column' and fr.captured %}{{ fr.value }}{% elif aa_can_edit %}<input name="pf_{{ fr.f.field_key }}" class="form-control form-control-sm" value="{{ fr.profile or '' }}">{% else %}{{ fr.value or '-' }}{% endif %}</td></tr>{% endfor %}</tbody></table>
+            {% if aa_can_edit %}<div class="card-footer"><button class="btn btn-sm btn-primary">{{ _('Save fields') }}</button> <span class="small text-muted">{{ _('Values held in the source system are shown read-only; others are captured here.') }}</span></div>{% endif %}
+        </form>
+        {% if st.kind == 'entity' %}
+        <div class="card mb-3"><div class="card-header"><strong>{{ _('Beneficial owners') }}</strong></div>
+            <table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Name') }}</th><th>{{ _('Nationality') }}</th><th class="text-end">{{ _('Ownership') }}</th><th>{{ _('Basis') }}</th><th>{{ _('PEP') }}</th></tr></thead><tbody>
+            {% for b in bos %}<tr><td>{{ b.full_name }}</td><td>{{ b.nationality or '-' }}</td><td class="text-end">{{ (b.ownership_pct ~ '%') if b.ownership_pct is not none else '-' }}</td><td>{{ b.control_type }}</td><td>{{ _('Yes') if b.is_pep else _('No') }}</td></tr>
+            {% else %}<tr><td colspan="5" class="text-danger">{{ _('No beneficial owner recorded.') }}</td></tr>{% endfor %}</tbody></table>
+            {% if aa_can_edit %}<form method="post" class="card-body border-top row g-1 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="bo">
+                <div class="col-md-4"><input name="full_name" class="form-control form-control-sm" placeholder="{{ _('Full name') }}" required></div>
+                <div class="col-md-2"><input name="nationality" class="form-control form-control-sm" placeholder="{{ _('Nationality') }}"></div>
+                <div class="col-md-2"><input type="number" step="0.01" name="ownership_pct" class="form-control form-control-sm" placeholder="{{ _('Ownership') ~ ' (%)' }}"></div>
+                <div class="col-md-2"><select name="control_type" class="form-select form-select-sm"><option value="ownership">{{ _('Ownership') }}</option><option value="control">{{ _('Control') }}</option><option value="senior_manager">{{ _('Senior manager') }}</option></select></div>
+                <div class="col-md-1 form-check pt-1"><input type="checkbox" name="is_pep" value="1" class="form-check-input" id="bp"><label class="form-check-label" for="bp">{{ _('PEP') }}</label></div>
+                <div class="col-md-1"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Add') }}</button></div></form>{% endif %}
+        </div>
+        <div class="card mb-3"><div class="card-header"><strong>{{ _('Signed beneficial-owner declarations') }}</strong></div><div class="card-body small">
+            {% for d in decls %}<div class="border-bottom pb-2 mb-2"><strong>{{ _('Self') if d.declaration_type == 'self' else _('On behalf of') ~ ' ' ~ d.bo_name }}</strong> · {{ _('signed') }} {{ d.signed_on }}
+                {% with attach_module='aml', attach_record_type='kyc_bo_declaration', attach_record_id=d.id, attach_items=decl_files[d.id], attach_can_edit=aa_can_edit %}{% include 'partials/attachment_widget.html' %}{% endwith %}</div>
+            {% else %}<p class="text-danger">{{ _('No signed declaration.') }}</p>{% endfor %}
+            {% if aa_can_edit %}<form method="post" class="row g-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="declaration">
+                <div class="col-md-3"><select name="declaration_type" class="form-select form-select-sm"><option value="self">{{ _('Self') }}</option><option value="other">{{ _('Another owner') }}</option></select></div>
+                <div class="col-md-4"><input name="bo_name" class="form-control form-control-sm" placeholder="{{ _('Beneficial owner name') }}"></div>
+                <div class="col-md-3"><input type="date" name="signed_on" class="form-control form-control-sm" required></div>
+                <div class="col-md-2"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Record') }}</button></div></form>
+                <p class="text-muted mt-1 mb-0">{{ _('Then attach the signed copy to the declaration.') }}</p>{% endif %}
+        </div></div>
+        {% endif %}
+    </div><div class="col-lg-5">
+        <div class="card mb-3"><div class="card-header d-flex justify-content-between"><strong>{{ _('Risk rating') }}</strong>
+            {% if aa_can_edit %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="rate"><button class="btn btn-sm btn-primary">{{ _('Rate now') }}</button></form>{% endif %}</div>
+            <div class="card-body small">{% set cur = ratings[0] if ratings else none %}
+                {% if cur %}<p class="mb-1"><span class="badge bg-{{ {'high': 'danger', 'medium': 'warning text-dark', 'low': 'success'}.get(cur.band, 'secondary') }} fs-6">{{ cur.band }} · {{ cur.score }}</span> {{ cur.rated_at.strftime('%Y-%m-%d') }} · {{ cur.trigger }}</p>
+                    <p class="mb-2 {{ 'text-danger' if cur.next_review_date and cur.next_review_date < today }}">{{ _('Next review') }}: {{ cur.next_review_date or _('cycle not set') }}</p>
+                    <table class="table table-sm mb-0"><thead><tr><th>{{ _('Factor') }}</th><th>{{ _('Value') }}</th><th class="text-end">{{ _('Score') }}</th><th class="text-end">{{ _('Weight') }}</th></tr></thead><tbody>
+                    {% for b in cur.factors %}<tr><td>{{ b.factor }}</td><td>{{ b.value if b.value is not none else '-' }}</td><td class="text-end">{{ b.score }}</td><td class="text-end">{{ b.weight }}</td></tr>{% endfor %}</tbody></table>
+                {% else %}<p class="text-danger mb-0">{{ _('Not rated.') }}</p>{% endif %}
+            </div></div>
+        <form method="post" class="card mb-3"><div class="card-header"><strong>{{ _('Enhanced due diligence') }}</strong> {% if onb.edd_completed %}<span class="badge bg-success">{{ _('complete') }}</span>{% endif %}</div><div class="card-body small">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="edd">
+            {% set done = (onb.edd_checklist or [])|selectattr('done')|map(attribute='item')|list %}
+            {% for i in edd_items %}<div class="form-check"><input type="checkbox" class="form-check-input" name="edd_item" value="{{ i }}" id="e{{ loop.index }}" {{ 'checked' if i in done }} {{ 'disabled' if not aa_can_edit }}><label class="form-check-label" for="e{{ loop.index }}">{{ _(i) }}</label></div>{% endfor %}
+            <textarea name="note" class="form-control form-control-sm mt-2" rows="2" placeholder="{{ _('Note') }}" {{ 'disabled' if not aa_can_edit }}>{{ onb.note or '' }}</textarea>
+            {% if aa_can_edit %}<button class="btn btn-sm btn-outline-primary mt-2">{{ _('Save EDD') }}</button>{% endif %}</div></form>
+        <div class="card"><div class="card-header"><strong>{{ _('Approvals') }}</strong></div><div class="card-body small">
+            <p class="mb-2">{{ _('Senior management approval') }}: {{ onb.senior_approved_at.strftime('%Y-%m-%d') if onb.senior_approved_at else _('not given') }}</p>
+            {% if aa_can_edit %}<div class="d-flex gap-2">
+                <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="senior"><button class="btn btn-sm btn-outline-secondary">{{ _('Give senior approval') }}</button></form>
+                <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="approve"><button class="btn btn-sm btn-success" {{ 'disabled' if blockers }}>{{ _('Approve onboarding') }}</button></form></div>{% endif %}
+        </div></div>
+    </div></div>
+</div>
+{% endblock %}

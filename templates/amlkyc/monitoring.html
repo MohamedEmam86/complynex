@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('AML monitoring programme') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('AML monitoring programme') }}</h3>
+    {{ aa.nav('amlkyc.monitoring') }}
+    <div class="card mb-3"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Year') }}</th><th>{{ _('Title') }}</th><th>{{ _('Approved on') }}</th><th class="text-end">{{ _('Reviews done / planned') }}</th></tr></thead><tbody>
+        {% for p in plans %}<tr><td><a href="{{ url_for('amlkyc.monitoring_plan', plan_id=p.id) }}">{{ p.plan_year }}</a></td><td>{{ p.title or '-' }}</td><td>{{ p.approved_on or '-' }}</td><td class="text-end">{{ p.done }} / {{ p.reviews }}</td></tr>
+        {% else %}<tr><td colspan="4" class="text-muted">{{ _('No plan yet.') }}</td></tr>{% endfor %}</tbody></table></div>
+    {% if aa_can_edit %}<form method="post" class="card"><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-2"><input type="number" name="plan_year" class="form-control form-control-sm" value="{{ today.year }}"></div>
+        <div class="col-md-5"><input name="title" class="form-control form-control-sm" placeholder="{{ _('Plan title') }}"></div>
+        <div class="col-md-3"><input type="date" name="approved_on" class="form-control form-control-sm" title="{{ _('Approved on') }}"></div>
+        <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">{{ _('Save plan') }}</button></div></div></form>{% endif %}
+</div>
+{% endblock %}

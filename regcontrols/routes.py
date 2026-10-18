@@ -27,6 +27,7 @@ Permission perm_regcontrols:
 Records with an org_unit_id are filtered with services.org_service scoping.
 """
 
+import json
 from datetime import date, datetime
 from functools import wraps
 
@@ -384,16 +385,23 @@ def control_edit(control_id):
         if check_key and check_key not in engine.CHECKS:
             flash(_('Unknown check.'), 'danger')
             return redirect(request.url)
+        try:
+            check_config = json.loads(f.get('check_config') or '{}')
+            if not isinstance(check_config, dict):
+                raise ValueError
+        except ValueError:
+            flash(_('Check settings must be a JSON object, e.g. {"fields": ["gender"]}.'), 'danger')
+            return redirect(request.url)
         keys = [k.strip() for k in (f.get('linked_params') or '').replace(';', ',').split(',') if k.strip()]
         db.execute("""
-            UPDATE rc_controls SET check_key = %s, area = %s, control_type = %s,
+            UPDATE rc_controls SET check_key = %s, check_config = %s, area = %s, control_type = %s,
                    title_en = %s, title_ar = %s, requirement_en = %s, requirement_ar = %s,
                    frequency = %s, criticality = %s, owner_role = %s, owner_user_id = %s, linked_module = %s,
                    linked_params = %s, licence_types = %s, test_procedure_en = %s, test_procedure_ar = %s,
                    erm_control_id = %s, auto_create_case = %s, is_active = %s, updated_at = %s,
                    next_run_due = CASE WHEN frequency = %s THEN next_run_due ELSE NULL END
             WHERE id = %s
-        """, (check_key, f.get('area') or None,
+        """, (check_key, json.dumps(check_config), f.get('area') or None,
               f.get('control_type') if f.get('control_type') in vocab.CONTROL_TYPES else control['control_type'],
               f.get('title_en', '').strip() or control['title_en'], f.get('title_ar', '').strip() or None,
               f.get('requirement_en') or None, f.get('requirement_ar') or None, freq, crit,

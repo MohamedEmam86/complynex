@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% import 'amlkyc/_nav.html' as aa with context %}
+{% block title %}{{ _('Monitoring plan') }} {{ plan.plan_year }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Monitoring plan') }} {{ plan.plan_year }} <span class="small text-muted">{{ plan.title or '' }}</span></h3>
+    {{ aa.nav('amlkyc.monitoring') }}
+    <div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 small align-middle">
+        <thead><tr><th>{{ _('Branch / department') }}</th><th>{{ _('Type') }}</th><th>{{ _('Planned') }}</th><th>{{ _('Performed') }}</th><th>{{ _('Reviewer') }}</th><th>{{ _('Status') }}</th><th>{{ _('Finding') }}</th></tr></thead><tbody>
+        {% for r in reviews %}{% set late = r.status == 'planned' and r.planned_date < today %}
+        <tr class="{{ 'table-danger' if late }}"><td><a href="{{ url_for('amlkyc.monitoring_review', review_id=r.id) }}">{{ r.unit_label }}</a></td><td>{{ _('On-site') if r.review_type == 'onsite' else _('Off-site') }}</td>
+            <td>{{ r.planned_date }}</td><td>{{ r.performed_date or '-' }}</td><td>{{ r.reviewer_name or '-' }}</td><td>{{ r.status }}{% if late %} · {{ _('overdue') }}{% endif %}</td><td>{{ r.finding_ref or '-' }}</td></tr>
+        {% else %}<tr><td colspan="7" class="text-muted">{{ _('No reviews scheduled.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+    {% if aa_can_edit %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Schedule a review') }}</strong></div><div class="card-body row g-2 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-4"><input name="unit_label" class="form-control form-control-sm" placeholder="{{ _('Branch / department') }}" required></div>
+        <div class="col-md-2"><select name="review_type" class="form-select form-select-sm"><option value="offsite">{{ _('Off-site') }}</option><option value="onsite">{{ _('On-site') }}</option></select></div>
+        <div class="col-md-2"><input type="date" name="planned_date" class="form-control form-control-sm" required></div>
+        <div class="col-md-3"><select name="reviewer_id" class="form-select form-select-sm"><option value="">{{ _('Reviewer') }}</option>{% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}</select></div>
+        <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div></div></form>{% endif %}
+</div>
+{% endblock %}

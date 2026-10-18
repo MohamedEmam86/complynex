@@ -29,6 +29,9 @@
                     {% if control.check_key and control.check_key not in checks|map(attribute=0)|list %}<option value="{{ control.check_key }}" selected>{{ control.check_key }} — {{ _('not available') }}</option>{% endif %}
                 </select>
                 <div class="form-text">{{ _('Checks come with the core and with enabled content packs.') }}</div></div>
+            <div class="col-md-12"><label class="form-label">{{ _('Check settings (JSON)') }}</label>
+                <textarea name="check_config" class="form-control font-monospace small" rows="2" dir="ltr">{{ (control.check_config or {})|tojson }}</textarea>
+                <div class="form-text">{{ _('Optional settings read by the check, e.g. which fields are required or which list sources are mandatory.') }}</div></div>
             <div class="col-md-3"><label class="form-label">{{ _('Frequency') }}</label>
                 <select name="frequency" class="form-select">{% for k in rc_vocab.FREQUENCIES %}<option value="{{ k }}" {{ 'selected' if control.frequency == k }}>{{ rc_label('FREQUENCIES', k) }}</option>{% endfor %}</select></div>
             <div class="col-md-3"><label class="form-label">{{ _('Criticality') }}</label>

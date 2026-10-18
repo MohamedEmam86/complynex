@@ -107,6 +107,72 @@ CHECK_KEYS = {
     'FRA-024': 'fra_nbfi.lending.er_ack',
     'FRA-025': 'fra_nbfi.lending.transfer_fees',
     'FRA-026': 'fra_nbfi.lending.rescheduling_fees',
+    # AML/CFT & KYC — generic core checks, tuned through CHECK_CONFIG below.
+    'FRA-027': 'core.aml.role_independence',
+    'FRA-028': 'core.aml.role_conflicts',
+    'FRA-029': 'core.aml.combined_roles',
+    'FRA-030': 'core.policies.board_approval',
+    'FRA-031': 'core.aml.monitoring_programme',
+    'FRA-032': 'core.screening.required_sources',
+    'FRA-033': 'core.screening.source_freshness',
+    'FRA-034': 'core.screening.qa_recall',
+    'FRA-035': 'core.aml.unusual_register',
+    'FRA-036': 'core.aml.unusual_studied',
+    'FRA-037': 'core.audit.red_flags_routed',
+    'FRA-038': 'core.kyc.fields',
+    'FRA-039': 'core.kyc.fields',
+    'FRA-040': 'core.kyc.fields',
+    'FRA-041': 'core.kyc.fields',
+    'FRA-042': 'core.kyc.fields',
+    'FRA-043': 'core.kyc.fields',
+    'FRA-044': 'core.kyc.fields',
+    'FRA-045': 'core.kyc.beneficial_owners',
+    'FRA-046': 'core.kyc.bo_declaration',
+    'FRA-047': 'core.kyc.refresh_cycle',
+    'FRA-048': 'core.kyc.risk_model',
+    'FRA-049': 'core.kyc.rated',
+    'FRA-050': 'core.kyc.edd_high_risk',
+    # FRA-051 (off-site backup) stays an evidence control until the IT module adds a check.
+    'FRA-052': 'core.screening.employees',
+    'FRA-053': 'core.aml.annual_report',
+    'FRA-054': 'core.audit.plan_coverage',
+    'OBS-01': 'core.training.coverage',
+}
+
+# Settings for the generic checks above (rc_controls.check_config, editable on
+# the control's edit page). Source-name patterns are matched case-insensitively.
+# TODO(compliance-review): confirm the list of mandatory watchlists and the
+# exact KYC fields per FRA instructions before go-live.
+_KYC = ['aml_customer']
+_KYB = ['aml_customer', 'merchant']
+CHECK_CONFIG = {
+    'FRA-027': {'role_codes': ['mlro']},
+    'FRA-028': {'role_codes': ['mlro']},
+    'FRA-029': {'role_codes': ['mlro']},
+    'FRA-030': {'name_contains': ['aml', 'money laundering', 'غسل']},
+    'FRA-032': {'required': [
+        {'label': 'UN Security Council consolidated list', 'match': ['un ', 'united nations', 'unsc', 'security council']},
+        {'label': 'Local terrorist / terrorist-entity lists', 'match': ['terror', 'إرهاب', 'local']},
+        {'label': 'Asset-freeze orders', 'match': ['freeze', 'تجميد']},
+    ]},
+    'FRA-033': {'max_age_param': 'aml.watchlist_freshness_max_hours'},
+    'FRA-034': {'max_age_days': 31, 'min_recall_param': 'aml.screening_min_recall_pct'},
+    'FRA-038': {'subjects': _KYC, 'fields': ['gender']},
+    'FRA-039': {'subjects': _KYC, 'fields': ['nationality']},
+    'FRA-040': {'subjects': _KYC, 'fields': ['residence_country']},
+    'FRA-041': {'subjects': _KYC, 'fields': ['address']},
+    'FRA-042': {'subjects': _KYC, 'fields': ['id_type']},
+    'FRA-043': {'subjects': _KYB, 'fields': ['tax_card_number', 'tax_card_issuer']},
+    'FRA-044': {'subjects': _KYB, 'fields': ['senior_management']},
+    'FRA-045': {'subjects': _KYB},
+    'FRA-046': {'subjects': _KYB, 'kinds': ['entity']},
+    'FRA-047': {'subjects': _KYB},
+    'FRA-049': {'subjects': _KYB},
+    'FRA-050': {'subjects': _KYB},
+    'FRA-052': {'months_param': 'aml.employee_rescreen_months'},
+    'FRA-053': {'role_code': 'mlro', 'approve_by_month': 6},
+    'FRA-054': {'criticality': ['critical', 'high']},
+    'OBS-01': {'category': 'AML', 'target_param': 'training.aml_coverage_target_pct'},
 }
 
 _LENDING = ['microfinance', 'consumer_finance']
@@ -130,6 +196,7 @@ def _c(code, area, types, title_en, title_ar, behaviour, module, owner, freq,
         'linked_params': params or [],
         'licence_types': licences or ['all'],
         'check_key': CHECK_KEYS.get(code),
+        'check_config': CHECK_CONFIG.get(code),
     }
 
 
