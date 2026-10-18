@@ -130,7 +130,7 @@
                 <div class="card-body border-top">
                     <form method="post" action="{{ url_for('regcontrols.finding_link', finding_id=f.id) }}" class="d-flex gap-1">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input name="control_codes" class="form-control form-control-sm" placeholder="FRA-035; FRA-036" required>
+                        <input name="control_codes" class="form-control form-control-sm" placeholder="CTRL-001; CTRL-002" required>
                         <button class="btn btn-sm btn-outline-primary">{{ _('Link') }}</button>
                     </form>
                 </div>

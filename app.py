@@ -375,6 +375,12 @@ def create_app(config_name=None):
     import regcontrols.routes  # noqa: F401 — registers routes on regcontrols_bp
     app.register_blueprint(regcontrols_bp)
 
+    # Optional content packs (packs/<code>/): their pages exist only while the
+    # pack is enabled (Compliance Controls > Content packs). Core never
+    # imports a specific pack.
+    from regcontrols.packs import register_blueprints as _register_pack_blueprints
+    _register_pack_blueprints(app)
+
 
     # Phishing Awareness Module
     from phishing import phishing_bp

@@ -24,7 +24,9 @@ import from. Documented in docs/regulatory/REGCONTROLS_API.md.
 All functions need a Flask app context (they use database.db.get_db()).
 """
 
-from .engine import CheckContext, register_check, run_control  # noqa: F401
+from .engine import CheckContext, record_manual_test, register_check, register_sweep, run_control  # noqa: F401
+from .packs import Pack, register_pack  # noqa: F401
+from . import catalog  # noqa: F401 — install_* helpers for packs
 from .logic import CheckResult, ParameterError, ParameterNotFound, ParameterNotSet  # noqa: F401
 from . import alerts as _alerts
 from . import evidence as _evidence

@@ -126,7 +126,7 @@
 
                     <h5 class="card-title mt-4 mb-3">{{ _('Module Permissions (Granular)') }}</h5>
                     <div class="row g-3 mb-4">
-                        {% for module in [('governance', 'Corporate Governance'), ('aml', 'AML/CFT'), ('policies', 'Policies'), ('reports', 'Regulatory Reports'), ('pdpl', 'Data Protection'), ('training', 'Training'), ('screening', 'Sanction Screening'), ('ongoing_screening', 'Ongoing Screening'), ('config', 'System Configuration'), ('cyber', 'Cyber Incidents Hub'), ('phishing', 'Phishing Awareness'), ('ghe', 'GHE Declarations'), ('coi', 'COI Declarations'), ('cobec', 'Code of Ethics'), ('merchant_kyc', 'Merchant KYC'), ('tm', 'Transaction Monitoring'), ('whistleblowing', 'Whistleblowing'), ('consumer_protection', 'Consumer Protection'), ('ekyc', 'eKYC'), ('risk_management', 'Risk Management'), ('internal_audit', 'Internal Audit'), ('esg', 'ESG Management'), ('carbon', 'Carbon Footprint'), ('academy', 'Integrys Academy (learners)'), ('regcontrols', 'Regulatory Compliance (FRA)')] %}
+                        {% for module in [('governance', 'Corporate Governance'), ('aml', 'AML/CFT'), ('policies', 'Policies'), ('reports', 'Regulatory Reports'), ('pdpl', 'Data Protection'), ('training', 'Training'), ('screening', 'Sanction Screening'), ('ongoing_screening', 'Ongoing Screening'), ('config', 'System Configuration'), ('cyber', 'Cyber Incidents Hub'), ('phishing', 'Phishing Awareness'), ('ghe', 'GHE Declarations'), ('coi', 'COI Declarations'), ('cobec', 'Code of Ethics'), ('merchant_kyc', 'Merchant KYC'), ('tm', 'Transaction Monitoring'), ('whistleblowing', 'Whistleblowing'), ('consumer_protection', 'Consumer Protection'), ('ekyc', 'eKYC'), ('risk_management', 'Risk Management'), ('internal_audit', 'Internal Audit'), ('esg', 'ESG Management'), ('carbon', 'Carbon Footprint'), ('academy', 'Integrys Academy (learners)'), ('regcontrols', 'Compliance Controls')] %}
                         {% set perm_val = getattr(user, 'perm_' ~ module[0], 'none') %}
                         <div class="col-md-4">
                             <div class="card bg-light border-0">
@@ -146,6 +146,21 @@
                         </div>
                         {% endfor %}
                     </div>
+                    {% set _pack_perms = rc_pack_permission_modules() %}
+                    {% if _pack_perms %}
+                    <h6 class="mt-2 mb-2">{{ _('Content pack modules') }}</h6>
+                    <div class="row g-3 mb-4">
+                        {% for module, label_en, label_ar, levels in _pack_perms %}
+                        {% set pv = rc_user_module_perm(user, module) %}
+                        <div class="col-md-4"><div class="card bg-light border-0"><div class="card-body p-2">
+                            <label class="form-label small fw-bold">{{ rc_loc(label_en, label_ar) }}</label>
+                            <select class="form-select form-select-sm" name="modperm_{{ module }}">
+                                {% for lv, ll in [('none', _('None')), ('view', _('View Only')), ('edit', _('View &amp; Edit')), ('admin', _('Admin'))] if lv in levels %}
+                                <option value="{{ lv }}" {{ 'selected' if pv == lv }}>{{ ll }}</option>{% endfor %}
+                            </select></div></div></div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
 
                     <div class="card bg-light border-0 mb-4">
                         <div class="card-body p-3">

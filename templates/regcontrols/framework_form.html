@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Framework') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-3">{{ _('Edit framework') if framework_id else _('New framework') }}</h3>
+    <form method="post" class="card"><div class="card-body"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+            <div class="col-md-3"><label class="form-label">{{ _('Code') }} *</label><input name="code" class="form-control" required value="{{ fw.code or '' }}" placeholder="e.g. PDPL-EG"></div>
+            <div class="col-md-5"><label class="form-label">{{ _('Name (English)') }} *</label><input name="name_en" class="form-control" required value="{{ fw.name_en or '' }}"></div>
+            <div class="col-md-4"><label class="form-label">{{ _('Name (Arabic)') }}</label><input name="name_ar" dir="rtl" class="form-control" value="{{ fw.name_ar or '' }}"></div>
+            <div class="col-md-4"><label class="form-label">{{ _('Regulator') }}</label><select name="regulator_id" class="form-select"><option value="">-</option>
+                {% for r in regulators %}<option value="{{ r.id }}" {{ 'selected' if fw.regulator_id|string == r.id|string }}>{{ rc_loc(r.regulator_name, r.name_ar) }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><label class="form-label">{{ _('Jurisdiction') }}</label><input name="jurisdiction" class="form-control" value="{{ fw.jurisdiction or '' }}" placeholder="EG"></div>
+            <div class="col-md-2"><label class="form-label">{{ _('Version') }}</label><input name="version" class="form-control" value="{{ fw.version or '' }}"></div>
+            <div class="col-md-4"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="is_active" id="act" {{ 'checked' if fw.is_active }}><label class="form-check-label" for="act">{{ _('Active') }}</label></div></div>
+            <div class="col-md-12"><label class="form-label">{{ _('Source document / legal basis') }}</label><input name="source_document" class="form-control" value="{{ fw.source_document or '' }}"></div>
+            <div class="col-12"><label class="form-label">{{ _('Description') }}</label><textarea name="description" class="form-control" rows="3">{{ fw.description or '' }}</textarea></div>
+        </div></div>
+        <div class="card-footer"><button class="btn btn-primary">{{ _('Save') }}</button> <a class="btn btn-outline-secondary" href="{{ url_for('regcontrols.library_home') }}">{{ _('Cancel') }}</a></div></form>
+</div>
+{% endblock %}

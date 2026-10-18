@@ -255,5 +255,5 @@ def test_parse_findings_csv_missing_title_column():
 
 
 def test_csv_template_parses():
-    rows, errors = logic.parse_findings_csv(logic.findings_csv_template(), ['FRA-035', 'FRA-036'])
+    rows, errors = logic.parse_findings_csv(logic.findings_csv_template(), ['CTRL-001', 'CTRL-002'])
     assert not errors and len(rows) == 1

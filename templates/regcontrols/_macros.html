@@ -30,7 +30,7 @@
 {%- endmacro %}
 
 {% macro source_label(s) -%}
-{{ {'regulator': _('Regulator (FRA)'), 'internal_audit': _('Internal audit'), 'self_identified': _('Self-identified'),
+{{ {'regulator': _('Regulator'), 'internal_audit': _('Internal audit'), 'self_identified': _('Self-identified'),
     'external_audit': _('External audit'), 'control_failure': _('Control failure')}.get(s, s) }}
 {%- endmacro %}
 
@@ -43,7 +43,8 @@
 <ul class="nav nav-pills mb-3 small flex-wrap no-print">
     {% for ep, label in [('regcontrols.dashboard', _('Dashboard')), ('regcontrols.controls', _('Controls')),
                          ('regcontrols.findings', _('Findings')), ('regcontrols.evidence_list', _('Evidence')),
-                         ('regcontrols.alerts', _('Alerts')), ('regcontrols.parameters', _('Parameters'))] %}
+                         ('regcontrols.alerts', _('Alerts')), ('regcontrols.parameters', _('Parameters')),
+                         ('regcontrols.library_home', _('Library')), ('regcontrols.packs_list', _('Content packs'))] %}
     <li class="nav-item"><a class="nav-link {{ 'active' if active == ep }}" href="{{ url_for(ep) }}">{{ label }}</a></li>
     {% endfor %}
 </ul>

@@ -257,11 +257,26 @@ class User(UserMixin):
         return True, "Password is valid"
 
     def _get_perm(self, module):
-        """Helper to get permission for a module, admin gets 'edit'."""
+        """Helper to get permission for a module, admin gets 'edit'.
+
+        Core modules keep a perm_<module> column on users; modules added by
+        optional content packs are stored in user_module_permissions."""
         if self.is_admin():
             return 'edit'
         attr = f'perm_{module}'
-        return getattr(self, attr, 'none')
+        if hasattr(self, attr):
+            return getattr(self, attr) or 'none'
+        return self.module_permissions().get(module, 'none')
+
+    def module_permissions(self):
+        """Pack module permissions ({module: level}), loaded once per user object."""
+        if getattr(self, '_module_perms', None) is None:
+            try:
+                from regcontrols.packs import get_module_perms
+                self._module_perms = get_module_perms(self.id)
+            except Exception:
+                self._module_perms = {}
+        return self._module_perms
 
     def can_view(self, module):
         """Check if user can view a specific module."""
@@ -275,7 +290,7 @@ class User(UserMixin):
         """Module-level administration (e.g. perm_regcontrols = 'admin': approve
         regulatory parameters, edit the control library). Only modules that
         offer an 'admin' level grant it; site admins always have it."""
-        return self.is_admin() or getattr(self, f'perm_{module}', 'none') == 'admin'
+        return self.is_admin() or self._get_perm(module) == 'admin'
     
     def has_permission(self, module, level='view'):
         """Convenience wrapper for permission checks."""

@@ -623,12 +623,12 @@
     </li>
     {% endif %}
 
-    {# ======== Regulatory Compliance (FRA) — 6 links ======== #}
+    {# ======== Compliance Controls — generic control framework (regcontrols) ======== #}
     {% if current_user.can_view('regcontrols') %}
     <li class="cnx-nav__item" data-area="regcontrols">
       <button class="cnx-nav__toggle" type="button" aria-expanded="false">
         <i class="bi bi-shield-check cnx-nav__icon"></i>
-        <span class="cnx-nav__label">{{ _('Regulatory Compliance (FRA)') }}</span>
+        <span class="cnx-nav__label">{{ _('Compliance Controls') }}</span>
         <i class="bi bi-chevron-down cnx-nav__caret"></i>
       </button>
       <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
@@ -639,7 +639,7 @@
           </li>
           <li class="cnx-nav__subitem">
             <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('regcontrols.controls') }}">
-              <span class="cnx-nav__label">{{ _('FRA Control Library') }}</span>
+              <span class="cnx-nav__label">{{ _('Controls') }}</span>
             </a>
           </li>
           <li class="cnx-nav__subitem">
@@ -662,9 +662,39 @@
               <span class="cnx-nav__label">{{ _('Regulatory Parameters') }}</span>
             </a>
           </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('regcontrols.library_home') }}">
+              <span class="cnx-nav__label">{{ _('Frameworks & Library') }}</span>
+            </a>
+          </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('regcontrols.packs_list') }}">
+              <span class="cnx-nav__label">{{ _('Content packs') }}</span>
+            </a>
+          </li>
       </ul></div>
     </li>
     {% endif %}
+
+    {# ======== Enabled content packs (generic: menus come from each pack's manifest) ======== #}
+    {% for pm in rc_pack_menus() %}
+    <li class="cnx-nav__item" data-area="pack-{{ pm.code }}">
+      <button class="cnx-nav__toggle" type="button" aria-expanded="false">
+        <i class="bi {{ pm.icon }} cnx-nav__icon"></i>
+        <span class="cnx-nav__label">{{ rc_loc(pm.title_en, pm.title_ar) }}</span>
+        <i class="bi bi-chevron-down cnx-nav__caret"></i>
+      </button>
+      <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
+        {% for ep, en, ar in pm.items %}
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for(ep) }}">
+              <span class="cnx-nav__label">{{ rc_loc(en, ar) }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul></div>
+    </li>
+    {% endfor %}
 
     {# ======== Risk & Audit — 15 links ======== #}
     {% if (current_user.can_view('risk_management')) or (current_user.can_view('internal_audit')) %}

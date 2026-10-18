@@ -48,9 +48,9 @@ def registry():
     engine.CHECKS.update(saved)
 
 
-def control(code='FRA-017', ctype='automated', licences=None):
+def control(code='CTRL-017', ctype='automated', licences=None, check_key='demo.fee_cap'):
     return {'id': 1, 'control_code': code, 'control_type': ctype, 'frequency': 'daily',
-            'licence_types': licences or ['all']}
+            'licence_types': licences or ['all'], 'check_key': check_key}
 
 
 def ctx(c=None, licence='microfinance', db=None):
@@ -81,34 +81,35 @@ class TestGetParam:
 
 # ---------------------------------------------------------------- registry
 def test_register_as_decorator_and_call(registry):
-    @engine.register_check('fra-017', name='cap')
+    @engine.register_check('demo.fee_cap', name='cap')
     def chk(ctx):
         return True
 
-    assert 'FRA-017' in registry and registry['FRA-017'].name == 'cap'
-    engine.register_check('FRA-018', lambda ctx: 'pass')
-    assert 'FRA-018' in registry
+    assert 'demo.fee_cap' in registry and registry['demo.fee_cap'].name == 'cap'
+    engine.register_check('demo.tiers', lambda ctx: 'pass')
+    assert 'demo.tiers' in registry
+    assert ('demo.fee_cap', 'cap', __name__) in engine.check_catalogue()
 
 
 def test_duplicate_registration_is_refused(registry):
-    engine.register_check('FRA-017', lambda ctx: True)
+    engine.register_check('demo.fee_cap', lambda ctx: True)
     with pytest.raises(ValueError):
-        engine.register_check('FRA-017', lambda ctx: False)
-    engine.register_check('FRA-017', lambda ctx: False, replace=True)
+        engine.register_check('demo.fee_cap', lambda ctx: False)
+    engine.register_check('demo.fee_cap', lambda ctx: False, replace=True)
 
 
 def test_re_registering_same_function_is_harmless(registry):
     def chk(ctx):
         return True
-    engine.register_check('FRA-017', chk)
-    engine.register_check('FRA-017', chk)
+    engine.register_check('demo.fee_cap', chk)
+    engine.register_check('demo.fee_cap', chk)
 
 
 # ---------------------------------------------------------------- execute_check
 def test_check_reads_parameter_and_fails(registry):
     loans = [{'id': 10, 'fee_pct': 2.0}, {'id': 11, 'fee_pct': 4.0}]
 
-    @engine.register_check('FRA-017')
+    @engine.register_check('demo.fee_cap')
     def cap(ctx):
         limit = ctx.param('lending.admin_fee_cap_pct')
         bad = [{'table': 'loans', 'id': l['id']} for l in loans if l['fee_pct'] > limit]
@@ -120,49 +121,75 @@ def test_check_reads_parameter_and_fails(registry):
 
 
 def test_crashing_check_becomes_error(registry):
-    engine.register_check('FRA-017', lambda ctx: 1 / 0)
+    engine.register_check('demo.fee_cap', lambda ctx: 1 / 0)
     res, _ = engine.execute_check(control(), ctx())
     assert res.status == 'error' and 'ZeroDivisionError' in res.summary
 
 
 def test_unset_parameter_becomes_error_with_message(registry):
-    engine.register_check('FRA-001', lambda ctx: ctx.param('capital.min_paid_up'))
-    res, _ = engine.execute_check(control('FRA-001'), ctx())
+    engine.register_check('demo.capital', lambda ctx: ctx.param('capital.min_paid_up'))
+    res, _ = engine.execute_check(control('CTRL-001', check_key='demo.capital'), ctx())
     assert res.status == 'error' and 'capital.min_paid_up' in res.summary
     assert res.details.get('parameter_error') is True
 
 
 def test_not_applicable_to_licence(registry):
-    engine.register_check('FRA-017', lambda ctx: False)
+    engine.register_check('demo.fee_cap', lambda ctx: False)
     res, _ = engine.execute_check(control(licences=['microfinance']), ctx(licence='leasing'))
     assert res.status == 'not_applicable'
 
 
 def test_evidence_fallback_and_no_check(registry):
-    ev_ctrl = control('FRA-069', ctype='evidence')
+    ev_ctrl = control('CTRL-069', ctype='evidence', check_key=None)
     res, name = engine.execute_check(ev_ctrl, ctx(ev_ctrl), evidence_items=[])
     assert (res.status, name) == ('fail', 'evidence')
     approved = [{'status': 'approved', 'valid_to': date(2027, 1, 1), 'valid_from': None}]
     assert engine.execute_check(ev_ctrl, ctx(ev_ctrl), approved)[0].status == 'pass'
-    wf = control('FRA-030', ctype='workflow')
+    wf = control('CTRL-030', ctype='workflow', check_key=None)
     assert engine.execute_check(wf, ctx(wf), [])[0].status == 'no_check'
     # A workflow control that does have evidence uploaded is judged on it.
     assert engine.execute_check(wf, ctx(wf), approved)[0].status == 'pass'
 
 
 def test_check_returning_check_result(registry):
-    engine.register_check('FRA-017', lambda ctx: CheckResult('warning', 'close to cap'))
+    engine.register_check('demo.fee_cap', lambda ctx: CheckResult('warning', 'close to cap'))
     assert engine.execute_check(control(), ctx())[0].status == 'warning'
 
 
 def test_has_runnable_check(registry):
-    engine.register_check('FRA-017', lambda ctx: True)
+    engine.register_check('demo.fee_cap', lambda ctx: True)
     assert engine.has_runnable_check(control())
-    assert engine.has_runnable_check(control('FRA-069', 'evidence'))
-    assert not engine.has_runnable_check(control('FRA-030', 'workflow'))
-    assert engine.has_runnable_check(control('FRA-030', 'workflow'), evidence_count=1)
+    assert engine.has_runnable_check(control('CTRL-069', 'evidence', check_key=None))
+    assert not engine.has_runnable_check(control('CTRL-030', 'workflow', check_key=None))
+    assert engine.has_runnable_check(control('CTRL-030', 'workflow', check_key=None), evidence_count=1)
+
+
+def test_bound_check_missing_is_an_error_not_a_pass(registry):
+    res, key = engine.execute_check(control(check_key='pack.not_loaded'), ctx())
+    assert res.status == 'error' and 'pack.not_loaded' in res.summary and key == 'pack.not_loaded'
+
+
+def test_one_check_serves_controls_of_several_frameworks(registry):
+    engine.register_check('core.shared', lambda ctx: ctx.fail(ctx.control['control_code']))
+    ca, cb = control('PSP-12', check_key='core.shared'), control('NBFI-34', check_key='core.shared')
+    a = engine.execute_check(ca, ctx(ca))[0]
+    b = engine.execute_check(cb, ctx(cb))[0]
+    assert (a.summary, b.summary) == ('PSP-12', 'NBFI-34')
 
 
 def test_builtin_checks_register():
-    engine.load_checks(force=True)
-    assert 'FRA-079' in engine.CHECKS
+    import importlib
+    import regcontrols.builtin_checks as bc
+    engine.unregister_check('core.findings_not_repeated')
+    importlib.reload(bc)
+    assert 'core.findings_not_repeated' in engine.CHECKS
+
+
+def test_sweeps_registration_is_idempotent():
+    def sweep():
+        return 'ok'
+    before = len(engine.SWEEPS)
+    engine.register_sweep(sweep, pack='demo')
+    engine.register_sweep(sweep, pack='demo')
+    assert len(engine.SWEEPS) == before + 1
+    engine.SWEEPS.pop()

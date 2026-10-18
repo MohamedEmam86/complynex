@@ -496,7 +496,7 @@ def findings_csv_template():
     out = io.StringIO()
     w = csv.writer(out)
     w.writerow(FINDING_CSV_COLUMNS)
-    w.writerow(['Example: unusual-transactions register incomplete', 'Describe the observation',
-                'high', 'regulator', 'Inspection memo ref', 'aml_cft', '2026-01-15', '2026-03-31',
-                'FRA-035;FRA-036', 'owner@example.com'])
+    w.writerow(['Example: register of unusual transactions incomplete', 'Describe the observation',
+                'high', 'regulator', 'Inspection letter ref', '', '2026-01-15', '2026-03-31',
+                'CTRL-001;CTRL-002', 'owner@example.com'])
     return out.getvalue()

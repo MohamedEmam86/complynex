@@ -58,6 +58,7 @@ def main():
             run = engine.run_control(args.control, triggered_by='schedule')
             log.info('%s: %s — %s', args.control, run['status'], run['summary'])
             return 0
+        log.info('data sweeps: %s', engine.run_sweeps())
         if not args.sweeps:
             log.info('due controls: %s', engine.run_due())
         log.info('evidence (expired, expiring): %s', evidence.sweep_expiry())

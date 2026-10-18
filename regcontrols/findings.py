@@ -16,7 +16,7 @@
 # =============================================================================
 
 """
-Findings & corrective actions (covers FRA-079).
+Findings & corrective actions (inspection / audit / self-identified findings).
 
 A finding comes from the regulator, internal / external audit, self-
 identification or a failing control. It is linked to one or more controls,
@@ -432,7 +432,7 @@ _IA_SEVERITY = {'CRITICAL': 'critical', 'HIGH': 'high', 'MEDIUM': 'medium', 'LOW
 
 def import_from_internal_audit(created_by, db=None):
     """Bring open internal-audit findings into the tracker (once each).
-    A finding whose linked ERM control is mapped to an FRA control
+    A finding whose linked ERM control is mapped to a compliance control
     (rc_controls.erm_control_id) is linked to that control."""
     db = db or get_db()
     rows = _rows(db, """

@@ -14,7 +14,7 @@
             <div class="col-md-4"><label class="form-label">{{ _('Source reference') }}</label>
                 <input name="source_ref" class="form-control" maxlength="200" value="{{ form.get('source_ref', '') }}" placeholder="{{ _('e.g. inspection letter number') }}"></div>
             <div class="col-md-4"><label class="form-label">{{ _('Linked controls') }}</label>
-                <input name="control_codes" class="form-control" value="{{ form.get('control_codes', '') }}" placeholder="FRA-035; FRA-036">
+                <input name="control_codes" class="form-control" value="{{ form.get('control_codes', '') }}" placeholder="CTRL-001; CTRL-002">
                 <div class="form-text">{{ _('Needed for verification and repeat detection.') }}</div></div>
             <div class="col-md-2"><label class="form-label">{{ _('Severity') }}</label>
                 <select name="severity" class="form-select">{% for s in severities %}<option value="{{ s }}" {{ 'selected' if form.get('severity', 'medium') == s }}>{{ rc_label('CRITICALITY', s) }}</option>{% endfor %}</select></div>

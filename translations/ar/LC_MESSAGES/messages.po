@@ -23128,18 +23128,14 @@ msgstr "فشل تنزيل المرفق."
 # ============================================
 # WHISTLEBLOWING FORM TRANSLATIONS
 
-# --- regcontrols (FRA regulatory control framework) ---
+# --- regcontrols (generic compliance control framework) ---
 msgid "Admin (approve parameters, edit library)"
 msgstr "مسؤول (اعتماد المعايير وتعديل المكتبة)"
 
-msgid "Regulatory Compliance (FRA)"
-msgstr "الالتزام الرقابي (الهيئة العامة للرقابة المالية)"
 
 msgid "Compliance Dashboard"
 msgstr "لوحة الالتزام"
 
-msgid "FRA Control Library"
-msgstr "مكتبة ضوابط الهيئة"
 
 msgid "Findings & Corrective Actions"
 msgstr "الملاحظات والإجراءات التصحيحية"
@@ -23186,8 +23182,6 @@ msgstr "منتهي الصلاحية"
 msgid "Pending review"
 msgstr "بانتظار المراجعة"
 
-msgid "Regulator (FRA)"
-msgstr "الجهة الرقابية (الهيئة)"
 
 msgid "Internal audit"
 msgstr "المراجعة الداخلية"
@@ -23324,8 +23318,6 @@ msgstr "الفحص الآلي"
 msgid "Generic evidence check"
 msgstr "فحص الأدلة العام"
 
-msgid "None yet — will be added by the owning module"
-msgstr "لا يوجد بعد — ستضيفه الوحدة المختصة"
 
 msgid "Last run"
 msgstr "آخر تشغيل"
@@ -23723,8 +23715,6 @@ msgstr "يُستخدم للإصدار الجديد فقط."
 msgid "Effective to"
 msgstr "ساري حتى"
 
-msgid "e.g. FRA Board Decree no. / year, article"
-msgstr "مثال: قرار مجلس إدارة الهيئة رقم / سنة، المادة"
 
 msgid "Description (English)"
 msgstr "الوصف (بالإنجليزية)"
@@ -23744,8 +23734,6 @@ msgstr "سبب التعديل"
 msgid "Submit for approval"
 msgstr "إرسال للاعتماد"
 
-msgid "Every regulatory limit used by the controls is read from this list. Changes need a reason and are applied only after a second administrator approves them. Values marked \"Needs review\" must be confirmed by Compliance against the current FRA decree."
-msgstr "تُقرأ كل الحدود الرقابية التي تستخدمها الضوابط من هذه القائمة. يتطلب كل تعديل سببًا ولا يُطبق إلا بعد اعتماد مسؤول ثانٍ. ويجب أن تؤكد إدارة الالتزام القيم المميزة بـ \"يحتاج مراجعة\" مقابل قرار الهيئة الساري."
 
 msgid "Changes waiting for approval"
 msgstr "تعديلات بانتظار الاعتماد"
@@ -23783,8 +23771,6 @@ msgstr "غير سارٍ"
 msgid "No parameters match."
 msgstr "لا توجد معايير مطابقة."
 
-msgid "Our FRA licence type"
-msgstr "نوع ترخيصنا من الهيئة"
 
 msgid "Selects which licence-specific parameter values the checks use."
 msgstr "يحدد قيم المعايير الخاصة بالترخيص التي تستخدمها الفحوصات."
@@ -24001,6 +23987,241 @@ msgstr "لا يجوز أن يسبق تاريخ نهاية الصلاحية تا�
 
 msgid "invalid parameter key"
 msgstr "مفتاح المعيار غير صحيح"
+
+# --- regcontrols generic core (frameworks, library, packs) ---
+msgid "Unknown check."
+msgstr "فحص غير معروف."
+
+msgid "Test result recorded."
+msgstr "تم تسجيل نتيجة الاختبار."
+
+msgid "Control created. Complete its settings below."
+msgstr "تم إنشاء الضابط. أكمل إعداداته أدناه."
+
+msgid "Framework saved."
+msgstr "تم حفظ الإطار."
+
+msgid "Requirement saved."
+msgstr "تم حفظ المتطلب."
+
+msgid "Saved."
+msgstr "تم الحفظ."
+
+msgid "Pack enabled."
+msgstr "تم تفعيل الحزمة."
+
+msgid "Pack disabled. Its controls are inactive and its pages hidden; its data is kept."
+msgstr "تم إيقاف الحزمة. ضوابطها غير مفعلة وصفحاتها مخفية، وبياناتها محفوظة."
+
+msgid "Library"
+msgstr "المكتبة"
+
+msgid "Content packs"
+msgstr "حزم المحتوى"
+
+msgid "not available (pack disabled?)"
+msgstr "غير متاح (هل الحزمة موقوفة؟)"
+
+msgid "None — evidence or manual test"
+msgstr "لا يوجد — دليل أو اختبار يدوي"
+
+msgid "Content pack"
+msgstr "حزمة المحتوى"
+
+msgid "Requirements satisfied"
+msgstr "المتطلبات المستوفاة"
+
+msgid "Unlink"
+msgstr "إلغاء الربط"
+
+msgid "Not mapped to any requirement yet."
+msgstr "غير مرتبط بأي متطلب بعد."
+
+msgid "Map"
+msgstr "ربط"
+
+msgid "Record a manual test"
+msgstr "تسجيل اختبار يدوي"
+
+msgid "How was it tested? Sample, period, result"
+msgstr "كيف تم الاختبار؟ العينة والفترة والنتيجة"
+
+msgid "Save test result"
+msgstr "حفظ نتيجة الاختبار"
+
+msgid "A failed test raises an alert and reopens closed findings, like an automated check."
+msgstr "الاختبار الفاشل يصدر تنبيهًا ويعيد فتح الملاحظات المغلقة، مثل الفحص الآلي."
+
+msgid "Control type"
+msgstr "نوع الضابط"
+
+msgid "None — tested by evidence or manual test"
+msgstr "لا يوجد — يُختبر بالأدلة أو اختبار يدوي"
+
+msgid "not available"
+msgstr "غير متاح"
+
+msgid "Checks come with the core and with enabled content packs."
+msgstr "تأتي الفحوصات مع النظام الأساسي ومع حزم المحتوى المفعلة."
+
+msgid "New control"
+msgstr "ضابط جديد"
+
+msgid "For requirement"
+msgstr "للمتطلب"
+
+msgid "What the control does"
+msgstr "ما يقوم به الضابط"
+
+msgid "Compliance Controls"
+msgstr "ضوابط الالتزام"
+
+msgid "Frameworks"
+msgstr "الأطر"
+
+msgid "Requirements"
+msgstr "المتطلبات"
+
+msgid "No framework yet. Add one in the Library, or enable a content pack."
+msgstr "لا يوجد إطار بعد. أضف إطارًا من المكتبة أو فعّل حزمة محتوى."
+
+msgid "No regulator"
+msgstr "بدون جهة رقابية"
+
+msgid "requirements mapped to controls"
+msgstr "متطلبات مرتبطة بضوابط"
+
+msgid "No control"
+msgstr "بدون ضابط"
+
+msgid "Add control"
+msgstr "إضافة ضابط"
+
+msgid "No requirements yet."
+msgstr "لا توجد متطلبات بعد."
+
+msgid "Add a requirement"
+msgstr "إضافة متطلب"
+
+msgid "Ref (e.g. Art. 12)"
+msgstr "المرجع (مثل المادة 12)"
+
+msgid "Requirement text (English)"
+msgstr "نص المتطلب (بالإنجليزية)"
+
+msgid "Requirement text (Arabic)"
+msgstr "نص المتطلب (بالعربية)"
+
+msgid "Edit framework"
+msgstr "تعديل الإطار"
+
+msgid "New framework"
+msgstr "إطار جديد"
+
+msgid "Name (English)"
+msgstr "الاسم (بالإنجليزية)"
+
+msgid "Name (Arabic)"
+msgstr "الاسم (بالعربية)"
+
+msgid "Jurisdiction"
+msgstr "الولاية القضائية"
+
+msgid "Source document / legal basis"
+msgstr "المستند المصدر / الأساس القانوني"
+
+msgid "Frameworks & Library"
+msgstr "الأطر والمكتبة"
+
+msgid "Any regulator, regulation or standard is set up here as data: a framework with its requirements, mapped to controls. Content packs install ready-made frameworks; you can also build your own."
+msgstr "تُعرَّف هنا أي جهة رقابية أو لائحة أو معيار كبيانات: إطار بمتطلباته المرتبطة بالضوابط. تثبّت حزم المحتوى أطرًا جاهزة، ويمكنك أيضًا بناء إطارك الخاص."
+
+msgid "custom"
+msgstr "مخصص"
+
+msgid "No framework yet. Add one, or enable a content pack."
+msgstr "لا يوجد إطار بعد. أضف إطارًا أو فعّل حزمة محتوى."
+
+msgid "Regulators"
+msgstr "الجهات الرقابية"
+
+msgid "Areas"
+msgstr "المجالات"
+
+msgid "Owner roles"
+msgstr "أدوار المسؤولين"
+
+msgid "Code (lower case)"
+msgstr "الرمز (حروف صغيرة)"
+
+msgid "A content pack adds ready-made content for one regulator or sector: its framework and requirements, controls, parameters and, where needed, sector modules with automated checks. The core works without any pack. Disabling a pack switches its controls off and hides its pages; its data is kept and comes back when the pack is enabled again."
+msgstr "تضيف حزمة المحتوى محتوى جاهزًا لجهة رقابية أو قطاع: الإطار والمتطلبات والضوابط والمعايير، وعند الحاجة وحدات قطاعية بفحوص آلية. يعمل النظام الأساسي دون أي حزمة. إيقاف الحزمة يوقف ضوابطها ويخفي صفحاتها، وتبقى بياناتها وتعود عند إعادة التفعيل."
+
+msgid "version"
+msgstr "الإصدار"
+
+msgid "installed"
+msgstr "تم التثبيت"
+
+msgid "Automated checks from"
+msgstr "الفحوص الآلية من"
+
+msgid "Module permissions"
+msgstr "صلاحيات الوحدات"
+
+msgid "Disable this pack? Its controls will be switched off."
+msgstr "إيقاف هذه الحزمة؟ سيتم إيقاف ضوابطها."
+
+msgid "Enable this pack? Its content will be installed (existing edits are kept)."
+msgstr "تفعيل هذه الحزمة؟ سيتم تثبيت محتواها (مع الاحتفاظ بالتعديلات الحالية)."
+
+msgid "Re-install / update content"
+msgstr "إعادة التثبيت / تحديث المحتوى"
+
+msgid "No content packs are installed on this server."
+msgstr "لا توجد حزم محتوى مثبتة على هذا الخادم."
+
+msgid "e.g. decree / circular no., year, article"
+msgstr "مثال: رقم القرار / المنشور، السنة، المادة"
+
+msgid "Every regulatory limit used by the controls is read from this list. Changes need a reason and are applied only after a second administrator approves them. Values marked \"Needs review\" must be confirmed by Compliance against the current regulation."
+msgstr "تُقرأ كل الحدود الرقابية التي تستخدمها الضوابط من هذه القائمة. يتطلب كل تعديل سببًا ولا يُطبق إلا بعد اعتماد مسؤول ثانٍ. ويجب أن تؤكد إدارة الالتزام القيم المميزة بـ \"يحتاج مراجعة\" مقابل اللائحة السارية."
+
+msgid "Our licence type"
+msgstr "نوع ترخيصنا"
+
+msgid "Content pack modules"
+msgstr "وحدات حزم المحتوى"
+
+msgid "code and English name are required"
+msgstr "الرمز والاسم بالإنجليزية إلزاميان"
+
+msgid "regulator name is required"
+msgstr "اسم الجهة الرقابية إلزامي"
+
+msgid "framework code and English name are required"
+msgstr "رمز الإطار واسمه بالإنجليزية إلزاميان"
+
+msgid "requirement reference and English title are required"
+msgstr "مرجع المتطلب وعنوانه بالإنجليزية إلزاميان"
+
+msgid "control code and English title are required"
+msgstr "رمز الضابط وعنوانه بالإنجليزية إلزاميان"
+
+msgid "unknown control type"
+msgstr "نوع ضابط غير معروف"
+
+msgid "a control with this code already exists"
+msgstr "يوجد ضابط بهذا الرمز بالفعل"
+
+msgid "describe how the control was tested"
+msgstr "اشرح كيف تم اختبار الضابط"
+
+msgid "unknown test result"
+msgstr "نتيجة اختبار غير معروفة"
+
+msgid "unknown pack"
+msgstr "حزمة غير معروفة"
 
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"

@@ -230,6 +230,9 @@ def add_user():
 
         try:
             new_user = User.create_user(email, password, first_name, last_name, role, employee_id, department, job_title, manager_id=manager_id, **perms)
+            # Permissions for modules added by optional content packs.
+            from regcontrols.packs import save_module_perms
+            save_module_perms(new_user.id, request.form)
 
             # Authority level: which parts of the organisation this user may
             # see. Set here rather than only on the separate visibility screen,
@@ -504,6 +507,9 @@ def edit_user(id):
             old_screening = getattr(user, 'perm_screening', 'none')
 
             User.update_user(id, **update_data)
+            # Permissions for modules added by optional content packs.
+            from regcontrols.packs import save_module_perms
+            save_module_perms(id, request.form)
 
             from services import org_service as _O
             from database.db import execute_db as _ex

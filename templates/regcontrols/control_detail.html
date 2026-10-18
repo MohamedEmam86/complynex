@@ -98,13 +98,52 @@
                     <dt class="col-5">{{ _('Linked module') }}</dt><dd class="col-7">{{ control.linked_module or '-' }}</dd>
                     <dt class="col-5">{{ _('Licence types') }}</dt><dd class="col-7">{% for l in control.licence_types %}{{ rc_label('LICENCE_TYPES', l) }}{{ ', ' if not loop.last }}{% endfor %}
                         {% if licence_type != 'all' and 'all' not in control.licence_types and licence_type not in control.licence_types %}<span class="badge bg-light text-dark border">{{ _('Not applicable to your licence') }}</span>{% endif %}</dd>
-                    <dt class="col-5">{{ _('Automated check') }}</dt><dd class="col-7">{% if check %}{{ check.name }} <span class="text-muted">({{ check.module }})</span>{% elif control.control_type == 'evidence' %}{{ _('Generic evidence check') }}{% else %}<span class="text-muted">{{ _('None yet — will be added by the owning module') }}</span>{% endif %}</dd>
+                    <dt class="col-5">{{ _('Automated check') }}</dt><dd class="col-7">{% if check %}{{ check.name }} <span class="text-muted">({{ check.module }})</span>{% elif control.check_key %}<span class="text-danger">{{ control.check_key }} — {{ _('not available (pack disabled?)') }}</span>{% elif control.control_type == 'evidence' %}{{ _('Generic evidence check') }}{% else %}<span class="text-muted">{{ _('None — evidence or manual test') }}</span>{% endif %}</dd>
                     <dt class="col-5">{{ _('Last run') }}</dt><dd class="col-7">{{ control.last_run_at.strftime('%Y-%m-%d %H:%M') if control.last_run_at else '-' }}</dd>
                     <dt class="col-5">{{ _('Next scheduled run') }}</dt><dd class="col-7">{{ control.next_run_due.strftime('%Y-%m-%d %H:%M') if control.next_run_due else '-' }}</dd>
                     <dt class="col-5">{{ _('Auto-open case on failure') }}</dt><dd class="col-7">{{ _('Yes') if control.auto_create_case else _('No') }}</dd>
+                    {% if control.pack_code %}<dt class="col-5">{{ _('Content pack') }}</dt><dd class="col-7">{{ control.pack_code }}</dd>{% endif %}
                     {% if erm %}<dt class="col-5">{{ _('ERM control') }}</dt><dd class="col-7">{{ erm.control_code }} — {{ erm.control_name }}</dd>{% endif %}
                 </dl>
             </div></div>
+
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Requirements satisfied') }}</strong></div>
+                <ul class="list-group list-group-flush small">
+                    {% for q in requirements %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <span><a href="{{ url_for('regcontrols.framework_detail', framework_id=q.framework_id) }}"><strong>{{ q.framework_code }}</strong></a> · {{ q.ref_code }} — {{ rc_loc(q.title_en, q.title_ar) }}
+                            {% if q.legal_reference %}<div class="text-muted">{{ q.legal_reference }}</div>{% endif %}</span>
+                        {% if rc_can_admin %}<form method="post" action="{{ url_for('regcontrols.control_map', control_id=control.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="requirement_id" value="{{ q.id }}"><input type="hidden" name="action" value="unlink">
+                            <button class="btn btn-sm btn-link text-danger p-0" title="{{ _('Unlink') }}"><i class="bi bi-x-lg"></i></button></form>{% endif %}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('Not mapped to any requirement yet.') }}</li>
+                    {% endfor %}
+                </ul>
+                {% if rc_can_admin and all_requirements %}
+                <div class="card-body border-top"><form method="post" action="{{ url_for('regcontrols.control_map', control_id=control.id) }}" class="d-flex gap-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="requirement_id" class="form-select form-select-sm">
+                        {% for fw, reqs in all_requirements %}<optgroup label="{{ fw.code }}">{% for q in reqs %}<option value="{{ q.id }}">{{ q.ref_code }} — {{ rc_loc(q.title_en, q.title_ar)|truncate(70) }}</option>{% endfor %}</optgroup>{% endfor %}
+                    </select>
+                    <button class="btn btn-sm btn-outline-primary">{{ _('Map') }}</button></form></div>
+                {% endif %}
+            </div>
+
+            {% if rc_can_edit %}
+            <div class="card mb-3">
+                <div class="card-header"><strong>{{ _('Record a manual test') }}</strong></div>
+                <div class="card-body"><form method="post" action="{{ url_for('regcontrols.control_test', control_id=control.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="status" class="form-select form-select-sm mb-1">{% for s, l in [('pass', _('Pass')), ('warning', _('Warning')), ('fail', _('Fail')), ('not_applicable', _('Not applicable'))] %}<option value="{{ s }}">{{ l }}</option>{% endfor %}</select>
+                    <textarea name="note" class="form-control form-control-sm mb-1" rows="2" placeholder="{{ _('How was it tested? Sample, period, result') }}" required></textarea>
+                    <button class="btn btn-sm btn-outline-primary">{{ _('Save test result') }}</button>
+                    <div class="form-text">{{ _('A failed test raises an alert and reopens closed findings, like an automated check.') }}</div>
+                </form></div>
+            </div>
+            {% endif %}
 
             <div class="card mb-3">
                 <div class="card-header"><strong>{{ _('Regulatory parameters used') }}</strong></div>

@@ -8,7 +8,7 @@
         {% if rc_can_admin %}<a class="btn btn-sm btn-primary" href="{{ url_for('regcontrols.parameter_change') }}"><i class="bi bi-plus-circle me-1"></i>{{ _('New parameter') }}</a>{% endif %}
     </div>
     {{ rc.nav('regcontrols.parameters') }}
-    <p class="small text-muted">{{ _('Every regulatory limit used by the controls is read from this list. Changes need a reason and are applied only after a second administrator approves them. Values marked "Needs review" must be confirmed by Compliance against the current FRA decree.') }}</p>
+    <p class="small text-muted">{{ _('Every regulatory limit used by the controls is read from this list. Changes need a reason and are applied only after a second administrator approves them. Values marked "Needs review" must be confirmed by Compliance against the current regulation.') }}</p>
 
     {% if pending %}
     <div class="card border-warning mb-3">
@@ -74,8 +74,8 @@
     <div class="card"><div class="card-header"><strong>{{ _('Settings') }}</strong></div><div class="card-body">
         <form method="post" action="{{ url_for('regcontrols.settings_save') }}" class="row g-3">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="col-md-4"><label class="form-label">{{ _('Our FRA licence type') }}</label>
-                <select name="fra_licence_type" class="form-select">{% for k in rc_vocab.LICENCE_TYPES %}<option value="{{ k }}" {{ 'selected' if licence_type == k }}>{{ rc_label('LICENCE_TYPES', k) }}</option>{% endfor %}</select>
+            <div class="col-md-4"><label class="form-label">{{ _('Our licence type') }}</label>
+                <select name="rc_licence_type" class="form-select">{% for k in rc_vocab.LICENCE_TYPES %}<option value="{{ k }}" {{ 'selected' if licence_type == k }}>{{ rc_label('LICENCE_TYPES', k) }}</option>{% endfor %}</select>
                 <div class="form-text">{{ _('Selects which licence-specific parameter values the checks use.') }}</div></div>
             {% set head_ids = heads.split(',') %}
             <div class="col-md-8"><label class="form-label">{{ _('Head(s) of Compliance — receive escalations') }}</label>

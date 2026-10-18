@@ -16,8 +16,8 @@
 # =============================================================================
 
 """
-Checks that belong to regcontrols itself. Other modules keep their checks in
-their own package and list it in engine.CHECK_MODULES.
+Generic checks shipped with the core. Any framework can bind its controls to
+them through rc_controls.check_key. Pack-specific checks live in the pack.
 """
 
 from datetime import date
@@ -26,7 +26,7 @@ from .engine import register_check
 from . import logic
 
 
-@register_check('FRA-079', name='Findings remediated and not repeated')
+@register_check('core.findings_not_repeated', name='Findings remediated and not repeated')
 def findings_not_repeated(ctx):
     """Fail while a repeated violation is open; warn while findings are overdue."""
     grace = ctx.param('rc.finding_overdue_grace_days', 0)

@@ -19,6 +19,16 @@
                 <textarea name="test_procedure_en" class="form-control" rows="3">{{ control.test_procedure_en or '' }}</textarea></div>
             <div class="col-md-6"><label class="form-label">{{ _('Test procedure (Arabic)') }}</label>
                 <textarea name="test_procedure_ar" class="form-control" dir="rtl" rows="3">{{ control.test_procedure_ar or '' }}</textarea></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Area') }}</label>
+                <select name="area" class="form-select"><option value="">-</option>{% for k in rc_vocab.AREAS %}<option value="{{ k }}" {{ 'selected' if control.area == k }}>{{ rc_label('AREAS', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><label class="form-label">{{ _('Control type') }}</label>
+                <select name="control_type" class="form-select">{% for k in rc_vocab.CONTROL_TYPES %}<option value="{{ k }}" {{ 'selected' if control.control_type == k }}>{{ rc_label('CONTROL_TYPES', k) }}</option>{% endfor %}</select></div>
+            <div class="col-md-6"><label class="form-label">{{ _('Automated check') }}</label>
+                <select name="check_key" class="form-select"><option value="">{{ _('None — tested by evidence or manual test') }}</option>
+                    {% for key, name, module in checks %}<option value="{{ key }}" {{ 'selected' if control.check_key == key }}>{{ name }} ({{ key }})</option>{% endfor %}
+                    {% if control.check_key and control.check_key not in checks|map(attribute=0)|list %}<option value="{{ control.check_key }}" selected>{{ control.check_key }} — {{ _('not available') }}</option>{% endif %}
+                </select>
+                <div class="form-text">{{ _('Checks come with the core and with enabled content packs.') }}</div></div>
             <div class="col-md-3"><label class="form-label">{{ _('Frequency') }}</label>
                 <select name="frequency" class="form-select">{% for k in rc_vocab.FREQUENCIES %}<option value="{{ k }}" {{ 'selected' if control.frequency == k }}>{{ rc_label('FREQUENCIES', k) }}</option>{% endfor %}</select></div>
             <div class="col-md-3"><label class="form-label">{{ _('Criticality') }}</label>

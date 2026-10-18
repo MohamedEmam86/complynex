@@ -32,7 +32,7 @@
             <div class="col-md-3"><label class="form-label">{{ _('Effective from') }}</label><input type="date" name="effective_from" class="form-control" value="{{ form.get('effective_from') or '' }}">
                 {% if p %}<div class="form-text">{{ _('Only used for a new version.') }}</div>{% endif %}</div>
             <div class="col-md-3"><label class="form-label">{{ _('Effective to') }}</label><input type="date" name="effective_to" class="form-control" value="{{ form.get('effective_to') or '' }}"></div>
-            <div class="col-md-12"><label class="form-label">{{ _('Legal reference') }}</label><input name="legal_reference" class="form-control" value="{{ form.get('legal_reference') or '' }}" placeholder="{{ _('e.g. FRA Board Decree no. / year, article') }}"></div>
+            <div class="col-md-12"><label class="form-label">{{ _('Legal reference') }}</label><input name="legal_reference" class="form-control" value="{{ form.get('legal_reference') or '' }}" placeholder="{{ _('e.g. decree / circular no., year, article') }}"></div>
             <div class="col-md-6"><label class="form-label">{{ _('Description (English)') }}</label><input name="description_en" class="form-control" value="{{ form.get('description_en') or '' }}"></div>
             <div class="col-md-6"><label class="form-label">{{ _('Description (Arabic)') }}</label><input name="description_ar" dir="rtl" class="form-control" value="{{ form.get('description_ar') or '' }}"></div>
             <div class="col-md-3"><div class="form-check mt-2"><input type="checkbox" class="form-check-input" name="needs_review" id="needs_review" {{ 'checked' if form.get('needs_review') }}>

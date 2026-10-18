@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 {% import 'regcontrols/_macros.html' as rc with context %}
-{% block title %}{{ _('Regulatory Compliance (FRA)') }} - ComplyNex CMS{% endblock %}
+{% block title %}{{ _('Compliance Controls') }} - ComplyNex CMS{% endblock %}
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-        <h3 class="mb-0"><i class="bi bi-shield-check me-2"></i>{{ _('Regulatory Compliance (FRA)') }}</h3>
+        <h3 class="mb-0"><i class="bi bi-shield-check me-2"></i>{{ _('Compliance Controls') }}</h3>
         <div class="d-flex gap-2">
             <span class="badge bg-light text-dark border align-self-center">{{ _('Licence type') }}: {{ rc_label('LICENCE_TYPES', licence_type) }}</span>
             {% if rc_can_admin %}
@@ -44,6 +44,24 @@
                 <h2 class="mb-0">{{ open_alerts }}</h2><p class="text-muted small mb-0">{{ _('Open alerts') }}</p>
             </div></div></a>
         </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between"><strong>{{ _('Frameworks') }}</strong>
+            <a class="small" href="{{ url_for('regcontrols.library_home') }}">{{ _('Library') }}</a></div>
+        <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+            <thead><tr><th>{{ _('Framework') }}</th><th>{{ _('Regulator') }}</th><th class="text-center">{{ _('Requirements') }}</th>
+                <th class="text-center">{{ _('Controls') }}</th><th class="text-center text-success">{{ _('Pass') }}</th>
+                <th class="text-center text-danger">{{ _('Fail') }}</th><th class="text-center text-muted">{{ _('Not run yet') }}</th></tr></thead>
+            <tbody>{% for fw in frameworks %}
+            <tr><td><a href="{{ url_for('regcontrols.framework_detail', framework_id=fw.id) }}"><strong>{{ fw.code }}</strong> {{ rc_loc(fw.name_en, fw.name_ar) }}</a></td>
+                <td class="small">{{ rc_loc(fw.regulator_name, fw.regulator_name_ar) or '-' }}</td>
+                <td class="text-center">{{ fw.requirement_count }}</td><td class="text-center"><a href="{{ url_for('regcontrols.controls', framework=fw.id) }}">{{ fw.control_count }}</a></td>
+                <td class="text-center">{{ fw.passing }}</td><td class="text-center fw-bold {{ 'text-danger' if fw.failing }}">{{ fw.failing }}</td><td class="text-center text-muted">{{ fw.not_run }}</td></tr>
+            {% else %}
+            <tr><td colspan="7" class="text-muted small">{{ _('No framework yet. Add one in the Library, or enable a content pack.') }}
+                <a href="{{ url_for('regcontrols.packs_list') }}">{{ _('Content packs') }}</a></td></tr>
+            {% endfor %}</tbody></table></div>
     </div>
 
     <div class="row g-3 mb-4">

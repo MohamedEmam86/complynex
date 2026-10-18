@@ -20,20 +20,21 @@ Control engine: a registry of automated checks plus the code that runs them,
 stores every run in rc_control_runs and hands the result to the alert and
 findings services.
 
-Any module registers a check for a control code:
+Checks are registered under a CHECK KEY, and a control is bound to a check
+through its check_key column (data, editable in the UI). The same check can
+therefore test controls of different frameworks:
 
     from regcontrols.api import register_check
 
-    @register_check('FRA-017', name='Admin fee within cap')
+    @register_check('lending.admin_fee_cap', name='Admin fee within cap')
     def admin_fee_cap(ctx):
         cap = ctx.param('lending.admin_fee_cap_pct')
-        bad = [...]
-        return ctx.fail(f'{len(bad)} loan(s) over the cap', affected=bad) if bad else ctx.ok('All loans within cap')
+        ...
 
-and adds its module path to CHECK_MODULES so the scheduler (a separate
-process) imports it. Controls without a registered check fall back to the
-generic evidence check when they are evidence-based; otherwise their run is
-recorded as 'no_check' only when someone runs them by hand.
+Core checks live in CORE_CHECK_MODULES; a content pack lists its own in its
+Pack.check_modules, which are loaded only while the pack is enabled. Controls
+without a bound check fall back to the generic evidence check when they are
+evidence-based; a person can also record a manual test result.
 
 Scheduling: scripts/regcontrols_run.py (cron) calls run_due() and the
 sweeps; the UI "Run now" button enqueues job_run_control() on the existing
@@ -56,7 +57,8 @@ logger = logging.getLogger(__name__)
 
 # Modules imported by load_checks(). Later workstreams append their own
 # (e.g. 'lending.checks', 'prudential.checks') — keep this the only list.
-CHECK_MODULES = [
+# Generic checks shipped with the core. Packs declare theirs in Pack.check_modules.
+CORE_CHECK_MODULES = [
     'regcontrols.builtin_checks',
 ]
 
@@ -73,17 +75,50 @@ class CheckSpec:
 
 
 CHECKS = {}
+SWEEPS = []
 _loaded = False
 
 
-def register_check(control_id, fn=None, *, name=None, description=None, replace=False):
-    """Register `fn(ctx)` as the automated check for a control code.
+def register_sweep(fn=None, *, pack=None):
+    """Register `fn()` to run before scheduled checks — for data refreshes that
+    write (recompute derived data, open remediation findings, register AML
+    candidates). Checks themselves stay read-only. A sweep that belongs to a
+    pack runs only while that pack is enabled."""
+    def _reg(f):
+        if all(f is not x for x, _ in SWEEPS):
+            SWEEPS.append((f, pack))
+        return f
+    return _reg(fn) if fn is not None else _reg
+
+
+def run_sweeps():
+    from . import packs
+    load_checks()
+    done = {}
+    for fn, pack in SWEEPS:
+        name = f'{fn.__module__}.{fn.__name__}'
+        if pack and not packs.is_enabled(pack):
+            continue
+        try:
+            done[name] = fn()
+        except Exception:
+            logger.exception('regcontrols: sweep %s failed', name)
+            try:
+                get_db().rollback()
+            except Exception:
+                pass
+            done[name] = 'failed'
+    return done
+
+
+def register_check(check_key, fn=None, *, name=None, description=None, replace=False):
+    """Register `fn(ctx)` under a check key (e.g. 'aml.watchlist_freshness').
 
     Usable as a plain call or as a decorator. Registering a second, different
-    function for the same control raises unless replace=True — two modules
-    silently fighting over one control would make results meaningless.
+    function under the same key raises unless replace=True — two modules
+    silently fighting over one key would make results meaningless.
     """
-    code = str(control_id).strip().upper()
+    code = str(check_key).strip()
 
     def _register(f):
         existing = CHECKS.get(code)
@@ -96,15 +131,27 @@ def register_check(control_id, fn=None, *, name=None, description=None, replace=
     return _register(fn) if fn is not None else _register
 
 
-def unregister_check(control_id):
-    CHECKS.pop(str(control_id).strip().upper(), None)
+def unregister_check(check_key):
+    CHECKS.pop(str(check_key).strip(), None)
+
+
+def check_catalogue():
+    """Registered checks for the control form's dropdown: [(key, name, module)]."""
+    load_checks()
+    return sorted((k, s.name, s.module) for k, s in CHECKS.items())
 
 
 def load_checks(force=False):
     global _loaded
     if _loaded and not force:
         return
-    for mod in CHECK_MODULES:
+    modules = list(CORE_CHECK_MODULES)
+    try:
+        from . import packs
+        modules += [m for p in packs.enabled_packs() for m in p.check_modules]
+    except Exception:
+        logger.exception('regcontrols: could not read enabled packs')
+    for mod in modules:
         try:
             importlib.import_module(mod)
         except Exception:
@@ -114,10 +161,11 @@ def load_checks(force=False):
 
 # ------------------------------------------------------------------ context
 def company_licence_type():
-    """The licence this installation runs under (Settings 'fra_licence_type')."""
+    """The licence this installation operates under (Settings 'rc_licence_type'),
+    used to pick licence-specific parameter values."""
     try:
         from models.settings import Settings
-        return Settings.get('fra_licence_type', 'all') or 'all'
+        return Settings.get('rc_licence_type', 'all') or 'all'
     except Exception:
         return 'all'
 
@@ -165,7 +213,10 @@ def execute_check(control, ctx, evidence_items=None):
     code = control['control_code']
     if not applies_to_licence(control, ctx.licence_type):
         return CheckResult('not_applicable', f'Not applicable to licence type {ctx.licence_type}'), None
-    spec = CHECKS.get(code)
+    key = control.get('check_key')
+    spec = CHECKS.get(key) if key else None
+    if key and not spec:
+        return CheckResult('error', f'Check "{key}" is not available (its pack may be disabled).'), key
     if spec:
         try:
             return logic.normalise_result(spec.fn(ctx)), spec.name
@@ -184,7 +235,7 @@ def execute_check(control, ctx, evidence_items=None):
 
 
 def has_runnable_check(control, evidence_count=0):
-    return (control['control_code'] in CHECKS or control.get('control_type') == 'evidence'
+    return (control.get('check_key') in CHECKS or control.get('control_type') == 'evidence'
             or evidence_count > 0)
 
 
@@ -279,6 +330,38 @@ def run_due(now=None, db=None):
     return counts
 
 
+def record_manual_test(control, status, note, user_id, db=None):
+    """Store a person's test result for a control (e.g. a walkthrough or
+    sample test) as a run, with the same alert / recurrence consequences as
+    an automated result."""
+    db = db or get_db()
+    control = get_control(control, db)
+    if not control:
+        raise ValueError('control not found')
+    if status not in ('pass', 'warning', 'fail', 'not_applicable'):
+        raise ValueError('unknown test result')
+    if not (note or '').strip():
+        raise ValueError('describe how the control was tested')
+    now = datetime.now()
+    run_id = db.execute("""
+        INSERT INTO rc_control_runs (control_id, status, summary, check_name, triggered_by, run_by, started_at, finished_at)
+        VALUES (%s,%s,%s,'manual test','manual_test',%s,%s,%s) RETURNING id""",
+                        (control['id'], status, note.strip()[:4000], user_id, now, now)).fetchone()['id']
+    db.execute("""UPDATE rc_controls SET last_run_id = %s, last_run_at = %s, last_status = %s, next_run_due = %s,
+                  updated_at = %s WHERE id = %s""",
+               (run_id, now, status, logic.next_due(control['frequency'], now), now, control['id']))
+    db.commit()
+    run = dict(db.execute("SELECT * FROM rc_control_runs WHERE id = %s", (run_id,)).fetchone())
+    from . import alerts, findings
+    for hook in (alerts.handle_run, findings.handle_run):
+        try:
+            hook(control, run, db=db)
+        except Exception:
+            logger.exception('regcontrols: post-run hook %s failed for run %s', hook.__name__, run_id)
+            db.rollback()
+    return run
+
+
 def latest_runs(control_id, limit=20, db=None):
     db = db or get_db()
     return [dict(r) for r in db.execute("""
@@ -323,6 +406,7 @@ def job_run_control(control_code, user_id=None):
 def job_run_due():
     with _app().app_context():
         from . import alerts, evidence, findings
+        run_sweeps()
         run_due()
         evidence.sweep_expiry()
         findings.sweep_overdue()

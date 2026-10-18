@@ -40,7 +40,7 @@ from attachments.service import list_attachments
 
 from . import regcontrols_bp as bp
 from . import alerts as alerts_svc
-from . import engine, evidence as evidence_svc, findings as findings_svc, library, logic, params
+from . import catalog, engine, evidence as evidence_svc, findings as findings_svc, logic, packs, params, vocab
 
 
 MODULE = 'regcontrols'
@@ -119,11 +119,46 @@ def _log(action, item_id=None, details=None):
         get_db().rollback()
 
 
+class _Vocab:
+    """Vocabularies for templates: fixed ones from vocab.py, regulator/sector
+    specific ones (areas, licence types, owner roles) from the database,
+    loaded once per request."""
+    CONTROL_TYPES = vocab.CONTROL_TYPES
+    FREQUENCIES = vocab.FREQUENCIES
+    CRITICALITY = vocab.CRITICALITY
+
+    def _db(self, kind):
+        from flask import g
+        cache = g.setdefault('_rc_vocab', {})
+        if kind not in cache:
+            try:
+                cache[kind] = catalog.ref_labels(kind)
+            except Exception:
+                get_db().rollback()
+                cache[kind] = {}
+        return cache[kind]
+
+    @property
+    def AREAS(self):
+        return self._db('areas')
+
+    @property
+    def LICENCE_TYPES(self):
+        return self._db('licence_types')
+
+    @property
+    def OWNER_ROLES(self):
+        return self._db('owner_roles')
+
+
+VOCAB = _Vocab()
+
+
 @bp.app_template_global('rc_label')
-def rc_label(vocab, code):
-    """Localised label from a library vocabulary, e.g. rc_label('AREAS', c.area)."""
+def rc_label(vocab_name, code):
+    """Localised label from a vocabulary, e.g. rc_label('AREAS', c.area)."""
     from flask_babel import get_locale
-    pair = getattr(library, vocab, {}).get(code)
+    pair = getattr(VOCAB, vocab_name, {}).get(code)
     if not pair:
         return (code or '').replace('_', ' ')
     return pair[1] if str(get_locale()).startswith('ar') else pair[0]
@@ -140,11 +175,37 @@ def rc_evidence_state(item, warn_days=30):
     return logic.evidence_state(item, date.today(), warn_days)
 
 
+@bp.app_template_global('rc_pack_menus')
+def rc_pack_menus():
+    """Sidebar groups of enabled content packs for the current user."""
+    try:
+        return packs.menus(current_user) if getattr(current_user, 'is_authenticated', False) else []
+    except Exception:
+        get_db().rollback()
+        return []
+
+
+@bp.app_template_global('rc_pack_permission_modules')
+def rc_pack_permission_modules():
+    try:
+        return packs.permission_modules()
+    except Exception:
+        return []
+
+
+@bp.app_template_global('rc_user_module_perm')
+def rc_user_module_perm(user, module):
+    try:
+        return packs.get_module_perms(user.id).get(module, 'none')
+    except Exception:
+        return 'none'
+
+
 @bp.context_processor
 def _inject():
     if not getattr(current_user, 'is_authenticated', False):
-        return {'rc_vocab': library, 'rc_can_edit': False, 'rc_can_admin': False, 'today': date.today()}
-    return {'rc_vocab': library, 'rc_can_edit': current_user.can_edit(MODULE),
+        return {'rc_vocab': VOCAB, 'rc_can_edit': False, 'rc_can_admin': False, 'today': date.today()}
+    return {'rc_vocab': VOCAB, 'rc_can_edit': current_user.can_edit(MODULE),
             'rc_can_admin': current_user.can_admin_module(MODULE), 'today': date.today()}
 
 
@@ -178,8 +239,16 @@ def dashboard():
     pending_params = db.execute("SELECT count(*) AS n FROM rc_parameter_changes WHERE status = 'pending'").fetchone()['n']
     review_params = db.execute("SELECT count(*) AS n FROM rc_parameters WHERE needs_review AND status = 'active'"
                                ).fetchone()['n']
+    fw_rows = []
+    for fw in catalog.frameworks(active_only=True, db=db):
+        st = [r['last_status'] for r in db.execute("""
+            SELECT DISTINCT c.id, c.last_status FROM rc_controls c JOIN rc_control_requirements cr ON cr.control_id = c.id
+            JOIN rc_requirements q ON q.id = cr.requirement_id WHERE q.framework_id = %s AND c.is_active""",
+                                                           (fw['id'],)).fetchall()]
+        fw_rows.append(dict(fw, passing=st.count('pass'), failing=sum(1 for x in st if x in ('fail', 'error')),
+                            not_run=st.count(None)))
     return render_template(
-        'regcontrols/dashboard.html', controls=controls, status_counts=status_counts, by_area=by_area,
+        'regcontrols/dashboard.html', frameworks=fw_rows, controls=controls, status_counts=status_counts, by_area=by_area,
         failing=failing, open_findings=open_findings, ageing=findings_svc.ageing_summary(open_findings),
         repeated=[f for f in open_findings if f['is_repeated']],
         overdue=[f for f in open_findings if f['overdue']],
@@ -195,6 +264,7 @@ def run_due():
     if job:
         flash(_('Scheduled run queued. Results appear as each control finishes.'), 'info')
     else:
+        engine.run_sweeps()
         counts = engine.run_due()
         evidence_svc.sweep_expiry()
         findings_svc.sweep_overdue()
@@ -210,7 +280,12 @@ def run_due():
 def controls():
     db = get_db()
     area, status, ctype, q = (request.args.get(k) or '' for k in ('area', 'status', 'type', 'q'))
+    fw = request.args.get('framework') or ''
     clauses, args = ['1=1'], []
+    if fw:
+        clauses.append('''EXISTS (SELECT 1 FROM rc_control_requirements cr JOIN rc_requirements q
+                                  ON q.id = cr.requirement_id WHERE cr.control_id = c.id AND q.framework_id = %s)''')
+        args.append(int(fw) if fw.isdigit() else 0)
     if area:
         clauses.append('c.area = %s')
         args.append(area)
@@ -234,7 +309,8 @@ def controls():
     """, tuple(args)).fetchall()]
     engine.load_checks()
     return render_template('regcontrols/controls.html', controls=rows, checks=engine.CHECKS,
-                           f_area=area, f_status=status, f_type=ctype, q=q)
+                           f_area=area, f_status=status, f_type=ctype, q=q, f_framework=fw,
+                           frameworks=catalog.frameworks())
 
 
 @bp.route('/controls/<int:control_id>')
@@ -263,7 +339,10 @@ def control_detail(control_id):
                          (control['erm_control_id'],)).fetchone()
     return render_template(
         'regcontrols/control_detail.html', control=control, owner=owner, linked_params=linked_params,
-        check=engine.CHECKS.get(control['control_code']), runs=engine.latest_runs(control_id),
+        check=engine.CHECKS.get(control['check_key']) if control['check_key'] else None,
+        runs=engine.latest_runs(control_id), requirements=catalog.control_requirements(control_id),
+        all_requirements=([(fw, catalog.requirements(fw['id'])) for fw in catalog.frameworks(active_only=True)]
+                          if current_user.can_admin_module(MODULE) else []),
         evidence=evidence_svc.list_for_control(control_id), warn_days=params.get_param(
             'rc.evidence_expiry_warning_days', default=30),
         findings=findings_svc.list_findings(control_id=control_id, scope_sql=sql, scope_args=args),
@@ -297,19 +376,26 @@ def control_edit(control_id):
         f = request.form
         freq = f.get('frequency')
         crit = f.get('criticality')
-        if freq not in library.FREQUENCIES or crit not in library.CRITICALITY:
+        if freq not in vocab.FREQUENCIES or crit not in vocab.CRITICALITY:
             flash(_('Invalid frequency or criticality.'), 'danger')
             return redirect(request.url)
-        lics = [x for x in f.getlist('licence_types') if x in library.LICENCE_TYPES] or ['all']
+        lics = [x for x in f.getlist('licence_types') if x in VOCAB.LICENCE_TYPES] or ['all']
+        check_key = f.get('check_key') or None
+        if check_key and check_key not in engine.CHECKS:
+            flash(_('Unknown check.'), 'danger')
+            return redirect(request.url)
         keys = [k.strip() for k in (f.get('linked_params') or '').replace(';', ',').split(',') if k.strip()]
         db.execute("""
-            UPDATE rc_controls SET title_en = %s, title_ar = %s, requirement_en = %s, requirement_ar = %s,
+            UPDATE rc_controls SET check_key = %s, area = %s, control_type = %s,
+                   title_en = %s, title_ar = %s, requirement_en = %s, requirement_ar = %s,
                    frequency = %s, criticality = %s, owner_role = %s, owner_user_id = %s, linked_module = %s,
                    linked_params = %s, licence_types = %s, test_procedure_en = %s, test_procedure_ar = %s,
                    erm_control_id = %s, auto_create_case = %s, is_active = %s, updated_at = %s,
                    next_run_due = CASE WHEN frequency = %s THEN next_run_due ELSE NULL END
             WHERE id = %s
-        """, (f.get('title_en', '').strip() or control['title_en'], f.get('title_ar', '').strip() or None,
+        """, (check_key, f.get('area') or None,
+              f.get('control_type') if f.get('control_type') in vocab.CONTROL_TYPES else control['control_type'],
+              f.get('title_en', '').strip() or control['title_en'], f.get('title_ar', '').strip() or None,
               f.get('requirement_en') or None, f.get('requirement_ar') or None, freq, crit,
               f.get('owner_role') or None, _int(f.get('owner_user_id')), f.get('linked_module') or None,
               keys, lics, f.get('test_procedure_en') or None, f.get('test_procedure_ar') or None,
@@ -323,7 +409,7 @@ def control_edit(control_id):
         "SELECT id, control_code, control_name FROM controls WHERE status = 'ACTIVE' ORDER BY control_code"
     ).fetchall()]
     return render_template('regcontrols/control_form.html', control=control, users=_users(),
-                           erm_controls=erm_controls)
+                           erm_controls=erm_controls, checks=engine.check_catalogue())
 
 
 @bp.route('/runs/<int:run_id>')
@@ -783,11 +869,180 @@ def parameter_decide(change_id, decision):
 @rc_required('admin')
 def settings_save():
     from models.settings import Settings
-    lic = request.form.get('fra_licence_type')
-    if lic in library.LICENCE_TYPES:
-        Settings.set('fra_licence_type', lic, 'Licence type used for FRA regulatory parameters')
+    lic = request.form.get('rc_licence_type')
+    if lic in VOCAB.LICENCE_TYPES:
+        Settings.set('rc_licence_type', lic, 'Licence type used to select regulatory parameter values')
     heads = ','.join(str(int(x)) for x in request.form.getlist('compliance_heads') if str(x).isdigit())
     Settings.set('regcontrols_compliance_head_ids', heads, 'Users who receive regcontrols escalations')
     _log('regcontrols_settings', None, f'licence={lic} heads={heads}')
     flash(_('Settings saved.'), 'success')
     return redirect(url_for('regcontrols.parameters'))
+
+
+# ------------------------------------------------------------------ manual tests & new controls
+@bp.route('/controls/<int:control_id>/test', methods=['POST'])
+@rc_required('edit')
+def control_test(control_id):
+    try:
+        engine.record_manual_test(control_id, request.form.get('status'), request.form.get('note'), current_user.id)
+        _log('regcontrols_manual_test', control_id, request.form.get('status'))
+        flash(_('Test result recorded.'), 'success')
+    except ValueError as e:
+        _flash_error(e)
+    return redirect(url_for('regcontrols.control_detail', control_id=control_id))
+
+
+@bp.route('/controls/new', methods=['GET', 'POST'])
+@rc_required('admin')
+def control_new():
+    if request.method == 'POST':
+        try:
+            cid = catalog.create_control(request.form)
+            req_id = _int(request.form.get('requirement_id'))
+            if req_id:
+                catalog.map_control(cid, req_id)
+            _log('regcontrols_control_new', cid, request.form.get('control_code'))
+            flash(_('Control created. Complete its settings below.'), 'success')
+            return redirect(url_for('regcontrols.control_edit', control_id=cid))
+        except catalog.CatalogError as e:
+            _flash_error(e)
+    req = None
+    if request.args.get('requirement'):
+        req = get_db().execute("SELECT q.*, f.code AS framework_code FROM rc_requirements q JOIN rc_frameworks f "
+                               "ON f.id = q.framework_id WHERE q.id = %s", (_int(request.args['requirement']),)).fetchone()
+    return render_template('regcontrols/control_new.html', form=request.form, req=dict(req) if req else None)
+
+
+@bp.route('/controls/<int:control_id>/requirements', methods=['POST'])
+@rc_required('admin')
+def control_map(control_id):
+    req_id = _int(request.form.get('requirement_id'))
+    if req_id:
+        catalog.map_control(control_id, req_id, linked=request.form.get('action') != 'unlink')
+        _log('regcontrols_control_map', control_id, f"{request.form.get('action') or 'link'} {req_id}")
+    return redirect(url_for('regcontrols.control_detail', control_id=control_id))
+
+
+@bp.route('/requirements.json')
+@rc_required('view')
+def requirements_json():
+    from flask import jsonify
+    fid = _int(request.args.get('framework'))
+    return jsonify([{'id': r['id'], 'ref': r['ref_code'], 'title': rc_loc(r['title_en'], r['title_ar'])}
+                    for r in (catalog.requirements(fid) if fid else [])])
+
+
+# ------------------------------------------------------------------ library: frameworks & requirements
+@bp.route('/library')
+@rc_required('view')
+def library_home():
+    return render_template('regcontrols/library.html', frameworks=catalog.frameworks(),
+                           regulators=catalog.regulators(),
+                           refs={k: catalog.ref_list(k) for k in catalog.REF_TABLES})
+
+
+@bp.route('/library/frameworks/new', methods=['GET', 'POST'])
+@bp.route('/library/frameworks/<int:framework_id>/edit', methods=['GET', 'POST'])
+@rc_required('admin')
+def framework_edit(framework_id=None):
+    fw = catalog.framework(framework_id) if framework_id else None
+    if framework_id and not fw:
+        abort(404)
+    if request.method == 'POST':
+        data = request.form.to_dict()
+        data['regulator_id'] = _int(data.get('regulator_id'))
+        data['is_active'] = bool(request.form.get('is_active'))
+        try:
+            fid = catalog.save_framework(data, framework_id)
+            _log('regcontrols_framework_save', fid, data.get('code'))
+            flash(_('Framework saved.'), 'success')
+            return redirect(url_for('regcontrols.framework_detail', framework_id=fid))
+        except catalog.CatalogError as e:
+            _flash_error(e)
+            fw = data
+    return render_template('regcontrols/framework_form.html', fw=fw or {'is_active': True},
+                           regulators=catalog.regulators(), framework_id=framework_id)
+
+
+@bp.route('/library/frameworks/<int:framework_id>')
+@rc_required('view')
+def framework_detail(framework_id):
+    fw = catalog.framework(framework_id)
+    if not fw:
+        abort(404)
+    reqs = catalog.requirements(framework_id)
+    status = {}
+    for r in get_db().execute("""
+            SELECT cr.requirement_id, c.last_status FROM rc_control_requirements cr
+            JOIN rc_controls c ON c.id = cr.control_id JOIN rc_requirements q ON q.id = cr.requirement_id
+            WHERE q.framework_id = %s AND c.is_active""", (framework_id,)).fetchall():
+        status.setdefault(r['requirement_id'], []).append(r['last_status'])
+    for q in reqs:
+        q['status'] = logic.worst_status(status.get(q['id'], [])) if status.get(q['id']) else None
+    covered = sum(1 for q in reqs if q['control_codes'])
+    return render_template('regcontrols/framework_detail.html', fw=fw, reqs=reqs, covered=covered)
+
+
+@bp.route('/library/frameworks/<int:framework_id>/requirements', methods=['POST'])
+@rc_required('admin')
+def requirement_save(framework_id):
+    if not catalog.framework(framework_id):
+        abort(404)
+    try:
+        catalog.save_requirement(framework_id, request.form.to_dict(), _int(request.form.get('requirement_id')))
+        _log('regcontrols_requirement_save', framework_id, request.form.get('ref_code'))
+        flash(_('Requirement saved.'), 'success')
+    except catalog.CatalogError as e:
+        _flash_error(e)
+    return redirect(url_for('regcontrols.framework_detail', framework_id=framework_id))
+
+
+@bp.route('/library/reference/<kind>', methods=['POST'])
+@rc_required('admin')
+def reference_save(kind):
+    try:
+        if kind == 'regulators':
+            catalog.save_regulator(request.form.get('name_en'), request.form.get('code'), request.form.get('name_ar'),
+                                   request.form.get('jurisdiction'), request.form.get('website'),
+                                   _int(request.form.get('regulator_id')))
+        elif kind in catalog.REF_TABLES:
+            extra = {}
+            if kind == 'licence_types':
+                extra = {'regulator_id': _int(request.form.get('regulator_id')),
+                         'jurisdiction': (request.form.get('jurisdiction') or '').upper() or None}
+            if kind == 'areas' and _int(request.form.get('sort_order')) is not None:
+                extra = {'sort_order': _int(request.form.get('sort_order'))}
+            catalog.save_ref(kind, request.form.get('code'), request.form.get('name_en'), request.form.get('name_ar'),
+                             extra)
+        else:
+            abort(404)
+        _log('regcontrols_reference_save', None, f"{kind} {request.form.get('code') or request.form.get('name_en')}")
+        flash(_('Saved.'), 'success')
+    except catalog.CatalogError as e:
+        _flash_error(e)
+    return redirect(url_for('regcontrols.library_home') + '#' + kind)
+
+
+# ------------------------------------------------------------------ content packs
+@bp.route('/packs')
+@rc_required('view')
+def packs_list():
+    return render_template('regcontrols/packs.html', packs=packs.listing())
+
+
+@bp.route('/packs/<code>/<action>', methods=['POST'])
+@rc_required('admin')
+def pack_action(code, action):
+    try:
+        if action == 'enable':
+            summary = packs.enable(code, current_user.id)
+            flash(_('Pack enabled.') + (f' {summary}' if summary else ''), 'success')
+        elif action == 'disable':
+            packs.disable(code, current_user.id)
+            flash(_('Pack disabled. Its controls are inactive and its pages hidden; its data is kept.'), 'info')
+        else:
+            abort(400)
+        _log(f'regcontrols_pack_{action}', None, code)
+    except ValueError as e:
+        _flash_error(e)
+    return redirect(url_for('regcontrols.packs_list'))

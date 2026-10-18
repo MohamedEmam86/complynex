@@ -1,18 +1,42 @@
-# regcontrols — Python API for FRA controls
+# regcontrols — generic compliance control framework
 
-`regcontrols` is the shared foundation that turns every requirement in
-[`FRA_NBFI_CONTROL_MAP.md`](FRA_NBFI_CONTROL_MAP.md) into a **control** that is
-monitored, evidenced, remediated and reported. Other modules (lending,
-prudential, AML hardening, cyber, carbon, inspection readiness) use it **only**
-through `regcontrols/api.py`:
+`regcontrols` is the core that lets ComplyNex monitor, evidence, remediate and
+report compliance with **any** regulator, regulation or standard — a central
+bank's PSP rules, a financial regulator's NBFI requirements, a data-protection
+law or a foreign framework. Nothing in the core is tied to one company, sector
+or regulator:
+
+* **Data, not code** — regulators, frameworks, requirements, controls, areas,
+  licence types, owner roles and regulatory parameters are rows, editable in
+  the UI (Compliance Controls → Frameworks & Library / Controls / Parameters),
+  each with legal references, jurisdiction and licence type where relevant.
+* **Content packs** — regulator- or sector-specific content *and logic* come
+  in optional packs under `packs/<code>/`, enabled per installation on
+  Compliance Controls → Content packs. The core never imports a pack.
+
+```
+core (regcontrols/)                          optional packs (packs/<code>/)
+────────────────────────────────────────     ─────────────────────────────────────
+regulators · frameworks · requirements        framework + requirements + controls (data)
+controls ↔ requirements (many-to-many)        areas · licence types · owner roles
+check registry (by check key)                 regulatory parameters (needs_review)
+evidence · manual tests · findings · CAPs     sector modules & their checks/sweeps
+alerts · escalation · cases                   (e.g. lending conduct in fra_nbfi)
+parameter registry (maker-checker)            menus · module permissions
+generic checks (core.*)
+```
+
+Other modules use the core through `regcontrols/api.py`:
 
 ```python
 from regcontrols.api import (
     get_param, get_param_record,          # regulatory numbers
-    register_check, CheckResult,          # automated checks
-    record_evidence,                      # evidence items
-    raise_finding,                        # findings / remediation plans
-    raise_alert, run_control,             # less common
+    register_check, CheckResult,          # automated checks (by check key)
+    register_sweep,                       # data refreshes that write, run before checks
+    record_evidence, record_manual_test,  # evidence items / manual test results
+    raise_finding, raise_alert,           # findings / alerts
+    run_control,
+    Pack, register_pack, catalog,         # writing a content pack
     ParameterNotFound, ParameterNotSet,
 )
 ```
@@ -21,7 +45,29 @@ Every call needs a Flask app context (it uses `database.db.get_db()`).
 
 ---
 
-## 1. Regulatory parameters — `get_param`
+## 1. Data model
+
+| Table | What it holds |
+|---|---|
+| `regulators` (existing table, + `name_ar`, `jurisdiction`) | any regulator / standard-setter |
+| `rc_frameworks` | a regulation, rulebook or standard (code, regulator, jurisdiction, version, source document, `pack_code`) |
+| `rc_requirements` | requirements of a framework (ref code, title/text EN/AR, legal reference, area) |
+| `rc_controls` | the organisation's controls (type, frequency, criticality, owner, licence types, **check_key**, parameters used) |
+| `rc_control_requirements` | which requirements a control satisfies — one control can serve several frameworks |
+| `rc_areas`, `rc_licence_types`, `rc_owner_roles` | vocabularies (data, not code) |
+| `rc_parameters` (+ `rc_parameter_changes`) | regulatory numbers by licence type and date, maker-checker history |
+| `rc_control_runs` | every automated check run and manual test result |
+| `rc_evidence` | evidence items with validity, four-eyes review, files in `generic_attachments` |
+| `rc_findings`, `rc_finding_controls`, `rc_corrective_actions`, `rc_finding_events` | findings, action plans, history |
+| `rc_alerts` | live alerts, escalation, optional case |
+| `rc_packs`, `user_module_permissions` | pack state per installation, permissions for pack modules |
+
+Fixed, regulator-neutral vocabularies (control types, frequencies,
+criticality) live in `regcontrols/vocab.py`.
+
+---
+
+## 2. Regulatory parameters — `get_param`
 
 **Rule: no regulatory number is hard-coded anywhere.** Caps, thresholds,
 ceilings, SLAs and cycles are rows in `rc_parameters`.
@@ -29,210 +75,171 @@ ceilings, SLAs and cycles are rows in `rc_parameters`.
 ```python
 cap = get_param('lending.admin_fee_cap_pct', licence_type='microfinance')   # Decimal('2.5')
 days = get_param('rc.escalation_days')                                       # int
-window = get_param('lending.prepay_new_loan_window_days', default=None)      # None if missing / not set
+window = get_param('aml.unusual_txn_study_sla_days', default=None)           # None if missing / not set
 old = get_param('lending.admin_fee_cap_pct', 'microfinance', as_of=date(2025, 6, 30))
 rec = get_param_record('capital.min_paid_up', 'microfinance')                # full row: unit, legal_reference, needs_review …
 ```
 
 | Behaviour | Detail |
 |---|---|
-| Licence | A version for the exact licence (`microfinance`, `consumer_finance`, `leasing`, `factoring`) beats the generic `all` version. |
-| Date | The version in force on `as_of` (default today): `effective_from ≤ as_of ≤ effective_to`. Retired versions are ignored. |
-| Types | `number` / `amount` / `percent` → `Decimal`; `integer` → `int`; `boolean` → `bool`; `json` → list/dict; `date` → `date`; `text` → `str`. |
-| Missing | `ParameterNotFound` (no version covers the date) or `ParameterNotSet` (seeded, value still NULL). Pass `default=` to get a fallback instead. |
+| Licence | A version for the exact licence type beats the generic `all` version. Licence types are data (`rc_licence_types`). |
+| Date | The version in force on `as_of` (default today). Retired versions are ignored. |
+| Types | `number` / `amount` / `percent` → `Decimal`; `integer` → `int`; `boolean` → `bool`; `json` → list/dict; `date`; `text`. |
+| Missing | `ParameterNotFound` / `ParameterNotSet` — or pass `default=`. |
 
-Inside a check use `ctx.param(key)` — it applies the company licence type
-(Settings `fra_licence_type`, set on the Parameters page) and the run date.
-If the parameter is missing the run is stored as **error** with a clear
-message, never as a silent pass.
+Inside a check use `ctx.param(key)`: it applies the installation's licence type
+(Settings `rc_licence_type`, chosen on the Parameters page) and the run date. A
+missing parameter makes the run an **error** with a clear message, never a pass.
+Changes are maker-checker: a *different* admin approves before a value applies.
 
-**Naming:** `<area>.<name>_<unit>` in lower case, e.g. `lending.admin_fee_cap_pct`,
-`aml.unusual_txn_study_sla_days`, `kyc.refresh_months_high`. Add new keys with
-`needs_review=true` and a `TODO(compliance-review)` note when the exact rule is
-not confirmed. Seed keys for a new module in your own migration with the same
-`WITH ins AS (INSERT … ON CONFLICT DO NOTHING RETURNING …) INSERT INTO
-rc_parameter_changes …` pattern used in `20261018_regcontrols.sql`, so the
-change history shows where the value came from.
-
-**Changes are maker-checker.** The UI records a pending row in
-`rc_parameter_changes`; a *different* user with `perm_regcontrols = admin`
-approves it, and only then is `rc_parameters` updated. A new value with a new
-effective date closes the previous version the day before (no overlap).
+**Naming:** `<area>.<name>_<unit>`, lower case. Engine settings use `rc.*` and
+ship with the core; regulatory parameters ship with a pack or are added in the UI.
 
 ---
 
-## 2. Automated checks — `register_check`
+## 3. Automated checks — `register_check` (by check key)
+
+A check is registered under a **check key**; a control is bound to it through
+`rc_controls.check_key` (set by a pack, or chosen from a dropdown on the
+control's edit page). The same check can test controls of different frameworks.
 
 ```python
-# lending/checks.py
 from regcontrols.api import register_check
 
-@register_check('FRA-017', name='Admin fee within cap')
-def admin_fee_cap(ctx):
+@register_check('my_pack.fee_cap', name='Fee within cap')
+def fee_cap(ctx):
     cap = ctx.param('lending.admin_fee_cap_pct')
-    rows = ctx.db.execute("SELECT id, ref, admin_fee_pct FROM lending_loans WHERE admin_fee_pct > %s",
-                          (cap,)).fetchall()
+    rows = ctx.db.execute("SELECT id, ref FROM ... WHERE fee_pct > %s", (cap,)).fetchall()
     if rows:
-        return ctx.fail(f'{len(rows)} loan(s) above the {cap}% cap',
-                        affected=[{'table': 'lending_loans', 'id': r['id'], 'label': r['ref']} for r in rows],
-                        cap=str(cap))
-    return ctx.ok('All loans within the cap')
+        return ctx.fail(f'{len(rows)} item(s) above the {cap}% cap',
+                        affected=[{'table': '...', 'id': r['id'], 'label': r['ref']} for r in rows])
+    return ctx.ok('All within the cap')
 ```
 
-Then add the module path to `CHECK_MODULES` in `regcontrols/engine.py`
-(e.g. `'lending.checks'`) so the scheduler process imports it.
+Key prefixes: `core.` for checks shipped with the core (`regcontrols/builtin_checks.py`,
+always loaded), `<pack_code>.` for a pack's checks (loaded only while the pack is enabled).
 
-**The `ctx` object (`CheckContext`)**
-
-| Attribute / method | Meaning |
+| `ctx` | |
 |---|---|
-| `ctx.control` | the `rc_controls` row (dict) |
-| `ctx.as_of` | run date (`date`) |
-| `ctx.licence_type` | company licence type |
-| `ctx.org_unit_id` | company/unit scope of the run, or `None` |
-| `ctx.db` | database connection — **read only**; do not commit inside a check |
-| `ctx.param(key, default=…)` | typed parameter for this licence and date |
-| `ctx.ok(summary, **details)` / `ctx.warn(summary, affected, **details)` / `ctx.fail(summary, affected, **details)` / `ctx.not_applicable(summary)` | build a `CheckResult` |
+| `ctx.control` | the `rc_controls` row |
+| `ctx.as_of`, `ctx.licence_type`, `ctx.org_unit_id` | run date, installation licence, scope |
+| `ctx.db` | connection — **read only**; writes go in a sweep |
+| `ctx.param(key, default=…)` | typed parameter |
+| `ctx.ok / warn / fail / not_applicable` | build a `CheckResult` |
 
-**Return values accepted:** `CheckResult`, `dict` with `status` (+ `summary`,
-`details`, `affected`), tuple `(status, summary[, affected])`, a status string,
-or `True`/`False`. Status is one of `pass`, `warning`, `fail`, `not_applicable`.
-`affected` is a list of dicts (`table`, `id`, `label`, any scalar fields); up to
-500 are stored, the full count is kept.
+Return values accepted: `CheckResult`, a dict with `status`, a tuple
+`(status, summary[, affected])`, a status string, or `True`/`False`.
 
-**Failure safety:** an exception, a missing parameter or an unknown return
-value is stored as `error` and shown on the dashboard. Registering two
-different functions for one control raises `ValueError` (use `replace=True`
-only on purpose).
+Safety: an exception, a missing parameter, an unknown return value, or a
+`check_key` whose pack is disabled all store an **error** run. Registering two
+different functions under one key raises.
 
-**Licence applicability:** a control whose `licence_types` does not include the
-company licence (or `all`) is recorded as `not_applicable` without calling the check.
+**Controls without a check** — evidence-type controls (and any control with
+evidence uploaded) use the generic evidence check. Any control can also get a
+**manual test result** (`record_manual_test` / "Record a manual test" on the
+control page): pass / warning / fail / not applicable with a description, with
+the same alert and recurrence consequences as an automated run.
 
-**Controls without a check** — evidence-type controls (and any control that
-already has evidence uploaded) use the generic evidence check: pass if at
-least one approved, in-date item exists; warning if only expiring or pending
-items; fail otherwise. Other controls show "No check" until their module
-registers one.
-
----
-
-## 3. Evidence — `record_evidence`
+**Sweeps** — work that writes (recompute derived data, open a remediation
+finding, register an AML candidate) runs before the scheduled checks:
 
 ```python
-ev_id = record_evidence('FRA-069', 'Penetration test report 2026',
-                        valid_from=date(2026, 3, 1), valid_to=date(2027, 2, 28),
-                        reference_no='PT-2026-01', submitted_by=current_user.id,
-                        file_path='/tmp/report.pdf', file_name='pentest.pdf')
-# automatic, system-generated evidence (e.g. a scheduled SSL check) is stored approved:
-record_evidence('FRA-072', 'SSL certificate valid — portal.example.com', valid_to=expiry,
-                source='system', source_module='cyber')
-```
+from regcontrols.api import register_sweep
 
-* Status starts `pending`; a reviewer **other than the submitter** approves or rejects
-  (rejection needs a comment). `source='system'` items are stored approved.
-* Files go through the shared attachments store (`generic_attachments`, module
-  `regcontrols`, record_type `rc_evidence`).
-* Daily sweep: approved items past `valid_to` become `expired` and raise an
-  `evidence_expired` alert; items within `rc.evidence_expiry_warning_days` raise
-  `evidence_expiring`. Approving newer evidence clears both.
+@register_sweep(pack='my_pack')          # runs only while my_pack is enabled
+def refresh():
+    ...
+    return {'updated': n}                # logged by scripts/regcontrols_run.py
+```
 
 ---
 
-## 4. Findings & corrective actions — `raise_finding` (FRA-079)
+## 4. Evidence, findings, alerts
 
 ```python
-fid = raise_finding('PAR30 above threshold in Branch 3',
-                    source='control_failure',          # regulator | internal_audit | self_identified | external_audit | control_failure
-                    severity='high',                    # critical | high | medium | low
-                    control_codes=['FRA-011', 'FRA-012'],
-                    description='PAR30 = 7.2% vs 5% threshold',
-                    due_date=date.today() + timedelta(days=30),
-                    owner_user_id=credit_head_id,
-                    dedupe=True)                        # default
+record_evidence('CTRL-069', 'Penetration test report 2026', valid_from=..., valid_to=...,
+                submitted_by=user_id, file_path='/tmp/report.pdf')
+record_evidence('CTRL-072', 'Certificate valid — portal.example.com', valid_to=expiry,
+                source='system', source_module='cyber')            # system evidence is stored approved
+
+fid = raise_finding('Portfolio at risk above threshold — branch B3', source='control_failure',
+                    source_ref='PAR30-branch-B3', severity='high', control_codes=['CTRL-011'],
+                    due_date=..., dedupe=True)
 ```
 
-* `dedupe=True` returns the existing finding when `(source, source_ref)` was
-  already imported, or — for `control_failure` — when an open control-failure
-  finding already exists for the first control. Safe to call on every failing run.
-* Lifecycle: `open → action_plan → in_progress → pending_verification → closed`.
-  Corrective actions (owner, due date, status, evidence) drive the status.
-* **Closing requires verification**: every linked control is re-run; the finding
-  closes only if they all pass. Controls with no check need a written manual
-  verification by someone other than the finding owner.
-* **Recurrence detection**: when a linked control fails again after the finding
-  was closed as remediated, the finding is reopened, flagged `is_repeated`
-  (`repeat_count` + 1) and a critical `repeated_violation` alert is raised.
-  FRA-079's own check fails while any repeated violation is open.
-* Imports: CSV (template on the Findings → Import page) and one-click import of
-  open internal-audit findings (`source_ref = 'IA-<id>'`, linked through
-  `rc_controls.erm_control_id`).
+* Evidence: validity period, review by someone other than the submitter, daily expiry sweep.
+* Findings: regulator / internal audit / external audit / self-identified / control failure;
+  optional `regulator_id` / `framework_id`; action plan; **closing requires verification**
+  (every linked control re-run and passing, or a written manual verification by someone
+  other than the owner); **recurrence detection** reopens a closed finding as a repeated
+  violation when a linked control fails again. CSV import and one-click import of open
+  internal-audit findings.
+* Alerts: control failed / evidence expiring / evidence expired / finding overdue /
+  repeated violation → owner (in-app + email), reminders, escalation to the Head(s) of
+  Compliance after `rc.escalation_days`, optional `REG_CONTROL` case.
 
 ---
 
-## 5. Alerts — `raise_alert`
+## 5. Writing a content pack
 
-Raised automatically for: `control_failed`, `evidence_expiring`,
-`evidence_expired`, `finding_overdue`, `repeated_violation`. One live alert per
-subject; a repeat failure refreshes it and re-notifies only every
-`rc.alert_renotify_days`.
+```
+packs/my_pack/
+  __init__.py      manifest: register_pack(Pack(...)) + install(db)
+  library.py       data: regulator, framework, requirements/controls, vocabularies, parameters
+  checks.py        optional: @register_check('my_pack.…') / @register_sweep(pack='my_pack')
+  <module>/        optional sector module (blueprint, service, templates)
+```
 
-* Recipient: the control/finding owner; otherwise the Head(s) of Compliance
-  (Settings `regcontrols_compliance_head_ids`, falling back to all admins and
-  compliance officers). Delivered in-app and by email through
-  `services.notification_service.notify`.
-* Escalation to the Head(s) of Compliance after `rc.escalation_days`.
-* A failed control opens a `REG_CONTROL` case in the unified case list when the
-  control has *auto-open case* ticked, or when it is critical and
-  `rc.auto_case_on_failure` is `true`.
-* A passing run resolves the `control_failed` alert (and syncs the case).
+```python
+from regcontrols.api import Pack, catalog, register_pack
 
----
+def install(db):                      # idempotent; never overwrites UI edits
+    reg = catalog.install_regulator('CB', 'Central Bank (example)', jurisdiction='EG', db=db)
+    catalog.install_ref('licence_types', 'psp', 'Payment service provider', pack_code='my_pack',
+                        regulator_id=reg, db=db)
+    fw = catalog.install_framework('CB-PSP', 'PSP rulebook', regulator_id=reg, pack_code='my_pack', db=db)
+    req = catalog.install_requirement(fw, 'Art. 5', 'Merchant due diligence', db=db)
+    catalog.install_control({'code': 'PSP-001', 'title_en': '...', 'control_type': 'automated',
+                             'check_key': 'core.findings_not_repeated'},
+                            pack_code='my_pack', requirement_ids=[req], db=db)
+    catalog.install_parameter({'key': 'psp.kyb_refresh_months', 'value': None, 'value_type': 'integer',
+                               'needs_review': True, 'review_note': 'TODO(compliance-review)'},
+                              pack_code='my_pack', framework_id=fw, db=db)
+    db.commit()
 
-## 6. Scheduling
+register_pack(Pack(
+    code='my_pack', name_en='…', name_ar='…', version='1', install=install,
+    check_modules=['packs.my_pack.checks'],
+    blueprints=['packs.my_pack.module.routes:bp'],          # pages answer 404 while disabled
+    menu=[('my_module.dashboard', 'Dashboard', 'لوحة', 'my_module')],
+    menu_title_en='My pack', menu_title_ar='…',
+    permissions=[('my_module', 'My module', '…', ('none', 'view', 'edit'))],
+))
+```
 
-* Cron (hourly is enough): `python scripts/regcontrols_run.py` — runs every
-  control whose `next_run_due` has passed, then the evidence-expiry,
-  overdue-finding and escalation sweeps. `--control FRA-079` runs one control;
-  `--enqueue` hands the work to the RQ `events` worker instead.
-* `next_run_due` = last run + the control's frequency (`event` / `on_demand`
-  controls are never scheduled).
-* `run_control(code, triggered_by='api')` runs one control immediately from code.
+Pack rules:
 
----
+1. The core must not reference the pack. Core → pack is never imported; pack → core only through `regcontrols.api`.
+2. All content is data installed through `catalog.install_*`, so users can edit it later.
+3. Pack module permissions are declared in the manifest and stored in
+   `user_module_permissions` (no new `users` column); the user form shows them automatically.
+4. Pack schema goes in its own migration `database/migrations/<date>_pack_<code>_<name>.sql`.
+   Tables are harmless while the pack is disabled.
+5. Demo data uses a **fictional** company only — never a real client name, figure, bank or branch.
 
-## 7. Permissions and scoping
-
-`users.perm_regcontrols`: `none` / `view` / `edit` / `admin`.
-
-| Level | Can |
-|---|---|
-| view | see dashboard, controls, runs, evidence, findings, alerts, parameters |
-| edit | run controls, submit and review evidence, manage findings, actions, verification, alerts |
-| admin | edit the control library, approve/reject parameter changes, close a finding without remediation, settings, run all due controls |
-
-Records with `org_unit_id` (runs, evidence, findings, alerts) are filtered with
-`services.org_service.scope_filter`, like other group/company-scoped modules.
-
----
-
-## 8. Tables (migration `database/migrations/20261018_regcontrols.sql`)
-
-`rc_parameters`, `rc_parameter_changes`, `rc_controls`, `rc_control_runs`,
-`rc_evidence`, `rc_findings`, `rc_finding_controls`, `rc_corrective_actions`,
-`rc_finding_events`, `rc_alerts`; plus `users.perm_regcontrols` and the
-`REG_CONTROL` row in `case_sla_config`.
-
-The control-library and parameter seed lives in `regcontrols/library.py`;
-regenerate the SQL block with `python scripts/regcontrols_seed_sql.py`
-(`--check` is run by the tests).
+Enabling a pack runs `install()` and switches its controls on. Disabling it switches them
+off (remembering which) and hides its pages and menus. Its data is kept.
 
 ---
 
-## 9. Checklist for a module that adds FRA controls
+## 6. Scheduling, permissions, scoping
 
-1. Put checks in `<module>/checks.py`, register with `@register_check('FRA-0xx')`, add the module to `CHECK_MODULES`.
-2. Read every limit with `ctx.param(...)`; seed new keys in your migration with `needs_review=true` when unconfirmed.
-3. Return `affected` records with `table` + `id` so inspectors can drill down.
-4. Use `raise_finding(..., source='control_failure', dedupe=True)` when a breach needs a remediation plan (e.g. FRA-012).
-5. Use `record_evidence(..., source='system')` for proofs the system generates itself.
-6. Add unit tests for the check logic (keep the decision in a pure function, as `regcontrols/logic.py` does).
+* Cron (hourly is enough): `python scripts/regcontrols_run.py` — sweeps, due controls,
+  evidence-expiry / overdue-finding / escalation sweeps. `--control CODE` runs one control;
+  `--enqueue` hands it to the RQ `events` worker.
+* `users.perm_regcontrols`: `view` (see), `edit` (run, test, evidence, findings, alerts),
+  `admin` (library, frameworks, parameters approval, packs, settings).
+* Records with `org_unit_id` are filtered with `services.org_service.scope_filter`.
+
+The first example pack is `packs/fra_nbfi/` (Egypt FRA requirements for non-bank financial
+institutions), built from `docs/regulatory/FRA_NBFI_CONTROL_MAP.md`.

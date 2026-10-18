@@ -16,16 +16,17 @@
 # =============================================================================
 
 """
-Seed data for the FRA control library and the regulatory parameter registry.
+Content of the FRA NBFI pack: Egypt's Financial Regulatory Authority (FRA)
+requirements for non-bank financial institutions, as generalised in
+docs/regulatory/FRA_NBFI_CONTROL_MAP.md (anonymised from one inspection memo).
 
-Source: docs/regulatory/FRA_NBFI_CONTROL_MAP.md (anonymised). This module is
-the single source of truth for the seed; the INSERTs in
-database/migrations/20261018_regcontrols.sql are generated from it by
-scripts/regcontrols_seed_sql.py, and tests/regcontrols/test_library.py checks
-that the two never drift apart.
+This is DATA for the generic core: one framework, one requirement per map ID,
+one control per requirement, the pack's areas / licence types / owner roles,
+and the regulatory parameters its checks read. packs/fra_nbfi/__init__.py
+installs it through regcontrols.catalog.
 
 Grouped rows in the map (FRA-038–042, 043–045, 057–058, 059–060, 062–063,
-064–065, 075–077) are split into one control per ID so every requirement can
+064–065, 075–077) are split into one requirement/control per ID so each can
 be evidenced, failed and reported on its own.
 
 Nothing here may contain a client, branch, counterparty or figure from the
@@ -34,8 +35,24 @@ are seeded with value NULL and needs_review=true — they must be confirmed by
 Compliance before the check that reads them can pass.
 """
 
+from regcontrols.vocab import TYPE_LETTERS
+
+PACK_CODE = 'fra_nbfi'
+
+REGULATOR = {'code': 'FRA', 'name_en': 'Financial Regulatory Authority', 'name_ar': 'الهيئة العامة للرقابة المالية',
+             'jurisdiction': 'EG', 'website': 'https://fra.gov.eg'}
+
+FRAMEWORK = {
+    'code': 'FRA-NBFI', 'name_en': 'FRA requirements for non-bank financial institutions',
+    'name_ar': 'متطلبات الهيئة العامة للرقابة المالية للمؤسسات المالية غير المصرفية', 'jurisdiction': 'EG',
+    'version': '2026.1',
+    'description': 'Requirements generalised from FRA inspection findings for microfinance, consumer-finance, '
+                   'leasing and factoring companies.',
+    'source_document': 'docs/regulatory/FRA_NBFI_CONTROL_MAP.md',
+}
+
 # --------------------------------------------------------------------------
-# Vocabularies (code -> (English, Arabic))
+# Pack vocabularies (installed into rc_areas / rc_licence_types / rc_owner_roles)
 # --------------------------------------------------------------------------
 
 AREAS = {
@@ -52,59 +69,27 @@ AREAS = {
     'remediation': ('Remediation of findings', 'معالجة الملاحظات'),
 }
 
-CONTROL_TYPES = {
-    'automated': ('Automated rule', 'قاعدة آلية'),
-    'evidence': ('Evidence / attestation', 'دليل / إقرار'),
-    'workflow': ('Workflow / approval gate', 'سير عمل / بوابة اعتماد'),
-    'metric': ('Metric / KPI', 'مؤشر قياس'),
-}
-
-# Map letters (A/E/W/M) -> primary control type. The first letter in the
-# map's "Type" column is the primary type.
-TYPE_LETTERS = {'A': 'automated', 'E': 'evidence', 'W': 'workflow', 'M': 'metric'}
-
-FREQUENCIES = {
-    'daily': ('Daily', 'يومي'),
-    'weekly': ('Weekly', 'أسبوعي'),
-    'monthly': ('Monthly', 'شهري'),
-    'quarterly': ('Quarterly', 'ربع سنوي'),
-    'semi_annual': ('Semi-annual', 'نصف سنوي'),
-    'annual': ('Annual', 'سنوي'),
-    'event': ('On event', 'عند حدوث واقعة'),
-    'on_demand': ('On demand', 'عند الطلب'),
-}
-
+# Roles the core does not ship (the core has compliance_head, cfo, it_head, ciso,
+# internal_audit_head, operations_head, hr_head, board_secretary, risk_head).
 OWNER_ROLES = {
-    'compliance_head': ('Head of Compliance', 'رئيس إدارة الالتزام'),
     'mlro': ('MLRO', 'مسؤول الإبلاغ عن غسل الأموال'),
-    'cfo': ('Chief Financial Officer', 'المدير المالي'),
     'credit_head': ('Head of Credit', 'رئيس إدارة الائتمان'),
-    'operations_head': ('Head of Operations', 'رئيس العمليات'),
     'cro': ('Chief Risk Officer', 'رئيس إدارة المخاطر'),
-    'ciso': ('Information Security Officer', 'مسؤول أمن المعلومات'),
-    'it_head': ('Head of IT', 'رئيس تكنولوجيا المعلومات'),
-    'internal_audit_head': ('Head of Internal Audit', 'رئيس المراجعة الداخلية'),
-    'hr_head': ('Head of HR', 'رئيس الموارد البشرية'),
-    'board_secretary': ('Board Secretary', 'أمين سر مجلس الإدارة'),
-}
-
-CRITICALITY = {
-    'critical': ('Critical', 'حرج'),
-    'high': ('High', 'مرتفع'),
-    'medium': ('Medium', 'متوسط'),
-    'low': ('Low', 'منخفض'),
 }
 
 LICENCE_TYPES = {
-    'all': ('All licence types', 'جميع أنواع التراخيص'),
     'microfinance': ('Microfinance', 'التمويل متناهي الصغر'),
     'consumer_finance': ('Consumer finance', 'التمويل الاستهلاكي'),
     'leasing': ('Financial leasing', 'التأجير التمويلي'),
     'factoring': ('Factoring', 'التخصيم'),
 }
 
-# Lending-conduct controls only make sense for licences that lend to
-# individuals / micro-projects.
+# Checks bound to controls. Core checks start with 'core.'; this pack's own
+# checks (registered by its check modules) start with 'fra_nbfi.'.
+CHECK_KEYS = {
+    'FRA-079': 'core.findings_not_repeated',
+}
+
 _LENDING = ['microfinance', 'consumer_finance']
 
 
@@ -125,6 +110,7 @@ def _c(code, area, types, title_en, title_ar, behaviour, module, owner, freq,
         'criticality': crit,
         'linked_params': params or [],
         'licence_types': licences or ['all'],
+        'check_key': CHECK_KEYS.get(code),
     }
 
 
@@ -438,7 +424,7 @@ CONTROLS = [
        'Inspection findings tracker: import findings, corrective-action plans, owners, deadlines, evidence, '
        'verification re-test, recurrence detection (same control failing again), board reporting.',
        'regcontrols', 'compliance_head', 'weekly', 'critical',
-       ['rc.escalation_days', 'rc.finding_overdue_grace_days']),
+       ['rc.finding_overdue_grace_days']),
 ]
 
 
@@ -461,27 +447,6 @@ def _p(key, value, value_type, unit, desc_en, desc_ar, legal_ref, needs_review=T
 
 
 PARAMETERS = [
-    # --- regcontrols engine (internal policy, not regulation) ---
-    _p('rc.escalation_days', '5', 'integer', 'days',
-       'Days an alert may stay open before it is escalated to the Head of Compliance',
-       'عدد الأيام التي يظل فيها التنبيه مفتوحًا قبل تصعيده لرئيس إدارة الالتزام',
-       'Internal compliance policy', needs_review=False),
-    _p('rc.evidence_expiry_warning_days', '30', 'integer', 'days',
-       'Days before evidence expiry when the owner is warned',
-       'عدد الأيام قبل انتهاء صلاحية الدليل التي يتم فيها تنبيه المسؤول',
-       'Internal compliance policy', needs_review=False),
-    _p('rc.finding_overdue_grace_days', '0', 'integer', 'days',
-       'Days after a finding due date before it is reported as overdue',
-       'عدد الأيام بعد تاريخ استحقاق الملاحظة قبل اعتبارها متأخرة',
-       'Internal compliance policy', needs_review=False),
-    _p('rc.alert_renotify_days', '3', 'integer', 'days',
-       'Days between repeat reminders for an open alert',
-       'عدد الأيام بين التذكيرات المتكررة لتنبيه مفتوح',
-       'Internal compliance policy', needs_review=False),
-    _p('rc.auto_case_on_failure', 'false', 'boolean', None,
-       'Automatically open a case in the unified case list when a critical control fails',
-       'فتح حالة تلقائيًا في قائمة الحالات الموحدة عند فشل رقابة حرجة',
-       'Internal compliance policy', needs_review=False),
     # --- capital & solvency (FRA-001..003) ---
     _p('capital.min_paid_up', None, 'amount', 'EGP', 'Minimum paid-up capital for a microfinance licence',
        'الحد الأدنى لرأس المال المدفوع لترخيص التمويل متناهي الصغر',
