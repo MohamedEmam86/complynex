@@ -24223,6 +24223,628 @@ msgstr "نتيجة اختبار غير معروفة"
 msgid "unknown pack"
 msgstr "حزمة غير معروفة"
 
+# --- FRA NBFI pack — lending conduct & portfolio ---
+msgid "You do not have permission for this Lending action."
+msgstr "ليست لديك صلاحية لتنفيذ هذا الإجراء في وحدة التمويل."
+
+msgid "Portfolio data refreshed."
+msgstr "تم تحديث بيانات المحفظة."
+
+msgid "Loan marked as disbursed."
+msgstr "تم تسجيل صرف التمويل."
+
+msgid "Exception requested. Another user must approve it."
+msgstr "تم طلب الاستثناء. يجب أن يعتمده مستخدم آخر."
+
+msgid "Exception decision saved."
+msgstr "تم حفظ قرار الاستثناء."
+
+msgid "Code and name are required."
+msgstr "الرمز والاسم إلزاميان."
+
+msgid "Product saved."
+msgstr "تم حفظ المنتج."
+
+msgid "QA decision saved."
+msgstr "تم حفظ قرار مراجعة الجودة."
+
+msgid "Choose the data type and a CSV or Excel file."
+msgstr "اختر نوع البيانات وملف CSV أو Excel."
+
+msgid "The file is larger than 20 MB."
+msgstr "حجم الملف أكبر من 20 ميجابايت."
+
+msgid "The file could not be read:"
+msgstr "تعذرت قراءة الملف:"
+
+msgid "Import finished: %(ok)s row(s) saved, %(bad)s with errors."
+msgstr "انتهى الاستيراد: تم حفظ %(ok)s صف، و%(bad)s بها أخطاء."
+
+msgid "Portfolio"
+msgstr "المحفظة"
+
+msgid "Loans"
+msgstr "التمويلات"
+
+msgid "Pricing & fees"
+msgstr "التسعير والرسوم"
+
+msgid "Credit-study QA"
+msgstr "جودة الدراسات الائتمانية"
+
+msgid "Pricing disclosure"
+msgstr "الإفصاح عن التسعير"
+
+msgid "Products"
+msgstr "المنتجات"
+
+msgid "Import data"
+msgstr "استيراد البيانات"
+
+msgid "Lending Conduct & Portfolio"
+msgstr "سلوكيات التمويل والمحفظة"
+
+msgid "Refresh portfolio data"
+msgstr "تحديث بيانات المحفظة"
+
+msgid "Active loans"
+msgstr "التمويلات القائمة"
+
+msgid "Outstanding (EGP)"
+msgstr "الرصيد القائم (جنيه)"
+
+msgid "pts vs last month"
+msgstr "نقطة مقارنة بالشهر السابق"
+
+msgid "PAR30 threshold"
+msgstr "حد المحفظة المعرضة للخطر 30 يومًا"
+
+msgid "not set — Regulatory Parameters"
+msgstr "غير محدد — المعايير الرقابية"
+
+msgid "FRA lending controls"
+msgstr "ضوابط الهيئة للتمويل"
+
+msgid "Attention needed"
+msgstr "يحتاج إلى اهتمام"
+
+msgid "Disbursed loans with incomplete files"
+msgstr "تمويلات مصروفة بملفات غير مكتملة"
+
+msgid "Open credit-study QA flags"
+msgstr "ملاحظات جودة مفتوحة على الدراسات الائتمانية"
+
+msgid "Exceptions waiting for approval"
+msgstr "استثناءات بانتظار الاعتماد"
+
+msgid "Early repayments in progress"
+msgstr "طلبات سداد معجل قيد التنفيذ"
+
+msgid "Fee breaches"
+msgstr "مخالفات الرسوم"
+
+msgid "AML candidates from lending"
+msgstr "حالات مرشحة لمكافحة غسل الأموال من التمويل"
+
+msgid "Follow-up visits overdue"
+msgstr "زيارات متابعة متأخرة"
+
+msgid "Fee checks are not complete until these parameters are set:"
+msgstr "لن تكتمل فحوصات الرسوم حتى يتم تحديد هذه المعايير:"
+
+msgid "Ageing buckets (days past due)"
+msgstr "شرائح أعمار المتأخرات (أيام التأخير)"
+
+msgid "Bucket"
+msgstr "الشريحة"
+
+msgid "PAR by branch"
+msgstr "المحفظة المعرضة للخطر حسب الفرع"
+
+msgid "PAR by loan officer"
+msgstr "المحفظة المعرضة للخطر حسب مسؤول الائتمان"
+
+msgid "PAR by product"
+msgstr "المحفظة المعرضة للخطر حسب المنتج"
+
+msgid "No data yet."
+msgstr "لا توجد بيانات بعد."
+
+msgid "Loans without a follow-up visit"
+msgstr "تمويلات بدون زيارة متابعة"
+
+msgid "within"
+msgstr "خلال"
+
+msgid "days of disbursement"
+msgstr "يومًا من الصرف"
+
+msgid "due by"
+msgstr "مستحقة قبل"
+
+msgid "Responsible-pricing disclosure"
+msgstr "الإفصاح عن التسعير المسؤول"
+
+msgid "Product"
+msgstr "المنتج"
+
+msgid "Rate avg / min / max"
+msgstr "متوسط / أدنى / أعلى سعر"
+
+msgid "APR avg / max"
+msgstr "متوسط / أعلى معدل سنوي فعلي"
+
+msgid "Admin fee avg / max"
+msgstr "متوسط / أعلى مصروفات إدارية"
+
+msgid "Penalty rate / cap"
+msgstr "معدل / حد الغرامة"
+
+msgid "No loans disbursed in this period."
+msgstr "لم يتم صرف تمويلات في هذه الفترة."
+
+msgid "Submissions in the regulatory calendar"
+msgstr "التقديمات في الأجندة الرقابية"
+
+msgid "Open FRA-RPD in Regulatory Reports"
+msgstr "فتح FRA-RPD في التقارير الرقابية"
+
+msgid "No submissions scheduled yet. Open FRA-RPD in Regulatory Reports and generate the schedule."
+msgstr "لا توجد تقديمات مجدولة بعد. افتح FRA-RPD في التقارير الرقابية وأنشئ الجدول."
+
+msgid "Early repayment"
+msgstr "السداد المعجل"
+
+msgid "Written cost disclosure"
+msgstr "الإفصاح الكتابي عن التكلفة"
+
+msgid "Remaining cost under the original schedule"
+msgstr "التكلفة المتبقية وفق الجدول الأصلي"
+
+msgid "Settlement amount"
+msgstr "مبلغ السداد"
+
+msgid "Early-repayment fee"
+msgstr "مصروفات السداد المعجل"
+
+msgid "New total cost"
+msgstr "إجمالي التكلفة الجديدة"
+
+msgid "Print disclosure for client signature"
+msgstr "طباعة الإفصاح لتوقيع العميل"
+
+msgid "No disclosure generated yet."
+msgstr "لم يتم إصدار الإفصاح بعد."
+
+msgid "Generate disclosure"
+msgstr "إصدار الإفصاح"
+
+msgid "Signed consent and cost acknowledgement"
+msgstr "الموافقة الموقعة والإقرار بالتكلفة"
+
+msgid "Signed consent"
+msgstr "موافقة موقعة"
+
+msgid "Cost impact acknowledged"
+msgstr "تم الإقرار بأثر التكلفة"
+
+msgid "The client signed the consent (scan attached below)"
+msgstr "وقّع العميل الموافقة (النسخة الممسوحة مرفقة أدناه)"
+
+msgid "The client confirmed they understand the cost impact"
+msgstr "أكد العميل فهمه لأثر التكلفة"
+
+msgid "Execute"
+msgstr "التنفيذ"
+
+msgid "Executed on"
+msgstr "تم التنفيذ في"
+
+msgid "Execute the early repayment and close the loan?"
+msgstr "تنفيذ السداد المعجل وإغلاق التمويل؟"
+
+msgid "Execute early repayment"
+msgstr "تنفيذ السداد المعجل"
+
+msgid "Available once the disclosure, signed consent and acknowledgement are recorded."
+msgstr "متاح بعد تسجيل الإفصاح والموافقة الموقعة والإقرار."
+
+msgid "Early repayment disclosure"
+msgstr "إفصاح السداد المعجل"
+
+msgid "Loan"
+msgstr "التمويل"
+
+msgid "Client"
+msgstr "العميل"
+
+msgid "I confirm that I received this disclosure, understand the cost impact of repaying early, and consent to the early repayment."
+msgstr "أقر بأنني استلمت هذا الإفصاح وفهمت أثر السداد المعجل على التكلفة، وأوافق على السداد المعجل."
+
+msgid "Client signature"
+msgstr "توقيع العميل"
+
+msgid "Company representative"
+msgstr "ممثل الشركة"
+
+msgid "Pricing & fee breaches"
+msgstr "مخالفات التسعير والرسوم"
+
+msgid "These parameters are not set, so the related checks cannot run:"
+msgstr "هذه المعايير غير محددة، لذلك لا يمكن تشغيل الفحوصات المرتبطة بها:"
+
+msgid "Over-charge by client (refund list)"
+msgstr "المبالغ المحصلة بالزيادة لكل عميل (قائمة الرد)"
+
+msgid "Items"
+msgstr "البنود"
+
+msgid "Total over-charge (EGP)"
+msgstr "إجمالي الزيادة (جنيه)"
+
+msgid "No over-charges found."
+msgstr "لا توجد مبالغ محصلة بالزيادة."
+
+msgid "Admin fee above the cap"
+msgstr "مصروفات إدارية أعلى من الحد"
+
+msgid "Admin fee above the tier"
+msgstr "مصروفات إدارية أعلى من الشريحة"
+
+msgid "Late penalty above the formula"
+msgstr "غرامة تأخير أعلى من المعادلة"
+
+msgid "Transfer fee above the cap"
+msgstr "رسوم نقل أعلى من الحد"
+
+msgid "Rescheduling fee above the cap"
+msgstr "رسوم إعادة جدولة أعلى من الحد"
+
+msgid "Detail"
+msgstr "التفاصيل"
+
+msgid "Charged"
+msgstr "المحصل"
+
+msgid "Allowed"
+msgstr "المسموح"
+
+msgid "Over-charge"
+msgstr "الزيادة"
+
+msgid "Late-penalty limit used: rate per started month of delay on the overdue instalment, capped at the cap percentage. Confirm this method with Compliance."
+msgstr "حد غرامة التأخير المستخدم: المعدل عن كل شهر تأخير بدأ على القسط المتأخر، بحد أقصى نسبة الحد. يجب تأكيد هذه الطريقة مع إدارة الالتزام."
+
+msgid "Import lending data"
+msgstr "استيراد بيانات التمويل"
+
+msgid "Data type"
+msgstr "نوع البيانات"
+
+msgid "CSV or Excel file"
+msgstr "ملف CSV أو Excel"
+
+msgid "Import in this order: clients, loans, then contracts, documents, credit studies, instalments, visits, early repayments, reschedulings, transfers. Rows are matched on their reference, so sending a file again updates them."
+msgstr "استورد بهذا الترتيب: العملاء ثم التمويلات ثم العقود والمستندات والدراسات الائتمانية والأقساط والزيارات والسداد المعجل وإعادة الجدولة والنقل. تتم مطابقة الصفوف بمرجعها، لذلك يؤدي إعادة إرسال الملف إلى تحديثها."
+
+msgid "Templates and columns"
+msgstr "النماذج والأعمدة"
+
+msgid "Dates as YYYY-MM-DD. Yes/no columns accept yes, no, 1, 0. cost_lines is a JSON list, e.g. [{\"label\": \"rent\", \"amount\": 1500}]. The same data can be sent to the JSON API: POST /api/v1/fra-nbfi/lending/import with an API key that has the lending:write scope."
+msgstr "التواريخ بصيغة YYYY-MM-DD. أعمدة نعم/لا تقبل yes وno و1 و0. عمود cost_lines قائمة JSON مثل [{\"label\": \"rent\", \"amount\": 1500}]. ويمكن إرسال نفس البيانات إلى واجهة JSON: POST /api/v1/fra-nbfi/lending/import بمفتاح API له صلاحية lending:write."
+
+msgid "Batch"
+msgstr "الدفعة"
+
+msgid "Recent imports"
+msgstr "عمليات الاستيراد الأخيرة"
+
+msgid "When"
+msgstr "التوقيت"
+
+msgid "OK"
+msgstr "سليم"
+
+msgid "No imports yet."
+msgstr "لا توجد عمليات استيراد بعد."
+
+msgid "Officer"
+msgstr "مسؤول الائتمان"
+
+msgid "file gap(s)"
+msgstr "نقص في الملف"
+
+msgid "File complete"
+msgstr "الملف مكتمل"
+
+msgid "Tenor"
+msgstr "المدة"
+
+msgid "months"
+msgstr "شهر"
+
+msgid "Interest rate"
+msgstr "سعر العائد"
+
+msgid "Admin fee"
+msgstr "المصروفات الإدارية"
+
+msgid "over by"
+msgstr "زيادة بمقدار"
+
+msgid "Outstanding"
+msgstr "الرصيد القائم"
+
+msgid "Disbursed on"
+msgstr "تاريخ الصرف"
+
+msgid "Days past due"
+msgstr "أيام التأخير"
+
+msgid "mandatory above EGP"
+msgstr "إلزامي فوق مبلغ (جنيه)"
+
+msgid "Client revenue / project size"
+msgstr "إيرادات العميل / حجم المشروع"
+
+msgid "Origination file"
+msgstr "ملف منح التمويل"
+
+msgid "All required items are on file."
+msgstr "جميع المتطلبات موجودة في الملف."
+
+msgid "No documents recorded."
+msgstr "لا توجد مستندات مسجلة."
+
+msgid "Contract"
+msgstr "العقد"
+
+msgid "Lender signature"
+msgstr "توقيع الشركة"
+
+msgid "Penalty clause"
+msgstr "بند الغرامة"
+
+msgid "cap"
+msgstr "الحد"
+
+msgid "Contract no."
+msgstr "رقم العقد"
+
+msgid "Lender signed"
+msgstr "وقّعت الشركة"
+
+msgid "Client signed"
+msgstr "وقّع العميل"
+
+msgid "Penalty rate"
+msgstr "معدل الغرامة"
+
+msgid "Penalty cap"
+msgstr "حد الغرامة"
+
+msgid "Credit study"
+msgstr "الدراسة الائتمانية"
+
+msgid "Revenue"
+msgstr "الإيرادات"
+
+msgid "Costs"
+msgstr "التكاليف"
+
+msgid "Household"
+msgstr "مصروفات الأسرة"
+
+msgid "Other debt service"
+msgstr "أعباء ديون أخرى"
+
+msgid "Net income"
+msgstr "صافي الدخل"
+
+msgid "Cost lines"
+msgstr "بنود التكاليف"
+
+msgid "Record / update the credit study"
+msgstr "تسجيل / تحديث الدراسة الائتمانية"
+
+msgid "Monthly revenue"
+msgstr "الإيرادات الشهرية"
+
+msgid "Monthly costs"
+msgstr "التكاليف الشهرية"
+
+msgid "Household expenses"
+msgstr "مصروفات الأسرة"
+
+msgid "Study date"
+msgstr "تاريخ الدراسة"
+
+msgid "Cost lines — one per line as \"label: amount\""
+msgstr "بنود التكاليف — بند في كل سطر بصيغة \"البيان: المبلغ\""
+
+msgid "Instalments"
+msgstr "الأقساط"
+
+msgid "Principal"
+msgstr "أصل"
+
+msgid "Interest"
+msgstr "عائد"
+
+msgid "Paid"
+msgstr "المسدد"
+
+msgid "Paid on"
+msgstr "تاريخ السداد"
+
+msgid "Penalty"
+msgstr "الغرامة"
+
+msgid "No schedule imported."
+msgstr "لم يتم استيراد جدول أقساط."
+
+msgid "Disbursement"
+msgstr "الصرف"
+
+msgid "Cannot be marked disbursed until:"
+msgstr "لا يمكن تسجيل الصرف حتى:"
+
+msgid "Complete the file, or request an exception approved by a second person."
+msgstr "استكمل الملف أو اطلب استثناءً يعتمده شخص آخر."
+
+msgid "Mark disbursed"
+msgstr "تسجيل الصرف"
+
+msgid "Incomplete file"
+msgstr "ملف غير مكتمل"
+
+msgid "Eligibility (licence ceiling)"
+msgstr "الأهلية (حد الترخيص)"
+
+msgid "Reason (required)"
+msgstr "السبب (إلزامي)"
+
+msgid "Request exception"
+msgstr "طلب استثناء"
+
+msgid "Follow-up visits"
+msgstr "زيارات المتابعة"
+
+msgid "Planned"
+msgstr "مخططة"
+
+msgid "No visits recorded."
+msgstr "لا توجد زيارات مسجلة."
+
+msgid "Done on"
+msgstr "تمت في"
+
+msgid "Outcome"
+msgstr "النتيجة"
+
+msgid "Start early repayment"
+msgstr "بدء السداد المعجل"
+
+msgid "Reschedulings & transfers"
+msgstr "إعادة الجدولة ونقل الأقساط"
+
+msgid "Rescheduling"
+msgstr "إعادة جدولة"
+
+msgid "fee"
+msgstr "رسوم"
+
+msgid "Transfer"
+msgstr "نقل"
+
+msgid "New client"
+msgstr "عميل جديد"
+
+msgid "New loan"
+msgstr "تمويل جديد"
+
+msgid "Loan, client reference or name"
+msgstr "رقم التمويل أو مرجع العميل أو الاسم"
+
+msgid "All statuses"
+msgstr "جميع الحالات"
+
+msgid "All branches"
+msgstr "جميع الفروع"
+
+msgid "Incomplete files only"
+msgstr "الملفات غير المكتملة فقط"
+
+msgid "DPD"
+msgstr "أيام التأخير"
+
+msgid "gap(s)"
+msgstr "نقص"
+
+msgid "No loans yet. Import data or add a loan."
+msgstr "لا توجد تمويلات بعد. استورد البيانات أو أضف تمويلًا."
+
+msgid "Manual entry for small portfolios. Larger portfolios: use Import data."
+msgstr "إدخال يدوي للمحافظ الصغيرة. للمحافظ الأكبر استخدم استيراد البيانات."
+
+msgid "The national ID is stored only as a secure hash."
+msgstr "يُحفظ الرقم القومي كقيمة مشفرة آمنة فقط."
+
+msgid "New loans start as application / approved. Mark them disbursed from the loan page once the file is complete."
+msgstr "تبدأ التمويلات الجديدة كطلب أو معتمد. سجل الصرف من صفحة التمويل بعد اكتمال الملف."
+
+msgid "Required documents per product are checked before a loan can be disbursed (in addition to the contract, receipt acknowledgement and credit study required for every loan)."
+msgstr "يتم التحقق من المستندات المطلوبة لكل منتج قبل الصرف (بالإضافة إلى العقد وإقرار الاستلام والدراسة الائتمانية المطلوبة لكل تمويل)."
+
+msgid "Required documents"
+msgstr "المستندات المطلوبة"
+
+msgid "No products yet."
+msgstr "لا توجد منتجات بعد."
+
+msgid "Add or update a product"
+msgstr "إضافة أو تحديث منتج"
+
+msgid "Credit-study QA queue"
+msgstr "قائمة مراجعة جودة الدراسات الائتمانية"
+
+msgid "Flags: identical figures across clients of one officer, mostly round numbers, too few cost lines, cost/revenue ratio far from the officer norm. Clear a flag when the study is genuine; confirm it when the study was templated or copied."
+msgstr "الملاحظات: أرقام متطابقة لعملاء نفس المسؤول، أرقام مقربة في معظمها، بنود تكاليف قليلة، نسبة تكاليف إلى إيرادات بعيدة عن معدل المسؤول. أغلق الملاحظة إذا كانت الدراسة حقيقية، وأكدها إذا كانت منسوخة أو نمطية."
+
+msgid "Flag"
+msgstr "الملاحظة"
+
+msgid "Confirm"
+msgstr "تأكيد"
+
+msgid "No QA flags."
+msgstr "لا توجد ملاحظات جودة."
+
+msgid "cannot disburse: "
+msgstr "لا يمكن الصرف: "
+
+msgid "an exception must be approved by someone other than the requester"
+msgstr "يجب أن يعتمد الاستثناء شخص غير مقدم الطلب"
+
+msgid "exception not found or already decided"
+msgstr "الاستثناء غير موجود أو تم البت فيه"
+
+msgid "attach the signed consent before recording it"
+msgstr "أرفق الموافقة الموقعة قبل تسجيلها"
+
+msgid "generate the disclosure first"
+msgstr "أصدر الإفصاح أولًا"
+
+msgid "signed client consent and cost acknowledgement are required before execution"
+msgstr "الموافقة الموقعة من العميل والإقرار بالتكلفة مطلوبان قبل التنفيذ"
+
+msgid "the written cost disclosure has not been generated"
+msgstr "لم يتم إصدار الإفصاح الكتابي عن التكلفة"
+
+msgid "early repayment is only possible on a disbursed loan"
+msgstr "السداد المعجل ممكن فقط على تمويل مصروف"
+
+msgid "settlement amount is required"
+msgstr "مبلغ السداد إلزامي"
+
+msgid "only an application or approved loan can be disbursed"
+msgstr "يمكن صرف الطلبات أو التمويلات المعتمدة فقط"
+
+msgid "a reason is required"
+msgstr "السبب إلزامي"
+
+msgid "unknown QA decision"
+msgstr "قرار المراجعة غير معروف"
+
+msgid "already executed"
+msgstr "تم التنفيذ بالفعل"
+
+msgid "loan not found"
+msgstr "التمويل غير موجود"
+
+msgid "early repayment not found"
+msgstr "طلب السداد المعجل غير موجود"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

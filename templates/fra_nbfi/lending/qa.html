@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% import 'fra_nbfi/lending/_nav.html' as ln with context %}
+{% block title %}{{ _('Credit-study QA') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-2">{{ _('Credit-study QA queue') }} <span class="small text-muted">FRA-016</span></h3>
+    {{ ln.nav('lending.qa') }}
+    <p class="small text-muted">{{ _('Flags: identical figures across clients of one officer, mostly round numbers, too few cost lines, cost/revenue ratio far from the officer norm. Clear a flag when the study is genuine; confirm it when the study was templated or copied.') }}</p>
+    <div class="card"><div class="table-responsive"><table class="table table-sm mb-0 align-middle small">
+        <thead><tr><th>{{ _('Loan') }}</th><th>{{ _('Client') }}</th><th>{{ _('Officer') }}</th><th>{{ _('Flag') }}</th><th>{{ _('Detail') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead><tbody>
+        {% for q in flags %}<tr>
+            <td><a href="{{ url_for('lending.loan_detail', loan_id=q.loan_id) }}">{{ q.loan_ref }}</a></td><td>{{ q.client_ref }}</td><td>{{ q.officer_code or '-' }}</td>
+            <td>{{ q.flag_type }}</td><td>{{ q.detail }}</td><td><span class="badge bg-{{ 'warning text-dark' if q.status == 'open' else ('danger' if q.status == 'confirmed' else 'success') }}">{{ q.status }}</span></td>
+            <td>{% if ln_can_edit and q.status == 'open' %}<form method="post" action="{{ url_for('lending.qa_review', flag_id=q.id) }}" class="d-flex gap-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="note" class="form-control form-control-sm" placeholder="{{ _('Note') }}" required>
+                <button name="status" value="cleared" class="btn btn-sm btn-outline-success">{{ _('Clear') }}</button>
+                <button name="status" value="confirmed" class="btn btn-sm btn-outline-danger">{{ _('Confirm') }}</button></form>{% elif q.review_note %}{{ q.review_note }}{% endif %}</td></tr>
+        {% else %}<tr><td colspan="7" class="text-center text-muted py-4">{{ _('No QA flags.') }}</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

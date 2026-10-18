@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% import 'fra_nbfi/lending/_nav.html' as ln with context %}
+{% import 'regcontrols/_macros.html' as rc with context %}
+{% block title %}{{ _('Lending Conduct & Portfolio') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+        <h3 class="mb-0"><i class="bi bi-cash-coin me-2"></i>{{ _('Lending Conduct & Portfolio') }}</h3>
+        {% if ln_can_edit %}
+        <div class="d-flex gap-2">
+            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('lending.import_data') }}"><i class="bi bi-upload me-1"></i>{{ _('Import data') }}</a>
+            <form method="post" action="{{ url_for('lending.refresh') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-sm btn-primary"><i class="bi bi-arrow-repeat me-1"></i>{{ _('Refresh portfolio data') }}</button></form>
+        </div>
+        {% endif %}
+    </div>
+    {{ ln.nav('lending.dashboard') }}
+
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fs-4">{{ company.loans }}</div><div class="small text-muted">{{ _('Active loans') }}</div></div></div></div>
+        <div class="col-6 col-md-2"><div class="card text-center"><div class="card-body py-2"><div class="fs-5">{{ '{:,.0f}'.format(company.outstanding) }}</div><div class="small text-muted">{{ _('Outstanding (EGP)') }}</div></div></div></div>
+        {% for lvl in [30, 60, 90, 120] %}
+        <div class="col-6 col-md-2"><div class="card text-center {{ 'border-danger' if lvl == 30 and threshold is not none and company.par[30] > threshold }}"><div class="card-body py-2">
+            <div class="fs-4 {{ 'text-danger' if lvl == 30 and threshold is not none and company.par[30] > threshold }}">{{ company.par[lvl] }}%</div>
+            <div class="small text-muted">PAR{{ lvl }}{% if lvl == 30 and trend is not none %} · {{ '+' if trend > 0 }}{{ trend }} {{ _('pts vs last month') }}{% endif %}</div>
+        </div></div></div>
+        {% endfor %}
+    </div>
+    <p class="small text-muted">{{ _('PAR30 threshold') }}: {% if threshold is not none %}<strong>{{ threshold }}%</strong>{% else %}<span class="badge bg-warning text-dark">{{ _('not set — Regulatory Parameters') }}</span>{% endif %}</p>
+
+    <div class="row g-3 mb-3">
+        <div class="col-lg-5">
+            <div class="card h-100"><div class="card-header"><strong>{{ _('FRA lending controls') }}</strong></div>
+                <ul class="list-group list-group-flush small">
+                {% for code, c in controls.items() if c %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-1">
+                        <a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}"><strong>{{ code }}</strong> {{ rc_loc(c.title_en, c.title_ar) }}</a>
+                        {{ rc.status_badge(c.last_status) }}
+                    </li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card mb-3"><div class="card-header"><strong>{{ _('Attention needed') }}</strong></div>
+                <div class="card-body small">
+                    <div class="row g-2">
+                        {% for label, n, link in [(_('Disbursed loans with incomplete files'), counts.incomplete, url_for('lending.loans', incomplete=1)),
+                                                  (_('Open credit-study QA flags'), counts.qa_open, url_for('lending.qa')),
+                                                  (_('Exceptions waiting for approval'), counts.exceptions, url_for('lending.loans')),
+                                                  (_('Early repayments in progress'), counts.er_pending, url_for('lending.loans')),
+                                                  (_('Fee breaches'), (breaches['FRA-017']|length + breaches['FRA-018']|length + breaches['FRA-020']|length + breaches['FRA-025']|length + breaches['FRA-026']|length), url_for('lending.fees')),
+                                                  (_('AML candidates from lending'), counts.aml_candidates, url_for('lending.dashboard')),
+                                                  (_('Follow-up visits overdue'), counts.get('visits_overdue', '-'), url_for('lending.dashboard'))] %}
+                        <div class="col-md-6 d-flex justify-content-between border-bottom py-1"><a href="{{ link }}">{{ label }}</a><span class="fw-bold {{ 'text-danger' if n and n != '-' }}">{{ n }}</span></div>
+                        {% endfor %}
+                    </div>
+                    {% if breaches.missing_params %}<div class="alert alert-warning small mt-2 mb-0">{{ _('Fee checks are not complete until these parameters are set:') }} <code>{{ breaches.missing_params|join(', ') }}</code></div>{% endif %}
+                </div>
+            </div>
+            <div class="card"><div class="card-header"><strong>{{ _('Ageing buckets (days past due)') }}</strong></div>
+                <table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Bucket') }}</th><th class="text-end">{{ _('Loans') }}</th><th class="text-end">{{ _('Outstanding (EGP)') }}</th></tr></thead><tbody>
+                {% for b in buckets %}{% set v = company.buckets[b[0]] %}
+                <tr><td>{{ _('Current') if b[0] == 'current' else b[0] }}</td><td class="text-end">{{ v.count }}</td><td class="text-end">{{ '{:,.0f}'.format(v.amount) }}</td></tr>
+                {% endfor %}</tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        {% for dim, title in [('branch', _('PAR by branch')), ('officer', _('PAR by loan officer')), ('product', _('PAR by product'))] %}
+        <div class="col-lg-4">
+            <div class="card h-100"><div class="card-header"><strong>{{ title }}</strong></div>
+                <div class="table-responsive" style="max-height: 360px"><table class="table table-sm mb-0 small">
+                    <thead><tr><th></th><th class="text-end">{{ _('Loans') }}</th><th class="text-end">PAR30</th><th class="text-end">PAR90</th></tr></thead><tbody>
+                    {% for k, m in by[dim].items() %}
+                    <tr class="{{ 'table-danger' if threshold is not none and m.par[30] > threshold }}"><td>{{ k }}</td><td class="text-end">{{ m.loans }}</td><td class="text-end">{{ m.par[30] }}%</td><td class="text-end">{{ m.par[90] }}%</td></tr>
+                    {% else %}<tr><td colspan="4" class="text-muted">{{ _('No data yet.') }}</td></tr>{% endfor %}
+                    </tbody></table></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if missing_visits %}
+    <div class="card mt-3"><div class="card-header"><strong>{{ _('Loans without a follow-up visit') }}</strong> <span class="small text-muted">({{ _('within') }} {{ visits_param }} {{ _('days of disbursement') }})</span></div>
+        <ul class="list-group list-group-flush small">{% for l, dl in missing_visits %}
+            <li class="list-group-item"><a href="{{ url_for('lending.loan_detail', loan_id=l.id) }}">{{ l.loan_ref }}</a> · {{ l.branch_code or '-' }} · {{ l.officer_code or '-' }} · {{ _('due by') }} {{ dl }}</li>
+        {% endfor %}</ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
