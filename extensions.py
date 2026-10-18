@@ -25,6 +25,10 @@ csrf = CSRFProtect()
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per minute"],
-    storage_uri="redis://localhost:6379/1"
+    storage_uri="redis://localhost:6379/1",
+    # Redis down must not turn every request into a 500: log the storage error,
+    # keep counting in memory until Redis is back.
+    swallow_errors=True,
+    in_memory_fallback_enabled=True,
 )
 mail = Mail()

@@ -789,7 +789,7 @@ def audit_coverage(year=None, db=None):
         JOIN annual_audit_plans ap ON ap.id = p.plan_id WHERE ap.plan_year = %s""", (year,))}
     controls = _rows(db, "SELECT id, control_code, title_en, title_ar, criticality, area FROM rc_controls WHERE is_active "
                          "ORDER BY control_code")
-    areas = _safe_rows(db, "SELECT id, auditable_area FROM audit_universe WHERE is_active ORDER BY auditable_area")
+    areas = _safe_rows(db, "SELECT id, auditable_area FROM audit_universe WHERE CAST(is_active AS INTEGER) = 1 ORDER BY auditable_area")
     mapping = {}
     for r in _safe_rows(db, "SELECT universe_id, control_id FROM ia_area_controls"):
         mapping.setdefault(r['control_id'], []).append(r['universe_id'])
