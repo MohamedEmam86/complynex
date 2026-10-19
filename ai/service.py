@@ -86,7 +86,16 @@ def run_feature(feature, payload, user_id):
         res, meta = tasks.draft(kind, ctx, payload.get('lang', 'en'), gen)
         sid = _log('draft', {'kind': kind, 'ctx': ctx}, res, meta, user_id, payload.get('obj_type'), payload.get('obj_id'))
         return dict(res, suggestion_id=sid, provider=meta['provider'], status=meta['status'])
+    if feature == 'library_index':
+        from . import library
+        return library.rebuild(db, emb)
+    if feature == 'mail_import':
+        from . import mailbox
+        return mailbox.run_import(db=db)
     raise ValueError('unknown feature')
+
+
+BACKGROUND = ('library_index', 'mail_import')     # may be slow without any model (embeddings, mail server)
 
 
 # ------------------------------------------------------------------ jobs
@@ -99,7 +108,7 @@ def start_job(feature, payload, user_id):
                (jid, feature, json.dumps(payload, default=str), user_id))
     db.commit()
     cfg, gen, _ = providers()
-    if cfg['ai.async'] and gen.can_generate:
+    if cfg['ai.async'] and (gen.can_generate or feature in BACKGROUND):
         try:
             from events.queue import get_queue
             get_queue().enqueue('ai.service.job_entry', jid, job_timeout=int(cfg['ai.timeout_s']) * 3 + 60)

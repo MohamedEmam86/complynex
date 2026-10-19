@@ -1,0 +1,21 @@
+{# Policy-question answer: only the cited library paragraphs (and, if a local model is configured, its summary of them). #}
+{% macro citations(lib, provider=None) -%}
+<div class="card mb-3" id="library-answer"><div class="card-header"><strong><i class="bi bi-journal-text me-1"></i>{{ _('Answer from the regulatory library') }}</strong></div>
+  <div class="card-body small">
+  {% if not lib or lib.status != 'cited' or not lib.citations %}
+    <div class="alert alert-warning py-2 mb-0">{{ _('No source found in the regulatory library. The Copilot does not answer without a citation: confirm to send the question to the compliance team, or rebuild the library index (AI settings).') }}</div>
+  {% else %}
+    {% if lib.answer %}<div class="border rounded p-2 mb-2 bg-light" dir="auto"><span class="badge bg-warning text-dark me-1">{{ _('AI draft — review required') }}</span>
+      <span style="white-space: pre-wrap">{{ lib.answer }}</span>
+      <div class="text-muted mt-1">{{ _('Summary of the cited paragraphs only; the paragraphs below are the source.') }}</div></div>{% endif %}
+    {% for c in lib.citations %}
+    <blockquote class="border-start border-3 ps-2 mb-2 {{ 'border-primary' if c.used is not defined or c.used else 'border-secondary' }}">
+      <div class="fw-semibold">{{ c.ref_label or '' }} {{ c.title or '' }} <span class="badge bg-light text-dark border">{{ c.source_type }}</span>
+        <span class="text-muted">{{ _('paragraph') }} {{ c.para_no }} · {{ _('match') }} {{ '%.0f'|format((c.score or 0) * 100) }}/100 ({{ c.by }})</span></div>
+      <div dir="auto" style="white-space: pre-wrap">{{ c.body }}</div>
+      {% if c.url %}<a href="{{ c.url }}" class="small">{{ _('Open the source') }} <i class="bi bi-box-arrow-up-right"></i></a>{% endif %}
+    </blockquote>
+    {% endfor %}
+  {% endif %}
+  </div></div>
+{%- endmacro %}

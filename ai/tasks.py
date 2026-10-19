@@ -35,7 +35,8 @@ from . import schema as S
 from . import text as T
 from .providers import ProviderError, RulesOnly, cosine
 
-PROMPT_VERSIONS = {'intake': 'intake-v1', 'playbook': 'playbook-v1', 'nba': 'nba-v1', 'draft': 'draft-v1'}
+PROMPT_VERSIONS = {'intake': 'intake-v1', 'playbook': 'playbook-v1', 'nba': 'nba-v1', 'draft': 'draft-v1',
+                   'guidance': 'guidance-v1'}
 RULES_THRESHOLD = 0.9          # below this rules score the item is "unclassified" (manual triage)
 
 SYSTEM = ("You are the compliance assistant inside a compliance-management system of a regulated financial "
@@ -411,6 +412,34 @@ def draft(kind, ctx, lang='en', gen=None):
     except ProviderError as e:
         return rules, _meta(gen, 'draft', 'fallback', 0, prompt, str(e))
     return obj, _meta(gen, 'draft', status, ms, prompt)
+
+
+# --------------------------------------------------------------------------
+# 4. policy questions: summarise ONLY the cited library paragraphs
+# --------------------------------------------------------------------------
+
+def summarise_citations(question, cites, lang='en', gen=None):
+    """The rules result is the cited paragraphs themselves (answer None). A local model may write a short
+    answer that must cite at least one of the given paragraph ids and use nothing else."""
+    gen = gen or RulesOnly()
+    rules = {'answer': None, 'cited': [c['id'] for c in cites]}
+    if not gen.can_generate or not cites:
+        return rules, _meta(gen, 'guidance')
+    ids = [c['id'] for c in cites]
+    sch = {'type': 'object', 'required': ['answer', 'cited'],
+           'properties': {'answer': {'type': 'string', 'minLength': 1, 'maxLength': 1500},
+                          'cited': {'type': 'array', 'minItems': 1, 'maxItems': len(ids), 'items': {'type': 'integer', 'enum': ids}}}}
+    paras = '\n\n'.join(f"[{c['id']}] {c.get('ref_label') or ''} {c.get('title') or ''}\n{c['body'][:1500]}" for c in cites)
+    prompt = (f"Answer the question ONLY from the numbered source paragraphs below, in {'Arabic' if lang == 'ar' else 'English'}, "
+              "in at most four sentences. Do not add any rule, number, deadline or exception that is not written in them. "
+              "If the paragraphs do not answer the question, say so. List the ids of the paragraphs you used.\n\n"
+              f"Question:\n\"\"\"\n{(question or '')[:1500]}\n\"\"\"\n\nSource paragraphs:\n{paras}\n\n"
+              'Reply as JSON: {"answer": "...", "cited": [<paragraph id>, ...]}')
+    try:
+        obj, status, ms = call_model(gen, SYSTEM, prompt, sch)
+    except ProviderError as e:
+        return rules, _meta(gen, 'guidance', 'fallback', 0, prompt, str(e))
+    return {'answer': obj['answer'], 'cited': obj['cited']}, _meta(gen, 'guidance', status, ms, prompt)
 
 
 def deadline_from(intent, fields, today=None):

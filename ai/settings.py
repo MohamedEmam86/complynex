@@ -40,7 +40,12 @@ DEFAULTS = {
     'ai.embeddings_path': '',
     'ai.log_retention_days': '90',
     'ai.async': 'true',                   # run model calls as RQ jobs (falls back inline without Redis)
+    'ai.freeze_match_threshold': '0.80',  # freeze-order screening: minimum name score (0-1), as the screening search
+    'ai.freeze_counterparty_days': '90',  # freeze-order screening: counterparties of the last N days
+    'ai.cite_min_score': '0.30',          # policy questions: minimum rules score of a cited paragraph (0-1)
+    'ai.cite_min_embedding': '0.55',      # policy questions: minimum embedding cosine of a cited paragraph (0-1)
 }
+FLOATS = ('ai.freeze_match_threshold', 'ai.cite_min_score', 'ai.cite_min_embedding')
 PROVIDERS = ('rules_only', 'local_http')
 EMBEDDINGS = ('off', 'semantic_service', 'local_path')
 
@@ -54,11 +59,16 @@ def get_config():
     cfg = {k: (vals.get(k) if vals.get(k) not in (None, '') else v) for k, v in DEFAULTS.items()}
     cfg['ai.enabled'] = str(cfg['ai.enabled']).lower() == 'true'
     cfg['ai.async'] = str(cfg['ai.async']).lower() == 'true'
-    for k in ('ai.timeout_s', 'ai.log_retention_days'):
+    for k in ('ai.timeout_s', 'ai.log_retention_days', 'ai.freeze_counterparty_days'):
         try:
             cfg[k] = int(cfg[k])
         except (TypeError, ValueError):
             cfg[k] = int(DEFAULTS[k])
+    for k in FLOATS:
+        try:
+            cfg[k] = min(1.0, max(0.0, float(cfg[k])))
+        except (TypeError, ValueError):
+            cfg[k] = float(DEFAULTS[k])
     return cfg
 
 
@@ -81,9 +91,18 @@ def save_config(data):
         import os
         if not os.path.isdir(data.get('ai.embeddings_path') or ''):
             raise ValueError('the embeddings model path must be a directory on this server')
-    for k in ('ai.timeout_s', 'ai.log_retention_days'):
-        if not str(data.get(k, DEFAULTS[k])).isdigit():
+    for k in ('ai.timeout_s', 'ai.log_retention_days', 'ai.freeze_counterparty_days'):
+        data[k] = str(data.get(k) or DEFAULTS[k])
+        if not data[k].isdigit():
             raise ValueError(f'{k} must be a whole number')
+    for k in FLOATS:
+        data[k] = str(data.get(k) or DEFAULTS[k])
+        try:
+            ok = 0 <= float(data[k]) <= 1
+        except ValueError:
+            ok = False
+        if not ok:
+            raise ValueError(f'{k} must be a number between 0 and 1')
     if data.get('ai.api_style', 'ollama') not in ('ollama', 'openai_compat'):
         raise ValueError('unknown API style')
     Settings.set_many({k: str(data.get(k, DEFAULTS[k])) for k in DEFAULTS})
@@ -109,3 +128,88 @@ def embedder(cfg=None):
     except (netguard.NotLocalError, ProviderError) as e:
         logger.warning('AI: embeddings not usable (%s)', e)
         return None
+
+
+# ------------------------------------------------------------------ monitored mailbox (IMAP, optional)
+# IMAP is not AI: any mail host is allowed, but only over TLS (implicit SSL or STARTTLS).
+# The password is stored encrypted (data_protection EncryptionService, Fernet) or as a
+# reference to an environment variable ("env:NAME"); it is never shown back in the UI.
+MAIL_DEFAULTS = {
+    'ai.imap_enabled': 'false',
+    'ai.imap_host': '',
+    'ai.imap_port': '993',
+    'ai.imap_security': 'ssl',            # ssl (implicit TLS, 993) | starttls (143 + STARTTLS)
+    'ai.imap_user': '',
+    'ai.imap_password': '',               # "enc:<token>" or "env:<VARIABLE>"
+    'ai.imap_folder': 'INBOX',
+    'ai.imap_max_messages': '20',
+    'ai.imap_channel': 'email',           # channel of the created intake items
+}
+MAIL_SECURITY = ('ssl', 'starttls')
+
+
+def get_mail_config():
+    try:
+        from models.settings import Settings
+        vals = Settings.get_many(list(MAIL_DEFAULTS))
+    except Exception:
+        vals = {}
+    cfg = {k: (vals.get(k) if vals.get(k) not in (None, '') else v) for k, v in MAIL_DEFAULTS.items()}
+    cfg['ai.imap_enabled'] = str(cfg['ai.imap_enabled']).lower() == 'true'
+    for k in ('ai.imap_port', 'ai.imap_max_messages'):
+        try:
+            cfg[k] = int(cfg[k])
+        except (TypeError, ValueError):
+            cfg[k] = int(MAIL_DEFAULTS[k])
+    cfg['password_set'] = bool(cfg['ai.imap_password'])
+    cfg['password_kind'] = 'env' if str(cfg['ai.imap_password']).startswith('env:') else ('stored' if cfg['password_set'] else None)
+    return cfg
+
+
+def save_mail_config(data):
+    """data: form values. An empty password keeps the stored one; "env:NAME" stores a reference."""
+    import re
+    from models.settings import Settings
+    cur = get_mail_config()
+    out = {k: str(data.get(k, '') or '').strip() for k in MAIL_DEFAULTS if k != 'ai.imap_password'}
+    out['ai.imap_enabled'] = 'true' if data.get('ai.imap_enabled') else 'false'
+    if out['ai.imap_security'] not in MAIL_SECURITY:
+        raise ValueError('the mailbox must be read over SSL/TLS or STARTTLS')
+    for k in ('ai.imap_port', 'ai.imap_max_messages'):
+        out[k] = out[k] or MAIL_DEFAULTS[k]
+        if not out[k].isdigit() or not 0 < int(out[k]) < 65536:
+            raise ValueError(f'{k} must be a whole number')
+    out['ai.imap_folder'] = out['ai.imap_folder'] or 'INBOX'
+    out['ai.imap_channel'] = out['ai.imap_channel'] if out['ai.imap_channel'] in ('email', 'alert', 'circular') else 'email'
+    if out['ai.imap_host'] and not re.fullmatch(r'[A-Za-z0-9.-]{1,253}', out['ai.imap_host']):
+        raise ValueError('the mail server must be a host name or IP address')
+    if out['ai.imap_enabled'] == 'true' and not (out['ai.imap_host'] and out['ai.imap_user']):
+        raise ValueError('enter the mail server and the user name')
+    pw = str(data.get('ai.imap_password') or '').strip()
+    if pw.startswith('env:'):
+        if not re.fullmatch(r'env:[A-Za-z_][A-Za-z0-9_]{0,80}', pw):
+            raise ValueError('an environment reference looks like env:COMPLYNEX_IMAP_PASSWORD')
+        out['ai.imap_password'] = pw
+    elif pw:
+        from data_protection.encryption_service import EncryptionService
+        tok = EncryptionService.encrypt_value(pw)
+        if not tok:
+            raise ValueError('the password could not be encrypted: use an environment reference (env:NAME)')
+        out['ai.imap_password'] = 'enc:' + tok
+    elif data.get('clear_password'):
+        out['ai.imap_password'] = ''
+    else:
+        out['ai.imap_password'] = cur['ai.imap_password'] if cur['password_set'] else ''
+    Settings.set_many(out)
+
+
+def mail_password(cfg=None):
+    """The clear-text IMAP password (only in memory, for the login)."""
+    import os
+    raw = str((cfg or get_mail_config()).get('ai.imap_password') or '')
+    if raw.startswith('env:'):
+        return os.environ.get(raw[4:], '')
+    if raw.startswith('enc:'):
+        from data_protection.encryption_service import EncryptionService
+        return EncryptionService.decrypt_value(raw[4:]) or ''
+    return ''

@@ -32,7 +32,8 @@ from database.db import get_db
 from models.audit import AuditLog
 
 from . import ai_bp as bp
-from . import audit, catalog, extract, handlers, intake, nba, playbooks, service, settings, tasks
+from . import audit, catalog, extract, freeze_screening, handlers, intake, library, mailbox, nba, playbooks, service, settings
+from . import tasks
 from .netguard import NotLocalError
 
 RANK = {'none': 0, 'view': 1, 'use': 2, 'edit': 2, 'admin': 3}
@@ -102,7 +103,8 @@ def _ctx():
 # ------------------------------------------------------------------ intake
 def _save_upload(item_id, f):
     from utils.file_validator import secure_filename_strict, validate_file
-    ok, err = validate_file(f, upload_type='document')
+    is_image = os.path.splitext((f.filename or '').lower())[1] in ('.png', '.jpg', '.jpeg', '.gif')
+    ok, err = validate_file(f, upload_type='image' if is_image else 'document')   # images: local OCR
     if not ok:
         raise ValueError(f'file not accepted: {err}')
     name = secure_filename_strict(f.filename)
@@ -118,7 +120,7 @@ def _save_upload(item_id, f):
                 datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     db.commit()
     with open(full, 'rb') as fh:
-        return extract.text_from_bytes(f.filename, fh.read())
+        return extract.extract(f.filename, fh.read())
 
 
 @bp.route('/', methods=['GET', 'POST'])
@@ -136,10 +138,9 @@ def home():
             iid = intake.create_item(request.form.get('channel'), request.form.get('subject'),
                                      body or ('(document)' if f and f.filename else ''), current_user.id)
             if f and f.filename:
-                text, note = _save_upload(iid, f)
-                if text and not body.strip():
-                    get_db().execute("UPDATE ai_intake_items SET body = %s, channel = 'document' WHERE id = %s", (text, iid))
-                    get_db().commit()
+                res = _save_upload(iid, f)
+                intake.set_extraction(iid, res, use_text=not body.strip())
+                note = res.get('note')
                 if note:
                     flash(_(note) if ':' not in note else note, 'warning')
             jid = service.start_job('intake', {'item_id': iid}, current_user.id)
@@ -148,16 +149,57 @@ def home():
         except ValueError as e:
             _err(e)
         return redirect(url_for('ai.home'))
-    return render_template('ai/home.html', items=intake.items(limit=30, user_id=None if level() >= 3 else current_user.id),
-                           channels=intake.CHANNELS)
+    return render_template('ai/home.html', items=intake.items(limit=30, user_id=None if level() >= 3 else current_user.id,
+                                                             include_queue=level() >= 2),
+                           channels=intake.CHANNELS, ocr=extract.ocr_status())
+
+
+def _visible_item(item_id):
+    it = intake.item(item_id)
+    if not intake.visible(it, current_user.id, level()):
+        abort(404)
+    return it
+
+
+@bp.route('/intake/<int:item_id>/screen', methods=['POST'])
+@need('use')
+def intake_screen(item_id):
+    """Run the freeze-order screening again (e.g. after new customers were loaded)."""
+    it = _visible_item(item_id)
+    if it['status'] != 'confirmed':
+        abort(400)
+    try:
+        r = freeze_screening.run_for_item(item_id)
+        _log('ai_freeze_screen', item_id, f"{r['matches']} match(es)")
+        flash(_('Screening finished: %(n)s possible match(es).', n=r['matches']), 'info')
+    except LookupError:
+        abort(404)
+    return redirect(url_for('ai.intake_review', item_id=item_id) + '#screening')
+
+
+@bp.route('/intake/<int:item_id>/matches/<int:match_id>', methods=['POST'])
+@need('use')
+def intake_match_decide(item_id, match_id):
+    _visible_item(item_id)
+    if not freeze_screening.can_decide(current_user, level()):
+        flash(_('Freeze decisions need AML edit rights.'), 'danger')
+        return redirect(url_for('ai.intake_review', item_id=item_id) + '#screening')
+    m = get_db().execute("SELECT item_id FROM ai_screening_matches WHERE id = %s", (match_id,)).fetchone()
+    if not m or m['item_id'] != item_id:
+        abort(404)
+    try:
+        r = freeze_screening.decide(match_id, request.form.get('decision'), current_user, request.form.get('reason'))
+        flash(_('Freeze recorded and registered for AML study.') if r['status'] == 'frozen'
+              else _('Marked as a false positive.'), 'success')
+    except ValueError as e:
+        _err(e)
+    return redirect(url_for('ai.intake_review', item_id=item_id) + '#screening')
 
 
 @bp.route('/intake/<int:item_id>', methods=['GET', 'POST'])
 @need('view')
 def intake_review(item_id):
-    it = intake.item(item_id)
-    if not it or (level() < 3 and it['created_by'] != current_user.id):
-        abort(404)
+    it = _visible_item(item_id)
     if request.method == 'POST':
         if level() < 2:
             abort(403)
@@ -172,7 +214,13 @@ def intake_review(item_id):
                 out, decision = intake.confirm(item_id, request.form, current_user)
                 _log('ai_intake_confirm', item_id, f"{request.form.get('intent')} ({decision})")
                 msg = out['message']
-                flash(_(msg), 'success')
+                flash(_(msg), 'success' if out.get('refs') or 'citations' not in out else 'warning')
+                if 'screening' in out:
+                    flash(_('Screening finished: %(n)s possible match(es).', n=out['screening']['matches']),
+                          'danger' if out['screening']['matches'] else 'info')
+                    return redirect(url_for('ai.intake_review', item_id=item_id) + '#screening')
+                if out.get('screening_error'):
+                    flash(out['screening_error'], 'danger')
         except (ValueError, handlers.HandlerError) as e:
             _err(e)
         return redirect(url_for('ai.intake_review', item_id=item_id))
@@ -185,9 +233,17 @@ def intake_review(item_id):
     if chosen:   # fields for the chosen intent: the proposal's, or extracted again when the user picked another intent
         pf = prop.get('fields') or {} if prop.get('intent') == chosen['code'] else \
             tasks.extract_fields(it.get('body') or '', chosen.get('fields'))
+    library.with_urls(prop.get('library'))
+    library.with_urls((it.get('final') or {}).get('library'))
+    decided_intent = catalog.intent((it.get('final') or {}).get('intent') or '') if it['status'] == 'confirmed' else None
+    screen = freeze_screening.should_screen(decided_intent) or bool(it.get('screened_at'))
     return render_template('ai/intake_review.html', it=it, prop=prop, intents=intents, chosen=chosen, pf=pf,
                            playbooks=catalog.playbooks(), handlers=handlers.HANDLERS, job_id=request.args.get('job'),
-                           files=list_attachments('ai', 'ai_intake', item_id), lang=_lang())
+                           files=list_attachments('ai', 'ai_intake', item_id), lang=_lang(),
+                           screen=screen, matches=freeze_screening.matches(item_id) if screen else [],
+                           receipt=freeze_screening.receipt_time(it), hours=freeze_screening.hours_since(it),
+                           can_freeze=freeze_screening.can_decide(current_user, level()),
+                           labels=freeze_screening.SOURCE_LABELS)
 
 
 # ------------------------------------------------------------------ jobs / cards (JSON, polled by static/js/ai_copilot.js)
@@ -370,6 +426,8 @@ def intent_edit(code):
 @bp.route('/settings', methods=['GET', 'POST'])
 @need('admin')
 def settings_page():
+    if request.method == 'POST' and request.form.get('action') in ('library_index', 'mail_save', 'mail_test', 'mail_import'):
+        return _settings_action(request.form.get('action'))
     if request.method == 'POST':
         data = {k: (request.form.get(k) or '').strip() for k in settings.DEFAULTS}
         data['ai.enabled'] = 'true' if request.form.get('ai.enabled') else 'false'
@@ -381,7 +439,47 @@ def settings_page():
         except (NotLocalError, ValueError) as e:
             _err(e)
         return redirect(url_for('ai.settings_page'))
-    return render_template('ai/settings.html', cfg=settings.get_config(), health=service.health())
+    return render_template('ai/settings.html', cfg=settings.get_config(), health=service.health(), mail=settings.get_mail_config(),
+                           lib=library.status(), ocr=extract.ocr_status(), job_id=request.args.get('job'))
+
+
+def _settings_action(action):
+    back = url_for('ai.settings_page')
+    try:
+        if action == 'library_index':
+            jid = service.start_job('library_index', {}, current_user.id)
+            j = service.job(jid) or {}
+            _log('ai_library_index', None, j.get('status'))
+            if j.get('status') == 'done':
+                r = j.get('result') or {}
+                flash(_('Library index rebuilt: %(p)s paragraph(s), %(e)s with embeddings.', p=r.get('paragraphs', 0),
+                        e=r.get('embedded', 0)), 'success')
+            elif j.get('status') == 'failed':
+                flash(j.get('error') or _('The analysis failed — try again.'), 'danger')
+            else:
+                flash(_('The library index is being rebuilt in the background.'), 'info')
+                return redirect(url_for('ai.settings_page', job=jid) + '#library')
+            return redirect(back + '#library')
+        if action == 'mail_save':
+            settings.save_mail_config(request.form)
+            _log('ai_mailbox_save', None, request.form.get('ai.imap_host'))
+            flash(_('Saved.'), 'success')
+        elif action == 'mail_test':
+            r = mailbox.test_connection()
+            flash(_('Mailbox reachable') + f": {r['detail']}", 'success')
+        elif action == 'mail_import':
+            r = mailbox.run_import()
+            _log('ai_mailbox_import', None, f"{r.get('imported')} imported")
+            if not r['enabled']:
+                flash(_('The monitored mailbox is switched off.'), 'warning')
+            else:
+                flash(_('%(n)s e-mail(s) imported into the intake queue.', n=r['imported']), 'success')
+                for e in r['errors'][:3]:
+                    flash(e, 'warning')
+    except (ValueError, mailbox.MailboxError) as e:
+        get_db().rollback()
+        _err(e)
+    return redirect(back + '#mailbox')
 
 
 @bp.route('/log', methods=['GET', 'POST'])

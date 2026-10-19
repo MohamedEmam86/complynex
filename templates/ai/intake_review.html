@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% import 'ai/_nav.html' as an with context %}
+{% import 'ai/_library.html' as lb with context %}
+{% import 'ai/_screening.html' as sc with context %}
 {% block title %}{{ _('Review the proposal') }} #{{ it.id }} - ComplyNex CMS{% endblock %}
 {% block content %}
 {% set decided = it.status in ('confirmed', 'rejected') %}
@@ -7,11 +9,20 @@
 <div class="container-fluid">
   <h3 class="mb-1">{{ _('Submission') }} #{{ it.id }} <span class="badge bg-secondary fs-6">{{ it.status }}</span></h3>
   {{ an.nav('ai.home') }}
+  {% set freeze_like = screen or (chosen and (chosen.handler_params or {}).get('screen_subjects') and not decided) %}
+  {% if freeze_like %}{{ sc.timer(it, receipt, hours) }}{% endif %}
   <div class="row g-3"><div class="col-lg-5">
     <div class="card mb-3"><div class="card-header"><strong>{{ it.subject or _('Submitted text') }}</strong> <span class="small text-muted">{{ it.channel }} · {{ it.created_at.strftime('%Y-%m-%d %H:%M') }}</span></div>
       <div class="card-body small" dir="auto" style="white-space: pre-wrap; max-height: 460px; overflow: auto">{{ it.body or _('(text removed after the retention period)') }}</div>
-      {% if files %}<div class="card-footer small">{% for f in files %}<a href="{{ url_for('attachments.download', attachment_id=f.id) }}">{{ f.filename }}</a> {% endfor %}</div>{% endif %}</div>
+      {% if files or it.extraction_method %}<div class="card-footer small">
+        {% if it.extraction_method %}<div class="mb-1">{{ _('Text read by') }}:
+          <span class="badge {{ 'bg-success' if it.extraction_method in ('text', 'pypdf') else ('bg-info text-dark' if it.extraction_method == 'ocr' else 'bg-secondary') }}">{{ {'text': _('text / document'), 'pypdf': _('PDF text layer'), 'ocr': _('OCR on this server (Tesseract)'), 'none': _('nothing could be read')}.get(it.extraction_method, it.extraction_method) }}</span>
+          {% if it.extraction_method == 'ocr' %}<span class="text-muted">{{ _('check names and numbers against the original') }}</span>{% endif %}
+          {% if it.extraction_note %}<div class="text-warning-emphasis">{{ it.extraction_note }}</div>{% endif %}</div>{% endif %}
+        {% for f in files %}<a href="{{ url_for('attachments.download', attachment_id=f.id) }}">{{ f.filename }}</a> {% endfor %}</div>{% endif %}</div>
   </div><div class="col-lg-7">
+    {% if screen %}{{ sc.matches_card(it, matches, can_freeze, labels, lang) }}{% endif %}
+    {% if decided and fin.library %}{{ lb.citations(fin.library) }}{% elif not decided and prop.library and chosen and chosen.handler == 'guidance' %}{{ lb.citations(prop.library) }}{% endif %}
     {% if not prop and it.status == 'new' %}
       <div class="card"><div class="card-body small" data-ai-job-reload="{{ job_id or '' }}" data-fail-text="{{ _('The analysis failed — try again.') }}">
         <div class="spinner-border spinner-border-sm me-2"></div>{{ _('Analysing on this server… (a local model on CPU can take a minute)') }}</div></div>

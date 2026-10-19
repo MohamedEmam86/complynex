@@ -112,4 +112,19 @@
       });
     });
   });
+
+  /* Freeze orders: live "time since receipt" — seconds elapsed when the server rendered the page
+     (data-elapsed-s), counted on from page load, so browser and server clocks / time zones need not agree. */
+  document.querySelectorAll('[data-elapsed-s]').forEach(function (box) {
+    var elapsed = parseInt(box.getAttribute('data-elapsed-s'), 10);
+    if (isNaN(elapsed)) { return; }
+    var since = new Date(Date.now() - elapsed * 1000);
+    var h = box.getAttribute('data-unit-h') || 'h', mn = box.getAttribute('data-unit-min') || 'min';
+    function tick() {
+      var mins = Math.max(0, Math.floor((Date.now() - since.getTime()) / 60000));
+      box.textContent = Math.floor(mins / 60) + ' ' + h + ' ' + (mins % 60) + ' ' + mn;
+    }
+    tick();
+    setInterval(tick, 30000);
+  });
 })();

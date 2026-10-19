@@ -29116,6 +29116,292 @@ msgstr "قيمة الكربون: تلقائي"
 msgid "Carbon value"
 msgstr "قيمة الكربون"
 
+# --- Copilot: OCR, freeze-order screening, library citations, mailbox ---
+msgid "Screening finished: %(n)s possible match(es)."
+msgstr "انتهى الفحص: %(n)s تطابق محتمل."
+
+msgid "Freeze decisions need AML edit rights."
+msgstr "قرارات التجميد تتطلب صلاحية تعديل في مكافحة غسل الأموال."
+
+msgid "Freeze recorded and registered for AML study."
+msgstr "تم تسجيل التجميد وإحالته للدراسة في سجل مكافحة غسل الأموال."
+
+msgid "Marked as a false positive."
+msgstr "تم التصنيف كتطابق خاطئ."
+
+msgid "Library index rebuilt: %(p)s paragraph(s), %(e)s with embeddings."
+msgstr "أعيد بناء فهرس المكتبة: %(p)s فقرة، منها %(e)s بمتجهات دلالية."
+
+msgid "The library index is being rebuilt in the background."
+msgstr "جارٍ إعادة بناء فهرس المكتبة في الخلفية."
+
+msgid "Mailbox reachable"
+msgstr "صندوق البريد متاح"
+
+msgid "The monitored mailbox is switched off."
+msgstr "صندوق البريد المراقَب غير مفعّل."
+
+msgid "%(n)s e-mail(s) imported into the intake queue."
+msgstr "تم استيراد %(n)s رسالة إلى قائمة الوارد."
+
+msgid "Answer from the regulatory library"
+msgstr "الإجابة من المكتبة التنظيمية"
+
+msgid "No source found in the regulatory library. The Copilot does not answer without a citation: confirm to send the question to the compliance team, or rebuild the library index (AI settings)."
+msgstr "لم يُعثر على مصدر في المكتبة التنظيمية. لا يجيب المساعد دون ذكر المصدر: أكّد لإرسال السؤال إلى فريق الالتزام، أو أعد بناء فهرس المكتبة (إعدادات الذكاء الاصطناعي)."
+
+msgid "Summary of the cited paragraphs only; the paragraphs below are the source."
+msgstr "ملخص للفقرات المذكورة فقط؛ الفقرات أدناه هي المصدر."
+
+msgid "paragraph"
+msgstr "الفقرة"
+
+msgid "match"
+msgstr "التطابق"
+
+msgid "Open the source"
+msgstr "فتح المصدر"
+
+msgid "h"
+msgstr "س"
+
+msgid "since the order was received"
+msgstr "منذ استلام الأمر"
+
+msgid "date of the order / e-mail"
+msgstr "تاريخ الأمر / الرسالة"
+
+msgid "Screening of the persons and entities in the order"
+msgstr "فحص الأشخاص والكيانات الواردة في الأمر"
+
+msgid "Screen again"
+msgstr "إعادة الفحص"
+
+msgid "Screened"
+msgstr "تم الفحص"
+
+msgid "names"
+msgstr "الأسماء"
+
+msgid "ID numbers"
+msgstr "أرقام الهوية"
+
+msgid "searched"
+msgstr "تم البحث في"
+
+msgid "not available here"
+msgstr "غير متاح هنا"
+
+msgid "Not screened yet."
+msgstr "لم يتم الفحص بعد."
+
+msgid "No possible match among customers, merchants, beneficial owners or recent counterparties."
+msgstr "لا يوجد تطابق محتمل بين العملاء أو التجار أو المستفيدين الحقيقيين أو الأطراف المقابلة الحديثة."
+
+msgid "Name in our records"
+msgstr "الاسم في سجلاتنا"
+
+msgid "In the order"
+msgstr "في الأمر"
+
+msgid "Match"
+msgstr "التطابق"
+
+msgid "ID number"
+msgstr "رقم الهوية"
+
+msgid "name"
+msgstr "الاسم"
+
+msgid "Record the freeze and register it for AML study?"
+msgstr "تسجيل التجميد وإحالته للدراسة في سجل مكافحة غسل الأموال؟"
+
+msgid "Freeze"
+msgstr "تجميد"
+
+msgid "open — AML edit rights needed to decide"
+msgstr "مفتوح — يلزم صلاحية تعديل في مكافحة غسل الأموال لاتخاذ القرار"
+
+msgid "Frozen"
+msgstr "مجمّد"
+
+msgid "AML register"
+msgstr "سجل مكافحة غسل الأموال"
+
+msgid "A match is a lead, not a decision. \"Freeze\" records your decision and registers it for AML study; apply the freeze itself in the core banking / payment system."
+msgstr "التطابق مؤشر وليس قراراً. زر \"تجميد\" يسجّل قرارك ويحيله للدراسة؛ ويُنفَّذ التجميد الفعلي في النظام المصرفي / نظام المدفوعات الأساسي."
+
+msgid "or a document (pdf, docx, txt) or a scanned image (png, jpg)"
+msgstr "أو مستند (pdf، docx، txt) أو صورة ممسوحة ضوئياً (png، jpg)"
+
+msgid "Scanned documents: OCR on this server"
+msgstr "المستندات الممسوحة ضوئياً: التعرف الضوئي على الحروف على هذا الخادم"
+
+msgid "scanned PDFs need poppler-utils"
+msgstr "ملفات PDF الممسوحة تتطلب poppler-utils"
+
+msgid "Scanned documents: OCR is not installed on this server — paste the text."
+msgstr "المستندات الممسوحة ضوئياً: التعرف الضوئي غير مثبت على هذا الخادم — الصق النص."
+
+msgid "From the monitored mailbox"
+msgstr "من صندوق البريد المراقَب"
+
+msgid "Text read by"
+msgstr "تمت قراءة النص بواسطة"
+
+msgid "text / document"
+msgstr "نص / مستند"
+
+msgid "PDF text layer"
+msgstr "طبقة النص في PDF"
+
+msgid "OCR on this server (Tesseract)"
+msgstr "التعرف الضوئي على هذا الخادم (Tesseract)"
+
+msgid "nothing could be read"
+msgstr "تعذّرت قراءة أي نص"
+
+msgid "check names and numbers against the original"
+msgstr "راجع الأسماء والأرقام مقابل الأصل"
+
+msgid "Freeze-order screening"
+msgstr "فحص أوامر التجميد"
+
+msgid "Minimum name score (0 to 1)"
+msgstr "الحد الأدنى لدرجة تطابق الاسم (من 0 إلى 1)"
+
+msgid "Counterparties of the last (days)"
+msgstr "الأطراف المقابلة خلال آخر (أيام)"
+
+msgid "Policy questions: citations"
+msgstr "أسئلة السياسات: ذكر المصادر"
+
+msgid "Minimum rules score of a cited paragraph (0 to 1)"
+msgstr "الحد الأدنى لدرجة القواعد للفقرة المذكورة (من 0 إلى 1)"
+
+msgid "Minimum embedding similarity (0 to 1)"
+msgstr "الحد الأدنى للتشابه الدلالي (من 0 إلى 1)"
+
+msgid "Monitored mailbox (optional)"
+msgstr "صندوق بريد مراقَب (اختياري)"
+
+msgid "Unseen e-mails of one IMAP folder become items in the intake queue, with their attachments. The mail server may be outside your network, but it is only read over SSL/TLS; the content is never sent anywhere else. Schedule scripts/ai_mail_import.py (e.g. every 5 minutes)."
+msgstr "الرسائل غير المقروءة في مجلد IMAP واحد تصبح عناصر في قائمة الوارد مع مرفقاتها. قد يكون خادم البريد خارج شبكتك، لكن القراءة تتم عبر SSL/TLS فقط، ولا يُرسل المحتوى إلى أي جهة أخرى. جدوِل تشغيل scripts/ai_mail_import.py (مثلاً كل 5 دقائق)."
+
+msgid "Import from the mailbox"
+msgstr "الاستيراد من صندوق البريد"
+
+msgid "Mail server (IMAP)"
+msgstr "خادم البريد (IMAP)"
+
+msgid "Port"
+msgstr "المنفذ"
+
+msgid "SSL/TLS (port 993)"
+msgstr "SSL/TLS (المنفذ 993)"
+
+msgid "STARTTLS (port 143)"
+msgstr "STARTTLS (المنفذ 143)"
+
+msgid "User name"
+msgstr "اسم المستخدم"
+
+msgid "stored encrypted — leave empty to keep"
+msgstr "محفوظة مشفّرة — اتركها فارغة للإبقاء عليها"
+
+msgid "environment reference"
+msgstr "مرجع متغير بيئة"
+
+msgid "password, or env:VARIABLE_NAME"
+msgstr "كلمة المرور، أو env:VARIABLE_NAME"
+
+msgid "remove the stored password"
+msgstr "حذف كلمة المرور المحفوظة"
+
+msgid "Folder"
+msgstr "المجلد"
+
+msgid "Messages per run"
+msgstr "عدد الرسائل في كل تشغيل"
+
+msgid "Channel of the items"
+msgstr "قناة العناصر"
+
+msgid "Test the connection"
+msgstr "اختبار الاتصال"
+
+msgid "Fetch now"
+msgstr "الجلب الآن"
+
+msgid "OCR (scanned documents)"
+msgstr "التعرف الضوئي (المستندات الممسوحة)"
+
+msgid "not installed"
+msgstr "غير مثبت"
+
+msgid "Regulatory library index"
+msgstr "فهرس المكتبة التنظيمية"
+
+msgid "Policies, framework requirements and submitted circulars, split into paragraphs. Answers to policy questions only cite these paragraphs, with a link to the source; without a source the Copilot says so and does not answer."
+msgstr "السياسات ومتطلبات الأطر والمنشورات المقدَّمة مقسّمة إلى فقرات. إجابات أسئلة السياسات لا تستند إلا إلى هذه الفقرات مع رابط المصدر؛ وبدون مصدر يوضح المساعد ذلك ولا يجيب."
+
+msgid "Paragraphs"
+msgstr "الفقرات"
+
+msgid "documents"
+msgstr "المستندات"
+
+msgid "with embeddings"
+msgstr "بمتجهات دلالية"
+
+msgid "built"
+msgstr "تاريخ البناء"
+
+msgid "Rebuilding…"
+msgstr "جارٍ إعادة البناء…"
+
+msgid "Rebuild the library index"
+msgstr "إعادة بناء فهرس المكتبة"
+
+msgid "Answered from the regulatory library with the cited sources; no record created."
+msgstr "تمت الإجابة من المكتبة التنظيمية مع ذكر المصادر؛ لم يُنشأ أي سجل."
+
+msgid "No source found in the regulatory library: no answer is given; the question was sent to the compliance team."
+msgstr "لم يُعثر على مصدر في المكتبة التنظيمية: لم تُقدَّم إجابة، وأُرسل السؤال إلى فريق الالتزام."
+
+msgid "give the reason for the false positive"
+msgstr "اذكر سبب اعتباره تطابقاً خاطئاً"
+
+msgid "this match is already decided"
+msgstr "تم اتخاذ قرار بشأن هذا التطابق بالفعل"
+
+msgid "match not found"
+msgstr "التطابق غير موجود"
+
+msgid "unknown decision"
+msgstr "قرار غير معروف"
+
+msgid "the mailbox must be read over SSL/TLS or STARTTLS"
+msgstr "يجب قراءة صندوق البريد عبر SSL/TLS أو STARTTLS"
+
+msgid "enter the mail server and the user name"
+msgstr "أدخل خادم البريد واسم المستخدم"
+
+msgid "the mail server must be a host name or IP address"
+msgstr "يجب أن يكون خادم البريد اسم مضيف أو عنوان IP"
+
+msgid "OCR ran without Arabic language data (install tesseract-ocr-ara)"
+msgstr "تم التعرف الضوئي دون بيانات اللغة العربية (ثبّت tesseract-ocr-ara)"
+
+msgid "read with pdfminer"
+msgstr "تمت القراءة باستخدام pdfminer"
+
+msgid "no mail server configured"
+msgstr "لم يتم إعداد خادم بريد"
+
+msgid "Answer from the regulatory library, with citations (no record created)"
+msgstr "إجابة من المكتبة التنظيمية مع ذكر المصدر (دون إنشاء سجل)"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

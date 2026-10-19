@@ -113,6 +113,7 @@ pydyf==0.12.1
 Pygments==2.19.2
 PyOTP==2.10.0
 pyparsing==3.3.2
+pypdf==6.21.1
 pyphen==0.17.2
 python-bidi==0.6.11
 python-dateutil==2.9.0.post0

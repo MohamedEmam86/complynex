@@ -28,7 +28,7 @@ from datetime import datetime
 
 from database.db import get_db
 
-from . import audit, catalog, handlers, tasks
+from . import audit, catalog, freeze_screening, handlers, tasks
 
 CHANNELS = ('text', 'document', 'email', 'alert', 'circular')
 PRIORITIES = ('critical', 'high', 'medium', 'low')
@@ -36,16 +36,36 @@ PRIORITIES = ('critical', 'high', 'medium', 'low')
 logger = logging.getLogger(__name__)
 
 
-def create_item(channel, subject, body, user_id, db=None):
+def create_item(channel, subject, body, user_id, db=None, received_at=None, message_id=None):
     db = db or get_db()
     if channel not in CHANNELS:
         channel = 'text'
     if not (body or '').strip() and not (subject or '').strip():
         raise ValueError('paste the text or upload a document')
-    rid = db.execute("INSERT INTO ai_intake_items (channel, subject, body, created_by) VALUES (%s,%s,%s,%s) RETURNING id",
-                     (channel, (subject or '')[:290] or None, body, user_id)).fetchone()['id']
+    rid = db.execute("""INSERT INTO ai_intake_items (channel, subject, body, created_by, received_at, source_message_id, extraction_method)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+                     (channel, (subject or '')[:290] or None, body, user_id, received_at, (message_id or '')[:300] or None,
+                      'text' if (body or '').strip() else None)).fetchone()['id']
     db.commit()
     return rid
+
+
+def set_extraction(item_id, res, use_text=True, db=None):
+    """Record how the uploaded document's text was read (text | pypdf | ocr | none); optionally use it as the body."""
+    db = db or get_db()
+    if use_text and res.get('text'):
+        db.execute("""UPDATE ai_intake_items SET body = %s, channel = CASE WHEN channel = 'text' THEN 'document' ELSE channel END,
+                      extraction_method = %s, extraction_note = %s WHERE id = %s""",
+                   (res['text'], res['method'], res.get('note'), item_id))
+    else:
+        db.execute("UPDATE ai_intake_items SET extraction_method = COALESCE(extraction_method, %s), extraction_note = %s WHERE id = %s",
+                   (res['method'], res.get('note'), item_id))
+    db.commit()
+
+
+def visible(it, user_id, lvl):
+    """Admins see all; users see their own; items from the monitored mailbox (no submitter) are the team's queue."""
+    return bool(it) and (lvl >= 3 or it['created_by'] == user_id or (it['created_by'] is None and lvl >= 2))
 
 
 def item(item_id, db=None):
@@ -54,12 +74,12 @@ def item(item_id, db=None):
     return dict(r) if r else None
 
 
-def items(db=None, limit=100, user_id=None):
+def items(db=None, limit=100, user_id=None, include_queue=False):
     db = db or get_db()
     sql = "SELECT i.*, u.first_name || ' ' || u.last_name AS created_by_name FROM ai_intake_items i LEFT JOIN users u ON u.id = i.created_by"
     args = []
     if user_id:
-        sql += " WHERE i.created_by = %s"
+        sql += " WHERE (i.created_by = %s" + (" OR i.created_by IS NULL)" if include_queue else ")")
         args.append(user_id)
     return [dict(r) for r in db.execute(sql + " ORDER BY i.id DESC LIMIT %s", (*args, limit)).fetchall()]
 
@@ -118,6 +138,19 @@ def propose(item_id, user_id, gen=None, emb=None, db=None):
                     error=meta.get('error'), latency_ms=meta.get('latency_ms'), prompt_text=meta.get('prompt_text'),
                     object_type='ai_intake', object_id=item_id, user_id=user_id, db=db)
     prop.update(provider=meta['provider'], model=meta.get('model'), status=meta['status'], suggestion_id=sid)
+    if prop.get('handler') == 'guidance':     # policy question: only cited library paragraphs, or "no source found"
+        from . import library
+        try:
+            lib, lmeta = library.answer(text, gen=gen, embedder=emb, db=db)
+            audit.log('guidance', text, lmeta['provider'], lmeta.get('model'), lmeta['prompt_version'],
+                      {'status': lib['status'], 'cited': [c['id'] for c in lib['citations']], 'answer': lib['answer']},
+                      status=lmeta['status'], error=lmeta.get('error'), latency_ms=lmeta.get('latency_ms'),
+                      prompt_text=lmeta.get('prompt_text'), object_type='ai_intake', object_id=item_id, user_id=user_id, db=db)
+            prop['library'] = lib
+        except Exception:
+            db.rollback()
+            logger.exception('AI: library answer failed for intake %s', item_id)
+            prop['library'] = {'status': 'no_source', 'citations': [], 'answer': None}
     db.execute("UPDATE ai_intake_items SET status = 'proposed', proposal = %s, suggestion_id = %s WHERE id = %s",
                (json.dumps(prop, ensure_ascii=False, default=str), sid, item_id))
     db.commit()
@@ -163,11 +196,21 @@ def confirm(item_id, form, user, db=None):
         logger.exception('AI intake routing failed (%s)', intent['handler'])
         raise handlers.HandlerError(f'the target module could not create the record ({e.__class__.__name__})') from e
     decision = _decision(it.get('proposal'), final)
+    if 'citations' in out:
+        final['library'] = {'status': 'cited' if out['citations'] else 'no_source', 'citations': out['citations'],
+                            'answer': out.get('answer')}
     db.execute("""UPDATE ai_intake_items SET status = 'confirmed', final = %s, created_refs = %s, decided_by = %s, decided_at = %s
                   WHERE id = %s""", (json.dumps(final, ensure_ascii=False, default=str), json.dumps(out['refs'], default=str),
                                      user.id, datetime.now(), item_id))
     db.commit()
     audit.decide(it.get('suggestion_id'), decision, user.id, db)
+    if freeze_screening.should_screen(intent):  # freeze orders: screen every subject NOW (DB only, synchronous)
+        try:
+            out['screening'] = freeze_screening.run_for_item(item_id, db)
+        except Exception as e:
+            db.rollback()
+            logger.exception('AI: freeze-order screening failed for intake %s', item_id)
+            out['screening_error'] = f'screening failed ({e.__class__.__name__}): run it again from the item'
     return out, decision
 
 

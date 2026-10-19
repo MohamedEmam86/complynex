@@ -26,15 +26,52 @@
         <option value="local_path" {{ 'selected' if cfg['ai.embeddings'] == 'local_path' }}>{{ _('Model from a local folder') }}</option></select></div>
       <div class="col-md-4"><label class="form-label mb-0">{{ _('Semantic service URL') }}</label><input name="ai.embeddings_url" dir="ltr" class="form-control form-control-sm" value="{{ cfg['ai.embeddings_url'] }}"></div>
       <div class="col-md-4"><label class="form-label mb-0">{{ _('Local model folder') }}</label><input name="ai.embeddings_path" dir="ltr" class="form-control form-control-sm" value="{{ cfg['ai.embeddings_path'] }}"></div>
+      <div class="col-12 border-top pt-2 mt-2 fw-semibold">{{ _('Freeze-order screening') }}</div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Minimum name score (0 to 1)') }}</label><input name="ai.freeze_match_threshold" type="number" step="0.01" min="0" max="1" class="form-control form-control-sm" value="{{ cfg['ai.freeze_match_threshold'] }}"></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Counterparties of the last (days)') }}</label><input name="ai.freeze_counterparty_days" type="number" min="1" class="form-control form-control-sm" value="{{ cfg['ai.freeze_counterparty_days'] }}"></div>
+      <div class="col-12 border-top pt-2 mt-2 fw-semibold">{{ _('Policy questions: citations') }}</div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Minimum rules score of a cited paragraph (0 to 1)') }}</label><input name="ai.cite_min_score" type="number" step="0.01" min="0" max="1" class="form-control form-control-sm" value="{{ cfg['ai.cite_min_score'] }}"></div>
+      <div class="col-md-4"><label class="form-label mb-0">{{ _('Minimum embedding similarity (0 to 1)') }}</label><input name="ai.cite_min_embedding" type="number" step="0.01" min="0" max="1" class="form-control form-control-sm" value="{{ cfg['ai.cite_min_embedding'] }}"></div>
     </div></div><div class="card-footer"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div></form>
+
+    <form method="post" class="card mt-3" id="mailbox" autocomplete="off"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="card-header"><strong><i class="bi bi-envelope me-1"></i>{{ _('Monitored mailbox (optional)') }}</strong></div>
+      <div class="card-body small"><p class="text-muted">{{ _('Unseen e-mails of one IMAP folder become items in the intake queue, with their attachments. The mail server may be outside your network, but it is only read over SSL/TLS; the content is never sent anywhere else. Schedule scripts/ai_mail_import.py (e.g. every 5 minutes).') }}</p>
+      <div class="row g-2">
+        <div class="col-12"><label><input type="checkbox" name="ai.imap_enabled" value="1" {{ 'checked' if mail['ai.imap_enabled'] }}> {{ _('Import from the mailbox') }}</label></div>
+        <div class="col-md-5"><label class="form-label mb-0">{{ _('Mail server (IMAP)') }}</label><input name="ai.imap_host" dir="ltr" class="form-control form-control-sm" value="{{ mail['ai.imap_host'] }}" placeholder="imap.example.org"></div>
+        <div class="col-md-2"><label class="form-label mb-0">{{ _('Port') }}</label><input name="ai.imap_port" type="number" class="form-control form-control-sm" value="{{ mail['ai.imap_port'] }}"></div>
+        <div class="col-md-5"><label class="form-label mb-0">{{ _('Security') }}</label><select name="ai.imap_security" class="form-select form-select-sm">
+          <option value="ssl" {{ 'selected' if mail['ai.imap_security'] == 'ssl' }}>{{ _('SSL/TLS (port 993)') }}</option>
+          <option value="starttls" {{ 'selected' if mail['ai.imap_security'] == 'starttls' }}>{{ _('STARTTLS (port 143)') }}</option></select></div>
+        <div class="col-md-6"><label class="form-label mb-0">{{ _('User name') }}</label><input name="ai.imap_user" dir="ltr" class="form-control form-control-sm" value="{{ mail['ai.imap_user'] }}" autocomplete="off"></div>
+        <div class="col-md-6"><label class="form-label mb-0">{{ _('Password') }}</label><input name="ai.imap_password" type="password" dir="ltr" class="form-control form-control-sm" autocomplete="new-password"
+            placeholder="{{ (_('stored encrypted — leave empty to keep') if mail.password_kind == 'stored' else (_('environment reference') ~ ' ' ~ mail['ai.imap_password'])) if mail.password_set else _('password, or env:VARIABLE_NAME') }}">
+          {% if mail.password_set %}<label class="text-muted"><input type="checkbox" name="clear_password" value="1"> {{ _('remove the stored password') }}</label>{% endif %}</div>
+        <div class="col-md-4"><label class="form-label mb-0">{{ _('Folder') }}</label><input name="ai.imap_folder" dir="ltr" class="form-control form-control-sm" value="{{ mail['ai.imap_folder'] }}"></div>
+        <div class="col-md-4"><label class="form-label mb-0">{{ _('Messages per run') }}</label><input name="ai.imap_max_messages" type="number" class="form-control form-control-sm" value="{{ mail['ai.imap_max_messages'] }}"></div>
+        <div class="col-md-4"><label class="form-label mb-0">{{ _('Channel of the items') }}</label><select name="ai.imap_channel" class="form-select form-select-sm">
+          {% for c, l in [('email', _('E-mail')), ('alert', _('Alert')), ('circular', _('Regulatory circular'))] %}<option value="{{ c }}" {{ 'selected' if mail['ai.imap_channel'] == c }}>{{ l }}</option>{% endfor %}</select></div>
+      </div></div>
+      <div class="card-footer d-flex gap-2 flex-wrap"><button class="btn btn-sm btn-primary" name="action" value="mail_save">{{ _('Save') }}</button>
+        <button class="btn btn-sm btn-outline-secondary" name="action" value="mail_test" formnovalidate>{{ _('Test the connection') }}</button>
+        <button class="btn btn-sm btn-outline-primary" name="action" value="mail_import" formnovalidate>{{ _('Fetch now') }}</button></div></form>
   </div><div class="col-lg-5">
     <div class="card"><div class="card-header"><strong>{{ _('Health') }}</strong></div><div class="card-body small">
       <p class="mb-1">{{ _('Active provider') }}: {{ an.provider_badge(health.provider) }} <span class="text-muted">{{ health.model }}</span></p>
       <p class="mb-1">{{ _('Generator') }}: {{ ok(health.generator) }}</p>
       <p class="mb-1">{{ _('Embeddings') }}: {{ ok(health.embeddings) }}</p>
       <p class="mb-1">{{ _('Job queue') }}: {{ ok(health.queue) }}</p>
-      <p class="mb-0">{{ _('Jobs (24 h)') }}: {% for j in health.jobs %}{{ j.status }} {{ j.n }}{{ ', ' if not loop.last }}{% else %}-{% endfor %}</p>
+      <p class="mb-1">{{ _('Jobs (24 h)') }}: {% for j in health.jobs %}{{ j.status }} {{ j.n }}{{ ', ' if not loop.last }}{% else %}-{% endfor %}</p>
+      <p class="mb-0">{{ _('OCR (scanned documents)') }}: {% if ocr.tesseract %}<span class="badge bg-success">{{ _('OK') }}</span> <span class="text-muted">tesseract · {{ ocr.langs }}{% if not ocr.pdftoppm %} · {{ _('scanned PDFs need poppler-utils') }}{% endif %}</span>{% else %}<span class="badge bg-secondary">{{ _('not installed') }}</span> <span class="text-muted">apt install tesseract-ocr tesseract-ocr-ara poppler-utils</span>{% endif %}</p>
+    </div></div>
+    <div class="card mt-3" id="library"><div class="card-header"><strong><i class="bi bi-journal-text me-1"></i>{{ _('Regulatory library index') }}</strong></div><div class="card-body small">
+      <p class="text-muted">{{ _('Policies, framework requirements and submitted circulars, split into paragraphs. Answers to policy questions only cite these paragraphs, with a link to the source; without a source the Copilot says so and does not answer.') }}</p>
+      <p class="mb-2">{{ _('Paragraphs') }}: <strong>{{ lib.n }}</strong> · {{ _('documents') }}: {{ lib.documents }} · {{ _('with embeddings') }}: {{ lib.embedded }} · {{ _('built') }}: {{ lib.indexed_at.strftime('%Y-%m-%d %H:%M') if lib.indexed_at else '-' }}</p>
+      {% if job_id %}<div class="mb-2" data-ai-job-reload="{{ job_id }}" data-fail-text="{{ _('The analysis failed — try again.') }}"><div class="spinner-border spinner-border-sm me-2"></div>{{ _('Rebuilding…') }}</div>{% endif %}
+      <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-primary" name="action" value="library_index">{{ _('Rebuild the library index') }}</button></form>
     </div></div>
   </div></div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/ai_copilot.js') }}"></script>
 </div>
 {% endblock %}
