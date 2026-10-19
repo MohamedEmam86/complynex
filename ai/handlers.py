@@ -30,8 +30,6 @@ from datetime import date
 
 from flask import current_app, url_for
 
-from database.db import get_db
-
 HANDLERS = {}
 
 
@@ -89,24 +87,22 @@ def h_link(item, final, user, intent):
             'message': 'Continue in the target module.'}
 
 
-@register_handler('guidance', 'Answer from policies (no record created)', 'إجابة من السياسات (دون إنشاء سجل)')
+@register_handler('guidance', 'Answer from the regulatory library, with citations (no record created)',
+                  'إجابة من المكتبة التنظيمية مع ذكر المصدر (دون إنشاء سجل)')
 def h_guidance(item, final, user, intent):
-    return {'refs': [{'type': 'policy', 'id': p['id'], 'label': p['policy_name'], 'url': p['url']}
-                     for p in related_policies(final.get('fields', {}).get('topic') or final.get('summary') or '')],
-            'message': 'Related policies listed; no record created.'}
-
-
-def related_policies(text, limit=5):
-    from . import text as T
-    db = get_db()
-    try:
-        rows = [dict(r) for r in db.execute("SELECT id, policy_number, policy_name FROM policies").fetchall()]
-    except Exception:
-        db.rollback()
-        return []
-    toks = set(T.tokens(text))
-    scored = sorted(((len(toks & set(T.tokens(r['policy_name'] or ''))), r) for r in rows), key=lambda x: -x[0])
-    return [dict(r, url=_url('policies.view_policy', id=r['id']) or _url('policies.list_policies')) for s, r in scored[:limit] if s]
+    """Only cited paragraphs are an answer; without a source nothing is answered and the question goes to the team."""
+    from . import library, settings
+    f = final.get('fields') or {}
+    question = '\n'.join(x for x in (f.get('topic'), item.get('body') or final.get('summary')) if x)
+    res, _meta = library.answer(question, gen=settings.generator(), embedder=settings.embedder())
+    if res['status'] != 'cited':
+        h_manual(item, final, user, intent)
+        return {'refs': [], 'citations': [],
+                'message': 'No source found in the regulatory library: no answer is given; the question was sent to the compliance team.'}
+    return {'refs': [{'type': c['source_type'], 'id': c['source_id'], 'label': ' '.join(x for x in (c['ref_label'], c['title']) if x)[:120],
+                      'url': c['url']} for c in res['citations']],
+            'citations': res['citations'], 'answer': res['answer'],
+            'message': 'Answered from the regulatory library with the cited sources; no record created.'}
 
 
 @register_handler('finding', 'Finding with action plan (Compliance Controls)', 'ملاحظة بخطة تصحيح (الضوابط الرقابية)', ('title',))

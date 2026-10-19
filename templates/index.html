@@ -112,6 +112,9 @@
         <input type="text" name="q" class="form-control" placeholder="{{ _('Jump to a risk, finding, or policy…') }}">
       </div>
     </form>
+    {% if ai_level() >= 2 %}
+    <a href="{{ url_for('ai.home') }}" class="btn btn-primary btn-sm fw-semibold"><i class="bi bi-send me-1"></i>{{ _('Submit to Compliance') }}</a>
+    {% endif %}
   </div>
 
   <div class="row g-3 mb-3">

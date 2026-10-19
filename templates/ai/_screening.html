@@ -1,0 +1,47 @@
+{# Freeze-order: time since receipt and the screening matches with freeze / false-positive decisions. #}
+{% macro timer(it, receipt, hours) -%}
+{% if receipt %}
+<div class="alert {{ 'alert-danger' if (hours or 0) >= 24 else 'alert-warning' }} d-flex align-items-center gap-3 py-2 mb-3" role="status">
+  <i class="bi bi-stopwatch fs-3"></i>
+  <div><div class="fs-4 fw-bold" data-elapsed-s="{{ ((hours or 0) * 3600)|int }}" data-unit-h="{{ _('h') }}" data-unit-min="{{ _('min') }}">{{ '%.1f'|format(hours or 0) }} {{ _('h') }}</div>
+    <div class="small">{{ _('since the order was received') }} ({{ receipt.strftime('%Y-%m-%d %H:%M') }}{% if it.received_at and it.received_at < it.created_at %} · {{ _('date of the order / e-mail') }}{% endif %})</div></div>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro matches_card(it, matches, can_freeze, labels, lang) -%}
+{% set summary = (it.proposal or {}).get('screening') or {} %}
+<div class="card mb-3" id="screening"><div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <strong><i class="bi bi-shield-exclamation me-1"></i>{{ _('Screening of the persons and entities in the order') }}</strong>
+  {% if ai_level() >= 2 %}<form method="post" action="{{ url_for('ai.intake_screen', item_id=it.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-primary">{{ _('Screen again') }}</button></form>{% endif %}</div>
+  <div class="card-body small">
+    {% if it.screened_at %}<p class="text-muted mb-2">{{ _('Screened') }} {{ it.screened_at.strftime('%Y-%m-%d %H:%M') }} ·
+      {{ _('names') }}: {{ (summary.names or [])|join(', ') or '-' }} · {{ _('ID numbers') }}: {{ (summary.ids or [])|join(', ') or '-' }} ·
+      {{ _('searched') }}: {% for s in summary.searched or [] %}{{ s.table }} ({{ s.rows }}){{ ', ' if not loop.last }}{% endfor %}
+      {% if summary.skipped %}· {{ _('not available here') }}: {{ summary.skipped|join(', ') }}{% endif %}</p>
+    {% else %}<p class="text-muted">{{ _('Not screened yet.') }}</p>{% endif %}
+    {% if not matches and it.screened_at %}<div class="alert alert-success py-1 mb-0">{{ _('No possible match among customers, merchants, beneficial owners or recent counterparties.') }}</div>{% endif %}
+    {% if matches %}
+    <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+      <thead><tr><th>{{ _('Record') }}</th><th>{{ _('Name in our records') }}</th><th>{{ _('In the order') }}</th><th>{{ _('Match') }}</th><th>{{ _('Decision') }}</th></tr></thead><tbody>
+      {% for m in matches %}<tr class="{{ 'table-danger' if m.status == 'frozen' else ('table-light text-muted' if m.status == 'false_positive' else '') }}">
+        <td>{{ labels[m.source][1] if lang == 'ar' and m.source in labels else (labels[m.source][0] if m.source in labels else m.source) }}
+          {% if m.url %}<a href="{{ m.url }}">#{{ m.record_id }}</a>{% else %}#{{ m.record_id }}{% endif %}
+          {% if m.detail and m.detail.note %}<div class="text-muted">{{ m.detail.note }}</div>{% endif %}</td>
+        <td dir="auto">{{ m.matched_name }}</td>
+        <td dir="auto">{{ m.query_name or m.query_id or '' }}</td>
+        <td><span class="badge {{ 'bg-danger' if m.match_type == 'id' else 'bg-warning text-dark' }}">{{ _('ID number') if m.match_type == 'id' else _('name') }}</span> {{ '%.0f'|format(m.score * 100) }}/100</td>
+        <td>{% if m.status == 'open' %}
+          {% if can_freeze %}<div class="d-flex flex-wrap gap-1">
+            <form method="post" action="{{ url_for('ai.intake_match_decide', item_id=it.id, match_id=m.id) }}" data-confirm="{{ _('Record the freeze and register it for AML study?') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="decision" value="freeze"><button class="btn btn-sm btn-danger"><i class="bi bi-snow"></i> {{ _('Freeze') }}</button></form>
+            <form method="post" action="{{ url_for('ai.intake_match_decide', item_id=it.id, match_id=m.id) }}" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="decision" value="false_positive">
+              <input name="reason" required class="form-control form-control-sm" style="min-width: 9rem" placeholder="{{ _('Reason (required)') }}"><button class="btn btn-sm btn-outline-secondary">{{ _('False positive') }}</button></form></div>
+          {% else %}<span class="text-muted">{{ _('open — AML edit rights needed to decide') }}</span>{% endif %}
+        {% else %}<strong>{{ _('Frozen') if m.status == 'frozen' else _('False positive') }}</strong>
+          <div class="text-muted">{{ m.decided_by_name or '' }} {{ m.decided_at.strftime('%Y-%m-%d %H:%M') if m.decided_at }}{% if m.reason %} — {{ m.reason }}{% endif %}
+          {% if m.aml_unusual_id %} · <a href="{{ url_for('amlkyc.unusual_item', item_id=m.aml_unusual_id) }}">{{ _('AML register') }}</a>{% endif %}</div>{% endif %}</td>
+      </tr>{% endfor %}</tbody></table></div>
+    <p class="text-muted mt-2 mb-0">{{ _('A match is a lead, not a decision. "Freeze" records your decision and registers it for AML study; apply the freeze itself in the core banking / payment system.') }}</p>
+    {% endif %}
+  </div></div>
+{%- endmacro %}

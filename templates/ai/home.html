@@ -12,14 +12,15 @@
         {% for c, l in [('text', _('Text')), ('email', _('E-mail')), ('alert', _('Alert')), ('circular', _('Regulatory circular')), ('document', _('Document'))] %}<option value="{{ c }}">{{ l }}</option>{% endfor %}</select></div>
         <div class="col-md-8"><label class="form-label mb-0">{{ _('Subject (optional)') }}</label><input name="subject" class="form-control form-control-sm"></div></div>
       <label class="form-label mb-0 mt-2">{{ _('Text') }}</label><textarea name="body" rows="10" class="form-control form-control-sm" dir="auto" placeholder="{{ _('Paste the text here (Arabic or English)') }}"></textarea>
-      <label class="form-label mb-0 mt-2">{{ _('or a document (txt, eml, docx, html; pdf if a reader is installed)') }}</label><input type="file" name="file" class="form-control form-control-sm">
+      <label class="form-label mb-0 mt-2">{{ _('or a document (pdf, docx, txt) or a scanned image (png, jpg)') }}</label><input type="file" name="file" class="form-control form-control-sm" accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg,.gif">
+      <div class="text-muted mt-1">{% if ocr.tesseract %}{{ _('Scanned documents: OCR on this server') }} ({{ ocr.langs }}){% if not ocr.pdftoppm %} — {{ _('scanned PDFs need poppler-utils') }}{% endif %}{% else %}{{ _('Scanned documents: OCR is not installed on this server — paste the text.') }}{% endif %}</div>
       <button class="btn btn-primary btn-sm mt-3">{{ _('Analyse') }}</button>
       <p class="text-muted mt-2 mb-0">{{ _('Runs on this server only — no external AI service is ever called.') }}</p></div></form>{% endif %}
   </div><div class="col-lg-6">
     <div class="card"><div class="card-header"><strong>{{ _('Recent submissions') }}</strong></div><div class="table-responsive"><table class="table table-sm mb-0 small">
       <thead><tr><th>#</th><th>{{ _('When') }}</th><th>{{ _('Subject') }}</th><th>{{ _('Proposed') }}</th><th>{{ _('Status') }}</th></tr></thead><tbody>
       {% for i in items %}<tr><td><a href="{{ url_for('ai.intake_review', item_id=i.id) }}">{{ i.id }}</a></td><td>{{ i.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-        <td>{{ (i.subject or i.body or '')|truncate(60) }}</td><td>{{ (i.proposal or {}).get('intent') or '-' }}</td><td>{{ i.status }}</td></tr>
+        <td>{% if i.channel == 'email' and not i.created_by %}<i class="bi bi-envelope" title="{{ _('From the monitored mailbox') }}"></i> {% endif %}{{ (i.subject or i.body or '')|truncate(60) }}</td><td>{{ (i.proposal or {}).get('intent') or '-' }}</td><td>{{ i.status }}</td></tr>
       {% else %}<tr><td colspan="5" class="text-muted">{{ _('Nothing submitted yet.') }}</td></tr>{% endfor %}</tbody></table></div></div>
   </div></div>
 </div>

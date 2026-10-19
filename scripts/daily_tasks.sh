@@ -5,3 +5,4 @@
 python scripts/escalate_complaints.py
 python scripts/regcontrols_run.py
 python scripts/ai_retention.py
+python scripts/ai_library_index.py

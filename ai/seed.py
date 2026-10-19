@@ -38,7 +38,7 @@ INTENTS = [
                 F('subject_names', 'Persons / entities named', 'الأشخاص / الكيانات المذكورة', 'list', True),
                 F('national_id', 'Identification numbers', 'أرقام الهوية', 'list'),
                 F('deadline', 'Deadline', 'الموعد النهائي', 'date')],
-     'handler': 'aml_candidate', 'handler_params': {'detection_rule': 'freeze_order', 'per_name': True},
+     'handler': 'aml_candidate', 'handler_params': {'detection_rule': 'freeze_order', 'per_name': True, 'screen_subjects': True},
      'owner_role': 'compliance_head', 'priority': 'critical', 'deadline_hours': 24},
     {'code': 'customer_complaint', 'name_en': 'Customer complaint', 'name_ar': 'شكوى عميل',
      'description': 'A customer is unhappy with a product, a charge, a delay or the way they were treated.',
