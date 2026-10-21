@@ -134,6 +134,12 @@ class User(UserMixin):
         return u.get_id() if u else None
 
     @staticmethod
+    def session_id_for_app(app, user_id):
+        """Same as session_id_for, pushing its own app context (test clients)."""
+        with app.app_context():
+            return User.session_id_for(user_id)
+
+    @staticmethod
     def bump_auth_version(user_id):
         """Invalidate all sessions of this user."""
         from database.db import get_db

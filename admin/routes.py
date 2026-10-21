@@ -123,6 +123,12 @@ def list_users():
                 display_dept = ", ".join([r['name'] for r in rows])
         
         user_dict['display_department'] = display_dept or '-'
+        _exp = user_dict.get('expires_at')
+        try:
+            from datetime import timezone as _tz
+            user_dict['is_expired'] = bool(_exp) and _exp <= (datetime.now(_tz.utc) if getattr(_exp, 'tzinfo', None) else datetime.now())
+        except TypeError:
+            user_dict['is_expired'] = False
         enriched_users.append(user_dict)
     
     return render_template('admin/users/list.html', users=enriched_users)
@@ -167,6 +173,12 @@ def add_user():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password') # Should be auto-generated or set by admin
+        if password:
+            _ok, _msg = User.validate_password_strength(password)
+            if not _ok:
+                from flask_babel import gettext as _t
+                flash(_t(_msg), 'danger')
+                return redirect(request.url)
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         role = request.form.get('role', 'employee')
@@ -484,8 +496,12 @@ def edit_user(id):
             }
 
             if new_password:
-                from werkzeug.security import generate_password_hash
-                update_data['password_hash'] = generate_password_hash(new_password)
+                _ok, _msg = User.validate_password_strength(new_password)
+                if not _ok:
+                    from flask_babel import gettext as _t
+                    flash(_t(_msg), 'danger')
+                    return redirect(request.url)
+                update_data['password_hash'] = User.hash_password(new_password)
 
             # Handle temporary access
             is_temporary = 1 if request.form.get('is_temporary') else 0
@@ -511,6 +527,13 @@ def edit_user(id):
             old_screening = getattr(user, 'perm_screening', 'none')
 
             User.update_user(id, **update_data)
+            if new_password or not update_data.get('is_active'):
+                # a new password or a deactivation ends every open session of that user
+                from database.db import get_db as _gdb
+                _db = _gdb()
+                _db.execute('UPDATE users SET auth_version = COALESCE(auth_version, 0) + 1, '
+                            'failed_login_count = 0, locked_until = NULL WHERE id = %s', (id,))
+                _db.commit()
             # Permissions for modules added by optional content packs.
             from regcontrols.packs import save_module_perms
             save_module_perms(id, request.form)

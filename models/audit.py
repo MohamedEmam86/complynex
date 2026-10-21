@@ -31,7 +31,8 @@ except Exception:
 class AuditLog:
     def __init__(self, id=None, user_id=None, action=None, 
                  module=None, item_id=None, details=None, 
-                 created_at=None, ip_address=None, user_name=None):
+                 created_at=None, ip_address=None, user_name=None,
+                 prev_hash=None, row_hash=None, **_ignored):
         self.id = id
         self.user_id = user_id
         self.user_name = user_name
@@ -55,6 +56,8 @@ class AuditLog:
             self.created_at = created_at
             
         self.ip_address = ip_address
+        self.prev_hash = prev_hash
+        self.row_hash = row_hash
 
     @staticmethod
     def log(user_id, action, module=None, item_id=None, details=None, ip_address=None):

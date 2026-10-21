@@ -91,7 +91,7 @@ def change_password():
     db.commit()
     # keep THIS browser signed in under the new auth_version; all others are signed out
     from flask_login import login_user
-    login_user(User.get_by_id(current_user.id))
+    login_user(User.get_by_id(current_user.id), remember=bool(request.cookies.get('remember_token')))
 
     flash(_('Password updated successfully. Other devices have been signed out.'), 'success')
     return redirect(url_for('users.profile'))

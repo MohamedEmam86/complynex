@@ -55,7 +55,7 @@ non-financial firms, under any regulator (CBE, FRA, EMLCU, PDPL, ITIDA, or forei
 - Escape dots in any regex/sed that matches endpoint names (`whistleblowing\.view_case`).
 - `url_for()` targets must exist — a missing endpoint is a 500 on render.
 - Anything that deletes or changes data is **POST-only** with a CSRF token (a `<form>` with a button, not an `<a href>`); `scripts/method_guard.py` blocks deploys that break this.
-- Sessions carry `'<user id>:<auth_version>'` (`User.get_id`); test clients use `User.session_id_for(1)`, not `'1'`.
+- Sessions carry `'<user id>:<auth_version>'` (`User.get_id`); test clients use `User.session_id_for_app(app, 1)`, not `'1'`.
 - Templates are cached per worker in production; changes need a restart (handled by `deploy.sh`).
 
 ## Checks to run before opening a PR

@@ -49,13 +49,12 @@ def portal_login():
 
         if user and guard.is_locked(user.id):
             AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'Portal Login: account locked', request.remote_addr)
-            flash(_('This account is temporarily locked after several failed attempts. Try again in %(m)s minutes.', m=guard.LOCK_MINUTES), 'danger')
+            flash(_('Invalid email or password. After 5 failed attempts the account is locked for 15 minutes.'), 'danger')
             return render_template('auth/login_portal.html')
 
         if user and user.check_password(password):
             # Session fixation prevention - regenerate session on login
             session.clear()
-            guard.reset_failures(user.id)
 
             if not user.is_active:
                 AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'Account expired' if user.is_expired() else 'Account deactivated', request.remote_addr)
@@ -73,6 +72,7 @@ def portal_login():
                     session['mfa_remember'] = remember
                     session['mfa_next'] = 'portal.dashboard'
                     return redirect(url_for('auth.mfa_setup'))
+                guard.reset_failures(user.id)
                 login_user(user, remember=remember)
                 session.permanent = True
                 User.update_last_login(user.id)
@@ -85,7 +85,7 @@ def portal_login():
             AuditLog.log(failed_user.id if failed_user else None, 'Failed Login', 'Auth', None, f'Invalid password for {email}' if failed_user else f'Invalid email: {email}', request.remote_addr)
             if failed_user and guard.register_failure(failed_user.id):
                 AuditLog.log(failed_user.id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed attempts', request.remote_addr)
-            flash(_('Invalid email or password.'), 'danger')
+            flash(_('Invalid email or password. After 5 failed attempts the account is locked for 15 minutes.'), 'danger')
             
     return render_template('auth/login_portal.html')
 
@@ -110,13 +110,12 @@ def login():
 
         if user and guard.is_locked(user.id):
             AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'CMS Login: account locked', request.remote_addr)
-            flash(_('This account is temporarily locked after several failed attempts. Try again in %(m)s minutes.', m=guard.LOCK_MINUTES), 'danger')
+            flash(_('Invalid email or password. After 5 failed attempts the account is locked for 15 minutes.'), 'danger')
             return render_template('auth/login.html')
 
         if user and user.check_password(password):
             # Session fixation prevention - regenerate session on login
             session.clear()
-            guard.reset_failures(user.id)
             # Upgrade legacy hash to bcrypt if needed
             if not user.password_hash.startswith('$2b$'):
                 new_hash = User.hash_password(password)
@@ -139,6 +138,7 @@ def login():
                     session['mfa_setup_user_id'] = user.id
                     session['mfa_remember'] = remember
                     return redirect(url_for('auth.mfa_setup'))
+                guard.reset_failures(user.id)
                 login_user(user, remember=remember)
                 session.permanent = True
                 User.update_last_login(user.id)
@@ -149,7 +149,7 @@ def login():
             AuditLog.log(failed_user.id if failed_user else None, 'Failed Login', 'Auth', None, f'CMS Login: Invalid password for {email}' if failed_user else f'CMS Login: Invalid email: {email}', request.remote_addr)
             if failed_user and guard.register_failure(failed_user.id):
                 AuditLog.log(failed_user.id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed attempts', request.remote_addr)
-            flash(_('Invalid email or password.'), 'danger')
+            flash(_('Invalid email or password. After 5 failed attempts the account is locked for 15 minutes.'), 'danger')
     
     return render_template('auth/login.html')
 
@@ -203,10 +203,12 @@ def mfa_setup():
             if totp.verify(code, valid_window=1):
                 codes, codes_json = User.generate_backup_codes()
                 User.enable_mfa(user_id, secret, codes_json)
+                guard.reset_failures(user_id)
                 session.pop('mfa_tmp_secret', None)
                 session.pop('mfa_setup_user_id', None)
                 remember = session.pop('mfa_remember', False)
                 next_endpoint = session.pop('mfa_next', 'dashboard')
+                guard.reset_failures(user.id)
                 login_user(user, remember=remember)
                 session.permanent = True
                 User.update_last_login(user_id)

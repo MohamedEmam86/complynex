@@ -29183,6 +29183,15 @@ msgstr "تسجيل الخروج من جميع الأجهزة"
 msgid "Are you sure you want to delete this category? It will fail if there are policies inside."
 msgstr "هل أنت متأكد من حذف هذا التصنيف؟ لن يتم الحذف إذا كانت به سياسات."
 
+msgid "Invalid email or password. After 5 failed attempts the account is locked for 15 minutes."
+msgstr "البريد الإلكتروني أو كلمة المرور غير صحيحة. بعد 5 محاولات فاشلة يتم إيقاف الحساب لمدة 15 دقيقة."
+
+msgid "Current expiry"
+msgstr "تاريخ الانتهاء الحالي"
+
+msgid "New expiry"
+msgstr "تاريخ الانتهاء الجديد"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

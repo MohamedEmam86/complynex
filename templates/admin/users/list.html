@@ -48,7 +48,9 @@
                         <td><span class="badge bg-secondary">{{ user.role }}</span></td>
                         <td>{{ user.display_department }}</td>
                         <td>
-                            {% if user.is_active %}
+                            {% if user.is_active and user.is_expired %}
+                            <span class="badge bg-warning text-dark">{{ _('Expired') }}</span>
+                            {% elif user.is_active %}
                             <span class="badge bg-success">{{ _('Active') }}</span>
                             {% else %}
                             <span class="badge bg-danger">{{ _('Inactive') }}</span>

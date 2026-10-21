@@ -44,7 +44,7 @@ def main():
     fails = 0
     with app.test_client() as c:
         with c.session_transaction() as s:
-            s['_user_id'] = __import__('models.user', fromlist=['User']).User.session_id_for(1)
+            s['_user_id'] = __import__('models.user', fromlist=['User']).User.session_id_for_app(app, 1)
             s['_fresh'] = True
         print('%-46s %-5s %-5s  %s' % ('URL', 'EN', 'AR', 'NOTE'))
         print('-' * 100)

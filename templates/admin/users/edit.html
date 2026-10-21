@@ -197,7 +197,7 @@
                     <div class="mb-3">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {{ 'checked'
-                                if user.is_active }}>
+                                if user._is_active }}>
                             <label class="form-check-label" for="is_active">{{ _('Account Active') }}</label>
                         </div>
                     </div>
@@ -236,9 +236,9 @@
                                     <div class="alert alert-warning py-2 mb-0">
                                         <i class="bi bi-calendar-x me-2"></i>
                                         {% if user.expires_at %}
-                                            Current expiry: <strong>{{ user.expires_at }}</strong> &nbsp;|&nbsp;
+                                            {{ _('Current expiry') }}: <strong>{{ (user.expires_at|string)[:16] }}</strong>{% if user.is_expired() %} <span class="badge bg-danger">{{ _('Expired') }}</span>{% endif %} &nbsp;|&nbsp;
                                         {% endif %}
-                                        New expiry: <strong id="expiryPreview">—</strong>
+                                        {{ _('New expiry') }}: <strong id="expiryPreview">—</strong>
                                     </div>
                                 </div>
                             </div>
