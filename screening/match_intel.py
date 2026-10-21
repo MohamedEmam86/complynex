@@ -630,7 +630,16 @@ def dedupe(matches):
     """One row per listed person: keep the best-scored occurrence and list the
     other sources it also appears in."""
     best, order = {}, []
-    for m in sorted(matches, key=lambda x: -float(x.get('match_score') or 0)):
+    # at equal score the official list leads and aggregators become "also
+    # listed in": OFAC / UN / EU / UK / EMLCU / internal orders, then copies
+    def _rank(x):
+        src = str(x.get('source') or '').lower()
+        if src.startswith('internal') or src in ('emlcu', 'emlcu_egypt'):
+            return 0
+        if src in ('un', 'un_consolidated', 'ofac', 'ofac_sdn', 'eu', 'eu_sanctions', 'hmt', 'uk_hmt'):
+            return 1
+        return 2
+    for m in sorted(matches, key=lambda x: (-round(float(x.get('match_score') or 0), 1), _rank(x))):
         k = _dedupe_key(m)
         if not k[0]:
             order.append(m)
