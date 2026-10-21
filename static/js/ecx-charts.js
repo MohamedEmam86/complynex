@@ -32,12 +32,15 @@
     id: 'ecxPointLabels',
     afterDatasetsDraw: function (chart, args, opts) {
       if (!opts || !opts.enabled) { return; }
-      var ctx = chart.ctx; ctx.save(); ctx.font = '11px ' + font; ctx.fillStyle = '#33404a';
+      var ctx = chart.ctx; ctx.save(); ctx.font = '11px ' + font; ctx.fillStyle = '#33404a'; ctx.textAlign = 'left'; ctx.direction = 'ltr';
       chart.data.datasets.forEach(function (ds, i) {
         chart.getDatasetMeta(i).data.forEach(function (pt, j) {
           var lbl = (ds.data[j] || {}).label; if (!lbl) { return; }
-          var w = ctx.measureText(lbl).width, x = pt.x + 8, y = pt.y + 4;
-          if (x + w > chart.chartArea.right) { x = pt.x - 8 - w; }
+          var w = ctx.measureText(lbl).width, a = chart.chartArea, y = pt.y + 4;
+          var x = rtl ? pt.x - 8 - w : pt.x + 8;
+          if (x < a.left) { x = pt.x + 8; }
+          if (x + w > a.right) { x = pt.x - 8 - w; }
+          if (y < a.top + 10) { y = pt.y + 16; }
           ctx.fillText(lbl, x, y);
         });
       });
@@ -54,7 +57,8 @@
       ctx.beginPath(); ctx.moveTo(xs.getPixelForValue(opts.x), a.top); ctx.lineTo(xs.getPixelForValue(opts.x), a.bottom);
       ctx.moveTo(a.left, ys.getPixelForValue(opts.y)); ctx.lineTo(a.right, ys.getPixelForValue(opts.y)); ctx.stroke();
       ctx.fillStyle = 'rgba(25,135,84,.07)';
-      ctx.fillRect(xs.getPixelForValue(opts.x), a.top, a.right - xs.getPixelForValue(opts.x), ys.getPixelForValue(opts.y) - a.top);
+      var x1 = xs.getPixelForValue(opts.x), x2 = xs.getPixelForValue(xs.max);
+      ctx.fillRect(Math.min(x1, x2), a.top, Math.abs(x2 - x1), ys.getPixelForValue(opts.y) - a.top);
       ctx.restore();
     }
   };
@@ -69,13 +73,13 @@
       if (d.dashed) { ds.borderDash = [6, 4]; }
       if (type === 'line') { ds.fill = !!d.fill; ds.tension = 0; ds.pointRadius = d.pointRadius === undefined ? 3 : d.pointRadius; ds.spanGaps = true; }
       if (type === 'radar') { ds.fill = true; ds.pointRadius = 3; }
-      if (type === 'scatter') { ds.pointRadius = 6; ds.pointHoverRadius = 8; }
+      if (type === 'scatter') { ds.pointRadius = 6; ds.pointHoverRadius = 8; ds.clip = false; }
       if (type === 'doughnut') { ds.borderWidth = 2; ds.borderColor = '#fff'; }
       if (d.barMax) { ds.maxBarThickness = d.barMax; }
       return ds;
     });
     var opts = {
-      responsive: true, maintainAspectRatio: false, animation: false,
+      responsive: true, maintainAspectRatio: false, animation: false, layout: {padding: {top: 10, left: 22, right: 22}},
       indexAxis: horizontal ? 'y' : 'x',
       plugins: {
         legend: {display: s.legend !== false && (datasets.length > 1 || type === 'doughnut'), position: type === 'doughnut' ? 'bottom' : 'top'},
@@ -92,6 +96,7 @@
     if (type === 'bar' || type === 'line' || type === 'scatter') {
       var valueAxis = {beginAtZero: s.min === undefined, grid: {color: GRID}, stacked: !!s.stacked,
                        ticks: {callback: function (v) { return fmt(v); }}, title: {display: !!(horizontal ? s.xTitle : s.yTitle), text: horizontal ? s.xTitle : s.yTitle}};
+      if (horizontal) { valueAxis.reverse = rtl; }
       if (s.max !== undefined) { valueAxis.max = s.max; }
       if (s.min !== undefined) { valueAxis.min = s.min; }
       var catAxis = {grid: {display: false}, stacked: !!s.stacked, reverse: rtl && !horizontal, title: {display: !!(horizontal ? s.yTitle : s.xTitle), text: horizontal ? s.yTitle : s.xTitle}};
