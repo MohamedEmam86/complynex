@@ -235,6 +235,8 @@ def create_app(config_name=None):
             v = 0
         return url_for('static', filename=filename) + '?v=' + str(v)
     app.jinja_env.globals.update(static_v=static_v)
+    from utils.insights import module_insights
+    app.jinja_env.globals.update(module_insights=module_insights)
     
     # Language switcher route
     @app.route('/set-language/<lang>')

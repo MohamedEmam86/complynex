@@ -30697,6 +30697,111 @@ msgstr "بريدك الإلكتروني"
 msgid "Your Name"
 msgstr "اسمك"
 
+msgid "0–7 days"
+msgstr "0–7 أيام"
+
+msgid "31–90 days"
+msgstr "31–90 يومًا"
+
+msgid "8–30 days"
+msgstr "8–30 يومًا"
+
+msgid "Alert status"
+msgstr "حالة التنبيهات"
+
+msgid "Assigned"
+msgstr "مُسند"
+
+msgid "Audit findings by severity"
+msgstr "ملاحظات المراجعة حسب الخطورة"
+
+msgid "Cases still open, by how long ago they were opened. The right-hand bars need attention first."
+msgstr "الحالات المفتوحة حسب مدة فتحها. الأعمدة الأقدم تحتاج اهتمامًا أولًا."
+
+msgid "Complaints"
+msgstr "الشكاوى"
+
+msgid "Complaints by category"
+msgstr "الشكاوى حسب التصنيف"
+
+msgid "Complaints received per month"
+msgstr "الشكاوى الواردة شهريًا"
+
+msgid "Confirmed hit"
+msgstr "تطابق مؤكد"
+
+msgid "Data-subject requests by status"
+msgstr "طلبات أصحاب البيانات حسب الحالة"
+
+msgid "Insights"
+msgstr "مؤشرات تحليلية"
+
+msgid "Items still waiting for action. Open the module to work on them."
+msgstr "بنود ما زالت تنتظر إجراء. افتح الموديول للعمل عليها."
+
+msgid "Likelihood"
+msgstr "الاحتمالية"
+
+msgid "Low match"
+msgstr "تطابق منخفض"
+
+msgid "Open audit findings"
+msgstr "ملاحظات مراجعة مفتوحة"
+
+msgid "Open cases"
+msgstr "حالات مفتوحة"
+
+msgid "Open cases by age"
+msgstr "الحالات المفتوحة حسب العمر"
+
+msgid "Open customer complaints"
+msgstr "شكاوى عملاء مفتوحة"
+
+msgid "Open monitoring alerts"
+msgstr "تنبيهات مراقبة مفتوحة"
+
+msgid "Open whistleblowing reports"
+msgstr "بلاغات مفتوحة"
+
+msgid "Open work across modules"
+msgstr "الأعمال المفتوحة في كل الموديولات"
+
+msgid "Over 90 days"
+msgstr "أكثر من 90 يومًا"
+
+msgid "Personal-data breaches by severity"
+msgstr "اختراقات البيانات الشخصية حسب الخطورة"
+
+msgid "Reports received per month"
+msgstr "البلاغات الواردة شهريًا"
+
+msgid "Residual risk heat map"
+msgstr "خريطة حرارية للمخاطر المتبقية"
+
+msgid "Review queue"
+msgstr "قائمة المراجعة"
+
+msgid "Review required"
+msgstr "تتطلب مراجعة"
+
+msgid "Risks by category"
+msgstr "المخاطر حسب التصنيف"
+
+msgid "Rows: likelihood (5 = almost certain). Columns: impact (5 = severe). Each cell shows how many risks sit there."
+msgstr "الصفوف: الاحتمالية (5 = شبه مؤكد). الأعمدة: الأثر (5 = جسيم). كل خلية توضح عدد المخاطر فيها."
+
+msgid "Screening matches to review"
+msgstr "تطابقات فحص تنتظر المراجعة"
+
+msgid "Screenings per month by result"
+msgstr "عمليات الفحص شهريًا حسب النتيجة"
+
+msgid "Transaction-monitoring alerts per month"
+msgstr "تنبيهات مراقبة المعاملات شهريًا"
+
+msgid "Under review"
+msgstr "قيد المراجعة"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 
