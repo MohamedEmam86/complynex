@@ -105,7 +105,7 @@ class NewsAPISource(NewsSource):
             
             def do_search():
                 return client.get_everything(
-                    q=query,
+                    q=f'"{query}"',
                     language='en',
                     sort_by='relevancy',
                     page_size=self.page_size
@@ -153,26 +153,27 @@ class GoogleNewsRSSSource(NewsSource):
         from urllib.parse import quote_plus
         import requests
         import feedparser
-        try:
-            encoded_name = quote_plus(query)
-            url = f"https://news.google.com/rss/search?q={encoded_name}&hl=ar&gl=EG&ceid=EG:ar"
-            logger.info(f"[GoogleNewsRSS] URL: {url}")
-            
-            loop = asyncio.get_event_loop()
-            def do_fetch():
+        # The exact phrase first (precise), then the loose query (catches the
+        # name written with other words between its elements). Relevance to
+        # the screened person is judged afterwards (adverse_relevance).
+        loop = asyncio.get_event_loop()
+        articles, errors = [], []
+        for q in (f'"{query}"', query):
+            url = f"https://news.google.com/rss/search?q={quote_plus(q)}&hl=ar&gl=EG&ceid=EG:ar"
+            def do_fetch(url=url):
                 resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}, timeout=self.timeout)
                 resp.raise_for_status()
                 return feedparser.parse(resp.content)
-                
-            feed = await loop.run_in_executor(None, do_fetch)
-            articles = []
-            for entry in feed.entries:
-                articles.append(self.standardize_article(entry))
-            logger.info(f"[GoogleNewsRSS] Found {len(articles)} articles")
-            return articles
-        except Exception as e:
-            logger.error(f"[GoogleNewsRSS] Failed: {str(e)}")
-            return []
+            try:
+                feed = await loop.run_in_executor(None, do_fetch)
+                articles += [self.standardize_article(e) for e in feed.entries]
+            except Exception as e:
+                errors.append(str(e))
+                logger.error(f"[GoogleNewsRSS] Failed for {q!r}: {e}")
+        if errors and not articles:
+            raise Exception('; '.join(errors)[:200])
+        logger.info(f"[GoogleNewsRSS] Found {len(articles)} articles")
+        return articles
             
     def _strip_html(self, text: str) -> str:
         if not text:
@@ -447,6 +448,8 @@ class WaterfallAdverseMediaScraper:
         per_source_timeout = self.config.get('search', {}).get(
             'per_source_timeout', 25)
 
+        failed = {}
+
         async def _safe_source_search(source):
             if not source.is_available():
                 return []
@@ -466,9 +469,11 @@ class WaterfallAdverseMediaScraper:
                 logger.warning(
                     f"⏱️ {source.name} exceeded {per_source_timeout}s and was "
                     f"dropped; other sources are unaffected")
+                failed[source.name] = 'timeout'
                 return []
             except Exception as e:
                 logger.error(f"❌ {source.name} failed: {str(e)}")
+                failed[source.name] = str(e)[:120]
                 return []
 
         # Run all searches in parallel
@@ -480,12 +485,11 @@ class WaterfallAdverseMediaScraper:
             
         # Logging sources used/failed for metadata
         for source, articles in zip(self.sources, source_articles_list):
-            if articles:
-                sources_used.append(source.name)
+            if source.name in failed:
+                sources_failed.append(source.name)
             elif source.is_available():
-                # We consider it failed only if it was supposed to work but returned nothing%s 
-                # Actually Waterfall usually just tracks failed as exceptions.
-                pass
+                # answered (with or without results) — the source was searched
+                sources_used.append(source.name)
         
         # Remove duplicates (by URL)
         unique_articles = self._deduplicate_articles(all_articles)
@@ -574,13 +578,33 @@ class WaterfallAdverseMediaScraper:
             # Execute async search in a new event loop in a separate thread
             # to avoid conflicts with gevent's patched event loop
             import nest_asyncio
+            # A Latin name is also searched in Arabic: most Egyptian news about
+            # an Egyptian customer is written in Arabic.
+            queries = [name]
+            try:
+                from screening import match_intel as _mi
+                if not _mi.is_arabic(name):
+                    ar = _mi.to_arabic_display(name)
+                    if ar and all(_mi.is_arabic(t) for t in ar.split()):
+                        queries.append(ar)
+            except Exception:
+                pass
+
             def run_async():
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 try:
-                    return loop.run_until_complete(self.search(name))
+                    res = loop.run_until_complete(asyncio.gather(*[self.search(q) for q in queries]))
                 finally:
                     loop.close()
+                merged = {'articles': [], 'sources_used': [], 'sources_failed': []}
+                for r in res:
+                    merged['articles'] += r.get('articles', [])
+                    merged['sources_used'] += [x for x in r.get('sources_used', []) if x not in merged['sources_used']]
+                    merged['sources_failed'] += [x for x in r.get('sources_failed', []) if x not in merged['sources_failed']]
+                merged['sources_failed'] = [x for x in merged['sources_failed'] if x not in merged['sources_used']]
+                merged['articles'] = self._deduplicate_articles(merged['articles'])
+                return merged
 
             # NOTE: deliberately NOT a `with` block. Exiting a ThreadPoolExecutor
             # context manager calls shutdown(wait=True), which blocks until the
@@ -596,55 +620,54 @@ class WaterfallAdverseMediaScraper:
             finally:
                 executor.shutdown(wait=False)
             
-            # Include ALL retrieved articles as requested by the user
-            adverse_hits = result.get('articles', [])
-            
-            # Map standard article format to previous CMS expected schema
-            mapped_hits = []
-            max_hit_score = 0
-            for article in adverse_hits:
-                score = min(100.0, article.get('risk_score', 0))
-                if score > max_hit_score:
-                    max_hit_score = score
-                    
-                mapped_hits.append({
+            # Keep only articles that name this person, and call an article
+            # adverse only when it carries a risk term (adverse_relevance).
+            from screening.adverse_relevance import assess
+            verdict = assess(name, result.get('articles', []))
+
+            def _map(article):
+                pub = article.get('published_at', '')
+                if isinstance(pub, datetime):
+                    pub = pub.isoformat()
+                return {
                     'title': article.get('title', ''),
                     'description': article.get('description', ''),
                     'url': article.get('url', ''),
-                    'published_at': article.get('published_at', ''),
-                    'published': article.get('published_at', ''), # For legacy template compatibility
-                    'source': article.get('source', 'Unknown API'),
-                    'risk_score': score,
-                    'matched_keywords': article.get('matched_keywords', [])
-                })
+                    'published_at': pub,
+                    'published': pub,  # legacy template compatibility
+                    'source': article.get('source', 'Unknown'),
+                    'language': article.get('language'),
+                    'risk_score': article.get('risk_score', 0.0),
+                    'severity': article.get('severity', 0),
+                    'categories': article.get('categories', []),
+                    'matched_keywords': article.get('matched_keywords', []),
+                    'name_match': article.get('name_match'),
+                }
 
-            if save_to_db:
-                # Logic to persist these hits to a dedicated adverse_media_hits table 
-                # if needed, though they are currently saved in the screening_result JSON.
-                pass
-                    
-            # Calibrate Overall Score
-            overall_score = max_hit_score
-            
-            risk_level = 'CLEAR'
-            recommendation = '✅ CLEAR: No adverse media identified'
-            if len(adverse_hits) > 0:
-                if overall_score >= 80:
-                    risk_level = 'HIGH'
-                    recommendation = '🚨 HIGH RISK: Critical adverse media findings. Escalation required.'
-                elif overall_score >= 40:
-                    risk_level = 'MEDIUM'
-                    recommendation = '⚠️ MEDIUM RISK: Adverse media found. Enhanced due diligence recommended.'
-                else:
-                    risk_level = 'LOW'
-                    recommendation = '⚠️ LOW RISK: Minor adverse media findings. Standard review sufficient.'
-                        
+            mapped_hits = [_map(a) for a in verdict['hits']]
+            mentions = [_map(a) for a in verdict['mentions']][:10]
+            risk_level = verdict['risk_level']
+            recommendation = {
+                'HIGH': '🚨 HIGH RISK: the person is named in news about terrorism, sanctions or financial crime. Escalate.',
+                'MEDIUM': '⚠️ MEDIUM RISK: the person is named in news about criminal proceedings or serious allegations. Enhanced due diligence.',
+                'LOW': '⚠️ LOW RISK: weak or partial-name adverse news. Review and record the conclusion.',
+                'CLEAR': '✅ CLEAR: no adverse news naming this person was found.',
+            }[risk_level]
+            if risk_level == 'CLEAR' and not result.get('sources_used'):
+                risk_level = 'ERROR'
+                recommendation = '⚠️ No news source answered — no conclusion can be drawn. Please retry.'
+
             return {
                 'all_hits': mapped_hits,
-                'total_hits': len(adverse_hits),
-                'risk_score': overall_score,
+                'total_hits': len(mapped_hits),
+                'risk_score': verdict['risk_score'],
                 'risk_level': risk_level,
                 'recommendation': recommendation,
+                'mentions': mentions,
+                'mentions_count': len(verdict['mentions']),
+                'unrelated_filtered': verdict['unrelated'],
+                'articles_reviewed': len(result.get('articles', [])),
+                'queries': queries,
                 'sources_used': result.get('sources_used', []),
                 'sources_failed': result.get('sources_failed', [])
             }

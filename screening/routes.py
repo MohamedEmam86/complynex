@@ -712,7 +712,9 @@ def manual_screen():
                     source_record_id=None,
                     result=result,
                     user_id=current_user.id,
-                    screening_type='MANUAL'
+                    screening_type='MANUAL',
+                    inputs={'national_id': national_id, 'employer': employer, 'gender': gender,
+                            'threshold': slider_val}
                 )
                 write_ok = True
                 break
@@ -851,10 +853,33 @@ def view_result(id):
         from flask_login import current_user
         AuditLog.log(current_user.id, 'Screening', 'Screening', None,
             f"Screened: {result.get('entity_name', 'Unknown')} — Result: {result.get('screening_result','UNKNOWN')}", request.remote_addr)
+    # Analyst view: verdict, per-hit evidence, list coverage, news coverage
+    from screening import result_view as rv
+    inputs = {}
+    try:
+        md = result.get('match_details')
+        md = json.loads(md) if isinstance(md, str) and md else (md or {})
+        inputs = md.get('inputs') or {}
+    except Exception:
+        inputs = {}
+    inputs.setdefault('dob', result.get('screened_dob'))
+    am_summary = {}
+    try:
+        am_summary = json.loads(result['adverse_media_summary']) if isinstance(result['adverse_media_summary'], str) \
+            else (result['adverse_media_summary'] or {})
+    except Exception:
+        am_summary = {}
+    s_views = [rv.match_view(m, 'SANCTIONS', inputs) for m in sanction_matches if isinstance(m, dict)]
+    p_views = [rv.match_view(m, 'PEP', inputs) for m in pep_matches if isinstance(m, dict)]
+    o_views = [rv.match_view(m, 'OTHER', inputs) for m in other_matches if isinstance(m, dict)]
+    verdict = rv.overall(s_views, p_views, o_views, am_summary, adverse_hits)
     return render_template('screening/screening_result.html', result=result, matches=matches,
                            adverse_hits=adverse_hits, adverse_media_count=adverse_media_count,
                            sanction_matches=sanction_matches, pep_matches=pep_matches,
-                           other_matches=other_matches)
+                           other_matches=other_matches,
+                           s_views=s_views, p_views=p_views, o_views=o_views, verdict=verdict,
+                           inputs=inputs, am=rv.adverse_view(am_summary, adverse_hits),
+                           coverage=rv.coverage())
 
 @screening_bp.route('/history')
 @login_required
@@ -1395,7 +1420,8 @@ def api_adverse_media(result_id):
         
     # ERROR must be retryable: a transient scraper failure would otherwise
     # be cached forever and replayed as a final verdict on every view.
-    if existing_summary and existing_summary.get('risk_level') not in ['PENDING', 'TIMEOUT', 'ERROR']:
+    force = request.args.get('refresh') == '1'
+    if existing_summary and not force and existing_summary.get('risk_level') not in ['PENDING', 'TIMEOUT', 'ERROR']:
         # Already processed - but don't trust a cache entry whose hits blob
         # fails to parse; treat it as not-yet-processed instead of silently
         # reporting a false "completed, 0 hits" (see Task #71).
@@ -1444,7 +1470,17 @@ print(json.dumps(result))
             'risk_level': media_info.get('risk_level', 'CLEAR'),
             'risk_score': media_info.get('risk_score', 0),
             'total_hits': media_info.get('total_hits', 0),
-            'recommendation': media_info.get('recommendation', '')
+            'recommendation': media_info.get('recommendation', ''),
+            # what was searched and how the articles were judged — the analyst
+            # needs this to rely on a CLEAR
+            'mentions': media_info.get('mentions', []),
+            'mentions_count': media_info.get('mentions_count', 0),
+            'unrelated_filtered': media_info.get('unrelated_filtered', 0),
+            'articles_reviewed': media_info.get('articles_reviewed', 0),
+            'queries': media_info.get('queries', [name]),
+            'sources_used': media_info.get('sources_used', []),
+            'sources_failed': media_info.get('sources_failed', []),
+            'searched_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC'),
         }
         
         # User Requirement: update DB with result
@@ -3118,7 +3154,7 @@ def queue_bulk_resolve():
 
     flash(f'Successfully resolved {processed_count} items.', 'success')
     return redirect(url_for('screening.screening_queue'))
-def _save_screening_result(name, entity_type, dob, nationality, source_module, source_record_id, result, user_id, screening_type='API'):
+def _save_screening_result(name, entity_type, dob, nationality, source_module, source_record_id, result, user_id, screening_type='API', inputs=None):
     """
     Helper to save screening result to history, results, and queue.
     Returns: history_id
@@ -3136,6 +3172,11 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
     if result.get('screening_result') == 'WHITE_LISTED':
         status = 'Completed'
         screening_result = 'WHITE_LISTED'
+    elif result.get('screening_result') == 'CONFIRMED_HIT':
+        # the decision layer confirmed it (same national ID, or a complete
+        # name with nothing contradicting it): say so, do not dilute it
+        status = 'Pending Review'
+        screening_result = 'CONFIRMED_HIT'
     elif high_risk:
         status = 'Pending Review'
         screening_result = 'POTENTIAL_MATCH'
@@ -3176,16 +3217,18 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
             screening_type, screened_name, screened_dob,
             screening_method, total_matches_found, highest_match_score,
             screening_result, matches, adverse_media, adverse_media_summary,
-            processing_time_ms, created_by, search_degraded, status
-        ) VALUES ({param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, 'PENDING')
+            processing_time_ms, created_by, search_degraded, status, match_details
+        ) VALUES ({param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, 'PENDING', {param})
     """, (
         source_module.upper().replace(' ', '_'), name, dob, screening_type,
         total_matches, highest_score, screening_result,
-        json.dumps(matches),
-        json.dumps(result.get('adverse_media', [])),
-        json.dumps(result.get('adverse_media_summary', {})),
+        json.dumps(matches, default=str),
+        json.dumps(result.get('adverse_media', []), default=str),
+        json.dumps(result.get('adverse_media_summary', {}), default=str),
         result.get('processing_time_ms', 0), user_id,
-        1 if result.get('search_degraded') else 0
+        1 if result.get('search_degraded') else 0,
+        json.dumps({'inputs': dict(inputs or {}, dob=str(dob) if dob else None, nationality=nationality,
+                                   entity_type=entity_type)}, default=str)
     ))
 
     # Tie the history row to the results row so an adjudication made on either

@@ -28624,6 +28624,507 @@ msgstr "اكتب إزاي وصلت للقرار."
 msgid "Decision recorded."
 msgstr "تم تسجيل القرار."
 
+msgid "Also listed in"
+msgstr "مُدرج أيضًا في"
+
+msgid "Official profile"
+msgstr "الملف الرسمي"
+
+msgid "Why this score"
+msgstr "لماذا هذه الدرجة"
+
+msgid "listed"
+msgstr "في القائمة"
+
+msgid "screened"
+msgstr "المفحوص"
+
+msgid "On the list, not in the screened name"
+msgstr "موجود في القائمة وغير موجود في الاسم المفحوص"
+
+msgid "In the screened name, not on the list"
+msgstr "موجود في الاسم المفحوص وغير موجود في القائمة"
+
+msgid "matched element"
+msgstr "جزء مطابق"
+
+msgid "on the list only"
+msgstr "في القائمة فقط"
+
+msgid "in the screened name only"
+msgstr "في الاسم المفحوص فقط"
+
+msgid "Screened before the decision layer: re-screen for the full explanation."
+msgstr "تم الفحص قبل تفعيل طبقة القرار: أعد الفحص لعرض التفسير الكامل."
+
+msgid "Identifiers"
+msgstr "بيانات التحقق"
+
+msgid "Screened"
+msgstr "المفحوص"
+
+msgid "On the list"
+msgstr "في القائمة"
+
+msgid "Not available on both sides"
+msgstr "غير متاح في الطرفين"
+
+msgid "No national ID, date of birth or nationality on either side. The decision rests on the name and the country."
+msgstr "لا يوجد رقم قومي أو تاريخ ميلاد أو جنسية في الطرفين. القرار مبني على الاسم والدولة."
+
+msgid "About the listed person"
+msgstr "بيانات الشخص المُدرج"
+
+msgid "Programme"
+msgstr "البرنامج"
+
+msgid "Position"
+msgstr "المنصب"
+
+msgid "Reason for listing"
+msgstr "سبب الإدراج"
+
+msgid "Listed / added"
+msgstr "تاريخ الإدراج / الإضافة"
+
+msgid "The list gives no further details for this record."
+msgstr "القائمة لا تحتوي على تفاصيل إضافية لهذا السجل."
+
+msgid "Required action"
+msgstr "الإجراء المطلوب"
+
+msgid "Screening result"
+msgstr "نتيجة الفحص"
+
+msgid "New screening"
+msgstr "فحص جديد"
+
+msgid "Download Report"
+msgstr "تحميل التقرير"
+
+msgid "Overall decision"
+msgstr "القرار العام"
+
+msgid "Sanctions"
+msgstr "العقوبات"
+
+msgid "Adverse media"
+msgstr "الأخبار السلبية"
+
+msgid "Top score"
+msgstr "أعلى درجة"
+
+msgid "Screened subject"
+msgstr "بيانات الشخص المفحوص"
+
+msgid "Entity type"
+msgstr "نوع الكيان"
+
+msgid "Date of birth"
+msgstr "تاريخ الميلاد"
+
+msgid "Search mode"
+msgstr "وضع البحث"
+
+msgid "Degraded — re-screen this name"
+msgstr "بحث منقوص — أعد فحص هذا الاسم"
+
+msgid "Full (search index + similar-name index + internal lists)"
+msgstr "كامل (فهرس البحث + فهرس الأسماء المتشابهة + القوائم الداخلية)"
+
+msgid "No national ID or date of birth was given: hits are judged on the name and the country only, so none can be confirmed by an identifier."
+msgstr "لم يُدخل رقم قومي أو تاريخ ميلاد: النتائج مبنية على الاسم والدولة فقط، ولا يمكن تأكيد أي منها بمُعرّف."
+
+msgid "Lists searched"
+msgstr "القوائم التي تم البحث فيها"
+
+msgid "updated in the last 2 days"
+msgstr "محدثة خلال آخر يومين"
+
+msgid "up to 7 days"
+msgstr "حتى 7 أيام"
+
+msgid "older or failed"
+msgstr "أقدم أو فشل التحديث"
+
+msgid "List coverage is not available right now."
+msgstr "بيانات تغطية القوائم غير متاحة حاليًا."
+
+msgid "Sanctions & restricted lists"
+msgstr "العقوبات والقوائم المحظورة"
+
+msgid "Asset-freeze orders, local and international terrorist and sanctions lists"
+msgstr "أوامر التجميد وقوائم الإرهاب والعقوبات المحلية والدولية"
+
+msgid "No match on any sanctions or restricted list."
+msgstr "لا توجد مطابقة في أي قائمة عقوبات أو قائمة محظورة."
+
+msgid "Politically exposed persons"
+msgstr "الأشخاص ذوو المخاطر السياسية (PEP)"
+
+msgid "Internal PEP list and global PEP databases"
+msgstr "قائمة PEP الداخلية وقواعد البيانات الدولية"
+
+msgid "No match on any PEP list."
+msgstr "لا توجد مطابقة في أي قائمة PEP."
+
+msgid "Other lists"
+msgstr "قوائم أخرى"
+
+msgid "Other watchlists"
+msgstr "قوائم مراقبة أخرى"
+
+msgid "News naming the person together with a risk term (financial crime, terrorism, criminal proceedings, misconduct)"
+msgstr "أخبار تذكر الشخص بالاسم مع مصطلح خطر (جرائم مالية، إرهاب، إجراءات جنائية، مخالفات)"
+
+msgid "Re-run news search"
+msgstr "إعادة البحث في الأخبار"
+
+msgid "Searching news sources…"
+msgstr "جاري البحث في مصادر الأخبار…"
+
+msgid "This takes a few seconds; the page refreshes by itself."
+msgstr "يستغرق ثوانٍ قليلة وستُحدَّث الصفحة تلقائيًا."
+
+msgid "Articles reviewed"
+msgstr "المقالات التي تمت مراجعتها"
+
+msgid "not about this person"
+msgstr "لا تخص هذا الشخص"
+
+msgid "mentions without risk terms"
+msgstr "إشارات بدون مصطلحات خطر"
+
+msgid "Searched as"
+msgstr "تم البحث باسم"
+
+msgid "Sources answered"
+msgstr "المصادر التي استجابت"
+
+msgid "Did not answer"
+msgstr "لم تستجب"
+
+msgid "This search ran with the earlier method, which listed every article returned. Re-run it for articles about this person only."
+msgstr "تم هذا البحث بالطريقة السابقة التي كانت تعرض كل المقالات. أعد البحث لعرض المقالات الخاصة بهذا الشخص فقط."
+
+msgid "How the article names the person"
+msgstr "كيف يذكر المقال الشخص"
+
+msgid "name"
+msgstr "الاسم"
+
+msgid "Showing the 30 most relevant of"
+msgstr "عرض أهم 30 من أصل"
+
+msgid "The news search did not complete. Re-run it before closing this screening."
+msgstr "لم يكتمل البحث في الأخبار. أعد البحث قبل إغلاق هذا الفحص."
+
+msgid "No adverse news naming this person was found."
+msgstr "لم يتم العثور على أخبار سلبية تذكر هذا الشخص."
+
+msgid "Other news naming the person, without risk terms"
+msgstr "أخبار أخرى تذكر الشخص بدون مصطلحات خطر"
+
+msgid "Adjudicated by"
+msgstr "تم البت بواسطة"
+
+msgid "Reviewer Rationale"
+msgstr "مبررات المراجع"
+
+msgid "COMPLIANCE RESOLUTION"
+msgstr "قرار الالتزام"
+
+msgid "Record the decision and the evidence it rests on (identifiers compared, documents checked, articles reviewed)."
+msgstr "سجّل القرار والأدلة التي بُني عليها (المُعرّفات التي تمت مقارنتها، المستندات التي تم فحصها، المقالات التي تمت مراجعتها)."
+
+msgid "Select Action..."
+msgstr "اختر الإجراء..."
+
+msgid "Confirm true match (block / escalate)"
+msgstr "تأكيد مطابقة حقيقية (حظر / تصعيد)"
+
+msgid "Confirm false positive (clear)"
+msgstr "تأكيد إيجابية كاذبة (إخلاء)"
+
+msgid "Provide justification for the compliance decision..."
+msgstr "اكتب مبررات قرار الالتزام..."
+
+msgid "SUBMIT ADJUDICATION"
+msgstr "اعتماد القرار"
+
+msgid "Media search temporarily unavailable. Please try again later."
+msgstr "البحث في الأخبار غير متاح مؤقتًا. حاول مرة أخرى لاحقًا."
+
+msgid "Searching…"
+msgstr "جاري البحث…"
+
+msgid "Retry"
+msgstr "إعادة المحاولة"
+
+msgid "CONFIRMED TRUE MATCH — ENTITY BLOCKED"
+msgstr "مطابقة حقيقية مؤكدة — تم حظر الكيان"
+
+msgid "CONFIRMED FALSE POSITIVE — ENTITY CLEARED"
+msgstr "إيجابية كاذبة مؤكدة — تم إخلاء الكيان"
+
+msgid "Confirmed match"
+msgstr "مطابقة مؤكدة"
+
+msgid "Potential match"
+msgstr "مطابقة محتملة"
+
+msgid "Low-confidence lead"
+msgstr "مؤشر ضعيف"
+
+msgid "Below threshold"
+msgstr "أقل من الحد"
+
+msgid "Same national ID"
+msgstr "نفس الرقم القومي"
+
+msgid "Different national ID"
+msgstr "رقم قومي مختلف"
+
+msgid "Date of birth differs"
+msgstr "تاريخ الميلاد مختلف"
+
+msgid "Gender differs (from the national ID)"
+msgstr "النوع مختلف (من الرقم القومي)"
+
+msgid "Nationality differs"
+msgstr "الجنسية مختلفة"
+
+msgid "An identifier agrees"
+msgstr "أحد المُعرّفات متطابق"
+
+msgid "No identifier to compare — decided on the name"
+msgstr "لا يوجد مُعرّف للمقارنة — القرار على الاسم"
+
+msgid "OFAC SDN (US Treasury)"
+msgstr "قائمة OFAC SDN (الخزانة الأمريكية)"
+
+msgid "UN Security Council Consolidated List"
+msgstr "القائمة الموحدة لمجلس الأمن"
+
+msgid "EU Financial Sanctions"
+msgstr "عقوبات الاتحاد الأوروبي"
+
+msgid "UK HM Treasury (OFSI)"
+msgstr "الخزانة البريطانية (OFSI)"
+
+msgid "EMLCU — Egyptian terrorist lists"
+msgstr "وحدة مكافحة غسل الأموال — قوائم الإرهاب المصرية"
+
+msgid "Internal list (asset-freeze orders / local & UN terrorist lists)"
+msgstr "القائمة الداخلية (أوامر التجميد / قوائم الإرهاب المحلية والأممية)"
+
+msgid "Internal PEP list"
+msgstr "قائمة PEP الداخلية"
+
+msgid "Global PEP database (OpenSanctions)"
+msgstr "قاعدة PEP الدولية (OpenSanctions)"
+
+msgid "Egypt PEP (OpenSanctions)"
+msgstr "PEP مصر (OpenSanctions)"
+
+msgid "Egypt PEP (Wikidata)"
+msgstr "PEP مصر (Wikidata)"
+
+msgid "Egypt PEP — Wikidata (via OpenSanctions)"
+msgstr "PEP مصر — Wikidata (عبر OpenSanctions)"
+
+msgid "Confirmed sanctions match"
+msgstr "مطابقة مؤكدة في قوائم العقوبات"
+
+msgid "Do not proceed. Freeze funds without delay, file the report to EMLCU and notify the CBE. Document the decision below."
+msgstr "لا تستكمل. جمّد الأموال دون تأخير وأرسل الإخطار لوحدة مكافحة غسل الأموال وأخطر البنك المركزي. وثّق القرار بالأسفل."
+
+msgid "Potential sanctions match — review required"
+msgstr "مطابقة محتملة في قوائم العقوبات — مطلوب مراجعة"
+
+msgid "Hold onboarding/transactions until the analyst confirms or clears the match with the national ID and date of birth."
+msgstr "أوقف التعاقد/العمليات لحين تأكيد المطابقة أو نفيها بالرقم القومي وتاريخ الميلاد."
+
+msgid "Politically exposed person"
+msgstr "شخص ذو مخاطر سياسية (PEP)"
+
+msgid "Enhanced due diligence and senior-management approval are required before the relationship continues."
+msgstr "مطلوب عناية واجبة مشددة وموافقة الإدارة العليا قبل استمرار العلاقة."
+
+msgid "Potential match — review required"
+msgstr "مطابقة محتملة — مطلوب مراجعة"
+
+msgid "Confirm or clear the match before proceeding, and record the rationale."
+msgstr "أكد المطابقة أو انفها قبل الاستكمال وسجّل المبررات."
+
+msgid "Adverse media found"
+msgstr "توجد أخبار سلبية"
+
+msgid "No list match, but the person is named in negative news. Review the articles and decide on enhanced due diligence."
+msgstr "لا توجد مطابقة في القوائم، لكن الشخص مذكور في أخبار سلبية. راجع المقالات وقرر بشأن العناية الواجبة المشددة."
+
+msgid "Low-confidence leads only"
+msgstr "مؤشرات ضعيفة فقط"
+
+msgid "No alert. Review the leads below and record why they are not this person."
+msgstr "لا يوجد تنبيه. راجع المؤشرات بالأسفل وسجّل سبب أنها لا تخص هذا الشخص."
+
+msgid "Lists clear — news search running"
+msgstr "القوائم سليمة — البحث في الأخبار جارٍ"
+
+msgid "The adverse media search is still running."
+msgstr "البحث في الأخبار السلبية ما زال جاريًا."
+
+msgid "Lists clear — news search incomplete"
+msgstr "القوائم سليمة — البحث في الأخبار غير مكتمل"
+
+msgid "No list match. The adverse media search did not complete: re-run it before closing."
+msgstr "لا توجد مطابقة في القوائم. البحث في الأخبار لم يكتمل: أعد البحث قبل الإغلاق."
+
+msgid "Clear — no match"
+msgstr "سليم — لا توجد مطابقة"
+
+msgid "No list match and no adverse media. Proceed with standard due diligence."
+msgstr "لا توجد مطابقة في القوائم ولا أخبار سلبية. استكمل بالعناية الواجبة العادية."
+
+msgid "Do not onboard or process. Freeze funds without delay and report to EMLCU and the CBE."
+msgstr "لا تتعاقد ولا تنفذ عمليات. جمّد الأموال دون تأخير وأخطر وحدة مكافحة غسل الأموال والبنك المركزي."
+
+msgid "Hold the relationship/transaction. Verify identity with the national ID and date of birth, then decide."
+msgstr "أوقف العلاقة/العملية. تحقق من الهوية بالرقم القومي وتاريخ الميلاد ثم قرر."
+
+msgid "Review and record why it is or is not the same person. Not an alert on its own."
+msgstr "راجع وسجّل هل هو نفس الشخص أم لا. ليس تنبيهًا في حد ذاته."
+
+msgid "Enhanced due diligence: source of funds and wealth, senior-management approval, enhanced ongoing monitoring."
+msgstr "عناية واجبة مشددة: مصدر الأموال والثروة، موافقة الإدارة العليا، ومتابعة مستمرة مشددة."
+
+msgid "Confirm whether the customer is this PEP (or a family member / close associate) before onboarding."
+msgstr "تأكد هل العميل هو هذا الشخص (أو أحد أفراد أسرته / المقربين منه) قبل التعاقد."
+
+msgid "Review and record the conclusion."
+msgstr "راجع وسجّل النتيجة."
+
+msgid "Escalate to compliance for a decision."
+msgstr "صعّد لإدارة الالتزام لاتخاذ القرار."
+
+msgid "Review before proceeding."
+msgstr "راجع قبل الاستكمال."
+
+msgid "complete name match, same order"
+msgstr "تطابق كامل للاسم بنفس الترتيب"
+
+msgid "complete but short name"
+msgstr "تطابق كامل لكن الاسم قصير"
+
+msgid "compared across scripts (Latin / Arabic)"
+msgstr "مقارنة بين لغتين (إنجليزي / عربي)"
+
+msgid "listed name is a short form inside a longer name"
+msgstr "الاسم المُدرج صيغة مختصرة داخل اسم أطول"
+
+msgid "complete match across scripts: confirm with an identifier"
+msgstr "تطابق كامل بين لغتين: أكّد بمُعرّف"
+
+msgid "cross-script match without a corroborating identifier"
+msgstr "تطابق بين لغتين بدون مُعرّف داعم"
+
+msgid "another record of this listed name carries a different national ID"
+msgstr "سجل آخر بنفس الاسم يحمل رقمًا قوميًا مختلفًا"
+
+msgid "Terrorism / sanctions"
+msgstr "إرهاب / عقوبات"
+
+msgid "Financial crime"
+msgstr "جرائم مالية"
+
+msgid "Criminal proceedings"
+msgstr "إجراءات جنائية"
+
+msgid "Regulatory / misconduct"
+msgstr "مخالفات تنظيمية / سوء سلوك"
+
+msgid "exact"
+msgstr "مطابق تمامًا"
+
+msgid "strong"
+msgstr "قوي"
+
+msgid "partial"
+msgstr "جزئي"
+
+msgid "Medium risk"
+msgstr "مخاطر متوسطة"
+
+msgid "Low risk"
+msgstr "مخاطر منخفضة"
+
+msgid "No adverse media"
+msgstr "لا توجد أخبار سلبية"
+
+msgid "The person is named in news about terrorism, sanctions or financial crime. Escalate."
+msgstr "الشخص مذكور في أخبار عن إرهاب أو عقوبات أو جرائم مالية. صعّد."
+
+msgid "The person is named in news about criminal proceedings or serious allegations. Enhanced due diligence."
+msgstr "الشخص مذكور في أخبار عن إجراءات جنائية أو اتهامات جسيمة. عناية واجبة مشددة."
+
+msgid "Weak or partial-name adverse news. Review and record the conclusion."
+msgstr "أخبار سلبية بتطابق اسم ضعيف أو جزئي. راجع وسجّل النتيجة."
+
+msgid "The news search is running."
+msgstr "البحث في الأخبار جارٍ."
+
+msgid "News sources did not answer in time. Re-run the search."
+msgstr "مصادر الأخبار لم تستجب في الوقت المحدد. أعد البحث."
+
+msgid "News sources did not answer. Re-run the search."
+msgstr "مصادر الأخبار لم تستجب. أعد البحث."
+
+msgid "name structure"
+msgstr "هيكل الاسم"
+
+msgid "not in the customer name"
+msgstr "غير موجود في اسم العميل"
+
+msgid "extra in the customer name"
+msgstr "زيادة في اسم العميل"
+
+msgid "national ID matches the listed record"
+msgstr "الرقم القومي مطابق للسجل المُدرج"
+
+msgid "listed record carries a different national ID"
+msgstr "السجل المُدرج يحمل رقمًا قوميًا مختلفًا"
+
+msgid "gender differs (from the national ID)"
+msgstr "النوع مختلف (من الرقم القومي)"
+
+msgid "birth year differs"
+msgstr "سنة الميلاد مختلفة"
+
+msgid "birth year agrees"
+msgstr "سنة الميلاد متطابقة"
+
+msgid "nationality / country agrees"
+msgstr "الجنسية / الدولة متطابقة"
+
+msgid "nationality differs"
+msgstr "الجنسية مختلفة"
+
+msgid "listed record has no identifiers: decision rests on the name"
+msgstr "السجل المُدرج بدون مُعرّفات: القرار مبني على الاسم"
+
+msgid "Identity documents"
+msgstr "مستندات الهوية"
+
+msgid "Show all adverse articles"
+msgstr "عرض كل المقالات السلبية"
+
+msgid "gender differs"
+msgstr "النوع مختلف"
+
+msgid "PEP basis"
+msgstr "أساس التصنيف كـ PEP"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

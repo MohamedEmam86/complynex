@@ -680,7 +680,7 @@ class EnhancedDataUpdater:
                 topics_json, countries_json,
                 entity.get('date_of_birth'), yob,
                 entity.get('nationality'), entity.get('gender'),
-                entity['source_url'], entity['source'], entity['risk_level'],
+                entity.get('source_url'), entity.get('source'), entity.get('risk_level', 'HIGH'),
                 aliases_json, details_json
             ))
         else:
@@ -698,7 +698,7 @@ class EnhancedDataUpdater:
                 topics_json, countries_json,
                 entity.get('date_of_birth'), yob,
                 entity.get('nationality'), entity.get('gender'),
-                entity['source_url'], entity['source'], entity['risk_level'],
+                entity.get('source_url'), entity.get('source'), entity.get('risk_level', 'HIGH'),
                 aliases_json, details_json
             ))
             

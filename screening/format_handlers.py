@@ -535,124 +535,107 @@ class EUSanctionsHandler(BaseFormatHandler):
         return entities
         
     def _parse_sanction_entity(self, entity_elem):
-        """Parse EU sanctionEntity"""
+        """Parse one EU sanctionEntity.
+
+        The EU file carries names, subject type, birth dates and documents as
+        ATTRIBUTES (<nameAlias wholeName="..." nameLanguage="AR"/>,
+        <subjectType code="person"/>). The earlier version read them as child
+        elements, found no name on any record and returned 0 entities, so the
+        EU list silently stopped updating.
+        """
         try:
             ns = {'fsd': 'http://eu.europa.ec/fpi/fsd/export'}
-            
-            # Entity ID
-            entity_id = entity_elem.get('euReferenceNumber')
-            source_id = f"EU-{entity_id}" if entity_id else None
-            
-            if not source_id:
+            ref = entity_elem.get('euReferenceNumber') or entity_elem.get('logicalId')
+            if not ref:
                 return None
-                
-            # Entity Type
-            subject_type = entity_elem.get('subjectType')
-            entity_type = 'INDIVIDUAL' if subject_type == 'person' else 'ENTITY'
-            
-            # Names (extract English if available, else first available)
-            names = entity_elem.findall('.//fsd:nameAlias', ns)
-            full_name = None
-            aliases_list = []
-            
-            for name_elem in names:
-                # Check language
-                lang = name_elem.get('lang', '')
-                
-                # Get name parts
-                whole_name = name_elem.find('fsd:wholeName', ns)
-                if whole_name is not None and whole_name.text:
-                    name_text = whole_name.text.strip()
-                    
-                    # Prefer English
-                    if lang == 'en' and not full_name:
-                        full_name = name_text
-                    else:
-                        if name_text and name_text != full_name:
-                            aliases_list.append(name_text)
-                            
-                # Build from parts if wholeName not available
-                if not whole_name or not whole_name.text:
-                    name_parts = [
-                        self._get_text(name_elem, 'fsd:firstName', ns),
-                        self._get_text(name_elem, 'fsd:middleName', ns),
-                        self._get_text(name_elem, 'fsd:lastName', ns)
-                    ]
-                    name_text = ' '.join(p for p in name_parts if p)
-                    
-                    if lang == 'en' and not full_name:
-                        full_name = name_text
-                    else:
-                        if name_text and name_text != full_name:
-                            aliases_list.append(name_text)
-                            
-            if not full_name and aliases_list:
-                full_name = aliases_list.pop(0)
-                
+            source_id = f"EU-{ref}"
+
+            st = entity_elem.find('fsd:subjectType', ns)
+            code = (st.get('code') if st is not None else '') or ''
+            entity_type = 'INDIVIDUAL' if code == 'person' else 'ENTITY'
+
+            arabic, names, primary = None, [], []
+            for na in entity_elem.findall('fsd:nameAlias', ns):
+                name = (na.get('wholeName') or ' '.join(
+                    x for x in (na.get('firstName'), na.get('middleName'), na.get('lastName')) if x)).strip()
+                if not name:
+                    continue
+                lang = (na.get('nameLanguage') or '').upper()
+                if lang == 'AR' and not arabic:
+                    arabic = name
+                names.append(name)
+                if lang in ('', 'EN') and na.get('strong', 'true') == 'true':
+                    primary.append(name)
+            # the fullest strong Latin name is the listed name; the rest are aliases
+            full_name = max(primary or names, key=len) if (primary or names) else None
             if not full_name:
                 return None
-                
-            # Date of Birth
+            aliases = [n for n in names if n != full_name]
+
             dob = None
-            birth_date_elem = entity_elem.find('.//fsd:birthdate', ns)
-            if birth_date_elem is not None:
-                date_text = birth_date_elem.get('birthdate') or birth_date_elem.text
-                if date_text:
-                    dob = self._parse_date(date_text)
-                    
-            # Nationality
-            nationality = None
-            citizenship = entity_elem.find('.//fsd:citizenship', ns)
-            if citizenship is not None:
-                nat_code = citizenship.get('countryIso2Code')
-                nat_desc = citizenship.get('countryDescription')
-                nationality = nat_desc if nat_desc else nat_code
-                
-            # Address
+            for bd in entity_elem.findall('fsd:birthdate', ns):
+                d = bd.get('birthdate') or (bd.get('year') and f"{bd.get('year')}")
+                if d:
+                    dob = self._parse_date(d) if len(d) > 4 else d
+                    break
+
+            nationality, countries = None, []
+            for c in entity_elem.findall('fsd:citizenship', ns):
+                desc = c.get('countryDescription') or c.get('countryIso2Code')
+                if desc and desc not in countries:
+                    countries.append(desc)
+            if countries:
+                nationality = countries[0]
+
+            ids = []
+            for idn in entity_elem.findall('fsd:identification', ns):
+                num = idn.get('number')
+                if num:
+                    ids.append(f"{idn.get('identificationTypeDescription') or idn.get('identificationTypeCode') or 'ID'}: {num}")
+
+            programmes, regulation_summary = [], None
+            for reg in entity_elem.findall('fsd:regulation', ns):
+                if reg.get('programme') and reg.get('programme') not in programmes:
+                    programmes.append(reg.get('programme'))
+                regulation_summary = regulation_summary or reg.get('numberTitle')
+            remark = self._get_text(entity_elem, 'fsd:remark', ns)
+
             address = None
-            address_elem = entity_elem.find('.//fsd:address', ns)
+            address_elem = entity_elem.find('fsd:address', ns)
             if address_elem is not None:
-                addr_parts = [
-                    self._get_text(address_elem, 'fsd:street', ns),
-                    self._get_text(address_elem, 'fsd:city', ns),
-                    self._get_text(address_elem, 'fsd:country', ns)
-                ]
-                address = ', '.join(p for p in addr_parts if p)
-                
-            # Regulation (sanctions basis)
-            regulation = entity_elem.find('.//fsd:regulation', ns)
-            regulation_summary = None
-            if regulation is not None:
-                regulation_summary = regulation.get('publicationUrl') or regulation.get('numberTitle')
-                
-            entity = {
+                address = ', '.join(x for x in (address_elem.get('street'), address_elem.get('city'),
+                                                address_elem.get('countryDescription')) if x) or None
+
+            return {
                 'source_id': source_id,
                 'full_name': full_name,
-                'original_name': None,
-                'list_type': 'EU_Sanctions',
+                'original_name': arabic,
+                'list_type': 'SANCTIONS',
                 'entity_type': entity_type,
-                'dataset': 'EU',
+                'dataset': 'eu_fsf',
                 'source': 'eu',
-                'source_url': f"https://webgate.ec.europa.eu/fsd/fsf#!/search",
+                'source_url': 'https://webgate.ec.europa.eu/fsd/fsf#!/search',
                 'risk_level': 'HIGH',
-                'topics': ['sanctions', 'eu'],
-                'countries': [nationality] if nationality else [],
+                'topics': ['sanctions', 'eu'] + [p.lower() for p in programmes],
+                'countries': countries,
                 'date_of_birth': dob,
                 'nationality': nationality,
-                'aliases': list(set(aliases_list)),  # Deduplicate
+                'aliases': list(dict.fromkeys(a for a in aliases if a != full_name)),
                 'details': {
+                    'program': ', '.join(programmes) or None,
+                    'regulation': regulation_summary,
+                    'reason': remark,
+                    'identifiers': ids or None,
                     'address': address,
-                    'regulation': regulation_summary
+                    'designation_date': entity_elem.get('designationDate'),
+                    'un_reference': entity_elem.get('unitedNationId') or None,
                 }
             }
-            
-            return entity
-            
         except Exception as e:
             logger.warning(f"Failed to parse EU entity: {e}")
             self.error_count += 1
             return None
-            
+
     def _get_text(self, element, path, ns):
         """Safely get text from XML element with namespace"""
         try:

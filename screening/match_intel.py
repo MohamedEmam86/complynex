@@ -211,6 +211,37 @@ def to_arabic(name):
     return ' '.join(x for x in out if x)
 
 
+def to_arabic_display(name):
+    """Arabic rendering that keeps the compound particles a reader writes
+    (Abdelaziz -> عبد العزيز, El Sayed -> السيد) — for searching the news,
+    where the name must look the way an Arabic article prints it."""
+    words = normalize(name).split()
+    out, i = [], 0
+    while i < len(words):
+        w = words[i]
+        nxt = words[i + 1] if i + 1 < len(words) else None
+        if w in ('abd', 'abdel', 'abdul', 'abdal') and nxt:
+            core = to_arabic(nxt)
+            out.append('عبد ' + ('ال' + core if not core.startswith('ال') else core))
+            i += 2
+            continue
+        if w in ('el', 'al') and nxt:
+            core = to_arabic(nxt)
+            out.append(core if core.startswith('ال') else 'ال' + core)
+            i += 2
+            continue
+        if w in ('abu', 'abou', 'abo') and nxt:
+            out.append('ابو ' + to_arabic(nxt))
+            i += 2
+            continue
+        if w in _PARTICLES or w in _LEGAL_FORMS:
+            i += 1
+            continue
+        out.append(to_arabic(w))
+        i += 1
+    return ' '.join(x for x in out if x)
+
+
 def _same_token(a, b):
     """Are two name elements the same name, allowing for spelling?
 
@@ -581,7 +612,7 @@ def decide(m, query, national_id=None, dob=None, nationality=None):
     m['match_score'] = round(max(0.0, min(100.0, score)), 2)
     m['decision'] = {
         'tier': tier, 'original_score': round(original, 2), 'final_score': m['match_score'],
-        'identity': idv['verdict'], 'reasons': reasons,
+        'identity': idv['verdict'], 'reasons': reasons, 'judged_against': listed,
         'name': ({k: nm[k] for k in ('matched', 'missing_from_query', 'extra_in_query',
                                      'cov_listed', 'cov_query', 'order_ok', 'complete')}
                  if nm else None),
