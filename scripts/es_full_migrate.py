@@ -21,6 +21,9 @@ from datetime import datetime, timezone
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from elasticsearch import Elasticsearch
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+from screening.es_client import get_es_client  # noqa: E402  (credentials from .env)
 from elasticsearch.helpers import bulk, BulkIndexError
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -48,7 +51,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger("es_migrate")
 
 def get_es():
-    es = Elasticsearch(ES_HOST)
+    es = get_es_client(timeout=120)
     if not es.ping(): log.error("Cannot reach ES"); sys.exit(1)
     return es
 

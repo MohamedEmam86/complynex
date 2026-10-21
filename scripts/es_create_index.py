@@ -18,6 +18,9 @@
 
 import sys, argparse
 from elasticsearch import Elasticsearch
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+from screening.es_client import get_es_client  # noqa: E402  (credentials from .env)
 
 ES_HOST  = "http://localhost:9200"
 ES_INDEX = "aml_watchlist"
@@ -70,7 +73,7 @@ MAPPING = {
 }
 
 def create_index(force: bool = False):
-    es = Elasticsearch(ES_HOST)
+    es = get_es_client()
     if not es.ping():
         print("FATAL: Cannot reach Elasticsearch at", ES_HOST); sys.exit(1)
     if es.indices.exists(index=ES_INDEX):

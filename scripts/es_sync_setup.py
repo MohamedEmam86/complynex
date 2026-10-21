@@ -18,6 +18,9 @@
 
 import os, sys, subprocess, logging, psycopg2
 from elasticsearch import Elasticsearch
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+from screening.es_client import get_es_client  # noqa: E402  (credentials from .env)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
@@ -51,7 +54,7 @@ def setup():
     conn.commit(); cur.close(); conn.close(); log.info("  PG setup complete ✓")
 
     log.info("[2/4] Setting up ES meta...")
-    es = Elasticsearch(ES_HOST)
+    es = get_es_client()
     if not es.indices.exists(index=META_INDEX): es.indices.create(index=META_INDEX, body={"mappings": {"properties": {"event": {"type": "keyword"}, "timestamp": {"type": "date"}, "detail": {"type": "object", "enabled": False}}}})
     log.info("  ES meta complete ✓")
 

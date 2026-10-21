@@ -111,7 +111,8 @@ def index_coverage(freshness):
     es_counts, es_ok = {}, False
     try:
         from elasticsearch import Elasticsearch
-        es = Elasticsearch(os.getenv('ES_URL', 'http://localhost:9200'), request_timeout=10)
+        from screening.es_client import get_es_client
+        es = get_es_client(timeout=10)
         res = es.search(index=os.getenv('ES_INDEX_WATCHLIST', 'aml_watchlist'), size=0,
                         query={'term': {'is_active': 1}},
                         aggs={'s': {'terms': {'field': 'source', 'size': 50}}})

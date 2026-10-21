@@ -20,6 +20,9 @@ sys.path.insert(0, BASE)
 import psycopg2  # noqa: E402
 from psycopg2.extras import RealDictCursor  # noqa: E402
 from elasticsearch import Elasticsearch  # noqa: E402
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+from screening.es_client import get_es_client  # noqa: E402  (credentials from .env)
 from elasticsearch.helpers import bulk  # noqa: E402
 from config import Config  # noqa: E402
 
@@ -41,7 +44,7 @@ def main():
     ap.add_argument('--source')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
-    es = Elasticsearch(os.getenv('ES_URL', 'http://localhost:9200'), request_timeout=120)
+    es = get_es_client(timeout=120)
     conn = psycopg2.connect(**Config.POSTGRES_CONFIG)
     where = "is_active = 1 AND source NOT IN ('internal_blacklist','internal_pep')"
     params = []

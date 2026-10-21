@@ -334,7 +334,8 @@ logger = logging.getLogger(__name__)
 # Elasticsearch client
 try:
     from elasticsearch import Elasticsearch
-    _es_client = Elasticsearch("http://localhost:9200")
+    from screening.es_client import get_es_client
+    _es_client = get_es_client()
     if _es_client.ping():
         logger.info("[ES] Elasticsearch connected successfully")
         ES_AVAILABLE = True

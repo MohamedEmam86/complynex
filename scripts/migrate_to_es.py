@@ -23,10 +23,13 @@ import time
 sys.path.append('/opt/complynex')
 
 from elasticsearch import Elasticsearch, helpers
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+from screening.es_client import get_es_client  # noqa: E402  (credentials from .env)
 from app import create_app
 from database.db import get_db
 
-es = Elasticsearch("http://localhost:9200")
+es = get_es_client(timeout=120)
 INDEX_NAME = "aml_watchlist"
 
 def setup_index():

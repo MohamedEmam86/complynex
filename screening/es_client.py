@@ -23,7 +23,25 @@ All connection details from .env — no hardcoded values.
 from elasticsearch import Elasticsearch
 import os
 
-def get_es_client():
+def _load_credentials():
+    """Scripts and timers may start without the app's environment: read the
+    Elasticsearch credentials from the app's .env when they are not set."""
+    if os.getenv('ES_PASSWORD'):
+        return
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+    try:
+        with open(path, encoding='utf-8') as fh:
+            for line in fh:
+                key, _, val = line.strip().partition('=')
+                if key in ('ES_USERNAME', 'ES_PASSWORD', 'ES_HOST', 'ES_PORT') and val:
+                    os.environ.setdefault(key, val.strip().strip('"').strip("'"))
+    except OSError:
+        pass
+
+
+def get_es_client(timeout=None):
+    """The ONE way to open an Elasticsearch connection (credentials included)."""
+    _load_credentials()
     host = os.getenv('ES_HOST', 'localhost')
     port = int(os.getenv('ES_PORT', 9200))
     username = os.getenv('ES_USERNAME', '')
@@ -38,7 +56,7 @@ def get_es_client():
     # fallback with no indication on the result. 15s + retry_on_timeout
     # covers transient GC pauses; genuine outages still fail fast enough
     # and are now flagged on the screening result (see complynex_engine).
-    timeout = int(os.getenv('ES_REQUEST_TIMEOUT', 15))
+    timeout = int(timeout or os.getenv('ES_REQUEST_TIMEOUT', 15))
     if username and password:
         return Elasticsearch(hosts=[url], basic_auth=(username, password),
                              request_timeout=timeout, max_retries=1, retry_on_timeout=True)

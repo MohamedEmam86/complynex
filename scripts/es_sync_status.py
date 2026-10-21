@@ -18,6 +18,9 @@
 
 import os, sys, psycopg2, subprocess
 from elasticsearch import Elasticsearch
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+from screening.es_client import get_es_client  # noqa: E402  (credentials from .env)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
@@ -40,7 +43,7 @@ try:
     conn.close()
 except: print("📦 PG: Cannot connect")
 
-es = Elasticsearch("http://localhost:9200")
+es = get_es_client()
 if es.indices.exists(index="aml_watchlist"):
     stats = es.indices.stats(index="aml_watchlist")
     es_docs = stats["_all"]["primaries"]["docs"]["count"]

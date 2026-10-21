@@ -20,6 +20,9 @@ import os, sys, time, logging, re, psycopg2
 from datetime import datetime, timezone, timedelta
 from psycopg2.extras import RealDictCursor
 from elasticsearch import Elasticsearch
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+from screening.es_client import get_es_client  # noqa: E402  (credentials from .env)
 from elasticsearch.helpers import bulk, BulkIndexError
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,7 +43,7 @@ log = logging.getLogger("es_sync")
 
 def run():
     log.info("Starting Incremental Sync...")
-    es = Elasticsearch("http://localhost:9200")
+    es = get_es_client(timeout=60)
     if not es.indices.exists(index="aml_watchlist"): log.error("Index missing. Run full migration first."); return
     
     try: res = es.get(index="aml_sync_meta", id="last_incremental_sync"); last_sync = datetime.fromisoformat(res["_source"]["timestamp"].replace("Z", "+00:00"))

@@ -926,7 +926,8 @@ def settings_integrations():
 
     try:
         from elasticsearch import Elasticsearch
-        ok = Elasticsearch("http://localhost:9200").ping()
+        from screening.es_client import get_es_client
+        ok = get_es_client(timeout=3).ping()
         integrations.append({'name': 'Elasticsearch', 'status': 'ok' if ok else 'error',
                               'detail': 'Connected' if ok else 'Ping failed'})
     except Exception as e:

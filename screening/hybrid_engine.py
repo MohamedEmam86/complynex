@@ -164,7 +164,8 @@ class HybridScreeningEngine:
         """Fetch potential matches from Elasticsearch in 200ms using Multi-Attribute Scoring."""
         try:
             from elasticsearch import Elasticsearch
-            es = Elasticsearch("http://localhost:9200", request_timeout=3)
+            from screening.es_client import get_es_client
+            es = get_es_client(timeout=3)
             
             search_query = norm_input
             if trans_input:
