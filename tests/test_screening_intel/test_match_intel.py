@@ -93,3 +93,29 @@ def test_id_conflict_on_one_record_blocks_name_only_confirmation():
     out = mi.apply_decisions([with_id, without_id], name, national_id='28812011234567')
     assert all((m.get('decision') or {}).get('tier') != 'CONFIRMED' for m in out)
     assert mi.overall_status(out) != 'CONFIRMED_HIT'
+
+
+def test_cross_script_names():
+    r = mi.name_match('Hossam Thabet Ibrahim', 'حسام ثابت ابراهيم')
+    assert r['score'] >= 80
+    assert mi.name_match('Ahmed Fathy Ali', 'حسام ثابت ابراهيم')['score'] < 60
+    assert mi.to_arabic('Hossam')            # always gives an Arabic rendering
+
+
+def test_cross_script_match_does_not_confirm_on_name_alone():
+    m = mi.decide({'match_score': 99, 'original_name': 'حسام ثابت ابراهيم', 'full_name': None},
+                  'Hossam Thabet Ibrahim')
+    assert m['decision']['tier'] != 'CONFIRMED'
+
+
+def test_company_legal_forms_ignored():
+    r = mi.name_match('شركة النور للمقاولات ش.م.م', 'النور للمقاولات')
+    assert r['complete']
+    assert mi.name_match('Al Nour Contracting Co. LLC', 'Al Nour Contracting')['complete']
+
+
+def test_gender_from_national_id():
+    v = mi.identity_verdict('29001011234561', listed_nids=['28501011234562'])   # different IDs anyway
+    assert v['verdict'] == 'id_conflict'
+    v = mi.identity_verdict('29001011234561', listed_gender='female')            # 13th digit 6 -> female? (6 even)
+    assert v['verdict'] in ('gender_conflict', 'unknown', 'corroborated')

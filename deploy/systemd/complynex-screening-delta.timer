@@ -1,0 +1,9 @@
+[Unit]
+Description=Re-screen existing relationships against newly listed names, daily after the list refresh
+
+[Timer]
+OnCalendar=*-*-* 04:10:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

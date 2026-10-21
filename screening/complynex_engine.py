@@ -1011,6 +1011,43 @@ class ComplyNexScreeningEngine:
             finally:
                 self.db_conn = None
 
+    def _structural_rescue(self, query_name, candidates, matches):
+        """Candidates the string scorer under-rated but whose name matches
+        element by element — typically across scripts (a Latin query against
+        an Arabic-only record, or an Arabic query against the Arabic form of
+        an international record). They are added with the structural score;
+        the decision layer then applies identifiers, caps and the rule that
+        a cross-script name alone never auto-confirms."""
+        try:
+            from screening import match_intel as _mi
+            have = {str(m.get('id')) for m in matches if m.get('id') is not None}
+            q_ar = _mi.is_arabic(query_name)
+            for c in candidates or []:
+                cid = c.get('id')
+                if cid is None or str(cid) in have:
+                    continue
+                forms = [c.get('full_name'), c.get('original_name'), c.get('full_name_arabic')]
+                forms += re.split(r'[|;]', c.get('aliases_arabic') or '')[:5]
+                best, best_form = 0.0, None
+                for f in dict.fromkeys((x or '').strip() for x in forms):
+                    if not f:
+                        continue
+                    sc = _mi.name_match(query_name, f)['score']
+                    if _mi.is_arabic(f) != q_ar:
+                        sc *= 0.97
+                    if sc > best:
+                        best, best_form = sc, f
+                if best >= self.LOW_MATCH_THRESHOLD:
+                    md = dict(c)
+                    md.update({'match_score': round(best, 2), 'matched_on': 'name_structure',
+                               'candidate_name': c.get('name_normalized') or best_form,
+                               'score_breakdown': {'name_structure': round(best, 2)}})
+                    matches.append(md)
+                    have.add(str(cid))
+        except Exception as e:
+            logger.warning(f"[MATCH-INTEL] structural rescue failed: {e}")
+        return matches
+
     def _apply_name_logic_to_internal(self, query_name, internal_matches):
         """Apply the same name-structure rules the watchlist path uses.
 
@@ -1034,6 +1071,12 @@ class ComplyNexScreeningEngine:
                 en = m.get('full_name')
                 cand = (ar or en) if q_is_ar else (en or ar)
                 if not cand:
+                    continue
+                # A Latin query against a record scored by match_intel was already
+                # judged element by element across scripts; the record's own
+                # Latin field is often a weak machine rendering and judging on
+                # it would wrongly bury a name the Arabic original matches.
+                if m.get('_mi_scored') and not q_is_ar:
                     continue
 
                 score = float(m.get('match_score') or 0.0)
@@ -1195,6 +1238,7 @@ class ComplyNexScreeningEngine:
                     'position': hit.get('position'),
                     'national_id': hit.get('national_id'),
                     'is_internal': True,
+                    '_mi_scored': bool(hit.get('_name_match')),
                     'details': {
                         'reason': hit['reason'],
                         'category': hit.get('category'),
@@ -1243,6 +1287,7 @@ class ComplyNexScreeningEngine:
                     'category': hit['category'],
                     'national_id': hit.get('national_id'),
                     'is_internal': True,
+                    '_mi_scored': bool(hit.get('_name_match')),
                     'details': {
                         'reason': hit['reason'],
                         'category': hit['category'],
@@ -1470,6 +1515,7 @@ class ComplyNexScreeningEngine:
         
         logger.debug(f"[TIMER] Scoring loop: {round((time.time()-t3)*1000)}ms")
         
+        matches = self._structural_rescue(name, candidates, matches)
         matches = [m for m in matches if m['match_score'] >= self.LOW_MATCH_THRESHOLD]
         
         # Merge internal blacklist matches (if any) with watchlist matches.
@@ -1741,6 +1787,7 @@ class ComplyNexScreeningEngine:
                     'risk_level': src.get('risk_level', 'HIGH'),
                     'aliases': src.get('aliases', '') or src.get('search_names', ''),
                     'aliases_arabic': src.get('aliases_arabic', ''),
+                    'full_name_arabic': src.get('full_name_arabic', '') or '',
                     'entity_type': src.get('entity_type', 'INDIVIDUAL'),
                     'national_id_numbers': src.get('national_id_numbers', '') or src.get('national_id', ''),
                     'properties': src.get('properties', '{}') or '{}',
@@ -2526,6 +2573,8 @@ class ComplyNexScreeningEngine:
                 # Include aliases_arabic so English records with Arabic alias storage
                 # are scored Arabic-to-Arabic instead of via weak transliterations.
                 cand_aliases_ar = candidate.get('aliases_arabic', '') or ''
+                if candidate.get('full_name_arabic'):
+                    cand_aliases_ar = (candidate['full_name_arabic'] + '|' + cand_aliases_ar).strip('|')
                 has_arabic_cand = any('\u0600' <= c <= '\u06FF' for c in cand_orig_ar + candidate_name + cand_aliases_ar[:200])
 
                 if is_arabic and has_arabic_cand:

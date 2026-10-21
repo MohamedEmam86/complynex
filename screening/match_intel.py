@@ -54,6 +54,13 @@ _AR_DIACRITICS = re.compile(r'[ً-ْٰـ]')
 _ARABIC = re.compile(r'[؀-ۿ]')
 _PARTICLES = {'ال', 'بن', 'ابن', 'بنت', 'ابو', 'عبد', 'ال', 'al', 'el', 'bin', 'ben', 'ibn',
               'abu', 'abou', 'abo', 'abd', 'abdel', 'abdul', 'abdal'}
+# legal-form words in company names carry no identity (شركة ... ش.م.م / ... LLC)
+_LEGAL_FORMS = {'شركه', 'شركة', 'ش', 'م', 'ذ', 'ق', 'مؤسسه', 'منشاه', 'co', 'company', 'llc', 'ltd', 'limited',
+                'inc', 'corp', 'corporation', 'sae', 's', 'a', 'e', 'plc', 'llp', 'gmbh', 'sa', 'sarl', 'fzco',
+                'fze', 'the', 'and', 'for', 'of', 'و',
+                # titles
+                'دكتور', 'الدكتور', 'مهندس', 'المهندس', 'الحاج', 'الحاجه', 'لواء', 'اللواء', 'المستشار',
+                'mr', 'mrs', 'ms', 'dr', 'eng', 'haj', 'hajj', 'sheikh'}
 # Arabic sound classes for phonetic equality of one element (ث/س/ص, ذ/ز/ظ, ...)
 _AR_SOUND = str.maketrans({'ث': 'س', 'ص': 'س', 'ذ': 'ز', 'ظ': 'ز', 'ض': 'د', 'ط': 'ت',
                            'ق': 'ك', 'غ': 'خ', 'ح': 'ه', 'ع': 'ا', 'ء': 'ا', 'ؤ': 'و', 'ئ': 'ي'})
@@ -98,7 +105,7 @@ def tokens(text):
     the leading ال of a family element removed (الشاذلي == شاذلي)."""
     out = []
     for tok in normalize(text).split():
-        if tok in _PARTICLES:
+        if tok in _PARTICLES or tok in _LEGAL_FORMS:
             continue
         if is_arabic(tok) and tok.startswith('ال') and len(tok) > 4:
             tok = tok[2:]
@@ -117,6 +124,93 @@ def _weight(tok):
     return max(0.6, min(float(w), 12.0))
 
 
+# --------------------------------------------------------------------------- Latin <-> Arabic
+_XS_DICT = None
+_AR_TO_KEY = str.maketrans({'ب': 'b', 'ت': 't', 'ث': 's', 'ج': 'g', 'ح': 'h', 'خ': 'k', 'د': 'd', 'ذ': 'z',
+                            'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'x', 'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z',
+                            'ع': '', 'غ': 'g', 'ف': 'f', 'ق': 'k', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n',
+                            'ه': 'h', 'و': '', 'ي': '', 'ا': '', 'ء': '', 'ئ': '', 'ؤ': '', 'ة': ''})
+# most likely Arabic letter for a Latin consonant (recall only; scoring uses keys)
+_LAT_TO_AR = [('sh', 'ش'), ('kh', 'خ'), ('gh', 'غ'), ('th', 'ث'), ('dh', 'ذ'), ('ou', 'و'), ('oo', 'و'),
+              ('ee', 'ي'), ('b', 'ب'), ('t', 'ت'), ('g', 'ج'), ('j', 'ج'), ('h', 'ه'), ('d', 'د'),
+              ('r', 'ر'), ('z', 'ز'), ('s', 'س'), ('f', 'ف'), ('q', 'ق'), ('k', 'ك'), ('l', 'ل'),
+              ('m', 'م'), ('n', 'ن'), ('w', 'و'), ('y', 'ي'), ('i', 'ي'), ('u', 'و'), ('o', 'و'),
+              ('a', 'ا'), ('e', ''), ('p', 'ب'), ('v', 'ف'), ('c', 'ك'), ('x', 'كس')]
+
+
+def _xs_dict():
+    """Latin element -> Arabic elements, learned from records that carry both
+    (scripts/build_latin_arabic_dict.py). Missing file -> empty dictionary."""
+    global _XS_DICT
+    if _XS_DICT is None:
+        import os
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'latin_arabic_dict.json')
+        try:
+            with open(path, encoding='utf-8') as f:
+                _XS_DICT = json.load(f)
+        except Exception:
+            _XS_DICT = {}
+    return _XS_DICT
+
+
+def _xs_key(t):
+    """Consonant key shared by both scripts (vowels dropped, sound classes merged)."""
+    if is_arabic(t):
+        k = t[:-1] + ('' if t.endswith('ه') and len(t) > 2 else t[-1]) if t else ''
+        k = k.translate(_AR_TO_KEY)
+    else:
+        k = t.lower()
+        for a, b in (('sh', 'x'), ('kh', 'k'), ('gh', 'g'), ('th', 's'), ('dh', 'z'), ('ph', 'f'),
+                     ('q', 'k'), ('c', 'k'), ('j', 'g'), ('v', 'f'), ('p', 'b')):
+            k = k.replace(a, b)
+        k = re.sub('[aeiouwy]', '', k)
+        if k.endswith('h') and len(k) > 2:
+            k = k[:-1]
+    return re.sub(r'(.)\1+', r'\1', k)
+
+
+def _xs_same(lat, ar):
+    """Same name element written in Latin and in Arabic?"""
+    cands = _xs_dict().get(lat)
+    if cands:
+        total = sum(c for _, c in cands)
+        for a, c in cands:
+            if a == ar or (len(a) == len(ar) and a.translate(_AR_SOUND) == ar.translate(_AR_SOUND)):
+                return 0.95 if c / total >= 0.1 else 0.85
+        if total >= 8:
+            return 0.0          # a well-known element that is written otherwise (Mohamed is not محمود)
+    kl, ka = _xs_key(lat), _xs_key(ar)
+    if len(kl) >= 2 and kl == ka:
+        return 0.85
+    if min(len(kl), len(ka)) >= 4 and _osa(kl, ka) <= 1:
+        return 0.75
+    return 0.0
+
+
+def to_arabic(name):
+    """Most likely Arabic spelling of a Latin name (used to search Arabic-only lists)."""
+    out = []
+    for t in tokens(name):
+        if is_arabic(t):
+            out.append(t)
+            continue
+        cands = _xs_dict().get(t)
+        if cands:
+            out.append(cands[0][0])
+            continue
+        w, i = '', 0
+        while i < len(t):
+            for lat, ar in _LAT_TO_AR:
+                if t.startswith(lat, i):
+                    w += ar
+                    i += len(lat)
+                    break
+            else:
+                i += 1
+        out.append(w)
+    return ' '.join(x for x in out if x)
+
+
 def _same_token(a, b):
     """Are two name elements the same name, allowing for spelling?
 
@@ -126,6 +220,8 @@ def _same_token(a, b):
     """
     if a == b:
         return 1.0
+    if is_arabic(a) != is_arabic(b):                 # Latin vs Arabic
+        return _xs_same(b, a) if is_arabic(a) else _xs_same(a, b)
     ar = is_arabic(a) and is_arabic(b)
     if ar and a.translate(_AR_SOUND) == b.translate(_AR_SOUND):
         return 0.95
@@ -314,7 +410,7 @@ def _countries(*vals):
 
 
 def identity_verdict(query_nid=None, query_dob=None, query_country=None,
-                     listed_nids=None, listed_dob=None, listed_countries=None):
+                     listed_nids=None, listed_dob=None, listed_countries=None, listed_gender=None):
     """Compare secondary identifiers. Returns {'verdict', 'reasons', ...}.
 
     verdict: id_match | id_conflict | dob_conflict | country_conflict |
@@ -331,6 +427,19 @@ def identity_verdict(query_nid=None, query_dob=None, query_country=None,
         if qd.get('valid') and valid14:
             return {'verdict': 'id_conflict',
                     'reasons': ['listed record carries a different national ID']}
+    # gender: the 13th digit of an Egyptian national ID, on either side
+    q_gender = qd.get('gender') if qd.get('valid') else None
+    l_gender = None
+    for x in lids:
+        d = decode_egyptian_nid(x)
+        if d.get('valid'):
+            l_gender = d['gender']
+            break
+    if not l_gender and listed_gender:
+        g = str(listed_gender).strip().lower()
+        l_gender = 'M' if g in ('m', 'male', 'ذكر') else ('F' if g in ('f', 'female', 'انثى', 'أنثى') else None)
+    if q_gender and l_gender and q_gender != l_gender:
+        return {'verdict': 'gender_conflict', 'reasons': ['gender differs (from the national ID)']}
     # date of birth: given, or decoded from the customer's national ID
     q_years = _years(query_dob)
     if not q_years and qd.get('valid'):
@@ -369,16 +478,34 @@ LOW = 75.0
 
 
 def _listed_name(m, query):
-    """The listed name in the query's script, if the record has one."""
-    ar = m.get('watchlist_name_ar') or m.get('original_name') or ''
-    en = m.get('full_name') or m.get('candidate_name') or ''
-    if is_arabic(query):
-        if is_arabic(ar):
-            return ar
-        return en if is_arabic(en) else ''
-    if en and not is_arabic(en):
-        return en
-    return ar if ar and not is_arabic(ar) else ''
+    """The listed name to judge against: the record's form in the query's
+    script when it has one, otherwise its other-script form (compared
+    element by element across scripts)."""
+    names = [m.get('watchlist_name_ar'), m.get('original_name'), m.get('full_name_arabic'),
+             m.get('full_name'), m.get('candidate_name')]
+    names = [n for n in names if n]
+    q_ar = is_arabic(query)
+    same = [n for n in names if is_arabic(n) == q_ar]
+    if same:
+        return same[0]
+    return names[0] if names else ''
+
+
+def _best_listed(m, query):
+    names = [m.get('watchlist_name_ar'), m.get('original_name'), m.get('full_name_arabic'),
+             m.get('full_name'), m.get('candidate_name')]
+    names = [n for n in dict.fromkeys(names) if n and str(n).strip()]
+    best = (None, None, False)
+    q_ar = is_arabic(query)
+    for n in names:
+        nm = name_match(query, n)
+        cross = is_arabic(n) != q_ar
+        if cross:
+            nm['score'] = round(nm['score'] * 0.97, 2)   # transliteration is never certain
+        if best[1] is None or nm['score'] > best[1]['score'] or (
+                nm['score'] == best[1]['score'] and best[2] and not cross):
+            best = (n, nm, cross)
+    return best
 
 
 def decide(m, query, national_id=None, dob=None, nationality=None):
@@ -386,13 +513,18 @@ def decide(m, query, national_id=None, dob=None, nationality=None):
     score = float(m.get('match_score') or 0.0)
     original = score
     reasons = []
-    listed = _listed_name(m, query)
-    nm = name_match(query, listed) if listed else None
+    # judge against every form the record carries (Arabic original, Latin
+    # rendering, aliases) and keep the best: a listed Latin spelling made by
+    # a machine must not hide an Arabic original the query matches
+    listed, nm, cross = _best_listed(m, query)
+    if nm is not None and cross:
+        reasons.append('compared across scripts (Latin / Arabic)')
     idv = identity_verdict(
         national_id, dob, nationality,
         m.get('national_id') or m.get('national_id_numbers'),
         m.get('date_of_birth') or m.get('year_of_birth'),
-        [m.get('nationality'), m.get('countries'), m.get('country')])
+        [m.get('nationality'), m.get('countries'), m.get('country')],
+        m.get('gender'))
     tier = None
     if idv['verdict'] == 'id_match':
         score, tier = 100.0, 'CONFIRMED'
@@ -400,6 +532,8 @@ def decide(m, query, national_id=None, dob=None, nationality=None):
         score = min(score, LOW + 1)
     elif idv['verdict'] == 'dob_conflict':
         score = min(score - 15, POTENTIAL - 1)
+    elif idv['verdict'] == 'gender_conflict':
+        score = min(score - 20, LOW + 1)
     elif idv['verdict'] == 'country_conflict':
         score = min(score - 10, POTENTIAL - 1)
     reasons += idv['reasons']
@@ -424,6 +558,9 @@ def decide(m, query, national_id=None, dob=None, nationality=None):
         elif len(nm['l_tokens']) < 3:
             score = min(score, CONFIRMED - 1)          # two-word names are too common to confirm
             reasons.append('complete but short name')
+        elif cross and idv['verdict'] != 'corroborated':
+            score = min(score, CONFIRMED - 1)          # across scripts the name alone does not confirm
+            reasons.append('complete match across scripts: confirm with an identifier')
         else:
             reasons.append('complete name match, same order')
     elif nm is None and tier != 'CONFIRMED':
@@ -533,26 +670,14 @@ def _columns(cur, table):
     return _COLS_CACHE[table]
 
 
-def search_internal(conn, table, name, limit=150, min_score=LOW):
-    """Token-based recall + analyst scoring over an internal list table.
-    Returns rows (dicts) with ``_match_score`` in 0..1 and ``_name_match``.
-
-    Recall uses the trigram-indexed ``name_search`` column (migration
-    20261027_internal_list_search) on the query's most identifying elements,
-    then counts how many of its elements each candidate carries."""
-    q = tokens(name)
-    if not q:
-        return []
-    cur = conn.cursor()
-    cols = _columns(cur, table)
-    if 'name_search' in cols:
-        field = 'name_search'
-    else:                                   # before the migration: slower expression
-        field = _TRANSLATE.format(c="coalesce(original_name,'') || ' ' || coalesce(full_name,'')")
+def _recall(cur, table, cols, field, q, limit):
     norm_q = [normalize(t) for t in q]
     frags = []
     for t in dict.fromkeys(norm_q):
-        frags.append((t, t if len(t) <= 4 else t[:len(t) - 1]))   # tolerate a changed last letter
+        if t:
+            frags.append((t, t if len(t) <= 4 else t[:len(t) - 1]))   # tolerate a changed last letter
+    if not frags:
+        return []
     ranked = sorted(frags, key=lambda x: -_weight(x[0]))
     distinctive = [f for t, f in ranked if _weight(t) >= 2.5 and len(f) >= 3][:3] or \
                   [f for t, f in ranked if len(f) >= 3][:2] or [ranked[0][1]]
@@ -565,16 +690,44 @@ def search_internal(conn, table, name, limit=150, min_score=LOW):
            f"WHERE {active} AND ({where})) s WHERE _tok_hits >= %s ORDER BY _tok_hits DESC LIMIT %s")
     params = [f'%{f}%' for f in count_frags] + [f'%{f}%' for f in distinctive] + [min(need, len(count_frags)), limit]
     cur.execute(sql, params)
-    rows = [dict(r) for r in cur.fetchall()]
+    return [dict(r) for r in cur.fetchall()]
+
+
+def search_internal(conn, table, name, limit=150, min_score=LOW):
+    """Token-based recall + analyst scoring over an internal list table.
+    Returns rows (dicts) with ``_match_score`` in 0..1 and ``_name_match``.
+
+    Recall uses the trigram-indexed ``name_search`` column (migration
+    20261027_internal_list_search) on the query's most identifying elements,
+    then counts how many of its elements each candidate carries. A Latin
+    query is also searched through its most likely Arabic spelling, because
+    the local lists are Arabic first."""
+    q = tokens(name)
+    if not q:
+        return []
+    cur = conn.cursor()
+    cols = _columns(cur, table)
+    if 'name_search' in cols:
+        field = 'name_search'
+    else:                                   # before the migration: slower expression
+        field = _TRANSLATE.format(c="coalesce(original_name,'') || ' ' || coalesce(full_name,'')")
     q_ar = is_arabic(name)
+    rows = {r['id']: r for r in _recall(cur, table, cols, field, q, limit)}
+    if not q_ar:
+        ar = to_arabic(name)
+        if ar:
+            for r in _recall(cur, table, cols, field, tokens(ar), limit):
+                rows.setdefault(r['id'], r)
     out = []
-    for r in rows:
+    for r in rows.values():
         primary = r.get('original_name') if q_ar else r.get('full_name')
         forms = [primary, r.get('full_name') if q_ar else r.get('original_name')]
         forms += [a for a in _as_list(r.get('aliases')) if is_arabic(a) == q_ar][:12]
         best = None
-        for f in dict.fromkeys(x for x in forms if x and is_arabic(x) == q_ar):
+        for f in dict.fromkeys(x for x in forms if x):
             nm = name_match(name, f)
+            if is_arabic(f) != q_ar:
+                nm['score'] = round(nm['score'] * 0.97, 2)       # across scripts
             if best is None or nm['score'] > best['score']:
                 best = nm
                 if nm['score'] >= 99.9:

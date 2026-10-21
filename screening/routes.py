@@ -4386,7 +4386,49 @@ def quality():
                     and c.get('status') in ('CONFIRMED_HIT', 'POTENTIAL_MATCH')][:25]
     return render_template('screening/quality.html', fresh=fresh, internal=qs.internal_lists(),
                            coverage=qs.index_coverage(fresh), runs=runs, latest=latest,
-                           misses=misses, false_alerts=false_alerts, targets=qs.TARGETS)
+                           misses=misses, false_alerts=false_alerts, targets=qs.TARGETS,
+                           delta=qs.delta_overview())
+
+
+@screening_bp.route('/quality/delta/run', methods=['POST'])
+@login_required
+@permission_required('screening', level='edit')
+def quality_delta_run():
+    from flask_babel import gettext as _
+    import subprocess
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(base, 'logs', 'screening_delta.log'), 'a') as lf:
+        subprocess.Popen([sys.executable, os.path.join(base, 'scripts', 'screening_delta_rescreen.py')],
+                         cwd=base, stdout=lf, stderr=subprocess.STDOUT, start_new_session=True)
+    flash(_('Re-screening started. It usually takes less than a minute; refresh this page.'), 'info')
+    return redirect(url_for('screening.quality') + '#delta')
+
+
+@screening_bp.route('/quality/delta/<int:hit_id>', methods=['POST'])
+@login_required
+@permission_required('screening', level='edit')
+def quality_delta_review(hit_id):
+    from flask_babel import gettext as _
+    status = request.form.get('status')
+    note = (request.form.get('note') or '').strip()
+    if status not in ('true_match', 'false_positive'):
+        flash(_('Choose true match or false positive.'), 'danger')
+        return redirect(url_for('screening.quality') + '#delta')
+    if not note:
+        flash(_('Write how you reached the decision.'), 'danger')
+        return redirect(url_for('screening.quality') + '#delta')
+    execute_db("""UPDATE screening_delta_hits SET status = %s, review_note = %s, reviewed_by = %s,
+                   reviewed_at = now() WHERE id = %s AND status = 'open'""",
+               (status, note[:2000], current_user.id, hit_id))
+    left = query_db("SELECT count(*) AS n FROM screening_delta_hits WHERE status = 'open'", one=True)
+    if left and not left['n']:
+        try:
+            from regcontrols.alerts import resolve_alerts
+            resolve_alerts(['screening_delta_hit'], note='all delta re-screening hits reviewed')
+        except Exception:
+            pass
+    flash(_('Decision recorded.'), 'success')
+    return redirect(url_for('screening.quality') + '#delta')
 
 
 @screening_bp.route('/quality/run', methods=['POST'])

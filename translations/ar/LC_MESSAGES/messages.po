@@ -28558,6 +28558,72 @@ msgstr "تشغيل التقييم متاح لمسؤولي النظام والا�
 msgid "Evaluation started. It takes about 10 minutes; refresh this page to see the result."
 msgstr "بدأ التقييم ويستغرق حوالي 10 دقائق، حدّث الصفحة لرؤية النتيجة."
 
+msgid "Latin, letter-by-letter (stress test)"
+msgstr "لاتيني حرف بحرف (اختبار ضغط)"
+
+msgid "International list: Arabic form"
+msgstr "قائمة دولية: الاسم بالعربي"
+
+msgid "International list: official Latin form"
+msgstr "قائمة دولية: الاسم اللاتيني الرسمي"
+
+msgid "International list: other Latin spelling"
+msgstr "قائمة دولية: تهجئة لاتينية أخرى"
+
+msgid "Company: exact name"
+msgstr "شركة: الاسم مطابق"
+
+msgid "Company: with legal form (شركة … ش.م.م)"
+msgstr "شركة: مع الشكل القانوني (شركة … ش.م.م)"
+
+msgid "Company: Latin script"
+msgstr "شركة: بالحروف اللاتينية"
+
+msgid "Newly listed names vs your existing customers and merchants"
+msgstr "الأسماء المدرجة حديثاً مقابل عملائك وتجارك الحاليين"
+
+msgid "True match"
+msgstr "تطابق حقيقي"
+
+msgid "Every day after the lists are refreshed, each name newly added to any list is checked against all existing customers, merchants (and their beneficial owners) and parties. A hit here means a current relationship may now be listed: act on it without delay."
+msgstr "كل يوم بعد تحديث القوائم، يتم فحص كل اسم أُضيف حديثاً لأي قائمة مقابل كل العملاء والتجار الحاليين (والمستفيدين الحقيقيين) والأطراف. أي تطابق هنا معناه إن علاقة قائمة ممكن تكون اتدرجت: تصرّف فوراً."
+
+msgid "Last check"
+msgstr "آخر فحص"
+
+msgid "new list names"
+msgstr "اسم جديد في القوائم"
+
+msgid "relationships"
+msgstr "علاقة"
+
+msgid "new hits"
+msgstr "تطابق جديد"
+
+msgid "Relationship"
+msgstr "العلاقة"
+
+msgid "Listed name"
+msgstr "الاسم المدرج"
+
+msgid "How you checked (ID, DOB, documents)"
+msgstr "إزاي اتأكدت (الرقم القومي، تاريخ الميلاد، المستندات)"
+
+msgid "No open hits."
+msgstr "لا توجد تطابقات مفتوحة."
+
+msgid "Re-screening started. It usually takes less than a minute; refresh this page."
+msgstr "بدأ إعادة الفحص ويستغرق عادة أقل من دقيقة، حدّث الصفحة."
+
+msgid "Choose true match or false positive."
+msgstr "اختر تطابق حقيقي أو تطابق خاطئ."
+
+msgid "Write how you reached the decision."
+msgstr "اكتب إزاي وصلت للقرار."
+
+msgid "Decision recorded."
+msgstr "تم تسجيل القرار."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

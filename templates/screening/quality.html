@@ -6,7 +6,11 @@
   'exact': _('Exact name'), 'spelling': _('Spelling variant (hamza, taa marbuta, alef maqsura)'),
   'missing_name': _('One middle name missing'), 'extra_name': _('Extra name (longer ID name)'),
   'typo': _('Typing error'), 'latin': _('Latin script'), 'short_form': _('First + family name only'),
-  'id_same': _('Typo + same national ID'), 'id_different': _('Same name, different national ID')} %}
+  'id_same': _('Typo + same national ID'), 'id_different': _('Same name, different national ID'),
+  'latin_crude': _('Latin, letter-by-letter (stress test)'), 'intl_arabic': _('International list: Arabic form'),
+  'intl_latin': _('International list: official Latin form'), 'intl_latin_variant': _('International list: other Latin spelling'),
+  'company_exact': _('Company: exact name'), 'company_legal_form': _('Company: with legal form (شركة … ش.م.م)'),
+  'company_latin': _('Company: Latin script')} %}
 <div class="container-fluid py-4">
   <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
     <div>
@@ -45,6 +49,51 @@
     {{ kpi(_('False confirmed hits'), s.get('false_confirmed_rate'), '%', (s.get('false_confirmed_rate') if s.get('false_confirmed_rate') is not none else 100) <= targets.false_confirmed_rate, _('Names on no list that were auto-confirmed') ~ ' · ' ~ _('target') ~ ' 0') }}
     {{ kpi(_('Different ID confirmed'), s.get('id_conflict_confirmed'), '%', (s.get('id_conflict_confirmed') if s.get('id_conflict_confirmed') is not none else 0) == 0, _('Same name but another national ID must never auto-confirm')) }}
     {{ kpi(_('Lists up to date'), fresh_green ~ ' / ' ~ fresh|length, '', fresh_green == fresh|length, _('Updated successfully in the last') ~ ' ' ~ targets.freshness_days ~ ' ' ~ _('days')) }}
+  </div>
+
+  {# ---------------- New list names vs existing relationships ---------------- #}
+  <div class="card shadow-sm border-0 mb-4" id="delta">
+    <div class="card-header bg-white fw-bold d-flex justify-content-between flex-wrap gap-2">
+      <span><i class="fas fa-user-shield me-2"></i>{{ _('Newly listed names vs your existing customers and merchants') }}</span>
+      <form method="post" action="{{ url_for('screening.quality_delta_run') }}" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline-primary btn-sm" type="submit"><i class="fas fa-rotate me-1"></i>{{ _('Check now') }}</button>
+      </form>
+      <span class="small fw-normal">{{ _('Open') }}: <b class="{{ 'text-danger' if delta.counts.get('open') else 'text-success' }}">{{ delta.counts.get('open', 0) }}</b> · {{ _('True match') }}: {{ delta.counts.get('true_match', 0) }} · {{ _('False positive') }}: {{ delta.counts.get('false_positive', 0) }}</span>
+    </div>
+    <div class="card-body small pb-2">
+      <p class="text-muted mb-2">{{ _('Every day after the lists are refreshed, each name newly added to any list is checked against all existing customers, merchants (and their beneficial owners) and parties. A hit here means a current relationship may now be listed: act on it without delay.') }}</p>
+      {% if delta.runs %}
+      <div class="text-muted">{{ _('Last check') }}: {{ delta.runs[0].run_at.strftime('%Y-%m-%d %H:%M') if delta.runs[0].run_at else '' }} · {{ '{:,}'.format(delta.runs[0].new_names or 0) }} {{ _('new list names') }} × {{ '{:,}'.format(delta.runs[0].subjects or 0) }} {{ _('relationships') }} → {{ delta.runs[0].hits or 0 }} {{ _('new hits') }}</div>
+      {% endif %}
+    </div>
+    {% if delta.hits %}
+    <div class="table-responsive"><table class="table table-sm mb-0 align-middle small">
+      <thead><tr><th>{{ _('Result') }}</th><th>{{ _('Relationship') }}</th><th>{{ _('Listed name') }}</th><th>{{ _('List') }}</th><th class="text-end">{{ _('Score') }}</th><th>{{ _('Why') }}</th><th style="min-width:260px">{{ _('Decision') }}</th></tr></thead>
+      <tbody>
+      {% for h in delta.hits %}
+        <tr>
+          <td><span class="badge {{ 'bg-danger' if h.tier == 'CONFIRMED' else 'bg-warning text-dark' }}">{{ h.tier }}</span></td>
+          <td dir="auto">{{ h.subject_name }}<div class="text-muted">{{ h.subject_table }} #{{ h.subject_id }}</div></td>
+          <td dir="auto">{{ h.listed_name }}</td>
+          <td>{{ h.list_source }}<div class="text-muted">{{ h.category or '' }}</div></td>
+          <td class="text-end">{{ h.score }}</td>
+          <td class="text-muted">{{ (h.decision.get('reasons') or [])[:3] | join(' · ') }}</td>
+          <td>
+            <form method="post" action="{{ url_for('screening.quality_delta_review', hit_id=h.id) }}" class="d-flex gap-1 flex-wrap">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="text" name="note" class="form-control form-control-sm" placeholder="{{ _('How you checked (ID, DOB, documents)') }}" required>
+              <button name="status" value="true_match" class="btn btn-danger btn-sm">{{ _('True match') }}</button>
+              <button name="status" value="false_positive" class="btn btn-outline-secondary btn-sm">{{ _('False positive') }}</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+    <div class="card-body pt-0 small text-success">{{ _('No open hits.') }}</div>
+    {% endif %}
   </div>
 
   {# ---------------- How a hit is decided ---------------- #}

@@ -163,3 +163,27 @@ def run_cases(run_id):
         return []
     c = r['cases']
     return c if isinstance(c, list) else json.loads(c or '[]')
+
+
+def delta_overview(limit=50):
+    """New list names vs existing relationships (scripts/screening_delta_rescreen.py)."""
+    try:
+        runs = query_db("SELECT id, run_at, new_names, subjects, hits, duration_s, note "
+                        "FROM screening_delta_runs ORDER BY id DESC LIMIT 5") or []
+        hits = query_db("""SELECT id, found_at, subject_table, subject_id, subject_name, listed_name, list_source,
+                                  category, score, tier, decision, status
+                           FROM screening_delta_hits WHERE status = 'open'
+                           ORDER BY (tier = 'CONFIRMED') DESC, score DESC, found_at DESC LIMIT %s""", (limit,)) or []
+        counts = query_db("""SELECT count(*) FILTER (WHERE status = 'open') AS open,
+                                    count(*) FILTER (WHERE status = 'true_match') AS true_match,
+                                    count(*) FILTER (WHERE status = 'false_positive') AS false_positive
+                             FROM screening_delta_hits""", one=True) or {}
+    except Exception:
+        return {'runs': [], 'hits': [], 'counts': {}}
+    out = []
+    for h in hits:
+        h = dict(h)
+        d = h.get('decision')
+        h['decision'] = d if isinstance(d, dict) else json.loads(d or '{}')
+        out.append(h)
+    return {'runs': [dict(r) for r in runs], 'hits': out, 'counts': dict(counts)}

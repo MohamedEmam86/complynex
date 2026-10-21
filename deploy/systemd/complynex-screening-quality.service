@@ -8,4 +8,6 @@ WorkingDirectory=/var/www/complynex
 EnvironmentFile=/var/www/complynex/.env
 Nice=10
 TimeoutStartSec=2h
+# relearn Latin <-> Arabic name spellings from the refreshed lists first
+ExecStartPre=/var/www/complynex/venv/bin/python /var/www/complynex/scripts/build_latin_arabic_dict.py
 ExecStart=/var/www/complynex/venv/bin/python /var/www/complynex/scripts/screening_quality_eval.py --kind scheduled

@@ -1,0 +1,11 @@
+[Unit]
+Description=ComplyNex delta re-screening: newly listed names vs existing customers and merchants
+
+[Service]
+Type=oneshot
+User=complynex
+WorkingDirectory=/var/www/complynex
+EnvironmentFile=/var/www/complynex/.env
+Nice=5
+TimeoutStartSec=1h
+ExecStart=/var/www/complynex/venv/bin/python /var/www/complynex/scripts/screening_delta_rescreen.py
