@@ -406,8 +406,15 @@ class EnhancedDataUpdater:
         """
         ids = list({e['source_id'] for e in entities if e.get('source_id')})
         cur = self.db_conn.cursor()
-        cur.execute("SELECT count(*) AS n FROM screening_watchlist WHERE source = %s AND is_active = 1",
-                    (source_name,))
+        # Compare with the active records written in the CURRENT id format only.
+        # Older importers wrote the same people under other ids (eu_123 vs
+        # EU-EU.1.2, hmt_RUS1 vs HMT-RUS1); counting those doubled the active
+        # total, so the guard always skipped and the duplicates never left.
+        import re as _re
+        prefixes = sorted({_re.match(r'^\D*', i).group(0) for i in ids})
+        cur.execute("""SELECT count(*) AS n FROM screening_watchlist
+                       WHERE source = %s AND is_active = 1
+                         AND substring(source_id from '^\\D*') = ANY(%s)""", (source_name, prefixes))
         row = cur.fetchone()
         active = row['n'] if isinstance(row, dict) else row[0]
         if not ids or (active and len(ids) < 0.8 * active):

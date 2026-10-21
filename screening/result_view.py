@@ -206,7 +206,7 @@ def match_view(m, kind, inputs):
         'also_listed_in': m.get('also_listed_in') or [],
         'entity_type': _first(m.get('entity_type')),
         'category': _first(m.get('category'), det.get('category'), p.get('topics')),
-        'program': _first(p.get('program'), p.get('programs'), p.get('sanctionsProgram'), det.get('program'), m.get('program')),
+        'program': _first(p.get('program'), p.get('programs'), p.get('sanctionsProgram'), det.get('program'), det.get('programs'), m.get('program')),
         'position': _first(m.get('position'), det.get('position'), p.get('position')),
         'reason': _first(m.get('reason'), det.get('reason'), p.get('reason'), p.get('remarks')),
         'identifiers': _first(det.get('identifiers'), p.get('identifiers')),
