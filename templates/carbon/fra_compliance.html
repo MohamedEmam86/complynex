@@ -14,6 +14,16 @@
   <div class="alert alert-warning">{{ _('No reporting period exists yet. Create one in the ESG module first.') }}</div>
   {% else %}
 
+  {% set due = (calendar|selectattr('key', 'defined')|selectattr('key', 'equalto', 'report_due')|list|first) if calendar else none %}
+  {% if due %}
+  <div class="alert {{ 'alert-danger' if due.days < 30 else ('alert-warning' if due.days < 90 else 'alert-info') }} d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="bi bi-alarm me-1"></i><strong>{{ _('Carbon-footprint report due to the regulator on %(d)s', d=due.date) }}</strong>
+      — {{ _('%(n)s days left', n=due.days) if due.days >= 0 else _('overdue by %(n)s days', n=-due.days) }}.
+      <span class="small">{{ _('Source: regulatory parameter carbon.first_report_deadline (see the legal basis below).') }}</span></span>
+    <span class="badge bg-dark">{{ _(period.fra_status or 'Draft') }}</span>
+  </div>
+  {% endif %}
+
   <!-- Status stepper -->
   <div class="ecx-card p-4 mb-3">
     <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
@@ -145,6 +155,9 @@
             {% endif %}
           </div>
         </div>
+        {% if offset_chart %}
+        <div class="col-auto" style="width:170px;height:150px;position:relative"><canvas role="img" aria-label="{{ _('Offset obligation') }}" data-ecx-chart='{{ offset_chart|tojson }}'></canvas></div>
+        {% endif %}
         <div class="col-auto">
           <div class="small text-muted">{{ _('Status') }}</div>
           <span class="badge fs-6 bg-{{ 'success' if obligation.status == 'FULFILLED' else ('danger' if obligation.status == 'OVERDUE' else 'warning') }}">{{ obligation.status }}</span>
@@ -155,14 +168,18 @@
       <div class="table-responsive mb-3">
         <table class="table table-sm">
           <thead class="table-light"><tr>
-            <th>{{ _('Project') }}</th><th>{{ _('Registry Ref') }}</th><th>{{ _('tCO2e') }}</th>
-            <th>{{ _('Date') }}</th><th>{{ _('Cost (EGP)') }}</th><th>{{ _('Logged by') }}</th>
+            <th>{{ _('Project') }}</th><th>{{ _('FRA registry project ID') }}</th><th>{{ _('Standard') }}</th><th>{{ _('Vintage') }}</th>
+            <th>{{ _('Serial numbers') }}</th><th>{{ _('tCO2e') }}</th>
+            <th>{{ _('Date') }}</th><th>{{ _('Retired on') }}</th><th>{{ _('Cost (EGP)') }}</th><th>{{ _('Logged by') }}</th>
           </tr></thead>
           <tbody>
           {% for pu in purchases %}
             <tr>
-              <td>{{ pu.project_name }}</td><td>{{ pu.registry_reference or '-' }}</td>
+              <td>{{ pu.project_name }}{% if pu.registry_reference %}<div class="small text-muted">{{ pu.registry_reference }}</div>{% endif %}</td>
+              <td>{{ pu.fra_project_id or '-' }}</td><td>{{ pu.standard or '-' }}</td><td>{{ pu.vintage_year or '-' }}</td>
+              <td class="small text-break">{{ pu.serial_numbers or '-' }}</td>
               <td>{{ pu.quantity_tco2e }}</td><td>{{ pu.purchase_date }}</td>
+              <td>{% if pu.retired_on %}{{ pu.retired_on }}{% else %}<span class="badge bg-warning text-dark">{{ _('not retired') }}</span>{% endif %}</td>
               <td>{{ pu.cost_egp or '-' }}</td><td class="small">{{ pu.created_by_email or '' }}</td>
             </tr>
           {% endfor %}
@@ -193,6 +210,27 @@
         <div class="col-md-2">
           <label class="form-label small">{{ _('Cost (EGP)') }}</label>
           <input type="number" step="any" class="form-control form-control-sm" name="cost_egp">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">{{ _('FRA registry project ID') }}</label>
+          <input class="form-control form-control-sm" name="fra_project_id">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">{{ _('Standard') }}</label>
+          <select class="form-select form-select-sm" name="standard"><option value=""></option>
+            {% for s in ['Verra (VCS)', 'Gold Standard', 'CDM', 'Global Carbon Council', 'Other'] %}<option>{{ s }}</option>{% endfor %}</select>
+        </div>
+        <div class="col-md-1">
+          <label class="form-label small">{{ _('Vintage') }}</label>
+          <input type="number" min="2000" max="2100" class="form-control form-control-sm" name="vintage_year">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">{{ _('Serial numbers') }}</label>
+          <input class="form-control form-control-sm" name="serial_numbers">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">{{ _('Retired on') }}</label>
+          <input type="date" class="form-control form-control-sm" name="retired_on">
         </div>
         <div class="col-md-1">
           <button class="btn btn-success btn-sm w-100">{{ _('Log') }}</button>

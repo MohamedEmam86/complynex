@@ -89,7 +89,7 @@
               <span class="val">{{ p.score if p.score is not none else '—' }}</span>
             </div>
           </div>
-          <div class="ecx-pillar-name">{{ p.name }}</div>
+          <div class="ecx-pillar-name">{{ p.name_ar if get_locale()|string == 'ar' and p.name_ar else p.name }}</div>
           <div class="ecx-pillar-weight">{{ (p.weight*100)|round(0)|int }}% {{ _('weight') }} · {{ p.answered_count }}/{{ p.indicator_count }} {{ _('answered') }}</div>
           <a href="{{ url_for('esg.scoring', pillar_code=p.code) }}" class="small">{{ _('Score →') }}</a>
         </div>
@@ -98,6 +98,35 @@
     {% endfor %}
   </div>
 
+  {% if radar or coverage %}
+  <div class="row g-3 mb-3">
+    {% if radar %}
+    <div class="col-lg-5"><div class="ecx-card h-100">
+      <h6><span><i class="bi bi-hexagon me-1"></i>{{ _('Pillar profile') }}</span><span class="ecx-badge-source">1–5</span></h6>
+      <div style="position:relative;height:300px"><canvas role="img" aria-label="{{ _('Pillar profile') }}" data-ecx-chart='{{ radar|tojson }}'></canvas></div>
+      <p class="small text-muted mb-0">{{ _('The further out, the more mature. A dent shows the pillar to work on next.') }}</p>
+    </div></div>
+    {% endif %}
+    {% if coverage %}
+    <div class="col-lg-{{ 7 if radar else 12 }}"><div class="ecx-card h-100">
+      <h6><span><i class="bi bi-grid-3x3 me-1"></i>{{ _('Disclosure coverage by framework') }}</span></h6>
+      <div class="table-responsive"><table class="table table-sm align-middle mb-1 ecx-heat">
+        <thead><tr><th>{{ _('Framework') }}</th><th class="text-center">{{ _('Complete') }}</th><th class="text-center">{{ _('Partial') }}</th>
+          <th class="text-center">{{ _('Not started') }}</th><th class="text-center">{{ _('Not applicable') }}</th><th style="min-width:120px">{{ _('Readiness') }}</th></tr></thead>
+        <tbody>{% for r in coverage %}<tr>
+          <td class="fw-semibold"><a href="{{ url_for('esg.disclosures', framework=r.framework) }}">{{ r.framework }}</a></td>
+          {% for st, rgb in [('complete', '25,135,84'), ('partial', '255,193,7'), ('not_started', '220,53,69'), ('not_applicable', '108,117,125')] %}
+          {% set n = r.counts[st] %}
+          <td class="text-center" style="background:rgba({{ rgb }},{{ (0.08 + 0.6 * n / r.total)|round(2) if r.total and n else 0 }})">{{ n or '' }}</td>
+          {% endfor %}
+          <td><div class="progress" style="height:8px"><div class="progress-bar bg-success" style="width:{{ r.pct_done }}%"></div></div><span class="small text-muted">{{ r.pct_done }}%</span></td>
+        </tr>{% endfor %}</tbody></table></div>
+      <p class="small text-muted mb-0">{{ _('Darker cells hold more items. FRA-ESG and FRA-TCFD follow the official FRA templates.') }}</p>
+    </div></div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="row g-3">
     <div class="col-lg-8">
       <div class="ecx-card">
@@ -105,7 +134,7 @@
         {% for p in summary.pillars %}
         <div class="mb-2">
           <div class="d-flex justify-content-between small mb-1">
-            <span class="fw-semibold">{{ p.name }} ({{ p.code }})</span>
+            <span class="fw-semibold">{{ p.name_ar if get_locale()|string == 'ar' and p.name_ar else p.name }} ({{ p.code }})</span>
             <span>{{ p.score if p.score is not none else _('not scored yet') }} {% if p.score is not none %}/5{% endif %}</span>
           </div>
           <div class="progress" style="height:10px; border-radius:999px;">
@@ -125,7 +154,7 @@
         <h6><i class="bi bi-list-check me-1"></i>{{ _('Score Your Pillars') }}</h6>
         {% for p in summary.pillars %}
         <a href="{{ url_for('esg.scoring', pillar_code=p.code) }}" class="d-flex justify-content-between align-items-center py-2 text-decoration-none" style="border-bottom:1px solid #f1f4f5; color:inherit;">
-          <span>{{ p.name }}</span>
+          <span>{{ p.name_ar if get_locale()|string == 'ar' and p.name_ar else p.name }}</span>
           <span class="badge {{ 'bg-success' if p.completeness_pct == 100 else ('bg-warning text-dark' if p.completeness_pct > 0 else 'bg-secondary') }}">{{ p.completeness_pct }}%</span>
         </a>
         {% endfor %}

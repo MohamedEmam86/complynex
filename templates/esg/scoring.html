@@ -1,9 +1,9 @@
 {% extends 'esg/_layout.html' %}
 {% set esg_active = 'esg.scoring' %}
-{% block title %}{{ _('Score') }}: {{ pillar.name }} — {{ _('ESG Management') }}{% endblock %}
+{% block title %}{{ _('Score') }}: {{ pillar.name_ar if get_locale()|string == 'ar' and pillar.name_ar else pillar.name }} — {{ _('ESG Management') }}{% endblock %}
 {% block esg_eyebrow %} · {{ framework.name }}{% endblock %}
 {% block esg_icon %}bi-clipboard2-pulse{% endblock %}
-{% block esg_title %}{{ pillar.name }} ({{ pillar.code }}){% endblock %}
+{% block esg_title %}{{ pillar.name_ar if get_locale()|string == 'ar' and pillar.name_ar else pillar.name }} ({{ pillar.code }}){% endblock %}
 {% block esg_lead %}{{ _('Score each indicator 1-5 based on current maturity. Leave an indicator blank to exclude it from the pillar score rather than counting it as zero.') }}{% endblock %}
 {% block esg_about %}{{ cx.about(
     _('The indicators of one pillar. Each is scored 1–5 for maturity, with evidence or a note.'),
@@ -21,9 +21,10 @@
         {% for ind in pillar.indicators %}
         <div class="ecx-slider-row">
           <div style="flex:1;">
-            <div class="fw-semibold small">{{ ind.name }} <span class="text-muted">({{ (ind.weight*100)|round(0)|int }}% {{ _('of pillar') }})</span></div>
+            <div class="fw-semibold small">{{ ind.name_ar if get_locale()|string == 'ar' and ind.name_ar else ind.name }} <span class="text-muted">({{ (ind.weight*100)|round(0)|int }}% {{ _('of pillar') }})</span></div>
             {% if ind.description %}<div class="text-muted small">{{ ind.description }}</div>{% endif %}
             {% set f = ind.carbon_feed %}
+            {% set mf = ind.module_feed %}{% if mf %}<div class="ecx-feed"><i class="bi {{ mf.icon }}"></i> {{ _('From %(m)s', m=mf.module) }} — {{ mf.text }}</div>{% endif %}
             {% if f %}<div class="ecx-feed"><i class="bi bi-cloud-haze2"></i> {{ _('From Carbon') }} — {{ metric_labels[f.metric] }}:
               {% if f.in_boundary %}<strong>{{ cx.t(f.value) if f.value is not none else '-' }}</strong>{% else %}<span class="ecx-outside">{{ _('outside the reporting boundary') }}</span>{% endif %}
               · {{ carbon_values.period.label }} · {{ status_labels.get(carbon_values.status, carbon_values.status) }}</div>{% endif %}

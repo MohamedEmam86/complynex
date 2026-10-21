@@ -17,7 +17,7 @@
     <div class="table-responsive" style="max-height: 600px"><table class="table table-sm table-hover mb-0 small align-middle"><thead><tr><th>{{ _('Code') }}</th><th>{{ _('Scope') }}</th><th>{{ _('Activity') }}</th>
       <th class="text-end">{{ cx.term('factor', _('kgCO2e per unit')) }}</th><th>{{ _('Source') }} · {{ cx.term('vintage') }}</th><th class="text-end">{{ cx.term('version', _('Versions')) }}</th></tr></thead><tbody>
     {% for c, v in codes.items() %}{% set f = v[-1] %}<tr class="{{ 'table-active' if c == sel }}"><td><a href="{{ url_for('carbon.factor_versions', code=c, scope=scope) }}">{{ c }}</a></td>
-      <td>{{ cx.scope_tag(f.scope) }}</td><td>{{ f.activity }}{% if f.ghg_category_no %} <span class="text-muted">({{ _('Cat.') }} {{ f.ghg_category_no }})</span>{% endif %}</td>
+      <td>{{ cx.scope_tag(f.scope) }}</td><td>{{ f.activity_ar if get_locale()|string == 'ar' and f.activity_ar else f.activity }}{% if f.ghg_category_no %} <span class="text-muted">({{ _('Cat.') }} {{ f.ghg_category_no }})</span>{% endif %}</td>
       <td class="text-end">{{ f.factor_kgco2e }} / {{ f.unit }}{% if f.effective_to %} <span class="badge bg-light text-muted border">{{ _('closed') }}</span>{% endif %}</td>
       <td><span class="ecx-badge-source">{{ f.source or '-' }} · {{ f.vintage_year or '-' }}</span></td><td class="text-end">{{ v|length }}</td></tr>
     {% else %}<tr><td colspan="6">{{ cx.empty('bi-database', _('No emission factor yet.'), _('EG_GRID_ELEC — Scope 2 — grid electricity — kWh — value and source from the national grid publication'), none) }}</td></tr>{% endfor %}</tbody></table></div></div></div>

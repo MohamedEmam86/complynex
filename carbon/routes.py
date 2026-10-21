@@ -170,12 +170,18 @@ def dashboard():
 
     recent_entries = sorted(entries, key=lambda e: e['created_at'], reverse=True)[:8]
 
+    from carbon import charts as CH
+    site_names = {r['id']: r['name'] for r in (query_db("SELECT id, name FROM carbon_sites") or [])}
+    charts = {'monthly': CH.monthly_by_scope(entries, enabled), 'category': CH.by_category(entries),
+              'site': CH.by_site(entries, site_names),
+              'pathway': CH.pathway(target, target_progress, totals['total_location_based'], period)}
+
     return render_template(
         'carbon/dashboard.html',
         period=period, totals=totals, scope3_breakdown=scope3_breakdown,
         yoy=yoy, target=target, target_progress=target_progress,
         recent_entries=recent_entries, scope_labels=SCOPE_LABELS,
-        entry_count=len(entries),
+        entry_count=len(entries), charts=charts,
         scope_cfg=scope_cfg, enabled_scopes=enabled,
         outside_count=len(outside), outside_tco2e=round(sum(float(e['tco2e'] or 0) for e in outside), 3),
         outside_by_scope={sc: round(sum(float(e['tco2e'] or 0) for e in outside if e['scope'] == sc), 3)
@@ -496,16 +502,29 @@ def _fra_context():
                 nxt = nxt.replace(year=nxt.year + 1, day=28)
         calendar.append({'label': _('Fiscal year end / annual carbon report alignment'),
                          'date': nxt, 'days': (nxt - today).days})
+    first_due = _param('carbon.first_report_deadline', None)
+    if isinstance(first_due, str):
+        try:
+            first_due = date.fromisoformat(first_due[:10])
+        except ValueError:
+            first_due = None
+    if first_due and (not period or not period.get('submitted_to_fra_at')):
+        calendar.insert(0, {'label': _('Carbon-footprint report due to the regulator'),
+                            'date': first_due, 'days': (first_due - date.today()).days, 'key': 'report_due'})
     if obligation and obligation['status'] != 'FULFILLED':
-        calendar.append({'label': _('Offset purchase deadline (90 days after submission)'),
+        calendar.append({'label': _('Offset purchase deadline (%(d)s days after submission)', d=_param('carbon.offset_deadline_days', 90)),
                          'date': obligation['deadline_date'], 'days': days_left})
 
     verifiers = query_db("SELECT * FROM fra_verifiers WHERE is_active = TRUE ORDER BY name") or []
+    calendar.sort(key=lambda c: c['date'])
+    required = float(obligation['required_tco2e']) if obligation else None
+    offset_progress = round(min(100.0, 100.0 * purchased / required), 1) if required else None
 
     return dict(period=period, cfg=cfg, enabled=enabled, entries=entries, totals=totals,
                 obligation=obligation, purchases=purchases, purchased=round(purchased, 3),
                 days_left=days_left, readiness=readiness, calendar=calendar,
-                verifiers=verifiers, statuses=FRA_STATUSES)
+                verifiers=verifiers, statuses=FRA_STATUSES, offset_progress=offset_progress,
+                offset_chart=__import__('carbon.charts', fromlist=['x']).offset_doughnut(purchased, required))
 
 
 @carbon_bp.route('/fra')
@@ -607,11 +626,15 @@ def fra_offset_purchase():
     execute_db("""
         INSERT INTO carbon_offset_purchases
             (obligation_id, project_name, registry_reference, quantity_tco2e,
-             purchase_date, cost_egp, notes, created_by)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+             purchase_date, cost_egp, notes, created_by,
+             fra_project_id, standard, vintage_year, serial_numbers, retired_on)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (obligation['id'], project, request.form.get('registry_reference') or None,
           qty, pdate, request.form.get('cost_egp', type=float),
-          request.form.get('notes') or None, current_user.id))
+          request.form.get('notes') or None, current_user.id,
+          request.form.get('fra_project_id') or None, request.form.get('standard') or None,
+          request.form.get('vintage_year', type=int), request.form.get('serial_numbers') or None,
+          request.form.get('retired_on') or None))
 
     AuditLog.log(current_user.id, 'CREATE', module='carbon',
                  details=f"Offset purchase logged: {qty} tCO2e from {project}")

@@ -489,6 +489,15 @@ def data_quality(period_id, db=None):
         if not e.get('activity_month') and e.get('scope') in ('scope1', 'scope2'):
             issues.append({'severity': 'warning', 'code': 'no_month', 'entry_id': e['id'],
                            'message': f"{e.get('activity')}: recorded for the whole period, no month"})
+    # A figure the verifier cannot trace to an official source: factors marked indicative / estimate.
+    flagged = {}
+    for e in cur:
+        src = ' '.join(str(e.get(k) or '') for k in ('factor_source_used', 'source', 'f_source'))
+        if any(w in src.lower() for w in ('estimate', 'indicative', 'generic')) and e.get('factor_code') not in flagged:
+            flagged[e.get('factor_code')] = e
+    for code, e in flagged.items():
+        issues.append({'severity': 'warning', 'code': 'indicative_factor', 'entry_id': e['id'],
+                       'message': f"{e.get('activity')}: {e.get('factor_source_used') or 'factor'} — replace with the official national factor before verification"})
     for x in exposures(period_id, db):
         if x['error']:
             issues.append({'severity': 'warning', 'code': 'pcaf', 'message': f"PCAF {x['reference'] or x['id']}: {x['error']}"})

@@ -24,3 +24,5 @@
   {% block esg_body %}{% endblock %}
 </div>
 {% endblock %}
+{% block extra_js %}<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='vendor/chartjs/chart@3.9.1.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/ecx-charts.js') }}"></script>{% endblock %}

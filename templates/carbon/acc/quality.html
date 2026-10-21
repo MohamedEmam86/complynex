@@ -13,10 +13,12 @@
   <p class="small text-muted">{{ _('Critical issues (unit mismatch, entry without evidence, negative quantity) block submission for review. Warnings (missing months, outliers vs the previous period, PCAF gaps) must be explained to the verifier.') }}</p>
   {% set names = {'unit_mismatch': _('Unit does not match the factor'), 'unsupported': _('No evidence attached'), 'negative': _('Negative quantity'),
                   'missing_months': _('Months without data'), 'outlier': _('Unusual change against the previous period'),
-                  'pcaf': _('Financed-emissions gap'), 'no_month': _('Recorded without a month')} %}
+                  'pcaf': _('Financed-emissions gap'), 'no_month': _('Recorded without a month'),
+                  'indicative_factor': _('Indicative emission factor')} %}
   {% set fixes = {'unit_mismatch': _('Delete the entry and record it again in the factor unit'), 'unsupported': _('Attach the invoice, meter reading or ticket'),
                   'negative': _('Delete the entry and record it again'), 'missing_months': _('Record the missing months'),
                   'outlier': _('Check the quantity or explain the change to the verifier'), 'pcaf': _('Complete the exposure'),
+                  'indicative_factor': _('Add a new factor version from the official Egyptian source (Emission factors page)'),
                   'no_month': _('Set the month on the entry')} %}
   {% set crit = dq.issues|selectattr('severity', 'equalto', 'critical')|list|length %}
   <div class="row g-3 mb-3">{% for l, v, c in [(_('Entries checked'), dq.entries, ''), (_('Critical (block review)'), crit, 'text-danger' if crit else 'text-success'), (_('Warnings (explain)'), dq.issues|length - crit, '')] %}

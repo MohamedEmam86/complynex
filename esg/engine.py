@@ -114,6 +114,7 @@ def build_pillar_summary(pillars_with_indicators):
         pillar_summaries.append({
             'code': pillar['code'],
             'name': pillar['name'],
+            'name_ar': pillar.get('name_ar'),
             'weight': pillar['weight'],
             'score': score,
             'completeness_pct': completeness,

@@ -73,13 +73,14 @@ def _pillars_with_indicators(framework_id, period_id):
         for ind in indicators:
             resp = responses.get(ind['id'])
             ind_list.append({
-                'id': ind['id'], 'code': ind['code'], 'name': ind['name'],
+                'id': ind['id'], 'code': ind['code'], 'name': ind['name'], 'name_ar': ind.get('name_ar'),
+                'description_ar': ind.get('description_ar'),
                 'description': ind['description'], 'weight': ind['weight'], 'carbon_metric': ind.get('carbon_metric'),
                 'score': resp['score'] if resp else None,
                 'evidence_notes': resp['evidence_notes'] if resp else None,
             })
         result.append({
-            'id': p['id'], 'code': p['code'], 'name': p['name'],
+            'id': p['id'], 'code': p['code'], 'name': p['name'], 'name_ar': p.get('name_ar'),
             'weight': p['weight'], 'indicators': ind_list,
         })
     return result
@@ -172,9 +173,20 @@ def dashboard():
         disclosure_progress = _disclosure_completion(period['id'])
         materiality_progress = _materiality_completion(period['id'])
 
+    from esg import charts as ECH
+    radar = coverage = None
+    if summary:
+        prior = query_db("SELECT * FROM esg_reporting_periods WHERE start_date < %s ORDER BY start_date DESC LIMIT 1",
+                         (period['start_date'],), one=True)
+        prior_summary = build_pillar_summary(_pillars_with_indicators(framework['id'], prior['id'])) if prior else None
+        radar = ECH.pillar_radar(summary, prior_summary, prior['label'] if prior else None)
+    if period:
+        coverage = ECH.coverage_rows(query_db(
+            "SELECT framework, status, COUNT(*) AS n FROM esg_disclosure_items WHERE reporting_period_id = %s "
+            "GROUP BY framework, status", (period['id'],)) or [])
     return render_template(
         'esg/dashboard.html', framework=framework, period=period, summary=summary,
-        maturity_labels=MATURITY_LABELS,
+        maturity_labels=MATURITY_LABELS, radar=radar, coverage=coverage,
         disclosure_progress=disclosure_progress, materiality_progress=materiality_progress,
         carbon=_carbon_summary(period),
     )
@@ -246,8 +258,11 @@ def scoring(pillar_code):
     pillars = _pillars_with_indicators(framework['id'], period['id'])
     this_pillar = next((p for p in pillars if p['code'] == pillar_code), None)
     cvals = _carbon_values(period)
+    from esg import feeds as module_feeds
+    mvals = module_feeds.values(period)
     for ind in (this_pillar or {}).get('indicators', []):
         ind['carbon_feed'] = carbon_links.feed(ind, cvals, 'code', 'name', 'description')
+        ind['module_feed'] = None if ind['carbon_feed'] else module_feeds.feed(ind, mvals, 'code', 'name', 'description')
     summary = build_pillar_summary(pillars)
     this_pillar_summary = next((p for p in summary['pillars'] if p['code'] == pillar_code), None)
 
@@ -359,6 +374,7 @@ def materiality():
     return render_template(
         'esg/materiality.html', period=period, topics=topics, scores_by_topic=scores_by_topic,
         plotted=plotted, completion=_materiality_completion(period['id']),
+        matrix=__import__('esg.charts', fromlist=['x']).materiality_scatter(plotted),
     )
 
 
@@ -389,8 +405,11 @@ def disclosures():
     q += " ORDER BY d.framework, d.ref_code"
     items = [dict(i) for i in (query_db(q, tuple(params)) or [])]
     cvals = _carbon_values(period)
+    from esg import feeds as module_feeds
+    mvals = module_feeds.values(period)
     for it in items:
         it['carbon_feed'] = carbon_links.feed(it, cvals, 'ref_code', 'title', 'requirement')
+        it['module_feed'] = None if it['carbon_feed'] else module_feeds.feed(it, mvals, 'ref_code', 'title', 'requirement')
 
     frameworks = query_db(
         "SELECT DISTINCT framework FROM esg_disclosure_items WHERE reporting_period_id = %s ORDER BY framework",

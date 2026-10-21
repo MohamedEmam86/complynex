@@ -29192,6 +29192,200 @@ msgstr "تاريخ الانتهاء الحالي"
 msgid "New expiry"
 msgstr "تاريخ الانتهاء الجديد"
 
+#, python-format
+msgid "%(h)s training hours per employee · %(n)s courses completed · %(p)s%% of due courses on time"
+msgstr "%(h)s ساعة تدريب لكل موظف · %(n)s دورة مكتملة · %(p)s%% من الدورات المستحقة في موعدها"
+
+#, python-format
+msgid "%(n)s active board members · %(p)s%% independent"
+msgstr "%(n)s عضو مجلس إدارة حالي · %(p)s%% مستقلون"
+
+#, python-format
+msgid "%(n)s active policies · %(o)s past their review date"
+msgstr "%(n)s سياسة سارية · %(o)s تجاوزت موعد مراجعتها"
+
+#, python-format
+msgid "%(n)s customer complaints · %(p)s%% resolved or closed"
+msgstr "%(n)s شكوى عملاء · %(p)s%% تم حلها أو إغلاقها"
+
+#, python-format
+msgid "%(n)s days left"
+msgstr "متبقٍ %(n)s يومًا"
+
+#, python-format
+msgid "%(n)s entries without a month are not shown on this chart."
+msgstr "%(n)s إدخال بدون شهر لا تظهر في هذا الرسم."
+
+#, python-format
+msgid "%(n)s personal-data breaches recorded in the period · %(m)s notified to the regulator"
+msgstr "%(n)s حادث اختراق للبيانات الشخصية خلال الفترة · %(m)s تم إخطار الجهة الرقابية بها"
+
+#, python-format
+msgid "%(n)s reports received · %(r)s resolved"
+msgstr "%(n)s بلاغ مستلم · %(r)s تم حلها"
+
+#, python-format
+msgid "%(n)s staff attested the code of conduct for %(y)s (%(p)s%% of active users)"
+msgstr "%(n)s موظف أقروا بميثاق السلوك لعام %(y)s (%(p)s%% من المستخدمين النشطين)"
+
+#, python-format
+msgid "%(n)s staff declared (%(p)s%% of active users) · %(c)s conflicts declared"
+msgstr "%(n)s موظف قدموا الإقرار (%(p)s%% من المستخدمين النشطين) · %(c)s حالة تعارض مصالح معلنة"
+
+msgid "Actual inventory"
+msgstr "الجرد الفعلي"
+
+msgid "Add a new factor version from the official Egyptian source (Emission factors page)"
+msgstr "أضف إصدارًا جديدًا للمعامل من المصدر المصري الرسمي (صفحة معاملات الانبعاث)"
+
+msgid "Are we on track for the 2030 target?"
+msgstr "هل نسير في الطريق الصحيح نحو هدف 2030؟"
+
+msgid "Business travel"
+msgstr "سفر العمل"
+
+msgid "Carbon-footprint report due to the regulator"
+msgstr "موعد تقديم تقرير البصمة الكربونية للجهة الرقابية"
+
+#, python-format
+msgid "Carbon-footprint report due to the regulator on %(d)s"
+msgstr "موعد تقديم تقرير البصمة الكربونية للجهة الرقابية: %(d)s"
+
+msgid "Certificates bought"
+msgstr "الشهادات المشتراة"
+
+msgid "Chart"
+msgstr "رسم بياني"
+
+msgid "Darker cells hold more items. FRA-ESG and FRA-TCFD follow the official FRA templates."
+msgstr "الخلايا الأغمق تحتوي على بنود أكثر. إطارا FRA-ESG وFRA-TCFD يتبعان النماذج الرسمية للهيئة."
+
+msgid "Dashed line: straight path from the base year to the 2030 target. Green points: the approved inventories."
+msgstr "الخط المتقطع: المسار المستقيم من سنة الأساس إلى هدف 2030. النقاط الخضراء: الجرد المعتمد."
+
+msgid "Disclosure coverage by framework"
+msgstr "تغطية الإفصاح حسب الإطار"
+
+msgid "Emissions by month and scope"
+msgstr "الانبعاثات حسب الشهر والنطاق"
+
+msgid "Emissions by site"
+msgstr "الانبعاثات حسب الموقع"
+
+msgid "Employee commuting"
+msgstr "انتقال العاملين اليومي"
+
+msgid "FRA registry project ID"
+msgstr "رقم المشروع في سجل الهيئة"
+
+#, python-format
+msgid "From %(m)s"
+msgstr "من %(m)s"
+
+msgid "Fuel- and energy-related activities"
+msgstr "أنشطة متعلقة بالوقود والطاقة"
+
+msgid "Fugitive emissions (refrigerants)"
+msgstr "الانبعاثات المتسربة (غازات التبريد)"
+
+msgid "Indicative emission factor"
+msgstr "معامل انبعاث استرشادي"
+
+msgid "Investments (financed emissions)"
+msgstr "الاستثمارات (الانبعاثات الممولة)"
+
+msgid "Largest emission sources"
+msgstr "أكبر مصادر الانبعاثات"
+
+msgid "Mobile combustion"
+msgstr "الاحتراق المتنقل"
+
+msgid "No site"
+msgstr "بدون موقع"
+
+#, python-format
+msgid "Offset purchase deadline (%(d)s days after submission)"
+msgstr "موعد شراء شهادات التعويض (%(d)s يومًا بعد التقديم)"
+
+msgid "Pillar profile"
+msgstr "ملف المحاور"
+
+msgid "Previous period"
+msgstr "الفترة السابقة"
+
+msgid "Purchased electricity"
+msgstr "الكهرباء المشتراة"
+
+msgid "Purchased goods and services"
+msgstr "السلع والخدمات المشتراة"
+
+msgid "Readiness"
+msgstr "الجاهزية"
+
+msgid "Required path to the 2030 target"
+msgstr "المسار المطلوب لهدف 2030"
+
+msgid "Serial numbers"
+msgstr "الأرقام التسلسلية"
+
+msgid "Shaded top-right quadrant: high importance and high impact — your reporting priorities."
+msgstr "الربع العلوي المظلل: أهمية عالية وأثر عالٍ — أولويات الإفصاح لديك."
+
+msgid "Source: regulatory parameter carbon.first_report_deadline (see the legal basis below)."
+msgstr "المصدر: المعيار الرقابي carbon.first_report_deadline (انظر السند القانوني أدناه)."
+
+msgid "Standard"
+msgstr "المعيار"
+
+msgid "Start reduction work at the top of this list. Colour = scope."
+msgstr "ابدأ الخفض من أعلى هذه القائمة. اللون = النطاق."
+
+msgid "Stationary combustion"
+msgstr "الاحتراق الثابت"
+
+msgid "Still to buy"
+msgstr "المتبقي للشراء"
+
+msgid "The further out, the more mature. A dent shows the pillar to work on next."
+msgstr "كلما ابتعد الخط عن المركز زاد النضج. الانبعاج يوضح المحور الذي يحتاج عملًا."
+
+msgid "This period"
+msgstr "هذه الفترة"
+
+msgid "Topics"
+msgstr "الموضوعات"
+
+msgid "Upstream transportation"
+msgstr "النقل والتوزيع السابق"
+
+msgid "Waste from operations"
+msgstr "مخلفات التشغيل"
+
+msgid "not retired"
+msgstr "غير مُسقطة"
+
+msgid "of the obligation"
+msgstr "من الالتزام"
+
+#, python-format
+msgid "overdue by %(n)s days"
+msgstr "متأخر %(n)s يومًا"
+
+msgid "Data protection"
+msgstr "حماية البيانات"
+
+msgid "Consumer protection"
+msgstr "حماية العملاء"
+
+msgid "Conflicts of interest"
+msgstr "تعارض المصالح"
+
+msgid "Code of conduct"
+msgstr "ميثاق السلوك"
+
+msgid "Governance"
+msgstr "الحوكمة"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

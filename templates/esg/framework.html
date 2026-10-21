@@ -12,14 +12,14 @@
 
   {% for p in pillars %}
   <div class="ecx-card mb-3">
-    <h6><span>{{ p.name }} ({{ p.code }})</span><span class="ecx-badge-source">{{ (p.weight*100)|round(0)|int }}% {{ _('of overall score') }}</span></h6>
+    <h6><span>{{ p.name_ar if get_locale()|string == 'ar' and p.name_ar else p.name }} ({{ p.code }})</span><span class="ecx-badge-source">{{ (p.weight*100)|round(0)|int }}% {{ _('of overall score') }}</span></h6>
     <table class="ecx-table-clean">
       <thead><tr><th>{{ _('Code') }}</th><th>{{ _('Indicator') }}</th><th>{{ _('Weight in Pillar') }}</th></tr></thead>
       <tbody>
       {% for ind in p.indicators %}
         <tr>
           <td class="fw-semibold">{{ ind.code }}</td>
-          <td>{{ ind.name }}<div class="text-muted small">{{ ind.description }}</div></td>
+          <td>{{ ind.name_ar if get_locale()|string == 'ar' and ind.name_ar else ind.name }}<div class="text-muted small">{{ ind.description_ar if get_locale()|string == 'ar' and ind.description_ar else ind.description }}</div></td>
           <td>{{ (ind.weight*100)|round(0)|int }}%</td>
         </tr>
       {% endfor %}

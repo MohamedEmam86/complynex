@@ -66,9 +66,10 @@
           <td><span class="ecx-badge-source">{{ it.framework }}</span></td>
           <td class="small fw-semibold">{{ it.ref_code }}</td>
           <td>
-            <div class="fw-semibold small">{{ it.title }}</div>
-            <div class="text-muted small">{{ it.requirement }}</div>
+            <div class="fw-semibold small">{{ it.title_ar if get_locale()|string == 'ar' and it.title_ar else it.title }}</div>
+            <div class="text-muted small">{{ it.requirement_ar if get_locale()|string == 'ar' and it.requirement_ar else it.requirement }}</div>
             {% set f = it.carbon_feed %}
+            {% set mf = it.module_feed %}{% if mf %}<div class="ecx-feed"><i class="bi {{ mf.icon }}"></i> {{ _('From %(m)s', m=mf.module) }} — {{ mf.text }}</div>{% endif %}
             {% if f %}<div class="ecx-feed"><i class="bi bi-cloud-haze2"></i> {{ _('Auto-filled from Carbon') }} — {{ metric_labels[f.metric] }}:
               {% if f.in_boundary %}<strong>{{ cx.t(f.value) if f.value is not none else '-' }}</strong> {{ '' if f.metric == 'intensity_employee' else 'tCO2e' }}{% else %}<span class="ecx-outside">{{ _('outside the reporting boundary') }}</span>{% endif %}
               · {{ carbon_values.period.label }} · {{ status_labels.get(carbon_values.status, carbon_values.status) }}
