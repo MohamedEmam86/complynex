@@ -719,13 +719,15 @@ Message:
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
-            f"script-src 'self' 'nonce-{nonce}' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com "
-                "https://fonts.googleapis.com; "
+            # Every library and font is served from /static (no third-party CDN):
+            # nothing to hijack upstream, and the system works on an offline network.
+            f"script-src 'self' 'nonce-{nonce}' 'wasm-unsafe-eval'; "
+            # 'unsafe-inline' styles stay for now: ~580 style= attributes in templates.
+            "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: blob:; "
-            "font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net "
-                "https://fonts.gstatic.com; "
-            "connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "font-src 'self' data:; "
+            "connect-src 'self'; "
+            "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; "
             "worker-src blob: 'self'; "
             # Academy lessons embed YouTube (privacy mode) / Vimeo players and serve MP4 from self
             "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com; "

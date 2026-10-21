@@ -7,8 +7,7 @@
   <meta name="description" content="{{ t('Free compliance training from Integrys Consulting — AML/CFT, governance and risk, grounded in Egyptian regulation.', 'تدريب مجاني في الالتزام من إنتيجريس للاستشارات — مكافحة غسل الأموال والحوكمة والمخاطر وفق التنظيم المصري.') }}">
   <meta name="robots" content="{% block robots %}index, follow{% endblock %}">
   <link rel="icon" href="{{ url_for('static', filename='images/academy/integrys-emblem-64.png') }}">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/fonts/academy/academy-fonts.css') }}" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/academy.css') }}?v=4">
 </head>
 <body class="ia {% block body_class %}{% endblock %}">
