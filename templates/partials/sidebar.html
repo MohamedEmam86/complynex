@@ -133,6 +133,13 @@
             </li>
             {% endif %}
             {% endif %}
+            {% if current_user.can_view('screening') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('screening.quality') }}">
+                <span class="cnx-nav__label">{{ _('Screening Quality') }}</span>
+              </a>
+            </li>
+            {% endif %}
           </ul></div>
         </li>
         {% endif %}

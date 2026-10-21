@@ -23,6 +23,7 @@ Handles CRUD operations for internal blacklist entries
 import os
 import sys
 import json
+import re
 from datetime import datetime
 import logging
 
@@ -96,7 +97,25 @@ class InternalBlacklistService:
             except Exception:
                 pass
 
-            source_id = self._generate_source_id(entry_data['full_name'])
+            # Same name is not the same person. source_id used to be a hash of
+            # the name alone, so a second listed person sharing a name
+            # silently overwrote the first one's national ID and order details.
+            # Re-use an existing record only when the identifiers agree (or one
+            # side has none); otherwise key the new record on name + ID.
+            nid = re.sub(r'\D', '', str(entry_data.get('national_id') or ''))
+            source_id = None
+            cursor.execute(
+                "SELECT source_id, national_id FROM internal_blacklist "
+                "WHERE lower(full_name) = lower(%s) OR (original_name IS NOT NULL AND original_name = %s)",
+                (entry_data['full_name'], entry_data.get('original_name')))
+            for _row in cursor.fetchall():
+                _rn = re.sub(r'\D', '', str(_row['national_id'] or ''))
+                if not nid or not _rn or _rn == nid:
+                    source_id = _row['source_id']
+                    break
+            if not source_id:
+                source_id = (self._generate_source_id(entry_data['full_name'] + '|' + nid)
+                             if nid else self._generate_source_id(entry_data['full_name']))
 
             aliases = entry_data.get('aliases', [])
             if isinstance(aliases, str):

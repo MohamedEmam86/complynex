@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Screening Quality') }}{% endblock %}
+{% block content %}
+{% set s = latest.summary if latest else {} %}
+{% set variant_labels = {
+  'exact': _('Exact name'), 'spelling': _('Spelling variant (hamza, taa marbuta, alef maqsura)'),
+  'missing_name': _('One middle name missing'), 'extra_name': _('Extra name (longer ID name)'),
+  'typo': _('Typing error'), 'latin': _('Latin script'), 'short_form': _('First + family name only'),
+  'id_same': _('Typo + same national ID'), 'id_different': _('Same name, different national ID')} %}
+<div class="container-fluid py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="h3 mb-1"><i class="fas fa-bullseye me-2"></i>{{ _('Screening Quality') }}</h1>
+      <p class="text-muted mb-0">{{ _('How accurately the engine finds listed persons, how often it raises false alerts, and whether every list is current and searchable.') }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('screening.data_sources') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-database me-1"></i>{{ _('Data sources') }}</a>
+      <form method="post" action="{{ url_for('screening.quality_run') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-play me-1"></i>{{ _('Run evaluation now') }}</button>
+      </form>
+    </div>
+  </div>
+
+  {% if not latest %}
+  <div class="alert alert-info">{{ _('No evaluation has run yet. Press “Run evaluation now”; the weekly run also fills this page.') }}</div>
+  {% endif %}
+
+  {# ---------------- KPI cards ---------------- #}
+  {% set fresh_green = fresh | selectattr('state', 'equalto', 'green') | list | length %}
+  <div class="row g-3 mb-4">
+    {% macro kpi(label, value, unit, good, hint) %}
+    <div class="col-xl col-md-4 col-6">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body">
+          <div class="text-uppercase small text-muted fw-bold mb-1">{{ label }}</div>
+          <div class="h3 mb-0 {{ 'text-success' if good else 'text-danger' }}">{{ value if value is not none else '—' }}{{ unit if value is not none }}</div>
+          <div class="small text-muted mt-1">{{ hint }}</div>
+        </div>
+      </div>
+    </div>
+    {% endmacro %}
+    {{ kpi(_('Detection rate'), s.get('recall'), '%', (s.get('recall') or 0) >= targets.recall, _('Listed names found across realistic variants') ~ ' · ' ~ _('target') ~ ' ≥ ' ~ targets.recall|int ~ '%') }}
+    {{ kpi(_('False alerts'), s.get('false_alert_rate'), '%', (s.get('false_alert_rate') if s.get('false_alert_rate') is not none else 100) <= targets.false_alert_rate, _('Names on no list that raised a potential or confirmed alert') ~ ' · ' ~ _('target') ~ ' ≤ ' ~ targets.false_alert_rate|int ~ '%') }}
+    {{ kpi(_('False confirmed hits'), s.get('false_confirmed_rate'), '%', (s.get('false_confirmed_rate') if s.get('false_confirmed_rate') is not none else 100) <= targets.false_confirmed_rate, _('Names on no list that were auto-confirmed') ~ ' · ' ~ _('target') ~ ' 0') }}
+    {{ kpi(_('Different ID confirmed'), s.get('id_conflict_confirmed'), '%', (s.get('id_conflict_confirmed') if s.get('id_conflict_confirmed') is not none else 0) == 0, _('Same name but another national ID must never auto-confirm')) }}
+    {{ kpi(_('Lists up to date'), fresh_green ~ ' / ' ~ fresh|length, '', fresh_green == fresh|length, _('Updated successfully in the last') ~ ' ' ~ targets.freshness_days ~ ' ' ~ _('days')) }}
+  </div>
+
+  {# ---------------- How a hit is decided ---------------- #}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold"><i class="fas fa-scale-balanced me-2"></i>{{ _('How the engine decides a hit') }}</div>
+    <div class="card-body small">
+      <ol class="mb-0">
+        <li>{{ _('Names are normalised (hamza, taa marbuta, alef maqsura, diacritics, عبد / ابو compounds, Latin spellings) and compared element by element, in order.') }}</li>
+        <li>{{ _('Rare elements (family names) weigh more than common ones (محمد, احمد). Coverage is measured both ways, so a two-word listed name inside a four-word customer name is a partial match, not a confirmed hit.') }}</li>
+        <li>{{ _('Identifiers decide: the same national ID confirms the hit; a different valid national ID or birth year contradicts it. The Egyptian national ID gives the birth date, governorate and gender.') }}</li>
+        <li>{{ _('When the listed record has no ID, the decision rests on the full name and the nationality / country.') }}</li>
+        <li>{{ _('Confirmed hit = identifier match, or a complete name match (both ways, same order, at least three names) with nothing contradicting it. Everything else is a potential match for review, and each listed person appears once with all the lists it is on.') }}</li>
+      </ol>
+    </div>
+  </div>
+
+  {% if latest %}
+  <div class="row g-3 mb-4">
+    <div class="col-lg-7">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white fw-bold">{{ _('Accuracy by name variant') }} <span class="text-muted fw-normal small">· {{ _('run') }} #{{ latest.id }} · {{ latest.run_at.strftime('%Y-%m-%d %H:%M') if latest.run_at else '' }} · {{ s.get('names_tested') }} {{ _('listed names') }}, {{ s.get('cases') }} {{ _('checks') }}</span></div>
+        <div class="card-body p-0">
+          <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+            <thead><tr><th>{{ _('Variant') }}</th><th class="text-end">{{ _('Checks') }}</th><th style="width:40%">{{ _('Found') }}</th><th class="text-end">{{ _('Auto-confirmed') }}</th></tr></thead>
+            <tbody>
+            {% for k, v in s.get('by_variant', {}).items() %}
+              <tr>
+                <td>{{ variant_labels.get(k, k) }}</td>
+                <td class="text-end">{{ v.n }}</td>
+                <td>
+                  <div class="progress" style="height:14px"><div class="progress-bar {{ 'bg-success' if (v.found or 0) >= 90 else ('bg-warning' if (v.found or 0) >= 70 else 'bg-danger') }}" style="width: {{ v.found or 0 }}%"></div></div>
+                  <span class="small">{{ v.found }}{{ ' %' }}</span>
+                </td>
+                <td class="text-end">{{ v.confirmed }}{{ ' %' }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table></div>
+          <div class="small text-muted p-2">{{ _('“First + family name only” is expected to be a potential match, not a confirmed hit. “Same name, different national ID” must show 0 auto-confirmed.') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-white fw-bold">{{ _('Detection rate by list') }}</div>
+        <ul class="list-group list-group-flush">
+          {% for g, v in s.get('by_group', {}).items() %}
+          <li class="list-group-item d-flex justify-content-between"><span>{{ g }}</span><span class="fw-bold {{ 'text-success' if (v or 0) >= targets.recall else 'text-danger' }}">{{ v }}{{ ' %' }}</span></li>
+          {% endfor %}
+          <li class="list-group-item d-flex justify-content-between"><span>{{ _('Average time per check') }}</span><span>{{ s.get('avg_seconds') }} s</span></li>
+        </ul>
+      </div>
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white fw-bold">{{ _('Trend') }}</div>
+        <div class="table-responsive"><table class="table table-sm mb-0">
+          <thead><tr><th>{{ _('Run') }}</th><th class="text-end">{{ _('Found') }}</th><th class="text-end">{{ _('False alerts') }}</th><th class="text-end">{{ _('False confirmed') }}</th></tr></thead>
+          <tbody>{% for r in runs %}<tr><td class="small">#{{ r.id }} {{ r.run_at.strftime('%m-%d') if r.run_at else '' }} <span class="text-muted">{{ r.kind }}</span></td><td class="text-end">{{ r.summary.get('recall') }}</td><td class="text-end">{{ r.summary.get('false_alert_rate') }}</td><td class="text-end">{{ r.summary.get('false_confirmed_rate') }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ---------------- List freshness ---------------- #}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold"><i class="fas fa-clock-rotate-left me-2"></i>{{ _('Are the lists current?') }}</div>
+    <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+      <thead><tr><th>{{ _('Source') }}</th><th class="text-end">{{ _('Active records') }}</th><th>{{ _('Last update run') }}</th><th>{{ _('Result') }}</th><th class="text-end">{{ _('Age (days)') }}</th><th class="text-end">{{ _('Delisted last run') }}</th><th>{{ _('Problem') }}</th></tr></thead>
+      <tbody>
+      {% for f in fresh %}
+        <tr>
+          <td><span class="badge rounded-pill {{ {'green':'bg-success','amber':'bg-warning text-dark','red':'bg-danger'}[f.state] }}">&nbsp;</span> {{ f.source }}</td>
+          <td class="text-end">{{ '{:,}'.format(f.active) }}</td>
+          <td class="small">{{ f.last_run.strftime('%Y-%m-%d %H:%M') if f.last_run else (_('no run logged yet') ) }}</td>
+          <td>{{ f.last_status or '—' }}</td>
+          <td class="text-end">{{ f.age_days if f.age_days is not none else '—' }}</td>
+          <td class="text-end">{{ f.delisted if f.delisted is not none else '—' }}</td>
+          <td class="small text-danger">{{ f.error or '' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white fw-bold"><i class="fas fa-list-check me-2"></i>{{ _('Internal lists') }}</div>
+        <div class="card-body small">
+          {% for t in internal %}
+          <div class="mb-3">
+            <div class="fw-bold">{{ t.label }}</div>
+            <div>{{ '{:,}'.format(t.active) }} {{ _('active') }} · {{ '{:,}'.format(t.total) }} {{ _('total') }} · {{ _('last added') }} {{ t.last_added.strftime('%Y-%m-%d') if t.last_added else '—' }}</div>
+            <div class="text-muted">{% for c in t.categories %}{{ c.category }} ({{ '{:,}'.format(c.n) }}){{ ' · ' if not loop.last }}{% endfor %}</div>
+          </div>
+          {% endfor %}
+          <div class="text-muted">{{ _('Internal lists are searched directly in the database, so a name is screenable the moment it is added.') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white fw-bold"><i class="fas fa-magnifying-glass me-2"></i>{{ _('Search index coverage') }}</div>
+        <div class="table-responsive"><table class="table table-sm mb-0">
+          <thead><tr><th>{{ _('Source') }}</th><th class="text-end">{{ _('In database') }}</th><th class="text-end">{{ _('Searchable') }}</th><th class="text-end">{{ _('Coverage') }}</th></tr></thead>
+          <tbody>{% for r in coverage.rows %}<tr><td>{{ r.source }}</td><td class="text-end">{{ '{:,}'.format(r.db_active) }}</td><td class="text-end">{{ '{:,}'.format(r.es) if r.es is not none else '—' }}</td><td class="text-end {{ 'text-success' if (r.pct or 0) >= 99 else 'text-danger' }}">{{ r.pct if r.pct is not none else '—' }}{{ ' %' if r.pct is not none }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+        <div class="card-body small border-top">
+          {% set sm = coverage.semantic %}
+          <div class="fw-bold">{{ _('Similar-name (semantic) index') }}</div>
+          {% if sm %}
+          <div>{{ _('Last incremental update') }}: {{ sm.last_run or '—' }} ({{ sm.age_days }} {{ _('days ago') }})</div>
+          <div>{{ _('Waiting to be indexed') }}: {{ '{:,}'.format(sm.pending_watchlist) }} {{ _('watchlist') }} · {{ '{:,}'.format(sm.pending_blacklist) }} {{ _('internal blacklist') }}</div>
+          {% else %}<div class="text-muted">{{ _('State not available') }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if latest %}
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white fw-bold text-danger">{{ _('Missed in the latest run') }} ({{ misses|length }})</div>
+        <div class="table-responsive"><table class="table table-sm mb-0 small">
+          <thead><tr><th>{{ _('Variant') }}</th><th>{{ _('Query') }}</th><th>{{ _('List') }}</th></tr></thead>
+          <tbody>{% for c in misses %}<tr><td>{{ variant_labels.get(c.variant, c.variant) }}</td><td dir="auto">{{ c.query }}</td><td>{{ c.group }}</td></tr>{% else %}<tr><td colspan="3" class="text-success">{{ _('None') }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white fw-bold text-danger">{{ _('False alerts in the latest run') }} ({{ false_alerts|length }})</div>
+        <div class="table-responsive"><table class="table table-sm mb-0 small">
+          <thead><tr><th>{{ _('Name on no list') }}</th><th>{{ _('Result') }}</th><th>{{ _('Matched to') }}</th></tr></thead>
+          <tbody>{% for c in false_alerts %}<tr><td dir="auto">{{ c.query }}</td><td>{{ c.status }}</td><td dir="auto">{{ c.top_hit or '' }}</td></tr>{% else %}<tr><td colspan="3" class="text-success">{{ _('None') }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

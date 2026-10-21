@@ -1,0 +1,9 @@
+[Unit]
+Description=Weekly screening quality evaluation
+
+[Timer]
+OnCalendar=Sun *-*-* 05:15:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

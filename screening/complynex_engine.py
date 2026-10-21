@@ -1143,11 +1143,26 @@ class ComplyNexScreeningEngine:
         t_int = time.time()
         internal_matches = []
         internal_service = InternalBlacklistService()
-        internal_hits: list[dict] = internal_service.search_by_name(name)
+        # Token-based recall + analyst scoring (screening/match_intel.py). The
+        # old search_by_name required the whole query to be contained in the
+        # listed name, so a customer whose ID name is longer than the listed
+        # name, or spelled with a different hamza / taa marbuta, was missed.
+        internal_hits: list[dict] = []
+        internal_pep_hits: list[dict] = []
+        try:
+            from screening import match_intel as _mi
+            _c = internal_service.get_connection()
+            try:
+                internal_hits = _mi.search_internal(_c, 'internal_blacklist', name)
+                internal_pep_hits = _mi.search_internal(_c, 'internal_pep', name)
+            finally:
+                _c.close()
+        except Exception as _e:
+            logger.warning(f"[MATCH-INTEL] internal search failed, falling back: {_e}")
+            internal_hits = internal_service.search_by_name(name)
+            internal_pep_hits = InternalPEPService().search_by_name(name)
         logger.debug(f"[TIMER] Internal Blacklist hit: {round((time.time()-t_int)*1000)}ms")
         # 0c. INTERNAL PEP CHECK
-        internal_pep_service = InternalPEPService()
-        internal_pep_hits = internal_pep_service.search_by_name(name)
         if internal_pep_hits:
             for hit in internal_pep_hits:
                 hit_name_en = (hit.get('full_name') or '').lower()
@@ -1178,6 +1193,7 @@ class ComplyNexScreeningEngine:
                     'date_of_birth': hit['date_of_birth'],
                     'category': hit.get('category'),
                     'position': hit.get('position'),
+                    'national_id': hit.get('national_id'),
                     'is_internal': True,
                     'details': {
                         'reason': hit['reason'],
@@ -1225,6 +1241,7 @@ class ComplyNexScreeningEngine:
                     'nationality': hit['nationality'],
                     'date_of_birth': hit['date_of_birth'],
                     'category': hit['category'],
+                    'national_id': hit.get('national_id'),
                     'is_internal': True,
                     'details': {
                         'reason': hit['reason'],
@@ -1469,6 +1486,19 @@ class ComplyNexScreeningEngine:
             ]
             matches.extend(internal_matches)
         
+        # Analyst decision layer (screening/match_intel.py): identifiers
+        # (national ID incl. the birth date it encodes, DOB, nationality) and
+        # the structure of the name decide the tier; a partial or short-form
+        # name never auto-confirms; the same listed person is shown once.
+        try:
+            from screening import match_intel as _mi
+            matches = _mi.apply_decisions(matches, name, national_id=national_id,
+                                          dob=date_of_birth, nationality=nationality)
+            matches = [m for m in matches if m['match_score'] >= self.LOW_MATCH_THRESHOLD]
+        except Exception as _e:
+            logger.warning(f"[MATCH-INTEL] decision layer failed: {_e}")
+            _mi = None
+
         # Sort matches by score desc
         matches.sort(key=lambda x: x['match_score'], reverse=True)
         
@@ -1476,7 +1506,9 @@ class ComplyNexScreeningEngine:
         
         # Determine result
         result_status = 'CLEAR'
-        if highest_score >= self.CONFIRMED_HIT_THRESHOLD:
+        if _mi is not None:
+            result_status = _mi.overall_status(matches)
+        elif highest_score >= self.CONFIRMED_HIT_THRESHOLD:
             result_status = 'CONFIRMED_HIT'
         elif highest_score >= self.POTENTIAL_MATCH_THRESHOLD:
             result_status = 'POTENTIAL_MATCH'
@@ -1665,7 +1697,15 @@ class ComplyNexScreeningEngine:
                     "bool": {
                         "should": should_clauses,
                         "minimum_should_match": 1,
-                        "filter": []
+                        "filter": [],
+                        # Internal lists are searched directly in PostgreSQL
+                        # (match_intel.search_internal) — always current. Their
+                        # ES mirror was a stale snapshot that produced ghost
+                        # and duplicate hits. Inactive / delisted records never match.
+                        "must_not": [
+                            {"terms": {"source": ["internal_blacklist", "internal_pep"]}},
+                            {"term": {"is_active": 0}}
+                        ]
                     }
                 }
             }
@@ -2130,7 +2170,7 @@ class ComplyNexScreeningEngine:
                         similarity(COALESCE(original_name, ''), {self.placeholder})
                     ) AS trgm_score
                 FROM screening_watchlist
-                WHERE is_active = 1
+                WHERE is_active = 1 AND source NOT IN ('internal_blacklist', 'internal_pep')
                 AND COALESCE(LENGTH(name_normalized), 0) BETWEEN {self.placeholder} AND {self.placeholder}
                 AND ({where_clause})
                 ORDER BY trgm_score DESC
@@ -2293,7 +2333,7 @@ class ComplyNexScreeningEngine:
                     source_url, risk_level, aliases, entity_type, properties, details, source,
                     original_name
                 FROM screening_watchlist
-                WHERE is_active = 1
+                WHERE is_active = 1 AND source NOT IN ('internal_blacklist', 'internal_pep')
                 AND ({where_clause})
                 ORDER BY {order_by_clause}
                 LIMIT 5000

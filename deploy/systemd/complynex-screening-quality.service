@@ -1,0 +1,11 @@
+[Unit]
+Description=ComplyNex screening quality evaluation (detection rate, false alerts)
+
+[Service]
+Type=oneshot
+User=complynex
+WorkingDirectory=/var/www/complynex
+EnvironmentFile=/var/www/complynex/.env
+Nice=10
+TimeoutStartSec=2h
+ExecStart=/var/www/complynex/venv/bin/python /var/www/complynex/scripts/screening_quality_eval.py --kind scheduled

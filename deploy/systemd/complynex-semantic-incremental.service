@@ -1,0 +1,12 @@
+[Unit]
+Description=ComplyNex semantic index incremental update (new watchlist / internal list names)
+After=complynex-semantic.service
+
+[Service]
+Type=oneshot
+User=complynex
+WorkingDirectory=/var/www/complynex
+EnvironmentFile=/var/www/complynex/.env
+Nice=10
+TimeoutStartSec=4h
+ExecStart=/var/www/complynex/venv/bin/python /var/www/complynex/scripts/incremental_reindex.py

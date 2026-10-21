@@ -97,18 +97,51 @@ def main():
         sources = cur.fetchall()
         log.info(f"=== scheduled update run: {len(sources)} source(s) ===")
 
+        cur.execute("SELECT source_name FROM screening_data_sources WHERE source_url = 'internal' OR source_url IS NULL")
+        internal = {r[0] for r in cur.fetchall()}
+
+        def _log_run(sname, status, st, err, secs):
+            try:
+                c = conn.cursor()
+                c.execute("""INSERT INTO screening_list_update_log
+                    (source, status, added, updated, unchanged, delisted, relisted, errors, error, duration_s)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    (sname, status, st.get('added', 0), st.get('updated', 0), st.get('unchanged', 0),
+                     st.get('delisted', 0), st.get('relisted', 0), st.get('errors', 0), err, round(secs, 1)))
+                conn.commit()
+            except Exception as le:
+                conn.rollback()
+                log.warning(f"could not write screening_list_update_log: {le}")
+
         for sid, sname in sources:
+            if sname in internal:
+                # internal lists are maintained in the app, not downloaded
+                _log_run(sname, 'skipped', {}, 'internal list (maintained in the app)', 0)
+                continue
             t0 = datetime.now()
             try:
                 updater = EnhancedDataUpdater(db_config)
                 stats = updater.update_watchlist(source_id=sid, user_id=1)
                 updater.close_db()
                 secs = (datetime.now() - t0).total_seconds()
-                log.info(f"[OK] {sname} (id={sid}) in {secs:.0f}s stats={stats}")
+                # update_watchlist never raises for a bad source: it counts
+                # errors. Those used to be logged as [OK] — OFAC, HMT and EU
+                # silently stopped updating for months.
+                per = (stats or {}).get('sources', {}).get(sname) if isinstance(stats, dict) else None
+                st = per or stats or {}
+                if st.get('errors'):
+                    err = st.get('error') or 'processing error (see log)'
+                    log.error(f"[FAIL] {sname} (id={sid}) in {secs:.0f}s stats={stats}")
+                    failures.append(sname)
+                    _log_run(sname, 'failed', st, err, secs)
+                else:
+                    log.info(f"[OK] {sname} (id={sid}) in {secs:.0f}s stats={stats}")
+                    _log_run(sname, 'ok', st, None, secs)
             except Exception as e:
                 secs = (datetime.now() - t0).total_seconds()
                 log.error(f"[FAIL] {sname} (id={sid}) after {secs:.0f}s: {e}", exc_info=True)
                 failures.append(sname)
+                _log_run(sname, 'failed', {}, str(e)[:500], secs)
 
     refresh_registry(conn)
     conn.close()

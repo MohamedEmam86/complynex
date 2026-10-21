@@ -9,22 +9,18 @@ msgstr ""
 "POT-Creation-Date: 2026-07-25 15:41+0200\n"
 "PO-Revision-Date: 2026-02-13 12:00+0200\n"
 "Last-Translator: ComplyNex Team\n"
-"Language-Team: Arabic\n"
 "Language: ar\n"
+"Language-Team: Arabic\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
 "Generated-By: Babel 2.18.0\n"
 
 #: aml/routes.py:398
 #, python-format
-msgid ""
-"UBO structure for \"%(company)s\" has been verified against Chamber of "
-"Commerce records."
-msgstr ""
-"تم التحقق من هيكل الملكية المستفيدة النهائية لـ\"%(company)s\" مقابل سجلات "
-"الغرفة التجارية."
+msgid "UBO structure for \"%(company)s\" has been verified against Chamber of Commerce records."
+msgstr "تم التحقق من هيكل الملكية المستفيدة النهائية لـ\"%(company)s\" مقابل سجلات الغرفة التجارية."
 
 #: aml/routes.py:801
 #, python-format
@@ -44,20 +40,12 @@ msgid "Customer added to the screening whitelist."
 msgstr "تمت إضافة العميل إلى القائمة البيضاء للفحص."
 
 #: aml/routes.py:855
-msgid ""
-"Alert closed, but the customer could not be added to the whitelist. Please "
-"add manually."
-msgstr ""
-"تم إغلاق التنبيه، لكن تعذّرت إضافة العميل إلى القائمة البيضاء. برجاء الإضافة"
-" يدويًا."
+msgid "Alert closed, but the customer could not be added to the whitelist. Please add manually."
+msgstr "تم إغلاق التنبيه، لكن تعذّرت إضافة العميل إلى القائمة البيضاء. برجاء الإضافة يدويًا."
 
 #: aml/routes.py:859
-msgid ""
-"Alert closed. No linked customer name, so nothing was added to the "
-"whitelist."
-msgstr ""
-"تم إغلاق التنبيه. لا يوجد اسم عميل مرتبط، لذا لم تتم إضافة أي شيء إلى "
-"القائمة البيضاء."
+msgid "Alert closed. No linked customer name, so nothing was added to the whitelist."
+msgstr "تم إغلاق التنبيه. لا يوجد اسم عميل مرتبط، لذا لم تتم إضافة أي شيء إلى القائمة البيضاء."
 
 #: attachments/routes.py:63
 msgid "You do not have permission to attach files here."
@@ -118,23 +106,16 @@ msgid "You have been logged out successfully."
 msgstr "تم تسجيل خروجك بنجاح."
 
 #: carbon/routes.py:196
-msgid ""
-"No open reporting period exists yet — ask an admin to create one before "
-"logging activity."
-msgstr ""
-"لا توجد فترة إبلاغ مفتوحة حالياً — يرجى مطالبة أحد المسؤولين بإنشاء واحدة "
-"قبل تسجيل أي نشاط."
+msgid "No open reporting period exists yet — ask an admin to create one before logging activity."
+msgstr "لا توجد فترة إبلاغ مفتوحة حالياً — يرجى مطالبة أحد المسؤولين بإنشاء واحدة قبل تسجيل أي نشاط."
 
 #: carbon/routes.py:202
 msgid "Please select a valid emission factor."
 msgstr "يرجى اختيار معامل انبعاثات صحيح."
 
 #: carbon/routes.py:205
-msgid ""
-"That scope is not part of your current reporting boundary. Enable it in "
-"Carbon Settings first."
-msgstr ""
-"هذا النطاق ليس ضمن حدود تقريرك الحالية. فعّله في إعدادات الكربون أولًا."
+msgid "That scope is not part of your current reporting boundary. Enable it in Carbon Settings first."
+msgstr "هذا النطاق ليس ضمن حدود تقريرك الحالية. فعّله في إعدادات الكربون أولًا."
 
 #: carbon/routes.py:238
 #, python-format
@@ -158,13 +139,8 @@ msgid "Access denied."
 msgstr "تم رفض الوصول."
 
 #: carbon/routes.py:387
-msgid ""
-"Warning: FRA Decision 36/2026 requires Scope 1 and Scope 2 for obligated "
-"companies. Disabling them breaks FRA compliance - only do this for a company"
-" that is not FRA-obligated."
-msgstr ""
-"تحذير: يتطلب قرار الهيئة ٣٦/٢٠٢٦ النطاقين ١ و٢ للشركات الملزمة. تعطيلهما يخل"
-" بالامتثال — لا تفعل ذلك إلا لشركة غير ملزمة."
+msgid "Warning: FRA Decision 36/2026 requires Scope 1 and Scope 2 for obligated companies. Disabling them breaks FRA compliance - only do this for a company that is not FRA-obligated."
+msgstr "تحذير: يتطلب قرار الهيئة ٣٦/٢٠٢٦ النطاقين ١ و٢ للشركات الملزمة. تعطيلهما يخل بالامتثال — لا تفعل ذلك إلا لشركة غير ملزمة."
 
 #: carbon/routes.py:388
 msgid "Carbon settings saved."
@@ -188,12 +164,8 @@ msgstr "حالة غير صالحة."
 
 #: carbon/routes.py:557
 #, python-format
-msgid ""
-"Report marked as submitted. Offset obligation created: %(req)s tCO2e (20%%) "
-"due within 90 days."
-msgstr ""
-"تم وضع علامة إرسال على التقرير. أُنشئ التزام تعويض: %(req)s طن مكافئ CO2 "
-"(٢٠%%) مستحق خلال ٩٠ يومًا."
+msgid "Report marked as submitted. Offset obligation created: %(req)s tCO2e (20%%) due within 90 days."
+msgstr "تم وضع علامة إرسال على التقرير. أُنشئ التزام تعويض: %(req)s طن مكافئ CO2 (٢٠%%) مستحق خلال ٩٠ يومًا."
 
 #: carbon/routes.py:561
 #, python-format
@@ -308,15 +280,11 @@ msgid "Committee deactivated."
 msgstr "تم إلغاء تنشيط اللجنة."
 
 #: governance/routes.py:274
-msgid ""
-"No charter has been uploaded for this committee yet. Use Edit Committee to "
-"upload one."
+msgid "No charter has been uploaded for this committee yet. Use Edit Committee to upload one."
 msgstr "لم يتم رفع ميثاق لهذه اللجنة بعد. استخدم \"تعديل اللجنة\" لرفعه."
 
 #: governance/routes.py:282
-msgid ""
-"The charter file for this committee is missing from the server. Please "
-"upload it again."
+msgid "The charter file for this committee is missing from the server. Please upload it again."
 msgstr "ملف ميثاق هذه اللجنة مفقود من الخادم. برجاء رفعه مرة أخرى."
 
 #: governance/routes.py:297
@@ -462,8 +430,7 @@ msgid "Regulatory Reference"
 msgstr "المرجع التنظيمي"
 
 #: policies/routes.py:483 templates/cases/list.html:34
-#: templates/cases/view.html:17
-#: templates/consumer_protection/dashboard.html:73
+#: templates/cases/view.html:17 templates/consumer_protection/dashboard.html:73
 #: templates/events/rules.html:22 templates/policies/gap_analysis.html:84
 #: templates/policies/manage_gap_requirements.html:78
 #: templates/screening/queue.html:95 templates/screening/queue.html:151
@@ -486,8 +453,7 @@ msgstr "الأولوية"
 #: templates/cases/list.html:33 templates/cases/view.html:16
 #: templates/cobec/all_declarations.html:77 templates/cobec/detail.html:111
 #: templates/cobec/my_declarations.html:55
-#: templates/cobec/pending_review.html:22
-#: templates/coi/campaign_detail.html:30
+#: templates/cobec/pending_review.html:22 templates/coi/campaign_detail.html:30
 #: templates/coi/campaign_detail.html:172 templates/coi/campaigns.html:67
 #: templates/coi/campaigns.html:137 templates/coi/my_declarations.html:79
 #: templates/coi/pending_review.html:21
@@ -561,10 +527,9 @@ msgstr "الأولوية"
 #: templates/screening/screening_history_full.html:51
 #: templates/screening/screening_history_full.html:95
 #: templates/screening/sources.html:295 templates/screening/sources.html:721
-#: templates/screening/whitelist.html:45
-#: templates/training/admin_list.html:159 templates/training/report.html:243
-#: templates/users/progress.html:95 templates/users/progress.html:131
-#: templates/whistleblowing/dashboard.html:72
+#: templates/screening/whitelist.html:45 templates/training/admin_list.html:159
+#: templates/training/report.html:243 templates/users/progress.html:95
+#: templates/users/progress.html:131 templates/whistleblowing/dashboard.html:72
 #: templates/whistleblowing/my_cases.html:20
 msgid "Status"
 msgstr "الحالة"
@@ -709,13 +674,8 @@ msgid "Control not found."
 msgstr "الضابط الرقابي غير موجود."
 
 #: templates/compliance_operations.html:9
-msgid ""
-"Detailed AML alert activity, sanctions-source freshness, regulatory "
-"deadlines, and flagged customers — moved off the main dashboard to keep it "
-"focused."
-msgstr ""
-"نشاط تنبيهات مكافحة غسل الأموال التفصيلي، وحداثة مصادر العقوبات، والمواعيد "
-"الرقابية، والعملاء الموسومين — نُقلت من اللوحة الرئيسية لإبقائها مركزة."
+msgid "Detailed AML alert activity, sanctions-source freshness, regulatory deadlines, and flagged customers — moved off the main dashboard to keep it focused."
+msgstr "نشاط تنبيهات مكافحة غسل الأموال التفصيلي، وحداثة مصادر العقوبات، والمواعيد الرقابية، والعملاء الموسومين — نُقلت من اللوحة الرئيسية لإبقائها مركزة."
 
 #: templates/admin/ops.html:74 templates/carbon/dashboard.html:23
 #: templates/coi/create_mitigation.html:8
@@ -784,9 +744,7 @@ msgstr "%(n)s جديدة"
 
 #: templates/index.html:159
 #, python-format
-msgid ""
-"%(n)s high-severity record(s) from other modules aren't linked to a risk "
-"yet."
+msgid "%(n)s high-severity record(s) from other modules aren't linked to a risk yet."
 msgstr "%(n)s سجل (سجلات) عالي الخطورة من وحدات أخرى غير مرتبط بعد بأي خطر."
 
 #: templates/index.html:160
@@ -1030,10 +988,10 @@ msgstr "ملاحظات المراجعة الداخلية"
 
 #: templates/partials/sidebar.html:192 templates/policies/categories.html:41
 #: templates/policies/category_detail.html:9
-#: templates/policies/category_detail.html:41
-#: templates/policies/detail.html:12 templates/policies/list.html:63
-#: templates/policies/versions.html:9 templates/portal/dashboard.html:111
-#: templates/search_results.html:43 templates/users/progress.html:81
+#: templates/policies/category_detail.html:41 templates/policies/detail.html:12
+#: templates/policies/list.html:63 templates/policies/versions.html:9
+#: templates/portal/dashboard.html:111 templates/search_results.html:43
+#: templates/users/progress.html:81
 msgid "Policies"
 msgstr "السياسات"
 
@@ -1063,9 +1021,8 @@ msgstr "إقرارات الهدايا والضيافة والترفيه"
 #: templates/aml/print_cdd_form.html:333 templates/aml/print_cdd_form.html:405
 #: templates/aml/scenario_simulator.html:91 templates/aml/screening.html:90
 #: templates/aml/tm_dashboard.html:89 templates/aml/transaction_list.html:39
-#: templates/aml/transaction_view.html:17
-#: templates/blacklist/pep_view.html:158 templates/blacklist/view.html:158
-#: templates/carbon/entries_list.html:29
+#: templates/aml/transaction_view.html:17 templates/blacklist/pep_view.html:158
+#: templates/blacklist/view.html:158 templates/carbon/entries_list.html:29
 #: templates/carbon/fra_compliance.html:161
 #: templates/cobec/all_declarations.html:76
 #: templates/coi/pending_review.html:20 templates/coi/review.html:30
@@ -1078,8 +1035,7 @@ msgstr "إقرارات الهدايا والضيافة والترفيه"
 #: templates/governance/annual_governance_report.html:107
 #: templates/governance/independence_print.html:169
 #: templates/governance/meeting_list.html:22
-#: templates/governance/meeting_list.html:84
-#: templates/phishing/reports.html:23
+#: templates/governance/meeting_list.html:84 templates/phishing/reports.html:23
 #: templates/policies/policy_acknowledgments.html:63
 #: templates/policies/versions.html:42 templates/portal/status.html:171
 #: templates/portal/status.html:258
@@ -1174,8 +1130,7 @@ msgstr "القيمة"
 #: templates/aml/rule_form.html:31 templates/aml/rules/form.html:51
 #: templates/carbon/fra_report.html:41 templates/coi/campaign_detail.html:40
 #: templates/consumer_protection/view.html:32 templates/ghe/edit.html:85
-#: templates/ghe/public_submit.html:118
-#: templates/governance/roles_list.html:51
+#: templates/ghe/public_submit.html:118 templates/governance/roles_list.html:51
 #: templates/internal_audit/finding_form.html:14
 #: templates/internal_audit/project_detail.html:150
 #: templates/internal_audit/universe_form.html:14
@@ -1228,10 +1183,9 @@ msgstr "الإجراء"
 #: templates/admin/approvals.html:152 templates/aml/alert_list.html:67
 #: templates/aml/tm_dashboard.html:99 templates/cobec/pending_review.html:46
 #: templates/coi/create_mitigation.html:10 templates/coi/detail.html:14
-#: templates/coi/mitigation_detail.html:10
-#: templates/coi/pending_review.html:48 templates/ekyc/review_queue.html:44
-#: templates/screening/bulk_results.html:58 templates/screening/queue.html:273
-#: templates/training/employee_list.html:74
+#: templates/coi/mitigation_detail.html:10 templates/coi/pending_review.html:48
+#: templates/ekyc/review_queue.html:44 templates/screening/bulk_results.html:58
+#: templates/screening/queue.html:273 templates/training/employee_list.html:74
 msgid "Review"
 msgstr "مراجعة"
 
@@ -1363,8 +1317,7 @@ msgstr "الإدارات ووحدات الأعمال والفروع"
 msgid "New"
 msgstr "جديد"
 
-#: templates/admin/departments.html:15
-#: templates/aml/scenario_simulator.html:54
+#: templates/admin/departments.html:15 templates/aml/scenario_simulator.html:54
 #: templates/carbon/entries_list.html:14 templates/carbon/factors.html:13
 #: templates/ekyc/list.html:15 templates/internal_audit/findings.html:16
 #: templates/internal_audit/findings.html:25
@@ -1393,8 +1346,7 @@ msgstr "الفروع"
 #: templates/aml/rules/list.html:71
 #: templates/data_protection/activity_list.html:23
 #: templates/data_protection/purpose_list.html:23
-#: templates/esg/framework.html:24
-#: templates/reporting/manage_regulator.html:28
+#: templates/esg/framework.html:24 templates/reporting/manage_regulator.html:28
 #: templates/reporting/regulator_list.html:31
 #: templates/reporting/report_list.html:36
 #: templates/risk_management/categories.html:18
@@ -1407,9 +1359,9 @@ msgstr "الرمز"
 #: templates/admin/departments.html:33 templates/admin/departments.html:100
 #: templates/admin/departments.html:166
 #: templates/admin/settings/api_keys.html:29
-#: templates/admin/settings/api_keys.html:56
-#: templates/admin/users/list.html:25 templates/aml/screening.html:89
-#: templates/blacklist/index.html:111 templates/blacklist/pep_index.html:117
+#: templates/admin/settings/api_keys.html:56 templates/admin/users/list.html:25
+#: templates/aml/screening.html:89 templates/blacklist/index.html:111
+#: templates/blacklist/pep_index.html:117
 #: templates/consumer_protection/view.html:42 templates/events/rules.html:19
 #: templates/ghe/public_submit.html:130
 #: templates/governance/annual_board_report.html:44
@@ -1427,8 +1379,7 @@ msgstr "الرمز"
 #: templates/screening/bulk_upload.html:27
 #: templates/screening/dashboard.html:107 templates/screening/history.html:23
 #: templates/screening/kyc_periodic_review.html:62
-#: templates/screening/whitelist.html:41
-#: templates/screening/whitelist.html:135
+#: templates/screening/whitelist.html:41 templates/screening/whitelist.html:135
 #: templates/screening/whitelist_bulk_upload.html:81
 msgid "Name"
 msgstr "الاسم"
@@ -1448,8 +1399,8 @@ msgstr "التابع لـ"
 #: templates/aml/sar_list.html:29 templates/blacklist/index.html:127
 #: templates/blacklist/pep_index.html:133
 #: templates/cobec/all_declarations.html:79
-#: templates/coi/campaign_detail.html:69
-#: templates/coi/campaign_detail.html:174 templates/cyber/dashboard.html:70
+#: templates/coi/campaign_detail.html:69 templates/coi/campaign_detail.html:174
+#: templates/cyber/dashboard.html:70
 #: templates/data_protection/activity_list.html:28
 #: templates/data_protection/breach_list.html:29
 #: templates/data_protection/dpia_list.html:28
@@ -1530,8 +1481,7 @@ msgstr "الإدارة"
 #: templates/reporting/manage_regulator.html:63
 #: templates/reporting/regulator_list.html:47
 #: templates/risk_management/categories.html:36
-#: templates/screening/manage_urls.html:51
-#: templates/screening/sources.html:147
+#: templates/screening/manage_urls.html:51 templates/screening/sources.html:147
 msgid "Active"
 msgstr "نشط"
 
@@ -1567,9 +1517,8 @@ msgstr "هل أنت متأكد؟"
 #: templates/governance/compliance_tracker.html:93
 #: templates/governance/dashboard.html:93
 #: templates/governance/member_form.html:3
-#: templates/governance/member_form.html:7
-#: templates/merchant_kyc/list.html:155 templates/merchant_kyc/view.html:50
-#: templates/policies/categories.html:46
+#: templates/governance/member_form.html:7 templates/merchant_kyc/list.html:155
+#: templates/merchant_kyc/view.html:50 templates/policies/categories.html:46
 #: templates/policies/category_detail.html:90
 #: templates/reporting/dashboard.html:182
 #: templates/reporting/regulator_list.html:59
@@ -1594,10 +1543,10 @@ msgstr "لا يوجد (المستوى الأعلى)"
 #: templates/blacklist/bulk_upload.html:73 templates/blacklist/edit.html:186
 #: templates/blacklist/index.html:235
 #: templates/blacklist/pep_bulk_upload.html:73
-#: templates/blacklist/pep_edit.html:186
-#: templates/blacklist/pep_index.html:241 templates/carbon/entry_form.html:73
-#: templates/cobec/declare.html:226 templates/coi/create_mitigation.html:80
-#: templates/coi/declare.html:260 templates/cyber/incident_form.html:54
+#: templates/blacklist/pep_edit.html:186 templates/blacklist/pep_index.html:241
+#: templates/carbon/entry_form.html:73 templates/cobec/declare.html:226
+#: templates/coi/create_mitigation.html:80 templates/coi/declare.html:260
+#: templates/cyber/incident_form.html:54
 #: templates/data_protection/dsr_detail.html:174
 #: templates/data_protection/dsr_form.html:39 templates/ekyc/edit.html:34
 #: templates/ekyc/new.html:33 templates/ghe/edit.html:129
@@ -1620,8 +1569,7 @@ msgstr "لا يوجد (المستوى الأعلى)"
 #: templates/policies/edit.html:16
 #: templates/policies/manage_gap_requirements.html:163
 #: templates/portal/coi_pin_verify.html:75
-#: templates/portal/policy_list.html:141
-#: templates/reporting/dashboard.html:264
+#: templates/portal/policy_list.html:141 templates/reporting/dashboard.html:264
 #: templates/reporting/manage_regulator.html:67
 #: templates/reporting/manage_report.html:100
 #: templates/risk_management/categories.html:106
@@ -1689,9 +1637,7 @@ msgid "Admin Operations Panel"
 msgstr "لوحة عمليات إدارة النظام"
 
 #: templates/admin/ops.html:107
-msgid ""
-"Every operation is logged to the audit trail. No free-text commands are "
-"accepted."
+msgid "Every operation is logged to the audit trail. No free-text commands are accepted."
 msgstr "تُسجل كل عملية في سجل التدقيق. لا تُقبل أوامر نصية حرة."
 
 #: templates/admin/ops.html:111
@@ -1840,17 +1786,14 @@ msgid "This key will not be shown again — copy it now."
 msgstr "لن يُعرض هذا المفتاح مرة أخرى — انسخه الآن."
 
 #: templates/admin/settings/api_keys.html:75
-#: templates/merchant_kyc/send_kyc.html:33
-#: templates/merchant_kyc/view.html:103
+#: templates/merchant_kyc/send_kyc.html:33 templates/merchant_kyc/view.html:103
 msgid "Copy"
 msgstr "نسخ"
 
-#: templates/admin/settings/api_keys.html:80
-#: templates/admin/users/list.html:95 templates/aml/print_cdd_form.html:179
-#: templates/auth/login_portal.html:22
+#: templates/admin/settings/api_keys.html:80 templates/admin/users/list.html:95
+#: templates/aml/print_cdd_form.html:179 templates/auth/login_portal.html:22
 #: templates/consumer_protection/track.html:22
-#: templates/portal/policy_list.html:118
-#: templates/reporting/dashboard.html:198
+#: templates/portal/policy_list.html:118 templates/reporting/dashboard.html:198
 #: templates/training/manage_questions.html:92 templates/users/list.html:87
 msgid "Close"
 msgstr "إغلاق"
@@ -1895,20 +1838,14 @@ msgid "Failed to create key."
 msgstr "فشل إنشاء المفتاح."
 
 #: templates/admin/settings/backup.html:3
-#: templates/admin/settings/backup.html:7
-#: templates/admin/settings/hub.html:126 templates/partials/sidebar.html:1030
+#: templates/admin/settings/backup.html:7 templates/admin/settings/hub.html:126
+#: templates/partials/sidebar.html:1030
 msgid "Backup Status"
 msgstr "حالة النسخ الاحتياطي"
 
 #: templates/admin/settings/backup.html:13
-msgid ""
-"Backups run automatically once per day via a server cron job and are GPG-"
-"encrypted before being written to disk. This page reflects real, current "
-"status — it is not a configuration form."
-msgstr ""
-"تُنفذ النسخ الاحتياطية تلقائيًا مرة يوميًا عبر مهمة مجدولة على الخادم "
-"وتُشفَّر بـ GPG قبل كتابتها على القرص. تعكس هذه الصفحة الحالة الفعلية "
-"الحالية — وليست نموذج تهيئة."
+msgid "Backups run automatically once per day via a server cron job and are GPG-encrypted before being written to disk. This page reflects real, current status — it is not a configuration form."
+msgstr "تُنفذ النسخ الاحتياطية تلقائيًا مرة يوميًا عبر مهمة مجدولة على الخادم وتُشفَّر بـ GPG قبل كتابتها على القرص. تعكس هذه الصفحة الحالة الفعلية الحالية — وليست نموذج تهيئة."
 
 #: templates/admin/settings/backup.html:23
 msgid "Last backup succeeded"
@@ -1918,8 +1855,8 @@ msgstr "نجحت آخر نسخة احتياطية"
 msgid "File"
 msgstr "ملف"
 
-#: templates/admin/settings/backup.html:29
-#: templates/merchant_kyc/form.html:224 templates/merchant_kyc/view.html:384
+#: templates/admin/settings/backup.html:29 templates/merchant_kyc/form.html:224
+#: templates/merchant_kyc/view.html:384
 msgid "Size"
 msgstr "الحجم"
 
@@ -1950,13 +1887,8 @@ msgid "New Template"
 msgstr "قالب جديد"
 
 #: templates/admin/settings/email_templates.html:18
-msgid ""
-"Templates edited here override the built-in defaults. If no active template "
-"exists for a key, the system falls back to its hardcoded default — nothing "
-"changes until you edit one."
-msgstr ""
-"القوالب المعدلة هنا تتجاوز الافتراضيات المدمجة. إذا لم يوجد قالب نشط لمفتاح "
-"ما، يرجع النظام إلى افتراضيه المدمج — لا يتغير شيء حتى تعدّل واحدًا."
+msgid "Templates edited here override the built-in defaults. If no active template exists for a key, the system falls back to its hardcoded default — nothing changes until you edit one."
+msgstr "القوالب المعدلة هنا تتجاوز الافتراضيات المدمجة. إذا لم يوجد قالب نشط لمفتاح ما، يرجع النظام إلى افتراضيه المدمج — لا يتغير شيء حتى تعدّل واحدًا."
 
 #: templates/admin/settings/email_templates.html:24
 msgid "Key"
@@ -2057,9 +1989,8 @@ msgstr "رقم التسجيل"
 #: templates/governance/annual_governance_report.html:70
 #: templates/governance/compliance_form.html:43
 #: templates/governance/fit_proper_form.html:89
-#: templates/reporting/dashboard.html:98
-#: templates/reporting/dashboard.html:224 templates/reporting/detail.html:30
-#: templates/reporting/manage_report.html:35
+#: templates/reporting/dashboard.html:98 templates/reporting/dashboard.html:224
+#: templates/reporting/detail.html:30 templates/reporting/manage_report.html:35
 #: templates/reporting/report_list.html:38
 msgid "Regulator"
 msgstr "الجهة الرقابية"
@@ -2083,8 +2014,7 @@ msgid "GHE Disposal Thresholds"
 msgstr "حدود التصرف في الهدايا والضيافة"
 
 #: templates/admin/settings/general.html:61
-msgid ""
-"Define the limits for Gifts, Hospitality, and Entertainment (GHE) approvals."
+msgid "Define the limits for Gifts, Hospitality, and Entertainment (GHE) approvals."
 msgstr "حدد حدود اعتماد الهدايا والضيافة والترفيه."
 
 #: templates/admin/settings/general.html:64
@@ -2092,23 +2022,16 @@ msgid "Auto-Approval Threshold (EGP)"
 msgstr "حد الاعتماد التلقائي (جنيه)"
 
 #: templates/admin/settings/general.html:67
-msgid ""
-"Declarations below this value are automatically approved (unless involves a "
-"Gov Official)."
-msgstr ""
-"الإقرارات الأقل من هذه القيمة تُعتمد تلقائيًا (ما لم تتضمن مسؤولًا حكوميًا)."
+msgid "Declarations below this value are automatically approved (unless involves a Gov Official)."
+msgstr "الإقرارات الأقل من هذه القيمة تُعتمد تلقائيًا (ما لم تتضمن مسؤولًا حكوميًا)."
 
 #: templates/admin/settings/general.html:71
 msgid "Manager Approval Limit (EGP)"
 msgstr "حد موافقة المدير (جنيه)"
 
 #: templates/admin/settings/general.html:74
-msgid ""
-"Declarations above this value ARE ESCALATED to Compliance. Items below this "
-"are handled by Managers."
-msgstr ""
-"الإقرارات التي تتجاوز هذه القيمة تُصعّد إلى الامتثال. وما دونها يتولاها "
-"المديرون."
+msgid "Declarations above this value ARE ESCALATED to Compliance. Items below this are handled by Managers."
+msgstr "الإقرارات التي تتجاوز هذه القيمة تُصعّد إلى الامتثال. وما دونها يتولاها المديرون."
 
 #: templates/admin/settings/general.html:78
 #: templates/screening/sar_preview.html:112
@@ -2116,25 +2039,16 @@ msgid "Note:"
 msgstr "ملاحظة:"
 
 #: templates/admin/settings/general.html:79
-msgid ""
-"All declarations involving Government Officials are automatically escalated "
-"to Compliance review regardless of these thresholds."
-msgstr ""
-"كل الإقرارات المتعلقة بمسؤولين حكوميين تُصعّد تلقائيًا لمراجعة الامتثال بغض "
-"النظر عن هذه الحدود."
+msgid "All declarations involving Government Officials are automatically escalated to Compliance review regardless of these thresholds."
+msgstr "كل الإقرارات المتعلقة بمسؤولين حكوميين تُصعّد تلقائيًا لمراجعة الامتثال بغض النظر عن هذه الحدود."
 
 #: templates/admin/settings/general.html:88
 msgid "Board Independence Policy"
 msgstr "سياسة استقلالية مجلس الإدارة"
 
 #: templates/admin/settings/general.html:91
-msgid ""
-"These thresholds drive the Corporate Governance module's Independence "
-"Declaration criteria. Adjust them to match whichever regulator(s) your board"
-" reports to."
-msgstr ""
-"توجه هذه الحدود معايير إقرار الاستقلالية في وحدة حوكمة الشركات. اضبطها "
-"لتتوافق مع الجهة/الجهات الرقابية التي يرفع لها مجلسك."
+msgid "These thresholds drive the Corporate Governance module's Independence Declaration criteria. Adjust them to match whichever regulator(s) your board reports to."
+msgstr "توجه هذه الحدود معايير إقرار الاستقلالية في وحدة حوكمة الشركات. اضبطها لتتوافق مع الجهة/الجهات الرقابية التي يرفع لها مجلسك."
 
 #: templates/admin/settings/general.html:94
 msgid "Maximum Board Tenure (years)"
@@ -2150,11 +2064,8 @@ msgid "Maximum Shareholding (%%)"
 msgstr "الحد الأقصى لنسبة المساهمة (%%)"
 
 #: templates/admin/settings/general.html:104
-msgid ""
-"A member holding more than this share of voting shares is no longer "
-"considered independent."
-msgstr ""
-"العضو الذي يملك أكثر من هذه النسبة من أسهم التصويت لم يعد يُعتبر مستقلًا."
+msgid "A member holding more than this share of voting shares is no longer considered independent."
+msgstr "العضو الذي يملك أكثر من هذه النسبة من أسهم التصويت لم يعد يُعتبر مستقلًا."
 
 #: templates/admin/settings/hub.html:3 templates/admin/settings/hub.html:7
 #: templates/partials/navbar.html:135 templates/partials/sidebar.html:942
@@ -2267,25 +2178,16 @@ msgid "Safe, audited service/log operations panel"
 msgstr "لوحة عمليات خدمات/سجلات آمنة ومُدققة"
 
 #: templates/admin/settings/integrations.html:13
-msgid ""
-"Live health status, checked at page load. These are infrastructure-level "
-"services configured via environment/system config, not user-editable "
-"settings."
-msgstr ""
-"الحالة الصحية المباشرة، تُفحص عند تحميل الصفحة. هذه خدمات على مستوى البنية "
-"التحتية تُهيأ عبر إعدادات النظام، وليست إعدادات قابلة للتعديل من المستخدم."
+msgid "Live health status, checked at page load. These are infrastructure-level services configured via environment/system config, not user-editable settings."
+msgstr "الحالة الصحية المباشرة، تُفحص عند تحميل الصفحة. هذه خدمات على مستوى البنية التحتية تُهيأ عبر إعدادات النظام، وليست إعدادات قابلة للتعديل من المستخدم."
 
 #: templates/admin/settings/localization.html:18
 msgid "Platform Default Language"
 msgstr "اللغة الافتراضية للمنصة"
 
 #: templates/admin/settings/localization.html:21
-msgid ""
-"Individual users can still switch language per-session from the top "
-"navigation. This sets what a first-time visitor sees."
-msgstr ""
-"يظل بإمكان المستخدمين تغيير اللغة لكل جلسة من شريط التنقل العلوي. يحدد هذا "
-"ما يراه الزائر لأول مرة."
+msgid "Individual users can still switch language per-session from the top navigation. This sets what a first-time visitor sees."
+msgstr "يظل بإمكان المستخدمين تغيير اللغة لكل جلسة من شريط التنقل العلوي. يحدد هذا ما يراه الزائر لأول مرة."
 
 #: templates/admin/settings/localization.html:24
 msgid "Arabic (العربية)"
@@ -2299,14 +2201,8 @@ msgid "English"
 msgstr "الإنجليزية"
 
 #: templates/admin/settings/numbering.html:13
-msgid ""
-"Configure the prefix and zero-padding used when the system auto-generates "
-"document IDs. The running number itself is always derived from existing "
-"records, so changing these is safe at any time."
-msgstr ""
-"تهيئة البادئة والتعبئة بالأصفار المستخدمة عند توليد أرقام المستندات "
-"تلقائيًا. الرقم المتسلسل نفسه يُشتق دائمًا من السجلات القائمة، لذا تغيير هذه"
-" الإعدادات آمن في أي وقت."
+msgid "Configure the prefix and zero-padding used when the system auto-generates document IDs. The running number itself is always derived from existing records, so changing these is safe at any time."
+msgstr "تهيئة البادئة والتعبئة بالأصفار المستخدمة عند توليد أرقام المستندات تلقائيًا. الرقم المتسلسل نفسه يُشتق دائمًا من السجلات القائمة، لذا تغيير هذه الإعدادات آمن في أي وقت."
 
 #: templates/admin/settings/numbering.html:19
 msgid "Sequence"
@@ -2334,12 +2230,8 @@ msgid "Permissions Matrix"
 msgstr "مصفوفة الصلاحيات"
 
 #: templates/admin/settings/permissions_matrix.html:13
-msgid ""
-"Read-only overview of every user's per-module access. Edit an individual "
-"user's permissions from their user profile."
-msgstr ""
-"عرض للقراءة فقط لصلاحيات كل مستخدم على كل وحدة. عدّل صلاحيات مستخدم بعينه من"
-" ملفه الشخصي."
+msgid "Read-only overview of every user's per-module access. Edit an individual user's permissions from their user profile."
+msgstr "عرض للقراءة فقط لصلاحيات كل مستخدم على كل وحدة. عدّل صلاحيات مستخدم بعينه من ملفه الشخصي."
 
 #: templates/admin/settings/permissions_matrix.html:19
 #: templates/reporting/reports_extended.html:40
@@ -2372,8 +2264,8 @@ msgstr "مدير النظام — صلاحية كاملة"
 #: templates/coi/campaign_detail.html:206 templates/coi/campaigns.html:94
 #: templates/coi/campaigns.html:159 templates/coi/my_declarations.html:46
 #: templates/coi/my_declarations.html:97
-#: templates/consumer_protection/dashboard.html:122
-#: templates/ghe/list.html:291 templates/governance/governance_report.html:48
+#: templates/consumer_protection/dashboard.html:122 templates/ghe/list.html:291
+#: templates/governance/governance_report.html:48
 #: templates/internal_audit/dashboard.html:105
 #: templates/internal_audit/dashboard.html:128
 #: templates/internal_audit/findings.html:54
@@ -2436,12 +2328,8 @@ msgid "Multi-Factor Authentication"
 msgstr "المصادقة متعددة العوامل"
 
 #: templates/admin/settings/security.html:54
-msgid ""
-"Users can enable TOTP-based MFA with backup codes from their account "
-"security page."
-msgstr ""
-"يمكن للمستخدمين تفعيل المصادقة عبر TOTP مع رموز احتياطية من صفحة أمان "
-"حساباتهم."
+msgid "Users can enable TOTP-based MFA with backup codes from their account security page."
+msgstr "يمكن للمستخدمين تفعيل المصادقة عبر TOTP مع رموز احتياطية من صفحة أمان حساباتهم."
 
 #: templates/admin/settings/security.html:57
 #: templates/internal_audit/dashboard.html:79
@@ -2693,12 +2581,8 @@ msgid "None"
 msgstr "بدون"
 
 #: templates/admin/users/add.html:104 templates/admin/users/edit.html:112
-msgid ""
-"Used to route COI, GHE and COBEC declarations to this employee's manager for"
-" review."
-msgstr ""
-"يُستخدم لتوجيه إقرارات تعارض المصالح والهدايا ومدونة السلوك إلى مدير هذا "
-"الموظف للمراجعة."
+msgid "Used to route COI, GHE and COBEC declarations to this employee's manager for review."
+msgstr "يُستخدم لتوجيه إقرارات تعارض المصالح والهدايا ومدونة السلوك إلى مدير هذا الموظف للمراجعة."
 
 #: templates/admin/users/add.html:107
 msgid "Module Permissions"
@@ -2722,17 +2606,14 @@ msgid ""
 "Allows this user to assign/enroll training courses to\n"
 "                                employees in their accessible departments, without granting full Compliance\n"
 "                                Officer rights."
-msgstr ""
-"يسمح لهذا المستخدم بإسناد/تسجيل الدورات التدريبية للموظفين في الإدارات "
-"المتاحة له، دون منحه صلاحيات ضابط الامتثال الكاملة."
+msgstr "يسمح لهذا المستخدم بإسناد/تسجيل الدورات التدريبية للموظفين في الإدارات المتاحة له، دون منحه صلاحيات ضابط الامتثال الكاملة."
 
 #: templates/admin/users/add.html:146 templates/admin/users/edit.html:189
 msgid "Temporary Access"
 msgstr "وصول مؤقت"
 
 #: templates/admin/users/add.html:151
-msgid ""
-"This account will be automatically deactivated after the selected period."
+msgid "This account will be automatically deactivated after the selected period."
 msgstr "سيُعطّل هذا الحساب تلقائيًا بعد الفترة المحددة."
 
 #: templates/admin/users/add.html:154 templates/admin/users/edit.html:197
@@ -2808,9 +2689,7 @@ msgstr "تغيير البريد الإلكتروني سيغير اسم المس�
 msgid ""
 "Password can only be reset by a\n"
 "                        system administrator or via the login page."
-msgstr ""
-"لا يمكن إعادة تعيين كلمة المرور إلا بواسطة مدير النظام أو عبر صفحة تسجيل "
-"الدخول."
+msgstr "لا يمكن إعادة تعيين كلمة المرور إلا بواسطة مدير النظام أو عبر صفحة تسجيل الدخول."
 
 #: templates/admin/users/edit.html:116
 msgid "CMS Access Level (Global)"
@@ -2873,10 +2752,9 @@ msgstr "رفع ملف CSV"
 #: templates/blacklist/edit.html:178 templates/blacklist/pep_add.html:162
 #: templates/blacklist/pep_edit.html:178
 #: templates/consumer_protection/view.html:50
-#: templates/governance/member_form.html:80
-#: templates/merchant_kyc/form.html:84 templates/merchant_kyc/send_kyc.html:85
-#: templates/merchant_kyc/view.html:248 templates/parties/view.html:24
-#: templates/phishing/campaign_detail.html:74
+#: templates/governance/member_form.html:80 templates/merchant_kyc/form.html:84
+#: templates/merchant_kyc/send_kyc.html:85 templates/merchant_kyc/view.html:248
+#: templates/parties/view.html:24 templates/phishing/campaign_detail.html:74
 #: templates/policies/policy_acknowledgments.html:97
 #: templates/users/list.html:22 templates/users/progress.html:22
 msgid "Email"
@@ -2887,8 +2765,7 @@ msgstr "البريد الإلكتروني"
 #: templates/governance/committee_list.html:35
 #: templates/governance/member_form.html:112
 #: templates/reporting/regulator_list.html:49
-#: templates/screening/manage_urls.html:53
-#: templates/screening/sources.html:149
+#: templates/screening/manage_urls.html:53 templates/screening/sources.html:149
 msgid "Inactive"
 msgstr "غير نشط"
 
@@ -2909,9 +2786,7 @@ msgstr "رفع ملف المستخدمين CSV"
 msgid ""
 "Upload a CSV file with the following columns: Email, First Name, Last Name, Password, Role,\n"
 "                        Department, Job Title."
-msgstr ""
-"ارفع ملف CSV بالأعمدة التالية: البريد الإلكتروني، الاسم الأول، اسم العائلة، "
-"كلمة المرور، الدور، الإدارة، المسمى الوظيفي."
+msgstr "ارفع ملف CSV بالأعمدة التالية: البريد الإلكتروني، الاسم الأول، اسم العائلة، كلمة المرور، الدور، الإدارة، المسمى الوظيفي."
 
 #: templates/admin/users/list.html:90
 msgid "CSV File"
@@ -2972,9 +2847,8 @@ msgid "Open (unresolved)"
 msgstr "مفتوح (لم تتم تسويته)"
 
 #: templates/aml/alert_list.html:30 templates/aml/customer_list.html:45
-#: templates/consumer_protection/list.html:22
-#: templates/esg/disclosures.html:51 templates/ghe/list.html:176
-#: templates/risk_management/register_list.html:27
+#: templates/consumer_protection/list.html:22 templates/esg/disclosures.html:51
+#: templates/ghe/list.html:176 templates/risk_management/register_list.html:27
 #: templates/screening/audit_log.html:27 templates/training/report.html:213
 msgid "All Statuses"
 msgstr "جميع الحالات"
@@ -3131,9 +3005,8 @@ msgid "Counterparty"
 msgstr "الطرف الآخر"
 
 #: templates/aml/alert_view.html:49 templates/aml/customer_pdf.html:59
-#: templates/aml/scenario_simulator.html:91
-#: templates/aml/tm_analytics.html:117 templates/aml/tm_network.html:86
-#: templates/aml/transaction_list.html:39
+#: templates/aml/scenario_simulator.html:91 templates/aml/tm_analytics.html:117
+#: templates/aml/tm_network.html:86 templates/aml/transaction_list.html:39
 #: templates/aml/transaction_view.html:22 templates/blacklist/add.html:107
 #: templates/blacklist/edit.html:113 templates/blacklist/pep_add.html:107
 #: templates/blacklist/pep_edit.html:113 templates/merchant_kyc/form.html:104
@@ -3308,12 +3181,10 @@ msgid "Contact & Risk Profile"
 msgstr "معلومات الاتصال وملف المخاطر"
 
 #: templates/aml/customer_form.html:95 templates/aml/customer_pdf.html:29
-#: templates/aml/pdf/customer_cdd.html:87
-#: templates/aml/print_cdd_form.html:244
+#: templates/aml/pdf/customer_cdd.html:87 templates/aml/print_cdd_form.html:244
 #: templates/consumer_protection/view.html:46
-#: templates/governance/member_form.html:85
-#: templates/merchant_kyc/form.html:89 templates/merchant_kyc/view.html:252
-#: templates/parties/view.html:25
+#: templates/governance/member_form.html:85 templates/merchant_kyc/form.html:89
+#: templates/merchant_kyc/view.html:252 templates/parties/view.html:25
 msgid "Phone"
 msgstr "الهاتف"
 
@@ -3373,8 +3244,7 @@ msgid "Industry / Occupation"
 msgstr "القطاع / المهنة"
 
 #: templates/aml/customer_form.html:129 templates/aml/customer_view.html:189
-#: templates/aml/pdf/customer_cdd.html:73
-#: templates/aml/print_cdd_form.html:281
+#: templates/aml/pdf/customer_cdd.html:73 templates/aml/print_cdd_form.html:281
 msgid "Source of Funds"
 msgstr "مصدر الأموال"
 
@@ -3465,8 +3335,7 @@ msgstr "دليل العملاء"
 msgid "Customer Directory (CDD/KYC)"
 msgstr "دليل العملاء (العناية الواجبة / اعرف عميلك)"
 
-#: templates/aml/customer_list.html:12
-#: templates/cobec/all_declarations.html:27
+#: templates/aml/customer_list.html:12 templates/cobec/all_declarations.html:27
 #: templates/coi/campaign_detail.html:49 templates/ekyc/list.html:12
 #: templates/merchant_kyc/list.html:12 templates/policies/gap_analysis.html:27
 #: templates/training/report.html:190
@@ -3599,8 +3468,7 @@ msgstr "ComplyNex — تقرير العناية الواجبة بالعميل"
 #: templates/governance/fra_governance_report.html:38
 #: templates/internal_audit/findings_report.html:29
 #: templates/screening/kyc_periodic_review.html:8
-#: templates/screening/report.html:123
-#: templates/whistleblowing/submit.html:349
+#: templates/screening/report.html:123 templates/whistleblowing/submit.html:349
 msgid "Generated:"
 msgstr "تم الإنشاء:"
 
@@ -3612,8 +3480,7 @@ msgstr "سري — للاستخدام الخاص بإدارة الامتثال �
 msgid "1. Customer Profile"
 msgstr "1. ملف العميل"
 
-#: templates/aml/customer_pdf.html:18
-#: templates/aml/upload_transactions.html:51
+#: templates/aml/customer_pdf.html:18 templates/aml/upload_transactions.html:51
 #: templates/blacklist/pep_view.html:160 templates/blacklist/view.html:160
 msgid "Field"
 msgstr "الحقل"
@@ -3690,8 +3557,8 @@ msgstr "3. المعاملات الأخيرة (آخر 20 معاملة)"
 msgid "CCY"
 msgstr "العملة"
 
-#: templates/aml/customer_pdf.html:68
-#: templates/cobec/all_declarations.html:110 templates/coi/detail.html:119
+#: templates/aml/customer_pdf.html:68 templates/cobec/all_declarations.html:110
+#: templates/coi/detail.html:119
 #: templates/data_protection/breach_detail.html:45
 #: templates/data_protection/breach_list.html:47
 #: templates/data_protection/consent_log.html:38
@@ -3763,11 +3630,8 @@ msgstr "لا يوجد سجل فحص متاح."
 
 #: templates/aml/customer_pdf.html:94
 #, python-format
-msgid ""
-"This report was generated by ComplyNex Compliance Management System on "
-"%(date)s."
-msgstr ""
-"تم إنشاء هذا التقرير بواسطة نظام إدارة الامتثال ComplyNex بتاريخ %(date)s."
+msgid "This report was generated by ComplyNex Compliance Management System on %(date)s."
+msgstr "تم إنشاء هذا التقرير بواسطة نظام إدارة الامتثال ComplyNex بتاريخ %(date)s."
 
 #: templates/aml/customer_pdf.html:95
 msgid "It is strictly confidential and intended for compliance use only."
@@ -3866,12 +3730,8 @@ msgid "Risk Profile — Multi-Dimensional Analysis"
 msgstr "ملف المخاطر — تحليل متعدد الأبعاد"
 
 #: templates/aml/customer_view.html:252
-msgid ""
-"Download a complete Customer Due Diligence report including risk profile, "
-"transaction history, and screening results."
-msgstr ""
-"تنزيل تقرير العناية الواجبة الكامل بالعميل بما في ذلك ملف المخاطر وسجل "
-"المعاملات ونتائج الفحص."
+msgid "Download a complete Customer Due Diligence report including risk profile, transaction history, and screening results."
+msgstr "تنزيل تقرير العناية الواجبة الكامل بالعميل بما في ذلك ملف المخاطر وسجل المعاملات ونتائج الفحص."
 
 #: templates/aml/customer_view.html:254
 msgid "Download CDD PDF Report"
@@ -3986,8 +3846,8 @@ msgstr "رقم الهوية"
 msgid "ID Expiry Date"
 msgstr "تاريخ انتهاء الهوية"
 
-#: templates/aml/pdf/customer_cdd.html:54
-#: templates/aml/print_cdd_form.html:229 templates/ekyc/review_detail.html:51
+#: templates/aml/pdf/customer_cdd.html:54 templates/aml/print_cdd_form.html:229
+#: templates/ekyc/review_detail.html:51
 #: templates/screening/manual_screen.html:26
 msgid "Gender"
 msgstr "الجنس"
@@ -4000,8 +3860,7 @@ msgstr "2. بيانات الاتصال والعنوان"
 msgid "3. Risk Assessment"
 msgstr "3. تقييم المخاطر"
 
-#: templates/aml/print_cdd_form.html:273
-#: templates/aml/transaction_view.html:36
+#: templates/aml/print_cdd_form.html:273 templates/aml/transaction_view.html:36
 #: templates/ekyc/decision_pending.html:20
 #: templates/ekyc/review_detail.html:100 templates/ekyc/review_queue.html:20
 #: templates/ekyc/view.html:126 templates/screening/report.html:266
@@ -4182,8 +4041,7 @@ msgstr "اشرح ما تكشفه هذه القاعدة..."
 #: templates/risk_management/risk_form.html:17
 #: templates/risk_management/suggestion_create_form.html:21
 #: templates/screening/screening_history_detail.html:189
-#: templates/training/admin_list.html:62
-#: templates/training/course_form.html:42
+#: templates/training/admin_list.html:62 templates/training/course_form.html:42
 #: templates/whistleblowing/reports.html:45
 msgid "Category"
 msgstr "الفئة"
@@ -4322,9 +4180,7 @@ msgid "Suspicion Description"
 msgstr "وصف الاشتباه"
 
 #: templates/aml/sar_form.html:48
-msgid ""
-"Detailed description of suspicious patterns, red flags identified, and "
-"rationale for suspicion."
+msgid "Detailed description of suspicious patterns, red flags identified, and rationale for suspicion."
 msgstr "وصف تفصيلي للأنماط المشتبه فيها والمؤشرات المحددة وأسباب الاشتباه."
 
 #: templates/aml/sar_form.html:53
@@ -4347,8 +4203,7 @@ msgstr "تقارير الأنشطة المشبوهة"
 msgid "Suspicious Activity Reports (SAR)"
 msgstr "تقارير الأنشطة المشتبه فيها"
 
-#: templates/aml/sar_list.html:47
-#: templates/data_protection/breach_list.html:66
+#: templates/aml/sar_list.html:47 templates/data_protection/breach_list.html:66
 #: templates/whistleblowing/dashboard.html:120
 msgid "Investigate"
 msgstr "تحقيق"
@@ -4358,8 +4213,7 @@ msgid "No SARs reported"
 msgstr "لم يتم تقديم أي تقارير أنشطة مشتبه فيها"
 
 #: templates/aml/scenario_simulator.html:2
-#: templates/aml/scenario_simulator.html:12
-#: templates/partials/sidebar.html:654
+#: templates/aml/scenario_simulator.html:12 templates/partials/sidebar.html:654
 msgid "Scenario Simulator"
 msgstr "محاكي السيناريوهات"
 
@@ -4568,8 +4422,7 @@ msgstr "الإجمالي"
 msgid "Top Flagged Customers"
 msgstr "أكثر العملاء رصدًا"
 
-#: templates/aml/tm_analytics.html:63
-#: templates/internal_audit/universe.html:70
+#: templates/aml/tm_analytics.html:63 templates/internal_audit/universe.html:70
 #: templates/merchant_kyc/list.html:108
 #: templates/risk_management/treatments_list.html:16
 #: templates/screening/alerts.html:51
@@ -4934,9 +4787,7 @@ msgstr ""
 msgid ""
 "Verify the ownership structure of corporate entities and identify\n"
 "                        individual owners with more than 25%% stake."
-msgstr ""
-"تحقق من الهيكل التملكي للكيانات الاعتبارية وحدد المالكين الأفراد الذين "
-"تتجاوز حصتهم 25%%."
+msgstr "تحقق من الهيكل التملكي للكيانات الاعتبارية وحدد المالكين الأفراد الذين تتجاوز حصتهم 25%%."
 
 #: templates/aml/ubo.html:34
 msgid "Enter company name or registration number..."
@@ -5060,12 +4911,8 @@ msgid "Optional:"
 msgstr "اختياري:"
 
 #: templates/aml/upload_transactions.html:37
-msgid ""
-"currency, counterparty_name, counterparty_account, counterparty_country, "
-"purpose_of_transaction, remittance_information"
-msgstr ""
-"currency, counterparty_name, counterparty_account, counterparty_country, "
-"purpose_of_transaction, remittance_information"
+msgid "currency, counterparty_name, counterparty_account, counterparty_country, purpose_of_transaction, remittance_information"
+msgstr "currency, counterparty_name, counterparty_account, counterparty_country, purpose_of_transaction, remittance_information"
 
 #: templates/aml/upload_transactions.html:40
 msgid "Upload & Evaluate"
@@ -5100,12 +4947,8 @@ msgid "transaction_type"
 msgstr "transaction_type"
 
 #: templates/aml/upload_transactions.html:55
-msgid ""
-"CREDIT, DEBIT, TRANSFER_IN, TRANSFER_OUT, CASH_DEPOSIT, CASH_WITHDRAWAL, "
-"PAYMENT, REFUND"
-msgstr ""
-"CREDIT, DEBIT, TRANSFER_IN, TRANSFER_OUT, CASH_DEPOSIT, CASH_WITHDRAWAL, "
-"PAYMENT, REFUND"
+msgid "CREDIT, DEBIT, TRANSFER_IN, TRANSFER_OUT, CASH_DEPOSIT, CASH_WITHDRAWAL, PAYMENT, REFUND"
+msgstr "CREDIT, DEBIT, TRANSFER_IN, TRANSFER_OUT, CASH_DEPOSIT, CASH_WITHDRAWAL, PAYMENT, REFUND"
 
 #: templates/aml/upload_transactions.html:56
 msgid "amount"
@@ -5184,10 +5027,9 @@ msgstr "تم الإنشاء بواسطة ComplyNex"
 #: templates/aml/pdf/customer_cdd.html:84
 #: templates/aml/pdf/customer_cdd.html:88
 #: templates/aml/pdf/customer_cdd.html:92
-#: templates/governance/meeting_summary.html:23
-#: templates/portal/status.html:88 templates/portal/status.html:137
-#: templates/portal/status.html:180 templates/portal/status.html:268
-#: templates/portal/training_list.html:139
+#: templates/governance/meeting_summary.html:23 templates/portal/status.html:88
+#: templates/portal/status.html:137 templates/portal/status.html:180
+#: templates/portal/status.html:268 templates/portal/training_list.html:139
 #: templates/risk_management/risk_detail.html:96
 #: templates/whistleblowing/case_detail.html:40
 msgid "N/A"
@@ -5253,12 +5095,8 @@ msgid "pending"
 msgstr "قيد الانتظار"
 
 #: templates/aml/rules/form.html:20
-msgid ""
-"version of this rule. The current active version remains in effect until a "
-"compliance officer approves the new one."
-msgstr ""
-"جديدة من هذه القاعدة. تظل النسخة النشطة الحالية سارية حتى يوافق مسؤول "
-"الامتثال على النسخة الجديدة."
+msgid "version of this rule. The current active version remains in effect until a compliance officer approves the new one."
+msgstr "جديدة من هذه القاعدة. تظل النسخة النشطة الحالية سارية حتى يوافق مسؤول الامتثال على النسخة الجديدة."
 
 #: templates/aml/rules/form.html:37
 msgid "Rule Code"
@@ -5299,19 +5137,12 @@ msgid "Alert fires when a single transaction exceeds the threshold value."
 msgstr "يصدر التنبيه عندما تتجاوز معاملة واحدة قيمة الحد المسموح به."
 
 #: templates/aml/rules/form.html:119
-msgid ""
-"Alert fires when multiple transactions in the time window sum to ≥ "
-"threshold."
-msgstr ""
-"يصدر التنبيه عندما يبلغ مجموع عدة معاملات خلال الفترة الزمنية المحددة الحد "
-"الأدنى أو أكثر."
+msgid "Alert fires when multiple transactions in the time window sum to ≥ threshold."
+msgstr "يصدر التنبيه عندما يبلغ مجموع عدة معاملات خلال الفترة الزمنية المحددة الحد الأدنى أو أكثر."
 
 #: templates/aml/rules/form.html:120
-msgid ""
-"Alert fires when transaction count in the time window exceeds threshold."
-msgstr ""
-"يصدر التنبيه عندما يتجاوز عدد المعاملات خلال الفترة الزمنية المحددة الحد "
-"المسموح به."
+msgid "Alert fires when transaction count in the time window exceeds threshold."
+msgstr "يصدر التنبيه عندما يتجاوز عدد المعاملات خلال الفترة الزمنية المحددة الحد المسموح به."
 
 #: templates/aml/rules/form.html:121
 msgid "Alert fires on transactions to/from high-risk countries."
@@ -5360,8 +5191,8 @@ msgstr "محاكاة"
 
 #: templates/aml/rules/list.html:72 templates/policies/category_detail.html:50
 #: templates/policies/compare.html:27 templates/policies/compare.html:43
-#: templates/policies/review_policy.html:30
-#: templates/policies/versions.html:40 templates/users/progress.html:170
+#: templates/policies/review_policy.html:30 templates/policies/versions.html:40
+#: templates/users/progress.html:170
 msgid "Version"
 msgstr "الإصدار"
 
@@ -5440,8 +5271,7 @@ msgstr "تسجيل الدخول"
 #: templates/ghe/public_status_lookup.html:20
 #: templates/ghe/public_submit.html:21 templates/ghe/public_thank_you.html:26
 #: templates/merchant_kyc/public_form.html:33 templates/partials/footer.html:7
-#: templates/partials/navbar.html:10
-#: templates/portal/already_submitted.html:43
+#: templates/partials/navbar.html:10 templates/portal/already_submitted.html:43
 #: templates/portal/annual_cobec.html:26 templates/portal/annual_coi.html:26
 #: templates/portal/base.html:419 templates/portal/base.html:421
 #: templates/portal/base.html:529 templates/portal/coi_pin_verify.html:38
@@ -5460,12 +5290,8 @@ msgid "Secure. Compliant. Digital."
 msgstr "آمنة. متوافقة. رقمية."
 
 #: templates/auth/login.html:339
-msgid ""
-"Unified compliance command center — screening, AML, governance &amp; "
-"reporting in one platform"
-msgstr ""
-"مركز قيادة امتثال موحد — الفحص ومكافحة غسل الأموال والحوكمة والتقارير في "
-"منصة واحدة"
+msgid "Unified compliance command center — screening, AML, governance &amp; reporting in one platform"
+msgstr "مركز قيادة امتثال موحد — الفحص ومكافحة غسل الأموال والحوكمة والتقارير في منصة واحدة"
 
 #: templates/auth/login.html:340
 msgid "Sanctions &amp; PEP screening with native Arabic name normalization"
@@ -5473,14 +5299,11 @@ msgstr "فحص العقوبات والأشخاص المعرضين سياسيًا
 
 #: templates/auth/login.html:341
 msgid "Integrated digital eKYC, GHE, COI &amp; whistleblowing workflows"
-msgstr ""
-"سير عمل رقمي متكامل لاعرف عميلك والهدايا وتعارض المصالح والإبلاغ عن "
-"المخالفات"
+msgstr "سير عمل رقمي متكامل لاعرف عميلك والهدايا وتعارض المصالح والإبلاغ عن المخالفات"
 
 #: templates/auth/login.html:342
 msgid "Built ground-up for CBE &amp; EMLCU regulatory alignment"
-msgstr ""
-"مبني من الأساس للتوافق مع البنك المركزي المصري ووحدة مكافحة غسل الأموال"
+msgstr "مبني من الأساس للتوافق مع البنك المركزي المصري ووحدة مكافحة غسل الأموال"
 
 #: templates/auth/login.html:343
 msgid "End-to-end audit trails &amp; risk-based decisioning, module to module"
@@ -5602,12 +5425,8 @@ msgid "Save these codes now."
 msgstr "احفظ هذه الرموز الآن."
 
 #: templates/auth/mfa_backup_codes.html:29
-msgid ""
-"They will not be shown again. Each code can only be used once to log in if "
-"you lose your phone."
-msgstr ""
-"لن تُعرض مرة أخرى. يمكن استخدام كل رمز مرة واحدة لتسجيل الدخول إذا فقدت "
-"هاتفك."
+msgid "They will not be shown again. Each code can only be used once to log in if you lose your phone."
+msgstr "لن تُعرض مرة أخرى. يمكن استخدام كل رمز مرة واحدة لتسجيل الدخول إذا فقدت هاتفك."
 
 #: templates/auth/mfa_backup_codes.html:40
 msgid "Copy all codes"
@@ -5662,11 +5481,8 @@ msgid "Activate &amp; Continue"
 msgstr "التفعيل والمتابعة"
 
 #: templates/auth/mfa_setup.html:79
-msgid ""
-"You will receive one-time backup codes on the next screen. Store them safely"
-" — they are shown"
-msgstr ""
-"ستتلقى رموزًا احتياطية لمرة واحدة في الشاشة التالية. احفظها بأمان — تُعرض"
+msgid "You will receive one-time backup codes on the next screen. Store them safely — they are shown"
+msgstr "ستتلقى رموزًا احتياطية لمرة واحدة في الشاشة التالية. احفظها بأمان — تُعرض"
 
 #: templates/auth/mfa_setup.html:79
 msgid "once only"
@@ -5938,8 +5754,7 @@ msgstr "ملاحظات إضافية"
 
 #: templates/blacklist/add.html:154 templates/blacklist/edit.html:169
 #: templates/blacklist/pep_add.html:154 templates/blacklist/pep_edit.html:169
-#: templates/governance/member_view.html:45
-#: templates/merchant_kyc/form.html:76
+#: templates/governance/member_view.html:45 templates/merchant_kyc/form.html:76
 #: templates/merchant_kyc/public_form.html:122
 #: templates/merchant_kyc/view.html:239
 msgid "Contact Information"
@@ -6309,29 +6124,16 @@ msgid "No period set"
 msgstr "لم يتم تحديد فترة"
 
 #: templates/carbon/dashboard.html:12
-msgid ""
-"A full Scope 1, 2 and 3 greenhouse-gas inventory built on the GHG Protocol "
-"Corporate Standard — the first carbon calculator purpose-built for an "
-"Egyptian payment service provider, with every figure traceable to the "
-"activity and emission factor behind it."
-msgstr ""
-"جرد كامل لانبعاثات غازات الاحتباس الحراري للنطاقات 1 و2 و3 مبني على معيار "
-"GHG Protocol للشركات — أول حاسبة كربونية مصممة خصيصاً لمزود خدمات دفع مصري، "
-"حيث يمكن تتبع كل رقم إلى النشاط ومعامل الانبعاث المستخدم في حسابه."
+msgid "A full Scope 1, 2 and 3 greenhouse-gas inventory built on the GHG Protocol Corporate Standard — the first carbon calculator purpose-built for an Egyptian payment service provider, with every figure traceable to the activity and emission factor behind it."
+msgstr "جرد كامل لانبعاثات غازات الاحتباس الحراري للنطاقات 1 و2 و3 مبني على معيار GHG Protocol للشركات — أول حاسبة كربونية مصممة خصيصاً لمزود خدمات دفع مصري، حيث يمكن تتبع كل رقم إلى النشاط ومعامل الانبعاث المستخدم في حسابه."
 
 #: templates/carbon/dashboard.html:13
 msgid "First of its kind for Egyptian PSPs"
 msgstr "الأول من نوعه لمزودي خدمات الدفع المصريين"
 
 #: templates/carbon/dashboard.html:19
-msgid ""
-"Reporting boundary: Scope 1 + Scope 2 (FRA 36/2026). Scope 3 is excluded — "
-"enable it in Carbon Settings if this engagement requires full GHG Protocol "
-"coverage."
-msgstr ""
-"حدود التقرير: النطاق ١ + النطاق ٢ (قرار الهيئة ٣٦/٢٠٢٦). النطاق ٣ مستبعد — "
-"فعّله في إعدادات الكربون إذا تطلبت هذه المهمة تغطية كاملة لبروتوكول الغازات "
-"الدفيئة."
+msgid "Reporting boundary: Scope 1 + Scope 2 (FRA 36/2026). Scope 3 is excluded — enable it in Carbon Settings if this engagement requires full GHG Protocol coverage."
+msgstr "حدود التقرير: النطاق ١ + النطاق ٢ (قرار الهيئة ٣٦/٢٠٢٦). النطاق ٣ مستبعد — فعّله في إعدادات الكربون إذا تطلبت هذه المهمة تغطية كاملة لبروتوكول الغازات الدفيئة."
 
 #: templates/carbon/dashboard.html:24 templates/carbon/entries_list.html:2
 #: templates/carbon/entries_list.html:8
@@ -6428,8 +6230,7 @@ msgstr "النطاق 3 حسب الفئة"
 #: templates/carbon/fra_compliance.html:120
 #: templates/carbon/fra_compliance.html:121
 #: templates/carbon/fra_compliance.html:122
-#: templates/carbon/fra_compliance.html:160
-#: templates/carbon/fra_report.html:75
+#: templates/carbon/fra_compliance.html:160 templates/carbon/fra_report.html:75
 msgid "tCO2e"
 msgstr "طن مكافئ CO2"
 
@@ -6455,11 +6256,8 @@ msgid "emission factor"
 msgstr "معامل الانبعاث"
 
 #: templates/carbon/dashboard.html:99
-msgid ""
-"Factors are sourced from DEFRA, IPCC AR6 and IEA, each dated and cited. See "
-"the"
-msgstr ""
-"المعاملات مستمدة من DEFRA وIPCC AR6 وIEA، وكل منها مؤرَّخ وموثَّق. راجع"
+msgid "Factors are sourced from DEFRA, IPCC AR6 and IEA, each dated and cited. See the"
+msgstr "المعاملات مستمدة من DEFRA وIPCC AR6 وIEA، وكل منها مؤرَّخ وموثَّق. راجع"
 
 #: templates/carbon/dashboard.html:100
 msgid "full methodology page"
@@ -6512,12 +6310,8 @@ msgid "Carbon Footprint"
 msgstr "البصمة الكربونية"
 
 #: templates/carbon/entries_list.html:9
-msgid ""
-"Every logged activity, with the exact quantity, factor, and calculated "
-"result — fully auditable."
-msgstr ""
-"كل نشاط مسجَّل، مع الكمية الدقيقة والمعامل والنتيجة المحسوبة — قابل للتدقيق "
-"بالكامل."
+msgid "Every logged activity, with the exact quantity, factor, and calculated result — fully auditable."
+msgstr "كل نشاط مسجَّل، مع الكمية الدقيقة والمعامل والنتيجة المحسوبة — قابل للتدقيق بالكامل."
 
 #: templates/carbon/entries_list.html:28 templates/carbon/factors.html:22
 #: templates/carbon/fra_report.html:41 templates/carbon/fra_report.html:75
@@ -6552,20 +6346,12 @@ msgid "Log an Activity"
 msgstr "تسجيل نشاط"
 
 #: templates/carbon/entry_form.html:9
-msgid ""
-"Select the emission factor that matches the activity, enter the quantity, "
-"and the tCO2e is calculated automatically — nothing is typed in by hand."
-msgstr ""
-"اختر معامل الانبعاث المطابق للنشاط، أدخل الكمية، ويتم احتساب الطن المكافئ من"
-" CO2 تلقائياً — لا شيء يُكتب يدوياً."
+msgid "Select the emission factor that matches the activity, enter the quantity, and the tCO2e is calculated automatically — nothing is typed in by hand."
+msgstr "اختر معامل الانبعاث المطابق للنشاط، أدخل الكمية، ويتم احتساب الطن المكافئ من CO2 تلقائياً — لا شيء يُكتب يدوياً."
 
 #: templates/carbon/entry_form.html:13
-msgid ""
-"No open reporting period exists yet. Ask an administrator to create one "
-"before logging activity."
-msgstr ""
-"لا توجد فترة إبلاغ مفتوحة حالياً. يرجى مطالبة أحد المسؤولين بإنشاء واحدة قبل"
-" تسجيل أي نشاط."
+msgid "No open reporting period exists yet. Ask an administrator to create one before logging activity."
+msgstr "لا توجد فترة إبلاغ مفتوحة حالياً. يرجى مطالبة أحد المسؤولين بإنشاء واحدة قبل تسجيل أي نشاط."
 
 #: templates/carbon/entry_form.html:19
 msgid "Emission Factor / Activity"
@@ -6623,27 +6409,16 @@ msgid "Why we ask this"
 msgstr "لماذا نطلب هذا"
 
 #: templates/carbon/entry_form.html:79
-msgid ""
-"Choosing the right factor matters more than the number you type — the "
-"emission factor already encodes the fuel/energy type, its source, and the "
-"year it applies to. Every factor is versioned, so past entries never "
-"silently change when a newer factor is added."
-msgstr ""
-"اختيار المعامل الصحيح أهم من الرقم الذي تكتبه — فمعامل الانبعاث يتضمن بالفعل"
-" نوع الوقود/الطاقة ومصدره والسنة التي ينطبق عليها. كل معامل له إصدار مرقّم، "
-"لذا لا تتغير السجلات السابقة بصمت عند إضافة معامل أحدث."
+msgid "Choosing the right factor matters more than the number you type — the emission factor already encodes the fuel/energy type, its source, and the year it applies to. Every factor is versioned, so past entries never silently change when a newer factor is added."
+msgstr "اختيار المعامل الصحيح أهم من الرقم الذي تكتبه — فمعامل الانبعاث يتضمن بالفعل نوع الوقود/الطاقة ومصدره والسنة التي ينطبق عليها. كل معامل له إصدار مرقّم، لذا لا تتغير السجلات السابقة بصمت عند إضافة معامل أحدث."
 
 #: templates/carbon/entry_form.html:80
 msgid "Browse the full factor library →"
 msgstr "تصفح مكتبة المعاملات الكاملة ←"
 
 #: templates/carbon/factors.html:9
-msgid ""
-"Every factor used anywhere in this module, with its source, vintage year, "
-"and citation — full transparency, nothing hidden in a spreadsheet cell."
-msgstr ""
-"كل معامل مستخدم في أي مكان بهذه الوحدة، مع مصدره وسنة إصداره ومرجعه — شفافية"
-" كاملة، لا شيء مخفي في خلية جدول بيانات."
+msgid "Every factor used anywhere in this module, with its source, vintage year, and citation — full transparency, nothing hidden in a spreadsheet cell."
+msgstr "كل معامل مستخدم في أي مكان بهذه الوحدة، مع مصدره وسنة إصداره ومرجعه — شفافية كاملة، لا شيء مخفي في خلية جدول بيانات."
 
 #: templates/carbon/factors.html:22
 msgid "Factor"
@@ -6672,12 +6447,8 @@ msgstr "لا توجد فترة"
 
 #: templates/carbon/fra_compliance.html:12
 #, python-format
-msgid ""
-"Annual carbon report, accredited verification, and the 20%% offset "
-"obligation — the full legal cycle in one place."
-msgstr ""
-"تقرير كربون سنوي وتحقق معتمد والتزام تعويض ٢٠%% — الدورة القانونية الكاملة "
-"في مكان واحد."
+msgid "Annual carbon report, accredited verification, and the 20%% offset obligation — the full legal cycle in one place."
+msgstr "تقرير كربون سنوي وتحقق معتمد والتزام تعويض ٢٠%% — الدورة القانونية الكاملة في مكان واحد."
 
 #: templates/carbon/fra_compliance.html:16
 msgid "No reporting period exists yet. Create one in the ESG module first."
@@ -6743,10 +6514,8 @@ msgid "Compliance calendar"
 msgstr "تقويم الامتثال"
 
 #: templates/carbon/fra_compliance.html:92
-msgid ""
-"Set your fiscal year end in Carbon Settings to activate deadline tracking."
-msgstr ""
-"حدد نهاية سنتك المالية في إعدادات الكربون لتفعيل تتبع المواعيد النهائية."
+msgid "Set your fiscal year end in Carbon Settings to activate deadline tracking."
+msgstr "حدد نهاية سنتك المالية في إعدادات الكربون لتفعيل تتبع المواعيد النهائية."
 
 #: templates/carbon/fra_compliance.html:100
 msgid "Verification readiness"
@@ -6766,12 +6535,8 @@ msgid "Entries reviewed / signed-off"
 msgstr "المدخلات المراجعة / المعتمدة"
 
 #: templates/carbon/fra_compliance.html:110
-msgid ""
-"The accredited verifier will sample evidence — attach bills/invoices at "
-"entry time, not at verification time."
-msgstr ""
-"ستعاين جهة التحقق المعتمدة عينة من الأدلة — أرفق الفواتير عند الإدخال لا عند"
-" التحقق."
+msgid "The accredited verifier will sample evidence — attach bills/invoices at entry time, not at verification time."
+msgstr "ستعاين جهة التحقق المعتمدة عينة من الأدلة — أرفق الفواتير عند الإدخال لا عند التحقق."
 
 #: templates/carbon/fra_compliance.html:117
 msgid "Declared emissions (current boundary)"
@@ -6795,10 +6560,8 @@ msgstr "النطاق ٣: مستبعد من حدود التقرير"
 
 #: templates/carbon/fra_compliance.html:131
 #, python-format
-msgid ""
-"Offset obligation (20%% of declared emissions, within 90 days of submission)"
-msgstr ""
-"التزام التعويض (٢٠%% من الانبعاثات المُقرّة، خلال ٩٠ يومًا من الإرسال)"
+msgid "Offset obligation (20%% of declared emissions, within 90 days of submission)"
+msgstr "التزام التعويض (٢٠%% من الانبعاثات المُقرّة، خلال ٩٠ يومًا من الإرسال)"
 
 #: templates/carbon/fra_compliance.html:135
 #: templates/portal/policy_list.html:51
@@ -6852,15 +6615,8 @@ msgstr "السجل"
 
 #: templates/carbon/fra_compliance.html:205
 #, python-format
-msgid ""
-"The obligation is created automatically the moment the report status is "
-"moved to Submitted: 20%% of the declared total, due within 90 days. "
-"Certificates are purchased through the FRA Climate Project Registry in the "
-"regulated voluntary carbon market."
-msgstr ""
-"يُنشأ الالتزام تلقائيًا بمجرد نقل حالة التقرير إلى «مُرسل»: ٢٠%% من الإجمالي"
-" المُقرّ، مستحقة خلال ٩٠ يومًا. تُشترى الشهادات عبر سجل مشروعات المناخ "
-"بالهيئة في سوق الكربون الطوعي المنظم."
+msgid "The obligation is created automatically the moment the report status is moved to Submitted: 20%% of the declared total, due within 90 days. Certificates are purchased through the FRA Climate Project Registry in the regulated voluntary carbon market."
+msgstr "يُنشأ الالتزام تلقائيًا بمجرد نقل حالة التقرير إلى «مُرسل»: ٢٠%% من الإجمالي المُقرّ، مستحقة خلال ٩٠ يومًا. تُشترى الشهادات عبر سجل مشروعات المناخ بالهيئة في سوق الكربون الطوعي المنظم."
 
 #: templates/carbon/fra_report.html:2
 msgid "FRA Annual Carbon Footprint Report"
@@ -6868,12 +6624,8 @@ msgstr "تقرير البصمة الكربونية السنوي للهيئة ا�
 
 #: templates/carbon/fra_report.html:23
 #, python-format
-msgid ""
-"Completeness: %(r)s%% reviewed, %(e)s%% with evidence — the verifier may "
-"query unreviewed or unevidenced entries."
-msgstr ""
-"الاكتمال: %(r)s%% تمت مراجعتها، %(e)s%% بأدلة — قد تستفسر جهة التحقق عن "
-"المدخلات غير المراجعة أو غير المدعمة بأدلة."
+msgid "Completeness: %(r)s%% reviewed, %(e)s%% with evidence — the verifier may query unreviewed or unevidenced entries."
+msgstr "الاكتمال: %(r)s%% تمت مراجعتها، %(e)s%% بأدلة — قد تستفسر جهة التحقق عن المدخلات غير المراجعة أو غير المدعمة بأدلة."
 
 #: templates/carbon/fra_report.html:26
 #: templates/governance/annual_board_report.html:29
@@ -6889,16 +6641,11 @@ msgstr "تقرير البصمة الكربونية السنوي"
 
 #: templates/carbon/fra_report.html:32
 msgid "Prepared pursuant to FRA Board Decision No. 36 of 2026"
-msgstr ""
-"أُعد عملاً بقرار مجلس إدارة الهيئة العامة للرقابة المالية رقم ٣٦ لسنة ٢٠٢٦"
+msgstr "أُعد عملاً بقرار مجلس إدارة الهيئة العامة للرقابة المالية رقم ٣٦ لسنة ٢٠٢٦"
 
 #: templates/carbon/fra_report.html:33
-msgid ""
-"تقرير البصمة الكربونية السنوي — إعمالاً لقرار مجلس إدارة الهيئة العامة "
-"للرقابة المالية رقم ٣٦ لسنة ٢٠٢٦"
-msgstr ""
-"تقرير البصمة الكربونية السنوي — إعمالاً لقرار مجلس إدارة الهيئة العامة "
-"للرقابة المالية رقم ٣٦ لسنة ٢٠٢٦"
+msgid "تقرير البصمة الكربونية السنوي — إعمالاً لقرار مجلس إدارة الهيئة العامة للرقابة المالية رقم ٣٦ لسنة ٢٠٢٦"
+msgstr "تقرير البصمة الكربونية السنوي — إعمالاً لقرار مجلس إدارة الهيئة العامة للرقابة المالية رقم ٣٦ لسنة ٢٠٢٦"
 
 #: templates/carbon/fra_report.html:34
 msgid "Reporting period:"
@@ -6917,11 +6664,8 @@ msgid "Direct emissions — fuel combustion, owned vehicles, operations"
 msgstr "الانبعاثات المباشرة — احتراق الوقود، المركبات المملوكة، العمليات"
 
 #: templates/carbon/fra_report.html:48
-msgid ""
-"Indirect emissions — purchased electricity, cooling and heating (location-"
-"based)"
-msgstr ""
-"الانبعاثات غير المباشرة — الكهرباء المشتراة والتبريد والتدفئة (حسب الموقع)"
+msgid "Indirect emissions — purchased electricity, cooling and heating (location-based)"
+msgstr "الانبعاثات غير المباشرة — الكهرباء المشتراة والتبريد والتدفئة (حسب الموقع)"
 
 #: templates/carbon/fra_report.html:51
 msgid "Value-chain emissions (assessed categories)"
@@ -6936,13 +6680,8 @@ msgid "2. Organizational and operational boundary"
 msgstr "٢. الحدود التنظيمية والتشغيلية"
 
 #: templates/carbon/fra_report.html:58
-msgid ""
-"This inventory was prepared following the GHG Protocol Corporate Accounting "
-"and Reporting Standard (operational control approach) and the measurement "
-"scope required by FRA Decision 36/2026."
-msgstr ""
-"أُعد هذا السجل وفقًا لمعيار بروتوكول الغازات الدفيئة للمحاسبة والتقارير "
-"المؤسسية (منهج السيطرة التشغيلية) ونطاق القياس المطلوب بقرار الهيئة ٣٦/٢٠٢٦."
+msgid "This inventory was prepared following the GHG Protocol Corporate Accounting and Reporting Standard (operational control approach) and the measurement scope required by FRA Decision 36/2026."
+msgstr "أُعد هذا السجل وفقًا لمعيار بروتوكول الغازات الدفيئة للمحاسبة والتقارير المؤسسية (منهج السيطرة التشغيلية) ونطاق القياس المطلوب بقرار الهيئة ٣٦/٢٠٢٦."
 
 #: templates/carbon/fra_report.html:60
 #, python-format
@@ -6963,25 +6702,16 @@ msgid "Scope 2 (purchased energy): %(s)s"
 msgstr "النطاق ٢ (الطاقة المشتراة): %(s)s"
 
 #: templates/carbon/fra_report.html:64
-msgid ""
-"Scope 3 (value chain): INCLUDED — assessed categories are listed in the "
-"annex. Categories not listed were not assessed in this period."
-msgstr ""
-"النطاق ٣ (سلسلة القيمة): مُدرج — الفئات المقيّمة مذكورة في الملحق. الفئات "
-"غير المذكورة لم تُقيّم في هذه الفترة."
+msgid "Scope 3 (value chain): INCLUDED — assessed categories are listed in the annex. Categories not listed were not assessed in this period."
+msgstr "النطاق ٣ (سلسلة القيمة): مُدرج — الفئات المقيّمة مذكورة في الملحق. الفئات غير المذكورة لم تُقيّم في هذه الفترة."
 
 #: templates/carbon/fra_report.html:66
-msgid ""
-"Scope 3 (value chain): EXCLUDED from the reporting boundary for this period."
+msgid "Scope 3 (value chain): EXCLUDED from the reporting boundary for this period."
 msgstr "النطاق ٣ (سلسلة القيمة): مستبعد من حدود التقرير لهذه الفترة."
 
 #: templates/carbon/fra_report.html:67
-msgid ""
-"This exclusion is declared explicitly in line with GHG Protocol boundary-"
-"setting guidance. FRA Decision 36/2026 requires Scope 1 and Scope 2 only."
-msgstr ""
-"يُعلن هذا الاستبعاد صراحةً تماشيًا مع إرشادات تحديد الحدود ببروتوكول الغازات"
-" الدفيئة. يتطلب قرار الهيئة ٣٦/٢٠٢٦ النطاقين ١ و٢ فقط."
+msgid "This exclusion is declared explicitly in line with GHG Protocol boundary-setting guidance. FRA Decision 36/2026 requires Scope 1 and Scope 2 only."
+msgstr "يُعلن هذا الاستبعاد صراحةً تماشيًا مع إرشادات تحديد الحدود ببروتوكول الغازات الدفيئة. يتطلب قرار الهيئة ٣٦/٢٠٢٦ النطاقين ١ و٢ فقط."
 
 #: templates/carbon/fra_report.html:72
 msgid "3. Emissions by category (annex)"
@@ -7000,16 +6730,8 @@ msgid "4. Methodology and emission factors"
 msgstr "٤. المنهجية ومعاملات الانبعاث"
 
 #: templates/carbon/fra_report.html:87
-msgid ""
-"Emissions were calculated as activity quantity × emission factor, in tonnes "
-"of CO2 equivalent (tCO2e). Every figure in this report is traceable in "
-"ComplyNex to the underlying activity entry, its supporting evidence, and the"
-" exact emission factor (source and vintage) applied."
-msgstr ""
-"حُسبت الانبعاثات بضرب كمية النشاط في معامل الانبعاث، بالأطنان المكافئة لثاني"
-" أكسيد الكربون. كل رقم في هذا التقرير قابل للتتبع في ComplyNex إلى مدخل "
-"النشاط الأساسي ودليله الداعم ومعامل الانبعاث المطبق بالضبط (المصدر وسنة "
-"الإصدار)."
+msgid "Emissions were calculated as activity quantity × emission factor, in tonnes of CO2 equivalent (tCO2e). Every figure in this report is traceable in ComplyNex to the underlying activity entry, its supporting evidence, and the exact emission factor (source and vintage) applied."
+msgstr "حُسبت الانبعاثات بضرب كمية النشاط في معامل الانبعاث، بالأطنان المكافئة لثاني أكسيد الكربون. كل رقم في هذا التقرير قابل للتتبع في ComplyNex إلى مدخل النشاط الأساسي ودليله الداعم ومعامل الانبعاث المطبق بالضبط (المصدر وسنة الإصدار)."
 
 #: templates/carbon/fra_report.html:88
 msgid "Factor sources used:"
@@ -7049,28 +6771,13 @@ msgstr "٦. التزام التعويض الكربوني"
 
 #: templates/carbon/fra_report.html:107
 #, python-format
-msgid ""
-"Pursuant to FRA Decision 36/2026, the company commits to purchasing "
-"certified emission-reduction certificates equal to 20%% of the total "
-"emissions declared above (%(req)s tCO2e) through the FRA Climate Project "
-"Registry within 90 days of report submission (deadline: %(dl)s)."
-msgstr ""
-"عملاً بقرار الهيئة ٣٦/٢٠٢٦، تلتزم الشركة بشراء شهادات خفض انبعاثات معتمدة "
-"تعادل ٢٠%% من إجمالي الانبعاثات المُقرّة أعلاه (%(req)s طن مكافئ CO2) عبر "
-"سجل مشروعات المناخ بالهيئة خلال ٩٠ يومًا من إرسال التقرير (الموعد النهائي: "
-"%(dl)s)."
+msgid "Pursuant to FRA Decision 36/2026, the company commits to purchasing certified emission-reduction certificates equal to 20%% of the total emissions declared above (%(req)s tCO2e) through the FRA Climate Project Registry within 90 days of report submission (deadline: %(dl)s)."
+msgstr "عملاً بقرار الهيئة ٣٦/٢٠٢٦، تلتزم الشركة بشراء شهادات خفض انبعاثات معتمدة تعادل ٢٠%% من إجمالي الانبعاثات المُقرّة أعلاه (%(req)s طن مكافئ CO2) عبر سجل مشروعات المناخ بالهيئة خلال ٩٠ يومًا من إرسال التقرير (الموعد النهائي: %(dl)s)."
 
 #: templates/carbon/fra_report.html:109
 #, python-format
-msgid ""
-"Upon submission of this report, the company will purchase certified "
-"emission-reduction certificates equal to 20%% of the total declared "
-"emissions (%(est)s tCO2e estimated) through the FRA Climate Project Registry"
-" within the 90-day statutory window."
-msgstr ""
-"عند إرسال هذا التقرير، ستشتري الشركة شهادات خفض انبعاثات معتمدة تعادل ٢٠%% "
-"من إجمالي الانبعاثات المُقرّة (%(est)s طن مكافئ CO2 تقديريًا) عبر سجل "
-"مشروعات المناخ بالهيئة خلال المهلة القانونية البالغة ٩٠ يومًا."
+msgid "Upon submission of this report, the company will purchase certified emission-reduction certificates equal to 20%% of the total declared emissions (%(est)s tCO2e estimated) through the FRA Climate Project Registry within the 90-day statutory window."
+msgstr "عند إرسال هذا التقرير، ستشتري الشركة شهادات خفض انبعاثات معتمدة تعادل ٢٠%% من إجمالي الانبعاثات المُقرّة (%(est)s طن مكافئ CO2 تقديريًا) عبر سجل مشروعات المناخ بالهيئة خلال المهلة القانونية البالغة ٩٠ يومًا."
 
 #: templates/carbon/fra_report.html:114
 msgid "Prepared by (Compliance)"
@@ -7085,41 +6792,24 @@ msgid "Calculation Methodology"
 msgstr "منهجية الاحتساب"
 
 #: templates/carbon/methodology.html:9
-msgid ""
-"How every number in this module is produced — in plain language, so anyone "
-"on the team can explain a figure without needing a carbon-accounting "
-"background."
-msgstr ""
-"كيف يتم إنتاج كل رقم في هذه الوحدة — بلغة بسيطة، بحيث يستطيع أي فرد في "
-"الفريق شرح الرقم دون الحاجة لخلفية في محاسبة الكربون."
+msgid "How every number in this module is produced — in plain language, so anyone on the team can explain a figure without needing a carbon-accounting background."
+msgstr "كيف يتم إنتاج كل رقم في هذه الوحدة — بلغة بسيطة، بحيث يستطيع أي فرد في الفريق شرح الرقم دون الحاجة لخلفية في محاسبة الكربون."
 
 #: templates/carbon/methodology.html:15
 msgid "The core formula"
 msgstr "المعادلة الأساسية"
 
 #: templates/carbon/methodology.html:16
-msgid ""
-"Every activity entry (a litre of diesel, a kWh of electricity, a flight) is "
-"converted to carbon dioxide equivalent (CO2e) using one formula, applied "
-"consistently everywhere in this module:"
-msgstr ""
-"يتم تحويل كل إدخال نشاط (لتر ديزل، كيلوواط ساعة كهرباء، رحلة طيران) إلى ما "
-"يعادل ثاني أكسيد الكربون (CO2e) باستخدام معادلة واحدة، تُطبَّق بثبات في كل "
-"أنحاء هذه الوحدة:"
+msgid "Every activity entry (a litre of diesel, a kWh of electricity, a flight) is converted to carbon dioxide equivalent (CO2e) using one formula, applied consistently everywhere in this module:"
+msgstr "يتم تحويل كل إدخال نشاط (لتر ديزل، كيلوواط ساعة كهرباء، رحلة طيران) إلى ما يعادل ثاني أكسيد الكربون (CO2e) باستخدام معادلة واحدة، تُطبَّق بثبات في كل أنحاء هذه الوحدة:"
 
 #: templates/carbon/methodology.html:17
 msgid "tCO2e = (Activity Quantity × Emission Factor) ÷ 1000"
 msgstr "طن مكافئ CO2 = (كمية النشاط × معامل الانبعاث) ÷ ١٠٠٠"
 
 #: templates/carbon/methodology.html:18
-msgid ""
-"The emission factor converts a physical quantity (litres, kWh, km, kg) into "
-"kilograms of CO2-equivalent. Dividing by 1000 converts kilograms to tonnes, "
-"the standard unit for corporate GHG reporting."
-msgstr ""
-"يحوّل معامل الانبعاث كمية فيزيائية (لتر، كيلوواط ساعة، كم، كجم) إلى "
-"كيلوجرامات مكافئة من CO2. والقسمة على 1000 تحوّل الكيلوجرامات إلى أطنان، وهي"
-" الوحدة المعيارية للإبلاغ المؤسسي عن غازات الاحتباس الحراري."
+msgid "The emission factor converts a physical quantity (litres, kWh, km, kg) into kilograms of CO2-equivalent. Dividing by 1000 converts kilograms to tonnes, the standard unit for corporate GHG reporting."
+msgstr "يحوّل معامل الانبعاث كمية فيزيائية (لتر، كيلوواط ساعة، كم، كجم) إلى كيلوجرامات مكافئة من CO2. والقسمة على 1000 تحوّل الكيلوجرامات إلى أطنان، وهي الوحدة المعيارية للإبلاغ المؤسسي عن غازات الاحتباس الحراري."
 
 #: templates/carbon/methodology.html:22
 msgid "The three Scopes (GHG Protocol)"
@@ -7130,55 +6820,32 @@ msgid "SCOPE 1"
 msgstr "النطاق ١"
 
 #: templates/carbon/methodology.html:24
-msgid ""
-"Direct emissions from sources the company owns or controls — company "
-"vehicles, on-site generators, refrigerant leaks."
-msgstr ""
-"انبعاثات مباشرة من مصادر تملكها الشركة أو تتحكم بها — سيارات الشركة، "
-"المولدات الموقعية، تسرّبات غاز التبريد."
+msgid "Direct emissions from sources the company owns or controls — company vehicles, on-site generators, refrigerant leaks."
+msgstr "انبعاثات مباشرة من مصادر تملكها الشركة أو تتحكم بها — سيارات الشركة، المولدات الموقعية، تسرّبات غاز التبريد."
 
 #: templates/carbon/methodology.html:25
 msgid "SCOPE 2"
 msgstr "النطاق ٢"
 
 #: templates/carbon/methodology.html:25
-msgid ""
-"Indirect emissions from purchased electricity, heat, steam or cooling. "
-"Reported two ways: location-based (grid average) and market-based (your "
-"actual electricity contracts, e.g. a renewable PPA)."
-msgstr ""
-"انبعاثات غير مباشرة من الكهرباء أو الحرارة أو البخار أو التبريد المُشتراة. "
-"تُبلَّغ بطريقتين: على أساس الموقع (متوسط الشبكة) وعلى أساس السوق (عقود "
-"الكهرباء الفعلية، مثل اتفاقية شراء طاقة متجددة)."
+msgid "Indirect emissions from purchased electricity, heat, steam or cooling. Reported two ways: location-based (grid average) and market-based (your actual electricity contracts, e.g. a renewable PPA)."
+msgstr "انبعاثات غير مباشرة من الكهرباء أو الحرارة أو البخار أو التبريد المُشتراة. تُبلَّغ بطريقتين: على أساس الموقع (متوسط الشبكة) وعلى أساس السوق (عقود الكهرباء الفعلية، مثل اتفاقية شراء طاقة متجددة)."
 
 #: templates/carbon/methodology.html:26
 msgid "SCOPE 3"
 msgstr "النطاق ٣"
 
 #: templates/carbon/methodology.html:26
-msgid ""
-"Everything else in the value chain — business travel, employee commuting, "
-"purchased goods, waste, and 12 other categories defined by the GHG Protocol "
-"Scope 3 Standard."
-msgstr ""
-"كل ما عدا ذلك في سلسلة القيمة — سفر العمل، تنقلات الموظفين، السلع المشتراة، "
-"النفايات، و12 فئة أخرى معرّفة بمعيار GHG Protocol للنطاق 3."
+msgid "Everything else in the value chain — business travel, employee commuting, purchased goods, waste, and 12 other categories defined by the GHG Protocol Scope 3 Standard."
+msgstr "كل ما عدا ذلك في سلسلة القيمة — سفر العمل، تنقلات الموظفين، السلع المشتراة، النفايات، و12 فئة أخرى معرّفة بمعيار GHG Protocol للنطاق 3."
 
 #: templates/carbon/methodology.html:31
 msgid "Year-on-year comparison"
 msgstr "المقارنة السنوية"
 
 #: templates/carbon/methodology.html:32
-msgid ""
-"YoY change is only ever calculated against a prior period's closed, stored "
-"total — never a live recalculation of an open period. This avoids a moving-"
-"target comparison, which was one of the errors found in the earlier "
-"consultant-built spreadsheets this module replaces."
-msgstr ""
-"يُحتسب التغير السنوي دائماً مقارنة بإجمالي مخزَّن ومغلَق لفترة سابقة — وليس "
-"إعادة احتساب حي لفترة مفتوحة. هذا يتجنب مقارنة الهدف المتحرك، وهي إحدى "
-"الأخطاء التي وُجدت في جداول البيانات السابقة التي أعدها الاستشاريون والتي "
-"تحل هذه الوحدة محلها."
+msgid "YoY change is only ever calculated against a prior period's closed, stored total — never a live recalculation of an open period. This avoids a moving-target comparison, which was one of the errors found in the earlier consultant-built spreadsheets this module replaces."
+msgstr "يُحتسب التغير السنوي دائماً مقارنة بإجمالي مخزَّن ومغلَق لفترة سابقة — وليس إعادة احتساب حي لفترة مفتوحة. هذا يتجنب مقارنة الهدف المتحرك، وهي إحدى الأخطاء التي وُجدت في جداول البيانات السابقة التي أعدها الاستشاريون والتي تحل هذه الوحدة محلها."
 
 #: templates/carbon/methodology.html:38
 msgid "Factor sources in this library"
@@ -7193,30 +6860,16 @@ msgid "Known limitations (read before external disclosure)"
 msgstr "قيود معروفة (يُقرأ قبل أي إفصاح خارجي)"
 
 #: templates/carbon/methodology.html:50
-msgid ""
-"The Egypt grid electricity factor is an indicative estimate pending an "
-"official EgyptERA/EETC published factor."
-msgstr ""
-"معامل كهرباء الشبكة المصرية تقدير إرشادي في انتظار نشر معامل رسمي من جهاز "
-"تنظيم مرفق الكهرباء / الشركة المصرية لنقل الكهرباء."
+msgid "The Egypt grid electricity factor is an indicative estimate pending an official EgyptERA/EETC published factor."
+msgstr "معامل كهرباء الشبكة المصرية تقدير إرشادي في انتظار نشر معامل رسمي من جهاز تنظيم مرفق الكهرباء / الشركة المصرية لنقل الكهرباء."
 
 #: templates/carbon/methodology.html:51
-msgid ""
-"The purchased-goods (Category 1) spend-based factor is a generic placeholder"
-" — validate against a sector-specific dataset before using it in a signed-"
-"off report."
-msgstr ""
-"معامل السلع المشتراة (الفئة 1) على أساس الإنفاق هو قيمة عامة مؤقتة — يجب "
-"التحقق منه مقابل بيانات خاصة بالقطاع قبل استخدامه في تقرير معتمد."
+msgid "The purchased-goods (Category 1) spend-based factor is a generic placeholder — validate against a sector-specific dataset before using it in a signed-off report."
+msgstr "معامل السلع المشتراة (الفئة 1) على أساس الإنفاق هو قيمة عامة مؤقتة — يجب التحقق منه مقابل بيانات خاصة بالقطاع قبل استخدامه في تقرير معتمد."
 
 #: templates/carbon/methodology.html:52
-msgid ""
-"Scope 3 categories with no logged activity are simply absent from totals, "
-"not assumed to be zero — check the factor library for full category "
-"coverage."
-msgstr ""
-"فئات النطاق 3 التي لم يُسجَّل لها نشاط تكون غائبة ببساطة عن الإجماليات، ولا "
-"تُفترض صفراً — راجع مكتبة المعاملات للاطلاع على التغطية الكاملة للفئات."
+msgid "Scope 3 categories with no logged activity are simply absent from totals, not assumed to be zero — check the factor library for full category coverage."
+msgstr "فئات النطاق 3 التي لم يُسجَّل لها نشاط تكون غائبة ببساطة عن الإجماليات، ولا تُفترض صفراً — راجع مكتبة المعاملات للاطلاع على التغطية الكاملة للفئات."
 
 #: templates/carbon/settings.html:2 templates/partials/sidebar.html:547
 msgid "Carbon Settings"
@@ -7227,14 +6880,8 @@ msgid "Carbon Settings — Reporting Boundary"
 msgstr "إعدادات الكربون — حدود التقرير"
 
 #: templates/carbon/settings.html:12
-msgid ""
-"Choose which GHG scopes are inside the reporting boundary. The default "
-"(Scope 1 + 2) matches FRA Decision 36/2026 exactly; Scope 3 is international"
-" best practice (GHG Protocol / IFRS S2) and can be enabled per engagement."
-msgstr ""
-"اختر نطاقات الغازات الدفيئة الداخلة في حدود التقرير. الافتراضي (النطاق ١ + "
-"٢) يطابق قرار الهيئة ٣٦/٢٠٢٦ تمامًا؛ النطاق ٣ ممارسة دولية فضلى (بروتوكول "
-"الغازات الدفيئة / IFRS S2) ويمكن تفعيله لكل مهمة."
+msgid "Choose which GHG scopes are inside the reporting boundary. The default (Scope 1 + 2) matches FRA Decision 36/2026 exactly; Scope 3 is international best practice (GHG Protocol / IFRS S2) and can be enabled per engagement."
+msgstr "اختر نطاقات الغازات الدفيئة الداخلة في حدود التقرير. الافتراضي (النطاق ١ + ٢) يطابق قرار الهيئة ٣٦/٢٠٢٦ تمامًا؛ النطاق ٣ ممارسة دولية فضلى (بروتوكول الغازات الدفيئة / IFRS S2) ويمكن تفعيله لكل مهمة."
 
 #: templates/carbon/settings.html:18
 msgid "Reporting boundary (Scope selection)"
@@ -7261,12 +6908,8 @@ msgid "Scope 3 — Value chain (optional)"
 msgstr "النطاق ٣ — سلسلة القيمة (اختياري)"
 
 #: templates/carbon/settings.html:25
-msgid ""
-"Business travel, commuting, purchased goods & services, waste — 15 GHG "
-"Protocol categories."
-msgstr ""
-"سفر العمل، التنقل، السلع والخدمات المشتراة، النفايات — ١٥ فئة وفق بروتوكول "
-"الغازات الدفيئة."
+msgid "Business travel, commuting, purchased goods & services, waste — 15 GHG Protocol categories."
+msgstr "سفر العمل، التنقل، السلع والخدمات المشتراة، النفايات — ١٥ فئة وفق بروتوكول الغازات الدفيئة."
 
 #: templates/carbon/settings.html:31
 msgid "FRA required"
@@ -7278,12 +6921,8 @@ msgstr "أفضل ممارسة"
 
 #: templates/carbon/settings.html:35
 #, python-format
-msgid ""
-"%(n)s existing entries — data is preserved if you disable this scope and "
-"returns when re-enabled."
-msgstr ""
-"%(n)s مدخل قائم — تُحفظ البيانات إذا عطّلت هذا النطاق وتعود عند إعادة "
-"تفعيله."
+msgid "%(n)s existing entries — data is preserved if you disable this scope and returns when re-enabled."
+msgstr "%(n)s مدخل قائم — تُحفظ البيانات إذا عطّلت هذا النطاق وتعود عند إعادة تفعيله."
 
 #: templates/carbon/settings.html:42
 msgid "Company profile (FRA applicability)"
@@ -7350,47 +6989,24 @@ msgid "Carbon report + 20%% offsets (FRA 36/2026, ≥ EGP 100m)"
 msgstr "تقرير الكربون + تعويض ٢٠%% (قرار الهيئة ٣٦/٢٠٢٦، ≥ ١٠٠ مليون جنيه)"
 
 #: templates/carbon/settings.html:88
-msgid ""
-"This company is obligated under FRA 36/2026: compliance is a condition for "
-"keeping the operating license. Keep Scope 1 and Scope 2 enabled."
-msgstr ""
-"هذه الشركة ملزمة بقرار الهيئة ٣٦/٢٠٢٦: الامتثال شرط للاحتفاظ برخصة التشغيل. "
-"أبقِ النطاقين ١ و٢ مفعلين."
+msgid "This company is obligated under FRA 36/2026: compliance is a condition for keeping the operating license. Keep Scope 1 and Scope 2 enabled."
+msgstr "هذه الشركة ملزمة بقرار الهيئة ٣٦/٢٠٢٦: الامتثال شرط للاحتفاظ برخصة التشغيل. أبقِ النطاقين ١ و٢ مفعلين."
 
 #: templates/carbon/settings.html:95
-msgid ""
-"Enter issued capital or net equity and save — the system will tell you which"
-" FRA obligations apply."
-msgstr ""
-"أدخل رأس المال المصدر أو صافي حقوق الملكية واحفظ — سيخبرك النظام بالالتزامات"
-" المنطبقة."
+msgid "Enter issued capital or net equity and save — the system will tell you which FRA obligations apply."
+msgstr "أدخل رأس المال المصدر أو صافي حقوق الملكية واحفظ — سيخبرك النظام بالالتزامات المنطبقة."
 
 #: templates/carbon/settings.html:100
 msgid "Why the default is Scope 1 + 2"
 msgstr "سبب كون الافتراضي هو النطاق ١ + ٢"
 
 #: templates/carbon/settings.html:101
-msgid ""
-"FRA Decision 36/2026 mandates measurement of Scope 1 (direct) and Scope 2 "
-"(purchased energy) only. Scope 3 covers 15 value-chain categories that most "
-"companies cannot fully source — reporting a partial Scope 3 understates "
-"emissions and fails verification. When Scope 3 is disabled, the generated "
-"FRA report states the exclusion explicitly (a GHG Protocol boundary "
-"statement) instead of staying silent."
-msgstr ""
-"يفرض قرار الهيئة ٣٦/٢٠٢٦ قياس النطاق ١ (المباشر) والنطاق ٢ (الطاقة المشتراة)"
-" فقط. يغطي النطاق ٣ ١٥ فئة بسلسلة القيمة لا تستطيع معظم الشركات توفير "
-"بياناتها كاملة — والإبلاغ عن نطاق ٣ جزئي يقلل من تقدير الانبعاثات ويفشل في "
-"التحقق. عند تعطيل النطاق ٣، ينص تقرير الهيئة المُولَّد على الاستبعاد صراحةً "
-"(بيان حدود وفق بروتوكول الغازات الدفيئة) بدلًا من الصمت."
+msgid "FRA Decision 36/2026 mandates measurement of Scope 1 (direct) and Scope 2 (purchased energy) only. Scope 3 covers 15 value-chain categories that most companies cannot fully source — reporting a partial Scope 3 understates emissions and fails verification. When Scope 3 is disabled, the generated FRA report states the exclusion explicitly (a GHG Protocol boundary statement) instead of staying silent."
+msgstr "يفرض قرار الهيئة ٣٦/٢٠٢٦ قياس النطاق ١ (المباشر) والنطاق ٢ (الطاقة المشتراة) فقط. يغطي النطاق ٣ ١٥ فئة بسلسلة القيمة لا تستطيع معظم الشركات توفير بياناتها كاملة — والإبلاغ عن نطاق ٣ جزئي يقلل من تقدير الانبعاثات ويفشل في التحقق. عند تعطيل النطاق ٣، ينص تقرير الهيئة المُولَّد على الاستبعاد صراحةً (بيان حدود وفق بروتوكول الغازات الدفيئة) بدلًا من الصمت."
 
 #: templates/carbon/targets.html:9
-msgid ""
-"Set a baseline year and a science-aligned reduction ambition, and track "
-"progress automatically as new activity is logged each period."
-msgstr ""
-"حدد سنة خط الأساس وطموح خفض متوافق علمياً، وتابع التقدم تلقائياً مع تسجيل "
-"نشاط جديد كل فترة."
+msgid "Set a baseline year and a science-aligned reduction ambition, and track progress automatically as new activity is logged each period."
+msgstr "حدد سنة خط الأساس وطموح خفض متوافق علمياً، وتابع التقدم تلقائياً مع تسجيل نشاط جديد كل فترة."
 
 #: templates/carbon/targets.html:15
 msgid "Target Settings"
@@ -7574,8 +7190,7 @@ msgstr "تم التقديم"
 msgid "Not Submitted"
 msgstr "لم يتم الإرسال"
 
-#: templates/cobec/all_declarations.html:67
-#: templates/ghe/public_status.html:23
+#: templates/cobec/all_declarations.html:67 templates/ghe/public_status.html:23
 msgid "Declaration Status"
 msgstr "حالة الإقرار"
 
@@ -7624,8 +7239,7 @@ msgstr "إقرار مدونة قواعد السلوك والأخلاقيات ا�
 msgid ""
 "Please read and acknowledge the following statements regarding the Code of Business Ethics &\n"
 "        Conduct."
-msgstr ""
-"برجاء قراءة البيانات التالية والإقرار بها بشأن مدونة أخلاقيات وسلوك العمل."
+msgstr "برجاء قراءة البيانات التالية والإقرار بها بشأن مدونة أخلاقيات وسلوك العمل."
 
 #: templates/cobec/declare.html:20 templates/coi/declare.html:26
 msgid "Declaration Form"
@@ -7753,8 +7367,7 @@ msgid "By signing below, I confirm that:"
 msgstr "بالتوقيع أدناه، أؤكد أن:"
 
 #: templates/cobec/declare.html:201
-msgid ""
-"I have read and understood the ComplyNex Code of Business Ethics & Conduct."
+msgid "I have read and understood the ComplyNex Code of Business Ethics & Conduct."
 msgstr "قرأت وفهمت مدونة أخلاقيات وسلوك العمل الخاصة بـ ComplyNex."
 
 #: templates/cobec/declare.html:202
@@ -7774,8 +7387,7 @@ msgid "The information provided above is true and accurate."
 msgstr "المعلومات المقدمة أعلاه صحيحة ودقيقة."
 
 #: templates/cobec/declare.html:210
-msgid ""
-"I agree to the above statement and confirm my commitment to ethical conduct."
+msgid "I agree to the above statement and confirm my commitment to ethical conduct."
 msgstr "أوافق على البيان أعلاه وأؤكد التزامي بالسلوك الأخلاقي."
 
 #: templates/cobec/declare.html:217 templates/coi/declare.html:251
@@ -7841,8 +7453,7 @@ msgstr "مرفوض"
 #: templates/cobec/my_declarations.html:71
 #: templates/cobec/pending_review.html:40
 #: templates/coi/campaign_detail.html:137
-#: templates/coi/campaign_detail.html:196
-#: templates/coi/my_declarations.html:42
+#: templates/coi/campaign_detail.html:196 templates/coi/my_declarations.html:42
 #: templates/governance/fit_proper_form.html:126
 #: templates/merchant_kyc/form.html:184 templates/merchant_kyc/list.html:75
 #: templates/merchant_kyc/list.html:137 templates/portal/status.html:93
@@ -7933,12 +7544,11 @@ msgstr "لإرسال إقرار جديد، برجاء زيارة"
 #: templates/coi/campaign_detail.html:128
 #: templates/coi/campaign_detail.html:194 templates/coi/campaigns.html:38
 #: templates/reporting/reports_extended.html:129
-#: templates/screening/audit_log.html:28
-#: templates/screening/audit_log.html:112
+#: templates/screening/audit_log.html:28 templates/screening/audit_log.html:112
 #: templates/screening/screening_history_full.html:54
 #: templates/training/certificates.html:25
-#: templates/training/course_library.html:46
-#: templates/training/report.html:216 templates/training/report.html:262
+#: templates/training/course_library.html:46 templates/training/report.html:216
+#: templates/training/report.html:262
 msgid "Completed"
 msgstr "مكتمل"
 
@@ -7953,9 +7563,8 @@ msgstr "سجل الإقرارات"
 
 #: templates/cobec/my_declarations.html:53 templates/coi/campaigns.html:66
 #: templates/coi/campaigns.html:136 templates/coi/create_campaign.html:28
-#: templates/coi/my_declarations.html:77
-#: templates/internal_audit/plans.html:14 templates/portal/status.html:78
-#: templates/portal/status.html:128
+#: templates/coi/my_declarations.html:77 templates/internal_audit/plans.html:14
+#: templates/portal/status.html:78 templates/portal/status.html:128
 msgid "Year"
 msgstr "السنة"
 
@@ -8289,8 +7898,7 @@ msgid "Plan Details & Specific Controls"
 msgstr "تفاصيل الخطة والضوابط المحددة"
 
 #: templates/coi/create_mitigation.html:57
-msgid ""
-"Describe the specific steps, restrictions, or monitoring requirements..."
+msgid "Describe the specific steps, restrictions, or monitoring requirements..."
 msgstr "صف الخطوات أو القيود أو متطلبات المتابعة المحددة..."
 
 #: templates/coi/create_mitigation.html:62
@@ -8317,9 +7925,7 @@ msgstr "١. المصالح المالية"
 msgid ""
 "Do you have any financial interests (stocks, shares, investments) in\n"
 "                    companies that are competitors, suppliers, or business partners of ComplyNex?"
-msgstr ""
-"هل لديك أي مصالح مالية (أسهم، حصص، استثمارات) في شركات منافسة أو موردة أو "
-"شريكة لـ ComplyNex؟"
+msgstr "هل لديك أي مصالح مالية (أسهم، حصص، استثمارات) في شركات منافسة أو موردة أو شريكة لـ ComplyNex؟"
 
 #: templates/coi/declare.html:43 templates/coi/declare.html:76
 #: templates/coi/declare.html:109 templates/coi/declare.html:141
@@ -8345,8 +7951,7 @@ msgstr "٢. أفراد الأسرة لدى جهات منافسة"
 msgid ""
 "Do you have family members (spouse, parent, child, sibling) who work\n"
 "                    for a competitor of ComplyNex?"
-msgstr ""
-"هل لديك أفراد أسرة (زوج/ة، والد، ابن، أخ) يعملون لدى منافس لـ ComplyNex؟"
+msgstr "هل لديك أفراد أسرة (زوج/ة، والد، ابن، أخ) يعملون لدى منافس لـ ComplyNex؟"
 
 #: templates/coi/declare.html:93 templates/coi/declare.html:126
 msgid "Relationship, company name, position, etc."
@@ -8384,9 +7989,7 @@ msgstr "٥. الهدايا والمزايا"
 msgid ""
 "Have you received gifts, hospitality, or benefits from customers,\n"
 "                    suppliers, or business partners that were NOT declared through the GHE system?"
-msgstr ""
-"هل تلقيت هدايا أو ضيافة أو مزايا من عملاء أو موردين أو شركاء عمل لم يُفصح "
-"عنها عبر نظام الهدايا والضيافة؟"
+msgstr "هل تلقيت هدايا أو ضيافة أو مزايا من عملاء أو موردين أو شركاء عمل لم يُفصح عنها عبر نظام الهدايا والضيافة؟"
 
 #: templates/coi/declare.html:190
 msgid "Description, value, date, provider, etc."
@@ -8411,15 +8014,11 @@ msgid "I declare that:"
 msgstr "أقر بأن:"
 
 #: templates/coi/declare.html:232
-msgid ""
-"The information provided in this declaration is true and accurate to the "
-"best of my knowledge."
+msgid "The information provided in this declaration is true and accurate to the best of my knowledge."
 msgstr "المعلومات المقدمة في هذا الإقرار صحيحة ودقيقة على حد علمي."
 
 #: templates/coi/declare.html:234
-msgid ""
-"I understand that failure to disclose conflicts of interest may result in "
-"disciplinary action."
+msgid "I understand that failure to disclose conflicts of interest may result in disciplinary action."
 msgstr "أفهم أن عدم الإفصاح عن تعارض المصالح قد يؤدي إلى إجراء تأديبي."
 
 #: templates/coi/declare.html:236
@@ -8610,9 +8209,7 @@ msgstr "رقم الإقرار:"
 msgid ""
 "A mitigation plan is required because a potential conflict was disclosed by\n"
 "                    the employee and flagged during compliance review."
-msgstr ""
-"خطة التخفيف مطلوبة لأن الموظف أفصح عن تعارض محتمل وتم وسمه أثناء مراجعة "
-"الامتثال."
+msgstr "خطة التخفيف مطلوبة لأن الموظف أفصح عن تعارض محتمل وتم وسمه أثناء مراجعة الامتثال."
 
 #: templates/coi/mitigation_detail.html:107
 msgid "View Full Declaration"
@@ -8756,8 +8353,7 @@ msgstr "اكتب اسمك الكامل للتوقيع"
 msgid ""
 "By submitting this form, I certify that the information provided\n"
 "                                is true and complete to the best of my knowledge."
-msgstr ""
-"بإرسال هذا النموذج، أشهد بأن المعلومات المقدمة صحيحة وكاملة على حد علمي."
+msgstr "بإرسال هذا النموذج، أشهد بأن المعلومات المقدمة صحيحة وكاملة على حد علمي."
 
 #: templates/coi/public_thank_you.html:7
 msgid "Submission Received - ComplyNex"
@@ -8772,9 +8368,7 @@ msgid "Thank you for reporting your potential conflict of interest."
 msgstr "شكرًا لإبلاغك عن تعارض المصالح المحتمل."
 
 #: templates/coi/public_thank_you.html:31
-msgid ""
-"It has been securely logged and will be reviewed by your manager or the "
-"compliance office."
+msgid "It has been securely logged and will be reviewed by your manager or the compliance office."
 msgstr "تم تسجيله بأمان وسيراجعه مديرك أو مكتب الامتثال."
 
 #: templates/coi/public_thank_you.html:36
@@ -8988,8 +8582,7 @@ msgid "Detailed Description"
 msgstr "الوصف التفصيلي"
 
 #: templates/consumer_protection/public_form.html:100
-msgid ""
-"Please describe what happened, when it occurred, and any financial impact..."
+msgid "Please describe what happened, when it occurred, and any financial impact..."
 msgstr "يرجى وصف ما حدث، ووقت حدوثه، وأي تأثير مالي..."
 
 #: templates/consumer_protection/public_form.html:105
@@ -9005,9 +8598,7 @@ msgid "Supported: PDF, Images, Word (Max 5MB)"
 msgstr "المدعوم: PDF، صور، Word (الحد الأقصى 5 ميجابايت)"
 
 #: templates/consumer_protection/public_form.html:120
-msgid ""
-"I declare that the information provided is accurate to the best of my "
-"knowledge."
+msgid "I declare that the information provided is accurate to the best of my knowledge."
 msgstr "أُقرّ بأن المعلومات المقدمة دقيقة على حد علمي."
 
 #: templates/consumer_protection/public_form.html:127
@@ -9248,9 +8839,7 @@ msgstr "الإبلاغ لفريق الاستجابة للطوارئ السيبر
 msgid ""
 "High/Critical incidents trigger immediate escalation to\n"
 "                            the CBE SOC per Circular Dec 2023."
-msgstr ""
-"الحوادث عالية الخطورة أو الحرجة تُصعّد فورًا إلى مركز عمليات الأمن بالبنك "
-"المركزي وفق منشور ديسمبر ٢٠٢٣."
+msgstr "الحوادث عالية الخطورة أو الحرجة تُصعّد فورًا إلى مركز عمليات الأمن بالبنك المركزي وفق منشور ديسمبر ٢٠٢٣."
 
 #: templates/cyber/incident_form.html:26
 msgid "Malware Infection"
@@ -9306,9 +8895,7 @@ msgid "Incident Description & Impact"
 msgstr "وصف الحادث وأثره"
 
 #: templates/cyber/incident_form.html:49
-msgid ""
-"Describe the incident, affected systems, and any observed indicators of "
-"compromise (IoCs)."
+msgid "Describe the incident, affected systems, and any observed indicators of compromise (IoCs)."
 msgstr "صف الحادث والأنظمة المتأثرة وأي مؤشرات اختراق ملحوظة."
 
 #: templates/cyber/incident_form.html:56
@@ -9467,9 +9054,7 @@ msgid "Investigation Findings"
 msgstr "نتائج التحقيق"
 
 #: templates/data_protection/breach_detail.html:86
-msgid ""
-"Detail the technical investigation, affected data types, and confirmed "
-"impact..."
+msgid "Detail the technical investigation, affected data types, and confirmed impact..."
 msgstr "فصّل التحقيق الفني وأنواع البيانات المتأثرة والأثر المؤكد..."
 
 #: templates/data_protection/breach_detail.html:90
@@ -9595,8 +9180,7 @@ msgstr "يشمل بيانات حساسة (حيوية، صحية، هوية)"
 msgid ""
 "Severity and PDPC notification requirements will be automatically calculated upon\n"
 "                            submission."
-msgstr ""
-"ستُحسب الخطورة ومتطلبات إخطار جهة حماية البيانات تلقائيًا عند الإرسال."
+msgstr "ستُحسب الخطورة ومتطلبات إخطار جهة حماية البيانات تلقائيًا عند الإرسال."
 
 #: templates/data_protection/breach_form.html:83
 msgid "Submit Breach Report"
@@ -9714,12 +9298,8 @@ msgid ""
 msgstr "٢. المخاطر المحددة"
 
 #: templates/data_protection/dpia_detail.html:46
-msgid ""
-"Identify potential harms to data subjects (Identity theft, discrimination, "
-"loss of privacy)..."
-msgstr ""
-"حدد الأضرار المحتملة على أصحاب البيانات (سرقة الهوية، التمييز، فقدان "
-"الخصوصية)..."
+msgid "Identify potential harms to data subjects (Identity theft, discrimination, loss of privacy)..."
+msgstr "حدد الأضرار المحتملة على أصحاب البيانات (سرقة الهوية، التمييز، فقدان الخصوصية)..."
 
 #: templates/data_protection/dpia_detail.html:50
 msgid "3. Mitigation Measures"
@@ -9783,8 +9363,7 @@ msgstr "يجب أن يكون تقييم الأثر بحالة «بانتظار �
 msgid "Assessment Metadata"
 msgstr "بيانات التقييم"
 
-#: templates/data_protection/dpia_detail.html:128
-#: templates/ghe/detail.html:244
+#: templates/data_protection/dpia_detail.html:128 templates/ghe/detail.html:244
 msgid "Created:"
 msgstr "تاريخ الإنشاء:"
 
@@ -9838,9 +9417,7 @@ msgstr "صف المشروع وسبب تضمّن البيانات الشخصية.
 msgid ""
 "This is an initial registration. You will be able to perform the full necessity and\n"
 "                            proportionality assessment in the next step."
-msgstr ""
-"هذا تسجيل أولي. ستتمكن من إجراء تقييم الضرورة والتناسب الكامل في الخطوة "
-"التالية."
+msgstr "هذا تسجيل أولي. ستتمكن من إجراء تقييم الضرورة والتناسب الكامل في الخطوة التالية."
 
 #: templates/data_protection/dpia_form.html:57
 msgid "Register Assessment"
@@ -10030,9 +9607,8 @@ msgstr "نوع الطلب"
 #: templates/data_protection/dsr_list.html:27
 #: templates/governance/compliance_form.html:74
 #: templates/portal/training_list.html:117
-#: templates/reporting/dashboard.html:99
-#: templates/reporting/dashboard.html:255 templates/reporting/detail.html:38
-#: templates/training/admin_list.html:158
+#: templates/reporting/dashboard.html:99 templates/reporting/dashboard.html:255
+#: templates/reporting/detail.html:38 templates/training/admin_list.html:158
 #: templates/training/employee_list.html:35
 msgid "Due Date"
 msgstr "تاريخ الاستحقاق"
@@ -10071,12 +9647,8 @@ msgid "eKYC Decision Queue"
 msgstr "قائمة قرارات التحقق الإلكتروني من الهوية"
 
 #: templates/ekyc/decision_pending.html:9
-msgid ""
-"Sessions cleared by automated verification and screening — awaiting an "
-"officer's final Approve/Reject."
-msgstr ""
-"جلسات تمت الموافقة عليها آليًا من خلال التحقق والفحص — في انتظار القرار "
-"النهائي من الموظف بالموافقة أو الرفض."
+msgid "Sessions cleared by automated verification and screening — awaiting an officer's final Approve/Reject."
+msgstr "جلسات تمت الموافقة عليها آليًا من خلال التحقق والفحص — في انتظار القرار النهائي من الموظف بالموافقة أو الرفض."
 
 #: templates/ekyc/decision_pending.html:17 templates/ekyc/list.html:59
 #: templates/ekyc/review_queue.html:17
@@ -10149,9 +9721,7 @@ msgid "This verification link is invalid or has expired."
 msgstr "رابط التحقق هذا غير صالح أو منتهي الصلاحية."
 
 #: templates/ekyc/expired.html:11
-msgid ""
-"Please contact the organization that sent you this link to request a new "
-"one."
+msgid "Please contact the organization that sent you this link to request a new one."
 msgstr "يرجى التواصل مع الجهة التي أرسلت لك هذا الرابط لطلب رابط جديد."
 
 #: templates/ekyc/list.html:8
@@ -10313,12 +9883,8 @@ msgid "فحص هجمات وثيقة الهوية / Document PAD"
 msgstr "فحص هجمات وثيقة الهوية / Document PAD"
 
 #: templates/ekyc/report.html:220
-msgid ""
-"4. نتيجة التحقق الآلي ودرجة الخطورة / Automated Verification Result &amp; "
-"Risk Score"
-msgstr ""
-"4. نتيجة التحقق الآلي ودرجة الخطورة / Automated Verification Result &amp; "
-"Risk Score"
+msgid "4. نتيجة التحقق الآلي ودرجة الخطورة / Automated Verification Result &amp; Risk Score"
+msgstr "4. نتيجة التحقق الآلي ودرجة الخطورة / Automated Verification Result &amp; Risk Score"
 
 #: templates/ekyc/report.html:224
 msgid "قرار النظام الآلي / System Decision"
@@ -10365,10 +9931,8 @@ msgid "التاريخ / Date"
 msgstr "التاريخ / Date"
 
 #: templates/ekyc/report.html:270
-msgid ""
-"لم يتم تنفيذ الفحص بعد / Screening has not been run for this session yet."
-msgstr ""
-"لم يتم تنفيذ الفحص بعد / Screening has not been run for this session yet."
+msgid "لم يتم تنفيذ الفحص بعد / Screening has not been run for this session yet."
+msgstr "لم يتم تنفيذ الفحص بعد / Screening has not been run for this session yet."
 
 #: templates/ekyc/report.html:273
 msgid "6. سجل الموافقة / Consent Record"
@@ -10419,12 +9983,8 @@ msgid "ملاحظات القرار / Decision Notes"
 msgstr "ملاحظات القرار / Decision Notes"
 
 #: templates/ekyc/report.html:311
-msgid ""
-"توقيع موظف الالتزام / Compliance Officer Signature &nbsp;&nbsp; التاريخ / "
-"Date: ______________"
-msgstr ""
-"توقيع موظف الالتزام / Compliance Officer Signature &nbsp;&nbsp; التاريخ / "
-"Date: ______________"
+msgid "توقيع موظف الالتزام / Compliance Officer Signature &nbsp;&nbsp; التاريخ / Date: ______________"
+msgstr "توقيع موظف الالتزام / Compliance Officer Signature &nbsp;&nbsp; التاريخ / Date: ______________"
 
 #: templates/ekyc/report.html:314
 msgid "الاسم بالكامل / Printed Name: ______________"
@@ -10438,10 +9998,7 @@ msgstr "المرجع الرقابي / Audit Reference:"
 msgid ""
 "هذا التقرير يحتوي على بيانات شخصية حساسة ويجب التعامل معه وفقًا لسياسة حماية البيانات.\n"
 "    This report contains sensitive personal data and must be handled per the data protection policy."
-msgstr ""
-"هذا التقرير يحتوي على بيانات شخصية حساسة ويجب التعامل معه وفقًا لسياسة حماية"
-" البيانات.     This report contains sensitive personal data and must be "
-"handled per the data protection policy."
+msgstr "هذا التقرير يحتوي على بيانات شخصية حساسة ويجب التعامل معه وفقًا لسياسة حماية البيانات.     This report contains sensitive personal data and must be handled per the data protection policy."
 
 #: templates/ekyc/review_detail.html:3 templates/ekyc/review_detail.html:8
 msgid "Review eKYC Session"
@@ -10557,12 +10114,8 @@ msgid "eKYC Review Queue"
 msgstr "قائمة مراجعة التحقق الإلكتروني من الهوية"
 
 #: templates/ekyc/review_queue.html:9
-msgid ""
-"Sessions where automated verification could not confidently confirm identity"
-" — correct or confirm the extracted data before screening/decision."
-msgstr ""
-"جلسات لم يتمكن فيها التحقق الآلي من تأكيد الهوية بثقة — قم بتصحيح أو تأكيد "
-"البيانات المستخرجة قبل الفحص/اتخاذ القرار."
+msgid "Sessions where automated verification could not confidently confirm identity — correct or confirm the extracted data before screening/decision."
+msgstr "جلسات لم يتمكن فيها التحقق الآلي من تأكيد الهوية بثقة — قم بتصحيح أو تأكيد البيانات المستخرجة قبل الفحص/اتخاذ القرار."
 
 #: templates/ekyc/review_queue.html:49
 msgid "Nothing waiting for review."
@@ -10715,8 +10268,7 @@ msgid "Captured Media"
 msgstr "الوسائط المسجلة"
 
 #: templates/ekyc/view.html:187
-msgid ""
-"Viewing decrypts the file on demand and is logged in the audit trail below."
+msgid "Viewing decrypts the file on demand and is logged in the audit trail below."
 msgstr "يتم فك تشفير الملف عند عرضه، ويتم تسجيل ذلك في سجل التدقيق أدناه."
 
 #: templates/ekyc/view.html:193
@@ -10764,8 +10316,7 @@ msgid "Record Not Found"
 msgstr "السجل غير موجود"
 
 #: templates/errors/404.html:8
-msgid ""
-"The page or record you are looking for does not exist or has been removed."
+msgid "The page or record you are looking for does not exist or has been removed."
 msgstr "الصفحة أو السجل الذي تبحث عنه غير موجود أو تم حذفه."
 
 #: templates/errors/500.html:2
@@ -10795,15 +10346,8 @@ msgid "ESG Scorecard"
 msgstr "بطاقة أداء ESG"
 
 #: templates/esg/dashboard.html:10
-msgid ""
-"A configurable, weighted ESG scoring framework built for Egyptian PSPs — "
-"Environmental, Social, Governance, plus a fourth Regulatory pillar "
-"reflecting CBE/FRA supervisory expectations that generic global frameworks "
-"miss."
-msgstr ""
-"إطار تقييم ESG قابل للتخصيص ومرجَّح مصمم لمزودي خدمات الدفع المصريين — بيئي "
-"واجتماعي وحوكمة، بالإضافة إلى محور رقابي رابع يعكس توقعات الرقابة من البنك "
-"المركزي المصري وهيئة الرقابة المالية والتي تفتقدها الأطر العالمية العامة."
+msgid "A configurable, weighted ESG scoring framework built for Egyptian PSPs — Environmental, Social, Governance, plus a fourth Regulatory pillar reflecting CBE/FRA supervisory expectations that generic global frameworks miss."
+msgstr "إطار تقييم ESG قابل للتخصيص ومرجَّح مصمم لمزودي خدمات الدفع المصريين — بيئي واجتماعي وحوكمة، بالإضافة إلى محور رقابي رابع يعكس توقعات الرقابة من البنك المركزي المصري وهيئة الرقابة المالية والتي تفتقدها الأطر العالمية العامة."
 
 #: templates/esg/dashboard.html:11
 msgid "First ESG framework purpose-built for Egyptian fintech"
@@ -10849,12 +10393,8 @@ msgid "Open Disclosure Tracker →"
 msgstr "فتح متتبع الإفصاحات ←"
 
 #: templates/esg/dashboard.html:52
-msgid ""
-"No active framework or reporting period found. Ask an administrator to set "
-"one up."
-msgstr ""
-"لا يوجد إطار عمل نشط أو فترة إبلاغ متاحة. يرجى مطالبة أحد المسؤولين بإعداد "
-"واحدة."
+msgid "No active framework or reporting period found. Ask an administrator to set one up."
+msgstr "لا يوجد إطار عمل نشط أو فترة إبلاغ متاحة. يرجى مطالبة أحد المسؤولين بإعداد واحدة."
 
 #: templates/esg/dashboard.html:61
 msgid "Overall ESG Score"
@@ -10881,15 +10421,8 @@ msgid "not scored yet"
 msgstr "لم يُقيَّم بعد"
 
 #: templates/esg/dashboard.html:103
-msgid ""
-"Each indicator is scored 1-5. A pillar score is the weighted average of its "
-"indicators; the overall score is the weighted average of the four pillars. "
-"Unanswered indicators are excluded, never treated as zero. Full weights are "
-"shown on the"
-msgstr ""
-"يُقيَّم كل مؤشر من 1 إلى 5. درجة المحور هي المتوسط المرجَّح لمؤشراته؛ "
-"والدرجة الإجمالية هي المتوسط المرجَّح للمحاور الأربعة. تُستبعد المؤشرات غير "
-"المجابة، ولا تُعامل كصفر أبداً. الأوزان الكاملة معروضة في"
+msgid "Each indicator is scored 1-5. A pillar score is the weighted average of its indicators; the overall score is the weighted average of the four pillars. Unanswered indicators are excluded, never treated as zero. Full weights are shown on the"
+msgstr "يُقيَّم كل مؤشر من 1 إلى 5. درجة المحور هي المتوسط المرجَّح لمؤشراته؛ والدرجة الإجمالية هي المتوسط المرجَّح للمحاور الأربعة. تُستبعد المؤشرات غير المجابة، ولا تُعامل كصفر أبداً. الأوزان الكاملة معروضة في"
 
 #: templates/esg/dashboard.html:104
 msgid "Framework & Weights page"
@@ -10900,12 +10433,8 @@ msgid "Score Your Pillars"
 msgstr "قيّم محاورك"
 
 #: templates/esg/disclosures.html:9
-msgid ""
-"Track readiness against GRI, IFRS S1/S2, TCFD and EGX disclosure "
-"requirements — assign an owner, record evidence, and mark progress per item."
-msgstr ""
-"تتبع الجاهزية مقابل متطلبات إفصاح GRI وIFRS S1/S2 وTCFD والبورصة المصرية — "
-"عيّن مسؤولاً، سجّل المستندات، وحدّد التقدم لكل بند."
+msgid "Track readiness against GRI, IFRS S1/S2, TCFD and EGX disclosure requirements — assign an owner, record evidence, and mark progress per item."
+msgstr "تتبع الجاهزية مقابل متطلبات إفصاح GRI وIFRS S1/S2 وTCFD والبورصة المصرية — عيّن مسؤولاً، سجّل المستندات، وحدّد التقدم لكل بند."
 
 #: templates/esg/disclosures.html:23
 msgid "Overall Completion"
@@ -10972,28 +10501,12 @@ msgid "Why weights are data, not code"
 msgstr "لماذا الأوزان بيانات وليست برمجة"
 
 #: templates/esg/framework.html:40
-msgid ""
-"Pillar and indicator weights are stored in the database and editable through"
-" the platform, not hardcoded into a formula. This avoids the exact failure "
-"mode found during the review of the earlier consultant-built spreadsheets, "
-"where two versions of the same workbook silently used two different "
-"weighting schemes six months apart with no way to tell which one was "
-"authoritative."
-msgstr ""
-"تُخزَّن أوزان المحاور والمؤشرات في قاعدة البيانات وتكون قابلة للتعديل عبر "
-"المنصة، وليست مضمَّنة بشكل ثابت في معادلة. هذا يتجنب بالضبط نمط الخلل الذي "
-"وُجد أثناء مراجعة جداول البيانات السابقة التي أعدها الاستشاريون، حيث استخدمت"
-" نسختان من نفس الملف مخططَي ترجيح مختلفين بصمت بفارق ستة أشهر دون أي طريقة "
-"لمعرفة أيهما المعتمد."
+msgid "Pillar and indicator weights are stored in the database and editable through the platform, not hardcoded into a formula. This avoids the exact failure mode found during the review of the earlier consultant-built spreadsheets, where two versions of the same workbook silently used two different weighting schemes six months apart with no way to tell which one was authoritative."
+msgstr "تُخزَّن أوزان المحاور والمؤشرات في قاعدة البيانات وتكون قابلة للتعديل عبر المنصة، وليست مضمَّنة بشكل ثابت في معادلة. هذا يتجنب بالضبط نمط الخلل الذي وُجد أثناء مراجعة جداول البيانات السابقة التي أعدها الاستشاريون، حيث استخدمت نسختان من نفس الملف مخططَي ترجيح مختلفين بصمت بفارق ستة أشهر دون أي طريقة لمعرفة أيهما المعتمد."
 
 #: templates/esg/materiality.html:9
-msgid ""
-"Score each topic on how important it is to stakeholders and how significant "
-"its business impact is. Topics in the top-right quadrant are your highest "
-"reporting priorities."
-msgstr ""
-"قيّم كل موضوع من حيث أهميته لأصحاب المصلحة ومدى تأثيره على العمل. المواضيع "
-"في الربع العلوي الأيمن هي أولوياتك الأعلى للإبلاغ."
+msgid "Score each topic on how important it is to stakeholders and how significant its business impact is. Topics in the top-right quadrant are your highest reporting priorities."
+msgstr "قيّم كل موضوع من حيث أهميته لأصحاب المصلحة ومدى تأثيره على العمل. المواضيع في الربع العلوي الأيمن هي أولوياتك الأعلى للإبلاغ."
 
 #: templates/esg/materiality.html:22
 msgid "Materiality Matrix"
@@ -11040,9 +10553,7 @@ msgid "Scoring Methodology"
 msgstr "منهجية التقييم"
 
 #: templates/esg/methodology.html:9
-msgid ""
-"How the ESG score behind every pillar and every ring on the dashboard is "
-"actually calculated."
+msgid "How the ESG score behind every pillar and every ring on the dashboard is actually calculated."
 msgstr "كيف تُحتسب فعلياً درجة ESG وراء كل محور وكل حلقة في لوحة المعلومات."
 
 #: templates/esg/methodology.html:23
@@ -11062,17 +10573,8 @@ msgid "Overall Score"
 msgstr "الدرجة الإجمالية"
 
 #: templates/esg/methodology.html:36
-msgid ""
-"Unanswered indicators (and unscored pillars) are excluded from both the "
-"numerator and denominator — never treated as a zero. This keeps a partially "
-"completed assessment honest rather than artificially deflated, which was a "
-"specific bug pattern found in the earlier consultant spreadsheets whenever a"
-" row was left blank."
-msgstr ""
-"تُستبعد المؤشرات غير المجابة (والمحاور غير المقيَّمة) من البسط والمقام معاً "
-"— ولا تُعامل كصفر أبداً. هذا يحافظ على صدق التقييم الجزئي بدلاً من خفضه بشكل"
-" مصطنع، وهو نمط خلل محدد وُجد في جداول بيانات الاستشاريين السابقة كلما تُرك "
-"صف فارغاً."
+msgid "Unanswered indicators (and unscored pillars) are excluded from both the numerator and denominator — never treated as a zero. This keeps a partially completed assessment honest rather than artificially deflated, which was a specific bug pattern found in the earlier consultant spreadsheets whenever a row was left blank."
+msgstr "تُستبعد المؤشرات غير المجابة (والمحاور غير المقيَّمة) من البسط والمقام معاً — ولا تُعامل كصفر أبداً. هذا يحافظ على صدق التقييم الجزئي بدلاً من خفضه بشكل مصطنع، وهو نمط خلل محدد وُجد في جداول بيانات الاستشاريين السابقة كلما تُرك صف فارغاً."
 
 #: templates/esg/methodology.html:39
 msgid "Why a fourth \"Regulatory\" pillar"
@@ -11080,21 +10582,8 @@ msgstr "لماذا محور رابع \"رقابي\""
 
 #: templates/esg/methodology.html:40
 #, python-format
-msgid ""
-"Global ESG frameworks (GRI, IFRS S1/S2, TCFD) are built for listed "
-"multinationals and don't weight CBE/FRA supervisory standing at all. For an "
-"Egyptian PSP, AML/CFT programme maturity, licensing standing, and regulatory"
-" reporting track record are as material to stakeholders as the classic E/S/G"
-" pillars — so I-ESG Egypt gives them their own 15%% weight rather than "
-"burying them inside Governance."
-msgstr ""
-"أُطر ESG العالمية (GRI، IFRS S1/S2، TCFD) مصممة للشركات متعددة الجنسيات "
-"المدرجة ولا تعطي أي وزن للوضع الرقابي لدى البنك المركزي المصري أو هيئة "
-"الرقابة المالية. أما بالنسبة لمزود خدمات الدفع المصري، فنضج برنامج مكافحة "
-"غسل الأموال وتمويل الإرهاب، والوضع الترخيصي، وسجل الإبلاغ الرقابي، لها نفس "
-"الأهمية لدى أصحاب المصلحة كالمحاور الكلاسيكية البيئية والاجتماعية والحوكمة —"
-" لذا يمنحها إطار I-ESG Egypt وزناً مستقلاً بنسبة 15%% بدلاً من دمجها داخل "
-"الحوكمة."
+msgid "Global ESG frameworks (GRI, IFRS S1/S2, TCFD) are built for listed multinationals and don't weight CBE/FRA supervisory standing at all. For an Egyptian PSP, AML/CFT programme maturity, licensing standing, and regulatory reporting track record are as material to stakeholders as the classic E/S/G pillars — so I-ESG Egypt gives them their own 15%% weight rather than burying them inside Governance."
+msgstr "أُطر ESG العالمية (GRI، IFRS S1/S2، TCFD) مصممة للشركات متعددة الجنسيات المدرجة ولا تعطي أي وزن للوضع الرقابي لدى البنك المركزي المصري أو هيئة الرقابة المالية. أما بالنسبة لمزود خدمات الدفع المصري، فنضج برنامج مكافحة غسل الأموال وتمويل الإرهاب، والوضع الترخيصي، وسجل الإبلاغ الرقابي، لها نفس الأهمية لدى أصحاب المصلحة كالمحاور الكلاسيكية البيئية والاجتماعية والحوكمة — لذا يمنحها إطار I-ESG Egypt وزناً مستقلاً بنسبة 15%% بدلاً من دمجها داخل الحوكمة."
 
 #: templates/esg/methodology.html:45
 msgid "Standards this framework draws on"
@@ -11114,9 +10603,7 @@ msgstr "توصيات لجنة الإفصاحات المالية المتعلقة
 
 #: templates/esg/methodology.html:50
 msgid "CBE regulatory & AML/CFT expectations, Law 80/2002"
-msgstr ""
-"متطلبات البنك المركزي المصري الرقابية ومكافحة غسل الأموال وتمويل الإرهاب، "
-"القانون رقم 80 لسنة 2002"
+msgstr "متطلبات البنك المركزي المصري الرقابية ومكافحة غسل الأموال وتمويل الإرهاب، القانون رقم 80 لسنة 2002"
 
 #: templates/esg/methodology.html:51
 msgid "Egypt's National Financial Inclusion Strategy"
@@ -11127,18 +10614,8 @@ msgid "Materiality scoring"
 msgstr "تقييم الأهمية النسبية"
 
 #: templates/esg/methodology.html:56
-msgid ""
-"Each topic is scored on a 1-5 scale for stakeholder importance and business "
-"impact. The matrix plots importance against impact — topics in the top-right"
-" are the highest reporting priorities. This does not feed into the pillar "
-"scores directly; it is a separate lens used to decide what to report on, per"
-" GRI 3 guidance on determining material topics."
-msgstr ""
-"يُقيَّم كل موضوع على مقياس من 1 إلى 5 من حيث أهميته لأصحاب المصلحة وتأثيره "
-"على الأعمال. ترسم المصفوفة الأهمية مقابل التأثير — والمواضيع في الربع العلوي"
-" الأيمن هي أعلى أولويات الإبلاغ. لا يغذي هذا درجات المحاور مباشرة؛ بل هو "
-"عدسة منفصلة تُستخدم لتحديد ما يجب الإبلاغ عنه، وفقاً لإرشادات GRI 3 بشأن "
-"تحديد المواضيع الجوهرية."
+msgid "Each topic is scored on a 1-5 scale for stakeholder importance and business impact. The matrix plots importance against impact — topics in the top-right are the highest reporting priorities. This does not feed into the pillar scores directly; it is a separate lens used to decide what to report on, per GRI 3 guidance on determining material topics."
+msgstr "يُقيَّم كل موضوع على مقياس من 1 إلى 5 من حيث أهميته لأصحاب المصلحة وتأثيره على الأعمال. ترسم المصفوفة الأهمية مقابل التأثير — والمواضيع في الربع العلوي الأيمن هي أعلى أولويات الإبلاغ. لا يغذي هذا درجات المحاور مباشرة؛ بل هو عدسة منفصلة تُستخدم لتحديد ما يجب الإبلاغ عنه، وفقاً لإرشادات GRI 3 بشأن تحديد المواضيع الجوهرية."
 
 #: templates/esg/methodology.html:59
 #, python-format
@@ -11146,23 +10623,12 @@ msgid "Disclosure completion %%"
 msgstr "نسبة إنجاز الإفصاح %%"
 
 #: templates/esg/methodology.html:60
-msgid ""
-"Each framework's completion percentage counts \"Complete\" items fully and "
-"\"Partial\" items as half-credit: (complete + 0.5 × partial) ÷ total. \"Not "
-"Applicable\" items are excluded from the denominator once marked, so they "
-"don't artificially suppress a framework's score."
-msgstr ""
-"تحتسب نسبة إنجاز كل إطار البنود \"المكتملة\" بالكامل والبنود \"الجزئية\" "
-"بنصف الدرجة: (المكتمل + 0.5 × الجزئي) ÷ الإجمالي. تُستبعد البنود \"غير "
-"المنطبقة\" من المقام بمجرد تحديدها، حتى لا تخفض درجة الإطار بشكل مصطنع."
+msgid "Each framework's completion percentage counts \"Complete\" items fully and \"Partial\" items as half-credit: (complete + 0.5 × partial) ÷ total. \"Not Applicable\" items are excluded from the denominator once marked, so they don't artificially suppress a framework's score."
+msgstr "تحتسب نسبة إنجاز كل إطار البنود \"المكتملة\" بالكامل والبنود \"الجزئية\" بنصف الدرجة: (المكتمل + 0.5 × الجزئي) ÷ الإجمالي. تُستبعد البنود \"غير المنطبقة\" من المقام بمجرد تحديدها، حتى لا تخفض درجة الإطار بشكل مصطنع."
 
 #: templates/esg/scoring.html:9
-msgid ""
-"Score each indicator 1-5 based on current maturity. Leave an indicator blank"
-" to exclude it from the pillar score rather than counting it as zero."
-msgstr ""
-"قيّم كل مؤشر من 1 إلى 5 بناءً على مستوى النضج الحالي. اترك المؤشر فارغاً "
-"لاستبعاده من درجة المحور بدلاً من احتسابه كصفر."
+msgid "Score each indicator 1-5 based on current maturity. Leave an indicator blank to exclude it from the pillar score rather than counting it as zero."
+msgstr "قيّم كل مؤشر من 1 إلى 5 بناءً على مستوى النضج الحالي. اترك المؤشر فارغاً لاستبعاده من درجة المحور بدلاً من احتسابه كصفر."
 
 #: templates/esg/scoring.html:25
 msgid "of pillar"
@@ -11185,12 +10651,8 @@ msgid "Pillar Summary"
 msgstr "ملخص المحور"
 
 #: templates/esg/scoring.html:57
-msgid ""
-"Scores save immediately per indicator. The pillar and overall ESG score "
-"recompute live from these answers — nothing is cached separately."
-msgstr ""
-"تُحفظ الدرجات فوراً لكل مؤشر. تُعاد حساب درجة المحور ودرجة ESG الإجمالية "
-"مباشرة من هذه الإجابات — لا شيء يُخزَّن مؤقتاً بشكل منفصل."
+msgid "Scores save immediately per indicator. The pillar and overall ESG score recompute live from these answers — nothing is cached separately."
+msgstr "تُحفظ الدرجات فوراً لكل مؤشر. تُعاد حساب درجة المحور ودرجة ESG الإجمالية مباشرة من هذه الإجابات — لا شيء يُخزَّن مؤقتاً بشكل منفصل."
 
 #: templates/events/log.html:3 templates/events/log.html:8
 msgid "Compliance Event Log"
@@ -11573,12 +11035,8 @@ msgid "Back to Details"
 msgstr "العودة إلى التفاصيل"
 
 #: templates/ghe/edit.html:17
-msgid ""
-"You can only edit declarations that are still pending. Changes will reset "
-"the approval workflow."
-msgstr ""
-"يمكنك تعديل الإقرارات المعلقة فقط. ستؤدي التغييرات إلى إعادة تعيين سير عمل "
-"الاعتماد."
+msgid "You can only edit declarations that are still pending. Changes will reset the approval workflow."
+msgstr "يمكنك تعديل الإقرارات المعلقة فقط. ستؤدي التغييرات إلى إعادة تعيين سير عمل الاعتماد."
 
 #: templates/ghe/edit.html:22
 msgid "Edit Declaration Details"
@@ -11643,12 +11101,8 @@ msgid "Target Max: 100k EGP"
 msgstr "الحد الأقصى المستهدف: 100 ألف جنيه مصري"
 
 #: templates/ghe/list.html:93
-msgid ""
-"Monitoring cumulative GHE is a core CBE requirement to prevent structural "
-"corruption."
-msgstr ""
-"مراقبة الإجمالي التراكمي للهدايا والضيافة والترفيه متطلب أساسي من البنك "
-"المركزي المصري لمنع الفساد البنيوي."
+msgid "Monitoring cumulative GHE is a core CBE requirement to prevent structural corruption."
+msgstr "مراقبة الإجمالي التراكمي للهدايا والضيافة والترفيه متطلب أساسي من البنك المركزي المصري لمنع الفساد البنيوي."
 
 #: templates/ghe/list.html:104
 msgid "Status Distribution"
@@ -11980,8 +11434,7 @@ msgstr "هام:"
 msgid ""
 "GHE involving government officials always requires manager\n"
 "                            approval."
-msgstr ""
-"الهدايا والضيافة المتعلقة بمسؤولين حكوميين تتطلب دائمًا موافقة المدير."
+msgstr "الهدايا والضيافة المتعلقة بمسؤولين حكوميين تتطلب دائمًا موافقة المدير."
 
 #: templates/ghe/public_submit.html:165
 msgid "Government Official Name & Agency"
@@ -12276,20 +11729,12 @@ msgid "Rating"
 msgstr "التقييم"
 
 #: templates/governance/annual_governance_report.html:62
-msgid ""
-"Sourced live from the ESG Management module — see ESG &rarr; Governance "
-"Pillar for indicator-level detail and evidence."
-msgstr ""
-"مصدر البيانات مباشر من وحدة إدارة ESG — راجع ESG ← ركيزة الحوكمة لمزيد من "
-"التفاصيل والأدلة على مستوى المؤشر."
+msgid "Sourced live from the ESG Management module — see ESG &rarr; Governance Pillar for indicator-level detail and evidence."
+msgstr "مصدر البيانات مباشر من وحدة إدارة ESG — راجع ESG ← ركيزة الحوكمة لمزيد من التفاصيل والأدلة على مستوى المؤشر."
 
 #: templates/governance/annual_governance_report.html:64
-msgid ""
-"No active ESG framework/reporting period found, or the Governance pillar has"
-" not been scored yet."
-msgstr ""
-"لا يوجد إطار عمل ESG نشط أو فترة إبلاغ متاحة، أو لم يتم بعد تقييم ركيزة "
-"الحوكمة."
+msgid "No active ESG framework/reporting period found, or the Governance pillar has not been scored yet."
+msgstr "لا يوجد إطار عمل ESG نشط أو فترة إبلاغ متاحة، أو لم يتم بعد تقييم ركيزة الحوكمة."
 
 #: templates/governance/annual_governance_report.html:67
 msgid "3. Regulatory Compliance Tracker"
@@ -12641,8 +12086,7 @@ msgid "Internal Compliance Notes"
 msgstr "ملاحظات الامتثال الداخلية"
 
 #: templates/governance/compliance_edit.html:58
-msgid ""
-"Add internal observations, follow-up actions, or justifications here..."
+msgid "Add internal observations, follow-up actions, or justifications here..."
 msgstr "أضف الملاحظات الداخلية أو إجراءات المتابعة أو التبريرات هنا..."
 
 #: templates/governance/compliance_form.html:3
@@ -12651,13 +12095,8 @@ msgid "Add Compliance Requirement"
 msgstr "إضافة متطلب امتثال"
 
 #: templates/governance/compliance_form.html:19
-msgid ""
-"Track a new obligation from any regulator — pick one already registered in "
-"Regulatory Reporting, or describe it freely if it hasn't been registered "
-"yet."
-msgstr ""
-"تتبع التزام جديد من أي جهة رقابية — اختر جهة مسجّلة بالفعل في التقارير "
-"التنظيمية، أو صِفه بحرية إذا لم يكن مسجّلاً بعد."
+msgid "Track a new obligation from any regulator — pick one already registered in Regulatory Reporting, or describe it freely if it hasn't been registered yet."
+msgstr "تتبع التزام جديد من أي جهة رقابية — اختر جهة مسجّلة بالفعل في التقارير التنظيمية، أو صِفه بحرية إذا لم يكن مسجّلاً بعد."
 
 #: templates/governance/compliance_form.html:25
 msgid "Requirement Code"
@@ -12692,12 +12131,8 @@ msgid "Source (free text)"
 msgstr "المصدر (نص حر)"
 
 #: templates/governance/compliance_form.html:59
-msgid ""
-"Used if the regulator above isn't selected, e.g. a specific circular or code"
-" section"
-msgstr ""
-"يُستخدم إذا لم يتم اختيار الجهة الرقابية أعلاه، مثل تعميم معين أو قسم من "
-"القانون"
+msgid "Used if the regulator above isn't selected, e.g. a specific circular or code section"
+msgstr "يُستخدم إذا لم يتم اختيار الجهة الرقابية أعلاه، مثل تعميم معين أو قسم من القانون"
 
 #: templates/governance/compliance_form.html:65
 msgid "Initial Status"
@@ -12912,11 +12347,8 @@ msgid "Regulatory Submission (optional)"
 msgstr "التقديم للجهة الرقابية (اختياري)"
 
 #: templates/governance/fit_proper_form.html:85
-msgid ""
-"If this assessment must be filed with a regulator, record the submission "
-"details here."
-msgstr ""
-"إذا كان يجب تقديم هذا التقييم إلى جهة رقابية، سجّل تفاصيل التقديم هنا."
+msgid "If this assessment must be filed with a regulator, record the submission details here."
+msgstr "إذا كان يجب تقديم هذا التقييم إلى جهة رقابية، سجّل تفاصيل التقديم هنا."
 
 #: templates/governance/fit_proper_form.html:91
 msgid "-- None --"
@@ -13084,8 +12516,7 @@ msgid "Final Assessment Result:"
 msgstr "النتيجة النهائية للتقييم:"
 
 #: templates/governance/fit_proper_print.html:239
-msgid ""
-"This is a system generated report from ComplyNex Full Compliance Platform."
+msgid "This is a system generated report from ComplyNex Full Compliance Platform."
 msgstr "هذا تقرير تم إنشاؤه آليًا من منصة ComplyNex الكاملة للامتثال."
 
 #: templates/governance/fit_proper_print.html:240
@@ -13106,14 +12537,8 @@ msgid "تقرير الحوكمة المقدم للهيئة العامة للرق
 msgstr "تقرير الحوكمة المقدم للهيئة العامة للرقابة المالية"
 
 #: templates/governance/fra_governance_report.html:41
-msgid ""
-"No regulator record named \"Financial Regulatory Authority\" was found — "
-"showing all tracked compliance requirements below. Add/rename the FRA "
-"regulator record under Governance settings to scope this report correctly."
-msgstr ""
-"لم يتم العثور على سجل جهة رقابية باسم \"الهيئة العامة للرقابة المالية\" — "
-"يتم عرض جميع متطلبات الامتثال المتابَعة أدناه. أضف أو أعد تسمية سجل الهيئة "
-"العامة للرقابة المالية ضمن إعدادات الحوكمة لضبط نطاق هذا التقرير بشكل صحيح."
+msgid "No regulator record named \"Financial Regulatory Authority\" was found — showing all tracked compliance requirements below. Add/rename the FRA regulator record under Governance settings to scope this report correctly."
+msgstr "لم يتم العثور على سجل جهة رقابية باسم \"الهيئة العامة للرقابة المالية\" — يتم عرض جميع متطلبات الامتثال المتابَعة أدناه. أضف أو أعد تسمية سجل الهيئة العامة للرقابة المالية ضمن إعدادات الحوكمة لضبط نطاق هذا التقرير بشكل صحيح."
 
 #: templates/governance/fra_governance_report.html:46
 msgid "1. Purpose and Scope"
@@ -13121,14 +12546,8 @@ msgstr "1. الغرض والنطاق"
 
 #: templates/governance/fra_governance_report.html:47
 #, python-format
-msgid ""
-"This report summarizes the corporate governance arrangements maintained by "
-"%(c)s that are relevant to the Financial Regulatory Authority's oversight of"
-" regulated non-bank financial activities, for the reporting year %(y)s."
-msgstr ""
-"يلخّص هذا التقرير ترتيبات حوكمة الشركات المُطبَّقة لدى %(c)s ذات الصلة "
-"برقابة الهيئة العامة للرقابة المالية على الأنشطة المالية غير المصرفية "
-"الخاضعة للتنظيم، عن السنة المشمولة بالتقرير %(y)s."
+msgid "This report summarizes the corporate governance arrangements maintained by %(c)s that are relevant to the Financial Regulatory Authority's oversight of regulated non-bank financial activities, for the reporting year %(y)s."
+msgstr "يلخّص هذا التقرير ترتيبات حوكمة الشركات المُطبَّقة لدى %(c)s ذات الصلة برقابة الهيئة العامة للرقابة المالية على الأنشطة المالية غير المصرفية الخاضعة للتنظيم، عن السنة المشمولة بالتقرير %(y)s."
 
 #: templates/governance/fra_governance_report.html:49
 msgid "2. Board and Committee Structure"
@@ -13143,13 +12562,8 @@ msgid "Last Reviewed"
 msgstr "آخر مراجعة"
 
 #: templates/governance/fra_governance_report.html:86
-msgid ""
-"No FRA-linked compliance requirements tracked yet. Link requirements to the "
-"FRA regulator record under Governance &rarr; Compliance Tracker."
-msgstr ""
-"لا توجد متطلبات امتثال مرتبطة بالهيئة العامة للرقابة المالية متابَعة بعد. "
-"اربط المتطلبات بسجل الهيئة العامة للرقابة المالية ضمن الحوكمة ← متتبع "
-"الامتثال."
+msgid "No FRA-linked compliance requirements tracked yet. Link requirements to the FRA regulator record under Governance &rarr; Compliance Tracker."
+msgstr "لا توجد متطلبات امتثال مرتبطة بالهيئة العامة للرقابة المالية متابَعة بعد. اربط المتطلبات بسجل الهيئة العامة للرقابة المالية ضمن الحوكمة ← متتبع الامتثال."
 
 #: templates/governance/fra_governance_report.html:91
 msgid "4. Declaration"
@@ -13157,13 +12571,8 @@ msgstr "4. الإقرار"
 
 #: templates/governance/fra_governance_report.html:92
 #, python-format
-msgid ""
-"The Board of %(c)s confirms that the governance arrangements described in "
-"this report were in effect during the %(y)s reporting year and remain "
-"subject to ongoing review."
-msgstr ""
-"يؤكد مجلس إدارة %(c)s أن ترتيبات الحوكمة الموضحة في هذا التقرير كانت سارية "
-"خلال السنة المشمولة بالتقرير %(y)s وتظل خاضعة للمراجعة المستمرة."
+msgid "The Board of %(c)s confirms that the governance arrangements described in this report were in effect during the %(y)s reporting year and remain subject to ongoing review."
+msgstr "يؤكد مجلس إدارة %(c)s أن ترتيبات الحوكمة الموضحة في هذا التقرير كانت سارية خلال السنة المشمولة بالتقرير %(y)s وتظل خاضعة للمراجعة المستمرة."
 
 #: templates/governance/governance_report.html:3
 #: templates/governance/governance_report.html:8
@@ -13271,44 +12680,30 @@ msgstr "أنا لا أمتلك أكثر من %(pct)s%% من الأسهم ذات 
 
 #: templates/governance/independence_form.html:37
 #: templates/governance/independence_print.html:132
-msgid ""
-"I have not been employed by the company or its affiliates in the last 5 "
-"years."
-msgstr ""
-"لم أكن موظفًا في الشركة أو الشركات التابعة لها خلال السنوات الخمس الماضية."
+msgid "I have not been employed by the company or its affiliates in the last 5 years."
+msgstr "لم أكن موظفًا في الشركة أو الشركات التابعة لها خلال السنوات الخمس الماضية."
 
 #: templates/governance/independence_form.html:45
 #: templates/governance/independence_print.html:136
-msgid ""
-"No first-degree relative is currently a senior executive of the company."
-msgstr ""
-"لا يوجد لدي قريب من الدرجة الأولى يشغل حاليًا منصبًا تنفيذيًا أول في الشركة."
+msgid "No first-degree relative is currently a senior executive of the company."
+msgstr "لا يوجد لدي قريب من الدرجة الأولى يشغل حاليًا منصبًا تنفيذيًا أول في الشركة."
 
 #: templates/governance/independence_form.html:53
 #: templates/governance/independence_print.html:140
-msgid ""
-"I have no material professional relationship (auditor, consultant) with the "
-"company."
+msgid "I have no material professional relationship (auditor, consultant) with the company."
 msgstr "لا توجد لدي علاقة مهنية جوهرية (مدقق حسابات، مستشار) مع الشركة."
 
 #: templates/governance/independence_form.html:61
-msgid ""
-"I do not have a significant business relationship with the company (as "
-"customer, supplier, or partner)."
+msgid "I do not have a significant business relationship with the company (as customer, supplier, or partner)."
 msgstr "ليست لدي علاقة عمل جوهرية مع الشركة (كعميل أو مورّد أو شريك)."
 
 #: templates/governance/independence_form.html:69
-msgid ""
-"I receive no remuneration from the company other than board/committee fees."
-msgstr ""
-"لا أتلقى أي مقابل مالي من الشركة بخلاف بدلات حضور مجلس الإدارة/اللجان."
+msgid "I receive no remuneration from the company other than board/committee fees."
+msgstr "لا أتلقى أي مقابل مالي من الشركة بخلاف بدلات حضور مجلس الإدارة/اللجان."
 
 #: templates/governance/independence_form.html:77
-msgid ""
-"I hold no other directorships that create a conflict of interest with this "
-"board."
-msgstr ""
-"لا أشغل أي عضوية مجلس إدارة أخرى تُنشئ تعارضًا في المصالح مع هذا المجلس."
+msgid "I hold no other directorships that create a conflict of interest with this board."
+msgstr "لا أشغل أي عضوية مجلس إدارة أخرى تُنشئ تعارضًا في المصالح مع هذا المجلس."
 
 #: templates/governance/independence_form.html:85
 #, python-format
@@ -13377,9 +12772,7 @@ msgid "Member Signature"
 msgstr "توقيع العضو"
 
 #: templates/governance/independence_print.html:176
-msgid ""
-"This is a formal electronic declaration stored in the ComplyNex Governance "
-"System."
+msgid "This is a formal electronic declaration stored in the ComplyNex Governance System."
 msgstr "هذا إقرار إلكتروني رسمي محفوظ في نظام حوكمة ComplyNex."
 
 #: templates/governance/meeting_attendance.html:7
@@ -13742,12 +13135,8 @@ msgid "No description"
 msgstr "لا يوجد وصف"
 
 #: templates/governance/roles_list.html:63
-msgid ""
-"Are you sure you want to remove this role? Active board members with this "
-"role will not be affected until their profile is updated."
-msgstr ""
-"هل أنت متأكد من رغبتك في حذف هذا الدور؟ لن يتأثر أعضاء مجلس الإدارة النشطون "
-"الذين يحملون هذا الدور حتى يتم تحديث ملفاتهم."
+msgid "Are you sure you want to remove this role? Active board members with this role will not be affected until their profile is updated."
+msgstr "هل أنت متأكد من رغبتك في حذف هذا الدور؟ لن يتأثر أعضاء مجلس الإدارة النشطون الذين يحملون هذا الدور حتى يتم تحديث ملفاتهم."
 
 #: templates/governance/roles_list.html:70
 msgid "No roles defined."
@@ -14049,9 +13438,7 @@ msgid "Independent Verification"
 msgstr "تحقق مستقل"
 
 #: templates/internal_audit/finding_detail.html:55
-msgid ""
-"Must be performed by an auditor on the engagement team, not the responsible "
-"person."
+msgid "Must be performed by an auditor on the engagement team, not the responsible person."
 msgstr "يجب أن ينفذه مراجع من فريق المهمة، وليس الشخص المسؤول."
 
 #: templates/internal_audit/finding_detail.html:58
@@ -14119,12 +13506,8 @@ msgid "Risk Owner"
 msgstr "مالك الخطر"
 
 #: templates/internal_audit/finding_link_risk.html:41
-msgid ""
-"The new risk will start as DRAFT with a neutral 3x3 score, ready for the "
-"owner to review and re-score."
-msgstr ""
-"سيبدأ الخطر الجديد كمسودة بدرجة محايدة ٣×٣، جاهزًا ليراجعه المالك ويعيد "
-"تقييمه."
+msgid "The new risk will start as DRAFT with a neutral 3x3 score, ready for the owner to review and re-score."
+msgstr "سيبدأ الخطر الجديد كمسودة بدرجة محايدة ٣×٣، جاهزًا ليراجعه المالك ويعيد تقييمه."
 
 #: templates/internal_audit/finding_link_risk.html:42
 #: templates/risk_management/suggestion_create_form.html:5
@@ -14375,13 +13758,8 @@ msgid "No engagements yet."
 msgstr "لا توجد مهام مراجعة بعد."
 
 #: templates/internal_audit/report_narrative_form.html:28
-msgid ""
-"All figures in the report are calculated from live audit data and cannot be "
-"edited. Use the sections below to add the narrative that accompanies those "
-"figures."
-msgstr ""
-"جميع الأرقام في التقرير محسوبة من بيانات المراجعة الفعلية ولا يمكن تعديلها. "
-"استخدم الأقسام أدناه لإضافة النص التحريري المصاحب لهذه الأرقام."
+msgid "All figures in the report are calculated from live audit data and cannot be edited. Use the sections below to add the narrative that accompanies those figures."
+msgstr "جميع الأرقام في التقرير محسوبة من بيانات المراجعة الفعلية ولا يمكن تعديلها. استخدم الأقسام أدناه لإضافة النص التحريري المصاحب لهذه الأرقام."
 
 #: templates/internal_audit/report_narrative_form.html:37
 msgid "Optional. Leave blank to omit this section from the report."
@@ -14392,18 +13770,13 @@ msgid "Save Narrative"
 msgstr "حفظ النص التحريري"
 
 #: templates/internal_audit/universe.html:2
-#: templates/internal_audit/universe.html:7
-#: templates/partials/sidebar.html:399
+#: templates/internal_audit/universe.html:7 templates/partials/sidebar.html:399
 msgid "Audit Universe"
 msgstr "نطاق المراجعة الشامل"
 
 #: templates/internal_audit/universe.html:8
-msgid ""
-"The risk-based inventory of auditable areas that drives annual audit "
-"planning."
-msgstr ""
-"السجل القائم على المخاطر للمجالات القابلة للمراجعة والذي يوجه التخطيط "
-"السنوي."
+msgid "The risk-based inventory of auditable areas that drives annual audit planning."
+msgstr "السجل القائم على المخاطر للمجالات القابلة للمراجعة والذي يوجه التخطيط السنوي."
 
 #: templates/internal_audit/universe.html:19
 msgid "Manual Risk Level"
@@ -14604,10 +13977,7 @@ msgstr "مرفقات المستند"
 msgid ""
 "Upload supporting documents: CR copy, Tax Card, ID copies, bank\n"
 "                            letter, etc. (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX — max 10MB each)"
-msgstr ""
-"ارفع المستندات الداعمة: صورة السجل التجاري، البطاقة الضريبية، صور الهوية، "
-"خطاب البنك، إلخ. (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX — بحد أقصى ١٠ ميجابايت"
-" لكل ملف)"
+msgstr "ارفع المستندات الداعمة: صورة السجل التجاري، البطاقة الضريبية، صور الهوية، خطاب البنك، إلخ. (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX — بحد أقصى ١٠ ميجابايت لكل ملف)"
 
 #: templates/merchant_kyc/form.html:222 templates/merchant_kyc/view.html:382
 #: templates/training/course_view.html:99
@@ -14738,8 +14108,7 @@ msgstr "شكرًا لك"
 msgid ""
 ". Your KYC information has\n"
 "                    been submitted for review. Our compliance team will process your application shortly."
-msgstr ""
-". تم إرسال بيانات اعرف عميلك للمراجعة. سيعالج فريق الامتثال طلبك قريبًا."
+msgstr ". تم إرسال بيانات اعرف عميلك للمراجعة. سيعالج فريق الامتثال طلبك قريبًا."
 
 #: templates/merchant_kyc/public_form.html:54
 msgid "You may now close this page."
@@ -14822,9 +14191,7 @@ msgid ""
 "By submitting this form, you confirm that all information\n"
 "                        provided is true and accurate. Providing false information may result in your application being\n"
 "                        rejected."
-msgstr ""
-"بإرسال هذا النموذج، تؤكد أن كل المعلومات المقدمة صحيحة ودقيقة. تقديم معلومات"
-" غير صحيحة قد يؤدي إلى رفض طلبك."
+msgstr "بإرسال هذا النموذج، تؤكد أن كل المعلومات المقدمة صحيحة ودقيقة. تقديم معلومات غير صحيحة قد يؤدي إلى رفض طلبك."
 
 #: templates/merchant_kyc/public_form.html:225
 msgid ""
@@ -14836,9 +14203,7 @@ msgstr "مرفقات المستند"
 msgid ""
 "Please upload supporting documents: Commercial Registration, Tax Card,\n"
 "                        ID copies, Bank letter, etc."
-msgstr ""
-"برجاء رفع المستندات الداعمة: السجل التجاري، البطاقة الضريبية، صور الهوية، "
-"خطاب البنك، إلخ."
+msgstr "برجاء رفع المستندات الداعمة: السجل التجاري، البطاقة الضريبية، صور الهوية، خطاب البنك، إلخ."
 
 #: templates/merchant_kyc/public_form.html:258
 msgid "POS Machine Location"
@@ -14880,25 +14245,19 @@ msgstr "رابط نموذج اعرف عملك"
 msgid ""
 "This link is unique to this merchant. They can open it on any device — no login required.\n"
 "        It includes GPS location capture when they submit."
-msgstr ""
-"هذا الرابط خاص بهذا التاجر. يمكنه فتحه على أي جهاز — دون تسجيل دخول. ويتضمن "
-"التقاط الموقع الجغرافي عند الإرسال."
+msgstr "هذا الرابط خاص بهذا التاجر. يمكنه فتحه على أي جهاز — دون تسجيل دخول. ويتضمن التقاط الموقع الجغرافي عند الإرسال."
 
 #: templates/merchant_kyc/send_kyc.html:47
 msgid "Send via WhatsApp"
 msgstr "الإرسال عبر واتساب"
 
 #: templates/merchant_kyc/send_kyc.html:59
-msgid ""
-"Clicking this opens WhatsApp with the message pre-filled. Just press Send."
+msgid "Clicking this opens WhatsApp with the message pre-filled. Just press Send."
 msgstr "النقر على هذا يفتح واتساب بالرسالة جاهزة. فقط اضغط إرسال."
 
 #: templates/merchant_kyc/send_kyc.html:64
-msgid ""
-"No phone number registered for this merchant. Add a contact phone number "
-"first, then resend."
-msgstr ""
-"لا يوجد رقم هاتف مسجل لهذا التاجر. أضف رقم تواصل أولًا ثم أعد الإرسال."
+msgid "No phone number registered for this merchant. Add a contact phone number first, then resend."
+msgstr "لا يوجد رقم هاتف مسجل لهذا التاجر. أضف رقم تواصل أولًا ثم أعد الإرسال."
 
 #: templates/merchant_kyc/send_kyc.html:67
 msgid "Add Phone Number"
@@ -14940,9 +14299,7 @@ msgstr "رابط نموذج تسجيل اعرف عميلك للتاجر"
 msgid ""
 "Share this link with the merchant to complete their KYC onboarding form. The link is permanent and can\n"
 "                be re-used."
-msgstr ""
-"شارك هذا الرابط مع التاجر لإتمام نموذج تسجيل اعرف عميلك. الرابط دائم ويمكن "
-"إعادة استخدامه."
+msgstr "شارك هذا الرابط مع التاجر لإتمام نموذج تسجيل اعرف عميلك. الرابط دائم ويمكن إعادة استخدامه."
 
 #: templates/merchant_kyc/view.html:102
 msgid "Copy link to clipboard"
@@ -15061,8 +14418,7 @@ msgstr "تم الرفع بواسطة"
 #: templates/partials/attachment_widget.html:33
 #: templates/policies/policy_acknowledgments.html:69
 #: templates/policies/policy_acknowledgments.html:103
-#: templates/screening/manage_urls.html:66
-#: templates/screening/sources.html:173
+#: templates/screening/manage_urls.html:66 templates/screening/sources.html:173
 msgid "Unknown"
 msgstr "غير معروف"
 
@@ -15599,12 +14955,8 @@ msgid "Guided Design Generator"
 msgstr "مولّد التصميم الموجّه"
 
 #: templates/phishing/campaign_form.html:30
-msgid ""
-"Answer a few questions and get a professionally designed email + landing "
-"page automatically — no HTML needed."
-msgstr ""
-"أجب عن بضعة أسئلة واحصل على بريد إلكتروني وصفحة هبوط بتصميم احترافي تلقائيًا"
-" — دون الحاجة إلى HTML."
+msgid "Answer a few questions and get a professionally designed email + landing page automatically — no HTML needed."
+msgstr "أجب عن بضعة أسئلة واحصل على بريد إلكتروني وصفحة هبوط بتصميم احترافي تلقائيًا — دون الحاجة إلى HTML."
 
 #: templates/phishing/campaign_form.html:35
 msgid "Scenario"
@@ -15678,11 +15030,8 @@ msgid "Email Content"
 msgstr "محتوى البريد الإلكتروني"
 
 #: templates/phishing/campaign_form.html:103
-msgid ""
-"Only used if the generator above isn't used, or as a starting point to fine-"
-"tune manually."
-msgstr ""
-"يُستخدم فقط إذا لم يُستخدم المولّد أعلاه، أو كنقطة بداية للضبط اليدوي."
+msgid "Only used if the generator above isn't used, or as a starting point to fine-tune manually."
+msgstr "يُستخدم فقط إذا لم يُستخدم المولّد أعلاه، أو كنقطة بداية للضبط اليدوي."
 
 #: templates/phishing/campaign_form.html:108
 msgid "Sender Display Name"
@@ -15705,12 +15054,8 @@ msgid "Advanced: Custom HTML Design (optional)"
 msgstr "متقدم: تصميم HTML مخصص (اختياري)"
 
 #: templates/phishing/campaign_form.html:137
-msgid ""
-"Paste your own complete email HTML to fully replace the template above — "
-"useful for mimicking a real brand email exactly."
-msgstr ""
-"الصق HTML البريد الكامل الخاص بك ليحل محل القالب أعلاه — مفيد لمحاكاة بريد "
-"علامة تجارية حقيقية بدقة."
+msgid "Paste your own complete email HTML to fully replace the template above — useful for mimicking a real brand email exactly."
+msgstr "الصق HTML البريد الكامل الخاص بك ليحل محل القالب أعلاه — مفيد لمحاكاة بريد علامة تجارية حقيقية بدقة."
 
 #: templates/phishing/campaign_form.html:141
 msgid "Guidance: what should this HTML contain?"
@@ -15739,10 +15084,7 @@ msgid ""
 "a multi-page template: the page a recipient lands\n"
 "                  on after clicking, and the \"you got caught\" awareness page shown afterward, are fixed\n"
 "                  pages used for every campaign and can't be edited here."
-msgstr ""
-"قالب متعدد الصفحات: الصفحة التي يصل إليها المستلم بعد النقر، وصفحة التوعية "
-"«لقد وقعت في الفخ» التي تظهر بعدها، صفحتان ثابتتان تُستخدمان لكل حملة ولا "
-"يمكن تعديلهما هنا."
+msgstr "قالب متعدد الصفحات: الصفحة التي يصل إليها المستلم بعد النقر، وصفحة التوعية «لقد وقعت في الفخ» التي تظهر بعدها، صفحتان ثابتتان تُستخدمان لكل حملة ولا يمكن تعديلهما هنا."
 
 #: templates/phishing/campaign_form.html:149
 msgid "It must:"
@@ -15781,12 +15123,8 @@ msgid "href"
 msgstr "href"
 
 #: templates/phishing/campaign_form.html:152
-msgid ""
-"of at least one link/button — this is what records a click for the "
-"campaign's metrics. Without it, clicks aren't tracked."
-msgstr ""
-"لرابط/زر واحد على الأقل — هذا ما يسجل النقرة لمقاييس الحملة. بدونه لا تُتتبع"
-" النقرات."
+msgid "of at least one link/button — this is what records a click for the campaign's metrics. Without it, clicks aren't tracked."
+msgstr "لرابط/زر واحد على الأقل — هذا ما يسجل النقرة لمقاييس الحملة. بدونه لا تُتتبع النقرات."
 
 #: templates/phishing/campaign_form.html:153
 msgid "Optionally use"
@@ -15797,12 +15135,8 @@ msgid "anywhere you want the recipient's name inserted."
 msgstr "في أي موضع تريد إدراج اسم المستلم فيه."
 
 #: templates/phishing/campaign_form.html:155
-msgid ""
-"Because it's sent as a real email, not a web page, follow email-HTML rules, "
-"not normal web conventions:"
-msgstr ""
-"لأنه يُرسل كبريد إلكتروني حقيقي وليس صفحة ويب، اتبع قواعد HTML للبريد لا "
-"قواعد الويب المعتادة:"
+msgid "Because it's sent as a real email, not a web page, follow email-HTML rules, not normal web conventions:"
+msgstr "لأنه يُرسل كبريد إلكتروني حقيقي وليس صفحة ويب، اتبع قواعد HTML للبريد لا قواعد الويب المعتادة:"
 
 #: templates/phishing/campaign_form.html:157
 msgid "Lay out with nested"
@@ -15821,12 +15155,8 @@ msgid "&lt;div&gt;"
 msgstr "&lt;div&gt;"
 
 #: templates/phishing/campaign_form.html:157
-msgid ""
-"/flexbox/grid — many mail clients (Outlook especially) ignore modern CSS "
-"layout."
-msgstr ""
-"/flexbox/grid — تتجاهل عملاء بريد كثيرة (خصوصًا Outlook) تنسيقات CSS "
-"الحديثة."
+msgid "/flexbox/grid — many mail clients (Outlook especially) ignore modern CSS layout."
+msgstr "/flexbox/grid — تتجاهل عملاء بريد كثيرة (خصوصًا Outlook) تنسيقات CSS الحديثة."
 
 #: templates/phishing/campaign_form.html:158
 msgid "Style every element with inline"
@@ -15853,8 +15183,7 @@ msgid "&lt;script&gt;"
 msgstr "&lt;script&gt;"
 
 #: templates/phishing/campaign_form.html:159
-msgid ""
-"— it will never run, and including it raises spam/phishing-filter scores."
+msgid "— it will never run, and including it raises spam/phishing-filter scores."
 msgstr "— لن يعمل أبدًا، وتضمينه يرفع درجات فلاتر البريد المزعج/التصيد."
 
 #: templates/phishing/campaign_form.html:160
@@ -15866,14 +15195,8 @@ msgid "https://yourdomain/..."
 msgstr "https://yourdomain/..."
 
 #: templates/phishing/campaign_form.html:160
-msgid ""
-"), not a relative path — mail clients fetch images directly and don't "
-"resolve relative paths against any page. Use \"Upload an image\" below; it "
-"inserts a ready-to-use absolute"
-msgstr ""
-")، وليس مسارًا نسبيًا — تجلب عملاء البريد الصور مباشرة ولا تحل المسارات "
-"النسبية مقابل أي صفحة. استخدم «رفع صورة» أدناه؛ فهي تُدرج رابطًا مطلقًا "
-"جاهزًا"
+msgid "), not a relative path — mail clients fetch images directly and don't resolve relative paths against any page. Use \"Upload an image\" below; it inserts a ready-to-use absolute"
+msgstr ")، وليس مسارًا نسبيًا — تجلب عملاء البريد الصور مباشرة ولا تحل المسارات النسبية مقابل أي صفحة. استخدم «رفع صورة» أدناه؛ فهي تُدرج رابطًا مطلقًا جاهزًا"
 
 #: templates/phishing/campaign_form.html:160
 msgid "&lt;img&gt;"
@@ -15884,30 +15207,19 @@ msgid "tag for you."
 msgstr "الوسم نيابة عنك."
 
 #: templates/phishing/campaign_form.html:161
-msgid ""
-"Keep the total HTML modest in size (well under ~100KB) — Gmail and others "
-"clip very large HTML emails."
-msgstr ""
-"أبقِ حجم HTML الإجمالي معقولًا (أقل بكثير من ١٠٠ كيلوبايت) — يقتطع Gmail "
-"وغيره الرسائل الكبيرة جدًا."
+msgid "Keep the total HTML modest in size (well under ~100KB) — Gmail and others clip very large HTML emails."
+msgstr "أبقِ حجم HTML الإجمالي معقولًا (أقل بكثير من ١٠٠ كيلوبايت) — يقتطع Gmail وغيره الرسائل الكبيرة جدًا."
 
 #: templates/phishing/campaign_form.html:162
-msgid ""
-"Design as a single column, ~600px wide — that's the width every major mail "
-"client renders consistently, on desktop and mobile alike."
-msgstr ""
-"صمّم بعمود واحد بعرض ~٦٠٠ بكسل — وهو العرض الذي تعرضه كل عملاء البريد "
-"الرئيسية باتساق على الحاسب والهاتف."
+msgid "Design as a single column, ~600px wide — that's the width every major mail client renders consistently, on desktop and mobile alike."
+msgstr "صمّم بعمود واحد بعرض ~٦٠٠ بكسل — وهو العرض الذي تعرضه كل عملاء البريد الرئيسية باتساق على الحاسب والهاتف."
 
 #: templates/phishing/campaign_form.html:165
 msgid ""
 "Leave this blank and the structured fields above (sender name, subject, offer heading/body, CTA)\n"
 "                  build the email automatically — that built-in template already follows every rule above, so\n"
 "                  it's a safe starting point to copy and adapt if you want a custom look."
-msgstr ""
-"اترك هذا فارغًا وستبني الحقول المنظمة أعلاه (اسم المرسل، الموضوع، عنوان ونص "
-"العرض، زر الإجراء) البريد تلقائيًا — فالقالب المدمج يتبع بالفعل كل قاعدة "
-"أعلاه، وهو نقطة بداية آمنة للنسخ والتعديل إذا أردت مظهرًا مخصصًا."
+msgstr "اترك هذا فارغًا وستبني الحقول المنظمة أعلاه (اسم المرسل، الموضوع، عنوان ونص العرض، زر الإجراء) البريد تلقائيًا — فالقالب المدمج يتبع بالفعل كل قاعدة أعلاه، وهو نقطة بداية آمنة للنسخ والتعديل إذا أردت مظهرًا مخصصًا."
 
 #: templates/phishing/campaign_form.html:172
 msgid "Upload an image"
@@ -15921,28 +15233,19 @@ msgstr "HTML مخصص — بريد إلكتروني"
 msgid ""
 "If filled in, this raw HTML is sent as-is (with the placeholders substituted) instead of the structured template above.\n"
 "                Must include"
-msgstr ""
-"إذا مُلئ، يُرسل HTML الخام كما هو (مع استبدال العناصر النائبة) بدلًا من "
-"القالب المنظم أعلاه. يجب أن يتضمن"
+msgstr "إذا مُلئ، يُرسل HTML الخام كما هو (مع استبدال العناصر النائبة) بدلًا من القالب المنظم أعلاه. يجب أن يتضمن"
 
 #: templates/phishing/campaign_form.html:185
-msgid ""
-"somewhere as a link so clicks are tracked. Auto-filled by the generator "
-"above."
-msgstr ""
-"في مكان ما كرابط ليتم تتبع النقرات. يُملأ تلقائيًا بواسطة المولّد أعلاه."
+msgid "somewhere as a link so clicks are tracked. Auto-filled by the generator above."
+msgstr "في مكان ما كرابط ليتم تتبع النقرات. يُملأ تلقائيًا بواسطة المولّد أعلاه."
 
 #: templates/phishing/campaign_form.html:189
 msgid "Custom HTML — Landing Page"
 msgstr "HTML مخصص — صفحة الهبوط"
 
 #: templates/phishing/campaign_form.html:193
-msgid ""
-"If filled in, this replaces the default generic landing page for this "
-"campaign. Auto-filled by the generator above."
-msgstr ""
-"إذا مُلئ، فسيحل محل صفحة الهبوط الافتراضية لهذه الحملة. يُملأ تلقائيًا "
-"بواسطة المولّد أعلاه."
+msgid "If filled in, this replaces the default generic landing page for this campaign. Auto-filled by the generator above."
+msgstr "إذا مُلئ، فسيحل محل صفحة الهبوط الافتراضية لهذه الحملة. يُملأ تلقائيًا بواسطة المولّد أعلاه."
 
 #: templates/phishing/caught.html:6
 msgid "تنبيه أمني — ComplyNex Pay"
@@ -16029,13 +15332,8 @@ msgid "Bulk Recipients"
 msgstr "مستلمون بالجملة"
 
 #: templates/phishing/recipients_form.html:21
-msgid ""
-"One per line:&#10;&#10;Mohamed, mohamed.emam@complynex.online&#10;Jahongir, "
-"js@example.com&#10;sarah.ahmed@complynex.online"
-msgstr ""
-"واحد في كل سطر:&#10;&#10;Mohamed, "
-"mohamed.emam@complynex.online&#10;Jahongir, "
-"js@example.com&#10;sarah.ahmed@complynex.online"
+msgid "One per line:&#10;&#10;Mohamed, mohamed.emam@complynex.online&#10;Jahongir, js@example.com&#10;sarah.ahmed@complynex.online"
+msgstr "واحد في كل سطر:&#10;&#10;Mohamed, mohamed.emam@complynex.online&#10;Jahongir, js@example.com&#10;sarah.ahmed@complynex.online"
 
 #: templates/phishing/recipients_form.html:22
 msgid "Format:"
@@ -16627,8 +15925,7 @@ msgstr "تعديل مستند السياسة"
 
 #: templates/policies/edit.html:12
 msgid "Update existing policy metadata, content, or lifecycle status."
-msgstr ""
-"تحديث البيانات الوصفية أو المحتوى أو حالة دورة الحياة للسياسة الحالية."
+msgstr "تحديث البيانات الوصفية أو المحتوى أو حالة دورة الحياة للسياسة الحالية."
 
 #: templates/policies/edit.html:27
 msgid "Content & Taxonomy"
@@ -16782,8 +16079,7 @@ msgid "No policies found"
 msgstr "لم يتم العثور على سياسات"
 
 #: templates/policies/list.html:159
-msgid ""
-"There are currently no policies visible to your account in this section."
+msgid "There are currently no policies visible to your account in this section."
 msgstr "لا توجد سياسات ظاهرة لحسابك في هذا القسم حاليًا."
 
 #: templates/policies/list.html:162
@@ -16918,9 +16214,7 @@ msgstr "الإقرار بالكل"
 msgid ""
 "The following policies have been published and require your formal acknowledgment to ensure compliance with\n"
 "    ComplyNex standards and CBE regulations."
-msgstr ""
-"نُشرت السياسات التالية وتتطلب إقرارك الرسمي لضمان الامتثال لمعايير ComplyNex"
-" ولوائح البنك المركزي المصري."
+msgstr "نُشرت السياسات التالية وتتطلب إقرارك الرسمي لضمان الامتثال لمعايير ComplyNex ولوائح البنك المركزي المصري."
 
 #: templates/policies/pending.html:48
 msgid "Review & Sign"
@@ -17008,9 +16302,7 @@ msgstr "إدارة دورة حياة السياسات"
 msgid ""
 "Showing policies due for review within the next 30 days. Regular reviews\n"
 "                    ensure our procedures remain aligned with CBE regulations."
-msgstr ""
-"عرض السياسات المستحقة للمراجعة خلال الـ٣٠ يومًا القادمة. تضمن المراجعات "
-"الدورية بقاء إجراءاتنا متوافقة مع لوائح البنك المركزي."
+msgstr "عرض السياسات المستحقة للمراجعة خلال الـ٣٠ يومًا القادمة. تضمن المراجعات الدورية بقاء إجراءاتنا متوافقة مع لوائح البنك المركزي."
 
 #: templates/policies/upcoming_reviews.html:37
 #: templates/users/progress.html:168
@@ -17182,12 +16474,8 @@ msgstr "عرض تقديماتي"
 #: templates/portal/annual_cobec.html:183 templates/portal/annual_coi.html:207
 #: templates/portal/incident_coi.html:139 templates/portal/status.html:304
 #: templates/portal/thank_you.html:144
-msgid ""
-"&copy; 2026 ComplyNex. All rights reserved. &nbsp;|&nbsp; Powered by Mohamed"
-" Emam &nbsp;|&nbsp;"
-msgstr ""
-"&copy; 2026 ComplyNex. جميع الحقوق محفوظة. &nbsp;|&nbsp; بواسطة Mohamed Emam"
-" &nbsp;|&nbsp;"
+msgid "&copy; 2026 ComplyNex. All rights reserved. &nbsp;|&nbsp; Powered by Mohamed Emam &nbsp;|&nbsp;"
+msgstr "&copy; 2026 ComplyNex. جميع الحقوق محفوظة. &nbsp;|&nbsp; بواسطة Mohamed Emam &nbsp;|&nbsp;"
 
 #: templates/portal/already_submitted.html:81
 #: templates/portal/annual_cobec.html:183 templates/portal/annual_coi.html:207
@@ -17523,8 +16811,7 @@ msgid "Pending Acknowledgments"
 msgstr "الإقرارات المعلقة"
 
 #: templates/portal/dashboard.html:136 templates/training/course_view.html:10
-#: templates/training/manage_questions.html:10
-#: templates/users/progress.html:77
+#: templates/training/manage_questions.html:10 templates/users/progress.html:77
 msgid "Training"
 msgstr "التدريب"
 
@@ -17679,12 +16966,8 @@ msgid "Employee Compliance Portal - ComplyNex"
 msgstr "بوابة امتثال الموظفين - ComplyNex"
 
 #: templates/portal/index.html:75
-msgid ""
-"Please log in to access your compliance declarations, policies, and training"
-" modules."
-msgstr ""
-"يرجى تسجيل الدخول للوصول إلى إقرارات الامتثال والسياسات ووحدات التدريب "
-"الخاصة بك."
+msgid "Please log in to access your compliance declarations, policies, and training modules."
+msgstr "يرجى تسجيل الدخول للوصول إلى إقرارات الامتثال والسياسات ووحدات التدريب الخاصة بك."
 
 #: templates/portal/index.html:80
 msgid "Log In"
@@ -17751,9 +17034,7 @@ msgid "Policy Acknowledgment"
 msgstr "الإقرار بالسياسة"
 
 #: templates/portal/policy_list.html:124
-msgid ""
-"I hereby acknowledge that I have received, read, and understood the "
-"following policy:"
+msgid "I hereby acknowledge that I have received, read, and understood the following policy:"
 msgstr "أُقرّ بأنني استلمت وقرأت وفهمت السياسة التالية:"
 
 #: templates/portal/policy_list.html:130
@@ -18310,8 +17591,7 @@ msgstr "السجلات الخاصة بـ:"
 msgid "Back to Reports"
 msgstr "العودة إلى التقارير"
 
-#: templates/reporting/policy_records.html:26
-#: templates/users/progress.html:167
+#: templates/reporting/policy_records.html:26 templates/users/progress.html:167
 msgid "Date Acknowledged"
 msgstr "تاريخ الإقرار"
 
@@ -18465,12 +17745,8 @@ msgid "Risk Category Management"
 msgstr "إدارة فئات المخاطر"
 
 #: templates/risk_management/categories.html:8
-msgid ""
-"Create, edit, archive, or delete risk categories. The Risk Register always "
-"reflects this list dynamically."
-msgstr ""
-"أنشئ أو عدّل أو أرشف أو احذف فئات المخاطر. يعكس سجل المخاطر هذه القائمة "
-"ديناميكيًا دائمًا."
+msgid "Create, edit, archive, or delete risk categories. The Risk Register always reflects this list dynamically."
+msgstr "أنشئ أو عدّل أو أرشف أو احذف فئات المخاطر. يعكس سجل المخاطر هذه القائمة ديناميكيًا دائمًا."
 
 #: templates/risk_management/categories.html:23
 msgid "Risks Using It"
@@ -18624,10 +17900,8 @@ msgid "Likelihood x Impact"
 msgstr "الاحتمالية × الأثر"
 
 #: templates/risk_management/dashboard.html:49
-msgid ""
-"Rows = Impact, Columns = Likelihood. Cell value = number of active risks."
-msgstr ""
-"الصفوف = الأثر، الأعمدة = الاحتمالية. قيمة الخلية = عدد المخاطر النشطة."
+msgid "Rows = Impact, Columns = Likelihood. Cell value = number of active risks."
+msgstr "الصفوف = الأثر، الأعمدة = الاحتمالية. قيمة الخلية = عدد المخاطر النشطة."
 
 #: templates/risk_management/dashboard.html:55
 msgid "Risk Bands"
@@ -18961,20 +18235,12 @@ msgid "Source:"
 msgstr "المصدر:"
 
 #: templates/risk_management/suggestion_create_form.html:33
-msgid ""
-"The risk will be created in DRAFT status with a neutral 3x3 score — please "
-"re-score it after review."
-msgstr ""
-"سيُنشأ الخطر بحالة مسودة بدرجة محايدة ٣×٣ — برجاء إعادة تقييمه بعد المراجعة."
+msgid "The risk will be created in DRAFT status with a neutral 3x3 score — please re-score it after review."
+msgstr "سيُنشأ الخطر بحالة مسودة بدرجة محايدة ٣×٣ — برجاء إعادة تقييمه بعد المراجعة."
 
 #: templates/risk_management/suggestions.html:6
-msgid ""
-"High-severity or overdue records from other modules that are not yet linked "
-"to a risk. Nothing here is created automatically — review each item and "
-"decide whether to raise a risk."
-msgstr ""
-"سجلات عالية الخطورة أو متأخرة من وحدات أخرى لم تُربط بخطر بعد. لا يُنشأ شيء "
-"هنا تلقائيًا — راجع كل بند وقرر ما إذا كنت سترفع خطرًا."
+msgid "High-severity or overdue records from other modules that are not yet linked to a risk. Nothing here is created automatically — review each item and decide whether to raise a risk."
+msgstr "سجلات عالية الخطورة أو متأخرة من وحدات أخرى لم تُربط بخطر بعد. لا يُنشأ شيء هنا تلقائيًا — راجع كل بند وقرر ما إذا كنت سترفع خطرًا."
 
 #: templates/risk_management/suggestions.html:12
 msgid "Suggested Category"
@@ -19050,11 +18316,8 @@ msgid "AML Alert Management"
 msgstr "إدارة تنبيهات مكافحة غسل الأموال"
 
 #: templates/screening/alerts.html:25
-msgid ""
-"Close all open alerts whose screening was already resolved through the "
-"review queue?"
-msgstr ""
-"إغلاق جميع التنبيهات المفتوحة التي تم حل فحصها بالفعل عبر قائمة المراجعة؟"
+msgid "Close all open alerts whose screening was already resolved through the review queue?"
+msgstr "إغلاق جميع التنبيهات المفتوحة التي تم حل فحصها بالفعل عبر قائمة المراجعة؟"
 
 #: templates/screening/alerts.html:29
 msgid "Backlog Cleanup (close alerts of already-resolved screenings)"
@@ -19117,8 +18380,8 @@ msgstr "مصادر البيانات"
 msgid "URL Management"
 msgstr "إدارة الروابط"
 
-#: templates/screening/audit_log.html:31
-#: templates/screening/audit_log.html:117 templates/screening/sources.html:339
+#: templates/screening/audit_log.html:31 templates/screening/audit_log.html:117
+#: templates/screening/sources.html:339
 msgid "Failed"
 msgstr "فشل"
 
@@ -19261,8 +18524,7 @@ msgstr "الأعمدة الاختيارية:"
 msgid "Type, DOB, Nationality, ID"
 msgstr "النوع، تاريخ الميلاد، الجنسية، رقم الهوية"
 
-#: templates/screening/bulk_upload.html:38
-#: templates/screening/sources.html:456
+#: templates/screening/bulk_upload.html:38 templates/screening/sources.html:456
 msgid "Select File"
 msgstr "اختر الملف"
 
@@ -19354,8 +18616,7 @@ msgstr "وزن خوارزمية Jaro-Winkler (الأساسي)"
 
 #: templates/screening/config.html:44
 msgid "Best for short strings like names. Handles typos well."
-msgstr ""
-"الأفضل للنصوص القصيرة مثل الأسماء. يتعامل بشكل جيد مع الأخطاء الكتابية."
+msgstr "الأفضل للنصوص القصيرة مثل الأسماء. يتعامل بشكل جيد مع الأخطاء الكتابية."
 
 #: templates/screening/config.html:47
 msgid "Levenshtein Weight (Validation)"
@@ -19572,9 +18833,8 @@ msgstr "التطابقات المحتملة"
 msgid "Recent Screenings"
 msgstr "عمليات الفحص الأخيرة"
 
-#: templates/screening/dashboard.html:99
-#: templates/screening/dashboard.html:158 templates/screening/queue.html:20
-#: templates/screening/queue.html:23
+#: templates/screening/dashboard.html:99 templates/screening/dashboard.html:158
+#: templates/screening/queue.html:20 templates/screening/queue.html:23
 msgid "Full History"
 msgstr "السجل الكامل"
 
@@ -19732,8 +18992,7 @@ msgstr "روابط المصادر المُهيَّأة"
 msgid "Validate All"
 msgstr "التحقق من الكل"
 
-#: templates/screening/manage_urls.html:83
-#: templates/screening/sources.html:219
+#: templates/screening/manage_urls.html:83 templates/screening/sources.html:219
 msgid "Edit URL"
 msgstr "تعديل الرابط"
 
@@ -19966,8 +19225,7 @@ msgstr "قائمة مراجعة الفحص"
 msgid "Whitelist"
 msgstr "القائمة البيضاء"
 
-#: templates/screening/queue.html:43
-#: templates/whistleblowing/dashboard.html:21
+#: templates/screening/queue.html:43 templates/whistleblowing/dashboard.html:21
 msgid "Total Cases"
 msgstr "إجمالي الحالات"
 
@@ -20035,8 +19293,7 @@ msgstr "حظر"
 msgid "Assign Case"
 msgstr "تعيين الحالة"
 
-#: templates/screening/queue.html:358
-#: templates/screening/queue_review.html:203
+#: templates/screening/queue.html:358 templates/screening/queue_review.html:203
 msgid "Select Officer"
 msgstr "اختر المسؤول"
 
@@ -20879,12 +20136,8 @@ msgid "Bulk Add Approved Customers to Whitelist"
 msgstr "إضافة جماعية للعملاء المعتمدين إلى القائمة البيضاء"
 
 #: templates/screening/whitelist_bulk_upload.html:17
-msgid ""
-"To whitelist a batch of already-approved customers at once, instead of "
-"adding them one by one:"
-msgstr ""
-"لإضافة مجموعة من العملاء المعتمدين بالفعل إلى القائمة البيضاء دفعة واحدة، "
-"بدلاً من إضافتهم واحدًا تلو الآخر:"
+msgid "To whitelist a batch of already-approved customers at once, instead of adding them one by one:"
+msgstr "لإضافة مجموعة من العملاء المعتمدين بالفعل إلى القائمة البيضاء دفعة واحدة، بدلاً من إضافتهم واحدًا تلو الآخر:"
 
 #: templates/screening/whitelist_bulk_upload.html:19
 msgid "Download the CSV template below."
@@ -20911,26 +20164,16 @@ msgid "Upload it below."
 msgstr "قم برفعه أدناه."
 
 #: templates/screening/whitelist_bulk_upload.html:24
-msgid ""
-"Each row is added independently — a mistake in one row will not block the "
-"rest of the batch. Rows that match an existing whitelist entry (same "
-"normalized name) update the reason instead of failing."
-msgstr ""
-"تتم إضافة كل صف بشكل مستقل — أي خطأ في صف واحد لن يمنع بقية الدفعة. الصفوف "
-"التي تطابق إدخالًا موجودًا في القائمة البيضاء (بنفس الاسم بعد التوحيد) "
-"تُحدّث السبب بدلاً من أن تفشل."
+msgid "Each row is added independently — a mistake in one row will not block the rest of the batch. Rows that match an existing whitelist entry (same normalized name) update the reason instead of failing."
+msgstr "تتم إضافة كل صف بشكل مستقل — أي خطأ في صف واحد لن يمنع بقية الدفعة. الصفوف التي تطابق إدخالًا موجودًا في القائمة البيضاء (بنفس الاسم بعد التوحيد) تُحدّث السبب بدلاً من أن تفشل."
 
 #: templates/screening/whitelist_bulk_upload.html:32
 msgid "Download the template with the expected columns and two examples."
 msgstr "قم بتنزيل النموذج الذي يحتوي على الأعمدة المتوقعة ومثالين."
 
 #: templates/screening/whitelist_bulk_upload.html:53
-msgid ""
-"Required columns: name, reason. Optional: entity_type, national_id, "
-"commercial_registry, date_of_birth, nationality."
-msgstr ""
-"الأعمدة الإلزامية: name، reason. الاختيارية: entity_type، national_id، "
-"commercial_registry، date_of_birth، nationality."
+msgid "Required columns: name, reason. Optional: entity_type, national_id, commercial_registry, date_of_birth, nationality."
+msgstr "الأعمدة الإلزامية: name، reason. الاختيارية: entity_type، national_id، commercial_registry، date_of_birth، nationality."
 
 #: templates/screening/whitelist_bulk_upload.html:62
 msgid "Upload and Add"
@@ -21017,8 +20260,7 @@ msgstr "إدارة النظام"
 msgid "Active Courses"
 msgstr "الدورات النشطة"
 
-#: templates/training/admin_list.html:61
-#: templates/training/course_form.html:30
+#: templates/training/admin_list.html:61 templates/training/course_form.html:30
 msgid "Course Name"
 msgstr "اسم الدورة"
 
@@ -21047,8 +20289,7 @@ msgid "Question Bank Quick View"
 msgstr "عرض سريع لبنك الأسئلة"
 
 #: templates/training/admin_list.html:124
-msgid ""
-"Select a course above to manage its dedicated quiz assessment questions."
+msgid "Select a course above to manage its dedicated quiz assessment questions."
 msgstr "اختر دورة بالأعلى لإدارة أسئلة الاختبار الخاصة بها."
 
 #: templates/training/admin_list.html:132
@@ -21323,9 +20564,7 @@ msgid "Video Completion Required"
 msgstr "يجب إكمال الفيديو"
 
 #: templates/training/course_view.html:137
-msgid ""
-"You must watch the entire video before taking the quiz. Scrubbing is "
-"disabled."
+msgid "You must watch the entire video before taking the quiz. Scrubbing is disabled."
 msgstr "يجب عليك مشاهدة الفيديو كاملاً قبل بدء الاختبار. التقديم السريع معطل."
 
 #: templates/training/course_view.html:143
@@ -21340,8 +20579,7 @@ msgstr "التقييم جاهز"
 
 #: templates/training/course_view.html:147
 #, python-format
-msgid ""
-"Complete the assessment to finish the course. You need %(score)s%% to pass."
+msgid "Complete the assessment to finish the course. You need %(score)s%% to pass."
 msgstr "أكمل التقييم لإنهاء الدورة. تحتاج إلى %(score)s%% للنجاح."
 
 #: templates/training/course_view.html:155
@@ -21501,8 +20739,7 @@ msgid "Ready to submit?"
 msgstr "هل أنت جاهز للإرسال؟"
 
 #: templates/training/quiz.html:68
-msgid ""
-"Please review all your answers. Once submitted, your score will be recorded."
+msgid "Please review all your answers. Once submitted, your score will be recorded."
 msgstr "يرجى مراجعة جميع إجاباتك. بعد الإرسال، سيتم تسجيل درجتك."
 
 #: templates/training/quiz.html:70
@@ -21517,9 +20754,7 @@ msgstr "تسجيل مستخدم يدويًا"
 msgid ""
 "Assign a training course to a specific employee. The list of\n"
 "                        courses will filter to show only those the user is not yet enrolled in."
-msgstr ""
-"أسند دورة تدريبية لموظف بعينه. ستُصفّى قائمة الدورات لعرض ما لم يُسجل فيه "
-"المستخدم بعد فقط."
+msgstr "أسند دورة تدريبية لموظف بعينه. ستُصفّى قائمة الدورات لعرض ما لم يُسجل فيه المستخدم بعد فقط."
 
 #: templates/training/report.html:21
 msgid "Select Employee"
@@ -21556,9 +20791,7 @@ msgid ""
 "Select one or more courses and one or more employees to\n"
 "                        enroll every selected employee in every selected course. Employees already enrolled in\n"
 "                        a given course are skipped automatically."
-msgstr ""
-"اختر دورة أو أكثر وموظفًا أو أكثر لتسجيل كل موظف محدد في كل دورة محددة. "
-"يُتخطى الموظفون المسجلون بالفعل في دورة ما تلقائيًا."
+msgstr "اختر دورة أو أكثر وموظفًا أو أكثر لتسجيل كل موظف محدد في كل دورة محددة. يُتخطى الموظفون المسجلون بالفعل في دورة ما تلقائيًا."
 
 #: templates/training/report.html:74
 msgid "Select Courses"
@@ -21731,9 +20964,7 @@ msgid "Anonymous Whistleblowing"
 msgstr "الإفصاح المجهول عن المخالفات"
 
 #: templates/whistleblowing/anonymous_info.html:13
-msgid ""
-"Report misconduct safely and confidentially. Your identity is protected by "
-"law."
+msgid "Report misconduct safely and confidentially. Your identity is protected by law."
 msgstr "الإفصاح عن سوء السلوك بأمان وسرية. هويتك محمية بموجب القانون."
 
 #: templates/whistleblowing/anonymous_info.html:17
@@ -22035,8 +21266,7 @@ msgstr "تأكيد الحل"
 
 #: templates/whistleblowing/case_detail.html:305
 msgid "Are you sure you want to escalate this case to HR/Legal?"
-msgstr ""
-"هل أنت متأكد من تصعيد هذه الحالة إلى الموارد البشرية/الشؤون القانونية؟"
+msgstr "هل أنت متأكد من تصعيد هذه الحالة إلى الموارد البشرية/الشؤون القانونية؟"
 
 #: templates/whistleblowing/case_status.html:18
 msgid "Submitted on"
@@ -22146,13 +21376,11 @@ msgid "All fields are anonymous. No personal information will be collected."
 msgstr "جميع الحقول مجهولة. لن يتم جمع أي معلومات شخصية."
 
 #: templates/whistleblowing/public_report.html:99
-msgid ""
-"I understand this report is completely anonymous and I cannot be identified"
+msgid "I understand this report is completely anonymous and I cannot be identified"
 msgstr "أتفهم أن هذا التقرير مجهول بالكامل ولا يمكن التعرف على هويتي"
 
 #: templates/whistleblowing/public_report.html:103
-msgid ""
-"You will receive a tracking code (e.g., WB-ABC-123-XYZ) to follow your case."
+msgid "You will receive a tracking code (e.g., WB-ABC-123-XYZ) to follow your case."
 msgstr "ستستلم رمز تتبع (مثال: WB-ABC-123-XYZ) لمتابعة حالتك."
 
 #: templates/whistleblowing/public_report.html:105
@@ -22340,8 +21568,7 @@ msgstr ""
 "                                    عمل"
 
 #: templates/whistleblowing/public_report.html:246
-msgid ""
-"Investigations typically take 10-30 business days depending on complexity"
+msgid "Investigations typically take 10-30 business days depending on complexity"
 msgstr "تستغرق التحقيقات عادةً 10-30 يوم عمل حسب التعقيد"
 
 #: templates/whistleblowing/public_report.html:248
@@ -22383,8 +21610,7 @@ msgstr "تم تقديم التقرير بنجاح"
 msgid "Thank You for Your Report"
 msgstr "شكرًا لك على تقريرك"
 
-#: templates/whistleblowing/public_report.html:295
-#: whistleblowing/routes.py:200
+#: templates/whistleblowing/public_report.html:295 whistleblowing/routes.py:200
 msgid "Your anonymous report has been submitted securely."
 msgstr "تم تقديم تقريرك المجهول بأمان."
 
@@ -22507,9 +21733,7 @@ msgid "SAVE THIS CODE"
 msgstr "احفظ هذا الرمز"
 
 #: templates/whistleblowing/public_report.html:513
-msgid ""
-"How to use: Visit the tracking page and enter this code to check your case "
-"status."
+msgid "How to use: Visit the tracking page and enter this code to check your case status."
 msgstr "كيفية الاستخدام: زر صفحة التتبع وأدخل هذا الرمز للتحقق من حالة حالتك."
 
 #: templates/whistleblowing/public_report.html:514
@@ -22541,8 +21765,7 @@ msgid "Monthly Trends"
 msgstr "الاتجاهات الشهرية"
 
 #: templates/whistleblowing/reports.html:27
-msgid ""
-"Analytic visualizations will be displayed here based on historical data."
+msgid "Analytic visualizations will be displayed here based on historical data."
 msgstr "ستُعرض التصورات التحليلية هنا بناءً على البيانات التاريخية."
 
 #: templates/whistleblowing/reports.html:38
@@ -22566,8 +21789,7 @@ msgid "Confidential Whistleblowing Portal"
 msgstr "بوابة الإفصاح السرية عن المخالفات"
 
 #: templates/whistleblowing/submit.html:12
-msgid ""
-"Report workplace misconduct safely and securely. Your identity is protected."
+msgid "Report workplace misconduct safely and securely. Your identity is protected."
 msgstr "الإفصاح عن سوء السلوك في مكان العمل بأمان وسرية. هويتك محمية."
 
 #: templates/whistleblowing/submit.html:25
@@ -22802,8 +22024,7 @@ msgstr "رمز التتبع السري الخاص بك"
 
 #: templates/whistleblowing/submit.html:338
 msgid "KEEP THIS CODE SAFE — This is the only way to check your case status."
-msgstr ""
-"احتفظ بهذا الرمز في مكان آمن — فهو الوسيلة الوحيدة للاستعلام عن حالة بلاغك."
+msgstr "احتفظ بهذا الرمز في مكان آمن — فهو الوسيلة الوحيدة للاستعلام عن حالة بلاغك."
 
 #: templates/whistleblowing/submit.html:339
 msgid "This code will not be shown again."
@@ -22818,14 +22039,11 @@ msgid "Your report has been securely received and encrypted."
 msgstr "تم استلام بلاغك بأمان وتم تشفيره."
 
 #: templates/whistleblowing/submit.html:342
-msgid ""
-"The Compliance Department will review your case within 2-3 business days."
+msgid "The Compliance Department will review your case within 2-3 business days."
 msgstr "ستقوم إدارة الامتثال بمراجعة بلاغك في غضون 2-3 أيام عمل."
 
 #: templates/whistleblowing/submit.html:343
-msgid ""
-"An investigation will be conducted. Cases typically take 10-30 business days"
-" to resolve."
+msgid "An investigation will be conducted. Cases typically take 10-30 business days to resolve."
 msgstr "سيتم إجراء تحقيق. تستغرق الحالات عادةً من 10 إلى 30 يوم عمل لحلها."
 
 #: templates/whistleblowing/submit.html:344
@@ -22841,17 +22059,12 @@ msgid "to check case status."
 msgstr "للاستعلام عن حالة البلاغ."
 
 #: templates/whistleblowing/submit.html:347
-msgid ""
-"This document is confidential and protected under Egyptian Labor Law No. "
-"12/2003."
+msgid "This document is confidential and protected under Egyptian Labor Law No. 12/2003."
 msgstr "هذا المستند سري ومحمي بموجب قانون العمل المصري رقم 12 لسنة 2003."
 
 #: templates/whistleblowing/submit.html:348
-msgid ""
-"Retaliation against whistleblowers is strictly prohibited and grounds for "
-"immediate termination."
-msgstr ""
-"يُحظر تمامًا الانتقام من مقدمي البلاغات، ويُعد ذلك سببًا للفصل الفوري."
+msgid "Retaliation against whistleblowers is strictly prohibited and grounds for immediate termination."
+msgstr "يُحظر تمامًا الانتقام من مقدمي البلاغات، ويُعد ذلك سببًا للفصل الفوري."
 
 #: templates/whistleblowing/submit.html:422
 msgid "Please provide a more detailed description (at least 50 characters)"
@@ -22948,25 +22161,19 @@ msgid "File too large. Maximum size is %(mb)sMB"
 msgstr "الملف كبير جدًا. الحد الأقصى %(mb)s ميجابايت"
 
 #: whistleblowing/routes.py:64
-msgid ""
-"Egyptian Labor Law No. 12/2003 protects whistleblowers from retaliation"
-msgstr ""
-"يحمي قانون العمل المصري رقم 12 لسنة 2003 المُفصِحين عن المخالفات من الانتقام"
+msgid "Egyptian Labor Law No. 12/2003 protects whistleblowers from retaliation"
+msgstr "يحمي قانون العمل المصري رقم 12 لسنة 2003 المُفصِحين عن المخالفات من الانتقام"
 
 #: whistleblowing/routes.py:65
 msgid "Central Bank of Egypt mandates confidential reporting mechanisms"
 msgstr "يفرض البنك المركزي المصري آليات إفصاح سرية"
 
 #: whistleblowing/routes.py:66
-msgid ""
-"ComplyNex has a strict zero-tolerance policy for whistleblower retaliation"
-msgstr ""
-"تتبنى ComplyNex سياسة صارمة بعدم التسامح مطلقًا مع الانتقام من المُفصِحين عن"
-" المخالفات"
+msgid "ComplyNex has a strict zero-tolerance policy for whistleblower retaliation"
+msgstr "تتبنى ComplyNex سياسة صارمة بعدم التسامح مطلقًا مع الانتقام من المُفصِحين عن المخالفات"
 
 #: whistleblowing/routes.py:67
-msgid ""
-"Retaliation against whistleblowers is grounds for immediate termination"
+msgid "Retaliation against whistleblowers is grounds for immediate termination"
 msgstr "يُعد الانتقام من المُفصِحين عن المخالفات سببًا للفصل الفوري"
 
 #: whistleblowing/routes.py:98
@@ -23047,9 +22254,7 @@ msgid "Whistleblowing Report Received"
 msgstr "تم استلام تقرير الإفصاح عن المخالفة"
 
 #: whistleblowing/routes.py:203
-msgid ""
-"Save this code to track your case. This is the only way to access your "
-"report."
+msgid "Save this code to track your case. This is the only way to access your report."
 msgstr "احفظ هذا الرمز لتتبع حالتك. هذه هي الطريقة الوحيدة للوصول إلى تقريرك."
 
 #: whistleblowing/routes.py:208
@@ -23127,15 +22332,12 @@ msgstr "فشل تنزيل المرفق."
 
 # ============================================
 # WHISTLEBLOWING FORM TRANSLATIONS
-
 # --- regcontrols (generic compliance control framework) ---
 msgid "Admin (approve parameters, edit library)"
 msgstr "مسؤول (اعتماد المعايير وتعديل المكتبة)"
 
-
 msgid "Compliance Dashboard"
 msgstr "لوحة الالتزام"
-
 
 msgid "Findings & Corrective Actions"
 msgstr "الملاحظات والإجراءات التصحيحية"
@@ -23181,7 +22383,6 @@ msgstr "منتهي الصلاحية"
 
 msgid "Pending review"
 msgstr "بانتظار المراجعة"
-
 
 msgid "Internal audit"
 msgstr "المراجعة الداخلية"
@@ -23318,7 +22519,6 @@ msgstr "الفحص الآلي"
 msgid "Generic evidence check"
 msgstr "فحص الأدلة العام"
 
-
 msgid "Last run"
 msgstr "آخر تشغيل"
 
@@ -23418,9 +22618,11 @@ msgstr "نوع الترخيص"
 msgid "Run due controls now"
 msgstr "تشغيل الضوابط المستحقة الآن"
 
+#, python-format
 msgid "%(n)s regulatory parameter(s) still need Compliance review."
 msgstr "%(n)s معيار رقابي ما زال يحتاج مراجعة إدارة الالتزام."
 
+#, python-format
 msgid "%(n)s parameter change(s) waiting for approval."
 msgstr "%(n)s تعديل على المعايير بانتظار الاعتماد."
 
@@ -23715,7 +22917,6 @@ msgstr "يُستخدم للإصدار الجديد فقط."
 msgid "Effective to"
 msgstr "ساري حتى"
 
-
 msgid "Description (English)"
 msgstr "الوصف (بالإنجليزية)"
 
@@ -23733,7 +22934,6 @@ msgstr "سبب التعديل"
 
 msgid "Submit for approval"
 msgstr "إرسال للاعتماد"
-
 
 msgid "Changes waiting for approval"
 msgstr "تعديلات بانتظار الاعتماد"
@@ -23771,7 +22971,6 @@ msgstr "غير سارٍ"
 msgid "No parameters match."
 msgstr "لا توجد معايير مطابقة."
 
-
 msgid "Selects which licence-specific parameter values the checks use."
 msgstr "يحدد قيم المعايير الخاصة بالترخيص التي تستخدمها الفحوصات."
 
@@ -23808,9 +23007,11 @@ msgstr "ليست لديك صلاحية لتنفيذ هذا الإجراء في �
 msgid "Scheduled run queued. Results appear as each control finishes."
 msgstr "تمت جدولة التشغيل. ستظهر النتائج عند انتهاء كل ضابط."
 
+#, python-format
 msgid "Due controls run: %(n)s."
 msgstr "تم تشغيل الضوابط المستحقة: %(n)s."
 
+#, python-format
 msgid "Control run finished: %(status)s"
 msgstr "انتهى تشغيل الضابط: %(status)s"
 
@@ -23880,9 +23081,11 @@ msgstr "حجم الملف أكبر من 2 ميجابايت."
 msgid "The file must be UTF-8 encoded CSV."
 msgstr "يجب أن يكون الملف CSV بترميز UTF-8."
 
+#, python-format
 msgid "%(c)s finding(s) imported, %(s)s already existed."
 msgstr "تم استيراد %(c)s ملاحظة، و%(s)s كانت موجودة مسبقًا."
 
+#, python-format
 msgid "%(n)s internal-audit finding(s) imported."
 msgstr "تم استيراد %(n)s ملاحظة من المراجعة الداخلية."
 
@@ -24257,6 +23460,7 @@ msgstr "حجم الملف أكبر من 20 ميجابايت."
 msgid "The file could not be read:"
 msgstr "تعذرت قراءة الملف:"
 
+#, python-format
 msgid "Import finished: %(ok)s row(s) saved, %(bad)s with errors."
 msgstr "انتهى الاستيراد: تم حفظ %(ok)s صف، و%(bad)s بها أخطاء."
 
@@ -24530,6 +23734,7 @@ msgstr "استورد بهذا الترتيب: العملاء ثم التمويل
 msgid "Templates and columns"
 msgstr "النماذج والأعمدة"
 
+#, python-brace-format
 msgid "Dates as YYYY-MM-DD. Yes/no columns accept yes, no, 1, 0. cost_lines is a JSON list, e.g. [{\"label\": \"rent\", \"amount\": 1500}]. The same data can be sent to the JSON API: POST /api/v1/fra-nbfi/lending/import with an API key that has the lending:write scope."
 msgstr "التواريخ بصيغة YYYY-MM-DD. أعمدة نعم/لا تقبل yes وno و1 و0. عمود cost_lines قائمة JSON مثل [{\"label\": \"rent\", \"amount\": 1500}]. ويمكن إرسال نفس البيانات إلى واجهة JSON: POST /api/v1/fra-nbfi/lending/import بمفتاح API له صلاحية lending:write."
 
@@ -24855,21 +24060,25 @@ msgstr "تم تسجيل المراجعة."
 msgid "A finding was opened for the issues."
 msgstr "تم فتح ملاحظة للمشكلات المكتشفة."
 
+#, python-format
 msgid "%(n)s test case(s) added."
 msgstr "تمت إضافة %(n)s حالة اختبار."
 
 msgid "Synthetic negative cases added."
 msgstr "تمت إضافة حالات سلبية مُختلَقة."
 
+#, python-format
 msgid "QA run finished: recall %(r)s, misses %(m)s."
 msgstr "انتهى اختبار الجودة: نسبة الاكتشاف %(r)s، الإخفاقات %(m)s."
 
 msgid "Screening failed:"
 msgstr "فشل الفحص:"
 
+#, python-format
 msgid "%(n)s employee(s) screened, %(h)s potential match(es)."
 msgstr "تم فحص %(n)s موظف، %(h)s تطابق محتمل."
 
+#, python-format
 msgid "Rated %(score)s (%(band)s)."
 msgstr "التصنيف %(score)s (%(band)s)."
 
@@ -24879,6 +24088,7 @@ msgstr "تم اعتماد بدء العلاقة."
 msgid "Field key and English label are required."
 msgstr "مفتاح الحقل والتسمية بالإنجليزية مطلوبان."
 
+#, python-brace-format
 msgid "Check the values: category, weight and scoring JSON (e.g. {\"HIGH\": 80, \"*\": 20})."
 msgstr "راجع القيم: الفئة والوزن وصيغة JSON للتقييم (مثال {\"HIGH\": 80, \"*\": 20})."
 
@@ -24888,6 +24098,7 @@ msgstr "تم تحديث مؤشر الاشتباه."
 msgid "Sent to the unusual-transactions register."
 msgstr "أُرسل إلى سجل العمليات غير العادية."
 
+#, python-brace-format
 msgid "Check settings must be a JSON object, e.g. {\"fields\": [\"gender\"]}."
 msgstr "يجب أن تكون إعدادات الفحص كائن JSON، مثال {\"fields\": [\"gender\"]}."
 
@@ -25675,12 +24886,14 @@ msgstr "تم الحفظ. أرفق المستند المؤيد (قرار، شها
 msgid "Period approved."
 msgstr "تم اعتماد الفترة."
 
+#, python-format
 msgid "%(n)s period(s) imported."
 msgstr "تم استيراد %(n)s فترة."
 
 msgid "Saved as draft; another user must approve the figures."
 msgstr "حُفظت كمسودة؛ يجب أن يعتمد الأرقام مستخدم آخر."
 
+#, python-format
 msgid "%(n)s facility(ies) imported."
 msgstr "تم استيراد %(n)s تسهيل."
 
@@ -26565,6 +25778,7 @@ msgstr "تم قبول التقييم."
 msgid "Saved. Attach the report, then accept it."
 msgstr "تم الحفظ. أرفق التقرير ثم اقبله."
 
+#, python-format
 msgid "Certificate valid until %(d)s."
 msgstr "الشهادة سارية حتى %(d)s."
 
@@ -26977,18 +26191,22 @@ msgstr "تم نشر إصدار جديد للمعامل؛ تحتفظ القيود
 msgid "No reporting period exists yet."
 msgstr "لا توجد فترة تقرير بعد."
 
+#, python-format
 msgid "Recorded %(t)s tCO2e. Attach the evidence (invoice, meter reading, ticket)."
 msgstr "تم تسجيل %(t)s طن مكافئ CO2. أرفق المستند (فاتورة، قراءة عداد، تذكرة)."
 
+#, python-format
 msgid "Exposure saved: %(t)s tCO2e financed (PCAF score %(s)s)."
 msgstr "تم حفظ التعرض: %(t)s طن مكافئ CO2 ممولة (درجة PCAF %(s)s)."
 
+#, python-format
 msgid "Inventory status: %(s)s."
 msgstr "حالة الجرد: %(s)s."
 
 msgid "This reporting period is approved and locked."
 msgstr "فترة التقرير هذه معتمدة ومقفلة."
 
+#, python-format
 msgid "Report marked as submitted. Offset obligation created: %(req)s tCO2e (%(pct)s%%) due within %(days)s days."
 msgstr "تم تسجيل تقديم التقرير. أُنشئ التزام التعويض: %(req)s طن مكافئ CO2 (%(pct)s%%) خلال %(days)s يوماً."
 
@@ -27554,6 +26772,7 @@ msgstr "لا يوجد إجراء بعد."
 msgid "All areas"
 msgstr "كل المجالات"
 
+#, python-format
 msgid "Readiness snapshot saved (%(n)s scores)."
 msgstr "تم حفظ لقطة الجاهزية (%(n)s درجة)."
 
@@ -27711,6 +26930,7 @@ msgstr "ليست لديك صلاحية على مساعد الالتزام."
 msgid "Proposal rejected; nothing was created."
 msgstr "تم رفض المقترح ولم يُنشأ أي سجل."
 
+#, python-format
 msgid "Playbook started: %(n)s task(s) created."
 msgstr "بدأ تنفيذ الدليل الإجرائي: تم إنشاء %(n)s مهمة."
 
@@ -27723,6 +26943,7 @@ msgstr "الرمز والاسم بالإنجليزية مطلوبان."
 msgid "Choose a routing target."
 msgstr "اختر جهة التوجيه."
 
+#, python-format
 msgid "Retention applied: %(n)s prompt(s) purged."
 msgstr "تم تطبيق مدة الاحتفاظ: حُذف %(n)s من النصوص المرسلة للنموذج."
 
@@ -28252,6 +27473,7 @@ msgstr "حدد سنة الأساس"
 msgid "Add at least one active site (office, branch, data centre)"
 msgstr "أضف موقعًا نشطًا واحدًا على الأقل (مكتب، فرع، مركز بيانات)"
 
+#, python-format
 msgid "No current emission factor for %(s)s"
 msgstr "لا يوجد معامل انبعاث حالي لـ %(s)s"
 
@@ -28267,21 +27489,26 @@ msgstr "أضف معاملات الانبعاث أولًا"
 msgid "No activity data recorded for this period"
 msgstr "لا توجد بيانات أنشطة مسجلة لهذه الفترة"
 
+#, python-format
 msgid "%(n)s entries without evidence"
 msgstr "%(n)s قيود بدون مستندات"
 
+#, python-format
 msgid "%(n)s Scope 1/2 entries without a month"
 msgstr "%(n)s قيود للنطاق 1/2 بدون شهر"
 
+#, python-format
 msgid "%(n)s entries recorded outside the reporting boundary (not counted)"
 msgstr "%(n)s قيود مسجلة خارج حدود التقرير (غير محتسبة)"
 
 msgid "Record activity data first"
 msgstr "سجّل بيانات الأنشطة أولًا"
 
+#, python-format
 msgid "%(n)s critical data-quality issues"
 msgstr "%(n)s مشكلات حرجة في جودة البيانات"
 
+#, python-format
 msgid "%(n)s warnings to explain to the verifier"
 msgstr "%(n)s تنبيهات يجب شرحها للمُحقِّق"
 
@@ -28291,6 +27518,7 @@ msgstr "في انتظار المراجع"
 msgid "Waiting for the approver"
 msgstr "في انتظار المعتمد"
 
+#, python-format
 msgid "Fix %(n)s critical data-quality issues before submitting"
 msgstr "عالج %(n)s مشكلات حرجة في جودة البيانات قبل التقديم"
 
@@ -28309,15 +27537,18 @@ msgstr "غير مطلوب وفق القواعد الرقابية المُعدّ�
 msgid "Enter capital or equity in the company profile to check whether this applies"
 msgstr "أدخل رأس المال أو حقوق الملكية في ملف الشركة لمعرفة ما إذا كان هذا ينطبق"
 
+#, python-format
 msgid "Current status: %(s)s"
 msgstr "الحالة الحالية: %(s)s"
 
 msgid "Send the approved report to the verifier"
 msgstr "أرسل التقرير المعتمد إلى المُحقِّق"
 
+#, python-format
 msgid "%(n)s tCO2e of certificates still to buy"
 msgstr "%(n)s طن مكافئ CO2 من الشهادات ما زال مطلوب شراؤها"
 
+#, python-format
 msgid "Deadline passed — %(n)s tCO2e missing"
 msgstr "انقضى الموعد — ينقص %(n)s طن مكافئ CO2"
 
@@ -28444,6 +27675,7 @@ msgstr "الإجماليات في هذه الصفحة تحتسب هذه النط
 msgid "recorded but outside the reporting boundary"
 msgstr "مسجّل لكنه خارج حدود التقرير"
 
+#, python-format
 msgid "%(n)s entries outside the boundary"
 msgstr "%(n)s قيود خارج الحدود"
 
@@ -28552,27 +27784,34 @@ msgstr "حدّث حالة التقرير مع تقدمه، مع اسم المُ�
 msgid "Scope 3: recorded but outside the reporting boundary (not declared)"
 msgstr "النطاق 3: مسجّل لكنه خارج حدود التقرير (غير مُعلن)"
 
+#, python-format
 msgid "%(p)s per cent of declared emissions, within %(d)s days of submission"
 msgstr "%(p)s في المائة من الانبعاثات المعلنة، خلال %(d)s يومًا من التقديم"
 
 msgid "No offset obligation yet."
 msgstr "لا يوجد التزام تعويض بعد."
 
+#, python-format
 msgid "It is created automatically when the report status is moved to Submitted: %(p)s per cent of the declared total, due within %(d)s days. Certificates are bought through the climate-project registry named by the regulator."
 msgstr "يُنشأ تلقائيًا عند نقل حالة التقرير إلى \"تم التقديم\": %(p)s في المائة من الإجمالي المعلن، مستحق خلال %(d)s يومًا. تُشترى الشهادات من سجل المشروعات المناخية الذي تحدده الجهة الرقابية."
 
+#, python-format
 msgid "Prepared pursuant to: %(ref)s"
 msgstr "أُعدّ استنادًا إلى: %(ref)s"
 
+#, python-format
 msgid "This inventory was prepared following the GHG Protocol Corporate Accounting and Reporting Standard (operational control approach) and the measurement scope required by the FRA carbon-footprint rules (%(ref)s)."
 msgstr "أُعدّ هذا الحصر وفق المعيار المؤسسي للمحاسبة والإبلاغ لبروتوكول غازات الاحتباس الحراري (منهج السيطرة التشغيلية) ونطاق القياس الذي تشترطه قواعد الهيئة العامة للرقابة المالية بشأن البصمة الكربونية (%(ref)s)."
 
+#, python-format
 msgid "This exclusion is declared explicitly in line with GHG Protocol boundary-setting guidance. The FRA carbon-footprint rules (%(ref)s) require Scope 1 and Scope 2 only."
 msgstr "يُعلن هذا الاستبعاد صراحةً وفق إرشادات بروتوكول غازات الاحتباس الحراري لتحديد الحدود. تشترط قواعد الهيئة بشأن البصمة الكربونية (%(ref)s) النطاقين 1 و2 فقط."
 
+#, python-format
 msgid "Pursuant to %(ref)s, the company commits to purchasing certified emission-reduction certificates equal to %(p)s per cent of the total emissions declared above (%(req)s tCO2e) through the FRA Climate Project Registry within %(d)s days of report submission (deadline: %(dl)s)."
 msgstr "استنادًا إلى %(ref)s، تلتزم الشركة بشراء شهادات خفض انبعاثات معتمدة تعادل %(p)s في المائة من إجمالي الانبعاثات المعلنة أعلاه (%(req)s طن مكافئ CO2) من خلال سجل المشروعات المناخية لدى الهيئة خلال %(d)s يومًا من تقديم التقرير (الموعد النهائي: %(dl)s)."
 
+#, python-format
 msgid "Upon submission of this report, the company will purchase certified emission-reduction certificates equal to %(p)s per cent of the total declared emissions (%(est)s tCO2e estimated) through the FRA Climate Project Registry within %(d)s days."
 msgstr "عند تقديم هذا التقرير، ستشتري الشركة شهادات خفض انبعاثات معتمدة تعادل %(p)s في المائة من إجمالي الانبعاثات المعلنة (%(est)s طن مكافئ CO2 تقديريًا) من خلال سجل المشروعات المناخية لدى الهيئة خلال %(d)s يومًا."
 
@@ -28624,6 +27863,7 @@ msgstr "إفصاحات المناخ وفق TCFD"
 msgid "Carbon footprint report and offset obligation"
 msgstr "تقرير البصمة الكربونية والتزام التعويض"
 
+#, python-format
 msgid "from EGP %(v)s"
 msgstr "من %(v)s جنيه"
 
@@ -28747,6 +27987,7 @@ msgstr "هذا ما تقرؤه الإدارة ومجلس الإدارة والم
 msgid "Nothing: approve the inventory first (step 6), then export the PDF or Excel file."
 msgstr "لا شيء: اعتمد الحصر أولًا (الخطوة 6)، ثم صدّر ملف PDF أو Excel."
 
+#, python-format
 msgid "%(s)s is outside the reporting boundary and not included in the totals."
 msgstr "%(s)s خارج حدود التقرير وغير مُدرج في الإجماليات."
 
@@ -29116,14 +28357,212 @@ msgstr "قيمة الكربون: تلقائي"
 msgid "Carbon value"
 msgstr "قيمة الكربون"
 
+msgid "Screening Quality"
+msgstr "جودة الفحص"
+
+msgid "Exact name"
+msgstr "الاسم مطابق تماماً"
+
+msgid "Spelling variant (hamza, taa marbuta, alef maqsura)"
+msgstr "اختلاف إملائي (همزة، تاء مربوطة، ألف مقصورة)"
+
+msgid "One middle name missing"
+msgstr "ناقص اسم من النص"
+
+msgid "Extra name (longer ID name)"
+msgstr "اسم زيادة (اسم البطاقة أطول)"
+
+msgid "Typing error"
+msgstr "خطأ كتابة"
+
+msgid "Latin script"
+msgstr "بالحروف اللاتينية"
+
+msgid "First + family name only"
+msgstr "الاسم الأول واسم العائلة فقط"
+
+msgid "Typo + same national ID"
+msgstr "خطأ كتابة + نفس الرقم القومي"
+
+msgid "Same name, different national ID"
+msgstr "نفس الاسم برقم قومي مختلف"
+
+msgid "How accurately the engine finds listed persons, how often it raises false alerts, and whether every list is current and searchable."
+msgstr "مدى دقة المحرك في إيجاد الأشخاص المدرجين، وعدد الإنذارات الخاطئة، وهل كل قائمة محدثة وقابلة للبحث."
+
+msgid "Data sources"
+msgstr "مصادر البيانات"
+
+msgid "Run evaluation now"
+msgstr "تشغيل التقييم الآن"
+
+msgid "No evaluation has run yet. Press “Run evaluation now”; the weekly run also fills this page."
+msgstr "لم يتم تشغيل أي تقييم بعد. اضغط «تشغيل التقييم الآن»، والتقييم الأسبوعي يملأ الصفحة أيضاً."
+
+msgid "Detection rate"
+msgstr "نسبة الاكتشاف"
+
+msgid "Listed names found across realistic variants"
+msgstr "الأسماء المدرجة التي تم إيجادها بأشكالها الواقعية"
+
+msgid "False alerts"
+msgstr "إنذارات خاطئة"
+
+msgid "Names on no list that raised a potential or confirmed alert"
+msgstr "أسماء غير مدرجة أعطت تطابقاً محتملاً أو مؤكداً"
+
+msgid "False confirmed hits"
+msgstr "تطابقات مؤكدة خاطئة"
+
+msgid "Names on no list that were auto-confirmed"
+msgstr "أسماء غير مدرجة تم تأكيدها تلقائياً"
+
+msgid "Different ID confirmed"
+msgstr "تأكيد برقم قومي مختلف"
+
+msgid "Same name but another national ID must never auto-confirm"
+msgstr "نفس الاسم برقم قومي آخر لا يجب أن يتأكد تلقائياً أبداً"
+
+msgid "Lists up to date"
+msgstr "قوائم محدثة"
+
+msgid "Updated successfully in the last"
+msgstr "تم تحديثها بنجاح خلال آخر"
+
+msgid "How the engine decides a hit"
+msgstr "إزاي المحرك بيقرر التطابق"
+
+msgid "Names are normalised (hamza, taa marbuta, alef maqsura, diacritics, عبد / ابو compounds, Latin spellings) and compared element by element, in order."
+msgstr "يتم توحيد كتابة الأسماء (الهمزة، التاء المربوطة، الألف المقصورة، التشكيل، المركبات مثل عبد/ابو، التهجئة اللاتينية) ثم المقارنة اسماً باسم وبنفس الترتيب."
+
+msgid "Rare elements (family names) weigh more than common ones (محمد, احمد). Coverage is measured both ways, so a two-word listed name inside a four-word customer name is a partial match, not a confirmed hit."
+msgstr "الأسماء النادرة (مثل اسم العائلة) وزنها أعلى من الأسماء الشائعة (محمد، احمد). التغطية تُقاس في الاتجاهين، فاسم مدرج من كلمتين داخل اسم عميل من أربع كلمات يُعتبر تطابقاً جزئياً وليس مؤكداً."
+
+msgid "Identifiers decide: the same national ID confirms the hit; a different valid national ID or birth year contradicts it. The Egyptian national ID gives the birth date, governorate and gender."
+msgstr "المعرّفات هي الحَكم: نفس الرقم القومي يؤكد التطابق، ورقم قومي مختلف أو سنة ميلاد مختلفة ينفيه. الرقم القومي المصري يعطي تاريخ الميلاد والمحافظة والنوع."
+
+msgid "When the listed record has no ID, the decision rests on the full name and the nationality / country."
+msgstr "لو السجل المدرج ليس له رقم قومي، يعتمد القرار على الاسم الكامل والجنسية / الدولة."
+
+msgid "Confirmed hit = identifier match, or a complete name match (both ways, same order, at least three names) with nothing contradicting it. Everything else is a potential match for review, and each listed person appears once with all the lists it is on."
+msgstr "التطابق المؤكد = تطابق المعرّف، أو تطابق الاسم كاملاً (في الاتجاهين وبنفس الترتيب ومن ثلاثة أسماء على الأقل) دون أي تعارض. غير ذلك يكون تطابقاً محتملاً للمراجعة، ويظهر كل شخص مدرج مرة واحدة مع كل القوائم المدرج بها."
+
+msgid "Accuracy by name variant"
+msgstr "الدقة حسب شكل الاسم"
+
+msgid "listed names"
+msgstr "اسم مدرج"
+
+msgid "checks"
+msgstr "فحص"
+
+msgid "Checks"
+msgstr "الفحوص"
+
+msgid "Auto-confirmed"
+msgstr "تأكيد تلقائي"
+
+msgid "“First + family name only” is expected to be a potential match, not a confirmed hit. “Same name, different national ID” must show 0 auto-confirmed."
+msgstr "«الاسم الأول واسم العائلة فقط» المتوقع أن يكون تطابقاً محتملاً وليس مؤكداً. و«نفس الاسم برقم قومي مختلف» لازم يكون صفر تأكيد تلقائي."
+
+msgid "Detection rate by list"
+msgstr "نسبة الاكتشاف حسب القائمة"
+
+msgid "Average time per check"
+msgstr "متوسط زمن الفحص"
+
+msgid "Run"
+msgstr "التشغيل"
+
+msgid "False confirmed"
+msgstr "مؤكد خطأ"
+
+msgid "Are the lists current?"
+msgstr "هل القوائم محدثة؟"
+
+msgid "Active records"
+msgstr "السجلات النشطة"
+
+msgid "Last update run"
+msgstr "آخر تحديث"
+
+msgid "Age (days)"
+msgstr "العمر (أيام)"
+
+msgid "Delisted last run"
+msgstr "المرفوعين في آخر تحديث"
+
+msgid "Problem"
+msgstr "المشكلة"
+
+msgid "no run logged yet"
+msgstr "لا يوجد تحديث مسجل بعد"
+
+msgid "Internal lists"
+msgstr "القوائم الداخلية"
+
+msgid "active"
+msgstr "نشط"
+
+msgid "last added"
+msgstr "آخر إضافة"
+
+msgid "Internal lists are searched directly in the database, so a name is screenable the moment it is added."
+msgstr "القوائم الداخلية يتم البحث فيها مباشرة في قاعدة البيانات، فأي اسم يصبح قابلاً للفحص لحظة إضافته."
+
+msgid "Search index coverage"
+msgstr "تغطية فهرس البحث"
+
+msgid "In database"
+msgstr "في قاعدة البيانات"
+
+msgid "Searchable"
+msgstr "قابل للبحث"
+
+msgid "Similar-name (semantic) index"
+msgstr "فهرس الأسماء المتشابهة (الدلالي)"
+
+msgid "Last incremental update"
+msgstr "آخر تحديث"
+
+msgid "days ago"
+msgstr "يوم مضى"
+
+msgid "Waiting to be indexed"
+msgstr "في انتظار الفهرسة"
+
+msgid "watchlist"
+msgstr "قوائم المراقبة"
+
+msgid "internal blacklist"
+msgstr "القائمة الداخلية"
+
+msgid "State not available"
+msgstr "الحالة غير متاحة"
+
+msgid "Missed in the latest run"
+msgstr "لم يتم اكتشافها في آخر تقييم"
+
+msgid "False alerts in the latest run"
+msgstr "إنذارات خاطئة في آخر تقييم"
+
+msgid "Name on no list"
+msgstr "اسم غير مدرج"
+
+msgid "Matched to"
+msgstr "تطابق مع"
+
+msgid "Only administrators and compliance officers can start an evaluation."
+msgstr "تشغيل التقييم متاح لمسؤولي النظام والامتثال فقط."
+
+msgid "Evaluation started. It takes about 10 minutes; refresh this page to see the result."
+msgstr "بدأ التقييم ويستغرق حوالي 10 دقائق، حدّث الصفحة لرؤية النتيجة."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 
-#~ msgid ""
-#~ "No login required. No tracking. No IP logging. Your identity is completely "
-#~ "protected."
-#~ msgstr ""
-#~ "لا يلزم تسجيل الدخول. لا تتبع. لا تسجيل لعنوان الـ IP. هويتك محمية بالكامل."
+#~ msgid "No login required. No tracking. No IP logging. Your identity is completely protected."
+#~ msgstr "لا يلزم تسجيل الدخول. لا تتبع. لا تسجيل لعنوان الـ IP. هويتك محمية بالكامل."
 
 #~ msgid "Privacy & Safety Tips (Click to expand)"
 #~ msgstr "نصائح الخصوصية والأمان (انقر للتوسيع)"
@@ -29251,12 +28690,8 @@ msgstr "قيمة الكربون"
 #~ msgid "Optional: Provide contact information"
 #~ msgstr "اختياري: قدم معلومات الاتصال"
 
-#~ msgid ""
-#~ "⚠️ WARNING: Providing contact details reduces anonymity. Only provide if you"
-#~ " feel safe."
-#~ msgstr ""
-#~ "⚠️ تحذير: تقديم معلومات الاتصال يقلل من عدم الكشف عن هويتك. قدمها فقط إذا "
-#~ "كنت تشعر بالأمان."
+#~ msgid "⚠️ WARNING: Providing contact details reduces anonymity. Only provide if you feel safe."
+#~ msgstr "⚠️ تحذير: تقديم معلومات الاتصال يقلل من عدم الكشف عن هويتك. قدمها فقط إذا كنت تشعر بالأمان."
 
 #~ msgid "Email Address (Optional)"
 #~ msgstr "عنوان البريد الإلكتروني (اختياري)"
@@ -29306,15 +28741,13 @@ msgstr "قيمة الكربون"
 #~ msgid "Close"
 #~ msgstr "إغلاق"
 
-#~ msgid ""
-#~ "Egyptian Labor Law No. 12/2003 protects whistleblowers from retaliation"
+#~ msgid "Egyptian Labor Law No. 12/2003 protects whistleblowers from retaliation"
 #~ msgstr "قانون العمل المصري رقم 12 لسنة 2003 يحمي المبلغين من الانتقام"
 
 #~ msgid "Central Bank of Egypt mandates confidential reporting mechanisms"
 #~ msgstr "البنك المركزي المصري يُلزم بآليات إبلاغ سرية"
 
-#~ msgid ""
-#~ "Retaliation against whistleblowers is grounds for immediate termination"
+#~ msgid "Retaliation against whistleblowers is grounds for immediate termination"
 #~ msgstr "الانتقام من المبلغين يعتبر سبباً للفصل الفوري"
 
 # ============================================
@@ -29398,9 +28831,7 @@ msgstr "قيمة الكربون"
 #~ msgstr "اختر الملفات..."
 
 #~ msgid "Maximum file size: 10MB. Allowed formats: PDF, JPG, PNG, DOCX"
-#~ msgstr ""
-#~ "الحد الأقصى لحجم الملف: 10 ميجابايت. التنسيقات المسموح بها: PDF، JPG، PNG، "
-#~ "DOCX"
+#~ msgstr "الحد الأقصى لحجم الملف: 10 ميجابايت. التنسيقات المسموح بها: PDF، JPG، PNG، DOCX"
 
 #~ msgid "4. Consent & Submission"
 #~ msgstr "4. الموافقة والإرسال"
@@ -29730,8 +29161,7 @@ msgstr "قيمة الكربون"
 #~ msgstr "حوكمة الهدايا والضيافة، وتعارض المصالح، والإفصاح عن المخالفات"
 
 #~ msgid "CBE / EMLCU regulatory framework aligned"
-#~ msgstr ""
-#~ "متوافق مع الإطار التنظيمي للبنك المركزي المصري ووحدة مكافحة غسل الأموال"
+#~ msgstr "متوافق مع الإطار التنظيمي للبنك المركزي المصري ووحدة مكافحة غسل الأموال"
 
 #~ msgid "Real-time adverse media &amp; risk monitoring"
 #~ msgstr "مراقبة الوسائط السلبية والمخاطر في الوقت الفعلي"
@@ -29772,38 +29202,18 @@ msgstr "قيمة الكربون"
 #~ msgid "Reduction by 2035 (%)"
 #~ msgstr "نسبة الخفض بحلول 2035 (%)"
 
-#~ msgid ""
-#~ "Global ESG frameworks (GRI, IFRS S1/S2, TCFD) are built for listed "
-#~ "multinationals and don't weight CBE/FRA supervisory standing at all. For an "
-#~ "Egyptian PSP, AML/CFT programme maturity, licensing standing, and regulatory"
-#~ " reporting track record are as material to stakeholders as the classic E/S/G"
-#~ " pillars — so I-ESG Egypt gives them their own 15% weight rather than "
-#~ "burying them inside Governance."
-#~ msgstr ""
-#~ "أُطر ESG العالمية (GRI، IFRS S1/S2، TCFD) مصممة للشركات متعددة الجنسيات "
-#~ "المدرجة ولا تعطي أي وزن للوضع الرقابي لدى البنك المركزي المصري أو هيئة "
-#~ "الرقابة المالية. أما بالنسبة لمزود خدمات الدفع المصري، فنضج برنامج مكافحة "
-#~ "غسل الأموال وتمويل الإرهاب، والوضع الترخيصي، وسجل الإبلاغ الرقابي، لها نفس "
-#~ "الأهمية لدى أصحاب المصلحة كالمحاور الكلاسيكية البيئية والاجتماعية والحوكمة —"
-#~ " لذا يمنحها إطار I-ESG Egypt وزناً مستقلاً بنسبة 15% بدلاً من دمجها داخل "
-#~ "الحوكمة."
+#~ msgid "Global ESG frameworks (GRI, IFRS S1/S2, TCFD) are built for listed multinationals and don't weight CBE/FRA supervisory standing at all. For an Egyptian PSP, AML/CFT programme maturity, licensing standing, and regulatory reporting track record are as material to stakeholders as the classic E/S/G pillars — so I-ESG Egypt gives them their own 15% weight rather than burying them inside Governance."
+#~ msgstr "أُطر ESG العالمية (GRI، IFRS S1/S2، TCFD) مصممة للشركات متعددة الجنسيات المدرجة ولا تعطي أي وزن للوضع الرقابي لدى البنك المركزي المصري أو هيئة الرقابة المالية. أما بالنسبة لمزود خدمات الدفع المصري، فنضج برنامج مكافحة غسل الأموال وتمويل الإرهاب، والوضع الترخيصي، وسجل الإبلاغ الرقابي، لها نفس الأهمية لدى أصحاب المصلحة كالمحاور الكلاسيكية البيئية والاجتماعية والحوكمة — لذا يمنحها إطار I-ESG Egypt وزناً مستقلاً بنسبة 15% بدلاً من دمجها داخل الحوكمة."
 
 #~ msgid "Roadmap — not built yet"
 #~ msgstr "خارطة الطريق — لم تُبنَ بعد"
 
-#~ msgid ""
-#~ "A materiality-assessment workshop UI and a full GRI/IFRS-S/TCFD disclosure "
-#~ "tracker are designed in the data model already but not yet exposed in the "
-#~ "interface — planned as the next phase once the core scoring workflow is in "
-#~ "daily use."
-#~ msgstr ""
-#~ "تم تصميم واجهة ورشة تقييم الأهمية النسبية ومتتبع إفصاح كامل وفق "
-#~ "GRI/IFRS-S/TCFD في نموذج البيانات بالفعل، لكنهما لم يُتاحا بعد في الواجهة — "
-#~ "مخطط لهما في المرحلة التالية بعد أن يصبح سير عمل التقييم الأساسي قيد "
-#~ "الاستخدام اليومي."
+#~ msgid "A materiality-assessment workshop UI and a full GRI/IFRS-S/TCFD disclosure tracker are designed in the data model already but not yet exposed in the interface — planned as the next phase once the core scoring workflow is in daily use."
+#~ msgstr "تم تصميم واجهة ورشة تقييم الأهمية النسبية ومتتبع إفصاح كامل وفق GRI/IFRS-S/TCFD في نموذج البيانات بالفعل، لكنهما لم يُتاحا بعد في الواجهة — مخطط لهما في المرحلة التالية بعد أن يصبح سير عمل التقييم الأساسي قيد الاستخدام اليومي."
 
 #~ msgid "Data provided by OpenSanctions."
 #~ msgstr "البيانات مقدمة من OpenSanctions."
 
 #~ msgid "Charter document not found."
 #~ msgstr "لم يتم العثور على مستند النظام الأساسي."
+

@@ -68,14 +68,22 @@ def run():
                     raw = row.get("original_name") or row.get("full_name")
                     doc["name_normalized"] = re.sub(r' {2,}', ' ', re.sub(r'عبدال([\u0600-\u06FF])', lambda m: 'عبد ال' + m.group(1), raw)).strip().lower()
                 doc["watchlist_id"] = row["id"]
-                batch.append({"_op_type": "index", "_index": "aml_watchlist", "_id": str(row["id"]), "_source": doc})
+                if row.get("is_active") == 0:
+                    # delisted / deactivated: must stop matching
+                    batch.append({"_op_type": "delete", "_index": "aml_watchlist", "_id": str(row["id"])})
+                else:
+                    batch.append({"_op_type": "index", "_index": "aml_watchlist", "_id": str(row["id"]), "_source": doc})
                 if len(batch) >= 500:
-                    try: ok, _ = bulk(es, batch, raise_on_error=False); upserted += ok
-                    except: pass
+                    try:
+                        ok, errs = bulk(es, batch, raise_on_error=False); upserted += ok
+                        if errs: log.error(f"{len(errs)} documents rejected by ES, first: {str(errs[0])[:400]}")
+                    except Exception as e: log.error(f"bulk failed: {e}")
                     batch = []
             if batch:
-                try: ok, _ = bulk(es, batch, raise_on_error=False); upserted += ok
-                except: pass
+                try:
+                    ok, errs = bulk(es, batch, raise_on_error=False); upserted += ok
+                    if errs: log.error(f"{len(errs)} documents rejected by ES, first: {str(errs[0])[:400]}")
+                except Exception as e: log.error(f"bulk failed: {e}")
         log.info(f"Upserted {upserted:,} records.")
     
     es.index(index="aml_sync_meta", id="last_incremental_sync", body={"event": "incremental_sync", "timestamp": sync_start.isoformat(), "detail": {"upserted": changes}})

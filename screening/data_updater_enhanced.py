@@ -199,6 +199,10 @@ class EnhancedDataUpdater:
                 self.stats['updated'] += source_stats['updated']
                 self.stats['unchanged'] += source_stats['unchanged']
                 self.stats['errors'] += source_stats['errors']
+                for _k in ('delisted', 'relisted'):
+                    self.stats[_k] = self.stats.get(_k, 0) + int(source_stats.get(_k) or 0)
+                if source_stats.get('error'):
+                    self.stats['error'] = source_stats['error']
                 
                 # Update source metadata
                 self._update_source_metadata(source['id'], source_stats, user_id)
@@ -243,7 +247,11 @@ class EnhancedDataUpdater:
             entities = self._fetch_entities(source)
             
             if not entities:
-                logger.warning(f"No entities fetched from {source['source_name']}")
+                # An empty download is a failure, not "nothing changed": the
+                # EU feed returned nothing for weeks while every run said [OK].
+                logger.error(f"No entities fetched from {source['source_name']}")
+                source_stats['errors'] += 1
+                source_stats['error'] = 'no entities fetched (download or parse failed)'
                 return source_stats
                 
             logger.info(f"Fetched {len(entities)} entities from {source['source_name']}")
@@ -255,6 +263,11 @@ class EnhancedDataUpdater:
                 source_stats['updated'] += updated
                 source_stats['unchanged'] += unchanged
                 self.db_conn.commit()
+                try:
+                    source_stats.update(self._sync_delistings(entities, source['source_name']))
+                except Exception as e:
+                    logger.error(f"Delisting sync failed for {source['source_name']}: {e}")
+                    self.db_conn.rollback()
                 logger.info(f"Batch complete: {added} added, {updated} updated, {unchanged} unchanged")
             except Exception as e:
                 logger.error(f"Failed to process {source['source_name']}: {e}")
@@ -385,6 +398,40 @@ class EnhancedDataUpdater:
             logger.error(f"Failed to fetch entities from {source['source_name']}: {e}")
             return []
             
+    def _sync_delistings(self, entities, source_name):
+        """Deactivate records the source no longer lists (and reactivate ones it
+        lists again). Without this a delisted person stayed an active hit for
+        ever. Guarded: skipped when the download looks partial (fewer than 80%
+        of the currently active records), so a truncated file cannot wipe a list.
+        """
+        ids = list({e['source_id'] for e in entities if e.get('source_id')})
+        cur = self.db_conn.cursor()
+        cur.execute("SELECT count(*) AS n FROM screening_watchlist WHERE source = %s AND is_active = 1",
+                    (source_name,))
+        row = cur.fetchone()
+        active = row['n'] if isinstance(row, dict) else row[0]
+        if not ids or (active and len(ids) < 0.8 * active):
+            logger.warning(f"[DELIST] {source_name}: {len(ids)} fetched vs {active} active — skipped (partial download?)")
+            return {'delisted': 0, 'relisted': 0, 'delist_skipped': True}
+        cur.execute("CREATE TEMP TABLE IF NOT EXISTS _fetched_ids (source_id text PRIMARY KEY) ON COMMIT DROP")
+        cur.execute("TRUNCATE _fetched_ids")
+        from psycopg2.extras import execute_values
+        execute_values(cur, "INSERT INTO _fetched_ids (source_id) VALUES %s ON CONFLICT DO NOTHING",
+                       [(i,) for i in ids], page_size=5000)
+        cur.execute("""UPDATE screening_watchlist w SET is_active = 0, updated_at = now()
+                       WHERE w.source = %s AND w.is_active = 1
+                         AND NOT EXISTS (SELECT 1 FROM _fetched_ids f WHERE f.source_id = w.source_id)""",
+                    (source_name,))
+        delisted = cur.rowcount
+        cur.execute("""UPDATE screening_watchlist w SET is_active = 1, updated_at = now()
+                       WHERE w.source = %s AND w.is_active = 0
+                         AND EXISTS (SELECT 1 FROM _fetched_ids f WHERE f.source_id = w.source_id)""",
+                    (source_name,))
+        relisted = cur.rowcount
+        self.db_conn.commit()
+        logger.info(f"[DELIST] {source_name}: {delisted} delisted, {relisted} relisted")
+        return {'delisted': delisted, 'relisted': relisted}
+
     def _import_entities_batch(self, entities, source_name):
         """
         Batch import with chunked SELECT to avoid 65k param limit.
@@ -699,13 +746,18 @@ class EnhancedDataUpdater:
         """, (
             entity['full_name'], entity.get('original_name'),
             name_norm, soundex, metaphone,
-            entity['dataset'], entity['list_type'], entity['entity_type'],
+            # .get() with the same defaults as the insert path: the OFAC / HMT
+            # handlers do not set 'dataset', and entity['dataset'] raised
+            # KeyError on every changed record — OFAC and HMT silently stopped
+            # updating on 2026-07-22/24 while the run still reported [OK].
+            entity.get('dataset', entity.get('source', 'unknown')),
+            entity.get('list_type', 'SANCTIONS'), entity.get('entity_type', 'INDIVIDUAL'),
             topics_json, countries_json,
             entity.get('date_of_birth'), yob,
             entity.get('nationality'), entity.get('gender'),
-            entity['source_url'], entity['risk_level'],
+            entity.get('source_url'), entity.get('risk_level', 'MEDIUM'),
             aliases_json, details_json,
-            entity['source_id'], entity['source']
+            entity['source_id'], entity.get('source')
         ))
         
     def _create_audit_log(self, user_id, total_sources):

@@ -4366,3 +4366,43 @@ def confirmed_match_update(match_id):
                 current_user.id, status, status, current_user.id, match_id))
     flash(f'Record updated for {dict(row)["entity_name"]}.', 'success')
     return redirect(request.referrer or url_for('screening.confirmed_matches'))
+
+
+# ---------------------------------------------------------------------------
+# Screening Quality: list freshness, index coverage, measured accuracy
+# ---------------------------------------------------------------------------
+@screening_bp.route('/quality')
+@login_required
+@permission_required('screening')
+def quality():
+    from screening import quality_service as qs
+    fresh = qs.list_freshness()
+    runs = qs.quality_runs()
+    latest = runs[0] if runs else None
+    cases = qs.run_cases(latest['id']) if latest else []
+    misses = [c for c in cases if c.get('variant') not in ('negative', 'id_different', 'short_form')
+              and not c.get('found')][:25]
+    false_alerts = [c for c in cases if c.get('variant') == 'negative'
+                    and c.get('status') in ('CONFIRMED_HIT', 'POTENTIAL_MATCH')][:25]
+    return render_template('screening/quality.html', fresh=fresh, internal=qs.internal_lists(),
+                           coverage=qs.index_coverage(fresh), runs=runs, latest=latest,
+                           misses=misses, false_alerts=false_alerts, targets=qs.TARGETS)
+
+
+@screening_bp.route('/quality/run', methods=['POST'])
+@login_required
+@permission_required('screening', level='edit')
+def quality_run():
+    from flask_babel import gettext as _
+    if not current_user.is_admin() and not current_user.is_compliance_officer():
+        flash(_('Only administrators and compliance officers can start an evaluation.'), 'danger')
+        return redirect(url_for('screening.quality'))
+    import subprocess
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    log_path = os.path.join(base, 'logs', 'screening_quality_eval.log')
+    with open(log_path, 'a') as lf:
+        subprocess.Popen([sys.executable, os.path.join(base, 'scripts', 'screening_quality_eval.py'),
+                          '--kind', 'manual', '--names', '30'],
+                         cwd=base, stdout=lf, stderr=subprocess.STDOUT, start_new_session=True)
+    flash(_('Evaluation started. It takes about 10 minutes; refresh this page to see the result.'), 'info')
+    return redirect(url_for('screening.quality'))
