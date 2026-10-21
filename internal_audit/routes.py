@@ -18,6 +18,7 @@
 import os
 from datetime import datetime
 
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from flask_babel import gettext as _, lazy_gettext as _l
@@ -138,7 +139,7 @@ def universe_new():
         )
         AuditLog.log(current_user.id, 'Create Audit Universe Entry', 'Internal Audit', area.id,
                      f'Added auditable area {area.auditable_area}', request.remote_addr)
-        flash('Auditable area added.', 'success')
+        flash(gettext('Auditable area added.'), 'success')
         return redirect(url_for('internal_audit.universe'))
     return render_template('internal_audit/universe_form.html', departments=Department.get_all())
 
@@ -151,7 +152,7 @@ def universe_link_risk(universe_id):
     AuditUniverse.link_risk(universe_id, risk_pk)
     AuditLog.log(current_user.id, 'Link Risk to Audit Universe', 'Internal Audit', universe_id,
                  f'Linked risk #{risk_pk}', request.remote_addr)
-    flash('Risk linked to auditable area.', 'success')
+    flash(gettext('Risk linked to auditable area.'), 'success')
     return redirect(url_for('internal_audit.universe'))
 
 
@@ -179,7 +180,7 @@ def plans_new():
         )
         AuditLog.log(current_user.id, 'Create Annual Audit Plan', 'Internal Audit', plan.id,
                      f'Created plan for {plan.plan_year}', request.remote_addr)
-        flash('Annual audit plan created.', 'success')
+        flash(gettext('Annual audit plan created.'), 'success')
         return redirect(url_for('internal_audit.plans'))
     areas = AuditUniverse.get_all()
     derived_scores = {a.id: AuditUniverse.get_derived_risk_score(a.id) for a in areas}
@@ -194,7 +195,7 @@ def plans_approve(plan_id):
                              approved_by_meeting_id=request.form.get('meeting_id', type=int) or None)
     AuditLog.log(current_user.id, 'Approve Annual Audit Plan', 'Internal Audit', plan_id,
                  'Plan approved', request.remote_addr)
-    flash('Plan approved.', 'success')
+    flash(gettext('Plan approved.'), 'success')
     return redirect(url_for('internal_audit.plans'))
 
 
@@ -233,7 +234,7 @@ def projects_new():
         )
         AuditLog.log(current_user.id, 'Create Audit Engagement', 'Internal Audit', project.id,
                      f'Created engagement {project.audit_number}: {project.audit_name}', request.remote_addr)
-        flash(f'Engagement {project.audit_number} created.', 'success')
+        flash(gettext('Engagement %(audit_number)s created.', audit_number=project.audit_number), 'success')
         return redirect(url_for('internal_audit.project_detail', project_id=project.id))
     preselected_area_id = request.args.get('auditable_area_id', type=int)
     return render_template(
@@ -248,7 +249,7 @@ def projects_new():
 def project_detail(project_id):
     project = AuditProject.get_by_id(project_id)
     if not project:
-        flash('Engagement not found.', 'danger')
+        flash(gettext('Engagement not found.'), 'danger')
         return redirect(url_for('internal_audit.projects'))
     team = AuditTeamMember.get_for_project(project_id)
     program = AuditProgram.get_for_project(project_id)
@@ -273,7 +274,7 @@ def working_paper_download(paper_id):
     """Serve a working paper file — same module guard as viewing the engagement."""
     paper = AuditWorkingPaper.get_by_id(paper_id)
     if not paper or not paper.file_path:
-        flash('File not found.', 'danger')
+        flash(gettext('File not found.'), 'danger')
         return redirect(url_for('internal_audit.projects'))
     return serve_uploaded_file(paper.file_path)
 
@@ -286,7 +287,7 @@ def project_status(project_id):
     AuditProject.update_status(project_id, status)
     AuditLog.log(current_user.id, 'Update Audit Engagement Status', 'Internal Audit', project_id,
                  f'Status changed to {status}', request.remote_addr)
-    flash('Engagement status updated.', 'success')
+    flash(gettext('Engagement status updated.'), 'success')
     return redirect(url_for('internal_audit.project_detail', project_id=project_id))
 
 
@@ -299,7 +300,7 @@ def project_team_add(project_id):
         role_on_engagement=request.form.get('role_on_engagement', 'AUDITOR'),
         allocated_hours=request.form.get('allocated_hours', type=float) or None,
     )
-    flash('Team member added.', 'success')
+    flash(gettext('Team member added.'), 'success')
     return redirect(url_for('internal_audit.project_detail', project_id=project_id))
 
 
@@ -311,7 +312,7 @@ def project_program_add(project_id):
         project_id, procedure_description=request.form.get('procedure_description'),
         control_id=request.form.get('control_id', type=int) or None,
     )
-    flash('Procedure step added.', 'success')
+    flash(gettext('Procedure step added.'), 'success')
     return redirect(url_for('internal_audit.project_detail', project_id=project_id))
 
 
@@ -325,7 +326,7 @@ def project_program_result(project_id, program_id):
     )
     AuditLog.log(current_user.id, 'Record Audit Program Result', 'Internal Audit', project_id,
                  f'Program step #{program_id} result: {request.form.get("test_result")}', request.remote_addr)
-    flash('Procedure result recorded.', 'success')
+    flash(gettext('Procedure result recorded.'), 'success')
     return redirect(url_for('internal_audit.project_detail', project_id=project_id))
 
 
@@ -340,9 +341,9 @@ def project_working_papers(project_id):
             program_step_id=request.form.get('program_step_id', type=int) or None,
             uploaded_by=current_user.id,
         )
-        flash('Working paper uploaded.', 'success')
+        flash(gettext('Working paper uploaded.'), 'success')
     else:
-        flash('No file selected.', 'warning')
+        flash(gettext('No file selected.'), 'warning')
     return redirect(url_for('internal_audit.project_detail', project_id=project_id))
 
 
@@ -427,7 +428,7 @@ def finding_new(project_id):
             )
         AuditLog.log(current_user.id, 'Raise Audit Finding', 'Internal Audit', finding.id,
                      f'Finding {finding.finding_number} raised: {finding.finding_title}', request.remote_addr)
-        flash(f'Finding {finding.finding_number} recorded.', 'success')
+        flash(gettext('Finding %(finding_number)s recorded.', finding_number=finding.finding_number), 'success')
         return redirect(url_for('internal_audit.finding_detail', finding_id=finding.id))
     return render_template('internal_audit/finding_form.html', project=project, users=User.get_all())
 
@@ -438,7 +439,7 @@ def finding_new(project_id):
 def finding_detail(finding_id):
     finding = AuditFinding.get_by_id(finding_id)
     if not finding:
-        flash('Finding not found.', 'danger')
+        flash(gettext('Finding not found.'), 'danger')
         return redirect(url_for('internal_audit.findings'))
     project = AuditProject.get_by_id(finding.project_id)
     responsible = User.get_by_id(finding.responsible_person_id) if finding.responsible_person_id else None
@@ -467,7 +468,7 @@ def finding_management_response(finding_id):
     )
     AuditLog.log(current_user.id, 'Record Management Response', 'Internal Audit', finding_id,
                  'Management response recorded', request.remote_addr)
-    flash('Management response recorded.', 'success')
+    flash(gettext('Management response recorded.'), 'success')
     return redirect(url_for('internal_audit.finding_detail', finding_id=finding_id))
 
 
@@ -478,7 +479,7 @@ def finding_remediate(finding_id):
     AuditFinding.mark_remediated(finding_id)
     AuditLog.log(current_user.id, 'Mark Finding Remediated', 'Internal Audit', finding_id,
                  'Marked remediated, pending independent verification', request.remote_addr)
-    flash('Finding marked as remediated — pending independent verification.', 'success')
+    flash(gettext('Finding marked as remediated — pending independent verification.'), 'success')
     return redirect(url_for('internal_audit.finding_detail', finding_id=finding_id))
 
 
@@ -491,7 +492,7 @@ def finding_verify(finding_id):
                                       verification_notes=request.form.get('verification_notes'))
         AuditLog.log(current_user.id, 'Verify Audit Finding', 'Internal Audit', finding_id,
                      'Finding independently verified and closed', request.remote_addr)
-        flash('Finding verified and closed.', 'success')
+        flash(gettext('Finding verified and closed.'), 'success')
     except ValueError as e:
         flash(str(e), 'danger')
     return redirect(url_for('internal_audit.finding_detail', finding_id=finding_id))
@@ -509,13 +510,13 @@ def finding_link_risk(finding_id):
         action = request.form.get('action')
         if action == 'link_existing':
             AuditFinding.link_to_risk(finding_id, request.form.get('risk_pk', type=int), linked_by=current_user.id)
-            flash('Finding linked to existing risk.', 'success')
+            flash(gettext('Finding linked to existing risk.'), 'success')
         else:
             risk = AuditFinding.create_risk_from_finding(
                 finding_id, risk_owner_id=request.form.get('risk_owner_id', type=int),
                 created_by=current_user.id, category_code=request.form.get('category_code'),
             )
-            flash(f'Draft risk {risk.risk_id} created from this finding — please review and score it.', 'success')
+            flash(gettext('Draft risk %(risk_id)s created from this finding — please review and score it.', risk_id=risk.risk_id), 'success')
         AuditLog.log(current_user.id, 'Link Audit Finding to Risk', 'Internal Audit', finding_id,
                      'Finding linked to risk register', request.remote_addr)
         return redirect(url_for('internal_audit.finding_detail', finding_id=finding_id))
@@ -549,7 +550,7 @@ def committee_report_attach(meeting_id):
     attach_report_to_meeting(meeting_id, report['report_text'], create_decisions=True)
     AuditLog.log(current_user.id, 'Attach Committee Report', 'Internal Audit', meeting_id,
                  'Attached audit committee report to board meeting', request.remote_addr)
-    flash('Committee report attached to the board meeting.', 'success')
+    flash(gettext('Committee report attached to the board meeting.'), 'success')
     return redirect(url_for('internal_audit.committee_report'))
 
 

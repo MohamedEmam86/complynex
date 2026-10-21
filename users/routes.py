@@ -15,6 +15,7 @@
 # ComplyNex Full Compliance Platform (CMS) — Proprietary & Confidential
 # =============================================================================
 
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from flask_babel import gettext as _
@@ -29,7 +30,7 @@ users_bp = Blueprint('users', __name__, url_prefix='/users')
 def list_users():
     """List all users for admin management."""
     if not current_user.is_admin():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     users = User.get_all()
@@ -49,7 +50,7 @@ def update_profile():
     last_name = request.form.get('last_name')
     
     if not first_name or not last_name:
-        flash('All fields are required.', 'danger')
+        flash(gettext('All fields are required.'), 'danger')
         return redirect(url_for('users.profile'))
         
     User.update_user(current_user.id, first_name=first_name, last_name=last_name)
@@ -59,7 +60,7 @@ def update_profile():
     # Actually, let's skip it here since only names change. 
     # But admin update is where it matters.
     
-    flash('Profile updated successfully.', 'success')
+    flash(gettext('Profile updated successfully.'), 'success')
     return redirect(url_for('users.profile'))
 
 @users_bp.route('/profile/password', methods=['POST'])
@@ -71,11 +72,11 @@ def change_password():
     confirm_password = request.form.get('confirm_password')
     
     if not current_user.check_password(current_password):
-        flash('Current password is incorrect.', 'danger')
+        flash(gettext('Current password is incorrect.'), 'danger')
         return redirect(url_for('users.profile'))
         
     if new_password != confirm_password:
-        flash('New passwords do not match.', 'danger')
+        flash(gettext('New passwords do not match.'), 'danger')
         return redirect(url_for('users.profile'))
         
     ok, msg = User.validate_password_strength(new_password or '')
@@ -101,12 +102,12 @@ def change_password():
 def upload_avatar():
     """Upload profile picture."""
     if 'avatar' not in request.files:
-        flash('No file uploaded.', 'danger')
+        flash(gettext('No file uploaded.'), 'danger')
         return redirect(url_for('users.profile'))
         
     file = request.files['avatar']
     if file.filename == '':
-        flash('No file selected.', 'danger')
+        flash(gettext('No file selected.'), 'danger')
         return redirect(url_for('users.profile'))
         
     if file:
@@ -126,7 +127,7 @@ def upload_avatar():
         relative_path = f"uploads/profiles/{filename}"
         User.update_user(current_user.id, profile_picture=relative_path)
         
-        flash('Profile picture updated.', 'success')
+        flash(gettext('Profile picture updated.'), 'success')
 
     return redirect(url_for('users.profile'))
 
@@ -136,12 +137,12 @@ def upload_avatar():
 def download_avatar(user_id):
     """Serve a user's profile picture — viewable by the user themselves or an admin."""
     if user_id != current_user.id and not current_user.is_admin():
-        flash('You do not have permission to view this.', 'danger')
+        flash(gettext('You do not have permission to view this.'), 'danger')
         return redirect(url_for('users.profile'))
 
     user = User.get_by_id(user_id)
     if not user or not user.profile_picture:
-        flash('No profile picture found.', 'danger')
+        flash(gettext('No profile picture found.'), 'danger')
         return redirect(url_for('users.profile'))
 
     return serve_uploaded_file(user.profile_picture)
@@ -152,12 +153,12 @@ def user_progress(user_id):
     """View detailed progress for a user (Admin view)."""
     if not current_user.is_admin() and not current_user.is_compliance_officer():
         # Managers might need this too, but restricting for now
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     user = User.get_by_id(user_id)
     if not user:
-        flash('User not found.', 'danger')
+        flash(gettext('User not found.'), 'danger')
         return redirect(url_for('dashboard'))
 
     # Reuse status logic from portal but for specific user
@@ -211,7 +212,7 @@ def user_progress(user_id):
 def reset_password(user_id):
     """Reset a user's password (Admin only)."""
     if not current_user.is_admin():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     new_password = request.form.get('new_password')
@@ -235,18 +236,18 @@ def reset_password(user_id):
 def update_role(user_id):
     """Inline update a user's role (Admin only)."""
     if not current_user.is_admin():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     if user_id == current_user.id:
-        flash('Cannot change your own role.', 'warning')
+        flash(gettext('Cannot change your own role.'), 'warning')
         return redirect(url_for('users.list_users'))
         
     new_role = request.form.get('role')
     if new_role not in ['admin', 'compliance_officer', 'manager', 'employee']:
-        flash('Invalid role selected.', 'danger')
+        flash(gettext('Invalid role selected.'), 'danger')
         return redirect(url_for('users.list_users'))
         
     User.update_user(user_id, role=new_role)
-    flash('User role updated successfully.', 'success')
+    flash(gettext('User role updated successfully.'), 'success')
     return redirect(url_for('users.list_users'))

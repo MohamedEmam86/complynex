@@ -19,6 +19,7 @@
 Public GHE Routes - No Authentication Required
 Allows external users to submit GHE declarations via public link
 """
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from datetime import datetime
 import uuid
@@ -185,7 +186,7 @@ def public_submit():
             except Exception as e:
                 current_app.logger.error(f"GHE email notification failed: {e}")
             
-            flash('Your declaration has been submitted successfully!', 'success')
+            flash(gettext('Your declaration has been submitted successfully!'), 'success')
             return redirect(url_for('public_ghe.thank_you', tracking_id=tracking_id))
             
         except Exception as e:
@@ -205,7 +206,7 @@ def thank_you(tracking_id):
     ).fetchone()
     
     if not declaration:
-        flash('Declaration not found', 'danger')
+        flash(gettext('Declaration not found'), 'danger')
         return redirect(url_for('public_ghe.public_submit'))
     
     return render_template('ghe/public_thank_you.html', declaration=declaration)
@@ -223,7 +224,7 @@ def check_status(tracking_id):
     ).fetchone()
     
     if not declaration:
-        flash('Declaration not found. Please check your tracking ID.', 'danger')
+        flash(gettext('Declaration not found. Please check your tracking ID.'), 'danger')
         return render_template('ghe/public_status.html', declaration=None, tracking_id=tracking_id)
     
     # Get approval history
@@ -249,7 +250,7 @@ def respond_to_info_request(tracking_id):
     response = request.form.get('response', '').strip()
     
     if not response:
-        flash('Please provide a response', 'danger')
+        flash(gettext('Please provide a response'), 'danger')
         return redirect(url_for('public_ghe.check_status', tracking_id=tracking_id))
     
     db = get_db()
@@ -259,7 +260,7 @@ def respond_to_info_request(tracking_id):
     ).fetchone()
     
     if not declaration:
-        flash('Declaration not found or no information was requested', 'danger')
+        flash(gettext('Declaration not found or no information was requested'), 'danger')
         return redirect(url_for('public_ghe.check_status', tracking_id=tracking_id))
     
     # Update declaration with response
@@ -281,7 +282,7 @@ def respond_to_info_request(tracking_id):
     ''', (declaration['id'], response))
     db.commit()
     
-    flash('Thank you! Your response has been submitted and your declaration is back under review.', 'success')
+    flash(gettext('Thank you! Your response has been submitted and your declaration is back under review.'), 'success')
     return redirect(url_for('public_ghe.check_status', tracking_id=tracking_id))
 
 
@@ -292,6 +293,6 @@ def status_lookup():
         tracking_id = request.form.get('tracking_id', '').strip().upper()
         if tracking_id:
             return redirect(url_for('public_ghe.check_status', tracking_id=tracking_id))
-        flash('Please enter a tracking ID', 'danger')
+        flash(gettext('Please enter a tracking ID'), 'danger')
     
     return render_template('ghe/public_status_lookup.html')

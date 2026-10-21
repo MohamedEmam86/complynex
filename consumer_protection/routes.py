@@ -29,6 +29,7 @@ Features:
 - CBE Reporting
 """
 
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file, current_app, session
 from flask_login import login_required, current_user
 from flask_babel import gettext as _, get_locale
@@ -270,5 +271,5 @@ def download_document(doc_id):
 @consumer_bp.route('/complaint/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_complaint(id):
-    flash('Edit functionality is merged with the View screen.', 'info')
+    flash(gettext('Edit functionality is merged with the View screen.'), 'info')
     return redirect(url_for('consumer_protection.view_complaint', id=id))

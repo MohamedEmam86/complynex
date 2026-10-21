@@ -15,6 +15,7 @@
 # ComplyNex Full Compliance Platform (CMS) — Proprietary & Confidential
 # =============================================================================
 
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -95,7 +96,7 @@ def add_member():
 
         member_id = BoardMember.create(data)
         AuditLog.log(current_user.id, 'Create Board Member', 'Governance', member_id, f'Created board member {data["member_name"]}', request.remote_addr)
-        flash('Board member added successfully.', 'success')
+        flash(gettext('Board member added successfully.'), 'success')
         return redirect(url_for('governance.dashboard'))
 
     roles = BoardRole.get_all()

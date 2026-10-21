@@ -16,6 +16,7 @@
 # =============================================================================
 
 from functools import wraps
+from flask_babel import gettext
 from flask import flash, redirect, url_for, request, abort
 from flask_login import current_user
 
@@ -41,7 +42,7 @@ def permission_required(module, level='view'):
             # Check specific permission
             if level == 'edit':
                 if not current_user.can_edit(module):
-                    flash(f'You do not have permission to edit {module}.', 'danger')
+                    flash(gettext('You do not have permission to edit %(module)s.', module=module), 'danger')
                     return redirect(request.referrer or url_for('dashboard'))
             elif level == 'admin':
                 # is_admin() only matches role == 'admin' exactly, but this codebase
@@ -49,11 +50,11 @@ def permission_required(module, level='view'):
                 # (see admin/routes.py::superadmin_required) — match that same set so
                 # this doesn't lock out those accounts.
                 if getattr(current_user, 'role', '') not in ('admin', 'superadmin', 'it_admin'):
-                    flash('This action requires administrator privileges.', 'danger')
+                    flash(gettext('This action requires administrator privileges.'), 'danger')
                     return redirect(request.referrer or url_for('dashboard'))
             else:
                 if not current_user.can_view(module):
-                    flash(f'You do not have permission to access {module}.', 'danger')
+                    flash(gettext('You do not have permission to access %(module)s.', module=module), 'danger')
                     return redirect(request.referrer or url_for('dashboard'))
 
             return f(*args, **kwargs)
@@ -67,7 +68,7 @@ def admin_required(f):
         if not current_user.is_authenticated:
             return redirect(url_for('auth.login', next=request.url))
         if not current_user.is_admin():
-            flash('This action requires administrator privileges.', 'danger')
+            flash(gettext('This action requires administrator privileges.'), 'danger')
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated_function

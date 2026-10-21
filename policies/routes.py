@@ -15,6 +15,7 @@
 # ComplyNex Full Compliance Platform (CMS) — Proprietary & Confidential
 # =============================================================================
 
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_from_directory, current_app, abort
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -182,11 +183,11 @@ def create_category():
             department_id = current_user.department_id
         
         if not name_en:
-            flash('English name is required.', 'warning')
+            flash(gettext('English name is required.'), 'warning')
             return redirect(url_for('policies.categories'))
             
         PolicyCategory.create(name_en, name_ar, description_en, description_ar, icon, department_id=department_id)
-        flash(f'Category "{name_en}" created successfully.', 'success')
+        flash(gettext('Category "%(name_en)s" created successfully.', name_en=name_en), 'success')
         AuditLog.log(current_user.id, f'Created policy category: {name_en}', module='Policies')
         return redirect(url_for('policies.categories'))
         
@@ -200,7 +201,7 @@ def edit_category(category_id):
     
     category = PolicyCategory.get_by_id(category_id)
     if not category:
-        flash('Category not found.', 'danger')
+        flash(gettext('Category not found.'), 'danger')
         return redirect(url_for('policies.categories'))
         
     if request.method == 'POST':
@@ -211,11 +212,11 @@ def edit_category(category_id):
         description_ar = request.form.get('description_ar')
         
         if not name_en:
-            flash('English name is required.', 'warning')
+            flash(gettext('English name is required.'), 'warning')
             return redirect(url_for('policies.categories'))
             
         PolicyCategory.update(category_id, name_en, name_ar, description_en, description_ar, icon)
-        flash(f'Category "{name_en}" updated successfully.', 'success')
+        flash(gettext('Category "%(name_en)s" updated successfully.', name_en=name_en), 'success')
         AuditLog.log(current_user.id, f'Updated policy category: {name_en}', module='Policies')
         return redirect(url_for('policies.categories'))
         
@@ -229,7 +230,7 @@ def delete_category(category_id):
         
     category = PolicyCategory.get_by_id(category_id)
     if not category:
-        flash('Category not found.', 'danger')
+        flash(gettext('Category not found.'), 'danger')
         return redirect(url_for('policies.categories'))
         
     success, message = PolicyCategory.delete(category_id)
@@ -248,7 +249,7 @@ def view_category(category_id):
     """View policies in a specific category"""
     category = PolicyCategory.get_by_id(category_id)
     if not category:
-        flash('Category not found.', 'danger')
+        flash(gettext('Category not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     
     policies = Policy.get_all(category_id=category_id)
@@ -296,7 +297,7 @@ def create_policy():
         if not current_user.is_admin():
              # Check if user has access to this department
              if not department_id or not current_user.has_department_access(department_id):
-                 flash('You do not have permission to create policies for this department.', 'danger')
+                 flash(gettext('You do not have permission to create policies for this department.'), 'danger')
                  return redirect(url_for('policies.list_policies'))
         
         is_internal = request.form.get('is_internal') == 'on'
@@ -390,10 +391,10 @@ def create_policy():
         
         # Validate required fields
         if not data.get('policy_name', '').strip():
-            flash('Policy Name is required.', 'danger')
+            flash(gettext('Policy Name is required.'), 'danger')
             return _render_create_form(categories, departments)
         if not data.get('category_id'):
-            flash('Category is required.', 'danger')
+            flash(gettext('Category is required.'), 'danger')
             return _render_create_form(categories, departments)
 
         try:
@@ -442,9 +443,9 @@ def create_policy():
 
             AuditLog.log(current_user.id, 'Create Policy', 'Policies', policy.id, f'Created policy {policy.policy_name} ({policy.policy_number})', request.remote_addr)
             if stages:
-                flash(f'Document created and sent for approval ({stages} stages).', 'success')
+                flash(gettext('Document created and sent for approval (%(stages)s stages).', stages=stages), 'success')
             else:
-                flash('Policy created successfully.', 'success')
+                flash(gettext('Policy created successfully.'), 'success')
             return redirect(url_for('policies.view_policy', id=policy.id))
         except Exception as e:
             flash(f'Error creating policy: {str(e)}', 'danger')
@@ -464,7 +465,7 @@ def version_history(id):
     """View version history of a policy"""
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     
     versions = policy.get_versions()
@@ -480,7 +481,7 @@ def compare_versions(v1_id, v2_id):
     v2 = db.execute('SELECT * FROM policy_versions WHERE id = %s', (v2_id,)).fetchone()
     
     if not v1 or not v2:
-        flash('One or both versions not found.', 'danger')
+        flash(gettext('One or both versions not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     
     return render_template('policies/compare.html', v1=v1, v2=v2)
@@ -493,7 +494,7 @@ def submit_for_approval(id):
     
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     
     # Get reviewer from form or fall back to compliance officers / admins
@@ -511,7 +512,7 @@ def submit_for_approval(id):
                 "SELECT id FROM users WHERE role IN ('admin','manager') ORDER BY id LIMIT 1"
             ).fetchone()
             if not _row:
-                flash('No approver found. Please assign a user first.', 'danger')
+                flash(gettext('No approver found. Please assign a user first.'), 'danger')
                 return redirect(url_for('policies.view_policy', id=id))
             reviewer_id = _row['id']
         else:
@@ -530,7 +531,7 @@ def submit_for_approval(id):
     db.commit()
     
     reviewer_name = reviewer_user.get_full_name() if reviewer_user else f'User #{reviewer_id}'
-    flash(f'Policy submitted for approval. Assigned to: {reviewer_name}', 'success')
+    flash(gettext('Policy submitted for approval. Assigned to: %(reviewer_name)s', reviewer_name=reviewer_name), 'success')
     return redirect(url_for('policies.view_policy', id=id))
 
 @policies_bp.route('/gap-analysis/export')
@@ -608,13 +609,13 @@ def manage_gap_requirements():
             new_id = RequiredPolicy.create(data)
             AuditLog.log(current_user.id, 'create', 'policies', new_id, 
                         f"Added required policy: {data['policy_name_en']}", request.remote_addr)
-            flash('Required policy added successfully.', 'success')
+            flash(gettext('Required policy added successfully.'), 'success')
         elif action == 'delete':
             policy_id = request.form.get('id')
             RequiredPolicy.delete(policy_id)
             AuditLog.log(current_user.id, 'delete', 'policies', policy_id, 
                         "Deleted required policy", request.remote_addr)
-            flash('Required policy removed.', 'success')
+            flash(gettext('Required policy removed.'), 'success')
         elif action == 'update':
             policy_id = request.form.get('id')
             data = {
@@ -628,7 +629,7 @@ def manage_gap_requirements():
             RequiredPolicy.update(policy_id, data)
             AuditLog.log(current_user.id, 'update', 'policies', policy_id, 
                         f"Updated required policy: {data['policy_name_en']}", request.remote_addr)
-            flash('Required policy updated.', 'success')
+            flash(gettext('Required policy updated.'), 'success')
             
         return redirect(url_for('policies.manage_gap_requirements'))
     
@@ -642,7 +643,7 @@ def view_policy(id):
     """View policy"""
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
         
     # Check if user has acknowledged
@@ -694,12 +695,12 @@ def download_policy_document(id):
     """Serve a policy's main attachment — authenticated + authorized."""
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     if not _policy_document_accessible(current_user, policy):
         abort(403)
     if not policy.attachment_path:
-        flash('No document attached to this policy.', 'warning')
+        flash(gettext('No document attached to this policy.'), 'warning')
         return redirect(url_for('policies.view_policy', id=id))
     return serve_uploaded_file(policy.attachment_path)
 
@@ -724,16 +725,16 @@ def acknowledge_policy(id):
     """Acknowledge policy"""
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
         
     if policy.status != 'published':
-        flash('This policy is not available for acknowledgment.', 'warning')
+        flash(gettext('This policy is not available for acknowledgment.'), 'warning')
         return redirect(url_for('policies.list_policies'))
     
     signature = request.form.get('digital_signature')
     if not signature:
-        flash('Digital signature is required.', 'danger')
+        flash(gettext('Digital signature is required.'), 'danger')
         return redirect(url_for('policies.view_policy', id=id))
         
     ip_address = request.remote_addr
@@ -753,7 +754,7 @@ def acknowledge_policy(id):
             n_type='policy'
         )
     
-    flash('Policy acknowledged successfully.', 'success')
+    flash(gettext('Policy acknowledged successfully.'), 'success')
     return redirect(url_for('policies.list_policies'))
 
 @policies_bp.route('/acknowledge-all', methods=['POST'])
@@ -814,7 +815,7 @@ def policy_acknowledgments(id):
     """Who has (and hasn't) acknowledged a specific policy — compliance-officer view."""
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.acknowledgment_dashboard'))
 
     acknowledged = PolicyAcknowledgment.get_acknowledgments(id)
@@ -843,7 +844,7 @@ def edit_policy(id):
     
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     
     if request.method == 'POST':
@@ -905,7 +906,7 @@ def edit_policy(id):
 
         policy.update(data, current_user.id)
         AuditLog.log(current_user.id, 'Update Policy', 'Policies', id, f'Updated policy {policy.policy_name}: {change_detail}', request.remote_addr)
-        flash('Policy updated successfully.', 'success')
+        flash(gettext('Policy updated successfully.'), 'success')
         return redirect(url_for('policies.view_policy', id=id))
 
     # Filter categories for dropdown
@@ -930,12 +931,12 @@ def upload_attachment(id):
     """Upload additional attachments to a policy"""
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     
     files = request.files.getlist('attachments')
     if not files:
-        flash('No files selected.', 'warning')
+        flash(gettext('No files selected.'), 'warning')
         return redirect(url_for('policies.edit_policy', id=id))
     
     uploaded = 0
@@ -953,9 +954,9 @@ def upload_attachment(id):
     
     if uploaded:
         AuditLog.log(current_user.id, 'Upload Attachments', 'Policies', id, f'Uploaded {uploaded} attachment(s)', request.remote_addr)
-        flash(f'{uploaded} attachment(s) uploaded successfully.', 'success')
+        flash(gettext('%(uploaded)s attachment(s) uploaded successfully.', uploaded=uploaded), 'success')
     else:
-        flash('No valid files were uploaded. Allowed types: PDF, DOC, DOCX.', 'warning')
+        flash(gettext('No valid files were uploaded. Allowed types: PDF, DOC, DOCX.'), 'warning')
     
     return redirect(url_for('policies.edit_policy', id=id))
 
@@ -966,7 +967,7 @@ def delete_attachment(attachment_id):
     """Delete a policy attachment"""
     attachment = PolicyAttachment.get_by_id(attachment_id)
     if not attachment:
-        flash('Attachment not found.', 'danger')
+        flash(gettext('Attachment not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     
     policy_id = attachment.policy_id
@@ -982,7 +983,7 @@ def delete_attachment(attachment_id):
             pass
     
     AuditLog.log(current_user.id, 'Delete Attachment', 'Policies', policy_id, f'Deleted attachment {attachment.filename}', request.remote_addr)
-    flash('Attachment deleted successfully.', 'success')
+    flash(gettext('Attachment deleted successfully.'), 'success')
     return redirect(url_for('policies.edit_policy', id=policy_id))
 
 @policies_bp.route('/<int:id>/approve', methods=['POST'])
@@ -993,13 +994,13 @@ def approve_policy(id):
     
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
         
     policy.approve(current_user.id)
     AuditLog.log(current_user.id, 'Approve Policy', 'Policies', id, f'Approved policy {policy.policy_name}', request.remote_addr)
     
-    flash('Policy approved successfully.', 'success')
+    flash(gettext('Policy approved successfully.'), 'success')
     return redirect(url_for('policies.view_policy', id=id))
 
 @policies_bp.route('/<int:id>/publish', methods=['POST'])
@@ -1010,13 +1011,13 @@ def publish_policy(id):
     
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
         
     policy.publish()
     AuditLog.log(current_user.id, 'Publish Policy', 'Policies', id, f'Published policy {policy.policy_name}', request.remote_addr)
     
-    flash('Policy published. Employees will be notified.', 'success')
+    flash(gettext('Policy published. Employees will be notified.'), 'success')
     return redirect(url_for('policies.list_policies'))
 
 @policies_bp.route('/<int:id>/archive', methods=['POST'])
@@ -1027,13 +1028,13 @@ def archive_policy(id):
     
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
         
     policy.archive()
     AuditLog.log(current_user.id, 'Archive Policy', 'Policies', id, f'Archived policy {policy.policy_name}', request.remote_addr)
     
-    flash('Policy archived successfully.', 'success')
+    flash(gettext('Policy archived successfully.'), 'success')
     return redirect(url_for('policies.list_policies'))
 
 @policies_bp.route('/review/<int:id>', methods=['GET', 'POST'])
@@ -1043,7 +1044,7 @@ def review_policy(id):
     """Review policy and submit decision"""
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     
     if request.method == 'POST':
@@ -1053,7 +1054,7 @@ def review_policy(id):
         policy.submit_review(current_user.id, status, comments)
         AuditLog.log(current_user.id, 'Policy Review Decision', 'Policies', id, f'Submitted {status} for policy {policy.policy_name}', request.remote_addr)
         
-        flash(f'Review submitted: {status}', 'success')
+        flash(gettext('Review submitted: %(status)s', status=status), 'success')
         return redirect(url_for('policies.my_reviews'))
         
     reviews = policy.get_reviews()
@@ -1067,7 +1068,7 @@ def workflow_management(id):
         
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
         
     if request.method == 'POST':
@@ -1075,7 +1076,7 @@ def workflow_management(id):
         stage_name = request.form.get('stage_name')
         
         policy.add_review_stage(reviewer_id, stage_name)
-        flash('Review stage added successfully.', 'success')
+        flash(gettext('Review stage added successfully.'), 'success')
         return redirect(url_for('policies.workflow_management', id=id))
         
     reviews = policy.get_reviews()

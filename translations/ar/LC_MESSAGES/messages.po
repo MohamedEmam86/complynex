@@ -29386,6 +29386,1317 @@ msgstr "ميثاق السلوك"
 msgid "Governance"
 msgstr "الحوكمة"
 
+msgid "A new verification link has been generated. The old link no longer works."
+msgstr "تم إنشاء رابط تحقق جديد، والرابط القديم لم يعد صالحًا."
+
+msgid "A reason is required for this action."
+msgstr "يجب إدخال سبب لهذا الإجراء."
+
+msgid "A reason is required to accept a new match as a false positive."
+msgstr "يجب إدخال سبب لقبول التطابق الجديد كإيجابي كاذب."
+
+msgid "A reason is required to revoke a certificate."
+msgstr "يجب إدخال سبب لإلغاء الشهادة."
+
+msgid "A reason is required to revoke a whitelist entry."
+msgstr "يجب إدخال سبب لإلغاء قيد القائمة البيضاء."
+
+msgid "A unit cannot be its own parent."
+msgstr "لا يمكن أن تكون الوحدة تابعة لنفسها."
+
+msgid "Access denied"
+msgstr "تم رفض الوصول"
+
+msgid "Access denied. Admin only."
+msgstr "تم رفض الوصول. للمسؤولين فقط."
+
+msgid "Access denied. Edit permission required for screening config."
+msgstr "تم رفض الوصول. يلزم صلاحية التعديل لإعدادات الفحص."
+
+msgid "Action not applied."
+msgstr "لم يتم تطبيق الإجراء."
+
+msgid "Alert not found"
+msgstr "التنبيه غير موجود"
+
+msgid "All fields are required."
+msgstr "جميع الحقول مطلوبة."
+
+msgid "Allowed file types are CSV and Excel (.xlsx)"
+msgstr "أنواع الملفات المسموح بها هي CSV وExcel (.xlsx)"
+
+msgid "Already enrolled."
+msgstr "مسجل بالفعل."
+
+msgid "Already sent."
+msgstr "تم الإرسال بالفعل."
+
+msgid "Annual audit plan created."
+msgstr "تم إنشاء خطة المراجعة السنوية."
+
+msgid "Assigned to you."
+msgstr "تم إسنادها إليك."
+
+msgid "Attachment deleted successfully."
+msgstr "تم حذف المرفق بنجاح."
+
+msgid "Auditable area added."
+msgstr "تمت إضافة نطاق المراجعة."
+
+msgid "Backlog cleanup completed: alerts with already-resolved screenings closed."
+msgstr "اكتمل تنظيف المتأخرات: تم إغلاق التنبيهات ذات عمليات الفحص المحسومة."
+
+msgid "Band and factor are both required."
+msgstr "الشريحة والمعامل مطلوبان."
+
+msgid "Blacklist entry deleted successfully"
+msgstr "تم حذف قيد القائمة السوداء بنجاح"
+
+msgid "Blacklist entry updated successfully"
+msgstr "تم تحديث قيد القائمة السوداء بنجاح"
+
+msgid "Board member added successfully."
+msgstr "تمت إضافة عضو مجلس الإدارة بنجاح."
+
+msgid "Breach investigation updated."
+msgstr "تم تحديث التحقيق في حادث الاختراق."
+
+msgid "Breach not found."
+msgstr "حادث الاختراق غير موجود."
+
+msgid "Campaign closed successfully."
+msgstr "تم إغلاق الحملة بنجاح."
+
+msgid "Campaign created successfully! All active employees have been notified."
+msgstr "تم إنشاء الحملة بنجاح! وتم إخطار جميع العاملين النشطين."
+
+msgid "Campaign deleted."
+msgstr "تم حذف الحملة."
+
+msgid "Campaign name and email subject are required."
+msgstr "اسم الحملة وعنوان البريد مطلوبان."
+
+msgid "Campaign not found."
+msgstr "الحملة غير موجودة."
+
+msgid "Cannot change your own role."
+msgstr "لا يمكنك تغيير دورك بنفسك."
+
+msgid "Cannot delete a sent campaign."
+msgstr "لا يمكن حذف حملة تم إرسالها."
+
+msgid "Cannot delete built-in rules. Disable them instead."
+msgstr "لا يمكن حذف القواعد الأساسية. قم بتعطيلها بدلًا من ذلك."
+
+msgid "Cannot delete the last remaining admin account."
+msgstr "لا يمكن حذف آخر حساب مسؤول متبقٍ."
+
+msgid "Cannot delete this declaration. It may no longer be in pending status."
+msgstr "لا يمكن حذف هذا الإقرار. قد لا يكون في حالة الانتظار."
+
+msgid "Cannot modify recipients of a sent campaign."
+msgstr "لا يمكن تعديل مستلمي حملة تم إرسالها."
+
+msgid "Case assigned successfully."
+msgstr "تم إسناد الحالة بنجاح."
+
+msgid "Case escalated to senior compliance officer."
+msgstr "تم تصعيد الحالة إلى مسؤول الالتزام الأول."
+
+msgid "Category is required."
+msgstr "التصنيف مطلوب."
+
+msgid "Category not found."
+msgstr "التصنيف غير موجود."
+
+msgid "Certificate not found or access denied."
+msgstr "الشهادة غير موجودة أو تم رفض الوصول."
+
+msgid "Choose a status and record the approval note."
+msgstr "اختر حالة وسجل ملاحظة الاعتماد."
+
+msgid "Clarification requested."
+msgstr "تم طلب إيضاح."
+
+msgid "Code and name are both required."
+msgstr "الرمز والاسم مطلوبان."
+
+msgid "Committee report attached to the board meeting."
+msgstr "تم إرفاق تقرير اللجنة باجتماع مجلس الإدارة."
+
+msgid "Configuration updated and saved to database"
+msgstr "تم تحديث الإعدادات وحفظها في قاعدة البيانات"
+
+msgid "Confirmed as True Match. Entity blocked and added to internal blacklist."
+msgstr "تم التأكيد كتطابق حقيقي. تم حظر الكيان وإضافته إلى القائمة السوداء الداخلية."
+
+msgid "Control created."
+msgstr "تم إنشاء الضابط الرقابي."
+
+msgid "Control linked to risk."
+msgstr "تم ربط الضابط بالخطر."
+
+msgid "Control test result recorded."
+msgstr "تم تسجيل نتيجة اختبار الضابط."
+
+msgid "Course created as DRAFT. Now add lessons and questions."
+msgstr "تم إنشاء الدورة كمسودة. أضف الآن الدروس والأسئلة."
+
+msgid "Course deleted."
+msgstr "تم حذف الدورة."
+
+msgid "Course saved successfully."
+msgstr "تم حفظ الدورة بنجاح."
+
+msgid "Course saved."
+msgstr "تم حفظ الدورة."
+
+msgid "Criterion added."
+msgstr "تمت إضافة المعيار."
+
+msgid "Criterion enabled/disabled."
+msgstr "تم تفعيل/تعطيل المعيار."
+
+msgid "Criterion removed."
+msgstr "تم حذف المعيار."
+
+msgid "Current password is incorrect."
+msgstr "كلمة المرور الحالية غير صحيحة."
+
+msgid "Customer information updated successfully."
+msgstr "تم تحديث بيانات العميل بنجاح."
+
+msgid "Customer not found"
+msgstr "العميل غير موجود"
+
+msgid "Customer not found."
+msgstr "العميل غير موجود."
+
+msgid "Customer reference updated."
+msgstr "تم تحديث مرجع العميل."
+
+msgid "DPIA assessment updated."
+msgstr "تم تحديث تقييم أثر حماية البيانات."
+
+msgid "DPIA not found."
+msgstr "تقييم أثر حماية البيانات غير موجود."
+
+msgid "Deactivate or move the child units first."
+msgstr "قم بتعطيل الوحدات التابعة أو نقلها أولًا."
+
+msgid "Declaration approved."
+msgstr "تم اعتماد الإقرار."
+
+msgid "Declaration deleted successfully."
+msgstr "تم حذف الإقرار بنجاح."
+
+msgid "Declaration escalated to compliance."
+msgstr "تم تصعيد الإقرار إلى الالتزام."
+
+msgid "Declaration not found"
+msgstr "الإقرار غير موجود"
+
+msgid "Declaration not found or no information was requested"
+msgstr "الإقرار غير موجود أو لم يتم طلب معلومات"
+
+msgid "Declaration not found. Please check your tracking ID."
+msgstr "الإقرار غير موجود. يرجى التحقق من رقم المتابعة."
+
+msgid "Declaration submitted successfully! A manager will review your submission."
+msgstr "تم تقديم الإقرار بنجاح! سيقوم المدير بمراجعته."
+
+msgid "Declaration submitted successfully."
+msgstr "تم تقديم الإقرار بنجاح."
+
+msgid "Declaration submitted successfully. Thank you for your commitment to ethical conduct."
+msgstr "تم تقديم الإقرار بنجاح. شكرًا لالتزامك بالسلوك الأخلاقي."
+
+msgid "Declaration updated successfully!"
+msgstr "تم تحديث الإقرار بنجاح!"
+
+msgid "Default language updated. Takes effect for new sessions."
+msgstr "تم تحديث اللغة الافتراضية. يسري ذلك على الجلسات الجديدة."
+
+msgid "Department created successfully."
+msgstr "تم إنشاء الإدارة بنجاح."
+
+msgid "Department deleted successfully."
+msgstr "تم حذف الإدارة بنجاح."
+
+msgid "Department updated successfully."
+msgstr "تم تحديث الإدارة بنجاح."
+
+msgid "Document deleted."
+msgstr "تم حذف المستند."
+
+msgid "Document type created."
+msgstr "تم إنشاء نوع المستند."
+
+msgid "Document type deleted."
+msgstr "تم حذف نوع المستند."
+
+msgid "Document type not found."
+msgstr "نوع المستند غير موجود."
+
+msgid "Document type status changed."
+msgstr "تم تغيير حالة نوع المستند."
+
+msgid "Document type updated."
+msgstr "تم تحديث نوع المستند."
+
+msgid "Done."
+msgstr "تم."
+
+msgid "Edit functionality is merged with the View screen."
+msgstr "تم دمج وظيفة التعديل مع شاشة العرض."
+
+msgid "Email not found in our employee database. Please contact HR."
+msgstr "البريد الإلكتروني غير موجود في قاعدة بيانات العاملين. يرجى التواصل مع الموارد البشرية."
+
+msgid "Email template created."
+msgstr "تم إنشاء قالب البريد."
+
+msgid "Email template updated."
+msgstr "تم تحديث قالب البريد."
+
+msgid "Engagement not found."
+msgstr "المهمة غير موجودة."
+
+msgid "Engagement status updated."
+msgstr "تم تحديث حالة المهمة."
+
+msgid "English lesson title is required."
+msgstr "عنوان الدرس بالإنجليزية مطلوب."
+
+msgid "English name is required."
+msgstr "الاسم بالإنجليزية مطلوب."
+
+msgid "Enrolled successfully."
+msgstr "تم التسجيل بنجاح."
+
+msgid "Entity flagged as PEP. Enhanced Due Diligence required."
+msgstr "تم تصنيف الكيان كشخص مكشوف سياسيًا. يلزم إجراء العناية الواجبة المعززة."
+
+msgid "Entry not found"
+msgstr "القيد غير موجود"
+
+msgid "Error approving declaration."
+msgstr "حدث خطأ أثناء اعتماد الإقرار."
+
+msgid "Error creating customer."
+msgstr "حدث خطأ أثناء إنشاء العميل."
+
+msgid "Error rejecting declaration."
+msgstr "حدث خطأ أثناء رفض الإقرار."
+
+msgid "Error updating customer."
+msgstr "حدث خطأ أثناء تحديث العميل."
+
+msgid "Error updating declaration."
+msgstr "حدث خطأ أثناء تحديث الإقرار."
+
+msgid "Failed to create the customer record — see server logs."
+msgstr "تعذر إنشاء سجل العميل — راجع سجلات الخادم."
+
+msgid "File must contain a \"Name\" column."
+msgstr "يجب أن يحتوي الملف على عمود \"Name\"."
+
+msgid "File not found."
+msgstr "الملف غير موجود."
+
+msgid "Finding linked to existing risk."
+msgstr "تم ربط الملاحظة بخطر قائم."
+
+msgid "Finding marked as remediated — pending independent verification."
+msgstr "تم تعليم الملاحظة كمعالجة — في انتظار التحقق المستقل."
+
+msgid "Finding verified and closed."
+msgstr "تم التحقق من الملاحظة وإغلاقها."
+
+msgid "Full name is required"
+msgstr "الاسم الكامل مطلوب"
+
+msgid "Identity verified. Request moved to IN_PROGRESS."
+msgstr "تم التحقق من الهوية. تم نقل الطلب إلى قيد التنفيذ."
+
+msgid "Invalid action — must be 'approve' or 'reject'."
+msgstr "إجراء غير صالح — يجب أن يكون اعتماد أو رفض."
+
+msgid "Invalid action."
+msgstr "إجراء غير صالح."
+
+msgid "Invalid file format. Please upload CSV or Excel file"
+msgstr "صيغة ملف غير صالحة. يرجى رفع ملف CSV أو Excel"
+
+msgid "Invalid file format. Please upload a CSV or Excel (.xlsx) file."
+msgstr "صيغة ملف غير صالحة. يرجى رفع ملف CSV أو Excel (.xlsx)."
+
+msgid "Invalid or incomplete job result payload request."
+msgstr "طلب نتيجة مهمة غير صالح أو غير مكتمل."
+
+msgid "Invalid role selected."
+msgstr "الدور المختار غير صالح."
+
+msgid "Invalid selection."
+msgstr "اختيار غير صالح."
+
+msgid "KRI created."
+msgstr "تم إنشاء مؤشر المخاطر الرئيسي."
+
+msgid "Lesson deleted."
+msgstr "تم حذف الدرس."
+
+msgid "Lesson saved."
+msgstr "تم حفظ الدرس."
+
+msgid "Management response recorded."
+msgstr "تم تسجيل رد الإدارة."
+
+msgid "Marked as False Positive and added to whitelist."
+msgstr "تم التعليم كإيجابي كاذب وإضافته إلى القائمة البيضاء."
+
+msgid "Merchant KYC approved."
+msgstr "تم اعتماد ملف اعرف عميلك للتاجر."
+
+msgid "Merchant KYC record created successfully."
+msgstr "تم إنشاء ملف اعرف عميلك للتاجر بنجاح."
+
+msgid "Merchant KYC rejected."
+msgstr "تم رفض ملف اعرف عميلك للتاجر."
+
+msgid "Merchant KYC updated successfully."
+msgstr "تم تحديث ملف اعرف عميلك للتاجر بنجاح."
+
+msgid "Merchant not found."
+msgstr "التاجر غير موجود."
+
+msgid "Mitigation plan created and linked to declaration."
+msgstr "تم إنشاء خطة المعالجة وربطها بالإقرار."
+
+msgid "Mitigation plan not found."
+msgstr "خطة المعالجة غير موجودة."
+
+msgid "Mitigation plan status updated."
+msgstr "تم تحديث حالة خطة المعالجة."
+
+msgid "Name is required"
+msgstr "الاسم مطلوب"
+
+msgid "New passwords do not match."
+msgstr "كلمتا المرور الجديدتان غير متطابقتين."
+
+msgid "New regulator created."
+msgstr "تم إنشاء جهة رقابية جديدة."
+
+msgid "New report template created."
+msgstr "تم إنشاء قالب تقرير جديد."
+
+msgid "New submission created successfully."
+msgstr "تم إنشاء تقديم جديد بنجاح."
+
+msgid "No alerts selected."
+msgstr "لم يتم اختيار أي تنبيه."
+
+msgid "No approver found. Please assign a user first."
+msgstr "لا يوجد معتمِد. يرجى إسناد مستخدم أولًا."
+
+msgid "No cadence was selected."
+msgstr "لم يتم اختيار دورية."
+
+msgid "No document attached to this policy."
+msgstr "لا يوجد مستند مرفق بهذه السياسة."
+
+msgid "No file part"
+msgstr "لا يوجد ملف"
+
+msgid "No file selected"
+msgstr "لم يتم اختيار ملف"
+
+msgid "No file selected."
+msgstr "لم يتم اختيار ملف."
+
+msgid "No file uploaded"
+msgstr "لم يتم رفع ملف"
+
+msgid "No file uploaded."
+msgstr "لم يتم رفع ملف."
+
+msgid "No files selected."
+msgstr "لم يتم اختيار ملفات."
+
+msgid "No items selected."
+msgstr "لم يتم اختيار عناصر."
+
+msgid "No previous version to roll back to."
+msgstr "لا توجد نسخة سابقة للرجوع إليها."
+
+msgid "No profile picture found."
+msgstr "لا توجد صورة شخصية."
+
+msgid "No recipients to send to."
+msgstr "لا يوجد مستلمون للإرسال إليهم."
+
+msgid "No reminder sent — the case has no current owner to remind."
+msgstr "لم يتم إرسال تذكير — لا يوجد مسؤول حالي عن الحالة."
+
+msgid "No selected file"
+msgstr "لم يتم اختيار ملف"
+
+msgid "No valid files were uploaded. Allowed types: PDF, DOC, DOCX."
+msgstr "لم يتم رفع ملفات صالحة. الأنواع المسموح بها: PDF وDOC وDOCX."
+
+msgid "Nobody is outstanding for the selected declarations."
+msgstr "لا يوجد متأخرون عن الإقرارات المختارة."
+
+msgid "Not found."
+msgstr "غير موجود."
+
+msgid "Nothing to export for that filter."
+msgstr "لا يوجد ما يمكن تصديره لهذا الفلتر."
+
+msgid "Numbering sequence updated."
+msgstr "تم تحديث تسلسل الترقيم."
+
+msgid "One or both versions not found."
+msgstr "إحدى النسختين أو كلتاهما غير موجودة."
+
+msgid "Only CSV or XLSX files accepted"
+msgstr "يقبل ملفات CSV أو XLSX فقط"
+
+msgid "Only an approved session can be onboarded."
+msgstr "لا يمكن إتمام الانضمام إلا لجلسة معتمدة."
+
+msgid "Only compliance can update status."
+msgstr "يمكن لإدارة الالتزام فقط تحديث الحالة."
+
+msgid "PEP entry deleted successfully"
+msgstr "تم حذف قيد الشخص المكشوف سياسيًا بنجاح"
+
+msgid "PEP entry updated successfully"
+msgstr "تم تحديث قيد الشخص المكشوف سياسيًا بنجاح"
+
+msgid "Personal data erased. Certificate numbers remain in the register as redacted."
+msgstr "تم محو البيانات الشخصية. تظل أرقام الشهادات في السجل بشكل محجوب."
+
+msgid "Plan approved."
+msgstr "تم اعتماد الخطة."
+
+msgid "Please enter a tracking ID"
+msgstr "يرجى إدخال رقم المتابعة"
+
+msgid "Please provide a response"
+msgstr "يرجى إدخال رد"
+
+msgid "Please select either a course or a policy."
+msgstr "يرجى اختيار دورة أو سياسة."
+
+msgid "Please specify what information you need."
+msgstr "يرجى تحديد المعلومات المطلوبة."
+
+msgid "Policy Name is required."
+msgstr "اسم السياسة مطلوب."
+
+msgid "Policy acknowledged successfully."
+msgstr "تم الإقرار بالسياسة بنجاح."
+
+msgid "Policy approved successfully."
+msgstr "تم اعتماد السياسة بنجاح."
+
+msgid "Policy archived successfully."
+msgstr "تمت أرشفة السياسة بنجاح."
+
+msgid "Policy created successfully."
+msgstr "تم إنشاء السياسة بنجاح."
+
+msgid "Policy not found."
+msgstr "السياسة غير موجودة."
+
+msgid "Policy published. Employees will be notified."
+msgstr "تم نشر السياسة. سيتم إخطار العاملين."
+
+msgid "Policy updated successfully."
+msgstr "تم تحديث السياسة بنجاح."
+
+msgid "Preview mode — the Academy is not public yet."
+msgstr "وضع المعاينة — الأكاديمية غير متاحة للعامة بعد."
+
+msgid "Procedure result recorded."
+msgstr "تم تسجيل نتيجة الإجراء."
+
+msgid "Procedure step added."
+msgstr "تمت إضافة خطوة الإجراء."
+
+msgid "Profile picture updated."
+msgstr "تم تحديث الصورة الشخصية."
+
+msgid "Profile updated successfully."
+msgstr "تم تحديث الملف الشخصي بنجاح."
+
+msgid "Question added."
+msgstr "تمت إضافة السؤال."
+
+msgid "Question deleted."
+msgstr "تم حذف السؤال."
+
+msgid "Question saved."
+msgstr "تم حفظ السؤال."
+
+msgid "Queue item not found."
+msgstr "عنصر قائمة الانتظار غير موجود."
+
+msgid "Reason is required"
+msgstr "السبب مطلوب"
+
+msgid "Record not found."
+msgstr "السجل غير موجود."
+
+msgid "Regulator not found."
+msgstr "الجهة الرقابية غير موجودة."
+
+msgid "Regulator updated successfully."
+msgstr "تم تحديث الجهة الرقابية بنجاح."
+
+msgid "Rejection reason is required."
+msgstr "سبب الرفض مطلوب."
+
+msgid "Reminder email sent successfully."
+msgstr "تم إرسال بريد التذكير بنجاح."
+
+msgid "Reminders sent to all pending employees."
+msgstr "تم إرسال التذكيرات لجميع العاملين المتأخرين."
+
+msgid "Reopened for review."
+msgstr "أعيد فتحها للمراجعة."
+
+msgid "Report Name is required for new reports."
+msgstr "اسم التقرير مطلوب للتقارير الجديدة."
+
+msgid "Report and Due Date are required."
+msgstr "التقرير وتاريخ الاستحقاق مطلوبان."
+
+msgid "Report not found."
+msgstr "التقرير غير موجود."
+
+msgid "Report updated successfully."
+msgstr "تم تحديث التقرير بنجاح."
+
+msgid "Request not found."
+msgstr "الطلب غير موجود."
+
+msgid "Required policy added successfully."
+msgstr "تمت إضافة السياسة المطلوبة بنجاح."
+
+msgid "Required policy removed."
+msgstr "تم حذف السياسة المطلوبة."
+
+msgid "Required policy updated."
+msgstr "تم تحديث السياسة المطلوبة."
+
+msgid "Requirement added successfully."
+msgstr "تمت إضافة المتطلب بنجاح."
+
+msgid "Requirement deleted."
+msgstr "تم حذف المتطلب."
+
+msgid "Requirement updated successfully."
+msgstr "تم تحديث المتطلب بنجاح."
+
+msgid "Result resolved successfully."
+msgstr "تم حسم النتيجة بنجاح."
+
+msgid "Review stage added successfully."
+msgstr "تمت إضافة مرحلة المراجعة بنجاح."
+
+msgid "Risk appetite statement recorded."
+msgstr "تم تسجيل بيان الرغبة في المخاطر."
+
+msgid "Risk category archived. Existing risks keep their reference; it will no longer appear for new selections."
+msgstr "تمت أرشفة تصنيف المخاطر. تحتفظ المخاطر الحالية بمرجعها، ولن يظهر للاختيارات الجديدة."
+
+msgid "Risk category created."
+msgstr "تم إنشاء تصنيف المخاطر."
+
+msgid "Risk category deleted."
+msgstr "تم حذف تصنيف المخاطر."
+
+msgid "Risk category reactivated."
+msgstr "تمت إعادة تفعيل تصنيف المخاطر."
+
+msgid "Risk category updated."
+msgstr "تم تحديث تصنيف المخاطر."
+
+msgid "Risk linked to auditable area."
+msgstr "تم ربط الخطر بنطاق المراجعة."
+
+msgid "Risk registered successfully."
+msgstr "تم تسجيل الخطر بنجاح."
+
+msgid "Risk scoring updated."
+msgstr "تم تحديث تقييم المخاطر."
+
+msgid "Rolled back to previous rule version."
+msgstr "تم الرجوع إلى النسخة السابقة من القاعدة."
+
+msgid "Routing rule updated."
+msgstr "تم تحديث قاعدة التوجيه."
+
+msgid "Rule approved and activated."
+msgstr "تم اعتماد القاعدة وتفعيلها."
+
+msgid "Rule deleted"
+msgstr "تم حذف القاعدة"
+
+msgid "Rule disabled."
+msgstr "تم تعطيل القاعدة."
+
+msgid "Rule not found"
+msgstr "القاعدة غير موجودة"
+
+msgid "Rule not found."
+msgstr "القاعدة غير موجودة."
+
+msgid "Rule submitted for approval."
+msgstr "تم تقديم القاعدة للاعتماد."
+
+msgid "Rule updated"
+msgstr "تم تحديث القاعدة"
+
+msgid "Rule updated successfully"
+msgstr "تم تحديث القاعدة بنجاح"
+
+msgid "Scope rule added."
+msgstr "تمت إضافة قاعدة النطاق."
+
+msgid "Scope rule removed."
+msgstr "تم حذف قاعدة النطاق."
+
+msgid "Screening record not found."
+msgstr "سجل الفحص غير موجود."
+
+msgid "Screening result not found"
+msgstr "نتيجة الفحص غير موجودة"
+
+msgid "Security settings updated. Session timeout applies to new logins."
+msgstr "تم تحديث إعدادات الأمان. تسري مهلة الجلسة على عمليات الدخول الجديدة."
+
+msgid "Select a valid rule"
+msgstr "اختر قاعدة صالحة"
+
+msgid "Select at least one case."
+msgstr "اختر حالة واحدة على الأقل."
+
+msgid "Select at least one declaration type."
+msgstr "اختر نوع إقرار واحدًا على الأقل."
+
+msgid "Selected user not found."
+msgstr "المستخدم المختار غير موجود."
+
+msgid "Self-registration is disabled. Contact your administrator."
+msgstr "التسجيل الذاتي معطل. تواصل مع مسؤول النظام."
+
+msgid "Session approved."
+msgstr "تم اعتماد الجلسة."
+
+msgid "Session expired. Please start again."
+msgstr "انتهت الجلسة. يرجى البدء من جديد."
+
+msgid "Session rejected."
+msgstr "تم رفض الجلسة."
+
+msgid "Settings updated successfully."
+msgstr "تم تحديث الإعدادات بنجاح."
+
+msgid "Source linked to risk."
+msgstr "تم ربط المصدر بالخطر."
+
+msgid "Stage added."
+msgstr "تمت إضافة المرحلة."
+
+msgid "Stage enabled/disabled."
+msgstr "تم تفعيل/تعطيل المرحلة."
+
+msgid "Stage removed."
+msgstr "تم حذف المرحلة."
+
+msgid "Stage updated."
+msgstr "تم تحديث المرحلة."
+
+msgid "Submission not found."
+msgstr "التقديم غير موجود."
+
+msgid "Submission updated."
+msgstr "تم تحديث التقديم."
+
+msgid "Support request received. Email delivery is pending configuration."
+msgstr "تم استلام طلب الدعم. إرسال البريد في انتظار الإعداد."
+
+msgid "Team member added."
+msgstr "تمت إضافة عضو الفريق."
+
+msgid "Template key is required."
+msgstr "مفتاح القالب مطلوب."
+
+msgid "Thank you! Your response has been submitted and your declaration is back under review."
+msgstr "شكرًا لك! تم تقديم ردك وعاد إقرارك للمراجعة."
+
+msgid "This action requires administrator privileges."
+msgstr "هذا الإجراء يتطلب صلاحيات مسؤول النظام."
+
+msgid "This course is live — the new assessment settings apply to attempts started from now on."
+msgstr "هذه الدورة منشورة — تسري إعدادات التقييم الجديدة على المحاولات التي تبدأ من الآن."
+
+msgid "This declaration can no longer be edited."
+msgstr "لم يعد من الممكن تعديل هذا الإقرار."
+
+msgid "This media has been purged per the data retention policy."
+msgstr "تم حذف هذه الوسائط وفقًا لسياسة الاحتفاظ بالبيانات."
+
+msgid "This policy is not available for acknowledgment."
+msgstr "هذه السياسة غير متاحة للإقرار."
+
+msgid "This question already appeared in learners' assessments, so it was DISABLED (kept for the record) instead of deleted."
+msgstr "ظهر هذا السؤال في تقييمات المتعلمين، لذلك تم تعطيله (مع الاحتفاظ به للسجل) بدلًا من حذفه."
+
+msgid "This session is already completed and can't be edited. Create a new session instead."
+msgstr "هذه الجلسة مكتملة ولا يمكن تعديلها. أنشئ جلسة جديدة بدلًا من ذلك."
+
+msgid "This session is already completed and can't be regenerated. Create a new session instead."
+msgstr "هذه الجلسة مكتملة ولا يمكن إعادة إنشائها. أنشئ جلسة جديدة بدلًا من ذلك."
+
+msgid "This session is already finalized."
+msgstr "هذه الجلسة منتهية بالفعل."
+
+msgid "This session is not available for manual review."
+msgstr "هذه الجلسة غير متاحة للمراجعة اليدوية."
+
+msgid "This session is not ready for approval — screening must be clear first."
+msgstr "هذه الجلسة غير جاهزة للاعتماد — يجب أن يكون الفحص سليمًا أولًا."
+
+msgid "Transaction not found"
+msgstr "المعاملة غير موجودة"
+
+msgid "Transaction saved. No alerts triggered."
+msgstr "تم حفظ المعاملة. لم يتم إطلاق أي تنبيهات."
+
+msgid "Treatment not found."
+msgstr "المعالجة غير موجودة."
+
+msgid "Treatment proposed."
+msgstr "تم اقتراح المعالجة."
+
+msgid "Treatment updated."
+msgstr "تم تحديث المعالجة."
+
+msgid "Treatment verified and closed."
+msgstr "تم التحقق من المعالجة وإغلاقها."
+
+msgid "Turning off an active second factor needs a reason."
+msgstr "إيقاف عامل التحقق الثاني النشط يتطلب سببًا."
+
+msgid "Two-factor authentication enabled. Save your backup codes — they are shown once only."
+msgstr "تم تفعيل التحقق الثنائي. احفظ رموز الاحتياط — تظهر مرة واحدة فقط."
+
+msgid "Unit deactivated. Its history is kept."
+msgstr "تم تعطيل الوحدة. يتم الاحتفاظ بسجلها."
+
+msgid "Unit reactivated."
+msgstr "تمت إعادة تفعيل الوحدة."
+
+msgid "Unit updated."
+msgstr "تم تحديث الوحدة."
+
+msgid "Unknown MFA action."
+msgstr "إجراء تحقق ثنائي غير معروف."
+
+msgid "Unknown decision."
+msgstr "قرار غير معروف."
+
+msgid "Upload started. Warning: synchronous render deprecated."
+msgstr "بدأ الرفع. تنبيه: العرض المتزامن لم يعد مدعومًا."
+
+msgid "Upload the CSV template (save from Excel as \"CSV UTF-8\")."
+msgstr "ارفع قالب CSV (احفظه من Excel بصيغة \"CSV UTF-8\")."
+
+msgid "User not found."
+msgstr "المستخدم غير موجود."
+
+msgid "User role updated successfully."
+msgstr "تم تحديث دور المستخدم بنجاح."
+
+msgid "Video link must start with https://"
+msgstr "يجب أن يبدأ رابط الفيديو بـ https://"
+
+msgid "Warning: this screening ran in DEGRADED search mode (primary search engine was unavailable). Recall quality was reduced - re-screen this name to be safe."
+msgstr "تنبيه: تم هذا الفحص في وضع البحث المحدود (محرك البحث الرئيسي لم يكن متاحًا) وانخفضت دقة الاسترجاع — أعد فحص هذا الاسم للتأكد."
+
+msgid "Whitelist entry not found."
+msgstr "قيد القائمة البيضاء غير موجود."
+
+msgid "Whitelist entry removed."
+msgstr "تم حذف قيد القائمة البيضاء."
+
+msgid "Working paper uploaded."
+msgstr "تم رفع ورقة العمل."
+
+msgid "You are not eligible for this quiz or have already completed it."
+msgstr "غير مؤهل لهذا الاختبار أو أكملته بالفعل."
+
+msgid "You can only delete your own declarations."
+msgstr "يمكنك حذف إقراراتك فقط."
+
+msgid "You can only edit your own declarations."
+msgstr "يمكنك تعديل إقراراتك فقط."
+
+msgid "You cannot delete your own account."
+msgstr "لا يمكنك حذف حسابك."
+
+msgid "You do not have approval permissions."
+msgstr "ليس لديك صلاحيات اعتماد."
+
+msgid "You do not have permission to approve this declaration."
+msgstr "ليس لديك صلاحية لاعتماد هذا الإقرار."
+
+msgid "You do not have permission to create policies for this department."
+msgstr "ليس لديك صلاحية لإنشاء سياسات لهذه الإدارة."
+
+msgid "You do not have permission to reject this declaration."
+msgstr "ليس لديك صلاحية لرفض هذا الإقرار."
+
+msgid "You do not have permission to request information."
+msgstr "ليس لديك صلاحية لطلب معلومات."
+
+msgid "You do not have permission to update this submission."
+msgstr "ليس لديك صلاحية لتحديث هذا التقديم."
+
+msgid "You do not have permission to view this declaration."
+msgstr "ليس لديك صلاحية لعرض هذا الإقرار."
+
+msgid "You do not have permission to view this."
+msgstr "ليس لديك صلاحية لعرض هذا."
+
+msgid "You have already declared for this campaign."
+msgstr "لقد قدمت إقرارك لهذه الحملة بالفعل."
+
+msgid "You have already submitted an ad-hoc declaration for this year. Please contact compliance to edit."
+msgstr "لقد قدمت إقرارًا استثنائيًا لهذا العام بالفعل. يرجى التواصل مع الالتزام للتعديل."
+
+msgid "You have already submitted your Code of Business Ethics & Conduct declaration for this year."
+msgstr "لقد قدمت إقرار ميثاق أخلاقيات وسلوك العمل لهذا العام بالفعل."
+
+msgid "You must watch the entire training video before taking the quiz."
+msgstr "يجب مشاهدة فيديو التدريب بالكامل قبل بدء الاختبار."
+
+msgid "Your declaration has been submitted successfully!"
+msgstr "تم تقديم إقرارك بنجاح!"
+
+msgid "Your screening was saved but could not be located. Please check History."
+msgstr "تم حفظ الفحص لكن تعذر العثور عليه. يرجى مراجعة السجل."
+
+msgid "Your session expired. Please log in again and resubmit the form."
+msgstr "انتهت جلستك. يرجى تسجيل الدخول مرة أخرى وإعادة إرسال النموذج."
+
+msgid "Your session expired. Please submit the form again."
+msgstr "انتهت جلستك. يرجى إعادة إرسال النموذج."
+
+msgid "Your support request has been sent. We will get back to you shortly."
+msgstr "تم إرسال طلب الدعم. سنتواصل معك قريبًا."
+
+msgid "eKYC session created. Share the verification link with the customer."
+msgstr "تم إنشاء جلسة التحقق الإلكتروني. شارك رابط التحقق مع العميل."
+
+msgid "eKYC session not found."
+msgstr "جلسة التحقق الإلكتروني غير موجودة."
+
+msgid "eKYC session updated."
+msgstr "تم تحديث جلسة التحقق الإلكتروني."
+
+msgid "openpyxl is not installed — exported as CSV instead."
+msgstr "مكتبة openpyxl غير مثبتة — تم التصدير بصيغة CSV بدلًا من ذلك."
+
+msgid "openpyxl not installed"
+msgstr "مكتبة openpyxl غير مثبتة"
+
+#, python-format
+msgid "%(added)s recipient(s) added."
+msgstr "تمت إضافة %(added)s مستلم."
+
+#, python-format
+msgid "%(name)s now follows the default rule for their role."
+msgstr "أصبح %(name)s يتبع القاعدة الافتراضية لدوره."
+
+#, python-format
+msgid "%(uploaded)s attachment(s) uploaded successfully."
+msgstr "تم رفع %(uploaded)s مرفق بنجاح."
+
+#, python-format
+msgid "Activity %(code)s registered in ROPA."
+msgstr "تم تسجيل النشاط %(code)s في سجل أنشطة المعالجة."
+
+#, python-format
+msgid "Alert #%(alert_id)s updated."
+msgstr "تم تحديث التنبيه رقم %(alert_id)s."
+
+#, python-format
+msgid "Alert updated to %(new_status)s"
+msgstr "تم تحديث التنبيه إلى %(new_status)s"
+
+#, python-format
+msgid "All %(failed_count)s emails failed to send — campaign left as draft, check mail server logs."
+msgstr "فشل إرسال جميع الرسائل (%(failed_count)s) — بقيت الحملة كمسودة، راجع سجلات خادم البريد."
+
+#, python-format
+msgid "Blacklist entry added successfully: %(full_name)s"
+msgstr "تمت إضافة قيد القائمة السوداء بنجاح: %(full_name)s"
+
+#, python-format
+msgid "Breach %(breach_number)s reported and severity assessed."
+msgstr "تم الإبلاغ عن الاختراق %(breach_number)s وتقييم خطورته."
+
+#, python-format
+msgid "Bulk assignment complete: %(assigned)s enrollment(s) created."
+msgstr "اكتمل الإسناد الجماعي: تم إنشاء %(assigned)s تسجيل."
+
+#, python-format
+msgid "Calendar updated. Generated %(total_generated)s upcoming submissions."
+msgstr "تم تحديث التقويم. تم إنشاء %(total_generated)s تقديم قادم."
+
+#, python-format
+msgid "Campaign \"%(name)s\" created successfully."
+msgstr "تم إنشاء الحملة \"%(name)s\" بنجاح."
+
+#, python-format
+msgid "Cannot publish: %(nq)s active questions, %(questions_per_attempt)s needed per attempt."
+msgstr "لا يمكن النشر: %(nq)s سؤال نشط، والمطلوب %(questions_per_attempt)s لكل محاولة."
+
+#, python-format
+msgid "Category \"%(name_en)s\" created successfully."
+msgstr "تم إنشاء التصنيف \"%(name_en)s\" بنجاح."
+
+#, python-format
+msgid "Category \"%(name_en)s\" updated successfully."
+msgstr "تم تحديث التصنيف \"%(name_en)s\" بنجاح."
+
+#, python-format
+msgid "Certificate %(cert_number)s revoked."
+msgstr "تم إلغاء الشهادة %(cert_number)s."
+
+#, python-format
+msgid "Code \"%(code)s\" is already in use."
+msgstr "الرمز \"%(code)s\" مستخدم بالفعل."
+
+#, python-format
+msgid "Could not read file: %(e)s"
+msgstr "تعذرت قراءة الملف: %(e)s"
+
+#, python-format
+msgid "Course set to %(new)s."
+msgstr "تم ضبط الدورة على %(new)s."
+
+#, python-format
+msgid "Customer #%(customer_id)s created and session onboarded."
+msgstr "تم إنشاء العميل رقم %(customer_id)s وإتمام انضمام الجلسة."
+
+#, python-format
+msgid "Customer %(customer_id)s not found"
+msgstr "العميل %(customer_id)s غير موجود"
+
+#, python-format
+msgid "DPIA %(dpia_number)s created as draft."
+msgstr "تم إنشاء تقييم الأثر %(dpia_number)s كمسودة."
+
+#, python-format
+msgid "Data Subject Request %(request_number)s registered."
+msgstr "تم تسجيل طلب صاحب البيانات %(request_number)s."
+
+#, python-format
+msgid "Declaration %(declaration_number)s escalated to compliance review."
+msgstr "تم تصعيد الإقرار %(declaration_number)s لمراجعة الالتزام."
+
+#, python-format
+msgid "Declaration %(declaration_number)s has been approved!"
+msgstr "تم اعتماد الإقرار %(declaration_number)s!"
+
+#, python-format
+msgid "Declaration %(declaration_number)s has been rejected."
+msgstr "تم رفض الإقرار %(declaration_number)s."
+
+#, python-format
+msgid "Declaration %(declaration_number)s submitted and auto-approved! (Value below 500 EGP)"
+msgstr "تم تقديم الإقرار %(declaration_number)s واعتماده تلقائيًا! (القيمة أقل من 500 جنيه)"
+
+#, python-format
+msgid "Declaration %(declaration_number)s submitted successfully!"
+msgstr "تم تقديم الإقرار %(declaration_number)s بنجاح!"
+
+#, python-format
+msgid "Declaration %(declaration_number)s submitted successfully! Awaiting compliance approval."
+msgstr "تم تقديم الإقرار %(declaration_number)s بنجاح! في انتظار اعتماد الالتزام."
+
+#, python-format
+msgid "Declaration %(declaration_number)s submitted successfully! Awaiting manager approval."
+msgstr "تم تقديم الإقرار %(declaration_number)s بنجاح! في انتظار اعتماد المدير."
+
+#, python-format
+msgid "Document created and sent for approval (%(stages)s stages)."
+msgstr "تم إنشاء المستند وإرساله للاعتماد (%(stages)s مراحل)."
+
+#, python-format
+msgid "Draft risk %(risk_id)s created from this finding — please review and score it."
+msgstr "تم إنشاء مسودة الخطر %(risk_id)s من هذه الملاحظة — يرجى مراجعتها وتقييمها."
+
+#, python-format
+msgid "Draft risk %(risk_id)s created — please review and complete scoring."
+msgstr "تم إنشاء مسودة الخطر %(risk_id)s — يرجى المراجعة واستكمال التقييم."
+
+#, python-format
+msgid "Engagement %(audit_number)s created."
+msgstr "تم إنشاء المهمة %(audit_number)s."
+
+msgid "Entry already exists in the list."
+msgstr "القيد موجود بالفعل في القائمة."
+
+msgid "Error requesting information."
+msgstr "حدث خطأ أثناء طلب المعلومات."
+
+#, python-format
+msgid "Error: %(e)s"
+msgstr "خطأ: %(e)s"
+
+#, python-format
+msgid "File truncated to %(MAX_ROWS)s rows (max per upload). Split file for more."
+msgstr "تم تقليص الملف إلى %(MAX_ROWS)s صف (الحد الأقصى لكل رفع). قسم الملف لرفع المزيد."
+
+#, python-format
+msgid "Finding %(finding_number)s recorded."
+msgstr "تم تسجيل الملاحظة %(finding_number)s."
+
+#, python-format
+msgid "Import completed: %(successful)s/%(total)s customers added to the whitelist."
+msgstr "اكتمل الاستيراد: تمت إضافة %(successful)s/%(total)s عميل إلى القائمة البيضاء."
+
+#, python-format
+msgid "Import completed: %(successful)s/%(total)s entries added successfully"
+msgstr "اكتمل الاستيراد: تمت إضافة %(successful)s/%(total)s قيد بنجاح"
+
+#, python-format
+msgid "Import completed: %(successful)s/%(total)s successful"
+msgstr "اكتمل الاستيراد: %(successful)s/%(total)s ناجح"
+
+#, python-format
+msgid "Import completed: %(successful)s/%(total)s successful. %(failed)s failed: %(error_preview)s"
+msgstr "اكتمل الاستيراد: %(successful)s/%(total)s ناجح. فشل %(failed)s: %(error_preview)s"
+
+#, python-format
+msgid "Incident %(inc_number)s reported. Compliance and SOC teams notified."
+msgstr "تم الإبلاغ عن الحادث %(inc_number)s وإخطار فريقي الالتزام ومركز العمليات الأمنية."
+
+#, python-format
+msgid "Information request sent for %(declaration_number)s."
+msgstr "تم إرسال طلب معلومات بخصوص %(declaration_number)s."
+
+msgid "KYB link generated successfully."
+msgstr "تم إنشاء رابط اعرف عميلك للشركات بنجاح."
+
+#, python-format
+msgid "MFA disabled for %(name)s."
+msgstr "تم تعطيل التحقق الثنائي لـ %(name)s."
+
+#, python-format
+msgid "MFA is no longer required for %(name)s. They may still enable it themselves."
+msgstr "لم يعد التحقق الثنائي إلزاميًا لـ %(name)s، ويمكنه تفعيله بنفسه."
+
+#, python-format
+msgid "MFA is now required for %(name)s."
+msgstr "أصبح التحقق الثنائي إلزاميًا لـ %(name)s."
+
+#, python-format
+msgid "Measurement recorded (%(status)s)."
+msgstr "تم تسجيل القياس (%(status)s)."
+
+#, python-format
+msgid "Name \"%(name)s\" added to whitelist."
+msgstr "تمت إضافة الاسم \"%(name)s\" إلى القائمة البيضاء."
+
+msgid "PEP entry added successfully."
+msgstr "تمت إضافة قيد الشخص المكشوف سياسيًا بنجاح."
+
+#, python-format
+msgid "Participant list refreshed — %(n)s new person(s) added."
+msgstr "تم تحديث قائمة المشاركين — أضيف %(n)s شخص جديد."
+
+#, python-format
+msgid "Policy submitted for approval. Assigned to: %(reviewer_name)s"
+msgstr "تم تقديم السياسة للاعتماد. أسندت إلى: %(reviewer_name)s"
+
+#, python-format
+msgid "Reminder sent to %(sent)s recipient(s)."
+msgstr "تم إرسال التذكير إلى %(sent)s مستلم."
+
+#, python-format
+msgid "Reporting calendar updated. %(count)s new submissions generated."
+msgstr "تم تحديث تقويم التقارير. تم إنشاء %(count)s تقديم جديد."
+
+#, python-format
+msgid "Request assigned to %(full_name)s."
+msgstr "تم إسناد الطلب إلى %(full_name)s."
+
+#, python-format
+msgid "Review submitted: %(status)s"
+msgstr "تم تقديم المراجعة: %(status)s"
+
+#, python-format
+msgid "Risk marked as %(status)s."
+msgstr "تم تعليم الخطر كـ %(status)s."
+
+#, python-format
+msgid "Rule %(code)s created successfully"
+msgstr "تم إنشاء القاعدة %(code)s بنجاح"
+
+#, python-format
+msgid "Rule code %(code)s already exists"
+msgstr "رمز القاعدة %(code)s موجود بالفعل"
+
+#, python-format
+msgid "Run complete — %(names)s name(s) re-screened, nothing new."
+msgstr "اكتمل التشغيل — تمت إعادة فحص %(names)s اسم، ولا جديد."
+
+#, python-format
+msgid "SAR %(sar_reference)s filed successfully and queued for compliance review."
+msgstr "تم تقديم تقرير الاشتباه %(sar_reference)s بنجاح ووضعه في قائمة مراجعة الالتزام."
+
+#, python-format
+msgid "Screening completed: %(total_high_risk)s high-risk match(es) found! Review required in Screening Queue."
+msgstr "اكتمل الفحص: تم العثور على %(total_high_risk)s تطابق مرتفع المخاطر! تلزم المراجعة في قائمة الفحص."
+
+msgid "Screening completed: All clear. No sanctions matches found."
+msgstr "اكتمل الفحص: لا توجد ملاحظات. لم يتم العثور على تطابقات مع قوائم العقوبات."
+
+#, python-format
+msgid "Sent %(count)s reminder emails."
+msgstr "تم إرسال %(count)s رسالة تذكير."
+
+#, python-format
+msgid "Sent %(sent_count)s. %(failed_count)s failed — check logs."
+msgstr "تم إرسال %(sent_count)s. فشل %(failed_count)s — راجع السجلات."
+
+#, python-format
+msgid "Successfully imported %(count)s users. %(errors)s failed."
+msgstr "تم استيراد %(count)s مستخدم بنجاح. فشل %(errors)s."
+
+#, python-format
+msgid "Successfully resolved %(processed_count)s items."
+msgstr "تمت معالجة %(processed_count)s عنصر بنجاح."
+
+#, python-format
+msgid "Successfully sent %(sent_count)s emails."
+msgstr "تم إرسال %(sent_count)s رسالة بنجاح."
+
+#, python-format
+msgid "Sync started for %(source_label)s. This runs in the background — check logs or refresh in a minute."
+msgstr "بدأت المزامنة لـ %(source_label)s. تعمل في الخلفية — راجع السجلات أو حدّث الصفحة بعد دقيقة."
+
+#, python-format
+msgid "Unit \"%(name)s\" created."
+msgstr "تم إنشاء الوحدة \"%(name)s\"."
+
+#, python-format
+msgid "User %(first_name)s %(last_name)s deleted successfully."
+msgstr "تم حذف المستخدم %(first_name)s %(last_name)s بنجاح."
+
+#, python-format
+msgid "User created successfully. %(assigned)s training items assigned."
+msgstr "تم إنشاء المستخدم بنجاح. تم إسناد %(assigned)s عنصر تدريب."
+
+#, python-format
+msgid "User updated successfully. %(assigned)s new training items assigned."
+msgstr "تم تحديث المستخدم بنجاح. تم إسناد %(assigned)s عنصر تدريب جديد."
+
+#, python-format
+msgid "Whitelist entry \"%(name)s\" revoked. It will be screened normally from now on."
+msgstr "تم إلغاء قيد القائمة البيضاء \"%(name)s\"، وسيتم فحصه بشكل طبيعي من الآن."
+
+#, python-format
+msgid "You do not have permission to access %(module)s."
+msgstr "ليس لديك صلاحية للوصول إلى %(module)s."
+
+#, python-format
+msgid "You do not have permission to edit %(module)s."
+msgstr "ليس لديك صلاحية لتعديل %(module)s."
+
+#, python-format
+msgid "⚠️ WARNING: Automated screening found potential matches for \"%(screening_name)s\". Customer assigned HIGH risk and status set to UNDER_REVIEW."
+msgstr "⚠️ تنبيه: عثر الفحص الآلي على تطابقات محتملة لـ \"%(screening_name)s\". تم تصنيف العميل عالي المخاطر وتغيير حالته إلى قيد المراجعة."
+
+#, python-format
+msgid "✅ Screening completed for \"%(screening_name)s\". No hits found."
+msgstr "✅ اكتمل فحص \"%(screening_name)s\". لم يتم العثور على تطابقات."
+
+msgid "AML / Compliance Module"
+msgstr "موديول مكافحة غسل الأموال / الالتزام"
+
+msgid "Account / Login Issue"
+msgstr "مشكلة في الحساب / تسجيل الدخول"
+
+msgid "Alert Activity — Last 30 Days"
+msgstr "نشاط التنبيهات — آخر 30 يومًا"
+
+msgid "Bug Report"
+msgstr "الإبلاغ عن خطأ"
+
+msgid "Compliance Operations Detail"
+msgstr "تفاصيل عمليات الالتزام"
+
+msgid "Darker = more alerts"
+msgstr "الأغمق = تنبيهات أكثر"
+
+msgid "Describe Your Issue"
+msgstr "صف مشكلتك"
+
+msgid "Feature Request"
+msgstr "طلب ميزة"
+
+msgid "No deadlines in next 90 days"
+msgstr "لا توجد مواعيد خلال 90 يومًا القادمة"
+
+msgid "No flagged customers"
+msgstr "لا يوجد عملاء مُعلَّمون"
+
+msgid "No sources configured"
+msgstr "لم يتم إعداد مصادر"
+
+msgid "Permission or Access Problem"
+msgstr "مشكلة في الصلاحيات أو الوصول"
+
+msgid "Please describe your issue in detail..."
+msgstr "يرجى وصف المشكلة بالتفصيل..."
+
+msgid "Regulatory Deadlines — Next 90 Days"
+msgstr "المواعيد الرقابية — الـ 90 يومًا القادمة"
+
+msgid "Report or Data Issue"
+msgstr "مشكلة في تقرير أو بيانات"
+
+msgid "Sanctions List Status"
+msgstr "حالة قوائم العقوبات"
+
+msgid "Screening Tool Issue"
+msgstr "مشكلة في أداة الفحص"
+
+msgid "Send Support Request"
+msgstr "إرسال طلب الدعم"
+
+msgid "Support Category"
+msgstr "تصنيف الطلب"
+
+msgid "We'll get back to you at"
+msgstr "سنرد عليك على"
+
+msgid "Your Email"
+msgstr "بريدك الإلكتروني"
+
+msgid "Your Name"
+msgstr "اسمك"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

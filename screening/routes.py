@@ -16,6 +16,7 @@
 # =============================================================================
 
 from extensions import csrf, limiter
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app, send_file, Response
 import requests
 from flask_login import login_required, current_user
@@ -649,7 +650,7 @@ def manual_screen():
         employer = request.form.get('employer')
         
         if not name:
-            flash('Name is required', 'error')
+            flash(gettext('Name is required'), 'error')
             return redirect(url_for('screening.manual_screen'))
             
         # Parse Threshold
@@ -754,7 +755,7 @@ def manual_screen():
                 f"(history_id={history_id}) but no screening_results row found on "
                 f"readback for name={name!r} user_id={current_user.id}"
             )
-            flash('Your screening was saved but could not be located. Please check History.', 'error')
+            flash(gettext('Your screening was saved but could not be located. Please check History.'), 'error')
             return redirect(url_for('screening.screening_history_full'))
 
         logger.info(f"[TIMER] DB write: {round((time.time()-t_db)*1000)}ms (history_id={history_id})")
@@ -791,7 +792,7 @@ def view_result(id):
     """, (id,), one=True)
     
     if not result:
-        flash('Screening result not found', 'error')
+        flash(gettext('Screening result not found'), 'error')
         return redirect(url_for('screening.dashboard'))
         
     matches = json.loads(result['matches']) if isinstance(result['matches'], str) else result['matches']
@@ -843,7 +844,7 @@ def view_result(id):
     # fallback. Say so explicitly so the analyst knows to re-screen.
     try:
         if ('search_degraded' in result.keys()) and result['search_degraded']:
-            flash('Warning: this screening ran in DEGRADED search mode (primary search engine was unavailable). Recall quality was reduced - re-screen this name to be safe.', 'warning')
+            flash(gettext('Warning: this screening ran in DEGRADED search mode (primary search engine was unavailable). Recall quality was reduced - re-screen this name to be safe.'), 'warning')
     except Exception:
         pass
 
@@ -902,7 +903,7 @@ def history():
 @permission_required('screening', level='view')
 def config():
     if not current_user.is_admin() and not current_user.can_edit('screening'):
-         flash('Access denied. Edit permission required for screening config.', 'error')
+         flash(gettext('Access denied. Edit permission required for screening config.'), 'error')
          return redirect(url_for('screening.dashboard'))
          
     param = get_param_style()
@@ -933,7 +934,7 @@ def config():
             for key in request.form:
                 val = request.form.get(key)
                 execute_db(f"UPDATE screening_config SET config_value = {param}, updated_at = CURRENT_TIMESTAMP WHERE config_key = {param}", (val, key))
-            flash('Configuration updated and saved to database', 'success')
+            flash(gettext('Configuration updated and saved to database'), 'success')
             return redirect(url_for('screening.config'))
         except Exception as e:
             flash(f'Update failed: {str(e)}', 'error')
@@ -946,7 +947,7 @@ def config():
 @permission_required('screening', level='view')
 def data_sources():
     if not current_user.is_admin() and not current_user.is_compliance_officer():
-         flash('Access denied', 'error')
+         flash(gettext('Access denied'), 'error')
          return redirect(url_for('screening.dashboard'))
          
     param = get_param_style()
@@ -1001,7 +1002,7 @@ def data_sources():
 @permission_required('screening', level='view')
 def manage_whitelist():
     if not current_user.is_admin() and not current_user.is_compliance_officer():
-         flash('Access denied', 'error')
+         flash(gettext('Access denied'), 'error')
          return redirect(url_for('screening.dashboard'))
          
     param = get_param_style()
@@ -1034,11 +1035,11 @@ def manage_whitelist():
             """,
                        (name, norm_name, reason, current_user.id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         current_user.id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            flash(f'Name "{name}" added to whitelist.', 'success')
+            flash(gettext('Name "%(name)s" added to whitelist.', name=name), 'success')
         elif action == 'delete':
             wid = request.form.get('wid')
             execute_db(f"DELETE FROM screening_whitelist WHERE id = {param}", (wid,))
-            flash('Whitelist entry removed.', 'info')
+            flash(gettext('Whitelist entry removed.'), 'info')
             
         return redirect(url_for('screening.manage_whitelist'))
         
@@ -1112,24 +1113,24 @@ def bulk_upload_whitelist():
     each row is inserted independently and failures are reported per-row.
     """
     if not current_user.is_admin() and not current_user.is_compliance_officer():
-        flash('Access denied', 'error')
+        flash(gettext('Access denied'), 'error')
         return redirect(url_for('screening.dashboard'))
 
     if request.method == 'POST':
         if 'file' not in request.files or request.files['file'].filename == '':
-            flash('No file selected.', 'danger')
+            flash(gettext('No file selected.'), 'danger')
             return redirect(request.url)
 
         file = request.files['file']
         filename = file.filename.lower()
         if not (filename.endswith('.csv') or filename.endswith('.xlsx')):
-            flash('Invalid file format. Please upload a CSV or Excel (.xlsx) file.', 'danger')
+            flash(gettext('Invalid file format. Please upload a CSV or Excel (.xlsx) file.'), 'danger')
             return redirect(request.url)
 
         try:
             rows = _parse_whitelist_csv(file) if filename.endswith('.csv') else _parse_whitelist_excel(file)
         except Exception as e:
-            flash(f'Could not read file: {e}', 'danger')
+            flash(gettext('Could not read file: %(e)s', e=e), 'danger')
             return redirect(request.url)
 
         from .complynex_engine import normalize_arabic_text, ComplyNexScreeningEngine
@@ -1173,7 +1174,7 @@ def bulk_upload_whitelist():
         if errors:
             flash(f'Import completed: {successful}/{total} added. {len(errors)} row(s) failed — see details below.', 'warning')
         else:
-            flash(f'Import completed: {successful}/{total} customers added to the whitelist.', 'success')
+            flash(gettext('Import completed: %(successful)s/%(total)s customers added to the whitelist.', successful=successful, total=total), 'success')
 
         return render_template('screening/whitelist_bulk_upload.html',
                                 import_errors=errors, import_total=total, import_successful=successful)
@@ -1317,7 +1318,7 @@ def resolve_hit():
     except Exception as e:
         logger.error(f"Could not mirror adjudication onto history: {e}")
 
-    flash('Result resolved successfully.', 'success')
+    flash(gettext('Result resolved successfully.'), 'success')
     return redirect(url_for('screening.view_result', id=result_id))
 
 @screening_bp.route('/api/screen/person', methods=['POST'])
@@ -1524,7 +1525,7 @@ def download_report(id):
     result = query_db(f"SELECT * FROM screening_results WHERE id = {param}", (id,), one=True)
     
     if not result:
-        flash('Screening result not found', 'error')
+        flash(gettext('Screening result not found'), 'error')
         return redirect(url_for('screening.dashboard'))
         
     matches = json.loads(result['matches']) if isinstance(result['matches'], str) else result['matches']
@@ -1580,7 +1581,7 @@ def update_watchlist():
     t.start()
 
     source_label = f'source #{source_id}' if source_id else 'all sources'
-    flash(f'Sync started for {source_label}. This runs in the background — check logs or refresh in a minute.', 'success')
+    flash(gettext('Sync started for %(source_label)s. This runs in the background — check logs or refresh in a minute.', source_label=source_label), 'success')
     return redirect(url_for('screening.data_sources'))
 
 
@@ -1721,13 +1722,13 @@ def bulk_screening_upload():
         
         if 'file' not in request.files:
             if is_ajax: return jsonify({"status": "error", "message": "No file part"}), 400
-            flash('No file part', 'error')
+            flash(gettext('No file part'), 'error')
             return redirect(request.url)
             
         file = request.files['file']
         if file.filename == '':
             if is_ajax: return jsonify({"status": "error", "message": "No selected file"}), 400
-            flash('No selected file', 'error')
+            flash(gettext('No selected file'), 'error')
             return redirect(request.url)
             
         if file and (file.filename.endswith('.csv') or file.filename.endswith('.xlsx')):
@@ -1742,7 +1743,7 @@ def bulk_screening_upload():
                 
                 if 'name' not in df.columns:
                     if is_ajax: return jsonify({"status": "error", "message": 'File must contain a "Name" column.'}), 400
-                    flash('File must contain a "Name" column.', 'error')
+                    flash(gettext('File must contain a "Name" column.'), 'error')
                     return redirect(request.url)
                 
                 # Generate unique ID and start job
@@ -1765,7 +1766,7 @@ def bulk_screening_upload():
                 if is_ajax: 
                     return jsonify({"status": "started", "job_id": job_id})
                 
-                flash('Upload started. Warning: synchronous render deprecated.', 'info')
+                flash(gettext('Upload started. Warning: synchronous render deprecated.'), 'info')
                 return redirect(request.url)
                 
             except Exception as e:
@@ -1775,7 +1776,7 @@ def bulk_screening_upload():
                 return redirect(request.url)
         else:
             if is_ajax: return jsonify({"status": "error", "message": 'Allowed file types are CSV and Excel (.xlsx)'}), 400
-            flash('Allowed file types are CSV and Excel (.xlsx)', 'error')
+            flash(gettext('Allowed file types are CSV and Excel (.xlsx)'), 'error')
             return redirect(request.url)
 
     return render_template('screening/bulk_upload.html')
@@ -1804,7 +1805,7 @@ def bulk_results_view(job_id):
     """Serves the completion view payload"""
     job = BULK_JOBS.get(job_id)
     if not job or job['status'] != 'completed':
-        flash('Invalid or incomplete job result payload request.', 'error')
+        flash(gettext('Invalid or incomplete job result payload request.'), 'error')
         return redirect(url_for('screening.screening_queue'))
         
     results = job['results']
@@ -2357,7 +2358,7 @@ def view_customer_transactions(customer_id):
     customer = query_db("SELECT * FROM customers WHERE customer_reference = %s", (customer_id,), one=True)
 
     if not customer:
-        flash(f'Customer {customer_id} not found', 'error')
+        flash(gettext('Customer %(customer_id)s not found', customer_id=customer_id), 'error')
         return redirect(url_for('screening.dashboard'))
         
     # Fetch transactions
@@ -2827,7 +2828,7 @@ def queue_review(id):
          WHERE q.id = %s
     """, (id,), one=True)
     if not item:
-        flash('Queue item not found.', 'error')
+        flash(gettext('Queue item not found.'), 'error')
         return redirect(url_for('screening.screening_queue'))
     
     # Parse match_details JSON
@@ -2874,7 +2875,7 @@ def queue_review(id):
                 item['match_score'],
                 item['list_source']
             ))
-            flash('Marked as False Positive and added to whitelist.', 'success')
+            flash(gettext('Marked as False Positive and added to whitelist.'), 'success')
 
         elif action == 'true_match':
             execute_db("""
@@ -2902,7 +2903,7 @@ def queue_review(id):
             # Update source record screening status if linked
             _update_source_screening_status(item, 'Blocked')
 
-            flash('Confirmed as True Match. Entity blocked and added to internal blacklist.', 'danger')
+            flash(gettext('Confirmed as True Match. Entity blocked and added to internal blacklist.'), 'danger')
 
         elif action == 'pep':
             execute_db("""
@@ -2922,7 +2923,7 @@ def queue_review(id):
             # Update source record
             _update_source_screening_status(item, 'PEP')
 
-            flash('Entity flagged as PEP. Enhanced Due Diligence required.', 'warning')
+            flash(gettext('Entity flagged as PEP. Enhanced Due Diligence required.'), 'warning')
 
         elif action == 'escalate':
             escalate_to = request.form.get('escalate_to')
@@ -2932,7 +2933,7 @@ def queue_review(id):
                     assigned_to = %s, resolution_notes = %s
                 WHERE id = %s
             """, (notes, escalate_to, notes, id))
-            flash('Case escalated to senior compliance officer.', 'info')
+            flash(gettext('Case escalated to senior compliance officer.'), 'info')
             return redirect(url_for('screening.screening_queue'))
 
         # Close the alerts generated for this entity's screening (Rec #5)
@@ -3043,7 +3044,7 @@ def queue_assign(id):
     assigned_to = request.form.get('assigned_to', type=int)
     execute_db("UPDATE screening_queue SET assigned_to = %s, status = 'In Review' WHERE id = %s",
                (assigned_to, id))
-    flash('Case assigned successfully.', 'success')
+    flash(gettext('Case assigned successfully.'), 'success')
     return redirect(url_for('screening.screening_queue'))
 
 
@@ -3058,13 +3059,13 @@ def queue_bulk_resolve():
     selected_ids_str = request.form.get('selected_ids', '')
     
     if not selected_ids_str:
-        flash('No items selected.', 'warning')
+        flash(gettext('No items selected.'), 'warning')
         return redirect(url_for('screening.screening_queue'))
         
     try:
         selected_ids = [int(id) for id in selected_ids_str.split(',') if id]
     except ValueError:
-        flash('Invalid selection.', 'error')
+        flash(gettext('Invalid selection.'), 'error')
         return redirect(url_for('screening.screening_queue'))
 
     processed_count = 0
@@ -3152,7 +3153,7 @@ def queue_bulk_resolve():
         _close_linked_alerts(item['entity_name'], action, notes, current_user.id)
         processed_count += 1
 
-    flash(f'Successfully resolved {processed_count} items.', 'success')
+    flash(gettext('Successfully resolved %(processed_count)s items.', processed_count=processed_count), 'success')
     return redirect(url_for('screening.screening_queue'))
 def _save_screening_result(name, entity_type, dob, nationality, source_module, source_record_id, result, user_id, screening_type='API', inputs=None):
     """
@@ -3544,7 +3545,7 @@ def screening_history_detail(id):
     """View detailed results for a specific screening history record."""
     record = query_db("SELECT h.*, u.email as initiated_by_email FROM screening_history h LEFT JOIN users u ON h.initiated_by = u.id WHERE h.id = %s", (id,), one=True)
     if not record:
-        flash('Screening record not found.', 'danger')
+        flash(gettext('Screening record not found.'), 'danger')
         return redirect(url_for('screening.screening_history_full'))
     
     record = dict(record)
@@ -3630,12 +3631,12 @@ def revoke_whitelist(id):
     row = query_db("SELECT id, name, status FROM screening_whitelist WHERE id = %s",
                    (id,), one=True)
     if not row:
-        flash('Whitelist entry not found.', 'danger')
+        flash(gettext('Whitelist entry not found.'), 'danger')
         return redirect(url_for('screening.manage_whitelist'))
 
     reason = (request.form.get('reason') or '').strip()
     if not reason:
-        flash('A reason is required to revoke a whitelist entry.', 'danger')
+        flash(gettext('A reason is required to revoke a whitelist entry.'), 'danger')
         return redirect(url_for('screening.manage_whitelist'))
 
     execute_db("UPDATE screening_whitelist SET status = 'Revoked', notes = %s WHERE id = %s",
@@ -3645,7 +3646,7 @@ def revoke_whitelist(id):
                       reason, performed_by)
                   VALUES (%s, %s, 'revoked', %s, 'Revoked', %s, %s)""",
                (id, row['name'], row['status'], reason, current_user.id))
-    flash(f'Whitelist entry "{row["name"]}" revoked. It will be screened normally from now on.',
+    flash(gettext('Whitelist entry "%(name)s" revoked. It will be screened normally from now on.', name=row["name"]),
           'warning')
     return redirect(url_for('screening.manage_whitelist'))
 
@@ -3663,7 +3664,7 @@ def reinstate_whitelist(id):
     row = query_db("SELECT id, name, status FROM screening_whitelist WHERE id = %s",
                    (id,), one=True)
     if not row:
-        flash('Whitelist entry not found.', 'danger')
+        flash(gettext('Whitelist entry not found.'), 'danger')
         return redirect(url_for('screening.manage_whitelist'))
 
     reason = (request.form.get('reason') or '').strip()
@@ -3696,7 +3697,7 @@ def export_internal_pep():
         import openpyxl
         from openpyxl.styles import Font, PatternFill, Alignment
     except ImportError:
-        flash('openpyxl not installed', 'danger')
+        flash(gettext('openpyxl not installed'), 'danger')
         return redirect(url_for('blacklist.pep_index'))
 
     rows = query_db("""
@@ -3862,7 +3863,7 @@ def alert_disposition(alert_id):
         'escalate': ('ESCALATED', 0),
     }
     if action not in mapping:
-        flash('Invalid action.', 'error')
+        flash(gettext('Invalid action.'), 'error')
         return redirect(url_for('screening.alerts_list'))
     status, fp = mapping[action]
     execute_db("""
@@ -3879,7 +3880,7 @@ def alert_disposition(alert_id):
                      f"Alert #{alert_id} dispositioned: {action}. Notes: {notes}", request.remote_addr)
     except Exception:
         pass
-    flash(f'Alert #{alert_id} updated.', 'success')
+    flash(gettext('Alert #%(alert_id)s updated.', alert_id=alert_id), 'success')
     return redirect(url_for('screening.alerts_list'))
 
 
@@ -3888,7 +3889,7 @@ def alert_disposition(alert_id):
 @permission_required('screening', level='edit')
 def alerts_bulk_disposition():
     if not current_user.is_admin() and not current_user.is_compliance_officer():
-        flash('Access denied.', 'error')
+        flash(gettext('Access denied.'), 'error')
         return redirect(url_for('screening.alerts_list'))
     action = request.form.get('action')
     notes = request.form.get('notes', '')
@@ -3916,7 +3917,7 @@ def alerts_bulk_disposition():
               )
         """, (current_user.id,
               f"Backlog cleanup: underlying screening already resolved via queue. {notes}"))
-        flash('Backlog cleanup completed: alerts with already-resolved screenings closed.', 'success')
+        flash(gettext('Backlog cleanup completed: alerts with already-resolved screenings closed.'), 'success')
         return redirect(url_for('screening.alerts_list'))
 
     try:
@@ -3924,7 +3925,7 @@ def alerts_bulk_disposition():
     except ValueError:
         ids = []
     if not ids:
-        flash('No alerts selected.', 'warning')
+        flash(gettext('No alerts selected.'), 'warning')
         return redirect(url_for('screening.alerts_list'))
 
     status = 'CLOSED' if action in ('close_false_positive', 'close_resolved') else 'ESCALATED'
@@ -3997,7 +3998,7 @@ def ongoing_screening_config():
                    (val, current_user.id, rationale, current_user.id, key[5:]))
         saved += 1
     if not saved:
-        flash('No cadence was selected.', 'warning')
+        flash(gettext('No cadence was selected.'), 'warning')
         return redirect(url_for('screening.ongoing_screening_dashboard'))
     # Changing a band's cadence should take effect now, not at the next run —
     # otherwise a shortened cycle silently waits out the old one.
@@ -4033,7 +4034,7 @@ def ongoing_screening_run():
               f"{stats['new_matches']} new match(es), {stats['changed']} changed listing(s), "
               f"{stats['delisted']} de-listed. These need review.", 'warning')
     else:
-        flash(f"Run complete — {stats['names']} name(s) re-screened, nothing new.", 'success')
+        flash(gettext("Run complete — %(names)s name(s) re-screened, nothing new.", names=stats['names']), 'success')
     return redirect(url_for('screening.ongoing_screening_dashboard'))
 
 
@@ -4052,14 +4053,14 @@ def ongoing_finding_action(finding_id):
     f = query_db("SELECT * FROM ongoing_screening_findings WHERE id=%s",
                  (finding_id,), one=True)
     if not f:
-        flash('Finding not found.', 'danger')
+        flash(gettext('Finding not found.'), 'danger')
         return redirect(url_for('screening.ongoing_screening_dashboard'))
     f = dict(f)
     reason = (request.form.get('reason') or '').strip()
 
     if action == 'accept':
         if not reason:
-            flash('A reason is required to accept a new match as a false positive.', 'danger')
+            flash(gettext('A reason is required to accept a new match as a false positive.'), 'danger')
             return redirect(url_for('screening.ongoing_screening_dashboard'))
         if f['finding_type'] == 'new_entity' and f['entity_id']:
             execute_db("""INSERT INTO screening_whitelist_matches
@@ -4133,7 +4134,7 @@ def whitelist_case(id):
                         LEFT JOIN users u ON u.id = w.added_by
                         WHERE w.id = %s""", (id,), one=True)
     if not entry:
-        flash('Whitelist entry not found.', 'danger')
+        flash(gettext('Whitelist entry not found.'), 'danger')
         return redirect(url_for('screening.manage_whitelist'))
 
     return render_template(
@@ -4173,13 +4174,13 @@ def whitelist_decide(id):
     entry = query_db("SELECT id, name, status FROM screening_whitelist WHERE id=%s",
                      (id,), one=True)
     if not entry:
-        flash('Whitelist entry not found.', 'danger')
+        flash(gettext('Whitelist entry not found.'), 'danger')
         return redirect(url_for('screening.manage_whitelist'))
     entry = dict(entry)
 
     decision = request.form.get('decision')
     if decision not in WL_DECISIONS:
-        flash('Unknown decision.', 'danger')
+        flash(gettext('Unknown decision.'), 'danger')
         return redirect(url_for('screening.whitelist_case', id=id))
 
     reason = (request.form.get('reason') or '').strip()
@@ -4221,7 +4222,7 @@ def whitelist_decide(id):
         flash(f'"{entry["name"]}" held for investigation. It is not suppressing alerts '
               f'while under investigation.', 'warning')
     else:
-        flash('Reopened for review.', 'info')
+        flash(gettext('Reopened for review.'), 'info')
 
     return redirect(url_for('screening.whitelist_case', id=id))
 
@@ -4260,7 +4261,7 @@ def risk_criteria():
         act = request.form.get('action')
         if act == 'add':
             if not request.form.get('band') or not request.form.get('factor'):
-                flash('Band and factor are both required.', 'danger')
+                flash(gettext('Band and factor are both required.'), 'danger')
             else:
                 execute_db("""INSERT INTO screening_risk_criteria
                                 (band, factor, operator, value, weight, description, created_by)
@@ -4271,16 +4272,16 @@ def risk_criteria():
                             int(request.form.get('weight') or 1),
                             (request.form.get('description') or '').strip() or None,
                             current_user.id))
-                flash('Criterion added.', 'success')
+                flash(gettext('Criterion added.'), 'success')
         elif act == 'toggle':
             execute_db("UPDATE screening_risk_criteria SET is_active = NOT is_active, "
                        "updated_by=%s, updated_at=NOW() WHERE id=%s",
                        (current_user.id, request.form.get('criterion_id')))
-            flash('Criterion enabled/disabled.', 'info')
+            flash(gettext('Criterion enabled/disabled.'), 'info')
         elif act == 'delete':
             execute_db("DELETE FROM screening_risk_criteria WHERE id=%s",
                        (request.form.get('criterion_id'),))
-            flash('Criterion removed.', 'info')
+            flash(gettext('Criterion removed.'), 'info')
         return redirect(url_for('screening.risk_criteria'))
 
     return render_template(
@@ -4387,7 +4388,7 @@ def confirmed_match_update(match_id):
     row = query_db("SELECT id, entity_name FROM confirmed_matches WHERE id=%s",
                    (match_id,), one=True)
     if not row:
-        flash('Record not found.', 'danger')
+        flash(gettext('Record not found.'), 'danger')
         return redirect(url_for('screening.confirmed_matches'))
 
     action = request.form.get('action_taken') or None

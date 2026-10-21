@@ -21,6 +21,7 @@ import io
 import json
 import os
 
+from flask_babel import gettext
 from flask import render_template, redirect, url_for, flash, request, jsonify, Response, make_response, current_app
 from flask_login import login_required, current_user
 from extensions import limiter
@@ -161,7 +162,7 @@ def new_session():
             created_by=current_user.id,
             locale=locale,
         )
-        flash('eKYC session created. Share the verification link with the customer.', 'success')
+        flash(gettext('eKYC session created. Share the verification link with the customer.'), 'success')
         return redirect(url_for('ekyc.view_session', session_id=session['id']))
     return render_template('ekyc/new.html', document_types=DOCUMENT_TYPES)
 
@@ -172,10 +173,10 @@ def new_session():
 def edit_session(session_id):
     session = EkycSession.get_by_id(session_id)
     if not session:
-        flash('eKYC session not found.', 'danger')
+        flash(gettext('eKYC session not found.'), 'danger')
         return redirect(url_for('ekyc.dashboard'))
     if session['status'] in POST_SUBMISSION_STATUSES:
-        flash('This session is already completed and can\'t be edited. Create a new session instead.', 'warning')
+        flash(gettext('This session is already completed and can\'t be edited. Create a new session instead.'), 'warning')
         return redirect(url_for('ekyc.view_session', session_id=session_id))
 
     if request.method == 'POST':
@@ -186,7 +187,7 @@ def edit_session(session_id):
         locale = request.form.get('locale', session['locale'])
         EkycSession.update_details(session_id, document_type, customer_reference, locale,
                                     user_id=current_user.id)
-        flash('eKYC session updated.', 'success')
+        flash(gettext('eKYC session updated.'), 'success')
         return redirect(url_for('ekyc.view_session', session_id=session_id))
 
     return render_template('ekyc/edit.html', session=session, document_types=DOCUMENT_TYPES)
@@ -206,12 +207,12 @@ def update_customer_reference(session_id):
     """
     session = EkycSession.get_by_id(session_id)
     if not session:
-        flash('eKYC session not found.', 'danger')
+        flash(gettext('eKYC session not found.'), 'danger')
         return redirect(url_for('ekyc.dashboard'))
 
     customer_reference = request.form.get('customer_reference') or None
     EkycSession.update_customer_reference(session_id, customer_reference, user_id=current_user.id)
-    flash('Customer reference updated.', 'success')
+    flash(gettext('Customer reference updated.'), 'success')
     return redirect(url_for('ekyc.view_session', session_id=session_id))
 
 
@@ -221,14 +222,14 @@ def update_customer_reference(session_id):
 def regenerate_link(session_id):
     session = EkycSession.get_by_id(session_id)
     if not session:
-        flash('eKYC session not found.', 'danger')
+        flash(gettext('eKYC session not found.'), 'danger')
         return redirect(url_for('ekyc.dashboard'))
     if session['status'] in POST_SUBMISSION_STATUSES:
-        flash('This session is already completed and can\'t be regenerated. Create a new session instead.', 'warning')
+        flash(gettext('This session is already completed and can\'t be regenerated. Create a new session instead.'), 'warning')
         return redirect(url_for('ekyc.view_session', session_id=session_id))
 
     EkycSession.regenerate_link(session_id, user_id=current_user.id, ip_address=request.remote_addr)
-    flash('A new verification link has been generated. The old link no longer works.', 'success')
+    flash(gettext('A new verification link has been generated. The old link no longer works.'), 'success')
     return redirect(url_for('ekyc.view_session', session_id=session_id))
 
 
@@ -238,7 +239,7 @@ def regenerate_link(session_id):
 def view_session(session_id):
     session = EkycSession.get_by_id(session_id)
     if not session:
-        flash('eKYC session not found.', 'danger')
+        flash(gettext('eKYC session not found.'), 'danger')
         return redirect(url_for('ekyc.dashboard'))
     documents = EkycDocument.list_for_session(session_id)
     result = EkycResult.get_for_session(session_id)
@@ -262,11 +263,11 @@ def view_document(doc_id):
     """
     document = EkycDocument.get_by_id(doc_id)
     if document is None:
-        flash('Document not found.', 'danger')
+        flash(gettext('Document not found.'), 'danger')
         return redirect(url_for('ekyc.dashboard'))
 
     if document.get('purged_at'):
-        flash('This media has been purged per the data retention policy.', 'warning')
+        flash(gettext('This media has been purged per the data retention policy.'), 'warning')
         return redirect(url_for('ekyc.view_session', session_id=document['session_id']))
 
     data = read_frame(document['stored_path'], key_version=document['encryption_key_id'])
@@ -520,7 +521,7 @@ def session_report(session_id):
 
     session = EkycSession.get_by_id(session_id)
     if not session:
-        flash('eKYC session not found.', 'danger')
+        flash(gettext('eKYC session not found.'), 'danger')
         return redirect(url_for('ekyc.dashboard'))
 
     result = EkycResult.get_for_session(session_id) or {}
@@ -644,10 +645,10 @@ def review_detail(session_id):
 
     session = EkycSession.get_by_id(session_id)
     if not session:
-        flash('eKYC session not found.', 'danger')
+        flash(gettext('eKYC session not found.'), 'danger')
         return redirect(url_for('ekyc.review_queue'))
     if session['status'] not in ('NEEDS_REVIEW', 'FAILED'):
-        flash('This session is not available for manual review.', 'warning')
+        flash(gettext('This session is not available for manual review.'), 'warning')
         return redirect(url_for('ekyc.view_session', session_id=session_id))
 
     result = EkycResult.get_for_session(session_id) or {}
@@ -724,7 +725,7 @@ def review_detail(session_id):
 @permission_required('ekyc', level='edit')
 def review_assign(session_id):
     EkycSession.assign_reviewer(session_id, current_user.id, user_id=current_user.id)
-    flash('Assigned to you.', 'success')
+    flash(gettext('Assigned to you.'), 'success')
     return redirect(url_for('ekyc.review_detail', session_id=session_id))
 
 
@@ -759,7 +760,7 @@ def session_screening(session_id):
     """
     session = EkycSession.get_by_id(session_id)
     if not session:
-        flash('eKYC session not found.', 'danger')
+        flash(gettext('eKYC session not found.'), 'danger')
         return redirect(url_for('ekyc.dashboard'))
 
     screening_history = query_db("""
@@ -783,25 +784,25 @@ def session_screening(session_id):
 def session_decision(session_id):
     session = EkycSession.get_by_id(session_id)
     if not session:
-        flash('eKYC session not found.', 'danger')
+        flash(gettext('eKYC session not found.'), 'danger')
         return redirect(url_for('ekyc.dashboard'))
 
     action = request.form.get('action')
     notes = request.form.get('notes') or None
     if action == 'approve':
         if session['status'] != 'DECISION_PENDING':
-            flash('This session is not ready for approval — screening must be clear first.', 'warning')
+            flash(gettext('This session is not ready for approval — screening must be clear first.'), 'warning')
             return redirect(url_for('ekyc.view_session', session_id=session_id))
         EkycSession.record_decision(session_id, 'APPROVED', current_user.id, notes)
-        flash('Session approved.', 'success')
+        flash(gettext('Session approved.'), 'success')
     elif action == 'reject':
         if session['status'] in ('ONBOARDED', 'REJECTED'):
-            flash('This session is already finalized.', 'warning')
+            flash(gettext('This session is already finalized.'), 'warning')
             return redirect(url_for('ekyc.view_session', session_id=session_id))
         EkycSession.record_decision(session_id, 'REJECTED', current_user.id, notes)
-        flash('Session rejected.', 'success')
+        flash(gettext('Session rejected.'), 'success')
     else:
-        flash("Invalid action — must be 'approve' or 'reject'.", 'danger')
+        flash(gettext("Invalid action — must be 'approve' or 'reject'."), 'danger')
     return redirect(url_for('ekyc.view_session', session_id=session_id))
 
 
@@ -817,10 +818,10 @@ def session_onboard(session_id):
 
     session = EkycSession.get_by_id(session_id)
     if not session:
-        flash('eKYC session not found.', 'danger')
+        flash(gettext('eKYC session not found.'), 'danger')
         return redirect(url_for('ekyc.dashboard'))
     if session['status'] != 'APPROVED':
-        flash('Only an approved session can be onboarded.', 'warning')
+        flash(gettext('Only an approved session can be onboarded.'), 'warning')
         return redirect(url_for('ekyc.view_session', session_id=session_id))
 
     result = EkycResult.get_for_session(session_id) or {}
@@ -836,9 +837,9 @@ def session_onboard(session_id):
         'country': 'EGYPT',
     })
     if not customer_id:
-        flash('Failed to create the customer record — see server logs.', 'danger')
+        flash(gettext('Failed to create the customer record — see server logs.'), 'danger')
         return redirect(url_for('ekyc.view_session', session_id=session_id))
 
     EkycSession.record_onboarding(session_id, customer_id, user_id=current_user.id)
-    flash(f'Customer #{customer_id} created and session onboarded.', 'success')
+    flash(gettext('Customer #%(customer_id)s created and session onboarded.', customer_id=customer_id), 'success')
     return redirect(url_for('ekyc.view_session', session_id=session_id))

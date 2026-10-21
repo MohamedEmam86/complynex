@@ -31,6 +31,7 @@ load_dotenv()
 
 from system_fingerprint import verify_on_startup, get_short_fingerprint, fingerprint_context
 
+from flask_babel import gettext
 from flask import Flask, render_template, redirect, url_for, jsonify, flash, send_from_directory
 from flask_login import LoginManager, login_required, current_user
 from flask_wtf.csrf import CSRFError
@@ -164,9 +165,9 @@ def create_app(config_name=None):
             return jsonify({'error': 'CSRF validation failed', 'message': 'Your session expired. Please log in again and resubmit.'}), 400
         if request.path.startswith('/academy') and not request.path.startswith('/academy/admin'):
             # Public Academy learners never see the staff login page.
-            flash('Your session expired. Please submit the form again.', 'warning')
+            flash(gettext('Your session expired. Please submit the form again.'), 'warning')
             return redirect(request.path if request.method == 'POST' and not request.path.endswith('/done') else '/academy/')
-        flash('Your session expired. Please log in again and resubmit the form.', 'warning')
+        flash(gettext('Your session expired. Please log in again and resubmit the form.'), 'warning')
         return redirect(url_for('auth.login', next=request.full_path))
 
     @login_manager.unauthorized_handler
@@ -567,9 +568,9 @@ Message:
                         server.starttls()
                         server.login(mail_user, mail_pass)
                         server.send_message(msg)
-                    flash('Your support request has been sent. We will get back to you shortly.', 'success')
+                    flash(gettext('Your support request has been sent. We will get back to you shortly.'), 'success')
                 else:
-                    flash('Support request received. Email delivery is pending configuration.', 'warning')
+                    flash(gettext('Support request received. Email delivery is pending configuration.'), 'warning')
             except Exception as e:
                 flash(f'Could not send email: {str(e)}', 'danger')
         return render_template('support.html')

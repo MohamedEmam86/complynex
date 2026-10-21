@@ -10,6 +10,7 @@ import io
 import json
 from datetime import datetime
 
+from flask_babel import gettext
 from flask import Response, abort, flash, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 
@@ -81,8 +82,8 @@ def course_form(cid=None):
             db.commit()
             _log(cid, 'course_edited', 'changed: ' + (', '.join(changed) or 'nothing'))
             if c['status'] == 'published' and {'pass_mark', 'questions_per_attempt'} & set(changed):
-                flash('This course is live — the new assessment settings apply to attempts started from now on.', 'warning')
-            flash('Course saved.', 'success')
+                flash(gettext('This course is live — the new assessment settings apply to attempts started from now on.'), 'warning')
+            flash(gettext('Course saved.'), 'success')
         else:
             slug = S.slugify(data['title_en'])
             while db.execute("SELECT 1 FROM academy_courses WHERE slug=%s", (slug,)).fetchone():
@@ -93,7 +94,7 @@ def course_form(cid=None):
             db.commit()
             cid = row['id']
             _log(cid, 'course_created', data['title_en'])
-            flash('Course created as DRAFT. Now add lessons and questions.', 'success')
+            flash(gettext('Course created as DRAFT. Now add lessons and questions.'), 'success')
         return redirect(url_for('academy_admin.course', cid=cid))
     return render_template('academy/admin/course_form.html', c=c or {'provider': 'integrys', 'level': 'Foundation',
                            **{k: v[2] for k, v in COURSE_INT_FIELDS.items()}}, is_new=not c)
@@ -136,10 +137,10 @@ def lesson_form(cid, lid=None):
                 'body_ar': (f.get('body_ar') or '').strip() or None,
                 'video_url': (f.get('video_url') or '').strip()[:500] or None}
         if not data['title_en']:
-            flash('English lesson title is required.', 'danger')
+            flash(gettext('English lesson title is required.'), 'danger')
             return render_template('academy/admin/lesson_form.html', c=c, l={**(lesson or {}), **data})
         if data['video_url'] and not data['video_url'].startswith('https://'):
-            flash('Video link must start with https://', 'danger')
+            flash(gettext('Video link must start with https://'), 'danger')
             return render_template('academy/admin/lesson_form.html', c=c, l={**(lesson or {}), **data})
         try:
             data.update(_store_media(request.files, lesson, cid))
@@ -157,7 +158,7 @@ def lesson_form(cid, lid=None):
                        [cid, pos, *data.values()])
             _log(cid, 'lesson_added', f'lesson={pos} {data["title_en"]}')
         db.commit()
-        flash('Lesson saved.', 'success')
+        flash(gettext('Lesson saved.'), 'success')
         return redirect(url_for('academy_admin.course', cid=cid) + '#lessons')
     return render_template('academy/admin/lesson_form.html', c=c, l=lesson or {})
 
@@ -180,7 +181,7 @@ def lesson_delete(cid, lid):
         db.execute("UPDATE academy_lessons SET position=%s WHERE id=%s", (i, r['id']))
     db.commit()
     _log(cid, 'lesson_deleted', l['title_en'])
-    flash('Lesson deleted.', 'success')
+    flash(gettext('Lesson deleted.'), 'success')
     return redirect(url_for('academy_admin.course', cid=cid) + '#lessons')
 
 
@@ -270,7 +271,7 @@ def question_form(cid, qid=None):
                        [cid, *data.values()])
             _log(cid, 'question_added')
         db.commit()
-        flash('Question saved.', 'success')
+        flash(gettext('Question saved.'), 'success')
         if request.form.get('save_and_new'):
             return redirect(url_for('academy_admin.question_form', cid=cid))
         return redirect(url_for('academy_admin.course', cid=cid) + '#questions')
@@ -293,11 +294,11 @@ def question_delete(cid, qid):
                       (cid, json.dumps([qid]))).fetchone()
     if used:
         db.execute("UPDATE academy_questions SET is_active=false WHERE id=%s AND course_id=%s", (qid, cid))
-        flash('This question already appeared in learners\' assessments, so it was DISABLED (kept for the record) instead of deleted.', 'warning')
+        flash(gettext('This question already appeared in learners\' assessments, so it was DISABLED (kept for the record) instead of deleted.'), 'warning')
         _log(cid, 'question_disabled', f'question={qid} (in use)')
     else:
         db.execute("DELETE FROM academy_questions WHERE id=%s AND course_id=%s", (qid, cid))
-        flash('Question deleted.', 'success')
+        flash(gettext('Question deleted.'), 'success')
         _log(cid, 'question_deleted', f'question={qid}')
     db.commit()
     return redirect(url_for('academy_admin.course', cid=cid) + '#questions')
@@ -331,7 +332,7 @@ def questions_import(cid):
     _course(cid)
     fs = request.files.get('csv_file')
     if not fs or not fs.filename.lower().endswith('.csv'):
-        flash('Upload the CSV template (save from Excel as "CSV UTF-8").', 'danger')
+        flash(gettext('Upload the CSV template (save from Excel as "CSV UTF-8").'), 'danger')
         return redirect(url_for('academy_admin.course', cid=cid) + '#questions')
     text = fs.stream.read().decode('utf-8-sig', errors='replace')
     rows = list(csv.DictReader(io.StringIO(text)))

@@ -3,8 +3,8 @@
 {% block content %}
 <div class="container-fluid px-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Compliance Operations Detail</h4>
-    <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back to Dashboard</a>
+    <h4 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>{{ _("Compliance Operations Detail") }}</h4>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>{{ _("Back to Dashboard") }}</a>
   </div>
   <p class="text-muted">{{ _('Detailed AML alert activity, sanctions-source freshness, regulatory deadlines, and flagged customers — moved off the main dashboard to keep it focused.') }}</p>
 
@@ -12,11 +12,11 @@
     <div class="col-md-6">
       <div class="card shadow-sm border-0">
         <div class="card-header fw-bold" style="background:#1B3A6B;color:white;">
-          <i class="bi bi-database-check"></i> Sanctions List Status
+          <i class="bi bi-database-check"></i> {{ _("Sanctions List Status") }}
         </div>
         <div class="card-body p-0">
           <table class="table table-sm mb-0 small">
-            <thead class="table-dark"><tr><th>Source</th><th>Last Updated</th><th>Status</th></tr></thead>
+            <thead class="table-dark"><tr><th>{{ _("Source") }}</th><th>{{ _("Last Updated") }}</th><th>{{ _("Status") }}</th></tr></thead>
             <tbody>
             {% for s in sanctions_freshness %}
             <tr>
@@ -29,7 +29,7 @@
               </span></td>
             </tr>
             {% else %}
-            <tr><td colspan="3" class="text-center text-muted py-2">No sources configured</td></tr>
+            <tr><td colspan="3" class="text-center text-muted py-2">{{ _("No sources configured") }}</td></tr>
             {% endfor %}
             </tbody>
           </table>
@@ -39,11 +39,11 @@
     <div class="col-md-6">
       <div class="card shadow-sm border-0">
         <div class="card-header fw-bold" style="background:#1B3A6B;color:white;">
-          <i class="bi bi-exclamation-triangle"></i> Top Flagged Customers
+          <i class="bi bi-exclamation-triangle"></i> {{ _("Top Flagged Customers") }}
         </div>
         <div class="card-body p-0">
           <table class="table table-sm mb-0 small">
-            <thead class="table-dark"><tr><th>Customer</th><th>Risk</th><th>Alerts</th></tr></thead>
+            <thead class="table-dark"><tr><th>{{ _("Customer") }}</th><th>{{ _("Risk") }}</th><th>{{ _("Alerts") }}</th></tr></thead>
             <tbody>
             {% for c in top_flagged %}
             <tr>
@@ -52,7 +52,7 @@
               <td class="fw-bold text-danger">{{ c.alert_count }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="3" class="text-center text-success py-3"><i class="bi bi-check-circle"></i> No flagged customers</td></tr>
+            <tr><td colspan="3" class="text-center text-success py-3"><i class="bi bi-check-circle"></i> {{ _("No flagged customers") }}</td></tr>
             {% endfor %}
             </tbody>
           </table>
@@ -65,13 +65,13 @@
     <div class="col-12">
       <div class="card shadow-sm border-0">
         <div class="card-header fw-bold" style="background:#1B3A6B;color:white;">
-          <i class="bi bi-calendar3"></i> Alert Activity — Last 30 Days
-          <span class="float-end small fw-normal opacity-75">Darker = more alerts</span>
+          <i class="bi bi-calendar3"></i> {{ _("Alert Activity — Last 30 Days") }}
+          <span class="float-end small fw-normal opacity-75">{{ _("Darker = more alerts") }}</span>
         </div>
         <div class="card-body py-3">
           <div id="alertHeatmap" style="display:flex;gap:3px;align-items:flex-end;flex-wrap:nowrap;overflow-x:auto;min-height:70px;"></div>
           <div class="d-flex gap-3 mt-2 small text-muted">
-            <span>Low</span>
+            <span>{{ _("Low") }}</span>
             <div style="display:flex;gap:2px;align-items:center;">
               <div style="width:14px;height:14px;background:#e8ecf0;border-radius:2px;"></div>
               <div style="width:14px;height:14px;background:#fca5a5;border-radius:2px;"></div>
@@ -79,7 +79,7 @@
               <div style="width:14px;height:14px;background:#ef4444;border-radius:2px;"></div>
               <div style="width:14px;height:14px;background:#991b1b;border-radius:2px;"></div>
             </div>
-            <span>High</span>
+            <span>{{ _("High") }}</span>
           </div>
         </div>
       </div>
@@ -90,11 +90,11 @@
     <div class="col-12">
       <div class="card shadow-sm border-0">
         <div class="card-header fw-bold" style="background:#1B3A6B;color:white;">
-          <i class="bi bi-calendar-x"></i> Regulatory Deadlines — Next 90 Days
+          <i class="bi bi-calendar-x"></i> {{ _("Regulatory Deadlines — Next 90 Days") }}
         </div>
         <div class="card-body p-0">
           <table class="table table-sm mb-0 small">
-            <thead class="table-dark"><tr><th>Report</th><th>Due Date</th><th>Status</th></tr></thead>
+            <thead class="table-dark"><tr><th>{{ _("Report") }}</th><th>{{ _("Due Date") }}</th><th>{{ _("Status") }}</th></tr></thead>
             <tbody>
             {% for d in reg_deadlines %}
             <tr class="{% if d.due_date_str and d.due_date_str[:10] <= today_str %}table-danger{% endif %}">
@@ -103,7 +103,7 @@
               <td><span class="badge bg-warning text-dark">{{ d.status }}</span></td>
             </tr>
             {% else %}
-            <tr><td colspan="3" class="text-center text-success py-3"><i class="bi bi-check-circle"></i> No deadlines in next 90 days</td></tr>
+            <tr><td colspan="3" class="text-center text-success py-3"><i class="bi bi-check-circle"></i> {{ _("No deadlines in next 90 days") }}</td></tr>
             {% endfor %}
             </tbody>
           </table>

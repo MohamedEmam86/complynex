@@ -20,6 +20,7 @@ Internal Blacklist Routes
 Web interface for managing internal blacklist
 """
 
+from flask_babel import gettext
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file, Response
 from flask_login import login_required, current_user
 import json
@@ -181,7 +182,7 @@ def add():
         try:
             entry_id = service.add_entry(entry_data, current_user.id)
             _sync_to_watchlist()
-            flash(f'Blacklist entry added successfully: {entry_data["full_name"]}', 'success')
+            flash(gettext('Blacklist entry added successfully: %(full_name)s', full_name=entry_data["full_name"]), 'success')
             return redirect(url_for('blacklist.index'))
         except Exception as e:
             flash(f'Error adding entry: {str(e)}', 'danger')
@@ -222,7 +223,7 @@ def edit(entry_id):
         try:
             service.update_entry(entry_id, update_data, current_user.id)
             _sync_to_watchlist()
-            flash('Blacklist entry updated successfully', 'success')
+            flash(gettext('Blacklist entry updated successfully'), 'success')
             return redirect(url_for('blacklist.index'))
         except Exception as e:
             flash(f'Error updating entry: {str(e)}', 'danger')
@@ -230,7 +231,7 @@ def edit(entry_id):
     # GET request - show form with current data
     entry = service.get_entry(entry_id)
     if not entry:
-        flash('Entry not found', 'danger')
+        flash(gettext('Entry not found'), 'danger')
         return redirect(url_for('blacklist.index'))
     
     return render_template('blacklist/edit.html', entry=entry)
@@ -248,7 +249,7 @@ def delete(entry_id):
     try:
         service.delete_entry(entry_id, current_user.id, reason)
         _sync_to_watchlist()
-        flash('Blacklist entry deleted successfully', 'success')
+        flash(gettext('Blacklist entry deleted successfully'), 'success')
     except Exception as e:
         flash(f'Error deleting entry: {str(e)}', 'danger')
     
@@ -264,7 +265,7 @@ def view(entry_id):
     
     entry = service.get_entry(entry_id)
     if not entry:
-        flash('Entry not found', 'danger')
+        flash(gettext('Entry not found'), 'danger')
         return redirect(url_for('blacklist.index'))
     
     # Get audit log
@@ -293,17 +294,17 @@ def bulk_upload():
     """Bulk upload blacklist entries from CSV/Excel"""
     if request.method == 'POST':
         if 'file' not in request.files:
-            flash('No file uploaded', 'danger')
+            flash(gettext('No file uploaded'), 'danger')
             return redirect(request.url)
         
         file = request.files['file']
         
         if file.filename == '':
-            flash('No file selected', 'danger')
+            flash(gettext('No file selected'), 'danger')
             return redirect(request.url)
         
         if not (file.filename.endswith('.csv') or file.filename.endswith('.xlsx')):
-            flash('Invalid file format. Please upload CSV or Excel file', 'danger')
+            flash(gettext('Invalid file format. Please upload CSV or Excel file'), 'danger')
             return redirect(request.url)
         
         try:
@@ -320,9 +321,9 @@ def bulk_upload():
 
             if stats['failed'] > 0:
                 error_preview = '; '.join(stats['errors'][:5])
-                flash(f'Import completed: {stats["successful"]}/{stats["total"]} successful. {stats["failed"]} failed: {error_preview}', 'warning')
+                flash(gettext('Import completed: %(successful)s/%(total)s successful. %(failed)s failed: %(error_preview)s', successful=stats["successful"], total=stats["total"], failed=stats["failed"], error_preview=error_preview), 'warning')
             else:
-                flash(f'Import completed: {stats["successful"]}/{stats["total"]} entries added successfully', 'success')
+                flash(gettext('Import completed: %(successful)s/%(total)s entries added successfully', successful=stats["successful"], total=stats["total"]), 'success')
             
             return redirect(url_for('blacklist.index'))
             
@@ -547,17 +548,17 @@ def pep_add():
                 'notes': request.form.get('notes', '').strip() or None,
             }
             if not entry_data['full_name']:
-                flash('Full name is required', 'error')
+                flash(gettext('Full name is required'), 'error')
                 return render_template('blacklist/pep_add.html')
             if not entry_data['reason']:
-                flash('Reason is required', 'error')
+                flash(gettext('Reason is required'), 'error')
                 return render_template('blacklist/pep_add.html')
             entry_id = service.add_entry(entry_data, user_id=current_user.id)
             if entry_id:
                 _sync_to_watchlist()
-                flash(f"PEP entry added successfully.", 'success')
+                flash(gettext("PEP entry added successfully."), 'success')
             else:
-                flash(f"Entry already exists in the list.", 'warning')
+                flash(gettext("Entry already exists in the list."), 'warning')
             return redirect(url_for('blacklist.pep_index'))
         except Exception as e:
             flash(f'Error adding entry: {str(e)}', 'error')
@@ -573,7 +574,7 @@ def pep_delete(entry_id):
     try:
         service.delete_entry(entry_id, user_id=current_user.id)
         _sync_to_watchlist()
-        flash('PEP entry deleted successfully', 'success')
+        flash(gettext('PEP entry deleted successfully'), 'success')
     except Exception as e:
         flash(f'Error deleting entry: {str(e)}', 'error')
     return redirect(url_for('blacklist.pep_index'))
@@ -586,17 +587,17 @@ def pep_bulk_upload():
     """Bulk upload PEP list entries from CSV/Excel"""
     if request.method == 'POST':
         if 'file' not in request.files:
-            flash('No file uploaded', 'danger')
+            flash(gettext('No file uploaded'), 'danger')
             return redirect(request.url)
 
         file = request.files['file']
 
         if file.filename == '':
-            flash('No file selected', 'danger')
+            flash(gettext('No file selected'), 'danger')
             return redirect(request.url)
 
         if not (file.filename.endswith('.csv') or file.filename.endswith('.xlsx')):
-            flash('Invalid file format. Please upload CSV or Excel file', 'danger')
+            flash(gettext('Invalid file format. Please upload CSV or Excel file'), 'danger')
             return redirect(request.url)
 
         try:
@@ -609,7 +610,7 @@ def pep_bulk_upload():
             stats = service.bulk_import(entries_list, current_user.id, file.filename)
             _sync_to_watchlist()
 
-            flash(f'Import completed: {stats["successful"]}/{stats["total"]} successful', 'success')
+            flash(gettext('Import completed: %(successful)s/%(total)s successful', successful=stats["successful"], total=stats["total"]), 'success')
 
             if stats['failed'] > 0:
                 from flask import session
@@ -663,7 +664,7 @@ def pep_view(entry_id):
     service = InternalPEPService()
     entry = service.get_entry(entry_id)
     if not entry:
-        flash('Entry not found', 'danger')
+        flash(gettext('Entry not found'), 'danger')
         return redirect(url_for('blacklist.pep_index'))
     conn = service.get_connection()
     cursor = conn.cursor()
@@ -711,12 +712,12 @@ def pep_edit(entry_id):
         try:
             service.update_entry(entry_id, update_data, current_user.id)
             _sync_to_watchlist()
-            flash('PEP entry updated successfully', 'success')
+            flash(gettext('PEP entry updated successfully'), 'success')
             return redirect(url_for('blacklist.pep_index'))
         except Exception as e:
             flash(f'Error updating entry: {str(e)}', 'danger')
     entry = service.get_entry(entry_id)
     if not entry:
-        flash('Entry not found', 'danger')
+        flash(gettext('Entry not found'), 'danger')
         return redirect(url_for('blacklist.pep_index'))
     return render_template('blacklist/pep_edit.html', entry=entry)

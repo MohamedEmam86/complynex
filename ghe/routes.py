@@ -19,6 +19,7 @@
 GHE (Gift, Hospitality & Entertainment) Routes
 Handles all GHE-related views and API endpoints.
 """
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -170,7 +171,7 @@ def create_declaration():
                 if attachment_path:
                     data['attachment_path'] = attachment_path
                 else:
-                    flash('Invalid file type. Allowed: PDF, PNG, JPG, DOC, DOCX', 'warning')
+                    flash(gettext('Invalid file type. Allowed: PDF, PNG, JPG, DOC, DOCX'), 'warning')
         
         try:
             # Create declaration (triggers approval workflow)
@@ -193,13 +194,13 @@ def create_declaration():
                 )
             
             if declaration.auto_approved:
-                flash(f'Declaration {declaration.declaration_number} submitted and auto-approved! (Value below 500 EGP)', 'success')
+                flash(gettext('Declaration %(declaration_number)s submitted and auto-approved! (Value below 500 EGP)', declaration_number=declaration.declaration_number), 'success')
             elif declaration.status == 'manager_review':
-                flash(f'Declaration {declaration.declaration_number} submitted successfully! Awaiting manager approval.', 'success')
+                flash(gettext('Declaration %(declaration_number)s submitted successfully! Awaiting manager approval.', declaration_number=declaration.declaration_number), 'success')
             elif declaration.status == 'compliance_review':
-                flash(f'Declaration {declaration.declaration_number} submitted successfully! Awaiting compliance approval.', 'success')
+                flash(gettext('Declaration %(declaration_number)s submitted successfully! Awaiting compliance approval.', declaration_number=declaration.declaration_number), 'success')
             else:
-                flash(f'Declaration {declaration.declaration_number} submitted successfully!', 'success')
+                flash(gettext('Declaration %(declaration_number)s submitted successfully!', declaration_number=declaration.declaration_number), 'success')
             
             AuditLog.log(current_user.id, 'GHE Submission', 'GHE', declaration.id, f'Submitted GHE declaration {declaration.declaration_number}', request.remote_addr)
             return redirect(url_for('ghe.view_declaration', id=declaration.id))
@@ -224,7 +225,7 @@ def view_declaration(id):
     declaration = GHEDeclaration.get_by_id(id)
     
     if not declaration:
-        flash('Declaration not found.', 'danger')
+        flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('ghe.list_declarations'))
     
     # Check permissions
@@ -236,7 +237,7 @@ def view_declaration(id):
     )
     
     if not can_view:
-        flash('You do not have permission to view this declaration.', 'danger')
+        flash(gettext('You do not have permission to view this declaration.'), 'danger')
         return redirect(url_for('ghe.my_declarations'))
     
     # Get approval history
@@ -264,7 +265,7 @@ def download_attachment(id):
     """Serve a GHE declaration's attachment — same ownership guard as view_declaration."""
     declaration = GHEDeclaration.get_by_id(id)
     if not declaration or not declaration.attachment_path:
-        flash('Attachment not found.', 'danger')
+        flash(gettext('Attachment not found.'), 'danger')
         return redirect(url_for('ghe.list_declarations'))
 
     can_view = (
@@ -274,7 +275,7 @@ def download_attachment(id):
         declaration.manager_id == current_user.id
     )
     if not can_view:
-        flash('You do not have permission to view this declaration.', 'danger')
+        flash(gettext('You do not have permission to view this declaration.'), 'danger')
         return redirect(url_for('ghe.my_declarations'))
 
     return serve_uploaded_file(declaration.attachment_path)
@@ -288,16 +289,16 @@ def edit_declaration(id):
     declaration = GHEDeclaration.get_by_id(id)
     
     if not declaration:
-        flash('Declaration not found.', 'danger')
+        flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('ghe.my_declarations'))
     
     # Check if user is owner and status allows editing
     if declaration.employee_id != current_user.id:
-        flash('You can only edit your own declarations.', 'danger')
+        flash(gettext('You can only edit your own declarations.'), 'danger')
         return redirect(url_for('ghe.my_declarations'))
     
     if declaration.status not in ['pending', 'manager_review']:
-        flash('This declaration can no longer be edited.', 'warning')
+        flash(gettext('This declaration can no longer be edited.'), 'warning')
         return redirect(url_for('ghe.view_declaration', id=id))
     
     if request.method == 'POST':
@@ -315,10 +316,10 @@ def edit_declaration(id):
         }
         
         if declaration.update(data, current_user.id):
-            flash('Declaration updated successfully!', 'success')
+            flash(gettext('Declaration updated successfully!'), 'success')
             return redirect(url_for('ghe.view_declaration', id=id))
         else:
-            flash('Error updating declaration.', 'danger')
+            flash(gettext('Error updating declaration.'), 'danger')
     
     return render_template('ghe/edit.html',
                          declaration=declaration,
@@ -333,7 +334,7 @@ def approve_declaration(id):
     declaration = GHEDeclaration.get_by_id(id)
     
     if not declaration:
-        flash('Declaration not found.', 'danger')
+        flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('ghe.pending_approval'))
     
     # Determine approver role and check permissions
@@ -344,7 +345,7 @@ def approve_declaration(id):
         approver_role = 'compliance_officer'
     
     if not approver_role:
-        flash('You do not have permission to approve this declaration.', 'danger')
+        flash(gettext('You do not have permission to approve this declaration.'), 'danger')
         return redirect(url_for('ghe.view_declaration', id=id))
     
     comments = request.form.get('comments')
@@ -367,11 +368,11 @@ def approve_declaration(id):
                 current_app.logger.error(f"GHE email notification failed: {e}")
         
         if declaration.status == 'approved':
-            flash(f'Declaration {declaration.declaration_number} has been approved!', 'success')
+            flash(gettext('Declaration %(declaration_number)s has been approved!', declaration_number=declaration.declaration_number), 'success')
         else:
-            flash(f'Declaration {declaration.declaration_number} escalated to compliance review.', 'info')
+            flash(gettext('Declaration %(declaration_number)s escalated to compliance review.', declaration_number=declaration.declaration_number), 'info')
     else:
-        flash('Error approving declaration.', 'danger')
+        flash(gettext('Error approving declaration.'), 'danger')
     
     return redirect(url_for('ghe.pending_approval'))
 
@@ -384,7 +385,7 @@ def reject_declaration(id):
     declaration = GHEDeclaration.get_by_id(id)
     
     if not declaration:
-        flash('Declaration not found.', 'danger')
+        flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('ghe.pending_approval'))
     
     # Determine approver role and check permissions
@@ -395,13 +396,13 @@ def reject_declaration(id):
         approver_role = 'compliance_officer'
     
     if not approver_role:
-        flash('You do not have permission to reject this declaration.', 'danger')
+        flash(gettext('You do not have permission to reject this declaration.'), 'danger')
         return redirect(url_for('ghe.view_declaration', id=id))
     
     comments = request.form.get('comments')
     
     if not comments:
-        flash('Rejection reason is required.', 'danger')
+        flash(gettext('Rejection reason is required.'), 'danger')
         return redirect(url_for('ghe.view_declaration', id=id))
     
     if declaration.reject(current_user.id, approver_role, comments):
@@ -419,9 +420,9 @@ def reject_declaration(id):
             except Exception as e:
                 current_app.logger.error(f"GHE email notification failed: {e}")
         
-        flash(f'Declaration {declaration.declaration_number} has been rejected.', 'warning')
+        flash(gettext('Declaration %(declaration_number)s has been rejected.', declaration_number=declaration.declaration_number), 'warning')
     else:
-        flash('Error rejecting declaration.', 'danger')
+        flash(gettext('Error rejecting declaration.'), 'danger')
     
     return redirect(url_for('ghe.pending_approval'))
 
@@ -432,7 +433,7 @@ def reject_declaration(id):
 def pending_approval():
     """Show declarations pending current user's approval."""
     if not (current_user.is_manager() or current_user.is_compliance_officer()):
-        flash('You do not have approval permissions.', 'warning')
+        flash(gettext('You do not have approval permissions.'), 'warning')
         return redirect(url_for('ghe.my_declarations'))
     
     declarations = []
@@ -467,17 +468,17 @@ def delete_declaration(id):
     declaration = GHEDeclaration.get_by_id(id)
     
     if not declaration:
-        flash('Declaration not found.', 'danger')
+        flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('ghe.my_declarations'))
     
     if declaration.employee_id != current_user.id:
-        flash('You can only delete your own declarations.', 'danger')
+        flash(gettext('You can only delete your own declarations.'), 'danger')
         return redirect(url_for('ghe.my_declarations'))
     
     if declaration.delete():
-        flash('Declaration deleted successfully.', 'success')
+        flash(gettext('Declaration deleted successfully.'), 'success')
     else:
-        flash('Cannot delete this declaration. It may no longer be in pending status.', 'warning')
+        flash(gettext('Cannot delete this declaration. It may no longer be in pending status.'), 'warning')
     
     return redirect(url_for('ghe.my_declarations'))
 
@@ -490,18 +491,18 @@ def request_more_info(id):
     declaration = GHEDeclaration.get_by_id(id)
     
     if not declaration:
-        flash('Declaration not found.', 'danger')
+        flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('ghe.pending_approval'))
     
     # Check permissions - only managers/compliance can request info
     if not (current_user.is_manager() or current_user.is_compliance_officer()):
-        flash('You do not have permission to request information.', 'danger')
+        flash(gettext('You do not have permission to request information.'), 'danger')
         return redirect(url_for('ghe.view_declaration', id=id))
     
     questions = request.form.get('questions', '').strip()
     
     if not questions:
-        flash('Please specify what information you need.', 'danger')
+        flash(gettext('Please specify what information you need.'), 'danger')
         return redirect(url_for('ghe.view_declaration', id=id))
     
     try:
@@ -519,9 +520,9 @@ def request_more_info(id):
                 except Exception as e:
                     current_app.logger.error(f"GHE email notification failed: {e}")
             
-            flash(f'Information request sent for {declaration.declaration_number}.', 'info')
+            flash(gettext('Information request sent for %(declaration_number)s.', declaration_number=declaration.declaration_number), 'info')
         else:
-            flash(f'Error requesting information.', 'danger')
+            flash(gettext('Error requesting information.'), 'danger')
 
     except Exception as e:
         flash(f'Error requesting information: {str(e)}', 'danger')

@@ -53,7 +53,33 @@ def _age_days(ts):
         return None
 
 
+def _cached(key, ttl, fn):
+    """Small Redis cache for slow, slowly-changing aggregates (lists change once a day).
+    Falls back to computing directly when Redis is unavailable."""
+    import pickle
+    try:
+        import redis
+        r = redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379/0'), socket_timeout=1)
+        hit = r.get(key)
+        if hit:
+            return pickle.loads(hit)
+    except Exception:
+        r = None
+    val = fn()
+    if r is not None:
+        try:
+            r.setex(key, ttl, pickle.dumps(val))
+        except Exception:
+            pass
+    return val
+
+
 def list_freshness():
+    """Per-source list counts (a scan of the whole watchlist): cached for 10 minutes."""
+    return _cached('cx:screening:list_freshness:v1', 600, _list_freshness)
+
+
+def _list_freshness():
     rows = query_db("""
         SELECT source, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active,
                COUNT(*) AS total, MAX(updated_at::timestamptz) AS last_change

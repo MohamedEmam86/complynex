@@ -15,6 +15,7 @@
 # ComplyNex Full Compliance Platform (CMS) — Proprietary & Confidential
 # =============================================================================
 
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -65,7 +66,7 @@ def list_courses():
 def training_report():
     """Generate a training report for compliance officers and assignment-authorized managers."""
     if not current_user.can_manage_training():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('training.list_courses'))
 
     filters = {
@@ -137,7 +138,7 @@ def view_course(id):
     """View course content and start quiz if enrolled"""
     course = TrainingCourse.get_by_id(id)
     if not course:
-        flash('Course not found.', 'danger')
+        flash(gettext('Course not found.'), 'danger')
         return redirect(url_for('training.list_courses'))
         
     enrollment = next((e for e in TrainingEnrollment.get_user_enrollments(current_user.id) 
@@ -154,7 +155,7 @@ def course_asset(id, asset_type):
     """Serve a course's video/presentation/document — same guard as viewing the course."""
     course = TrainingCourse.get_by_id(id)
     if not course:
-        flash('Course not found.', 'danger')
+        flash(gettext('Course not found.'), 'danger')
         return redirect(url_for('training.list_courses'))
 
     path_by_type = {
@@ -164,7 +165,7 @@ def course_asset(id, asset_type):
     }
     relative_path = path_by_type.get(asset_type)
     if not relative_path:
-        flash('File not found.', 'danger')
+        flash(gettext('File not found.'), 'danger')
         return redirect(url_for('training.view_course', id=id))
 
     return serve_uploaded_file(relative_path)
@@ -182,12 +183,12 @@ def take_quiz(id):
                       if e.course_id == id), None)
                       
     if not enrollment or enrollment.status == 'completed':
-        flash('You are not eligible for this quiz or have already completed it.', 'warning')
+        flash(gettext('You are not eligible for this quiz or have already completed it.'), 'warning')
         return redirect(url_for('training.view_course', id=id))
 
     has_video = bool(course.video_file_path or course.video_url)
     if has_video and not enrollment.video_completed:
-        flash('You must watch the entire training video before taking the quiz.', 'warning')
+        flash(gettext('You must watch the entire training video before taking the quiz.'), 'warning')
         return redirect(url_for('training.view_course', id=id))
 
     questions = course.get_questions()
@@ -233,7 +234,7 @@ def my_certificates():
 @permission_required('training', level='view')
 def edit_course(id=None):
     if not current_user.is_compliance_officer():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('training.list_courses'))
         
     course = TrainingCourse.get_by_id(id) if id else None
@@ -244,7 +245,7 @@ def edit_course(id=None):
 @permission_required('training', level='view')
 def save_course(id):
     if not current_user.is_compliance_officer():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('training.list_courses'))
         
     # Handle File Uploads
@@ -318,7 +319,7 @@ def save_course(id):
 
     course = TrainingCourse(**course_data)
     course.save()
-    flash('Course saved successfully.', 'success')
+    flash(gettext('Course saved successfully.'), 'success')
     return redirect(url_for('training.list_courses'))
 
 @training_bp.route('/manage/course/<int:id>/delete', methods=['POST'])
@@ -326,16 +327,16 @@ def save_course(id):
 @permission_required('training', level='view')
 def delete_course(id):
     if not current_user.is_compliance_officer():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('training.list_courses'))
         
     course = TrainingCourse.get_by_id(id)
     if course:
         course.delete()
         AuditLog.log(current_user.id, 'Delete Course', 'Training', id, f'Deleted course {course.course_name}', request.remote_addr)
-        flash('Course deleted.', 'success')
+        flash(gettext('Course deleted.'), 'success')
     else:
-        flash('Course not found.', 'danger')
+        flash(gettext('Course not found.'), 'danger')
         
     return redirect(url_for('training.list_courses'))
 
@@ -344,12 +345,12 @@ def delete_course(id):
 @permission_required('training', level='view')
 def manage_questions(id):
     if not current_user.is_compliance_officer():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('training.list_courses'))
         
     course = TrainingCourse.get_by_id(id)
     if not course:
-        flash('Course not found.', 'danger')
+        flash(gettext('Course not found.'), 'danger')
         return redirect(url_for('training.list_courses'))
     questions = course.get_questions()
     return render_template('training/manage_questions.html', course=course, questions=questions)
@@ -385,7 +386,7 @@ def save_question(course_id):
     
     from models.training import TrainingQuestion
     TrainingQuestion.create(course_id, question_text, options, correct_answer, points, question_text_ar, options_ar)
-    flash('Question added.', 'success')
+    flash(gettext('Question added.'), 'success')
     return redirect(url_for('training.manage_questions', id=course_id))
 
 @training_bp.route('/manage/course/<int:course_id>/questions/<int:question_id>/delete', methods=['POST'])
@@ -397,7 +398,7 @@ def delete_question(course_id, question_id):
         
     from models.training import TrainingQuestion
     TrainingQuestion.delete(question_id)
-    flash('Question deleted.', 'success')
+    flash(gettext('Question deleted.'), 'success')
     return redirect(url_for('training.manage_questions', id=course_id))
 
 @training_bp.route('/report/export')
@@ -456,7 +457,7 @@ def send_reminders():
         print(f"Sending reminder to {e.employee_name} for course {e.course_code}")
         count += 1
         
-    flash(f'Sent {count} reminder emails.', 'success')
+    flash(gettext('Sent %(count)s reminder emails.', count=count), 'success')
     return redirect(url_for('training.training_report'))
 
 @training_bp.route('/reminders/send/<int:enrollment_id>', methods=['POST'])
@@ -466,7 +467,7 @@ def send_single_reminder(enrollment_id):
     if not current_user.is_compliance_officer():
         return redirect(url_for('training.list_courses'))
     
-    flash('Reminder email sent successfully.', 'success')
+    flash(gettext('Reminder email sent successfully.'), 'success')
     return redirect(url_for('training.training_report'))
 
 @training_bp.route('/enroll', methods=['POST'])
@@ -480,14 +481,14 @@ def enroll_user():
     if int(user_id) != current_user.id:
         target_user = User.get_by_id(user_id)
         if not target_user or not current_user.can_assign_training_to(target_user):
-            flash('Access denied.', 'danger')
+            flash(gettext('Access denied.'), 'danger')
             return redirect(url_for('training.list_courses'))
 
     if TrainingEnrollment.enroll(course_id, user_id, current_user.id):
         AuditLog.log(current_user.id, 'Training Enrollment', 'Training', course_id, f'Enrolled user {user_id} in course {course_id}', request.remote_addr)
-        flash('Enrolled successfully.', 'success')
+        flash(gettext('Enrolled successfully.'), 'success')
     else:
-        flash('Already enrolled.', 'info')
+        flash(gettext('Already enrolled.'), 'info')
 
     return redirect(url_for('training.list_courses'))
 
@@ -498,7 +499,7 @@ def bulk_enroll_users():
     """Assign one or more courses to one or more users at once (compliance officers and
     managers with training assignment authority)."""
     if not current_user.can_manage_training():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('training.training_report'))
 
     course_ids = request.form.getlist('course_ids')
@@ -525,7 +526,7 @@ def bulk_enroll_users():
         flash(f'Bulk assignment complete: {assigned} enrollment(s) created. '
               f'{skipped_users} user(s) skipped (outside your assignment scope).', 'warning')
     else:
-        flash(f'Bulk assignment complete: {assigned} enrollment(s) created.', 'success')
+        flash(gettext('Bulk assignment complete: %(assigned)s enrollment(s) created.', assigned=assigned), 'success')
 
     return redirect(url_for('training.training_report'))
 
@@ -556,7 +557,7 @@ def download_certificate(cert_id):
     """Generate and download a professional PDF certificate"""
     cert = TrainingCertificate.get_by_id(cert_id)
     if not cert or (not current_user.is_compliance_officer() and cert.employee_id != current_user.id):
-        flash('Certificate not found or access denied.', 'danger')
+        flash(gettext('Certificate not found or access denied.'), 'danger')
         return redirect(url_for('training.my_certificates'))
 
     from fpdf import FPDF

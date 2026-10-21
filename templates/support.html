@@ -5,8 +5,8 @@
 <div class="container py-5" style="max-width:680px;">
     <div class="text-center mb-4">
         <i class="bi bi-headset fs-1 text-primary"></i>
-        <h2 class="mt-2 fw-bold">Contact Support</h2>
-        <p class="text-muted">We'll get back to you at <strong>info@complynex.online</strong></p>
+        <h2 class="mt-2 fw-bold">{{ _("Contact Support") }}</h2>
+        <p class="text-muted">{{ _("We'll get back to you at") }} <strong>info@complynex.online</strong></p>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -24,61 +24,61 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Your Name</label>
+                    <label class="form-label fw-semibold">{{ _("Your Name") }}</label>
                     <input type="text" class="form-control" name="name"
                         value="{{ current_user.get_full_name() if current_user.is_authenticated else '' }}"
-                        placeholder="Full name" required>
+                        placeholder="{{ _('Full name') }}" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Your Email</label>
+                    <label class="form-label fw-semibold">{{ _("Your Email") }}</label>
                     <input type="email" class="form-control" name="email"
                         value="{{ current_user.email if current_user.is_authenticated else '' }}"
                         placeholder="your@email.com" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Support Category</label>
+                    <label class="form-label fw-semibold">{{ _("Support Category") }}</label>
                     <select class="form-select" name="category" required>
-                        <option value="">-- Select Category --</option>
-                        <option value="Account / Login Issue">Account / Login Issue</option>
-                        <option value="Permission or Access Problem">Permission or Access Problem</option>
-                        <option value="Screening Tool Issue">Screening Tool Issue</option>
-                        <option value="AML / Compliance Module">AML / Compliance Module</option>
-                        <option value="Report or Data Issue">Report or Data Issue</option>
-                        <option value="Feature Request">Feature Request</option>
-                        <option value="Bug Report">Bug Report</option>
-                        <option value="Other">Other</option>
+                        <option value="">{{ _("-- Select Category --") }}</option>
+                        <option value="Account / Login Issue">{{ _("Account / Login Issue") }}</option>
+                        <option value="Permission or Access Problem">{{ _("Permission or Access Problem") }}</option>
+                        <option value="Screening Tool Issue">{{ _("Screening Tool Issue") }}</option>
+                        <option value="AML / Compliance Module">{{ _("AML / Compliance Module") }}</option>
+                        <option value="Report or Data Issue">{{ _("Report or Data Issue") }}</option>
+                        <option value="Feature Request">{{ _("Feature Request") }}</option>
+                        <option value="Bug Report">{{ _("Bug Report") }}</option>
+                        <option value="Other">{{ _("Other") }}</option>
                     </select>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Priority</label>
+                    <label class="form-label fw-semibold">{{ _("Priority") }}</label>
                     <div class="d-flex gap-3">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="priority" value="Low" id="pLow">
-                            <label class="form-check-label text-success fw-semibold" for="pLow">Low</label>
+                            <label class="form-check-label text-success fw-semibold" for="pLow">{{ _("Low") }}</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="priority" value="Medium" id="pMed" checked>
-                            <label class="form-check-label text-warning fw-semibold" for="pMed">Medium</label>
+                            <label class="form-check-label text-warning fw-semibold" for="pMed">{{ _("Medium") }}</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="priority" value="High" id="pHigh">
-                            <label class="form-check-label text-danger fw-semibold" for="pHigh">High</label>
+                            <label class="form-check-label text-danger fw-semibold" for="pHigh">{{ _("High") }}</label>
                         </div>
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-semibold">Describe Your Issue</label>
+                    <label class="form-label fw-semibold">{{ _("Describe Your Issue") }}</label>
                     <textarea class="form-control" name="message" rows="5"
-                        placeholder="Please describe your issue in detail..." required minlength="20"></textarea>
+                        placeholder="{{ _('Please describe your issue in detail...') }}" required minlength="20"></textarea>
                 </div>
 
                 <div class="d-grid">
                     <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="bi bi-send me-2"></i>Send Support Request
+                        <i class="bi bi-send me-2"></i>{{ _("Send Support Request") }}
                     </button>
                 </div>
             </form>
@@ -87,7 +87,7 @@
 
     <div class="text-center mt-3">
         <a href="{{ url_for('dashboard') }}" class="text-muted small">
-            <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+            <i class="bi bi-arrow-left me-1"></i>{{ _("Back to Dashboard") }}
         </a>
     </div>
 </div>

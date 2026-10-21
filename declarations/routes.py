@@ -2,6 +2,7 @@
 import csv
 import io as _io
 
+from flask_babel import gettext
 from flask import (Blueprint, render_template, request, redirect, url_for,
                    flash, Response)
 from flask_login import login_required, current_user
@@ -56,7 +57,7 @@ def detail(campaign_id):
     DS.sync_submissions(campaign_id)
     c = query_db("SELECT * FROM declaration_campaigns WHERE id=%s", (campaign_id,), one=True)
     if not c:
-        flash('Campaign not found.', 'danger')
+        flash(gettext('Campaign not found.'), 'danger')
         return redirect(url_for('declarations.index'))
     return render_template('declarations/detail.html', c=dict(c),
                            stats=DS.stats(campaign_id),
@@ -82,7 +83,7 @@ def remind(campaign_id):
 @permission_required('config')
 def refresh(campaign_id):
     n = DS.refresh_targets(campaign_id)
-    flash(f'Participant list refreshed — {n} new person(s) added.', 'success')
+    flash(gettext('Participant list refreshed — %(n)s new person(s) added.', n=n), 'success')
     return redirect(url_for('declarations.detail', campaign_id=campaign_id))
 
 
@@ -93,7 +94,7 @@ def export(campaign_id, fmt):
     which = request.args.get('which', 'all')
     rows = DS.export_rows(campaign_id, which)
     if not rows:
-        flash('Nothing to export for that filter.', 'warning')
+        flash(gettext('Nothing to export for that filter.'), 'warning')
         return redirect(url_for('declarations.detail', campaign_id=campaign_id))
 
     c = dict(query_db("SELECT module, cycle_year FROM declaration_campaigns WHERE id=%s",
@@ -121,7 +122,7 @@ def export(campaign_id, fmt):
                 mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 headers={'Content-Disposition': f'attachment; filename={base}.xlsx'})
         except ImportError:
-            flash('openpyxl is not installed — exported as CSV instead.', 'warning')
+            flash(gettext('openpyxl is not installed — exported as CSV instead.'), 'warning')
             fmt = 'csv'
 
     out = _io.StringIO()
@@ -154,7 +155,7 @@ def bulk_reminders():
     if request.method == 'POST':
         modules = request.form.getlist('modules')
         if not modules:
-            flash('Select at least one declaration type.', 'warning')
+            flash(gettext('Select at least one declaration type.'), 'warning')
             return redirect(url_for('declarations.bulk_reminders'))
 
         which = request.form.get('which', 'outstanding')
@@ -177,7 +178,7 @@ def bulk_reminders():
                     f"{DS.MODULES[c['module']]['label']} ({c['cycle_year']})")
 
         if not owed:
-            flash('Nobody is outstanding for the selected declarations.', 'info')
+            flash(gettext('Nobody is outstanding for the selected declarations.'), 'info')
             return redirect(url_for('declarations.bulk_reminders'))
 
         sent = 0

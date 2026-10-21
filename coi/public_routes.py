@@ -16,6 +16,7 @@
 # =============================================================================
 
 
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database.db import get_db
 from models.coi import COICampaign, COIDeclaration
@@ -35,7 +36,7 @@ def public_declare():
         user = db.execute('SELECT * FROM users WHERE email = %s', (email,)).fetchone()
         
         if not user:
-            flash('Email not found in our employee database. Please contact HR.', 'danger')
+            flash(gettext('Email not found in our employee database. Please contact HR.'), 'danger')
             return render_template('coi/public_declare.html')
             
         # 2. Find Ad-hoc Campaign
@@ -65,7 +66,7 @@ def public_declare():
             data['campaign_id'] = campaign['id']
             # Digital signature is required
             if not data.get('digital_signature'):
-                 flash('Digital signature is required.', 'danger')
+                 flash(gettext('Digital signature is required.'), 'danger')
                  return render_template('coi/public_declare.html', email=email)
 
             # Check existing%s
@@ -76,12 +77,12 @@ def public_declare():
             
             try:
                 COIDeclaration.create(data, user['id'])
-                flash('Declaration submitted successfully! A manager will review your submission.', 'success')
+                flash(gettext('Declaration submitted successfully! A manager will review your submission.'), 'success')
                 return redirect(url_for('public_coi.thank_you'))
             except Exception as e:
                 import sqlite3
                 if "UNIQUE constraint failed" in str(e):
-                    flash('You have already submitted an ad-hoc declaration for this year. Please contact compliance to edit.', 'warning')
+                    flash(gettext('You have already submitted an ad-hoc declaration for this year. Please contact compliance to edit.'), 'warning')
                 else:
                     flash(f'Error submitting declaration: {str(e)}', 'danger')
                     

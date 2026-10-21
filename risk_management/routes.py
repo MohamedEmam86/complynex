@@ -18,6 +18,7 @@
 import os
 from datetime import datetime
 
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from flask_babel import gettext as _
@@ -142,7 +143,7 @@ def register_new():
         )
         AuditLog.log(current_user.id, 'Create Risk', 'Risk Management', risk.id,
                      f'Registered risk {risk.risk_id}: {risk.risk_title}', request.remote_addr)
-        flash('Risk registered successfully.', 'success')
+        flash(gettext('Risk registered successfully.'), 'success')
         return redirect(url_for('risk_management.register_detail', risk_pk=risk.id))
 
     return render_template(
@@ -157,7 +158,7 @@ def register_new():
 def register_detail(risk_pk):
     risk = Risk.get_by_id(risk_pk)
     if not risk:
-        flash('Risk not found.', 'danger')
+        flash(gettext('Risk not found.'), 'danger')
         return redirect(url_for('risk_management.register_list'))
     controls = RiskControl.get_controls_for_risk(risk_pk)
     treatments = RiskTreatment.get_for_risk(risk_pk)
@@ -187,7 +188,7 @@ def register_detail(risk_pk):
 def register_edit(risk_pk):
     risk = Risk.get_by_id(risk_pk)
     if not risk:
-        flash('Risk not found.', 'danger')
+        flash(gettext('Risk not found.'), 'danger')
         return redirect(url_for('risk_management.register_list'))
 
     if request.method == 'POST':
@@ -204,7 +205,7 @@ def register_edit(risk_pk):
         )
         AuditLog.log(current_user.id, 'Update Risk Scoring', 'Risk Management', risk_pk,
                      f'Re-scored risk {risk.risk_id}', request.remote_addr)
-        flash('Risk scoring updated.', 'success')
+        flash(gettext('Risk scoring updated.'), 'success')
         return redirect(url_for('risk_management.register_detail', risk_pk=risk_pk))
 
     return render_template(
@@ -221,7 +222,7 @@ def register_close(risk_pk):
     Risk.close(risk_pk, status=status)
     AuditLog.log(current_user.id, 'Close Risk', 'Risk Management', risk_pk,
                  f'Risk marked {status}', request.remote_addr)
-    flash(f'Risk marked as {status}.', 'success')
+    flash(gettext('Risk marked as %(status)s.', status=status), 'success')
     return redirect(url_for('risk_management.register_detail', risk_pk=risk_pk))
 
 
@@ -245,7 +246,7 @@ def register_link_source(risk_pk):
         )
         AuditLog.log(current_user.id, 'Link Risk Source', 'Risk Management', risk_pk,
                      'Manually linked a source-module record', request.remote_addr)
-        flash('Source linked to risk.', 'success')
+        flash(gettext('Source linked to risk.'), 'success')
         return redirect(url_for('risk_management.register_detail', risk_pk=risk_pk))
     return render_template(
         'risk_management/link_source_form.html', risk=risk,
@@ -280,7 +281,7 @@ def suggestion_create(source_module, source_table, source_record_id):
         AuditLog.log(current_user.id, 'Create Draft Risk From Suggestion', 'Risk Management', risk.id,
                      f'Draft risk {risk.risk_id} created from {source_module}.{source_table}#{source_record_id}',
                      request.remote_addr)
-        flash(f'Draft risk {risk.risk_id} created — please review and complete scoring.', 'success')
+        flash(gettext('Draft risk %(risk_id)s created — please review and complete scoring.', risk_id=risk.risk_id), 'success')
         return redirect(url_for('risk_management.register_edit', risk_pk=risk.id))
 
     return render_template(
@@ -307,7 +308,7 @@ def categories():
         )
         AuditLog.log(current_user.id, 'Create Risk Category', 'Risk Management', None,
                      f"Category '{request.form.get('category_code')}' created", request.remote_addr)
-        flash('Risk category created.', 'success')
+        flash(gettext('Risk category created.'), 'success')
         return redirect(url_for('risk_management.categories'))
     all_categories = RiskCategory.get_all(include_inactive=True)
     usage = {c.id: RiskCategory.usage_count(c.id) for c in all_categories}
@@ -326,7 +327,7 @@ def category_edit(category_id):
     )
     AuditLog.log(current_user.id, 'Edit Risk Category', 'Risk Management', category_id,
                  'Category details updated', request.remote_addr)
-    flash('Risk category updated.', 'success')
+    flash(gettext('Risk category updated.'), 'success')
     return redirect(url_for('risk_management.categories'))
 
 
@@ -337,7 +338,7 @@ def category_archive(category_id):
     RiskCategory.set_active(category_id, False)
     AuditLog.log(current_user.id, 'Archive Risk Category', 'Risk Management', category_id,
                  'Category archived (hidden from new risk selection)', request.remote_addr)
-    flash('Risk category archived. Existing risks keep their reference; it will no longer appear for new selections.', 'success')
+    flash(gettext('Risk category archived. Existing risks keep their reference; it will no longer appear for new selections.'), 'success')
     return redirect(url_for('risk_management.categories'))
 
 
@@ -348,7 +349,7 @@ def category_reactivate(category_id):
     RiskCategory.set_active(category_id, True)
     AuditLog.log(current_user.id, 'Reactivate Risk Category', 'Risk Management', category_id,
                  'Category reactivated', request.remote_addr)
-    flash('Risk category reactivated.', 'success')
+    flash(gettext('Risk category reactivated.'), 'success')
     return redirect(url_for('risk_management.categories'))
 
 
@@ -360,7 +361,7 @@ def category_delete(category_id):
         RiskCategory.delete(category_id)
         AuditLog.log(current_user.id, 'Delete Risk Category', 'Risk Management', category_id,
                      'Category permanently deleted', request.remote_addr)
-        flash('Risk category deleted.', 'success')
+        flash(gettext('Risk category deleted.'), 'success')
     except ValueError as e:
         flash(str(e), 'danger')
     return redirect(url_for('risk_management.categories'))
@@ -387,7 +388,7 @@ def appetite():
         )
         AuditLog.log(current_user.id, 'Create Risk Appetite Statement', 'Risk Management', None,
                      'New risk appetite statement recorded', request.remote_addr)
-        flash('Risk appetite statement recorded.', 'success')
+        flash(gettext('Risk appetite statement recorded.'), 'success')
         return redirect(url_for('risk_management.appetite'))
     return render_template(
         'risk_management/appetite.html',
@@ -424,7 +425,7 @@ def controls_new():
         )
         AuditLog.log(current_user.id, 'Create Control', 'Risk Management', control.id,
                      f'Created control {control.control_code}', request.remote_addr)
-        flash('Control created.', 'success')
+        flash(gettext('Control created.'), 'success')
         return redirect(url_for('risk_management.controls_detail', control_id=control.id))
     return render_template(
         'risk_management/control_form.html', control=None,
@@ -438,7 +439,7 @@ def controls_new():
 def controls_detail(control_id):
     control = Control.get_by_id(control_id)
     if not control:
-        flash('Control not found.', 'danger')
+        flash(gettext('Control not found.'), 'danger')
         return redirect(url_for('risk_management.controls_list'))
     linked_risks = RiskControl.get_risks_for_control(control_id)
     test_results = ControlTestResult.get_for_control(control_id)
@@ -456,7 +457,7 @@ def controls_link_risk(control_id):
     RiskControl.link(risk_pk, control_id, reliance_level=request.form.get('reliance_level', 'PRIMARY'))
     AuditLog.log(current_user.id, 'Link Control to Risk', 'Risk Management', control_id,
                  f'Linked control to risk #{risk_pk}', request.remote_addr)
-    flash('Control linked to risk.', 'success')
+    flash(gettext('Control linked to risk.'), 'success')
     return redirect(url_for('risk_management.controls_detail', control_id=control_id))
 
 
@@ -479,7 +480,7 @@ def controls_test(control_id):
         )
         AuditLog.log(current_user.id, 'Log Control Test Result', 'Risk Management', control_id,
                      f'Test result: {request.form.get("result")}', request.remote_addr)
-        flash('Control test result recorded.', 'success')
+        flash(gettext('Control test result recorded.'), 'success')
         return redirect(url_for('risk_management.controls_detail', control_id=control_id))
     return render_template('risk_management/control_test_form.html', control=control)
 
@@ -519,7 +520,7 @@ def kris_new():
         )
         AuditLog.log(current_user.id, 'Create KRI', 'Risk Management', kri.id,
                      f'Created KRI {kri.kri_name}', request.remote_addr)
-        flash('KRI created.', 'success')
+        flash(gettext('KRI created.'), 'success')
         return redirect(url_for('risk_management.kris_dashboard'))
     return render_template(
         'risk_management/kri_form.html', risks=Risk.get_all(), users=User.get_all(),
@@ -543,7 +544,7 @@ def kris_record_measurement(kri_id):
                 message=f'A new measurement for "{kri.kri_name}" has breached the RED threshold.',
                 link=url_for('risk_management.kris_dashboard'), n_type='kri_breach',
             )
-        flash(f'Measurement recorded ({status}).', 'success')
+        flash(gettext('Measurement recorded (%(status)s).', status=status), 'success')
         return redirect(url_for('risk_management.kris_dashboard'))
     return render_template('risk_management/kri_measurement_form.html', kri=kri)
 
@@ -593,7 +594,7 @@ def treatment_new(risk_pk):
         )
         AuditLog.log(current_user.id, 'Propose Risk Treatment', 'Risk Management', treatment.id,
                      f'Treatment proposed for risk {risk.risk_id}', request.remote_addr)
-        flash('Treatment proposed.', 'success')
+        flash(gettext('Treatment proposed.'), 'success')
         return redirect(url_for('risk_management.register_detail', risk_pk=risk_pk))
     return render_template('risk_management/treatment_form.html', risk=risk, users=User.get_all())
 
@@ -604,7 +605,7 @@ def treatment_new(risk_pk):
 def treatment_detail(treatment_id):
     treatment = RiskTreatment.get_by_id(treatment_id)
     if not treatment:
-        flash('Treatment not found.', 'danger')
+        flash(gettext('Treatment not found.'), 'danger')
         return redirect(url_for('risk_management.register_list'))
     if request.method == 'POST':
         evidence_path = _save_evidence(request.files.get('evidence_file'), 'treatments', treatment_id)
@@ -619,7 +620,7 @@ def treatment_detail(treatment_id):
             get_db().commit()
         AuditLog.log(current_user.id, 'Update Risk Treatment', 'Risk Management', treatment_id,
                      f'Status changed to {request.form.get("status")}', request.remote_addr)
-        flash('Treatment updated.', 'success')
+        flash(gettext('Treatment updated.'), 'success')
         return redirect(url_for('risk_management.treatment_detail', treatment_id=treatment_id))
     risk = Risk.get_by_id(treatment.risk_id)
     owner = User.get_by_id(treatment.treatment_owner_id) if treatment.treatment_owner_id else None
@@ -637,7 +638,7 @@ def treatment_evidence(treatment_id):
     """Serve a risk treatment's evidence file — same module guard as viewing the treatment."""
     treatment = RiskTreatment.get_by_id(treatment_id)
     if not treatment or not treatment.evidence_file:
-        flash('File not found.', 'danger')
+        flash(gettext('File not found.'), 'danger')
         return redirect(url_for('risk_management.treatment_detail', treatment_id=treatment_id))
     return serve_uploaded_file(treatment.evidence_file)
 
@@ -651,7 +652,7 @@ def treatment_verify(treatment_id):
                                        verification_notes=request.form.get('verification_notes'))
         AuditLog.log(current_user.id, 'Verify Risk Treatment', 'Risk Management', treatment_id,
                      'Treatment independently verified and closed', request.remote_addr)
-        flash('Treatment verified and closed.', 'success')
+        flash(gettext('Treatment verified and closed.'), 'success')
     except ValueError as e:
         flash(str(e), 'danger')
     return redirect(url_for('risk_management.treatment_detail', treatment_id=treatment_id))

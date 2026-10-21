@@ -16,6 +16,7 @@
 # =============================================================================
 
 import os
+from flask_babel import gettext
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -72,7 +73,7 @@ def create_dsr():
         """, (request_number, subject_name, req_type, due_date, current_user.id))
         
         db.commit()
-        flash(f'Data Subject Request {request_number} registered.')
+        flash(gettext('Data Subject Request %(request_number)s registered.', request_number=request_number))
         return redirect(url_for('dp.dsr_list'))
         
     return render_template('data_protection/dsr_form.html', user=current_user)
@@ -84,7 +85,7 @@ def dsr_detail(id):
     db = get_db()
     dsr = db.execute("SELECT * FROM data_subject_requests WHERE id = %s", (id,)).fetchone()
     if not dsr:
-        flash('Request not found.')
+        flash(gettext('Request not found.'))
         return redirect(url_for('dp.dsr_list'))
     
     timeline = db.execute("""
@@ -127,7 +128,7 @@ def verify_identity(id):
     """, (id, f"Identity verified via {method}", current_user.id))
     
     db.commit()
-    flash('Identity verified. Request moved to IN_PROGRESS.')
+    flash(gettext('Identity verified. Request moved to IN_PROGRESS.'))
     return redirect(url_for('dp.dsr_detail', id=id))
 
 @dp_bp.route('/dsrs/<int:id>/assign', methods=['POST'])
@@ -145,7 +146,7 @@ def assign_dsr(id):
 
     assigned_user = db.execute("SELECT first_name || ' ' || last_name as full_name FROM users WHERE id = %s", (user_id,)).fetchone()
     if not assigned_user:
-        flash('Selected user not found.', 'danger')
+        flash(gettext('Selected user not found.'), 'danger')
         return redirect(url_for('dp.dsr_detail', id=id))
 
     db.execute("""
@@ -154,7 +155,7 @@ def assign_dsr(id):
     """, (id, f"Assigned to {assigned_user['full_name']}", current_user.id))
     
     db.commit()
-    flash(f'Request assigned to {assigned_user["full_name"]}.')
+    flash(gettext('Request assigned to %(full_name)s.', full_name=assigned_user["full_name"]))
     return redirect(url_for('dp.dsr_detail', id=id))
 
 @dp_bp.route('/dsrs/<int:id>/complete', methods=['POST'])
@@ -231,7 +232,7 @@ def report_breach():
         calculate_breach_severity(breach_id)
         check_pdpc_notification_requirement(breach_id)
         
-        flash(f'Breach {breach_number} reported and severity assessed.')
+        flash(gettext('Breach %(breach_number)s reported and severity assessed.', breach_number=breach_number))
         return redirect(url_for('dp.breach_list'))
         
     return render_template('data_protection/breach_form.html', user=current_user)
@@ -254,12 +255,12 @@ def breach_detail(id):
             WHERE id = %s
         """, (status, findings, root_cause, id))
         db.commit()
-        flash('Breach investigation updated.')
+        flash(gettext('Breach investigation updated.'))
         return redirect(url_for('dp.breach_detail', id=id))
 
     breach = db.execute("SELECT * FROM data_breaches WHERE id = %s", (id,)).fetchone()
     if not breach:
-        flash('Breach not found.')
+        flash(gettext('Breach not found.'))
         return redirect(url_for('dp.breach_list'))
         
     remediations = db.execute("""
@@ -304,7 +305,7 @@ def create_dpia():
         """, (dpia_number, project_name, description, risk_level, current_user.id))
         
         db.commit()
-        flash(f'DPIA {dpia_number} created as draft.')
+        flash(gettext('DPIA %(dpia_number)s created as draft.', dpia_number=dpia_number))
         return redirect(url_for('dp.dpia_list'))
         
     return render_template('data_protection/dpia_form.html', user=current_user)
@@ -337,12 +338,12 @@ def dpia_detail(id):
             WHERE id = %s
         """, (processing, combined_mitigations, status, id))
         db.commit()
-        flash('DPIA assessment updated.')
+        flash(gettext('DPIA assessment updated.'))
         return redirect(url_for('dp.dpia_detail', id=id))
 
     dpia = db.execute("SELECT * FROM dpias WHERE id = %s", (id,)).fetchone()
     if not dpia:
-        flash('DPIA not found.')
+        flash(gettext('DPIA not found.'))
         return redirect(url_for('dp.dpia_list'))
         
     users = db.execute("SELECT id, first_name || ' ' || last_name as full_name FROM users WHERE is_active = 1").fetchall()
@@ -408,7 +409,7 @@ def create_activity():
         """, (code, name, purpose, legal_basis, categories, subjects))
         
         db.commit()
-        flash(f'Activity {code} registered in ROPA.')
+        flash(gettext('Activity %(code)s registered in ROPA.', code=code))
         return redirect(url_for('dp.activity_list'))
         
     return render_template('data_protection/activity_form.html', user=current_user)

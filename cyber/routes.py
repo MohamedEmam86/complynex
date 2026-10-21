@@ -15,6 +15,7 @@
 # ComplyNex Full Compliance Platform (CMS) — Proprietary & Confidential
 # =============================================================================
 
+from flask_babel import gettext
 from flask import render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -71,7 +72,7 @@ def report_incident():
         except Exception:
             current_app.logger.exception('Failed to sync case registry for cyber_incidents %s', incident_id)
 
-        flash(f'Incident {inc_number} reported. Compliance and SOC teams notified.')
+        flash(gettext('Incident %(inc_number)s reported. Compliance and SOC teams notified.', inc_number=inc_number))
         return redirect(url_for('cyber.dashboard'))
         
     return render_template('cyber/incident_form.html', user=current_user)

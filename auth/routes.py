@@ -19,6 +19,7 @@
 Authentication routes for ComplyNex CMS
 Handles login, logout, and user registration
 """
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_babel import gettext as _
 from flask_login import login_user, logout_user, login_required, current_user
@@ -172,7 +173,7 @@ def logout():
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    flash('Self-registration is disabled. Contact your administrator.', 'warning')
+    flash(gettext('Self-registration is disabled. Contact your administrator.'), 'warning')
     return redirect(url_for('auth.login'))
 
 
@@ -197,7 +198,7 @@ def mfa_setup():
             secret = session.get('mfa_tmp_secret')
             code   = request.form.get('code', '').strip()
             if not secret:
-                flash('Session expired. Please start again.', 'danger')
+                flash(gettext('Session expired. Please start again.'), 'danger')
                 return redirect(url_for('auth.mfa_setup'))
             totp = pyotp.TOTP(secret)
             if totp.verify(code, valid_window=1):
@@ -213,10 +214,10 @@ def mfa_setup():
                 session.permanent = True
                 User.update_last_login(user_id)
                 AuditLog.log(user_id, 'MFA Enabled', 'Auth', None, 'TOTP MFA configured successfully', request.remote_addr)
-                flash('Two-factor authentication enabled. Save your backup codes — they are shown once only.', 'success')
+                flash(gettext('Two-factor authentication enabled. Save your backup codes — they are shown once only.'), 'success')
                 return render_template('auth/mfa_backup_codes.html', codes=codes, next_endpoint=next_endpoint)
             else:
-                flash('Invalid code. Please try again.', 'danger')
+                flash(gettext('Invalid code. Please try again.'), 'danger')
 
     # GET: generate a fresh secret and QR code
     secret = User.generate_mfa_secret()

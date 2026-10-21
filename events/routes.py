@@ -23,6 +23,7 @@ Gated at 'config'/admin level since this is system configuration, not a
 day-to-day compliance workflow.
 """
 
+from flask_babel import gettext
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_required
 
@@ -64,5 +65,5 @@ def toggle_rule(rule_id):
         (rule_id,),
     )
     db.commit()
-    flash('Routing rule updated.', 'success')
+    flash(gettext('Routing rule updated.'), 'success')
     return redirect(url_for('events.rules_list'))

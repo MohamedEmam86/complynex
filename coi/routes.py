@@ -16,6 +16,7 @@
 # =============================================================================
 
 
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -54,7 +55,7 @@ def list_campaigns():
 def create_campaign():
     """Create new COI campaign (compliance only)"""
     if not current_user.is_compliance_officer():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
@@ -68,7 +69,7 @@ def create_campaign():
             }
             camp = COICampaign.create(data, current_user.id)
             AuditLog.log(current_user.id, 'Create COI Campaign', 'COI', camp.id, f'Created campaign {data["campaign_name"]} ({data["campaign_year"]})', request.remote_addr)
-            flash('Campaign created successfully! All active employees have been notified.', 'success')
+            flash(gettext('Campaign created successfully! All active employees have been notified.'), 'success')
             return redirect(url_for('coi.list_campaigns'))
         except Exception as e:
             flash(f'Error creating campaign: {str(e)}', 'danger')
@@ -81,12 +82,12 @@ def create_campaign():
 def view_campaign(id):
     """View campaign details"""
     if not current_user.is_compliance_officer():
-         flash('Access denied.', 'danger')
+         flash(gettext('Access denied.'), 'danger')
          return redirect(url_for('dashboard'))
 
     campaign = COICampaign.get_by_id(id)
     if not campaign:
-        flash('Campaign not found.', 'danger')
+        flash(gettext('Campaign not found.'), 'danger')
         return redirect(url_for('coi.list_campaigns'))
         
     stats = campaign.get_statistics()
@@ -109,14 +110,14 @@ def view_campaign(id):
 def close_campaign(id):
     """Close campaign (compliance only)"""
     if not current_user.is_compliance_officer():
-         flash('Access denied.', 'danger')
+         flash(gettext('Access denied.'), 'danger')
          return redirect(url_for('dashboard'))
          
     campaign = COICampaign.get_by_id(id)
     if campaign:
         campaign.close()
         AuditLog.log(current_user.id, 'Close COI Campaign', 'COI', id, f'Closed campaign {campaign.campaign_name}', request.remote_addr)
-        flash('Campaign closed successfully.', 'success')
+        flash(gettext('Campaign closed successfully.'), 'success')
     return redirect(url_for('coi.list_campaigns'))
 
 @coi_bp.route('/campaigns/<int:id>/send-reminders', methods=['POST'])
@@ -125,13 +126,13 @@ def close_campaign(id):
 def send_reminders(id):
     """Send reminders to pending employees"""
     if not current_user.is_compliance_officer():
-         flash('Access denied.', 'danger')
+         flash(gettext('Access denied.'), 'danger')
          return redirect(url_for('dashboard'))
          
     campaign = COICampaign.get_by_id(id)
     if campaign:
         campaign.send_reminders()
-        flash('Reminders sent to all pending employees.', 'success')
+        flash(gettext('Reminders sent to all pending employees.'), 'success')
     return redirect(url_for('coi.view_campaign', id=id))
 
 # ==================== EMPLOYEE DECLARATIONS ====================
@@ -244,13 +245,13 @@ def declare(campaign_id):
     """Submit COI declaration for campaign"""
     campaign = COICampaign.get_by_id(campaign_id)
     if not campaign:
-        flash('Campaign not found.', 'danger')
+        flash(gettext('Campaign not found.'), 'danger')
         return redirect(url_for('coi.my_declarations'))
     
     # Check if already declared
     existing = COIDeclaration.get_by_employee_campaign(current_user.id, campaign_id)
     if existing:
-        flash('You have already declared for this campaign.', 'info')
+        flash(gettext('You have already declared for this campaign.'), 'info')
         return redirect(url_for('coi.view_declaration', id=existing.id))
     
     if request.method == 'POST':
@@ -274,7 +275,7 @@ def declare(campaign_id):
                     n_type='submission'
                 )
                 
-            flash('Declaration submitted successfully.', 'success')
+            flash(gettext('Declaration submitted successfully.'), 'success')
             return redirect(url_for('coi.my_declarations'))
         except Exception as e:
             flash(f'Error submitting declaration: {str(e)}', 'danger')
@@ -288,7 +289,7 @@ def view_declaration(id):
     """View COI declaration"""
     declaration = COIDeclaration.get_by_id(id)
     if not declaration:
-        flash('Declaration not found.', 'danger')
+        flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('dashboard'))
         
     # Permission check: Own declaration, or Manager, or Compliance
@@ -297,7 +298,7 @@ def view_declaration(id):
     is_compliance = current_user.is_compliance_officer()
     
     if not (is_owner or is_manager or is_compliance):
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     return render_template('coi/detail.html', declaration=declaration)
@@ -324,7 +325,7 @@ def pending_review():
             declarations_dict[d.id] = d
             
     if not declarations_dict and not (current_user.is_manager() or current_user.is_compliance_officer() or current_user.role == 'admin'):
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
     
     # Sort by created_at descending (newest first)
@@ -340,12 +341,12 @@ def review_declaration(id):
     declaration = COIDeclaration.get_by_id(id)
     
     if not declaration:
-        flash('Declaration not found', 'danger')
+        flash(gettext('Declaration not found'), 'danger')
         return redirect(url_for('coi.pending_review'))
         
     # Basic permission check
     if not (current_user.is_manager() or current_user.is_compliance_officer()):
-         flash('Access denied.', 'danger')
+         flash(gettext('Access denied.'), 'danger')
          return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
@@ -354,13 +355,13 @@ def review_declaration(id):
         
         if action == 'approve':
             declaration.approve(current_user.id, comments)
-            flash('Declaration approved.', 'success')
+            flash(gettext('Declaration approved.'), 'success')
         elif action == 'clarify':
             declaration.request_clarification(current_user.id, comments)
-            flash('Clarification requested.', 'info')
+            flash(gettext('Clarification requested.'), 'info')
         elif action == 'escalate':
             declaration.escalate(current_user.id, comments)
-            flash('Declaration escalated to compliance.', 'warning')
+            flash(gettext('Declaration escalated to compliance.'), 'warning')
         elif action == 'mitigate':
             # Create a draft mitigation plan if needed, or redirect to creation form
             return redirect(url_for('coi.create_mitigation_plan', declaration_id=id))
@@ -381,12 +382,12 @@ def review_declaration(id):
 def create_mitigation_plan(declaration_id):
     """Create a mitigation plan for a declaration"""
     if not (current_user.is_compliance_officer() or current_user.role == 'admin'):
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     declaration = COIDeclaration.get_by_id(declaration_id)
     if not declaration:
-        flash('Declaration not found.', 'danger')
+        flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('coi.pending_review'))
         
     if request.method == 'POST':
@@ -400,7 +401,7 @@ def create_mitigation_plan(declaration_id):
             }
             COIMitigationPlan.create(data, current_user.id)
             AuditLog.log(current_user.id, 'Create COI Mitigation Plan', 'COI', declaration_id, f'Created mitigation plan for declaration {declaration_id}', request.remote_addr)
-            flash('Mitigation plan created and linked to declaration.', 'success')
+            flash(gettext('Mitigation plan created and linked to declaration.'), 'success')
             return redirect(url_for('coi.review_declaration', id=declaration_id))
         except Exception as e:
             flash(f'Error creating mitigation plan: {str(e)}', 'danger')
@@ -423,19 +424,19 @@ def view_mitigation_plan(id):
     """View and update a mitigation plan"""
     plan = COIMitigationPlan.get_by_id(id)
     if not plan:
-        flash('Mitigation plan not found.', 'danger')
+        flash(gettext('Mitigation plan not found.'), 'danger')
         return redirect(url_for('dashboard'))
         
     declaration = COIDeclaration.get_by_id(plan.declaration_id)
     
     if request.method == 'POST':
         if not (current_user.is_compliance_officer() or current_user.role == 'admin'):
-            flash('Only compliance can update status.', 'danger')
+            flash(gettext('Only compliance can update status.'), 'danger')
         else:
             status = request.form.get('status')
             comments = request.form.get('comments')
             plan.update_status(status, comments, updated_by=current_user.id)
-            flash('Mitigation plan status updated.', 'success')
+            flash(gettext('Mitigation plan status updated.'), 'success')
             return redirect(url_for('coi.view_mitigation_plan', id=id))
 
     return render_template('coi/mitigation_detail.html', plan=plan, declaration=declaration)
@@ -448,12 +449,12 @@ def view_mitigation_plan(id):
 def export_campaign(id):
     """Export campaign declarations to CSV"""
     if not current_user.is_compliance_officer():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     campaign = COICampaign.get_by_id(id)
     if not campaign:
-        flash('Campaign not found.', 'danger')
+        flash(gettext('Campaign not found.'), 'danger')
         return redirect(url_for('coi.list_campaigns'))
     
     # Get all members with their status and declaration details

@@ -9,6 +9,7 @@ import csv
 import io
 from datetime import datetime
 
+from flask_babel import gettext
 from flask import (Blueprint, Response, abort, flash, redirect, render_template, request,
                    url_for, current_app)
 from flask_login import current_user, login_required
@@ -195,7 +196,7 @@ def learner_action(lid):
     action = request.form.get('action')
     reason = (request.form.get('reason') or '').strip()
     if not reason:
-        flash('A reason is required for this action.', 'danger')
+        flash(gettext('A reason is required for this action.'), 'danger')
         return redirect(url_for('academy_admin.learner', lid=lid))
     if action == 'suspend' and l['status'] == 'active':
         db.execute("UPDATE academy_learners SET status='suspended' WHERE id=%s", (lid,))
@@ -207,12 +208,12 @@ def learner_action(lid):
         S.audit('reactivated', lid, reason, actor_user_id=current_user.id)
     elif action == 'erase' and request.form.get('confirm') == 'ERASE':
         S.erase_learner(lid, current_user.id, reason)
-        flash('Personal data erased. Certificate numbers remain in the register as redacted.', 'success')
+        flash(gettext('Personal data erased. Certificate numbers remain in the register as redacted.'), 'success')
         return redirect(url_for('academy_admin.learners'))
     else:
-        flash('Action not applied.', 'warning')
+        flash(gettext('Action not applied.'), 'warning')
         return redirect(url_for('academy_admin.learner', lid=lid))
-    flash('Done.', 'success')
+    flash(gettext('Done.'), 'success')
     return redirect(url_for('academy_admin.learner', lid=lid))
 
 
@@ -255,12 +256,12 @@ def course_status(cid):
     new = request.form.get('status')
     note = (request.form.get('note') or '').strip()
     if new not in ('published', 'draft', 'retired') or not note:
-        flash('Choose a status and record the approval note.', 'danger')
+        flash(gettext('Choose a status and record the approval note.'), 'danger')
         return redirect(url_for('academy_admin.course', cid=cid))
     if new == 'published':
         nq = db.execute("SELECT count(*) n FROM academy_questions WHERE course_id=%s AND is_active", (cid,)).fetchone()['n']
         if nq < c['questions_per_attempt']:
-            flash(f'Cannot publish: {nq} active questions, {c["questions_per_attempt"]} needed per attempt.', 'danger')
+            flash(gettext('Cannot publish: %(nq)s active questions, %(questions_per_attempt)s needed per attempt.', nq=nq, questions_per_attempt=c["questions_per_attempt"]), 'danger')
             return redirect(url_for('academy_admin.course', cid=cid))
         db.execute("""UPDATE academy_courses SET status='published', approved_by=%s, approved_at=now(),
                       approval_note=%s, updated_at=now() WHERE id=%s""", (current_user.id, note, cid))
@@ -268,7 +269,7 @@ def course_status(cid):
         db.execute("UPDATE academy_courses SET status=%s, updated_at=now() WHERE id=%s", (new, cid))
     db.commit()
     S.audit(f'course_{new}', None, f'course={cid} {note}', actor_user_id=current_user.id)
-    flash(f'Course set to {new}.', 'success')
+    flash(gettext('Course set to %(new)s.', new=new), 'success')
     return redirect(url_for('academy_admin.course', cid=cid))
 
 
@@ -305,7 +306,7 @@ def certificates():
 def certificate_revoke(cert_id):
     reason = (request.form.get('reason') or '').strip()
     if not reason:
-        flash('A reason is required to revoke a certificate.', 'danger')
+        flash(gettext('A reason is required to revoke a certificate.'), 'danger')
         return redirect(url_for('academy_admin.certificates'))
     db = get_db()
     row = db.execute("""UPDATE academy_certificates SET status='revoked', status_reason=%s,
@@ -314,7 +315,7 @@ def certificate_revoke(cert_id):
     db.commit()
     if row:
         S.audit('certificate_revoked', row['learner_id'], f"{row['cert_number']}: {reason}", actor_user_id=current_user.id)
-        flash(f"Certificate {row['cert_number']} revoked.", 'success')
+        flash(gettext("Certificate %(cert_number)s revoked.", cert_number=row['cert_number']), 'success')
     return redirect(url_for('academy_admin.certificates'))
 
 

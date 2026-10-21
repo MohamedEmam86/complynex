@@ -13,6 +13,7 @@ Isolation rules enforced here and in nginx:
 """
 from functools import wraps
 
+from flask_babel import gettext
 from flask import (Blueprint, abort, flash, g, make_response, redirect, render_template,
                    request, session, url_for, current_app)
 from itsdangerous import URLSafeTimedSerializer, BadSignature
@@ -116,7 +117,7 @@ def preview(token):
     except BadSignature:
         abort(404)
     session['academy_preview'] = True
-    flash('Preview mode — the Academy is not public yet.', 'info')
+    flash(gettext('Preview mode — the Academy is not public yet.'), 'info')
     return redirect(url_for('academy.home'))
 
 

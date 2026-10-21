@@ -27,6 +27,7 @@ New Features:
 """
 
 from flask_babel import gettext as _
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, send_file, session
 from flask_login import login_required, current_user
 from database.db import get_db
@@ -686,9 +687,9 @@ def case_remind(case_id):
                                     message=request.form.get('message') or None,
                                     to=request.form.get('to') or 'assignee')
     if sent:
-        flash(f'Reminder sent to {sent} recipient(s).', 'success')
+        flash(gettext('Reminder sent to %(sent)s recipient(s).', sent=sent), 'success')
     else:
-        flash('No reminder sent — the case has no current owner to remind.', 'warning')
+        flash(gettext('No reminder sent — the case has no current owner to remind.'), 'warning')
     return redirect(url_for('whistleblowing.view_case', case_id=case_id))
 
 
@@ -720,7 +721,7 @@ def bulk_remind():
     from services import whistleblowing_service as W
     ids = [int(x) for x in request.form.getlist('case_ids') if x.isdigit()]
     if not ids:
-        flash('Select at least one case.', 'warning')
+        flash(gettext('Select at least one case.'), 'warning')
         return redirect(url_for('whistleblowing.case_tracking'))
     sent, skipped = W.send_reminder(ids, current_user.id,
                                     message=request.form.get('message') or None)

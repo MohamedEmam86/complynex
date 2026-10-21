@@ -19,6 +19,7 @@ import os, subprocess
 from datetime import datetime
 from functools import wraps
 
+from flask_babel import gettext
 from flask import render_template, request, redirect, url_for, flash, jsonify, abort, current_app
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -91,7 +92,7 @@ def list_users():
     """List all users"""
     # Only Admin and Compliance Officer (users with management rights) can see this
     if not current_user.can_manage_users():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     # We need a get_all method in User model or just raw SQL
@@ -161,7 +162,7 @@ def _authority_context(user_id=None):
 def add_user():
     """Add a single user"""
     if not current_user.can_manage_users():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
 
     departments = Department.get_all()
@@ -306,7 +307,7 @@ def add_user():
             from models.training import TrainingRequirement
             assigned = TrainingRequirement.assign_requirements(new_user.id, role, department, current_user.id)
             
-            flash(f'User created successfully. {assigned} training items assigned.', 'success')
+            flash(gettext('User created successfully. %(assigned)s training items assigned.', assigned=assigned), 'success')
             return redirect(url_for('admin.list_users'))
         except ValueError as e:
             flash(str(e), 'danger')
@@ -320,28 +321,28 @@ def add_user():
 @login_required
 def delete_user(user_id):
     if not current_user.can_manage_users():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('admin.list_users'))
     if user_id == current_user.id:
-        flash('You cannot delete your own account.', 'danger')
+        flash(gettext('You cannot delete your own account.'), 'danger')
         return redirect(url_for('admin.list_users'))
     try:
         from database.db import get_db
         db = get_db()
         user = db.execute('SELECT first_name, last_name, email, role FROM users WHERE id = %s', (user_id,)).fetchone()
         if not user:
-            flash('User not found.', 'danger')
+            flash(gettext('User not found.'), 'danger')
             return redirect(url_for('admin.list_users'))
         if user['role'] == 'admin':
             admin_count = db.execute("SELECT COUNT(*) as c FROM users WHERE role = 'admin'").fetchone()['c']
             if admin_count <= 1:
-                flash('Cannot delete the last remaining admin account.', 'danger')
+                flash(gettext('Cannot delete the last remaining admin account.'), 'danger')
                 return redirect(url_for('admin.list_users'))
         db.execute('DELETE FROM users WHERE id = %s', (user_id,))
         db.commit()
         AuditLog.log(current_user.id, 'Delete User', 'Admin', user_id,
                      f'Deleted user: {user["first_name"]} {user["last_name"]} ({user["email"]})')
-        flash(f'User {user["first_name"]} {user["last_name"]} deleted successfully.', 'success')
+        flash(gettext('User %(first_name)s %(last_name)s deleted successfully.', first_name=user["first_name"], last_name=user["last_name"]), 'success')
     except Exception as e:
         flash(f'Error deleting user: {str(e)}', 'danger')
     return redirect(url_for('admin.list_users'))
@@ -352,16 +353,16 @@ def delete_user(user_id):
 def upload_users():
     """Upload users from CSV"""
     if not current_user.can_manage_users():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     if 'file' not in request.files:
-        flash('No file part', 'danger')
+        flash(gettext('No file part'), 'danger')
         return redirect(url_for('admin.list_users'))
         
     file = request.files['file']
     if file.filename == '':
-        flash('No selected file', 'danger')
+        flash(gettext('No selected file'), 'danger')
         return redirect(url_for('admin.list_users'))
         
     if file and file.filename.endswith('.csv'):
@@ -390,7 +391,7 @@ def upload_users():
                 except Exception:
                     errors += 1
                     
-            flash(f'Successfully imported {count} users. {errors} failed.', 'success' if errors == 0 else 'warning')
+            flash(gettext('Successfully imported %(count)s users. %(errors)s failed.', count=count, errors=errors), 'success' if errors == 0 else 'warning')
             
         except Exception as e:
             flash(f'Error processing file: {str(e)}', 'danger')
@@ -415,12 +416,12 @@ def _excluded_unit_ids(user_id):
 def edit_user(id):
     """Edit an existing user"""
     if not current_user.can_manage_users():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     user = User.get_by_id(id)
     if not user:
-        flash('User not found.', 'danger')
+        flash(gettext('User not found.'), 'danger')
         return redirect(url_for('admin.list_users'))
         
     departments = Department.get_all()
@@ -572,7 +573,7 @@ def edit_user(id):
             from models.training import TrainingRequirement
             assigned = TrainingRequirement.assign_requirements(id, role, department, current_user.id)
             
-            flash(f'User updated successfully. {assigned} new training items assigned.', 'success')
+            flash(gettext('User updated successfully. %(assigned)s new training items assigned.', assigned=assigned), 'success')
             return redirect(url_for('admin.list_users'))
         except Exception as e:
             flash(f'Error updating user: {str(e)}', 'danger')
@@ -587,7 +588,7 @@ def edit_user(id):
 def view_audit_logs():
     """View system audit logs (Compliance/Admin only)"""
     if not current_user.is_admin() and not current_user.is_compliance_officer():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
     
     filters = {
@@ -619,7 +620,7 @@ def view_audit_logs():
 def approvals():
     """Centralized approvals dashboard"""
     if not current_user.is_admin() and not current_user.is_compliance_officer():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     from models.ghe import GHEDeclaration
@@ -648,7 +649,7 @@ def approvals():
 def reports():
     """System Reports Hub"""
     if not current_user.is_admin() and not current_user.is_compliance_officer():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
     return render_template('admin/reports.html')
 
@@ -658,7 +659,7 @@ def reports():
 def settings():
     """Settings Hub — enterprise admin configuration landing page."""
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
 
     backup_info = _backup_status()
@@ -671,7 +672,7 @@ def settings():
 def settings_general():
     """General Settings: Organization Info + Workflow (GHE) thresholds."""
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
 
     from database.db import get_db
@@ -713,7 +714,7 @@ def settings_general():
                              f'GHE Manager approval threshold changed from {old_manager["setting_value"]} to {ghe_manager}')
 
         db.commit()
-        flash('Settings updated successfully.', 'success')
+        flash(gettext('Settings updated successfully.'), 'success')
         return redirect(url_for('admin.settings_general'))
 
     rows = db.execute('SELECT setting_key, setting_value FROM system_settings').fetchall()
@@ -728,7 +729,7 @@ def settings_general():
 def settings_security():
     """Security Settings: session timeout, password policy, MFA overview."""
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
 
     from models.settings import Settings as Cfg
@@ -746,7 +747,7 @@ def settings_security():
         Cfg.set('password_require_complexity', 'true' if require_complexity else 'false')
 
         AuditLog.log(current_user.id, 'Update Setting', 'Settings', None, 'Security policy updated')
-        flash('Security settings updated. Session timeout applies to new logins.', 'success')
+        flash(gettext('Security settings updated. Session timeout applies to new logins.'), 'success')
         return redirect(url_for('admin.settings_security'))
 
     db = get_db()
@@ -767,7 +768,7 @@ def settings_security():
 def settings_numbering():
     """Numbering Sequences: configurable prefix/padding for document IDs."""
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
 
     from database.db import get_db
@@ -784,7 +785,7 @@ def settings_numbering():
             )
             db.commit()
             AuditLog.log(current_user.id, 'Update Setting', 'Settings', seq_id, f'Numbering sequence updated: prefix={prefix}')
-            flash('Numbering sequence updated.', 'success')
+            flash(gettext('Numbering sequence updated.'), 'success')
         return redirect(url_for('admin.settings_numbering'))
 
     sequences = db.execute('SELECT * FROM numbering_sequences ORDER BY sequence_key').fetchall()
@@ -797,7 +798,7 @@ def settings_numbering():
 def settings_email_templates():
     """Email Templates list."""
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
 
     from database.db import get_db
@@ -811,7 +812,7 @@ def settings_email_templates():
 @permission_required('config')
 def create_email_template():
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
 
     from database.db import get_db
@@ -819,7 +820,7 @@ def create_email_template():
     key = (request.form.get('template_key') or '').strip()
     subject = request.form.get('subject', '')
     if not key:
-        flash('Template key is required.', 'danger')
+        flash(gettext('Template key is required.'), 'danger')
         return redirect(url_for('admin.settings_email_templates'))
     try:
         db.execute(
@@ -828,7 +829,7 @@ def create_email_template():
         )
         db.commit()
         AuditLog.log(current_user.id, 'Create Email Template', 'Settings', None, f'Created email template {key}')
-        flash('Email template created.', 'success')
+        flash(gettext('Email template created.'), 'success')
     except Exception as e:
         flash(f'Error creating template: {str(e)}', 'danger')
     return redirect(url_for('admin.settings_email_templates'))
@@ -839,7 +840,7 @@ def create_email_template():
 @permission_required('config')
 def edit_email_template(template_id):
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
 
     from database.db import get_db
@@ -855,7 +856,7 @@ def edit_email_template(template_id):
     )
     db.commit()
     AuditLog.log(current_user.id, 'Update Email Template', 'Settings', template_id, 'Email template updated')
-    flash('Email template updated.', 'success')
+    flash(gettext('Email template updated.'), 'success')
     return redirect(url_for('admin.settings_email_templates'))
 
 
@@ -865,7 +866,7 @@ def edit_email_template(template_id):
 def settings_permissions_matrix():
     """Read-only grid of every user's per-module permission level."""
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
 
     modules = ['governance', 'risk_management', 'internal_audit', 'aml', 'screening',
@@ -881,7 +882,7 @@ def settings_permissions_matrix():
 def settings_localization():
     """Platform default language."""
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
 
     from models.settings import Settings as Cfg
@@ -891,7 +892,7 @@ def settings_localization():
         if locale in ('ar', 'en'):
             Cfg.set('default_locale', locale)
             AuditLog.log(current_user.id, 'Update Setting', 'Settings', None, f'Default locale set to {locale}')
-            flash('Default language updated. Takes effect for new sessions.', 'success')
+            flash(gettext('Default language updated. Takes effect for new sessions.'), 'success')
         return redirect(url_for('admin.settings_localization'))
 
     return render_template('admin/settings/localization.html',
@@ -920,7 +921,7 @@ def _backup_status():
 def settings_backup():
     """Read-only backup status (real daily cron-driven backups, no fake schedule UI)."""
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
     return render_template('admin/settings/backup.html', backup_info=_backup_status())
 
@@ -931,7 +932,7 @@ def settings_backup():
 def settings_api_keys():
     """API Keys management UI — calls the existing /api/v1/keys JSON endpoints."""
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
     return render_template('admin/settings/api_keys.html')
 
@@ -942,7 +943,7 @@ def settings_api_keys():
 def settings_integrations():
     """Read-only health status of external integrations (ES, Redis, Postgres, gdrive)."""
     if not current_user.is_admin():
-        flash('Access denied. Admin only.', 'danger')
+        flash(gettext('Access denied. Admin only.'), 'danger')
         return redirect(url_for('dashboard'))
 
     integrations = []
@@ -986,7 +987,7 @@ def settings_integrations():
 def generate_calendar():
     """Trigger generation of upcoming regulatory report submissions."""
     if not current_user.can_manage_users(): # Using generic admin permission
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('admin.reports'))
         
     from models.reporting import RegulatoryReport
@@ -996,7 +997,7 @@ def generate_calendar():
     for report in reports:
         total_generated += report.generate_upcoming_submissions()
         
-    flash(f'Calendar updated. Generated {total_generated} upcoming submissions.', 'success')
+    flash(gettext('Calendar updated. Generated %(total_generated)s upcoming submissions.', total_generated=total_generated), 'success')
     return redirect(url_for('admin.reports'))
 
 @admin_bp.route('/training/requirements', methods=['GET', 'POST'])
@@ -1004,7 +1005,7 @@ def generate_calendar():
 def training_requirements():
     """Manage Training Requirements (Auto-assignment rules)"""
     if not current_user.can_manage_users():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
 
     from models.training import TrainingRequirement, TrainingCourse
@@ -1013,7 +1014,7 @@ def training_requirements():
     if request.method == 'POST':
         if 'delete' in request.form:
             TrainingRequirement.delete(request.form.get('id'))
-            flash('Requirement deleted.', 'success')
+            flash(gettext('Requirement deleted.'), 'success')
         elif 'update' in request.form:
             req_id = request.form.get('id')
             data = {
@@ -1026,7 +1027,7 @@ def training_requirements():
             }
             try:
                 TrainingRequirement.update(req_id, data)
-                flash('Requirement updated successfully.', 'success')
+                flash(gettext('Requirement updated successfully.'), 'success')
             except Exception as e:
                 flash(f'Error updating requirement: {str(e)}', 'danger')
         else:
@@ -1039,11 +1040,11 @@ def training_requirements():
                 'deadline_days': request.form.get('deadline_days')
             }
             if not data['course_id'] and not data['policy_id']:
-                flash('Please select either a course or a policy.', 'warning')
+                flash(gettext('Please select either a course or a policy.'), 'warning')
             else:
                 try:
                     TrainingRequirement.create(data)
-                    flash('Requirement added successfully.', 'success')
+                    flash(gettext('Requirement added successfully.'), 'success')
                 except Exception as e:
                     flash(f'Error adding requirement: {str(e)}', 'danger')
         
@@ -1063,7 +1064,7 @@ def training_requirements():
 def list_departments():
     """Manage Departments / Business Units / Branches"""
     if not current_user.is_admin():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
 
     from models.department import Department
@@ -1078,7 +1079,7 @@ def list_departments():
 def create_department():
     """Create a new department / business unit / branch"""
     if not current_user.is_admin():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
 
     name = request.form.get('name')
@@ -1090,7 +1091,7 @@ def create_department():
     from models.department import Department
     try:
         Department.create(name, code, description, unit_type=unit_type, parent_id=parent_id)
-        flash('Department created successfully.', 'success')
+        flash(gettext('Department created successfully.'), 'success')
         AuditLog.log(current_user.id, 'Create Department', 'Admin', None, f'Created department {name} ({code})')
     except Exception as e:
         flash(f'Error creating department: {str(e)}', 'danger')
@@ -1102,13 +1103,13 @@ def create_department():
 def toggle_department_active(id):
     """Archive/reactivate a department/business unit/branch (soft, preserves FK history)"""
     if not current_user.is_admin():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
 
     from models.department import Department
     dept = Department.get_by_id(id)
     if not dept:
-        flash('Not found.', 'danger')
+        flash(gettext('Not found.'), 'danger')
         return redirect(url_for('admin.list_departments'))
     new_state = not dept.is_active
     Department.set_active(id, new_state)
@@ -1122,7 +1123,7 @@ def toggle_department_active(id):
 def edit_department(id):
     """Edit department"""
     if not current_user.is_admin():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
 
     name = request.form.get('name')
@@ -1134,7 +1135,7 @@ def edit_department(id):
     from models.department import Department
     try:
         Department.update(id, name, code, description, unit_type=unit_type, parent_id=parent_id)
-        flash('Department updated successfully.', 'success')
+        flash(gettext('Department updated successfully.'), 'success')
         AuditLog.log(current_user.id, 'Update Department', 'Admin', id, f'Updated department {name}')
     except Exception as e:
         flash(f'Error updating department: {str(e)}', 'danger')
@@ -1146,7 +1147,7 @@ def edit_department(id):
 def delete_department(id):
     """Delete department"""
     if not current_user.is_admin():
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
     from models.department import Department
@@ -1154,7 +1155,7 @@ def delete_department(id):
         # Check if used by users or policies
         # TODO: Implement strict dependency check
         Department.delete(id)
-        flash('Department deleted successfully.', 'success')
+        flash(gettext('Department deleted successfully.'), 'success')
         AuditLog.log(current_user.id, 'Delete Department', 'Admin', id, 'Deleted department')
     except Exception as e:
         flash(f'Error deleting department: {str(e)}', 'danger')
@@ -1321,7 +1322,7 @@ def org_unit_create():
     code = (request.form.get('code') or '').strip().upper()
     name = (request.form.get('name_en') or '').strip()
     if not code or not name:
-        flash('Code and name are both required.', 'danger')
+        flash(gettext('Code and name are both required.'), 'danger')
         return redirect(url_for('admin.org_tree'))
     try:
         execute_db("""INSERT INTO org_units
@@ -1335,11 +1336,11 @@ def org_unit_create():
                     bool(request.form.get('is_legal_entity')),
                     (request.form.get('country') or '').strip() or None,
                     current_user.id))
-        flash(f'Unit "{name}" created.', 'success')
+        flash(gettext('Unit "%(name)s" created.', name=name), 'success')
     except Exception as e:
         msg = str(e)
         if 'org_units_code_uniq' in msg:
-            flash(f'Code "{code}" is already in use.', 'danger')
+            flash(gettext('Code "%(code)s" is already in use.', code=code), 'danger')
         else:
             flash(f'Could not create unit: {msg[:160]}', 'danger')
     return redirect(url_for('admin.org_tree'))
@@ -1356,23 +1357,23 @@ def org_unit_update(unit_id):
         kids = query_db("SELECT count(*) AS c FROM org_units WHERE parent_id=%s AND is_active",
                         (unit_id,), one=True)
         if dict(kids)['c']:
-            flash('Deactivate or move the child units first.', 'danger')
+            flash(gettext('Deactivate or move the child units first.'), 'danger')
             return redirect(url_for('admin.org_tree'))
         staff = query_db("SELECT count(*) AS c FROM users WHERE org_unit_id=%s", (unit_id,), one=True)
         if dict(staff)['c']:
             flash(f'{dict(staff)["c"]} user(s) are still posted to this unit. Move them first.', 'danger')
             return redirect(url_for('admin.org_tree'))
         execute_db("UPDATE org_units SET is_active=FALSE WHERE id=%s", (unit_id,))
-        flash('Unit deactivated. Its history is kept.', 'info')
+        flash(gettext('Unit deactivated. Its history is kept.'), 'info')
 
     elif action == 'reactivate':
         execute_db("UPDATE org_units SET is_active=TRUE WHERE id=%s", (unit_id,))
-        flash('Unit reactivated.', 'success')
+        flash(gettext('Unit reactivated.'), 'success')
 
     else:
         new_parent = request.form.get('parent_id') or None
         if new_parent and int(new_parent) == unit_id:
-            flash('A unit cannot be its own parent.', 'danger')
+            flash(gettext('A unit cannot be its own parent.'), 'danger')
             return redirect(url_for('admin.org_tree'))
         try:
             execute_db("""UPDATE org_units SET name_en=%s, name_ar=%s, code=%s,
@@ -1388,7 +1389,7 @@ def org_unit_update(unit_id):
                         (request.form.get('country') or '').strip() or None,
                         request.form.get('head_user_id') or None,
                         unit_id))
-            flash('Unit updated.', 'success')
+            flash(gettext('Unit updated.'), 'success')
         except Exception as e:
             # the trigger raises on cycles, which is the case worth naming
             flash('Could not update: ' + ('that move would create a loop in the tree.'
@@ -1413,7 +1414,7 @@ def org_user_scope(user_id):
         if request.form.get('action') == 'delete':
             execute_db("DELETE FROM user_org_scope_rules WHERE id=%s AND user_id=%s",
                        (request.form.get('rule_id'), user_id))
-            flash('Scope rule removed.', 'info')
+            flash(gettext('Scope rule removed.'), 'info')
         else:
             rt = request.form.get('rule_type')
             execute_db("""INSERT INTO user_org_scope_rules
@@ -1427,12 +1428,12 @@ def org_user_scope(user_id):
                         request.form.get('match_type_id') or None,
                         bool(request.form.get('is_exclusion')),
                         current_user.id))
-            flash('Scope rule added.', 'success')
+            flash(gettext('Scope rule added.'), 'success')
         return redirect(url_for('admin.org_user_scope', user_id=user_id))
 
     user = query_db("SELECT * FROM users WHERE id=%s", (user_id,), one=True)
     if not user:
-        flash('User not found.', 'danger')
+        flash(gettext('User not found.'), 'danger')
         return redirect(url_for('admin.list_users'))
 
     rules = query_db("""SELECT r.*, o.name_en AS unit_name, ro.name_en AS root_name,
@@ -1480,7 +1481,7 @@ def document_types():
                             int(request.form.get('default_review_months') or 12),
                             int(request.form.get('sort_order') or 999),
                             current_user.id))
-                flash('Document type created.', 'success')
+                flash(gettext('Document type created.'), 'success')
             except Exception as e:
                 flash('Could not create: ' + ('that code already exists.'
                       if 'document_types_code_key' in str(e) else str(e)[:150]), 'danger')
@@ -1499,12 +1500,12 @@ def document_types():
                         int(request.form.get('default_review_months') or 12),
                         int(request.form.get('sort_order') or 999),
                         request.form.get('type_id')))
-            flash('Document type updated.', 'success')
+            flash(gettext('Document type updated.'), 'success')
 
         elif act == 'toggle':
             execute_db("UPDATE document_types SET is_active = NOT is_active WHERE id=%s",
                        (request.form.get('type_id'),))
-            flash('Document type status changed.', 'info')
+            flash(gettext('Document type status changed.'), 'info')
 
         elif act == 'delete':
             tid = request.form.get('type_id')
@@ -1518,7 +1519,7 @@ def document_types():
                       'danger')
             else:
                 execute_db("DELETE FROM document_types WHERE id=%s", (tid,))
-                flash('Document type deleted.', 'success')
+                flash(gettext('Document type deleted.'), 'success')
 
         return redirect(url_for('admin.document_types'))
 
@@ -1544,7 +1545,7 @@ def document_workflow(type_id):
 
     dt = query_db("SELECT * FROM document_types WHERE id=%s", (type_id,), one=True)
     if not dt:
-        flash('Document type not found.', 'danger')
+        flash(gettext('Document type not found.'), 'danger')
         return redirect(url_for('admin.document_types'))
 
     wf = D.get_workflow_for(type_id)
@@ -1569,7 +1570,7 @@ def document_workflow(type_id):
                         (request.form.get('approver_role') or '').strip() or None,
                         bool(request.form.get('is_mandatory')),
                         int(request.form.get('sla_days') or 7)))
-            flash('Stage added.', 'success')
+            flash(gettext('Stage added.'), 'success')
 
         elif act == 'update_stage':
             execute_db("""UPDATE approval_workflow_stages
@@ -1583,12 +1584,12 @@ def document_workflow(type_id):
                         bool(request.form.get('is_mandatory')),
                         int(request.form.get('sla_days') or 7),
                         request.form.get('stage_id'), wf['id']))
-            flash('Stage updated.', 'success')
+            flash(gettext('Stage updated.'), 'success')
 
         elif act == 'toggle_stage':
             execute_db("UPDATE approval_workflow_stages SET is_enabled = NOT is_enabled "
                        "WHERE id=%s AND workflow_id=%s", (request.form.get('stage_id'), wf['id']))
-            flash('Stage enabled/disabled.', 'info')
+            flash(gettext('Stage enabled/disabled.'), 'info')
 
         elif act == 'delete_stage':
             execute_db("DELETE FROM approval_workflow_stages WHERE id=%s AND workflow_id=%s",
@@ -1599,7 +1600,7 @@ def document_workflow(type_id):
             for i, r in enumerate(rows, start=1):
                 execute_db("UPDATE approval_workflow_stages SET stage_order=%s WHERE id=%s",
                            (i, dict(r)['id']))
-            flash('Stage removed.', 'info')
+            flash(gettext('Stage removed.'), 'info')
 
         elif act in ('move_up', 'move_down'):
             sid = request.form.get('stage_id')
@@ -1643,7 +1644,7 @@ def user_mfa(user_id):
     target = query_db("SELECT id, email, first_name, last_name, role, mfa_enabled "
                       "FROM users WHERE id=%s", (user_id,), one=True)
     if not target:
-        flash('User not found.', 'danger')
+        flash(gettext('User not found.'), 'danger')
         return redirect(url_for('admin.list_users'))
     target = dict(target)
     name = f"{target['first_name']} {target['last_name']}".strip() or target['email']
@@ -1662,29 +1663,29 @@ def user_mfa(user_id):
 
     elif action == 'require':
         execute_db("UPDATE users SET mfa_required_override=TRUE WHERE id=%s", (user_id,))
-        flash(f'MFA is now required for {name}.', 'success')
+        flash(gettext('MFA is now required for %(name)s.', name=name), 'success')
 
     elif action == 'not_required':
         if target['role'] in ('admin', 'compliance_officer', 'compliance_manager'):
             flash(f'{name} holds a privileged role. Lifting MFA for them is possible, '
                   f'but weakens a control an auditor will look for.', 'warning')
         execute_db("UPDATE users SET mfa_required_override=FALSE WHERE id=%s", (user_id,))
-        flash(f'MFA is no longer required for {name}. They may still enable it themselves.',
+        flash(gettext('MFA is no longer required for %(name)s. They may still enable it themselves.', name=name),
               'info')
 
     elif action == 'follow_role':
         execute_db("UPDATE users SET mfa_required_override=NULL WHERE id=%s", (user_id,))
-        flash(f'{name} now follows the default rule for their role.', 'info')
+        flash(gettext('%(name)s now follows the default rule for their role.', name=name), 'info')
 
     elif action == 'disable':
         if not reason:
-            flash('Turning off an active second factor needs a reason.', 'danger')
+            flash(gettext('Turning off an active second factor needs a reason.'), 'danger')
             return redirect(request.referrer or url_for('admin.list_users'))
         execute_db("UPDATE users SET mfa_enabled=FALSE WHERE id=%s", (user_id,))
-        flash(f'MFA disabled for {name}.', 'warning')
+        flash(gettext('MFA disabled for %(name)s.', name=name), 'warning')
 
     else:
-        flash('Unknown MFA action.', 'danger')
+        flash(gettext('Unknown MFA action.'), 'danger')
         return redirect(request.referrer or url_for('admin.list_users'))
 
     execute_db("""INSERT INTO mfa_audit (user_id, action, performed_by, reason, ip_address)

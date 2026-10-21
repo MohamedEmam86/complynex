@@ -32,6 +32,7 @@ from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from flask_babel import gettext
 from flask import (
     render_template, redirect, url_for, request,
     flash, current_app, abort, session, jsonify, Response
@@ -421,7 +422,7 @@ def create_campaign():
         logo_url       = request.form.get('logo_url', '').strip()
 
         if not name or not email_subject:
-            flash('Campaign name and email subject are required.', 'danger')
+            flash(gettext('Campaign name and email subject are required.'), 'danger')
             return render_template('phishing/campaign_form.html')
 
         # execute_db() returns rowcount on Postgres, not the new row's id (a pre-existing
@@ -444,7 +445,7 @@ def create_campaign():
         campaign_id = cursor.fetchone()['id']
         db.commit()
         _log_audit('campaign_created', f'Campaign: {name} (id={campaign_id})')
-        flash(f'Campaign "{name}" created successfully.', 'success')
+        flash(gettext('Campaign "%(name)s" created successfully.', name=name), 'success')
         return redirect(url_for('phishing.campaign_detail', campaign_id=campaign_id))
 
     return render_template('phishing/campaign_form.html')
@@ -550,7 +551,7 @@ def manage_recipients(campaign_id):
     if not campaign:
         abort(404)
     if campaign['status'] == 'sent':
-        flash('Cannot modify recipients of a sent campaign.', 'warning')
+        flash(gettext('Cannot modify recipients of a sent campaign.'), 'warning')
         return redirect(url_for('phishing.campaign_detail', campaign_id=campaign_id))
 
     if request.method == 'POST':
@@ -592,7 +593,7 @@ def manage_recipients(campaign_id):
             added += 1
 
         if added:
-            flash(f'{added} recipient(s) added.', 'success')
+            flash(gettext('%(added)s recipient(s) added.', added=added), 'success')
             _log_audit('recipients_added', f'Campaign {campaign_id}: {added} added')
         for err in errors[:5]:
             flash(err, 'warning')
@@ -612,7 +613,7 @@ def send_campaign(campaign_id):
     if not campaign:
         abort(404)
     if campaign['status'] == 'sent':
-        flash('Already sent.', 'warning')
+        flash(gettext('Already sent.'), 'warning')
         return redirect(url_for('phishing.campaign_detail', campaign_id=campaign_id))
 
     recipients = query_db(
@@ -620,7 +621,7 @@ def send_campaign(campaign_id):
         (campaign_id,)
     )
     if not recipients:
-        flash('No recipients to send to.', 'warning')
+        flash(gettext('No recipients to send to.'), 'warning')
         return redirect(url_for('phishing.campaign_detail', campaign_id=campaign_id))
 
     from flask import current_app as _app
@@ -666,11 +667,11 @@ def send_campaign(campaign_id):
     _log_audit('campaign_sent', f'Campaign {campaign_id}: {sent_count} sent, {failed_count} failed')
 
     if sent_count and failed_count:
-        flash(f'Sent {sent_count}. {failed_count} failed — check logs.', 'warning')
+        flash(gettext('Sent %(sent_count)s. %(failed_count)s failed — check logs.', sent_count=sent_count, failed_count=failed_count), 'warning')
     elif sent_count:
-        flash(f'Successfully sent {sent_count} emails.', 'success')
+        flash(gettext('Successfully sent %(sent_count)s emails.', sent_count=sent_count), 'success')
     else:
-        flash(f'All {failed_count} emails failed to send — campaign left as draft, check mail server logs.', 'danger')
+        flash(gettext('All %(failed_count)s emails failed to send — campaign left as draft, check mail server logs.', failed_count=failed_count), 'danger')
 
     return redirect(url_for('phishing.campaign_detail', campaign_id=campaign_id))
 
@@ -685,14 +686,14 @@ def delete_campaign(campaign_id):
     if not campaign:
         abort(404)
     if campaign['status'] == 'sent':
-        flash('Cannot delete a sent campaign.', 'danger')
+        flash(gettext('Cannot delete a sent campaign.'), 'danger')
         return redirect(url_for('phishing.campaign_detail', campaign_id=campaign_id))
 
     execute_db('DELETE FROM phishing_events     WHERE campaign_id = %s', (campaign_id,))
     execute_db('DELETE FROM phishing_recipients WHERE campaign_id = %s', (campaign_id,))
     execute_db('DELETE FROM phishing_campaigns  WHERE id = %s',          (campaign_id,))
     _log_audit('campaign_deleted', f'Campaign: {campaign["name"]} (id={campaign_id})')
-    flash('Campaign deleted.', 'success')
+    flash(gettext('Campaign deleted.'), 'success')
     return redirect(url_for('phishing.dashboard'))
 
 

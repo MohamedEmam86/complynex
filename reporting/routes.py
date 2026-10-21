@@ -15,6 +15,7 @@
 # ComplyNex Full Compliance Platform (CMS) — Proprietary & Confidential
 # =============================================================================
 
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_from_directory, current_app
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -70,12 +71,12 @@ def view_submission(id):
     submission = RegulatoryReportSubmission.get_by_id(id)
     
     if not submission:
-        flash('Submission not found.', 'danger')
+        flash(gettext('Submission not found.'), 'danger')
         return redirect(url_for('reporting.dashboard'))
         
     if request.method == 'POST':
         if not current_user.can_edit('reports'):
-            flash('You do not have permission to update this submission.', 'danger')
+            flash(gettext('You do not have permission to update this submission.'), 'danger')
             return redirect(url_for('reporting.view_submission', id=id))
 
         # Handle file upload
@@ -101,7 +102,7 @@ def view_submission(id):
                                reference=reference,
                                notes=notes)
         AuditLog.log(current_user.id, 'Report Submission Update', 'Reporting', id, f'Updated status to {status} for {submission.report_name}', request.remote_addr)
-        flash('Submission updated.', 'success')
+        flash(gettext('Submission updated.'), 'success')
         return redirect(url_for('reporting.view_submission', id=id))
         
     return render_template('reporting/detail.html', submission=submission)
@@ -114,7 +115,7 @@ def download_attachment(id):
     """Serve a submission's attachment — same module guard as viewing the submission."""
     submission = RegulatoryReportSubmission.get_by_id(id)
     if not submission or not submission.attachment_path:
-        flash('Attachment not found.', 'danger')
+        flash(gettext('Attachment not found.'), 'danger')
         return redirect(url_for('reporting.dashboard'))
     return serve_uploaded_file(submission.attachment_path)
 
@@ -195,7 +196,7 @@ def generate_calendar():
                 count += 1
                 
     AuditLog.log(current_user.id, 'Generate Calendar', 'Reporting', None, f'Generated {count} new submissions.', request.remote_addr)
-    flash(f'Reporting calendar updated. {count} new submissions generated.', 'info')
+    flash(gettext('Reporting calendar updated. %(count)s new submissions generated.', count=count), 'info')
     return redirect(url_for('reporting.dashboard'))
 
 @reporting_bp.route('/create-submission', methods=['POST'])
@@ -213,7 +214,7 @@ def create_submission():
         new_frequency = request.form.get('new_frequency')
         
         if not new_report_name:
-             flash('Report Name is required for new reports.', 'danger')
+             flash(gettext('Report Name is required for new reports.'), 'danger')
              return redirect(url_for('reporting.dashboard'))
 
         # Check for regulator or create simplified logic
@@ -243,7 +244,7 @@ def create_submission():
     notes = request.form.get('notes')
     
     if not report_id or not due_date:
-        flash('Report and Due Date are required.', 'danger')
+        flash(gettext('Report and Due Date are required.'), 'danger')
         return redirect(url_for('reporting.dashboard'))
         
     try:
@@ -257,7 +258,7 @@ def create_submission():
             'prepared_by': current_user.id
         })
         AuditLog.log(current_user.id, 'Manual Report Submission', 'Reporting', submission_id, f'Created manual submission for report {report_id}', request.remote_addr)
-        flash('New submission created successfully.', 'success')
+        flash(gettext('New submission created successfully.'), 'success')
         return redirect(url_for('reporting.view_submission', id=submission_id))
     except Exception as e:
         flash(f'Error creating submission: {str(e)}', 'danger')
@@ -317,7 +318,7 @@ def policy_acknowledgments(id):
 
     policy = Policy.get_by_id(id)
     if not policy:
-        flash('Policy not found.', 'danger')
+        flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('reporting.extended_reports'))
 
     acks = PolicyAcknowledgment.get_acknowledgments(id)
@@ -401,7 +402,7 @@ def manage_report(id):
     if id:
         report = RegulatoryReport.get_by_id(id)
         if not report:
-            flash('Report not found.', 'danger')
+            flash(gettext('Report not found.'), 'danger')
             return redirect(url_for('reporting.dashboard'))
 
     if request.method == 'POST':
@@ -420,11 +421,11 @@ def manage_report(id):
         if id:
              report.update(data)
              AuditLog.log(current_user.id, 'Update Report Template', 'Reporting', id, f'Updated report template {data["report_name"]}', request.remote_addr)
-             flash('Report updated successfully.', 'success')
+             flash(gettext('Report updated successfully.'), 'success')
         else:
              new_id = RegulatoryReport.create(data)
              AuditLog.log(current_user.id, 'Create Report Template', 'Reporting', new_id, f'Created report template {data["report_name"]}', request.remote_addr)
-             flash('New report template created.', 'success')
+             flash(gettext('New report template created.'), 'success')
         
         return redirect(url_for('reporting.dashboard'))
 
@@ -462,7 +463,7 @@ def manage_regulator(id):
     if id:
         regulator = Regulator.get_by_id(id)
         if not regulator:
-            flash('Regulator not found.', 'danger')
+            flash(gettext('Regulator not found.'), 'danger')
             return redirect(url_for('reporting.list_regulators'))
 
     if request.method == 'POST':
@@ -479,11 +480,11 @@ def manage_regulator(id):
         if id:
              regulator.update(data)
              AuditLog.log(current_user.id, 'Update Regulator', 'Reporting', id, f'Updated regulator {data["regulator_name"]}', request.remote_addr)
-             flash('Regulator updated successfully.', 'success')
+             flash(gettext('Regulator updated successfully.'), 'success')
         else:
              new_id = Regulator.create(data)
              AuditLog.log(current_user.id, 'Create Regulator', 'Reporting', new_id, f'Created regulator {data["regulator_name"]}', request.remote_addr)
-             flash('New regulator created.', 'success')
+             flash(gettext('New regulator created.'), 'success')
         
         return redirect(url_for('reporting.list_regulators'))
 

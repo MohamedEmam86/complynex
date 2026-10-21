@@ -15,6 +15,7 @@
 # ComplyNex Full Compliance Platform (CMS) — Proprietary & Confidential
 # =============================================================================
 
+from flask_babel import gettext
 from flask import render_template, redirect, url_for, flash, request, Response, current_app, send_from_directory
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -184,7 +185,7 @@ def create_merchant():
         _sync_party_registry(merchant_id)
         _publish_ubo_updated_event(merchant_id, request.form)
 
-        flash('Merchant KYC record created successfully.', 'success')
+        flash(gettext('Merchant KYC record created successfully.'), 'success')
         return redirect(url_for('merchant_kyc.merchant_list'))
     
     return render_template('merchant_kyc/form.html')
@@ -199,7 +200,7 @@ def view_merchant(id):
     db = get_db()
     merchant = db.execute('SELECT * FROM merchants WHERE id = %s', (id,)).fetchone()
     if not merchant:
-        flash('Merchant not found.', 'danger')
+        flash(gettext('Merchant not found.'), 'danger')
         return redirect(url_for('merchant_kyc.merchant_list'))
     documents = _get_documents(id)
     return render_template('merchant_kyc/view.html', merchant=merchant, documents=documents)
@@ -214,7 +215,7 @@ def edit_merchant(id):
     db = get_db()
     merchant = db.execute('SELECT * FROM merchants WHERE id = %s', (id,)).fetchone()
     if not merchant:
-        flash('Merchant not found.', 'danger')
+        flash(gettext('Merchant not found.'), 'danger')
         return redirect(url_for('merchant_kyc.merchant_list'))
     
     if request.method == 'POST':
@@ -270,7 +271,7 @@ def edit_merchant(id):
         _sync_party_registry(id)
         _publish_ubo_updated_event(id, request.form)
 
-        flash('Merchant KYC updated successfully.', 'success')
+        flash(gettext('Merchant KYC updated successfully.'), 'success')
         return redirect(url_for('merchant_kyc.view_merchant', id=id))
     
     documents = _get_documents(id)
@@ -286,7 +287,7 @@ def send_kyc_link(id):
     db = get_db()
     merchant = db.execute('SELECT * FROM merchants WHERE id = %s', (id,)).fetchone()
     if not merchant:
-        flash('Merchant not found.', 'danger')
+        flash(gettext('Merchant not found.'), 'danger')
         return redirect(url_for('merchant_kyc.merchant_list'))
     
     token = merchant['kyc_token']
@@ -333,7 +334,7 @@ def send_kyc_link(id):
     db.execute("UPDATE merchants SET kyb_link_sent_via='whatsapp', updated_at=CURRENT_TIMESTAMP WHERE id=%s", (id,))
     db.commit()
 
-    flash(f'KYB link generated successfully.', 'success')
+    flash(gettext('KYB link generated successfully.'), 'success')
     return render_template('merchant_kyc/send_kyc.html',
         merchant=merchant,
         public_url=public_url,
@@ -355,7 +356,7 @@ def approve_merchant(id):
         WHERE id = %s
     ''', (current_user.id, current_user.id, id))
     db.commit()
-    flash('Merchant KYC approved.', 'success')
+    flash(gettext('Merchant KYC approved.'), 'success')
     return redirect(url_for('merchant_kyc.view_merchant', id=id))
 
 
@@ -373,7 +374,7 @@ def reject_merchant(id):
         WHERE id = %s
     ''', (current_user.id, reason, current_user.id, id))
     db.commit()
-    flash('Merchant KYC rejected.', 'warning')
+    flash(gettext('Merchant KYC rejected.'), 'warning')
     return redirect(url_for('merchant_kyc.view_merchant', id=id))
 
 
@@ -494,7 +495,7 @@ def download_document(doc_id):
     db = get_db()
     doc = db.execute('SELECT * FROM merchant_kyc_documents WHERE id = %s', (doc_id,)).fetchone()
     if not doc:
-        flash('Document not found.', 'danger')
+        flash(gettext('Document not found.'), 'danger')
         return redirect(url_for('merchant_kyc.merchant_list'))
     
     upload_path = os.path.join(current_app.root_path, UPLOAD_FOLDER)
@@ -511,7 +512,7 @@ def delete_document(doc_id):
     db = get_db()
     doc = db.execute('SELECT * FROM merchant_kyc_documents WHERE id = %s', (doc_id,)).fetchone()
     if not doc:
-        flash('Document not found.', 'danger')
+        flash(gettext('Document not found.'), 'danger')
         return redirect(url_for('merchant_kyc.merchant_list'))
     
     # Remove file from disk
@@ -521,7 +522,7 @@ def delete_document(doc_id):
     
     db.execute('DELETE FROM merchant_kyc_documents WHERE id = %s', (doc_id,))
     db.commit()
-    flash('Document deleted.', 'success')
+    flash(gettext('Document deleted.'), 'success')
     return redirect(url_for('merchant_kyc.view_merchant', id=doc['merchant_id']))
 
 
@@ -534,7 +535,7 @@ def run_screening(id):
     db = get_db()
     row = db.execute('SELECT * FROM merchants WHERE id = %s', (id,)).fetchone()
     if not row:
-        flash('Merchant not found.', 'danger')
+        flash(gettext('Merchant not found.'), 'danger')
         return redirect(url_for('merchant_kyc.merchant_list'))
     merchant = dict(row)
 
@@ -693,7 +694,7 @@ def run_screening(id):
     db.commit()
 
     if total_high_risk > 0:
-        flash(f'Screening completed: {total_high_risk} high-risk match(es) found! Review required in Screening Queue.', 'danger')
+        flash(gettext('Screening completed: %(total_high_risk)s high-risk match(es) found! Review required in Screening Queue.', total_high_risk=total_high_risk), 'danger')
         try:
             from events.publisher import publish_event
             publish_event(
@@ -712,7 +713,7 @@ def run_screening(id):
         except Exception:
             current_app.logger.exception('Failed to publish merchant.screening.hit event for merchant %s', id)
     else:
-        flash(f'Screening completed: All clear. No sanctions matches found.', 'success')
+        flash(gettext('Screening completed: All clear. No sanctions matches found.'), 'success')
 
     return redirect(url_for('merchant_kyc.view_merchant', id=id))
 

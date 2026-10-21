@@ -16,6 +16,7 @@
 # =============================================================================
 
 from utils.nid_parser import parse_egyptian_nid
+from flask_babel import gettext
 from flask import render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -149,9 +150,9 @@ def create_customer():
                 # a compliance officer to adjudicate, never an automatic REJECTED.
                 if res['screening_result'] == 'POTENTIAL_MATCH':
                     db.execute("UPDATE customers SET status = 'UNDER_REVIEW', risk_classification = 'HIGH' WHERE id = %s", (customer_id,))
-                    flash(f'⚠️ WARNING: Automated screening found potential matches for "{screening_name}". Customer assigned HIGH risk and status set to UNDER_REVIEW.', 'warning')
+                    flash(gettext('⚠️ WARNING: Automated screening found potential matches for "%(screening_name)s". Customer assigned HIGH risk and status set to UNDER_REVIEW.', screening_name=screening_name), 'warning')
                 else:
-                    flash(f'✅ Screening completed for "{screening_name}". No hits found.')
+                    flash(gettext('✅ Screening completed for "%(screening_name)s". No hits found.', screening_name=screening_name))
 
                 db.commit()
 
@@ -175,7 +176,7 @@ def create_customer():
             
             return redirect(url_for('aml.customer_list'))
         else:
-            flash('Error creating customer.', 'danger')
+            flash(gettext('Error creating customer.'), 'danger')
         
     return render_template('aml/customer_form.html', user=current_user)
 
@@ -186,7 +187,7 @@ def view_customer(id):
     db = get_db()
     customer = db.execute("SELECT * FROM customers WHERE id = %s", (id,)).fetchone()
     if not customer:
-        flash('Customer not found.', 'danger')
+        flash(gettext('Customer not found.'), 'danger')
         return redirect(url_for('aml.customer_list'))
     
     recent_alerts = db.execute("""
@@ -252,7 +253,7 @@ def edit_customer(id):
     db = get_db()
     customer = db.execute("SELECT * FROM customers WHERE id = %s", (id,)).fetchone()
     if not customer:
-        flash('Customer not found.', 'danger')
+        flash(gettext('Customer not found.'), 'danger')
         return redirect(url_for('aml.customer_list'))
         
     if request.method == 'POST':
@@ -293,10 +294,10 @@ def edit_customer(id):
             # Re-calculate risk after edit
             calculate_customer_risk(id)
             db.commit()
-            flash('Customer information updated successfully.')
+            flash(gettext('Customer information updated successfully.'))
             return redirect(url_for('aml.view_customer', id=id))
         else:
-            flash('Error updating customer.', 'danger')
+            flash(gettext('Error updating customer.'), 'danger')
             db.rollback()
         
     return render_template('aml/customer_form.html', customer=customer, user=current_user)
@@ -336,7 +337,7 @@ def create_sar():
         """, (sar_reference, activity_date, discovery_date, customer_id, amount, description, current_user.id))
         
         db.commit()
-        flash(f'SAR {sar_reference} filed successfully and queued for compliance review.')
+        flash(gettext('SAR %(sar_reference)s filed successfully and queued for compliance review.', sar_reference=sar_reference))
         return redirect(url_for('aml.sar_list'))
     
     customers = db.execute("SELECT id, full_name, customer_reference FROM customers ORDER BY full_name").fetchall()
@@ -444,7 +445,7 @@ def run_customer_screening(id):
     db = get_db()
     row = db.execute("SELECT * FROM customers WHERE id = %s", (id,)).fetchone()
     if not row:
-        flash('Customer not found.', 'danger')
+        flash(gettext('Customer not found.'), 'danger')
         return redirect(url_for('aml.customer_list'))
     customer = dict(row)
 
@@ -539,7 +540,7 @@ def print_cdd_form(id):
     db = get_db()
     row = db.execute("SELECT * FROM customers WHERE id = %s", (id,)).fetchone()
     if not row:
-        flash('Customer not found.', 'danger')
+        flash(gettext('Customer not found.'), 'danger')
         return redirect(url_for('aml.customer_list'))
     customer = dict(row)
 
@@ -649,7 +650,7 @@ def create_transaction():
             if alerts:
                 flash(f'Transaction saved. {len(alerts)} alert(s) raised: {", ".join(a["rule"] for a in alerts)}', 'warning')
             else:
-                flash('Transaction saved. No alerts triggered.', 'success')
+                flash(gettext('Transaction saved. No alerts triggered.'), 'success')
             return redirect(url_for('aml.transaction_list'))
         except Exception as e:
             db.rollback()
@@ -672,7 +673,7 @@ def view_transaction(tx_id):
         WHERE t.id = %s
     """, (tx_id,)).fetchone()
     if not tx:
-        flash('Transaction not found', 'danger')
+        flash(gettext('Transaction not found'), 'danger')
         return redirect(url_for('aml.transaction_list'))
     alerts = db.execute("""
         SELECT a.*, r.rule_name, r.rule_code
@@ -873,7 +874,7 @@ def view_alert(alert_id):
                     flash(_('Alert closed. No linked customer name, so nothing '
                             'was added to the whitelist.'), 'warning')
 
-            flash(f'Alert updated to {new_status}', 'success')
+            flash(gettext('Alert updated to %(new_status)s', new_status=new_status), 'success')
         return redirect(url_for('aml.view_alert', alert_id=alert_id))
 
     alert = db.execute("""
@@ -892,7 +893,7 @@ def view_alert(alert_id):
     """, (alert_id,)).fetchone()
 
     if not alert:
-        flash('Alert not found', 'danger')
+        flash(gettext('Alert not found'), 'danger')
         return redirect(url_for('aml.alert_list'))
 
     tx_ids = json.loads(alert['triggered_transactions'] or '[]')
@@ -932,7 +933,7 @@ def toggle_rule(rule_id):
     db = get_db()
     db.execute("UPDATE tm_rules SET is_active = NOT is_active WHERE id=%s", (rule_id,))
     db.commit()
-    flash('Rule updated', 'success')
+    flash(gettext('Rule updated'), 'success')
     return redirect(url_for('aml.rule_list'))
 
 
@@ -998,12 +999,12 @@ def upload_transactions():
 
     if request.method == 'POST':
         if 'file' not in request.files:
-            flash('No file selected', 'danger')
+            flash(gettext('No file selected'), 'danger')
             return redirect(request.url)
 
         f = request.files['file']
         if not f.filename:
-            flash('No file selected', 'danger')
+            flash(gettext('No file selected'), 'danger')
             return redirect(request.url)
 
         ext = f.filename.rsplit('.', 1)[-1].lower()
@@ -1060,13 +1061,13 @@ def upload_transactions():
                 df = df.fillna('')
                 rows = df.to_dict('records')
             else:
-                flash('Only CSV or XLSX files accepted', 'danger')
+                flash(gettext('Only CSV or XLSX files accepted'), 'danger')
                 return redirect(request.url)
 
             # Enforce row limit
             if len(rows) > MAX_ROWS:
                 rows = rows[:MAX_ROWS]
-                flash(f'File truncated to {MAX_ROWS} rows (max per upload). Split file for more.', 'warning')
+                flash(gettext('File truncated to %(MAX_ROWS)s rows (max per upload). Split file for more.', MAX_ROWS=MAX_ROWS), 'warning')
 
             for i, row in enumerate(rows, 1):
                 try:
@@ -1247,7 +1248,7 @@ def create_rule():
         try:
             code = request.form.get('rule_code','').strip().upper()
             if db.execute("SELECT id FROM tm_rules WHERE rule_code=%s", (code,)).fetchone():
-                flash(f'Rule code {code} already exists', 'danger')
+                flash(gettext('Rule code %(code)s already exists', code=code), 'danger')
                 return render_template('aml/rule_form.html', rule=None, action='Create')
 
             db.execute("""
@@ -1267,7 +1268,7 @@ def create_rule():
                 request.form.get('severity','MEDIUM')
             ))
             db.commit()
-            flash(f'Rule {code} created successfully', 'success')
+            flash(gettext('Rule %(code)s created successfully', code=code), 'success')
             return redirect(url_for('aml.rule_list'))
         except Exception as e:
             flash(f'Error: {str(e)}', 'danger')
@@ -1283,7 +1284,7 @@ def edit_rule(rule_id):
     db = get_db()
     rule = db.execute("SELECT * FROM tm_rules WHERE id=%s", (rule_id,)).fetchone()
     if not rule:
-        flash('Rule not found', 'danger')
+        flash(gettext('Rule not found'), 'danger')
         return redirect(url_for('aml.rule_list'))
 
     if request.method == 'POST':
@@ -1305,7 +1306,7 @@ def edit_rule(rule_id):
                 rule_id
             ))
             db.commit()
-            flash('Rule updated successfully', 'success')
+            flash(gettext('Rule updated successfully'), 'success')
             return redirect(url_for('aml.rule_list'))
         except Exception as e:
             flash(f'Error: {str(e)}', 'danger')
@@ -1321,11 +1322,11 @@ def delete_rule(rule_id):
     db = get_db()
     rule = db.execute("SELECT rule_code FROM tm_rules WHERE id=%s", (rule_id,)).fetchone()
     if rule and rule['rule_code'].startswith('TM0'):
-        flash('Cannot delete built-in rules. Disable them instead.', 'warning')
+        flash(gettext('Cannot delete built-in rules. Disable them instead.'), 'warning')
         return redirect(url_for('aml.rule_list'))
     db.execute("DELETE FROM tm_rules WHERE id=%s", (rule_id,))
     db.commit()
-    flash('Rule deleted', 'success')
+    flash(gettext('Rule deleted'), 'success')
     return redirect(url_for('aml.rule_list'))
 
 
@@ -1442,7 +1443,7 @@ def scenario_simulator():
 
         rule = db.execute("SELECT * FROM tm_rules WHERE id=%s", (rule_id,)).fetchone()
         if not rule:
-            flash('Select a valid rule', 'danger')
+            flash(gettext('Select a valid rule'), 'danger')
             return render_template('aml/scenario_simulator.html',
                                    rules=rules, results=None)
 
@@ -1637,7 +1638,7 @@ def customer_pdf(id):
 
     customer = db.execute("SELECT * FROM customers WHERE id=%s",(id,)).fetchone()
     if not customer:
-        flash('Customer not found','danger')
+        flash(gettext('Customer not found'),'danger')
         return redirect(url_for('aml.customer_list'))
 
     transactions = db.execute("""
@@ -1701,7 +1702,7 @@ def export_customer_pdf(id):
     db = get_db()
     customer = db.execute("SELECT * FROM customers WHERE id = %s", (id,)).fetchone()
     if not customer:
-        flash('Customer not found.', 'danger')
+        flash(gettext('Customer not found.'), 'danger')
         return redirect(url_for('aml.customer_list'))
     html = render_template('aml/pdf/customer_cdd.html', customer=customer)
     pdf = HTML(string=html).write_pdf()
@@ -1764,10 +1765,10 @@ def rule_create():
                 )
             )
             db.commit()
-            flash('Rule submitted for approval.', 'success')
+            flash(gettext('Rule submitted for approval.'), 'success')
             return redirect(url_for('aml.rules_list'))
         except Exception as e:
-            flash(f'Error: {e}', 'danger')
+            flash(gettext('Error: %(e)s', e=e), 'danger')
     return render_template('aml/rules/form.html', rule=None, action='create')
 
 
@@ -1778,7 +1779,7 @@ def rule_edit(rule_id):
     db = get_db()
     rule = db.execute("SELECT * FROM tm_rules WHERE id = %s", (rule_id,)).fetchone()
     if not rule:
-        flash('Rule not found.', 'danger')
+        flash(gettext('Rule not found.'), 'danger')
         return redirect(url_for('aml.rules_list'))
 
     if request.method == 'POST':
@@ -1810,7 +1811,7 @@ def rule_edit(rule_id):
             flash('Edited rule submitted for approval (v%d → v%d).' % (rule['version'], rule['version'] + 1), 'info')
             return redirect(url_for('aml.rules_list'))
         except Exception as e:
-            flash(f'Error: {e}', 'danger')
+            flash(gettext('Error: %(e)s', e=e), 'danger')
 
     return render_template('aml/rules/form.html', rule=dict(rule), action='edit')
 
@@ -1838,7 +1839,7 @@ def rule_approve(rule_id):
         (current_user.id, rule_id)
     )
     db.commit()
-    flash('Rule approved and activated.', 'success')
+    flash(gettext('Rule approved and activated.'), 'success')
     return redirect(url_for('aml.rules_list'))
 
 
@@ -1852,7 +1853,7 @@ def rule_disable(rule_id):
         (current_user.id, rule_id)
     )
     db.commit()
-    flash('Rule disabled.', 'warning')
+    flash(gettext('Rule disabled.'), 'warning')
     return redirect(url_for('aml.rules_list'))
 
 
@@ -1864,7 +1865,7 @@ def rule_rollback(rule_id):
     db = get_db()
     rule = db.execute("SELECT * FROM tm_rules WHERE id = %s", (rule_id,)).fetchone()
     if not rule or not rule['previous_id']:
-        flash('No previous version to roll back to.', 'danger')
+        flash(gettext('No previous version to roll back to.'), 'danger')
         return redirect(url_for('aml.rules_list'))
 
     # Disable current
@@ -1879,7 +1880,7 @@ def rule_rollback(rule_id):
         (current_user.id, rule['previous_id'])
     )
     db.commit()
-    flash('Rolled back to previous rule version.', 'info')
+    flash(gettext('Rolled back to previous rule version.'), 'info')
     return redirect(url_for('aml.rules_list'))
 
 

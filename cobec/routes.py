@@ -18,6 +18,7 @@
 """
 COBEC (Code of Business Ethics & Conduct) Routes
 """
+from flask_babel import gettext
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
@@ -38,7 +39,7 @@ def declare():
     # Check if already declared this year
     existing = COBECDeclaration.get_by_employee_year(current_user.id, year)
     if existing:
-        flash('You have already submitted your Code of Business Ethics & Conduct declaration for this year.', 'info')
+        flash(gettext('You have already submitted your Code of Business Ethics & Conduct declaration for this year.'), 'info')
         return redirect(url_for('cobec.view_declaration', id=existing.id))
     
     if request.method == 'POST':
@@ -59,7 +60,7 @@ def declare():
                     n_type='submission'
                 )
             
-            flash('Declaration submitted successfully. Thank you for your commitment to ethical conduct.', 'success')
+            flash(gettext('Declaration submitted successfully. Thank you for your commitment to ethical conduct.'), 'success')
             return redirect(url_for('cobec.view_declaration', id=declaration_id))
         except Exception as e:
             flash(f'Error submitting declaration: {str(e)}', 'danger')
@@ -90,7 +91,7 @@ def view_declaration(id):
     declaration = COBECDeclaration.get_by_id(id)
     
     if not declaration:
-        flash('Declaration not found.', 'danger')
+        flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('cobec.my_declarations'))
     
     # Permission check
@@ -99,7 +100,7 @@ def view_declaration(id):
     is_admin = current_user.role == 'admin'
     
     if not (is_owner or is_compliance or is_admin):
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
     
     return render_template('cobec/detail.html', declaration=declaration)
@@ -110,7 +111,7 @@ def view_declaration(id):
 def all_declarations():
     """View all COBEC declarations (compliance/admin only)"""
     if current_user.role not in ['admin', 'compliance_officer']:
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
     
     year = request.args.get('year', datetime.now().year, type=int)
@@ -142,7 +143,7 @@ def pending_review():
             declarations_dict[d.id] = d
 
     if not declarations_dict and not (current_user.is_manager() or current_user.is_compliance_officer() or current_user.role == 'admin'):
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
 
     declarations = sorted(declarations_dict.values(), key=lambda x: x.created_at if x.created_at else '', reverse=True)
@@ -155,12 +156,12 @@ def pending_review():
 def review_declaration(id):
     """Review COBEC declaration"""
     if not (current_user.is_manager() or current_user.is_compliance_officer()):
-        flash('Access denied.', 'danger')
+        flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
 
     declaration = COBECDeclaration.get_by_id(id)
     if not declaration:
-        flash('Declaration not found.', 'danger')
+        flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('cobec.pending_review'))
 
     if request.method == 'POST':
@@ -170,15 +171,15 @@ def review_declaration(id):
         if action == 'approve':
             declaration.approve(current_user.id, comments)
             AuditLog.log(current_user.id, 'COBEC Approval', 'COBEC', id, 'Approved COBEC declaration', request.remote_addr)
-            flash('Declaration approved.', 'success')
+            flash(gettext('Declaration approved.'), 'success')
         elif action == 'clarify':
             declaration.request_clarification(current_user.id, comments)
             AuditLog.log(current_user.id, 'COBEC Clarification', 'COBEC', id, 'Requested clarification for COBEC declaration', request.remote_addr)
-            flash('Clarification requested.', 'info')
+            flash(gettext('Clarification requested.'), 'info')
         elif action == 'escalate':
             declaration.escalate(current_user.id, comments)
             AuditLog.log(current_user.id, 'COBEC Escalation', 'COBEC', id, 'Escalated COBEC declaration to compliance', request.remote_addr)
-            flash('Declaration escalated to compliance.', 'warning')
+            flash(gettext('Declaration escalated to compliance.'), 'warning')
 
         return redirect(url_for('cobec.pending_review'))
     
