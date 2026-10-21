@@ -1,0 +1,19 @@
+[Unit]
+Description=ComplyNex Monthly Sanctions/Watchlist List Refresh (manual "Sync Now" available anytime via /screening/update_watchlist)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+ExecStart=/var/www/complynex/venv/bin/python3 /var/www/complynex/scripts/run_sanctions_update.py
+# A full OpenSanctions refresh can be long; cap at 4 hours so a wedged
+# download cannot run forever.
+TimeoutStartSec=14400
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

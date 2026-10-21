@@ -1,0 +1,14 @@
+[Unit]
+Description=ComplyNex eKYC media retention purge
+
+[Service]
+Type=oneshot
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+Environment="PATH=/var/www/complynex/venv/bin"
+ExecStart=/var/www/complynex/venv/bin/python scripts/ekyc_purge_expired.py
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/complynex/ekyc_storage /var/www/complynex/logs

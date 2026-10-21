@@ -1,0 +1,18 @@
+[Unit]
+Description=ComplyNex weekly dependency vulnerability scan (pip-audit)
+
+[Service]
+Type=oneshot
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+Environment="PATH=/var/www/complynex/venv/bin"
+# pip-audit's cache dir resolution (platformdirs) falls back to
+# ~/.cache, and the `complynex` user's $HOME doesn't exist (same root
+# cause as HF_HOME/insightface's model paths elsewhere in this codebase).
+Environment="XDG_CACHE_HOME=/var/www/complynex/.cache"
+ExecStart=/var/www/complynex/venv/bin/python scripts/pip_audit_scan.py
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/complynex/.cache /var/www/complynex/logs

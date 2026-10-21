@@ -1,0 +1,63 @@
+[Unit]
+Description=ComplyNex Semantic Name-Matching Service
+After=network.target complynex.service
+
+[Service]
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+Environment="PATH=/var/www/complynex/venv/bin"
+# This process loads a ~470MB sentence-transformer embedding model plus a
+# ~2.2GB FAISS index of the full watchlist (~3.5GB RSS total) once, in one
+# long-lived process — screening/semantic_matcher.py's SemanticMatcherClient
+# calls it over local HTTP from every gunicorn web worker instead of each
+# worker loading its own copy (see semantic_matcher.py's module docstring).
+# Same OOM/CPU-thrash rationale as complynex-ekyc-worker.service: without
+# these caps, torch/faiss each spawn a thread pool sized to the host's core
+# count by default.
+Environment="OMP_NUM_THREADS=1"
+Environment="OPENBLAS_NUM_THREADS=1"
+# Best-effort reclaim protection (cgroup v2): when this process idles, the
+# kernel swaps its ~1.9GB of model+index pages out (measured ~1-2GB in swap
+# after quiet periods), and the next screening's first semantic search
+# spends >3s paging everything back in — past SemanticMatcherClient's
+# timeout, so that screen silently gets zero semantic candidates.
+# MemoryLow keeps this cgroup's pages resident under normal pressure;
+# complynex-semantic-keepalive.timer covers what MemoryLow can't guarantee
+# (it's best-effort, not a pin).
+MemoryLow=2500M
+# Ceiling added 2026-07-24 alongside the same fix on complynex.service (see
+# that unit for the full incident writeup). First attempt set this to 4G,
+# then 5G — both caused this service's OWN cgroup to OOM-kill it repeatedly
+# during the FAISS index *load* phase (transiently higher than the ~3.5-3.8GB
+# steady-state figure above), which put the box into a restart-loop that
+# itself drove real system memory pressure (swap climbed to 2.4GB). Set to
+# 8G — comfortably above the observed load-time peak — so this ceiling acts
+# purely as a last-resort circuit breaker against a genuine runaway leak, not
+# a routine speed bump during normal startup.
+MemoryMax=8G
+Environment="MKL_NUM_THREADS=1"
+Environment="NUMEXPR_NUM_THREADS=1"
+# Model is fully cached locally already — see semantic_service.py's comment
+# on why this must not depend on huggingface.co being reachable at boot.
+# HF_HOME is explicit because the `complynex` user's $HOME doesn't exist,
+# so default $HOME-relative cache resolution can't find it (same root
+# cause as ekyc/ocr_engine.py's and ekyc/face_match.py's model paths).
+Environment="HF_HOME=/var/www/complynex/.cache/huggingface"
+Environment="HF_HUB_OFFLINE=1"
+Environment="TRANSFORMERS_OFFLINE=1"
+# -c /dev/null: gunicorn auto-discovers gunicorn.conf.py in the CWD, which
+# is the *main app's* config (gevent worker, 4 workers, a post_fork hook
+# for the Postgres pool) — none of which applies here and gevent actively
+# breaks this process (torch's threading conflicts with gevent's event
+# loop). This service needs its own explicit, minimal config instead.
+ExecStart=/var/www/complynex/venv/bin/gunicorn --worker-class sync --workers 1 --threads 1 --timeout 120 --bind 127.0.0.1:8100 -c /dev/null "screening.semantic_service:create_service_app()"
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/complynex/screening /var/www/complynex/.cache/huggingface
+
+[Install]
+WantedBy=multi-user.target

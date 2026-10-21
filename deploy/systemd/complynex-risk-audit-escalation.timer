@@ -1,0 +1,9 @@
+[Unit]
+Description=Run ComplyNex Risk & Internal Audit escalation daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

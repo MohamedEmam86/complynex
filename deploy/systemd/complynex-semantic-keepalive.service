@@ -1,0 +1,23 @@
+[Unit]
+Description=ComplyNex semantic service keepalive probe
+# Probe, don't start: if the semantic service is deliberately stopped this
+# must not resurrect it — curl just fails fast and the timer tries again
+# next interval.
+After=complynex-semantic.service
+
+[Service]
+Type=oneshot
+User=complynex
+Group=complynex
+# One real /search touches every page of the flat FAISS index (a flat
+# inner-product scan reads all vectors), so a single probe every interval
+# keeps the whole index + model hot and marked recently-used — the kernel
+# then reclaims other pages first instead of this service's, and real
+# screenings never hit the pages-swapped-out cold path (was 3-7s of page-in,
+# past the client timeout, on 10/10 cold probes on 2026-07-11).
+# --max-time 60: a genuinely cold probe IS the slow path we're absorbing on
+# the user's behalf — give it time to finish rather than dying half-warm.
+ExecStart=/usr/bin/curl -sS --max-time 60 -X POST -H "Content-Type: application/json" -d '{"name": "keepalive warm probe", "top_k": 1}' -o /dev/null http://127.0.0.1:8100/search
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict

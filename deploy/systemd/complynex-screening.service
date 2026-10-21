@@ -1,0 +1,63 @@
+[Unit]
+# Merchant screening batch. Owned by the system, not by any login session, so
+# it survives SSH disconnection, a closed laptop and a reboot.
+Description=ComplyNex merchant screening batch
+After=network.target postgresql.service elasticsearch.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+EnvironmentFile=/var/www/complynex/.env
+
+# 8 workers, not 12. Each worker thread holds its own engine with its own FAISS
+# index and models; twelve of them reached 9.6 GB on an 11 GB machine and the
+# kernel killed the job at 1,625 names.
+# 6 workers. Each worker thread builds its own engine with its own FAISS index
+# and models — measured at roughly 700 MB each, so 10 workers reached the 7 GB
+# ceiling on warm-up alone. Six fits with room for Elasticsearch, PostgreSQL and
+# the web service on an 11 GB box.
+Environment=SCREEN_WORKERS=6
+# 300, not 1000. Memory grows roughly 100 MB per name screened — a real leak I
+# have not isolated, on top of the per-worker engine cost. At 1000 the process
+# would reach the 7 GB ceiling mid-chunk and be killed rather than exiting
+# cleanly. 300 recycles before that point; the cost is about 40 seconds of model
+# loading per chunk, which is the cheaper failure mode by far.
+Environment=SCREEN_CHUNK=300
+
+ExecStart=/var/www/complynex/venv/bin/python3 tools/healthcheck/run_merchant_screening.py
+
+# The runner exits cleanly after each chunk and is resumable, so a restart
+# resumes from the results file rather than starting over. Exit 64 means every
+# name has been screened — that is the one code that must NOT restart.
+Restart=always
+RestartSec=10
+SuccessExitStatus=64
+RestartPreventExitStatus=64
+
+# Leave headroom for the web service and PostgreSQL on an 11 GB box. If a chunk
+# does misbehave, systemd stops it before the kernel starts choosing victims.
+# MemoryHigh REMOVED. It is a throttle, not a limit: on crossing it the kernel
+# forces synchronous reclaim on every allocation. The cgroup was throttled 1,581
+# times and throughput collapsed to 0.2 names/sec — six times slower than the
+# unlimited run, which is worse than the problem it was meant to solve.
+#
+# MemoryMax alone is the right control here: run at full speed, and if a chunk
+# does reach the ceiling systemd restarts it and the job resumes from the
+# results file. Recovery is cheap; throttling every allocation is not.
+MemoryMax=7G
+
+# Yield to the live application: this is a background report, not a service.
+Nice=10
+# IOSchedulingClass=idle — removed: this job is ES/Postgres bound and idle I/O
+# scheduling was starving its own index reads, holding it near 0.3 names/sec.
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+
+StandardOutput=append:/var/log/complynex-screening.log
+StandardError=append:/var/log/complynex-screening.log
+
+[Install]
+WantedBy=multi-user.target

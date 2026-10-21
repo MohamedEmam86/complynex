@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily Copilot prompt-log retention
+
+[Timer]
+OnCalendar=*-*-* 02:40:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=Run ComplyNex semantic index incremental update every 15 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+# Skips the run if the previous one hasn't finished (it always finishes in
+# seconds/low-minutes once past the initial full-rebuild's runtime, since
+# it only embeds what's new since the last checkpoint) — no overlap risk
+# on top of the explicit complynex-semantic-rebuild.service guard inside
+# the script itself.
+Persistent=false
+
+[Install]
+WantedBy=timers.target

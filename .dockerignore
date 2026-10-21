@@ -1,0 +1,18 @@
+# never bake data or secrets into an image
+.env
+.env.*
+venv/
+logs/
+uploads/
+ekyc_storage/
+attachments/
+backups/
+data/
+.cache/
+*.db
+*.dump
+**/__pycache__/
+.git/
+screening/*.index
+screening/*.npy
+screening/watchlist_semantic_metadata*.json

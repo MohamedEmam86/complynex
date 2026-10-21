@@ -1,0 +1,9 @@
+[Unit]
+Description=Run ComplyNex KRI auto-feed weekly (matches TM Alert Backlog KRI's WEEKLY measurement_frequency)
+
+[Timer]
+OnCalendar=Mon *-*-* 01:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

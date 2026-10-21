@@ -1,0 +1,9 @@
+[Unit]
+Description=Run ComplyNex eKYC media retention purge daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

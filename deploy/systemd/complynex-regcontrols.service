@@ -1,0 +1,11 @@
+[Unit]
+Description=ComplyNex regulatory control engine (due controls + sweeps)
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+ExecStart=/var/www/complynex/venv/bin/python scripts/regcontrols_run.py
+TimeoutStartSec=3600

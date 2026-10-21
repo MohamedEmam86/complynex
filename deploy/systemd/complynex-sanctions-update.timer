@@ -1,0 +1,19 @@
+[Unit]
+Description=Monthly trigger for ComplyNex sanctions list refresh
+
+[Timer]
+# Changed from daily to monthly 2026-07-24 per compliance decision: a fixed
+# monthly cadence is more predictable to govern/audit than a silent daily
+# job, and an admin/compliance officer can always force an immediate refresh
+# via the "Sync Now" action in the screening dashboard (POST
+# /screening/update_watchlist) if an urgent list update comes in before the
+# next scheduled run — see screening/routes.py's update_watchlist().
+# 2nd of the month (a day after the semantic index's first-Saturday full
+# rebuild has had a chance to start) at 03:30 local, low-traffic window;
+# randomized so restarts don't stampede.
+OnCalendar=*-*-02 03:30:00
+RandomizedDelaySec=1800
+Persistent=true
+
+[Install]
+WantedBy=timers.target

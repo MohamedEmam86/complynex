@@ -1,0 +1,18 @@
+[Unit]
+Description=ComplyNex PEP Management Background Scheduler
+After=network.target postgresql.service complynex.service
+
+[Service]
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+Environment="PATH=/var/www/complynex/venv/bin"
+EnvironmentFile=/var/www/complynex/.env
+ExecStart=/var/www/complynex/venv/bin/python /var/www/complynex/scripts/run_pep_scheduler.py
+Restart=always
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target

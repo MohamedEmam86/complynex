@@ -1,0 +1,16 @@
+[Unit]
+Description=ComplyNex weekly full backup — Sundays 02:00
+
+[Timer]
+OnCalendar=Sun *-*-* 02:00:00
+
+# If the VPS was off or rebooting at 02:00, run when it comes back rather than
+# skipping the week. The previous schedule stopped on 17 July and went unnoticed
+# for eleven days; a missed run should catch up, not disappear.
+Persistent=true
+
+# Spread the start so it never collides exactly with the other Sunday timers.
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

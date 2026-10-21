@@ -1,0 +1,31 @@
+[Unit]
+Description=ComplyNex Full Compliance Platform (CMS)
+After=network.target postgresql.service redis-server.service elasticsearch.service
+
+[Service]
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+Environment="PATH=/var/www/complynex/venv/bin"
+ExecStart=/var/www/complynex/venv/bin/gunicorn -c /var/www/complynex/gunicorn.conf.py "app:create_app()"
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Memory ceiling added 2026-07-24 after a production incident: one worker
+# grew to 11.4GB RSS within minutes and was OOM-killed by the kernel, which
+# (because there was no cgroup limit) let it starve the rest of the VM
+# (Postgres, Elasticsearch, the semantic service) on the way down instead of
+# failing in isolation. Normal steady-state footprint for this whole service
+# (master + 4 workers, sharing pages via preload_app) is ~600-800MB, so these
+# ceilings leave generous headroom for legitimate spikes (bulk screening,
+# report generation) while guaranteeing a future runaway leak gets contained
+# and killed within this service's own cgroup — not the whole box. Paired
+# with gunicorn.conf.py's max_requests (periodic worker recycling) and the
+# _pool_lock fix in database/db.py (the actual root cause of this incident).
+MemoryHigh=2500M
+MemoryMax=3G
+
+[Install]
+WantedBy=multi-user.target

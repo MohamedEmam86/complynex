@@ -1,0 +1,23 @@
+[Unit]
+Description=ComplyNex weekly full backup to Google Drive
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/complynex-backup.sh
+
+# A 7 GB upload on a slow link should not be killed halfway.
+TimeoutStartSec=4h
+
+# Yield to the live application. The backup is important but not urgent.
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+
+StandardOutput=append:/var/log/complynex-backup.log
+StandardError=append:/var/log/complynex-backup.log
+
+[Install]
+WantedBy=multi-user.target

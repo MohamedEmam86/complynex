@@ -1,0 +1,27 @@
+[Unit]
+Description=Monthly full rebuild of the ComplyNex semantic index
+
+[Timer]
+# First Saturday of the month, 02:00 UTC — a ~10h low-priority batch job,
+# so start it in the quietest window. Persistent catches a missed window
+# after downtime.
+#
+# complynex-semantic-reindex.timer (the 15-minute delta path this comment
+# used to describe) was deliberately DISABLED 2026-07-24: a bug in its
+# retry handling caused the same failed batch to be silently re-embedded
+# and re-appended on every retry with no deduplication, which grew the
+# delta index to 5.17M duplicate vectors (7.4GB) and OOM-killed the
+# service (see database/db.py and semantic_matcher.py's add_to_delta for
+# the fix, since applied). Per the compliance owner's decision, this
+# monthly full rebuild is now the ONLY automated path that keeps the
+# semantic index in sync with new watchlist/PEP/blacklist rows — simpler
+# to govern and audit than a silent 15-minute background job. If an
+# urgent update can't wait for the next scheduled window, run this
+# service manually: `sudo systemctl start complynex-semantic-rebuild.service`
+# (takes ~10h; complynex.service keeps running against the existing index
+# throughout, so screening isn't interrupted while it runs).
+OnCalendar=Sat *-*-01..07 02:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,30 @@
+[Unit]
+Description=ComplyNex Semantic Index Incremental Update
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+Environment="PATH=/var/www/complynex/venv/bin"
+EnvironmentFile=/var/www/complynex/.env
+# No model/index/thread-pinning env vars needed here anymore — this script
+# calls complynex-semantic.service's /add_embeddings over HTTP instead of
+# loading the embedding model + FAISS index in this process (see
+# scripts/incremental_reindex.py's module docstring for why: a second
+# in-process copy alongside the always-on service OOM-killed the box).
+ExecStart=/var/www/complynex/venv/bin/python /var/www/complynex/scripts/incremental_reindex.py
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+# Added 2026-07-24: ProtectSystem=strict makes the whole filesystem
+# read-only except paths listed here. This unit had none declared, so
+# _save_state()'s write to screening/semantic_index_state.json.tmp has
+# been failing with "Read-only file system" on every single run since
+# this hardening was applied — meaning the checkpoint could never
+# advance even on a fully successful embedding run, which is the deeper
+# reason it was stuck at 2026-07-10 (compounding the separate duplicate-
+# adding bug fixed in semantic_matcher.py's add_to_delta). Confirmed by
+# reproducing the exact traceback in production before this fix.
+ReadWritePaths=/var/www/complynex/screening

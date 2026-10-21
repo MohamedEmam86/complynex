@@ -1,0 +1,9 @@
+[Unit]
+Description=Run ComplyNex unified case sync + SLA escalation every 15 minutes
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+
+[Install]
+WantedBy=timers.target

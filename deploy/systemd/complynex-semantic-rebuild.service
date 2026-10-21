@@ -1,0 +1,47 @@
+[Unit]
+Description=ComplyNex Semantic Index Full Rebuild (~10h on this box)
+After=network.target postgresql.service
+# Don't run while the 15-min incremental updater is mid-write on the same
+# delta files this rebuild deletes at the end.
+Conflicts=complynex-semantic-reindex.service
+
+[Service]
+Type=oneshot
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+Environment="PATH=/var/www/complynex/venv/bin"
+EnvironmentFile=/var/www/complynex/.env
+# Full CPU parallelism intentionally NOT pinned to 1 thread here (unlike
+# complynex-semantic.service, the serving process) — torch/faiss may use
+# both cores for throughput. But since this now runs on a schedule while
+# the platform serves traffic (was a one-off), it runs de-prioritized:
+# live screening always wins the CPU; the batch job just takes longer.
+Nice=10
+CPUWeight=20
+# Reclaim pressure kicks in at 3G, hard kill at 3.5G — the chunked
+# build_index() peaks well under this (model ~0.8GB + int8 index ~1GB +
+# one 50k-row embedding chunk), so these caps only fire on pathological
+# runs, where killing this job beats the kernel OOM-killing the web app.
+MemoryHigh=3G
+MemoryMax=3500M
+Environment="SEMANTIC_MATCHER_ENABLED=true"
+Environment="HF_HOME=/var/www/complynex/.cache/huggingface"
+Environment="HF_HUB_OFFLINE=1"
+Environment="TRANSFORMERS_OFFLINE=1"
+ExecStart=/var/www/complynex/venv/bin/python /var/www/complynex/scripts/rebuild_semantic_index.py
+# The serving process reads the index into memory at boot and never
+# re-reads the file — restart it (root-privileged '+' prefix) so the fresh
+# index actually goes live; its warm-up hook re-heats it immediately.
+# Only runs if ExecStart succeeded, so a failed rebuild never restarts the
+# service onto a possibly-corrupt partial index write.
+ExecStartPost=+/usr/bin/systemctl restart complynex-semantic.service
+# No Restart= — a oneshot job that fails should be looked at, not silently
+# retried against a possibly-corrupt partial index write.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/complynex/screening /var/www/complynex/.cache/huggingface
+
+[Install]
+WantedBy=multi-user.target

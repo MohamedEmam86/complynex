@@ -1,0 +1,18 @@
+[Unit]
+Description=ComplyNex Compliance Event Dispatcher
+After=network.target postgresql.service redis-server.service complynex.service
+
+[Service]
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+Environment="PATH=/var/www/complynex/venv/bin"
+ExecStart=/var/www/complynex/venv/bin/python -m events.worker
+Restart=always
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/complynex/logs
+
+[Install]
+WantedBy=multi-user.target
