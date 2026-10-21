@@ -25,6 +25,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from extensions import limiter
 from models.user import User
 from models.audit import AuditLog
+from auth import guard
 
 
 auth_bp = Blueprint('auth', __name__)
@@ -46,13 +47,19 @@ def portal_login():
         
         user = User.get_by_email(email)
 
+        if user and guard.is_locked(user.id):
+            AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'Portal Login: account locked', request.remote_addr)
+            flash(_('This account is temporarily locked after several failed attempts. Try again in %(m)s minutes.', m=guard.LOCK_MINUTES), 'danger')
+            return render_template('auth/login_portal.html')
+
         if user and user.check_password(password):
             # Session fixation prevention - regenerate session on login
             session.clear()
+            guard.reset_failures(user.id)
 
             if not user.is_active:
-                AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'Account deactivated', request.remote_addr)
-                flash(_('Your account has been deactivated.'), 'danger')
+                AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'Account expired' if user.is_expired() else 'Account deactivated', request.remote_addr)
+                flash(_('Your account has expired. Contact your administrator.') if user.is_expired() else _('Your account has been deactivated.'), 'danger')
             elif user.mfa_enabled:
                 # Password correct but MFA required — store pending user id and redirect to verify
                 session['mfa_pending_user_id'] = user.id
@@ -76,6 +83,8 @@ def portal_login():
             # but we can try to find it for the log if it exists
             failed_user = User.get_by_email(email)
             AuditLog.log(failed_user.id if failed_user else None, 'Failed Login', 'Auth', None, f'Invalid password for {email}' if failed_user else f'Invalid email: {email}', request.remote_addr)
+            if failed_user and guard.register_failure(failed_user.id):
+                AuditLog.log(failed_user.id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed attempts', request.remote_addr)
             flash(_('Invalid email or password.'), 'danger')
             
     return render_template('auth/login_portal.html')
@@ -98,18 +107,24 @@ def login():
         remember = request.form.get('remember', False) == 'on'
         
         user = User.get_by_email(email)
-        
+
+        if user and guard.is_locked(user.id):
+            AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'CMS Login: account locked', request.remote_addr)
+            flash(_('This account is temporarily locked after several failed attempts. Try again in %(m)s minutes.', m=guard.LOCK_MINUTES), 'danger')
+            return render_template('auth/login.html')
+
         if user and user.check_password(password):
             # Session fixation prevention - regenerate session on login
             session.clear()
+            guard.reset_failures(user.id)
             # Upgrade legacy hash to bcrypt if needed
             if not user.password_hash.startswith('$2b$'):
                 new_hash = User.hash_password(password)
                 User.update_user(user.id, password_hash=new_hash)
 
             if not user.is_active:
-                AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'CMS Login: Account deactivated', request.remote_addr)
-                flash(_('Account deactivated.'), 'danger')
+                AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'CMS Login: Account expired' if user.is_expired() else 'CMS Login: Account deactivated', request.remote_addr)
+                flash(_('Your account has expired. Contact your administrator.') if user.is_expired() else _('Account deactivated.'), 'danger')
             elif not user.can_access_cms():
                 AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'CMS Login: Access Denied (Role Insufficient)', request.remote_addr)
                 flash(_('Access Denied. You do not have permission to access the CMS.'), 'danger')
@@ -132,7 +147,9 @@ def login():
         else:
             failed_user = User.get_by_email(email)
             AuditLog.log(failed_user.id if failed_user else None, 'Failed Login', 'Auth', None, f'CMS Login: Invalid password for {email}' if failed_user else f'CMS Login: Invalid email: {email}', request.remote_addr)
-            flash('Invalid email or password.', 'danger')
+            if failed_user and guard.register_failure(failed_user.id):
+                AuditLog.log(failed_user.id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed attempts', request.remote_addr)
+            flash(_('Invalid email or password.'), 'danger')
     
     return render_template('auth/login.html')
 
@@ -220,8 +237,13 @@ def mfa_verify():
         return redirect(url_for('auth.login'))
 
     user = User.get_by_id(user_id)
-    if not user:
+    if not user or not user.is_active:
         session.pop('mfa_pending_user_id', None)
+        return redirect(url_for('auth.login'))
+
+    if guard.is_locked(user.id):
+        session.pop('mfa_pending_user_id', None)
+        flash(_('This account is temporarily locked after several failed attempts. Try again in %(m)s minutes.', m=guard.LOCK_MINUTES), 'danger')
         return redirect(url_for('auth.login'))
 
     if request.method == 'POST':
@@ -229,6 +251,7 @@ def mfa_verify():
         use_backup = request.form.get('use_backup') == '1'
         valid = user.verify_backup_code(code) if use_backup else user.verify_totp(code)
         if valid:
+            guard.reset_failures(user_id)
             session.pop('mfa_pending_user_id', None)
             remember = session.pop('mfa_remember', False)
             next_endpoint = session.pop('mfa_next', 'dashboard')
@@ -240,7 +263,12 @@ def mfa_verify():
             return redirect(url_for(next_endpoint))
         else:
             AuditLog.log(user_id, 'Failed MFA', 'Auth', None, 'Invalid MFA code', request.remote_addr)
-            flash('Invalid code. Please try again.', 'danger')
+            if guard.register_failure(user_id):
+                AuditLog.log(user_id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed MFA codes', request.remote_addr)
+                session.pop('mfa_pending_user_id', None)
+                flash(_('This account is temporarily locked after several failed attempts. Try again in %(m)s minutes.', m=guard.LOCK_MINUTES), 'danger')
+                return redirect(url_for('auth.login'))
+            flash(_('Invalid code. Please try again.'), 'danger')
 
     return render_template('auth/mfa_verify.html')
 
@@ -250,9 +278,26 @@ def mfa_verify():
 def mfa_disable():
     """Allow admin to disable MFA for their own account (re-enroll)."""
     if not current_user.is_admin():
-        flash('Only administrators can disable MFA directly.', 'danger')
+        flash(_('Only administrators can disable MFA directly.'), 'danger')
+        return redirect(url_for('dashboard'))
+    if not current_user.verify_totp(request.form.get('code', '')):
+        AuditLog.log(current_user.id, 'Failed MFA', 'Auth', None, 'MFA disable refused: invalid code', request.remote_addr)
+        flash(_('Enter a valid code from your authenticator app to disable MFA.'), 'danger')
         return redirect(url_for('dashboard'))
     User.disable_mfa(current_user.id)
     AuditLog.log(current_user.id, 'MFA Disabled', 'Auth', None, 'TOTP MFA removed by admin', request.remote_addr)
-    flash('MFA has been disabled. You will be prompted to re-enroll on next login.', 'warning')
+    flash(_('MFA has been disabled. You will be prompted to re-enroll on next login.'), 'warning')
     return redirect(url_for('dashboard'))
+
+
+@auth_bp.route('/logout-everywhere', methods=['POST'])
+@login_required
+def logout_everywhere():
+    """Invalidate every session and remember-me cookie of the current user."""
+    is_cms_user = current_user.can_access_cms()
+    user_id = current_user.id
+    User.bump_auth_version(user_id)
+    logout_user()
+    AuditLog.log(user_id, 'Logout', 'Auth', None, 'Signed out on all devices', request.remote_addr)
+    flash(_('You have been signed out on all devices.'), 'info')
+    return redirect(url_for('auth.login') if is_cms_user else url_for('auth.portal_login'))

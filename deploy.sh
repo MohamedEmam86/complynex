@@ -47,7 +47,7 @@ for m in $MIGR; do
 done
 
 echo "-- guards"
-for g in csp_guard endpoint_guard url_guard; do
+for g in csp_guard endpoint_guard url_guard method_guard; do
   sudo -u complynex env -C "$APP" "$APP/venv/bin/python" "scripts/$g.py" 2>&1 | grep -v '^INFO' | tail -2
 done
 

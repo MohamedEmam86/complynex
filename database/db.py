@@ -309,7 +309,10 @@ def init_db():
         cursor.close()
     else:
         db.executescript(schema_sql)
-    admin_password_hash = generate_password_hash('Admin@123')
+    import secrets as _secrets
+    _initial_pw = _secrets.token_urlsafe(14) + 'A1!'
+    admin_password_hash = generate_password_hash(_initial_pw)
+    print(f"Initial admin password (shown once, change it at first login): {_initial_pw}")
     param = "%s" if db_type == 'postgresql' else "%s"
     db.execute(
         f"UPDATE users SET password_hash = {param} WHERE email = 'admin@complynex.online'",

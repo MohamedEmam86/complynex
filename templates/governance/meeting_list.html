@@ -51,11 +51,11 @@
                                     class="btn btn-sm btn-outline-info" title="{{ _('Edit Meeting') }}">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="{{ url_for('governance.delete_meeting', id=meeting.id) }}"
-                                    class="btn btn-sm btn-outline-danger" title="{{ _('Cancel Meeting') }}"
+                                <form method="post" action="{{ url_for('governance.delete_meeting', id=meeting.id) }}" class="d-inline"
                                     data-confirm="{{ _('Are you sure you want to cancel this meeting?') }}">
-                                    <i class="fas fa-trash"></i>
-                                </a>
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ _('Cancel Meeting') }}"><i class="fas fa-trash"></i></button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}

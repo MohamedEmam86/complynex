@@ -221,7 +221,7 @@ def edit_category(category_id):
         
     return render_template('policies/category_form.html', category=category)
 
-@policies_bp.route('/category/delete/<int:category_id>')
+@policies_bp.route('/category/delete/<int:category_id>', methods=['POST'])
 @login_required
 @permission_required('policies', level='edit')
 def delete_category(category_id):

@@ -93,16 +93,16 @@
                                         <i class="bi bi-pencil-square me-1"></i>{{ _('Edit') }}
                                     </a>
                                     {% if req.is_active %}
-                                    <a href="{{ url_for('governance.deactivate_compliance', id=req.id) }}"
-                                        class="btn btn-sm btn-outline-secondary"
+                                    <form method="post" action="{{ url_for('governance.deactivate_compliance', id=req.id) }}" class="d-inline"
                                         data-confirm="{{ _('Retire this requirement? Its history is kept.') }}">
-                                        <i class="bi bi-archive"></i>
-                                    </a>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-archive"></i></button>
+                                    </form>
                                     {% else %}
-                                    <a href="{{ url_for('governance.reactivate_compliance', id=req.id) }}"
-                                        class="btn btn-sm btn-outline-success">
-                                        <i class="bi bi-arrow-counterclockwise"></i>
-                                    </a>
+                                    <form method="post" action="{{ url_for('governance.reactivate_compliance', id=req.id) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-arrow-counterclockwise"></i></button>
+                                    </form>
                                     {% endif %}
                                 </td>
                             </tr>

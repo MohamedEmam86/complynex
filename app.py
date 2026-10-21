@@ -182,8 +182,18 @@ def create_app(config_name=None):
     
     @login_manager.user_loader
     def load_user(user_id):
-        """Load user by ID for Flask-Login."""
-        return User.get_by_id(int(user_id))
+        """Load user by session identity '<id>:<auth_version>'. Rejects old-format
+        ids, a changed auth_version (revoked sessions), and inactive or expired
+        accounts on EVERY request, not only at login."""
+        try:
+            uid, ver = str(user_id).split(':', 1)
+            uid, ver = int(uid), int(ver)
+        except (ValueError, TypeError):
+            return None
+        user = User.get_by_id(uid)
+        if not user or not user.is_active or (getattr(user, 'auth_version', 0) or 0) != ver:
+            return None
+        return user
     
     # Babel Configuration
     app.config['BABEL_DEFAULT_LOCALE'] = 'ar'
@@ -244,7 +254,7 @@ def create_app(config_name=None):
         link = request.args.get('next')
         return redirect(link or url_for('dashboard'))
 
-    @app.route('/notifications/mark-all-read')
+    @app.route('/notifications/mark-all-read', methods=['POST'])
     @login_required
     def mark_all_notifications_read():
         from models.notification import Notification
@@ -505,6 +515,10 @@ def create_app(config_name=None):
             status['redis'] = 'error'
             status['status'] = 'degraded'
         http_status = 200 if status['status'] == 'ok' else 503
+        # Outsiders get the status word only; component details and the deployment
+        # fingerprint stay on the server (deploy.sh / monitoring call it on 127.0.0.1).
+        if request.remote_addr not in ('127.0.0.1', '::1'):
+            return jsonify({'status': status['status']}), http_status
         return jsonify(status), http_status
 
     # Root route redirects to dashboard

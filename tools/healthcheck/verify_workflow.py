@@ -18,7 +18,7 @@ def csrf(client, url):
 
 with app.test_client() as c:
     with c.session_transaction() as s:
-        s['_user_id'] = '1'
+        s['_user_id'] = __import__('models.user', fromlist=['User']).User.session_id_for(1)
         s['_fresh'] = True
 
     print('=== pages render (EN + AR) ===')

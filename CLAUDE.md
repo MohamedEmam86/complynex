@@ -54,12 +54,14 @@ non-financial firms, under any regulator (CBE, FRA, EMLCU, PDPL, ITIDA, or forei
 - **psycopg2 treats `%` in SQL as a placeholder:** always parameterise; write `%%` for a literal percent.
 - Escape dots in any regex/sed that matches endpoint names (`whistleblowing\.view_case`).
 - `url_for()` targets must exist — a missing endpoint is a 500 on render.
+- Anything that deletes or changes data is **POST-only** with a CSRF token (a `<form>` with a button, not an `<a href>`); `scripts/method_guard.py` blocks deploys that break this.
+- Sessions carry `'<user id>:<auth_version>'` (`User.get_id`); test clients use `User.session_id_for(1)`, not `'1'`.
 - Templates are cached per worker in production; changes need a restart (handled by `deploy.sh`).
 
 ## Checks to run before opening a PR
 ```bash
 python -m py_compile $(git diff --name-only origin/main -- '*.py')
-for g in csp_guard endpoint_guard url_guard nullscan; do python scripts/$g.py | tail -3; done
+for g in csp_guard endpoint_guard url_guard method_guard nullscan; do python scripts/$g.py | tail -3; done
 ```
 (`csp_guard` and `url_guard` are pure static checks; `endpoint_guard` and `nullscan` import the app and may
 need dependencies installed — if they cannot run in your environment, say so in the PR.)

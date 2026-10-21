@@ -20,7 +20,7 @@ CHROME = re.compile(
 def main():
     with app.test_client() as c:
         with c.session_transaction() as s:
-            s['_user_id'] = '1'
+            s['_user_id'] = __import__('models.user', fromlist=['User']).User.session_id_for(1)
             s['_fresh'] = True
         for p in PAGES:
             r = c.get(p + '?lang=ar')

@@ -607,5 +607,8 @@ OPENAPI_SPEC = {
 
 @api_v1_bp.route('/openapi.json', methods=['GET'])
 def openapi_spec():
-    """Serve the OpenAPI 3.0 spec (no auth required)."""
+    """Serve the OpenAPI 3.0 spec to signed-in users only (it maps the whole API surface)."""
+    from flask_login import current_user as _cu
+    if not _cu.is_authenticated:
+        return jsonify({'error': 'authentication required'}), 401
     return jsonify(OPENAPI_SPEC)

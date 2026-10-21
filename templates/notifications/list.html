@@ -7,9 +7,12 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">{{ _('Notifications') }}</h4>
         {% if notifications and notifications|selectattr('is_read', 'equalto', 0)|list %}
-        <a href="{{ url_for('mark_all_notifications_read') }}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-check2-all me-1"></i>{{ _('Mark all read') }}
-        </a>
+        <form method="post" action="{{ url_for('mark_all_notifications_read') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-check2-all me-1"></i>{{ _('Mark all read') }}
+            </button>
+        </form>
         {% endif %}
     </div>
 

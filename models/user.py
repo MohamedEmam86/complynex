@@ -103,8 +103,43 @@ class User(UserMixin):
 
     @property
     def is_active(self):
-        """Required by Flask-Login. Returns whether the user account is active."""
-        return self._is_active
+        """Required by Flask-Login. False when the account is deactivated OR its
+        expiry date (temporary / trial accounts) has passed."""
+        return bool(self._is_active) and not self.is_expired()
+
+    def is_expired(self):
+        """True when expires_at is set and already in the past."""
+        exp = self.expires_at
+        if not exp:
+            return False
+        if isinstance(exp, str):
+            try:
+                exp = datetime.fromisoformat(exp.strip().replace('Z', '+00:00'))
+            except ValueError:
+                return False
+        from datetime import timezone
+        now = datetime.now(timezone.utc) if exp.tzinfo else datetime.now()
+        return exp <= now
+
+    def get_id(self):
+        """Session identity = '<id>:<auth_version>'. Bumping users.auth_version
+        (password change, deactivation, 'sign out everywhere') invalidates every
+        existing session and remember-me cookie of that user."""
+        return f"{self.id}:{getattr(self, 'auth_version', 0) or 0}"
+
+    @staticmethod
+    def session_id_for(user_id):
+        """Session identity for a user id (used by test clients / health tools)."""
+        u = User.get_by_id(user_id)
+        return u.get_id() if u else None
+
+    @staticmethod
+    def bump_auth_version(user_id):
+        """Invalidate all sessions of this user."""
+        from database.db import get_db
+        db = get_db()
+        db.execute('UPDATE users SET auth_version = COALESCE(auth_version, 0) + 1 WHERE id = %s', (user_id,))
+        db.commit()
     
     @property
     def username(self):
@@ -501,6 +536,7 @@ class User(UserMixin):
         for _k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols', 'perm_prudential', 'perm_ai'):
             if _k in row.keys():
                 setattr(_u, _k, row[_k] or 'none')
+        _u.auth_version = (row['auth_version'] if 'auth_version' in row.keys() else 0) or 0
         return _u
     
     @staticmethod
@@ -552,7 +588,13 @@ class User(UserMixin):
         override = getattr(self, 'mfa_required_override', None)
         if override is not None:
             return bool(override)
-        return self.role in ('admin', 'compliance_officer', 'compliance_manager')
+        if self.role in ('admin', 'compliance_officer', 'compliance_manager'):
+            return True
+        # Everyone who can open the CMS back-office handles compliance data.
+        try:
+            return bool(self.can_access_cms())
+        except Exception:
+            return False
 
     def verify_totp(self, code):
         """Verify a 6-digit TOTP code against this user's secret (±30s window)."""

@@ -254,7 +254,7 @@ def edit_committee(id):
     members = BoardMember.get_all()
     return render_template('governance/committee_form.html', committee=committee, members=members)
 
-@governance_bp.route('/committee/delete/<int:id>')
+@governance_bp.route('/committee/delete/<int:id>', methods=['POST'])
 @login_required
 @permission_required('governance', level='edit')
 def delete_committee(id):
@@ -300,7 +300,7 @@ def manage_roles():
     roles = BoardRole.get_all()
     return render_template('governance/roles_list.html', roles=roles)
 
-@governance_bp.route('/role/delete/<int:id>')
+@governance_bp.route('/role/delete/<int:id>', methods=['POST'])
 @login_required
 @permission_required('governance', level='edit')
 def delete_role(id):
@@ -388,7 +388,7 @@ def edit_meeting(id):
     committees = BoardCommittee.get_all()
     return render_template('governance/meeting_form.html', meeting=meeting, committees=committees)
 
-@governance_bp.route('/meeting/delete/<int:id>')
+@governance_bp.route('/meeting/delete/<int:id>', methods=['POST'])
 @login_required
 @permission_required('governance', level='edit')
 def delete_meeting(id):
@@ -730,7 +730,7 @@ def add_compliance():
     regulators = Regulator.get_all()
     return render_template('governance/compliance_form.html', regulators=regulators)
 
-@governance_bp.route('/compliance/deactivate/<int:id>')
+@governance_bp.route('/compliance/deactivate/<int:id>', methods=['POST'])
 @login_required
 @permission_required('governance', level='edit')
 def deactivate_compliance(id):
@@ -738,7 +738,7 @@ def deactivate_compliance(id):
     flash(_('Requirement retired.'), 'success')
     return redirect(url_for('governance.compliance_dashboard'))
 
-@governance_bp.route('/compliance/reactivate/<int:id>')
+@governance_bp.route('/compliance/reactivate/<int:id>', methods=['POST'])
 @login_required
 @permission_required('governance', level='edit')
 def reactivate_compliance(id):

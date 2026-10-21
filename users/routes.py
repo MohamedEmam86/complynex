@@ -17,6 +17,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
+from flask_babel import gettext as _
 from models.user import User
 from utils.file_serving import serve_uploaded_file
 from werkzeug.security import generate_password_hash
@@ -77,17 +78,22 @@ def change_password():
         flash('New passwords do not match.', 'danger')
         return redirect(url_for('users.profile'))
         
-    if len(new_password) < 8:
-        flash('Password must be at least 8 characters.', 'danger')
+    ok, msg = User.validate_password_strength(new_password or '')
+    if not ok:
+        flash(_(msg), 'danger')
         return redirect(url_for('users.profile'))
-        
-    password_hash = generate_password_hash(new_password)
+
+    password_hash = User.hash_password(new_password)
     from database.db import get_db
     db = get_db()
-    db.execute('UPDATE users SET password_hash = %s WHERE id = %s', (password_hash, current_user.id))
+    db.execute('UPDATE users SET password_hash = %s, auth_version = COALESCE(auth_version, 0) + 1 WHERE id = %s',
+               (password_hash, current_user.id))
     db.commit()
-    
-    flash('Password updated successfully.', 'success')
+    # keep THIS browser signed in under the new auth_version; all others are signed out
+    from flask_login import login_user
+    login_user(User.get_by_id(current_user.id))
+
+    flash(_('Password updated successfully. Other devices have been signed out.'), 'success')
     return redirect(url_for('users.profile'))
 
 @users_bp.route('/profile/avatar', methods=['POST'])
@@ -209,17 +215,19 @@ def reset_password(user_id):
         return redirect(url_for('dashboard'))
         
     new_password = request.form.get('new_password')
-    if not new_password or len(new_password) < 8:
-        flash('Password must be at least 8 characters.', 'danger')
+    ok, msg = User.validate_password_strength(new_password or '')
+    if not ok:
+        flash(_(msg), 'danger')
         return redirect(url_for('users.list_users'))
-        
-    password_hash = generate_password_hash(new_password)
+
+    password_hash = User.hash_password(new_password)
     from database.db import get_db
     db = get_db()
-    db.execute('UPDATE users SET password_hash = %s WHERE id = %s', (password_hash, user_id))
+    db.execute('UPDATE users SET password_hash = %s, auth_version = COALESCE(auth_version, 0) + 1, '
+               'failed_login_count = 0, locked_until = NULL WHERE id = %s', (password_hash, user_id))
     db.commit()
-    
-    flash('Password reset successfully.', 'success')
+
+    flash(_('Password reset successfully.'), 'success')
     return redirect(url_for('users.list_users'))
 
 @users_bp.route('/<int:user_id>/update-role', methods=['POST'])
