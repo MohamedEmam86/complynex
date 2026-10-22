@@ -383,6 +383,11 @@
               </a>
             </li>
             {% endif %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('guides.ratings') }}">
+                <span class="cnx-nav__label">{{ _('Rating guides') }}</span>
+              </a>
+            </li>
             {% if current_user.can_view('governance') %}
             <li class="cnx-nav__subitem">
               <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.independence_dashboard') }}">
@@ -1034,6 +1039,11 @@
               </a>
             </li>
             {% endif %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('guides.esg_carbon') }}">
+                <span class="cnx-nav__label">{{ _('ESG & carbon guideline') }}</span>
+              </a>
+            </li>
             {% if current_user.can_view('esg') %}
             <li class="cnx-nav__subitem">
               <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('esg.scoring', pillar_code='E') }}">

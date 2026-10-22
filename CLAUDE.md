@@ -71,3 +71,29 @@ need dependencies installed — if they cannot run in your environment, say so i
 - Keep the copyright header used at the top of existing Python files on new files.
 - User-facing text: English and Arabic, short and clear; compliance wording must stay accurate to Egyptian
   regulation — when unsure, leave a `TODO(compliance-review)` note in the PR instead of guessing.
+
+## Fit & proper forms (governance/fp)
+- Regulator and internal forms are DATA: `governance/fp/forms/<code>.json` (+ the regulator's original `.docx`
+  when there is one). Regulator forms reproduce the questions word for word ("locked") and map every item to the
+  content controls of the original Word file, so `/governance/fit-proper/forms/<id>/docx` returns the ORIGINAL
+  regulator form filled in (empty fields = "N/A", signature fields left for wet/digital signature).
+  `tests/test_fit_proper` checks that every control of the CBE form is mapped exactly once.
+- Add a regulator's new/updated form by adding a JSON (and its .docx) — no code change.
+- Workflow: draft -> candidate_completed -> under_review -> approved_internal -> signed (scan attached)
+  -> submitted -> regulator_approved / regulator_rejected. Institution assessment: 5 criteria scored 1–5 with a
+  written justification; the guides are in `utils/rating_guides.py`.
+- Key officials (`fp_officials`): board members (imported from board_members), executives (users) and
+  committee members who are not board members (`fp_official_committees`).
+
+## Rating guides
+`utils/rating_guides.py` holds what each level of every rating scale means (bilingual). Show it next to an input
+with `{% from 'partials/rating_guide.html' import guide_panel with context %}{{ guide_panel('risk.likelihood') }}`;
+all guides: `/guides/ratings`; ESG/carbon guideline: `/guides/esg-carbon`.
+
+## Demo instance (demo.complynex.online)
+- Same code in `/var/www/complynex-demo` (git worktree, detached; `.demo_instance` marker), own database
+  `complynex_demo` (role complynex_demo), Redis db 1, read-only ES alias `aml_watchlist_public` (internal lists
+  filtered out). `utils/demo.py` disables list downloads, ES/semantic writes and delta re-screening there.
+- `deploy.sh` updates it after the main deploy. Reset the fictional company (Nile Microfinance S.A.E.):
+  `sudo /var/www/complynex-demo/scripts/demo_data/reset.sh` (reference tables are copied from the main
+  instance; everything else is reseeded by `scripts/demo_data/m_<area>.py`).

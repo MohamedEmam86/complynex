@@ -200,6 +200,8 @@ def add_committee():
     if request.method == 'POST':
         data = {
             'committee_name': request.form.get('committee_name'),
+            'committee_name_arabic': (request.form.get('committee_name_arabic') or '').strip() or None,
+            'requires_fit_proper': 'requires_fit_proper' in request.form,
             'committee_type': request.form.get('committee_type', '').upper().strip(),
             'chairman_id': request.form.get('chairman_id'),
             'meeting_frequency': request.form.get('meeting_frequency')
@@ -233,6 +235,8 @@ def edit_committee(id):
     if request.method == 'POST':
         data = {
             'committee_name': request.form.get('committee_name'),
+            'committee_name_arabic': (request.form.get('committee_name_arabic') or '').strip() or None,
+            'requires_fit_proper': 'requires_fit_proper' in request.form,
             'committee_type': request.form.get('committee_type', '').upper().strip(),
             'chairman_id': request.form.get('chairman_id'),
             'meeting_frequency': request.form.get('meeting_frequency'),
@@ -326,7 +330,22 @@ def manage_committee_members(id):
     
     current_members = CommitteeMembership.get_by_committee(id)
     all_members = BoardMember.get_all()
-    return render_template('governance/committee_members.html', 
+    from governance.fp import service as _fp
+    db = get_db()
+    fp_status = {r['board_member_id']: dict(r) for r in db.execute("""
+        SELECT o.board_member_id, f.id AS form_id, f.status, f.assessment_result FROM fp_officials o
+        LEFT JOIN LATERAL (SELECT * FROM fp_forms x WHERE x.official_id = o.id AND x.status <> 'withdrawn'
+                           ORDER BY x.created_at DESC LIMIT 1) f ON TRUE WHERE o.board_member_id IS NOT NULL""").fetchall()}
+    externals = [dict(r) for r in db.execute("""
+        SELECT oc.id AS seat_id, oc.role, oc.joined_on, o.id AS official_id, o.full_name, f.id AS form_id, f.status, f.assessment_result
+        FROM fp_official_committees oc JOIN fp_officials o ON o.id = oc.official_id
+        LEFT JOIN LATERAL (SELECT * FROM fp_forms x WHERE x.official_id = o.id AND x.status <> 'withdrawn'
+                           ORDER BY x.created_at DESC LIMIT 1) f ON TRUE
+        WHERE oc.committee_id = %s AND oc.is_active ORDER BY o.full_name""", (id,)).fetchall()]
+    external_candidates = db.execute("""SELECT id, full_name FROM fp_officials WHERE is_active AND official_type <> 'board'
+                                        ORDER BY full_name""").fetchall()
+    return render_template('governance/committee_members.html', fp_status=fp_status, externals=externals,
+                           external_candidates=external_candidates, fp_labels=_fp.STATUS_LABELS, 
                        committee=committee, 
                        current_members=current_members, 
                        all_members=all_members)
@@ -490,10 +509,8 @@ def governance_report():
 @login_required
 @permission_required('governance')
 def fit_proper_dashboard():
-    assessments = FitProperAssessment.get_due_for_review()
-    return render_template('governance/fit_proper_dashboard.html', 
-                         assessments=assessments,
-                         title=_('Fit & Proper Assessments'))
+    from governance.fp.routes import hub
+    return hub()
 
 @governance_bp.route('/fit-proper/add/<int:member_id>', methods=['GET', 'POST'])
 @login_required
@@ -1025,3 +1042,41 @@ def _column_exists(db, table, column):
         WHERE table_name = %s AND column_name = %s
     """, (table, column)).fetchone()
     return bool(row)
+
+
+@governance_bp.route('/committee/<int:id>/members/<int:membership_id>/remove', methods=['POST'])
+@login_required
+@permission_required('governance', level='edit')
+def remove_committee_member(id, membership_id):
+    """End a board member's committee seat (kept for history: is_active = 0 and a departure date)."""
+    db = get_db()
+    db.execute("""UPDATE committee_memberships SET is_active = 0, departure_date = %s, departure_reason = %s
+                  WHERE id = %s AND committee_id = %s""",
+               (datetime.now().strftime('%Y-%m-%d'), (request.form.get('reason') or '').strip() or None, membership_id, id))
+    db.commit()
+    AuditLog.log(current_user.id, 'Remove committee member', 'Governance', id, str(membership_id), request.remote_addr)
+    flash(_('Member removed from the committee.'), 'success')
+    return redirect(url_for('governance.manage_committee_members', id=id))
+
+
+@governance_bp.route('/committee/<int:id>/external', methods=['POST'])
+@login_required
+@permission_required('governance', level='edit')
+def committee_external_member(id):
+    """Add or end the seat of a committee member who is not a board member (key officials list)."""
+    db = get_db()
+    oid = request.form.get('official_id')
+    if request.form.get('remove'):
+        db.execute("UPDATE fp_official_committees SET is_active = FALSE, left_on = CURRENT_DATE WHERE id = %s AND committee_id = %s",
+                   (request.form.get('seat_id'), id))
+        flash(_('Committee seat removed.'), 'info')
+    elif oid:
+        db.execute("""INSERT INTO fp_official_committees (official_id, committee_id, role, joined_on) VALUES (%s,%s,%s,CURRENT_DATE)
+                      ON CONFLICT (official_id, committee_id) DO UPDATE SET is_active = TRUE, role = EXCLUDED.role, left_on = NULL""",
+                   (oid, id, request.form.get('role') or 'MEMBER'))
+        flash(_('Committee seat added.'), 'success')
+    db.commit()
+    return redirect(url_for('governance.manage_committee_members', id=id))
+
+
+from governance.fp import routes as _fp_routes  # noqa: E402,F401  (fit & proper routes on this blueprint)

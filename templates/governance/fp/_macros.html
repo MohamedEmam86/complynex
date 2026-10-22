@@ -1,0 +1,99 @@
+{# Fit & proper form rendering. Labels are bilingual like the regulator form: current language first. #}
+{% macro t(o, field='') -%}
+{%- set en = o[field ~ 'en'] if field else o.en -%}{%- set ar = o[field ~ 'ar'] if field else o.ar -%}
+{%- if lang == 'ar' %}{{ ar or en }}{% else %}{{ en or ar }}{% endif -%}
+{%- endmacro %}
+{% macro t2(o, field='') -%}
+{%- set en = o[field ~ 'en'] if field else o.en -%}{%- set ar = o[field ~ 'ar'] if field else o.ar -%}
+{%- if lang == 'ar' %}{{ en }}{% else %}{{ ar }}{% endif -%}
+{%- endmacro %}
+
+{% macro label(it, issue_nos) -%}
+<label class="form-label fw-semibold mb-1 {{ 'text-danger' if it.no in issue_nos }}" for="{{ it.id }}">
+  <span class="badge bg-light text-dark border me-1">{{ it.no }}</span>{{ t(it) }}
+  {% if it.no in issue_nos %}<i class="fas fa-exclamation-circle ms-1" title="{{ _('Needs an answer') }}"></i>{% endif %}
+</label>
+<div class="small text-muted mb-1" dir="auto">{{ t2(it) }}</div>
+{%- endmacro %}
+
+{% macro field(it, a, issue_nos, locked=False) -%}
+{% set v = a.get(it.id) %}
+<div class="mb-3 fp-item" data-show-if='{{ (it.show_if or {})|tojson }}'>
+  {% if it.type not in ('confirm',) %}{{ label(it, issue_nos) }}{% endif %}
+  {% if it.type == 'text' %}
+    <input type="text" class="form-control" id="{{ it.id }}" name="{{ it.id }}" value="{{ v or '' }}" {{ 'disabled' if locked }}>
+  {% elif it.type == 'textarea' %}
+    <textarea class="form-control" id="{{ it.id }}" name="{{ it.id }}" rows="3" {{ 'disabled' if locked }}>{{ v or '' }}</textarea>
+  {% elif it.type == 'date' %}
+    <input type="date" class="form-control" style="max-width:14rem" id="{{ it.id }}" name="{{ it.id }}" value="{{ v or '' }}" {{ 'disabled' if locked }}>
+  {% elif it.type in ('choice', 'docstatus') %}
+    <div class="d-flex flex-wrap gap-3">
+    {% for o in it.options %}
+      {% set checked = (o.v in v) if v is iterable and v is not string else (o.v == v) %}
+      <div class="form-check">
+        <input class="form-check-input" type="{{ 'checkbox' if it.multi else 'radio' }}" name="{{ it.id }}" value="{{ o.v }}"
+               id="{{ it.id }}_{{ o.v }}" {{ 'checked' if checked }} {{ 'disabled' if locked }}>
+        <label class="form-check-label" for="{{ it.id }}_{{ o.v }}">{{ t(o) }} <span class="text-muted small">/ {{ t2(o) }}</span></label>
+      </div>
+    {% endfor %}
+    </div>
+  {% elif it.type == 'yesno' %}
+    <div class="d-flex gap-4">
+      {% for val, en, ar in [('yes', 'Yes', 'نعم'), ('no', 'No', 'لا'), ('na', 'N/A', 'لا ينطبق')] %}
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="{{ it.id }}" value="{{ val }}" id="{{ it.id }}_{{ val }}" {{ 'checked' if v == val }} {{ 'disabled' if locked }}>
+        <label class="form-check-label" for="{{ it.id }}_{{ val }}">{{ ar if lang == 'ar' else en }} / {{ en if lang == 'ar' else ar }}</label>
+      </div>
+      {% endfor %}
+    </div>
+    {% if it.details_docx is defined or it.details %}
+      <textarea class="form-control mt-2" name="{{ it.id }}_details" rows="2" placeholder="{{ _('If yes, full details') }}" {{ 'disabled' if locked }}>{{ a.get(it.id ~ '_details') or '' }}</textarea>
+    {% endif %}
+  {% elif it.type == 'grid' %}
+    <div class="table-responsive">
+    <table class="table table-sm table-bordered align-middle mb-0">
+      <thead class="table-light"><tr>{% for c in it.columns %}<th class="small">{{ t(c) }}<div class="fw-normal text-muted">{{ t2(c) }}</div></th>{% endfor %}</tr></thead>
+      <tbody>
+      {% set rows = v or [] %}
+      {% for r in range(it.rows or 4) %}
+        {% set row = rows[r] if r < rows|length else {} %}
+        <tr>{% for c in it.columns %}<td>
+          {% if c.kind == 'textarea' %}<textarea class="form-control form-control-sm" rows="2" name="{{ it.id }}__{{ r }}__{{ c.key }}" {{ 'disabled' if locked }}>{{ row.get(c.key, '') }}</textarea>
+          {% else %}<input type="{{ 'date' if c.kind == 'date' else 'text' }}" class="form-control form-control-sm" name="{{ it.id }}__{{ r }}__{{ c.key }}" value="{{ row.get(c.key, '') }}" {{ 'disabled' if locked }}>{% endif %}
+        </td>{% endfor %}</tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <div class="form-text">{{ _('Leave unused rows empty; the regulator file shows them as N/A.') }}</div>
+  {% elif it.type == 'signature' %}
+    <div class="border rounded p-3 text-muted small bg-light">{{ _('Signed by hand (or digitally) on the printed form, then the signed copy is attached to this record.') }}</div>
+  {% elif it.type == 'confirm' %}
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="{{ it.id }}" value="yes" id="{{ it.id }}" {{ 'checked' if v == 'yes' }} {{ 'disabled' if locked }}>
+      <label class="form-check-label fw-semibold {{ 'text-danger' if it.no in issue_nos }}" for="{{ it.id }}">{{ t(it) }} <span class="text-muted small">/ {{ t2(it) }}</span></label>
+    </div>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro answer(it, a) -%}
+{% set v = a.get(it.id) %}
+{% if it.type == 'grid' %}
+  {% set filled = [] %}{% for r in (v or []) %}{% if r.values()|select|list %}{% set _ = filled.append(r) %}{% endif %}{% endfor %}
+  {% if filled %}
+  <table class="table table-sm table-bordered mb-0 small"><thead class="table-light"><tr>{% for c in it.columns %}<th>{{ t(c) }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for r in filled %}<tr>{% for c in it.columns %}<td>{{ r.get(c.key, '') }}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
+  {% else %}<span class="text-muted">N/A</span>{% endif %}
+{% elif it.type in ('choice', 'docstatus') %}
+  {% set chosen = v if v is iterable and v is not string else [v] %}
+  {% for o in it.options if o.v in chosen %}<span class="badge bg-primary-subtle text-primary-emphasis border me-1">{{ t(o) }}</span>{% else %}<span class="text-muted">—</span>{% endfor %}
+{% elif it.type == 'yesno' %}
+  {% if v == 'yes' %}<span class="badge {{ 'bg-danger' if it.adverse else 'bg-success' }}">{{ _('Yes') }}</span>
+  {% elif v == 'no' %}<span class="badge {{ 'bg-success' if it.adverse else 'bg-secondary' }}">{{ _('No') }}</span>
+  {% elif v == 'na' %}<span class="badge bg-light text-dark border">N/A</span>{% else %}<span class="text-muted">—</span>{% endif %}
+  {% if a.get(it.id ~ '_details') %}<div class="small mt-1">{{ a.get(it.id ~ '_details') }}</div>{% endif %}
+{% elif it.type == 'signature' %}<span class="text-muted small">{{ _('On the signed copy') }}</span>
+{% elif it.type == 'confirm' %}{{ ('✔ ' ~ _('Confirmed')) if v == 'yes' else '—' }}
+{% else %}<span style="white-space:pre-wrap">{{ v or '—' }}</span>{% endif %}
+{%- endmacro %}

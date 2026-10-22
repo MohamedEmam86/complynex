@@ -1,4 +1,5 @@
 {% extends 'esg/_layout.html' %}
+{% from 'partials/rating_guide.html' import guide_panel with context %}
 {% set esg_active = 'esg.materiality' %}
 {% block title %}{{ _('Materiality Assessment') }} — {{ _('ESG Management') }}{% endblock %}
 {% block esg_icon %}bi-bullseye{% endblock %}
@@ -27,6 +28,7 @@
     </div>
 
     <div class="col-lg-6">
+      {{ guide_panel('esg.materiality') }}
       <form method="POST" class="ecx-card">
         {% for t in topics %}
         {% set s = scores_by_topic.get(t.id) %}

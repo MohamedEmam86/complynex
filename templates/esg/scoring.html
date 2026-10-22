@@ -4,7 +4,7 @@
 {% block esg_eyebrow %} · {{ framework.name }}{% endblock %}
 {% block esg_icon %}bi-clipboard2-pulse{% endblock %}
 {% block esg_title %}{{ pillar.name_ar if get_locale()|string == 'ar' and pillar.name_ar else pillar.name }} ({{ pillar.code }}){% endblock %}
-{% block esg_lead %}{{ _('Score each indicator 1-5 based on current maturity. Leave an indicator blank to exclude it from the pillar score rather than counting it as zero.') }}{% endblock %}
+{% block esg_lead %}{{ _('Score each indicator 1-5 based on current maturity. Leave an indicator blank to exclude it from the pillar score rather than counting it as zero.') }}{% from 'partials/rating_guide.html' import guide_panel with context %}{{ guide_panel('esg.maturity') }}{% endblock %}
 {% block esg_about %}{{ cx.about(
     _('The indicators of one pillar. Each is scored 1–5 for maturity, with evidence or a note.'),
     _('The pillar score is the weighted average of these answers. Environmental indicators can show the carbon result they rely on.'),

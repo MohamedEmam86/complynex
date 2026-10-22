@@ -1,0 +1,29 @@
+{# Rating guide widgets. Data: utils/rating_guides.py. Usage:
+     {% from 'partials/rating_guide.html' import guide_panel, guide_link with context %}
+     {{ guide_panel('risk.likelihood') }}   - collapsible "what each level means" table under an input
+     {{ guide_link('esg.maturity') }}       - small link to the full guide page #}
+{% macro _lang() -%}{{ 'ar' if session.get('lang') == 'ar' else 'en' }}{%- endmacro %}
+{% macro guide_link(key) -%}
+<a href="{{ url_for('guides.ratings') }}#{{ key }}" class="small text-decoration-none ms-1 no-print" target="_blank" title="{{ _('Rating guide') }}"><i class="fas fa-ruler"></i> {{ _('Guide') }}</a>
+{%- endmacro %}
+{% macro guide_panel(key, pid=None) -%}
+{% set g = rating_guide(key) %}
+{% if g %}
+{% set ar = session.get('lang') == 'ar' %}
+{% set pid = pid or ('rg_' ~ key|replace('.', '_')) %}
+<div class="no-print mt-1">
+  <a class="small text-decoration-none" data-bs-toggle="collapse" href="#{{ pid }}" role="button"><i class="fas fa-ruler"></i> {{ _('What does each level mean?') }}</a>
+  <div class="collapse" id="{{ pid }}">
+    <div class="border rounded p-2 mt-1 bg-light small">
+      <div class="mb-1">{{ g.how_ar if ar else g.how_en }}</div>
+      <table class="table table-sm table-bordered mb-0 bg-white">
+        {% for lv in g.levels|reverse %}
+        <tr><td class="text-nowrap fw-bold" style="width:7rem">{{ lv.level if lv.level is number else '' }} {{ lv.label_ar if ar else lv.label_en }}</td>
+            <td>{{ lv.desc_ar if ar else lv.desc_en }}{% if lv.evidence_en %}<div class="text-muted"><i class="fas fa-search"></i> {{ lv.evidence_ar if ar else lv.evidence_en }}</div>{% endif %}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+{%- endmacro %}

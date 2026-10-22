@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from 'partials/rating_guide.html' import guide_panel with context %}
 
 {% block title %}{{ _('Skills Assessment') }} - ComplyNex CMS{% endblock %}
 
@@ -12,6 +13,7 @@
         <form method="POST" class="card border-0 shadow-sm">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 fw-bold">{{ _('Rate Competency (1-5)') }}</h5>
+                {{ guide_panel('governance.skills') }}
                 <small class="text-muted">{{ _('1: Beginner, 3: Competent, 5: Expert') }}</small>
             </div>
             <div class="card-body">

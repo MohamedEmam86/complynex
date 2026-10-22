@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Rating guides') }} - ComplyNex{% endblock %}
+{% block content %}
+{% set MOD = {'risk_management': _('Risk management'), 'governance': _('Governance & fit and proper'), 'aml': _('AML / KYC'),
+              'esg': _('ESG'), 'carbon': _('Carbon'), 'cyber': _('Cyber security'), 'internal_audit': _('Internal audit'), 'pdpl': _('Data protection')} %}
+<div class="pt-3 pb-2 mb-3 border-bottom d-flex justify-content-between flex-wrap gap-2">
+  <div><h1 class="h3 mb-0">{{ _('Rating guides') }}</h1>
+    <div class="text-muted small">{{ _('What every score in the system means, when to give it and what evidence supports it — so two people scoring the same facts reach the same number, and every score can be explained to an inspector.') }}</div></div>
+  <div class="d-flex gap-2"><a class="btn btn-sm btn-outline-success" href="{{ url_for('guides.esg_carbon') }}"><i class="fas fa-leaf"></i> {{ _('ESG & carbon guideline') }}</a>
+    <button class="btn btn-sm btn-outline-secondary" data-print><i class="fas fa-print"></i> {{ _('Print') }}</button></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-3 d-none d-lg-block no-print"><div class="list-group sticky-top small" style="top:5rem">
+    {% for key, g in guides %}<a class="list-group-item list-group-item-action" href="#{{ key }}">{{ g.title_ar if ar else g.title_en }}</a>{% endfor %}
+  </div></div>
+  <div class="col-lg-9">
+  {% set ns = namespace(mod='') %}
+  {% for key, g in guides %}
+    {% if g.module != ns.mod %}{% set ns.mod = g.module %}<h2 class="h5 mt-3 text-primary" {% if g.module == 'governance' %}id="fp"{% endif %}>{{ MOD.get(g.module, g.module) }}</h2>{% endif %}
+    <div class="card border-0 shadow-sm mb-3" id="{{ key }}">
+      <div class="card-header bg-white"><span class="fw-bold">{{ g.title_ar if ar else g.title_en }}</span>
+        <div class="small text-muted">{{ _('Used in') }}: {{ g.where_ar if ar else g.where_en }}</div></div>
+      <div class="card-body">
+        <p class="small mb-2"><i class="fas fa-lightbulb text-warning"></i> {{ g.how_ar if ar else g.how_en }}</p>
+        <table class="table table-sm table-bordered small mb-0">
+          <thead class="table-light"><tr><th style="width:9rem">{{ _('Level') }}</th><th>{{ _('When to give it') }}</th><th style="width:30%">{{ _('Typical evidence') }}</th></tr></thead>
+          <tbody>{% for lv in g.levels|reverse %}<tr>
+            <td class="fw-semibold">{% if lv.level is number %}<span class="badge bg-dark me-1">{{ lv.level }}</span>{% endif %}{{ lv.label_ar if ar else lv.label_en }}</td>
+            <td>{{ lv.desc_ar if ar else lv.desc_en }}</td><td class="text-muted">{{ (lv.evidence_ar if ar else lv.evidence_en) or '—' }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/print-button.js') }}" nonce="{{ csp_nonce }}"></script>
+{% endblock %}

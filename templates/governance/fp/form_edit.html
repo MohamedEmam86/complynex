@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% from 'governance/fp/_macros.html' import field, t, t2 with context %}
+{% block title %}{{ f.reference }} - {{ _('Fit & Proper') }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-3 border-bottom gap-2">
+  <div>
+    <div class="small text-muted">{{ f.reference }} · {{ f.full_name }}</div>
+    <h1 class="h4 mb-0">{{ defn.title_ar if lang == 'ar' else defn.title_en }}</h1>
+    <div class="small text-muted">{{ defn.basis_ar if lang == 'ar' else defn.basis_en }}{% if defn.form_no %} · {{ defn.form_no }}{% endif %}</div>
+  </div>
+  <a href="{{ url_for('governance.fp_form_view', fid=f.id) }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i> {{ _('Review page') }}</a>
+</div>
+{% if defn.locked %}<div class="alert alert-info py-2 small"><i class="fas fa-lock"></i> {{ _('Regulator form: the questions are reproduced word for word and cannot be changed in the system. Answer every item; write N/A where not applicable.') }}</div>{% endif %}
+{% if issues %}<div class="alert alert-warning small"><strong>{{ _('Still to answer:') }}</strong>
+  {% for no, en, ar, why in issues %}<span class="badge bg-warning text-dark me-1">{{ no }}</span>{% endfor %}</div>{% endif %}
+
+{% if defn.guidance %}
+<div class="card border-0 shadow-sm mb-3"><div class="card-header bg-white">
+  <a data-bs-toggle="collapse" href="#guid" class="fw-semibold text-decoration-none"><i class="fas fa-info-circle"></i> {{ _('General guidance and instructions') }} ({{ defn.guidance|length }})</a></div>
+  <div id="guid" class="collapse"><div class="card-body small">
+    {% for g in defn.guidance %}<div class="row border-bottom py-1"><div class="col-md-6">{{ g.en }}</div><div class="col-md-6" dir="rtl">{{ g.ar }}</div></div>{% endfor %}
+  </div></div></div>
+{% endif %}
+
+<form method="post" id="fpform">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="row g-3">
+    <div class="col-lg-3 d-none d-lg-block"><div class="list-group sticky-top small" style="top:5rem">
+      {% for s in defn.sections %}<a class="list-group-item list-group-item-action fp-sec-link" href="#{{ s.id }}" data-show-if='{{ (s.show_if or {})|tojson }}'>{{ s.no }}. {{ t(s) }}</a>{% endfor %}
+    </div></div>
+    <div class="col-lg-9">
+    {% for s in defn.sections %}
+      <div class="card border-0 shadow-sm mb-3 fp-section" id="{{ s.id }}" data-show-if='{{ (s.show_if or {})|tojson }}'>
+        <div class="card-header bg-white"><span class="fw-bold">{{ s.no }}. {{ t(s) }}</span> <span class="text-muted small">/ {{ t2(s) }}</span>
+          {% if s.show_if %}<span class="badge bg-light text-dark border ms-2">{{ _('Only for independent board members') }}</span>{% endif %}</div>
+        <div class="card-body">
+          {% if s.declaration %}<div class="small mb-3">{% for d in s.declaration %}<div class="row border-bottom py-1"><div class="col-md-6">– {{ d.en }}</div><div class="col-md-6" dir="rtl">– {{ d.ar }}</div></div>{% endfor %}</div>{% endif %}
+          {% for it in s['items'] %}{{ field(it, a, issue_nos) }}{% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+      <div class="d-flex gap-2 justify-content-end sticky-bottom bg-white py-2 border-top">
+        <button class="btn btn-outline-primary" name="save" value="1"><i class="fas fa-save"></i> {{ _('Save') }}</button>
+        {% if f.status == 'draft' %}<button class="btn btn-primary" name="complete" value="1"><i class="fas fa-check"></i> {{ _('Save and mark as completed by the candidate') }}</button>{% endif %}
+      </div>
+    </div>
+  </div>
+</form>
+<script src="{{ url_for('static', filename='js/fp-form.js') }}" nonce="{{ csp_nonce }}"></script>
+{% endblock %}

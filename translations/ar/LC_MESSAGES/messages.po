@@ -30808,6 +30808,417 @@ msgstr "أسماء جديدة في القوائم تطابق عملاء حالي
 msgid "Demo environment: every company, person and figure here is fictional."
 msgstr "بيئة تجريبية: كل الشركات والأشخاص والأرقام هنا وهمية."
 
+#, python-format
+msgid "%(n)s board member(s) added to the key officials list."
+msgstr "تمت إضافة %(n)s عضو مجلس إدارة إلى قائمة المسئولين الرئيسيين."
+
+#, python-format
+msgid "%(n)s item(s) not answered yet."
+msgstr "%(n)s بند لم تتم الإجابة عنه بعد."
+
+msgid "AML / KYC"
+msgstr "مكافحة غسل الأموال / اعرف عميلك"
+
+msgid "Add a member who is not a board member"
+msgstr "إضافة عضو من غير أعضاء مجلس الإدارة"
+
+msgid "Add board member"
+msgstr "إضافة عضو مجلس إدارة"
+
+msgid "Add board members to the list"
+msgstr "إضافة أعضاء مجلس الإدارة إلى القائمة"
+
+msgid "Add key official"
+msgstr "إضافة مسئول رئيسي"
+
+msgid "Adverse answers in the form"
+msgstr "إجابات سلبية في النموذج"
+
+msgid "Answers"
+msgstr "الإجابات"
+
+msgid "Answers needing the reviewer's attention"
+msgstr "إجابات تحتاج انتباه المراجع"
+
+msgid "Answers saved."
+msgstr "تم حفظ الإجابات."
+
+msgid "Approve internally"
+msgstr "اعتماد داخلي"
+
+msgid "Approved = regulator approval (or internal approval for non-board committee members). Add, rename or deactivate committees under Governance > Committees."
+msgstr "معتمد = موافقة الجهة الرقابية (أو الاعتماد الداخلي لأعضاء اللجان من غير أعضاء المجلس). إضافة اللجان أو تغيير أسمائها أو إيقافها من الحوكمة > اللجان."
+
+msgid "Assessment saved."
+msgstr "تم حفظ التقييم."
+
+msgid "Blank form"
+msgstr "نموذج فارغ"
+
+msgid "Board member"
+msgstr "عضو مجلس إدارة"
+
+msgid "Board member record"
+msgstr "سجل عضو مجلس الإدارة"
+
+msgid "Board members are added to committees from the committee page."
+msgstr "يُضاف أعضاء مجلس الإدارة إلى اللجان من صفحة اللجنة."
+
+msgid "Board members on this committee"
+msgstr "أعضاء مجلس الإدارة في هذه اللجنة"
+
+msgid "Board members, committee members and key-function holders: regulator forms, institution assessment (1–5), signed copies and the regulator decision."
+msgstr "أعضاء مجلس الإدارة وأعضاء اللجان وشاغلو الوظائف الرئيسية: النماذج الرقابية، وتقييم المؤسسة (1–5)، والنسخ الموقعة، وقرار الجهة الرقابية."
+
+msgid "Boundary"
+msgstr "الحدود التنظيمية"
+
+msgid "Carbon"
+msgstr "الكربون"
+
+msgid "Carbon footprint: what is measured and how"
+msgstr "البصمة الكربونية: ما الذي يُقاس وكيف"
+
+msgid "Chair"
+msgstr "رئيس"
+
+msgid "Choose the scanned signed form (PDF)."
+msgstr "اختر النموذج الموقع الممسوح ضوئياً (PDF)."
+
+msgid "Committee (external)"
+msgstr "لجنة (خارجي)"
+
+msgid "Committee Name (Arabic)"
+msgstr "اسم اللجنة (بالعربية)"
+
+msgid "Committee member (not a board member)"
+msgstr "عضو لجنة (من غير أعضاء المجلس)"
+
+msgid "Committee seat added."
+msgstr "تمت إضافة العضوية في اللجنة."
+
+msgid "Committee seat removed."
+msgstr "تم إنهاء العضوية في اللجنة."
+
+msgid "Committee seats"
+msgstr "العضوية في اللجان"
+
+msgid "Committees — fit & proper coverage"
+msgstr "اللجان — تغطية الجدارة والصلاحية"
+
+msgid "Complete the answers"
+msgstr "استكمال الإجابات"
+
+msgid "Conditions (if fit with conditions)"
+msgstr "الشروط (في حالة الجدارة المشروطة)"
+
+#, python-format
+msgid "Could not create the form: %(e)s"
+msgstr "تعذر إنشاء النموذج: %(e)s"
+
+msgid "Cyber security"
+msgstr "الأمن السيبراني"
+
+msgid "Data quality: what the checks look for"
+msgstr "جودة البيانات: ما الذي تبحث عنه الفحوصات"
+
+msgid "Download the filled form (original regulator Word file or PDF)."
+msgstr "حمّل النموذج المستوفى (ملف Word الأصلي للجهة الرقابية أو PDF)."
+
+msgid "ESG"
+msgstr "الاستدامة"
+
+msgid "ESG & carbon guideline"
+msgstr "دليل الاستدامة والكربون"
+
+msgid "Earlier assessments (previous screen)"
+msgstr "تقييمات سابقة (الشاشة السابقة)"
+
+msgid "Edit key official"
+msgstr "تعديل مسئول رئيسي"
+
+msgid "Every score needs a justification (why this level and not the one above or below)."
+msgstr "كل درجة تحتاج مبرراً (لماذا هذا المستوى وليس الأعلى أو الأدنى منه)."
+
+msgid "Executive / key function"
+msgstr "تنفيذي / وظيفة رئيسية"
+
+msgid "Financed emissions (PCAF)"
+msgstr "الانبعاثات الممولة (PCAF)"
+
+msgid "Fit & Proper — key officials"
+msgstr "الجدارة والصلاحية — المسئولون الرئيسيون"
+
+msgid "Fit with conditions"
+msgstr "جدير بشروط"
+
+msgid "Form completed and sent for compliance review."
+msgstr "تم استكمال النموذج وإرساله لمراجعة الالتزام."
+
+msgid "Forms available"
+msgstr "النماذج المتاحة"
+
+msgid "Full name (Arabic)"
+msgstr "الاسم بالكامل (بالعربية)"
+
+msgid "Full name (as in ID / passport)"
+msgstr "الاسم بالكامل (كما في الرقم القومي / جواز السفر)"
+
+msgid "General guidance and instructions"
+msgstr "إرشادات وتعليمات عامة"
+
+msgid "Governance & fit and proper"
+msgstr "الحوكمة والجدارة والصلاحية"
+
+msgid "Guide"
+msgstr "الدليل"
+
+msgid "If yes, full details"
+msgstr "في حالة الإجابة بنعم، التفاصيل كاملة"
+
+msgid "In practice"
+msgstr "عملياً"
+
+msgid "Institution assessment (1–5)"
+msgstr "تقييم المؤسسة (1–5)"
+
+msgid "Justification and evidence checked"
+msgstr "المبرر والأدلة التي تم التحقق منها"
+
+msgid "Key function"
+msgstr "الوظيفة الرئيسية"
+
+msgid "Key official"
+msgstr "مسئول رئيسي"
+
+msgid "Key officials"
+msgstr "المسئولون الرئيسيون"
+
+msgid "Latest form"
+msgstr "آخر نموذج"
+
+msgid "Leave unused rows empty; the regulator file shows them as N/A."
+msgstr "اترك الصفوف غير المستخدمة فارغة؛ يُظهرها ملف الجهة الرقابية بعبارة N/A."
+
+msgid "Mark as submitted to the regulator"
+msgstr "تسجيل الإرسال للجهة الرقابية"
+
+msgid "Materiality"
+msgstr "الأهمية النسبية"
+
+msgid "Member removed from the committee."
+msgstr "تم إنهاء عضوية العضو في اللجنة."
+
+msgid "Members need a fit & proper assessment"
+msgstr "الأعضاء يحتاجون تقييم جدارة وصلاحية"
+
+msgid "Members who are not board members"
+msgstr "أعضاء من غير أعضاء مجلس الإدارة"
+
+msgid "Mobile"
+msgstr "المحمول"
+
+msgid "Needs an answer"
+msgstr "يحتاج إجابة"
+
+msgid "New form"
+msgstr "نموذج جديد"
+
+msgid "No committee seat."
+msgstr "لا توجد عضوية في لجان."
+
+msgid "No committees."
+msgstr "لا توجد لجان."
+
+msgid "No fit & proper form"
+msgstr "لا يوجد نموذج جدارة وصلاحية"
+
+msgid "No form yet"
+msgstr "لا يوجد نموذج بعد"
+
+msgid "No key officials yet. Add board members to the list or add a key official."
+msgstr "لا يوجد مسئولون رئيسيون بعد. أضف أعضاء مجلس الإدارة إلى القائمة أو أضف مسئولاً رئيسياً."
+
+msgid "No signed copy yet."
+msgstr "لا توجد نسخة موقعة بعد."
+
+msgid "Not fit"
+msgstr "غير جدير"
+
+msgid "Not in the list? Add the person under Fit & Proper > Add key official (type: committee member)."
+msgstr "غير موجود في القائمة؟ أضفه من الجدارة والصلاحية > إضافة مسئول رئيسي (النوع: عضو لجنة)."
+
+#, python-format
+msgid "Not possible: %(e)s"
+msgstr "غير ممكن: %(e)s"
+
+msgid "Note (optional)"
+msgstr "ملاحظة (اختياري)"
+
+msgid "Numbers that come from a regulation (thresholds, offset percentage, deadlines) are parameters with their legal reference, not hard-coded: check and update them under Regulatory controls > Parameters when a decision changes."
+msgstr "الأرقام المأخوذة من القرارات (الحدود، نسبة التعويض، المواعيد) معاملات مسجل معها مرجعها القانوني وليست ثابتة في الكود: راجعها وحدّثها من الضوابط الرقابية > المعاملات عند تغير أي قرار."
+
+msgid "On the signed copy"
+msgstr "على النسخة الموقعة"
+
+msgid "On what basis each ESG and carbon assessment is made in the system, with the rule or standard behind it."
+msgstr "على أي أساس يتم كل تقييم للاستدامة والكربون في النظام، مع القاعدة أو المعيار الذي يستند إليه."
+
+msgid "Only for independent board members"
+msgstr "لأعضاء مجلس الإدارة المستقلين فقط"
+
+msgid "Open FRA compliance"
+msgstr "فتح التزام الهيئة"
+
+msgid "Open the data-quality page"
+msgstr "فتح صفحة جودة البيانات"
+
+msgid "Open the materiality assessment"
+msgstr "فتح تقييم الأهمية النسبية"
+
+msgid "Original regulator file"
+msgstr "الملف الأصلي للجهة الرقابية"
+
+msgid "Original regulator form, filled (.docx)"
+msgstr "النموذج الأصلي للجهة الرقابية مستوفى (.docx)"
+
+msgid "Position title"
+msgstr "المسمى الوظيفي"
+
+msgid "Rating guide"
+msgstr "دليل التقييم"
+
+msgid "Rating guides"
+msgstr "أدلة التقييم"
+
+msgid "References: FRA decrees and decisions as listed above; GHG Protocol Corporate Standard, Scope 2 Guidance and Scope 3 Standard (WRI/WBCSD); PCAF Global GHG Accounting and Reporting Standard for the Financial Industry; TCFD recommendations; ISO 14064-3 for verification."
+msgstr "المراجع: قرارات الهيئة العامة للرقابة المالية الموضحة أعلاه؛ بروتوكول غازات الاحتباس الحراري (المعيار المؤسسي وإرشادات النطاق 2 ومعيار النطاق 3 – WRI/WBCSD)؛ معيار PCAF العالمي لحساب انبعاثات القطاع المالي؛ توصيات TCFD؛ ومعيار ISO 14064-3 للتحقق."
+
+msgid "Regulator approved"
+msgstr "موافقة الجهة الرقابية"
+
+msgid "Regulator form: the questions are reproduced word for word and cannot be changed in the system. Answer every item; write N/A where not applicable."
+msgstr "نموذج رقابي: الأسئلة منقولة بنصها ولا يمكن تعديلها في النظام. أجب عن كل بند واكتب N/A حيث لا ينطبق."
+
+msgid "Regulator rejected"
+msgstr "رفض الجهة الرقابية"
+
+msgid "Remove from committee"
+msgstr "إنهاء العضوية في اللجنة"
+
+msgid "Remove this member from the committee?"
+msgstr "إنهاء عضوية هذا العضو في اللجنة؟"
+
+msgid "Rename / edit committee"
+msgstr "تعديل اسم / بيانات اللجنة"
+
+msgid "Result rule: any criterion at 1 = not fit; any at 2 or an average below 3 = fit with conditions; otherwise fit & proper."
+msgstr "قاعدة النتيجة: أي معيار بدرجة 1 = غير جدير؛ أي معيار بدرجة 2 أو متوسط أقل من 3 = جدير بشروط؛ غير ذلك جدير."
+
+msgid "Return to draft"
+msgstr "إعادة إلى المسودة"
+
+msgid "Review page"
+msgstr "صفحة المراجعة"
+
+msgid "Risk management"
+msgstr "إدارة المخاطر"
+
+msgid "Save and mark as completed by the candidate"
+msgstr "حفظ وتسجيل استيفاء المرشح للنموذج"
+
+msgid "Save assessment"
+msgstr "حفظ التقييم"
+
+#, python-format
+msgid "Saved, but %(n)s item(s) still need an answer (write N/A where not applicable)."
+msgstr "تم الحفظ، ولكن %(n)s بند ما زال يحتاج إجابة (اكتب N/A حيث لا ينطبق)."
+
+msgid "Scan and attach the signed form here, then send it to the regulator."
+msgstr "امسح النموذج الموقع ضوئياً وأرفقه هنا، ثم أرسله للجهة الرقابية."
+
+msgid "Score each criterion from the answers and your checks. Open the guide to see what each level means; the justification must say why this level and not the next one."
+msgstr "قيّم كل معيار من الإجابات ومن تحققك. افتح الدليل لمعرفة معنى كل مستوى؛ يجب أن يوضح المبرر لماذا هذا المستوى وليس الذي يليه."
+
+msgid "Scoring an ESG indicator (1–5)"
+msgstr "تقييم مؤشر الاستدامة (1–5)"
+
+msgid "Scoring guide"
+msgstr "دليل التقييم"
+
+msgid "Select from key officials"
+msgstr "اختر من المسئولين الرئيسيين"
+
+msgid "Signed by hand (or digitally) on the printed form, then the signed copy is attached to this record."
+msgstr "يُوقَّع باليد (أو رقمياً) على النموذج المطبوع، ثم تُرفق النسخة الموقعة بهذا السجل."
+
+msgid "Signed copy"
+msgstr "النسخة الموقعة"
+
+msgid "Signed copy attached."
+msgstr "تم إرفاق النسخة الموقعة."
+
+msgid "Start compliance review"
+msgstr "بدء مراجعة الالتزام"
+
+msgid "Status updated."
+msgstr "تم تحديث الحالة."
+
+msgid "Still to answer:"
+msgstr "متبقٍ للإجابة:"
+
+msgid "Submission email / letter reference"
+msgstr "مرجع بريد / خطاب الإرسال"
+
+msgid "Suggested max"
+msgstr "الحد الأقصى المقترح"
+
+msgid "System user (executives)"
+msgstr "مستخدم النظام (للتنفيذيين)"
+
+msgid "The candidate signs every page; the chairperson or CEO signs the institution certification."
+msgstr "يوقع المرشح على كل صفحة؛ ويوقع رئيس مجلس الإدارة أو الرئيس التنفيذي على مصادقة المؤسسة."
+
+msgid "The full regulator form, the 1–5 guide and signed copies are under Fit & Proper."
+msgstr "النموذج الرقابي الكامل ودليل التقييم من 1 إلى 5 والنسخ الموقعة موجودة في صفحة الجدارة والصلاحية."
+
+#, python-format
+msgid "This form is locked (status: %(s)s). Return it to draft to change answers."
+msgstr "هذا النموذج مقفل (الحالة: %(s)s). أعده إلى المسودة لتعديل الإجابات."
+
+msgid "Typical evidence"
+msgstr "أدلة نموذجية"
+
+msgid "Used in"
+msgstr "يُستخدم في"
+
+msgid "Verification, report and offset"
+msgstr "التحقق والتقرير والتعويض"
+
+msgid "What does each level mean?"
+msgstr "ما معنى كل مستوى؟"
+
+msgid "What every score in the system means, when to give it and what evidence supports it — so two people scoring the same facts reach the same number, and every score can be explained to an inspector."
+msgstr "معنى كل درجة في النظام، ومتى تُعطى، وما الأدلة التي تدعمها — حتى يصل شخصان يقيّمان نفس الوقائع إلى نفس الرقم، ويمكن شرح أي درجة للمفتش."
+
+msgid "What it requires"
+msgstr "ما الذي يتطلبه"
+
+msgid "When to give it"
+msgstr "متى تُعطى"
+
+msgid "Where in the system"
+msgstr "أين في النظام"
+
+msgid "Which rules apply"
+msgstr "القواعد المطبقة"
+
+msgid "Withdraw"
+msgstr "سحب"
+
+msgid "Yearly calendar"
+msgstr "التقويم السنوي"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from 'partials/rating_guide.html' import guide_panel with context %}
 
 {% block title %}New Fit & Proper Assessment - ComplyNex CMS{% endblock %}
 
@@ -38,6 +39,7 @@
                 </div>
 
                 <div class="mb-3">
+                    <div class="alert alert-info small py-2">{{ _('The full regulator form, the 1–5 guide and signed copies are under Fit & Proper.') }} <a href="{{ url_for('governance.fit_proper_dashboard') }}">{{ _('Open') }}</a></div>
                     <label class="form-label">{{ _('1. Honesty, Integrity & Reputation') }}</label>
                     <input type="number" name="honesty_integrity_score" class="form-control" min="0" max="20" required>
                     <div class="form-text">{{ _('Criminal record, regulatory sanctions, personal conduct.') }}</div>

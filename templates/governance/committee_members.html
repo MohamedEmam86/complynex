@@ -1,89 +1,100 @@
 {% extends "base.html" %}
-
 {% block content %}
+{% set ar = session.get('lang') == 'ar' %}
+{% macro fpbadge(r) -%}
+  {% if r and r.form_id %}<a href="{{ url_for('governance.fp_form_view', fid=r.form_id) }}" class="badge text-decoration-none bg-{{ {'regulator_approved': 'success', 'regulator_rejected': 'danger', 'draft': 'warning'}.get(r.status, 'primary') }}">{{ fp_labels[r.status][1] if ar else fp_labels[r.status][0] }}</a>
+  {% else %}<span class="badge bg-secondary">{{ _('No fit & proper form') }}</span>{% endif %}
+{%- endmacro %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">{{ committee.committee_name }} - {{ _('Members') }}</h1>
-        <a href="{{ url_for('governance.list_committees') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> {{ _('Back to Committees') }}
-        </a>
+        <h1 class="h3 mb-0">{{ (committee.committee_name_arabic if ar and committee.committee_name_arabic else committee.committee_name) }} - {{ _('Members') }}</h1>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('governance.edit_committee', id=committee.id) }}" class="btn btn-outline-primary"><i class="fas fa-pen"></i> {{ _('Rename / edit committee') }}</a>
+          <a href="{{ url_for('governance.list_committees') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> {{ _('Back to Committees') }}</a>
+        </div>
     </div>
-
     <div class="row">
-        <!-- Current Members -->
         <div class="col-lg-8">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">{{ _('Current Members') }}</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>{{ _('Member Name') }}</th>
-                                    <th>{{ _('Committee Role') }}</th>
-                                    <th>{{ _('Joined Date') }}</th>
-                                    <th>{{ _('Actions') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for membership in current_members %}
-                                <tr>
-                                    <td>{{ membership.member_name }}</td>
-                                    <td><span class="badge bg-secondary">{{ membership.role }}</span></td>
-                                    <td>{{ membership.joined_date }}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-danger">
-                                            <i class="fas fa-user-minus"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                                {% if not current_members %}
-                                <tr>
-                                    <td colspan="4" class="text-center py-4 text-muted">
-                                        {{ _('No members assigned to this committee yet.') }}
-                                    </td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">{{ _('Board members on this committee') }}</h6></div>
+                <div class="card-body"><div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>{{ _('Member Name') }}</th><th>{{ _('Committee Role') }}</th><th>{{ _('Joined Date') }}</th><th>{{ _('Fit & proper') }}</th><th></th></tr></thead>
+                        <tbody>
+                        {% for m in current_members %}
+                            <tr>
+                                <td>{{ m.member_name }}</td>
+                                <td><span class="badge bg-secondary">{{ m.role }}</span></td>
+                                <td>{{ m.joined_date or '—' }}</td>
+                                <td>{{ fpbadge(fp_status.get(m.member_id)) }}</td>
+                                <td class="text-end">
+                                    <form method="post" action="{{ url_for('governance.remove_committee_member', id=committee.id, membership_id=m.id) }}" data-confirm="{{ _('Remove this member from the committee?') }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="btn btn-sm btn-outline-danger" title="{{ _('Remove from committee') }}"><i class="fas fa-user-minus"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="5" class="text-center py-4 text-muted">{{ _('No members assigned to this committee yet.') }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div></div>
+            </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">{{ _('Members who are not board members') }}</h6></div>
+                <div class="card-body"><div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>{{ _('Name') }}</th><th>{{ _('Committee Role') }}</th><th>{{ _('Joined Date') }}</th><th>{{ _('Fit & proper') }}</th><th></th></tr></thead>
+                        <tbody>
+                        {% for e in externals %}
+                            <tr>
+                                <td><a href="{{ url_for('governance.fp_official_edit', oid=e.official_id) }}">{{ e.full_name }}</a></td>
+                                <td><span class="badge bg-secondary">{{ e.role }}</span></td>
+                                <td>{{ e.joined_on or '—' }}</td>
+                                <td>{{ fpbadge(e) }}</td>
+                                <td class="text-end">
+                                    <form method="post" action="{{ url_for('governance.committee_external_member', id=committee.id) }}" data-confirm="{{ _('Remove this member from the committee?') }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="remove" value="1"><input type="hidden" name="seat_id" value="{{ e.seat_id }}">
+                                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-user-minus"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted small">{{ _('None.') }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div></div>
             </div>
         </div>
-
-        <!-- Add Member Form -->
         <div class="col-lg-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 text-white bg-primary">
-                    <h6 class="m-0 font-weight-bold">{{ _('Add Member') }}</h6>
-                </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header py-3 text-white bg-primary"><h6 class="m-0 fw-bold">{{ _('Add board member') }}</h6></div>
                 <div class="card-body">
                     <form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <div class="mb-3">
-                            <label class="form-label">{{ _('Board Member') }}</label>
-                            <select name="member_id" class="form-select" required>
-                                <option value="">-- {{ _('Select Member') }} --</option>
-                                {% for member in all_members %}
-                                <option value="{{ member.id }}">{{ member.member_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">{{ _('Role in Committee') }}</label>
-                            <select name="role" class="form-select">
-                                <option value="MEMBER">{{ _('MEMBER') }}</option>
-                                <option value="CHAIRMAN">{{ _('CHAIRMAN') }}</option>
-                                <option value="SECRETARY">{{ _('SECRETARY') }}</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-user-plus"></i> {{ _('Add to Committee') }}
-                        </button>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3"><label class="form-label">{{ _('Board Member') }}</label>
+                            <select name="member_id" class="form-select" required><option value="">-- {{ _('Select Member') }} --</option>
+                                {% for member in all_members %}<option value="{{ member.id }}">{{ member.member_name }}</option>{% endfor %}</select></div>
+                        <div class="mb-3"><label class="form-label">{{ _('Role in Committee') }}</label>
+                            <select name="role" class="form-select"><option value="MEMBER">{{ _('MEMBER') }}</option><option value="CHAIRMAN">{{ _('CHAIRMAN') }}</option><option value="SECRETARY">{{ _('SECRETARY') }}</option></select></div>
+                        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-user-plus"></i> {{ _('Add to Committee') }}</button>
                     </form>
+                </div>
+            </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header py-3"><h6 class="m-0 fw-bold">{{ _('Add a member who is not a board member') }}</h6></div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('governance.committee_external_member', id=committee.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3"><select name="official_id" class="form-select" required><option value="">-- {{ _('Select from key officials') }} --</option>
+                            {% for o in external_candidates %}<option value="{{ o.id }}">{{ o.full_name }}</option>{% endfor %}</select></div>
+                        <div class="mb-3"><select name="role" class="form-select"><option value="MEMBER">{{ _('MEMBER') }}</option><option value="CHAIRMAN">{{ _('CHAIRMAN') }}</option><option value="EXPERT">{{ _('Expert') }}</option></select></div>
+                        <button class="btn btn-outline-primary w-100">{{ _('Add to Committee') }}</button>
+                    </form>
+                    <div class="small text-muted mt-2">{{ _('Not in the list? Add the person under Fit & Proper > Add key official (type: committee member).') }}
+                        <a href="{{ url_for('governance.fp_official_edit') }}">{{ _('Add key official') }}</a></div>
                 </div>
             </div>
         </div>

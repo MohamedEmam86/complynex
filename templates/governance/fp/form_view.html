@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% from 'governance/fp/_macros.html' import answer, t, t2 with context %}
+{% from 'partials/rating_guide.html' import guide_panel with context %}
+{% block title %}{{ f.reference }} - {{ _('Fit & Proper') }}{% endblock %}
+{% block content %}
+{% set SL = S.STATUS_LABELS %}
+{% set can_edit = current_user.can_edit('governance') %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-3 border-bottom gap-2">
+  <div>
+    <div class="small text-muted">{{ f.reference }} · {{ S.PURPOSES[f.purpose][1] if lang == 'ar' else S.PURPOSES[f.purpose][0] }}{% if f.committee_name %} · {{ f.committee_name }}{% endif %}</div>
+    <h1 class="h4 mb-0">{{ f.full_name_ar if lang == 'ar' and f.full_name_ar else f.full_name }}</h1>
+    <div class="small text-muted">{{ defn.title_ar if lang == 'ar' else defn.title_en }}</div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <span class="badge fs-6 bg-{{ {'regulator_approved': 'success', 'regulator_rejected': 'danger', 'draft': 'warning'}.get(f.status, 'primary') }}">{{ SL[f.status][1] if lang == 'ar' else SL[f.status][0] }}</span>
+    {% if can_edit and f.status in ('draft', 'candidate_completed', 'under_review') %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('governance.fp_form_edit', fid=f.id) }}"><i class="fas fa-pen"></i> {{ _('Answers') }}</a>{% endif %}
+    <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ url_for('governance.fp_form_print', fid=f.id) }}"><i class="fas fa-print"></i> {{ _('Print') }}</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('governance.fp_form_pdf', fid=f.id) }}"><i class="fas fa-file-pdf"></i> PDF</a>
+    {% if has_docx %}<a class="btn btn-sm btn-success" href="{{ url_for('governance.fp_form_docx', fid=f.id) }}"><i class="fas fa-file-word"></i> {{ _('Original regulator form, filled (.docx)') }}</a>{% endif %}
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('governance.fit_proper_dashboard') }}"><i class="fas fa-arrow-left"></i></a>
+  </div>
+</div>
+
+{# ---- progress #}
+{% set steps = ['draft', 'candidate_completed', 'under_review', 'approved_internal', 'signed', 'submitted', 'regulator_approved'] %}
+{% set cur = steps.index(f.status) if f.status in steps else -1 %}
+<div class="d-flex flex-wrap gap-1 mb-3 small">
+  {% for st in steps %}<span class="badge {{ 'bg-success' if loop.index0 < cur else ('bg-primary' if loop.index0 == cur else 'bg-light text-muted border') }}">{{ loop.index }}. {{ SL[st][1] if lang == 'ar' else SL[st][0] }}</span>{% endfor %}
+</div>
+
+<div class="row g-3">
+<div class="col-lg-7">
+  {% if issues %}<div class="alert alert-warning small"><i class="fas fa-exclamation-triangle"></i> {{ _('%(n)s item(s) not answered yet.', n=issues|length) }}
+    {% for no, en, ar, why in issues[:12] %}<span class="badge bg-warning text-dark me-1">{{ no }}</span>{% endfor %}</div>{% endif %}
+  {% if flags %}<div class="alert alert-danger small"><strong><i class="fas fa-flag"></i> {{ _('Answers needing the reviewer\'s attention') }}</strong>
+    <ul class="mb-0">{% for fl in flags %}<li>{{ fl.no }} — {{ fl.ar if lang == 'ar' else fl.en }}</li>{% endfor %}</ul></div>{% endif %}
+
+  {% for s in defn.sections %}
+  <div class="card border-0 shadow-sm mb-2">
+    <div class="card-header bg-white py-2"><a data-bs-toggle="collapse" href="#v{{ s.id }}" class="text-decoration-none fw-semibold">{{ s.no }}. {{ t(s) }}</a></div>
+    <div id="v{{ s.id }}" class="collapse {{ 'show' if loop.index <= 3 }}"><div class="card-body py-2">
+      <table class="table table-sm mb-0 small">
+      {% for it in s['items'] %}<tr><th class="text-muted fw-normal" style="width:45%">{{ it.no }} {{ t(it) }}</th><td>{{ answer(it, a) }}</td></tr>{% endfor %}
+      </table></div></div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="col-lg-5">
+  {# ---- assessment #}
+  <div class="card border-0 shadow-sm mb-3" id="assessment">
+    <div class="card-header bg-white fw-bold d-flex justify-content-between">
+      <span>{{ _('Institution assessment (1–5)') }}</span>
+      {% if f.assessment_score %}<span>{{ f.assessment_score }} / 5 ·
+        <span class="badge bg-{{ {'fit': 'success', 'fit_with_conditions': 'warning', 'not_fit': 'danger'}[f.assessment_result] }}">{{ {'fit': _('Fit & proper'), 'fit_with_conditions': _('Fit with conditions'), 'not_fit': _('Not fit')}[f.assessment_result] }}</span></span>{% endif %}
+    </div>
+    <form method="post" action="{{ url_for('governance.fp_form_assess', fid=f.id) }}"><div class="card-body">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <p class="small text-muted">{{ _('Score each criterion from the answers and your checks. Open the guide to see what each level means; the justification must say why this level and not the next one.') }}</p>
+      {% for key, gkey, secs, en, ar in CRITERIA %}
+        {% set cur_a = f.assessment.get(key, {}) %}
+        <div class="mb-3 border-bottom pb-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <label class="fw-semibold">{{ ar if lang == 'ar' else en }}</label>
+            {% if caps.get(key) %}<span class="badge bg-danger-subtle text-danger-emphasis" title="{{ _('Adverse answers in the form') }}">{{ _('Suggested max') }} {{ caps[key] }}</span>{% endif %}
+          </div>
+          <div class="d-flex gap-2 my-1">
+            {% for n in range(1, 6) %}<input type="radio" class="btn-check" name="score_{{ key }}" id="sc_{{ key }}_{{ n }}" value="{{ n }}" {{ 'checked' if cur_a.get('score')|string == n|string }} {{ 'disabled' if not can_edit }}>
+            <label class="btn btn-sm btn-outline-{{ 'danger' if n <= 2 else ('warning' if n == 3 else 'success') }}" for="sc_{{ key }}_{{ n }}">{{ n }}</label>{% endfor %}
+          </div>
+          <textarea class="form-control form-control-sm" name="just_{{ key }}" rows="2" placeholder="{{ _('Justification and evidence checked') }}" {{ 'disabled' if not can_edit }}>{{ cur_a.get('justification', '') }}</textarea>
+          {{ guide_panel(gkey, 'g_' ~ key) }}
+        </div>
+      {% endfor %}
+      <label class="form-label small">{{ _('Conditions (if fit with conditions)') }}</label>
+      <textarea class="form-control form-control-sm" name="conditions" rows="2" {{ 'disabled' if not can_edit }}>{{ f.conditions or '' }}</textarea>
+      <div class="small text-muted mt-2">{{ _('Result rule: any criterion at 1 = not fit; any at 2 or an average below 3 = fit with conditions; otherwise fit & proper.') }}</div>
+    </div>
+    {% if can_edit and f.status not in ('submitted', 'regulator_approved', 'regulator_rejected', 'withdrawn') %}<div class="card-footer bg-white text-end"><button class="btn btn-sm btn-primary">{{ _('Save assessment') }}</button></div>{% endif %}
+    </form>
+  </div>
+
+  {# ---- workflow #}
+  {% if can_edit %}
+  <div class="card border-0 shadow-sm mb-3"><div class="card-header bg-white fw-bold">{{ _('Workflow') }}</div><div class="card-body">
+    <form method="post" action="{{ url_for('governance.fp_form_status', fid=f.id) }}" class="row g-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="col-12"><textarea class="form-control form-control-sm" name="note" rows="2" placeholder="{{ _('Note (optional)') }}"></textarea></div>
+      {% if f.status in ('submitted',) %}
+        <div class="col-6"><input class="form-control form-control-sm" name="regulator_reference" placeholder="{{ _('Regulator reference') }}" value="{{ f.regulator_reference or '' }}"></div>
+        <div class="col-6"><input type="date" class="form-control form-control-sm" name="decision_on"></div>
+      {% elif f.status in ('signed', 'approved_internal') %}
+        <div class="col-12"><input class="form-control form-control-sm" name="regulator_reference" placeholder="{{ _('Submission email / letter reference') }}"></div>
+      {% endif %}
+      <div class="col-12 d-flex flex-wrap gap-2">
+        {% if f.status == 'draft' %}<a class="btn btn-sm btn-primary" href="{{ url_for('governance.fp_form_edit', fid=f.id) }}">{{ _('Complete the answers') }}</a>{% endif %}
+        {% if f.status == 'candidate_completed' %}<button class="btn btn-sm btn-primary" name="action" value="start_review">{{ _('Start compliance review') }}</button>{% endif %}
+        {% if f.status == 'under_review' %}<button class="btn btn-sm btn-success" name="action" value="approve">{{ _('Approve internally') }}</button>{% endif %}
+        {% if f.status in ('signed', 'approved_internal') %}<button class="btn btn-sm btn-primary" name="action" value="submit">{{ _('Mark as submitted to the regulator') }}</button>{% endif %}
+        {% if f.status == 'submitted' %}<button class="btn btn-sm btn-success" name="action" value="regulator_approved">{{ _('Regulator approved') }}</button>
+          <button class="btn btn-sm btn-danger" name="action" value="regulator_rejected">{{ _('Regulator rejected') }}</button>{% endif %}
+        {% if f.status in ('candidate_completed', 'under_review', 'approved_internal') %}<button class="btn btn-sm btn-outline-warning" name="action" value="return">{{ _('Return to draft') }}</button>{% endif %}
+        {% if f.status not in ('regulator_approved', 'regulator_rejected', 'withdrawn') %}<button class="btn btn-sm btn-outline-danger" name="action" value="withdraw">{{ _('Withdraw') }}</button>{% endif %}
+      </div>
+    </form>
+  </div></div>
+  {% endif %}
+
+  {# ---- signed copy #}
+  <div class="card border-0 shadow-sm mb-3"><div class="card-header bg-white fw-bold">{{ _('Signed copy') }}</div><div class="card-body">
+    <ol class="small text-muted ps-3">
+      <li>{{ _('Download the filled form (original regulator Word file or PDF).') }}</li>
+      <li>{{ _('The candidate signs every page; the chairperson or CEO signs the institution certification.') }}</li>
+      <li>{{ _('Scan and attach the signed form here, then send it to the regulator.') }}</li>
+    </ol>
+    {% for s in signed %}<div class="small"><i class="fas fa-file-signature text-success"></i> <a href="{{ url_for('attachments.download', attachment_id=s.id) }}">{{ s.filename }}</a> · {{ s.uploaded_at }}</div>{% else %}<div class="small text-muted">{{ _('No signed copy yet.') }}</div>{% endfor %}
+    {% if can_edit and f.status in ('approved_internal', 'under_review', 'candidate_completed', 'signed', 'submitted') %}
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('governance.fp_form_signed', fid=f.id) }}" class="d-flex gap-2 mt-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="file" name="file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png">
+      <button class="btn btn-sm btn-outline-primary text-nowrap">{{ _('Attach') }}</button>
+    </form>{% endif %}
+    {% if f.regulator_reference %}<div class="small mt-2">{{ _('Regulator reference') }}: <strong>{{ f.regulator_reference }}</strong>{% if f.regulator_decision_on %} · {{ f.regulator_decision_on }}{% endif %}</div>{% endif %}
+    {% if f.next_review_date %}<div class="small">{{ _('Next review') }}: {{ f.next_review_date }}</div>{% endif %}
+  </div></div>
+
+  {# ---- history #}
+  <div class="card border-0 shadow-sm"><div class="card-header bg-white fw-bold">{{ _('History') }}</div>
+    <ul class="list-group list-group-flush small">{% for e in events %}<li class="list-group-item">
+      <span class="text-muted">{{ e.created_at.strftime('%Y-%m-%d %H:%M') if e.created_at }}</span> · {{ e.user_name or '' }} · <strong>{{ e.action }}</strong>
+      {% if e.status_to %}→ {{ SL[e.status_to][1] if lang == 'ar' and e.status_to in SL else (SL[e.status_to][0] if e.status_to in SL else e.status_to) }}{% endif %}
+      {% if e.note %}<div>{{ e.note }}</div>{% endif %}</li>{% endfor %}</ul></div>
+</div>
+</div>
+{% endblock %}

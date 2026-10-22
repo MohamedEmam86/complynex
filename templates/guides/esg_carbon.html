@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% from 'partials/rating_guide.html' import guide_panel with context %}
+{% block title %}{{ _('ESG & carbon guideline') }} - ComplyNex{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom d-flex justify-content-between flex-wrap gap-2">
+  <div><h1 class="h3 mb-0">{{ _('ESG & carbon guideline') }}</h1>
+  <div class="text-muted small">{{ _('On what basis each ESG and carbon assessment is made in the system, with the rule or standard behind it.') }}</div></div>
+  <div class="d-flex gap-2"><a class="btn btn-sm btn-outline-info" href="{{ url_for('guides.ratings') }}#esg.maturity"><i class="fas fa-ruler"></i> {{ _('Rating guides') }}</a>
+  <button class="btn btn-sm btn-outline-secondary" data-print><i class="fas fa-print"></i> {{ _('Print') }}</button></div>
+</div>
+
+{% macro sec(n, title) %}<h2 class="h5 mt-4 mb-2 text-success">{{ n }}. {{ title }}</h2>{% endmacro %}
+
+{{ sec(1, _('Which rules apply')) }}
+<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-sm small mb-0">
+<thead class="table-light"><tr><th>{{ _('Rule') }}</th><th>{{ _('Who') }}</th><th>{{ _('What it requires') }}</th><th>{{ _('Where in the system') }}</th></tr></thead><tbody>
+{% if ar %}
+<tr><td>قرار مجلس إدارة الهيئة العامة للرقابة المالية رقم 107 لسنة 2021</td><td>الشركات العاملة في الأنشطة المالية غير المصرفية التي يبلغ رأس مالها المُصدر أو صافي حقوق ملكيتها 100 مليون جنيه فأكثر (الحد مُعرّف كمعامل في النظام)</td><td>تقرير الإفصاح عن ممارسات الاستدامة (ESG) وفق نموذج الهيئة: مؤشرات بيئية واجتماعية وحوكمة (17 مؤشراً في الأقسام ب وج وح)</td><td><a href="{{ url_for('esg.disclosures') }}">الإفصاحات</a> · <a href="{{ url_for('esg.dashboard') }}">لوحة الاستدامة</a></td></tr>
+<tr><td>قرار مجلس إدارة الهيئة رقم 108 لسنة 2021</td><td>الشركات التي يبلغ رأس مالها المُصدر أو صافي حقوق ملكيتها 500 مليون جنيه فأكثر</td><td>الإفصاح عن الآثار المالية للتغيرات المناخية وفق توصيات TCFD (الحوكمة، الاستراتيجية، إدارة المخاطر، المقاييس والأهداف)</td><td><a href="{{ url_for('esg.disclosures') }}">الإفصاحات (TCFD)</a></td></tr>
+<tr><td>قرار مجلس إدارة الهيئة رقم 36 لسنة 2026 (المعدّل بالقرار 115 لسنة 2026)</td><td>الشركات فوق حد الإفصاح (معامل carbon.report_threshold_egp)</td><td>تقرير البصمة الكربونية للنطاقين 1 و2، يتحقق منه جهة تحقق معتمدة من الهيئة، وتعويض نسبة من الانبعاثات خلال مدة محددة؛ أول تقرير في موعد أقصاه 31 ديسمبر 2026</td><td><a href="{{ url_for('carbon.fra_compliance') }}">التزام الهيئة (الكربون)</a></td></tr>
+{% else %}
+<tr><td>FRA Board Decree 107 of 2021</td><td>Non-bank financial companies with issued capital or net equity of EGP 100m or more (threshold held as a system parameter)</td><td>Sustainability (ESG) disclosure report on the FRA template: environmental, social and governance indicators (17 KPIs in sections B, C and H)</td><td><a href="{{ url_for('esg.disclosures') }}">Disclosures</a> · <a href="{{ url_for('esg.dashboard') }}">ESG dashboard</a></td></tr>
+<tr><td>FRA Board Decree 108 of 2021</td><td>Companies with issued capital or net equity of EGP 500m or more</td><td>Climate-related financial disclosure following the TCFD recommendations (governance, strategy, risk management, metrics and targets)</td><td><a href="{{ url_for('esg.disclosures') }}">Disclosures (TCFD)</a></td></tr>
+<tr><td>FRA Board Decision 36 of 2026 (amended by Decision 115 of 2026)</td><td>Companies above the reporting threshold (parameter carbon.report_threshold_egp)</td><td>Carbon-footprint report for Scope 1 and Scope 2, verified by an FRA-accredited verifier, with a share of emissions offset within a set period; first report due by 31 December 2026</td><td><a href="{{ url_for('carbon.fra_compliance') }}">FRA compliance (carbon)</a></td></tr>
+{% endif %}
+</tbody></table></div>
+<div class="card-footer bg-white small text-muted">{{ _('Numbers that come from a regulation (thresholds, offset percentage, deadlines) are parameters with their legal reference, not hard-coded: check and update them under Regulatory controls > Parameters when a decision changes.') }} <a href="{{ url_for('regcontrols.parameters') }}">{{ _('Parameters') }}</a></div></div>
+
+{{ sec(2, _('Scoring an ESG indicator (1–5)')) }}
+<div class="card border-0 shadow-sm"><div class="card-body small">
+{% if ar %}
+<p>كل مؤشر يُقيَّم من 1 إلى 5 حسب <strong>نضج إدارة الموضوع</strong> وليس حجم الرقم: هل يوجد مسؤول؟ منهجية؟ بيانات منتظمة؟ هدف معتمد؟ تأكيد خارجي؟ كل مستوى يتطلب أدلة المستويات الأدنى. المؤشر غير المنطبق يُترك فارغاً فلا يدخل في المتوسط.</p>
+<p><strong>الحساب في النظام:</strong> درجة المحور = متوسط مرجح بأوزان المؤشرات المُجاب عنها فقط؛ الدرجة الكلية = متوسط مرجح بأوزان المحاور، وتظهر أيضاً من 100. التصنيف: 4.5 فأكثر رائد، 3.5–4.49 متقدم، 2.5–3.49 قيد التطوير، 1.5–2.49 أساسي، أقل من ذلك لم يبدأ. نسبة الاستكمال تُعرض بجانب الدرجة حتى لا تُقرأ درجة جزئية كأنها كاملة.</p>
+{% else %}
+<p>Each indicator is scored 1–5 on <strong>how well the topic is managed</strong>, not on the size of the figure: is there an owner, a method, regular data, an approved target, external assurance? Each level needs the evidence of the levels below it. An indicator that does not apply is left blank, so it does not pull the average down.</p>
+<p><strong>How the system calculates:</strong> pillar score = weighted average of the answered indicators only; overall score = weighted average of the pillars, also shown out of 100. Bands: 4.5+ Leading, 3.5–4.49 Advanced, 2.5–3.49 Developing, 1.5–2.49 Basic, below that Not started. Completeness is shown next to the score so a partial score is never read as a full one.</p>
+{% endif %}
+{{ guide_panel('esg.maturity', 'gx1') }}
+</div></div>
+
+{{ sec(3, _('Materiality')) }}
+<div class="card border-0 shadow-sm"><div class="card-body small">
+{% if ar %}
+<p>تقييم مزدوج لكل موضوع: <strong>أهمية أصحاب المصلحة</strong> (المحور الرأسي) و<strong>الأثر على الأعمال</strong> (المحور الأفقي)، كل منهما من 1 إلى 5، بناءً على مصادر موثقة: استبيانات أو مقابلات مع العملاء والعاملين، متطلبات الهيئة، أسئلة المستثمرين والممولين، الشكاوى، وسجل المخاطر. الموضوعات فوق 3 على المحورين (الربع الأعلى الأيمن في المصفوفة) هي الموضوعات الجوهرية ذات الأولوية، وأي موضوع يحصل على 4–5 في محور واحد يُراجع للإفصاح. احفظ مصدر كل تقييم في الملاحظات.</p>
+{% else %}
+<p>Each topic is scored twice: <strong>stakeholder importance</strong> (vertical axis) and <strong>business impact</strong> (horizontal axis), each 1–5, from documented sources: customer and staff surveys or interviews, FRA requirements, investor and lender questions, complaints and the risk register. Topics above 3 on both axes (top-right quadrant of the matrix) are the priority material topics; any topic at 4–5 on one axis is reviewed for disclosure. Record the source of each score in the notes.</p>
+{% endif %}
+{{ guide_panel('esg.materiality', 'gx2') }}
+<a href="{{ url_for('esg.materiality') }}">{{ _('Open the materiality assessment') }}</a>
+</div></div>
+
+{{ sec(4, _('Carbon footprint: what is measured and how')) }}
+<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-sm small mb-0">
+<thead class="table-light"><tr><th>{{ _('Item') }}</th><th>{{ _('Basis') }}</th><th>{{ _('In practice') }}</th></tr></thead><tbody>
+{% if ar %}
+<tr><td>النطاق 1</td><td>بروتوكول غازات الاحتباس الحراري (GHG Protocol) – المعيار المؤسسي</td><td>الوقود المحترق في المولدات وسيارات الشركة، وتسرب غازات التبريد من أجهزة التكييف (حسب سجل الصيانة)</td></tr>
+<tr><td>النطاق 2</td><td>إرشادات النطاق 2 في بروتوكول غازات الاحتباس الحراري (طريقة الموقع)</td><td>الكهرباء المشتراة لكل موقع من فواتير شركة التوزيع × معامل انبعاث شبكة الكهرباء المصرية للسنة المعنية</td></tr>
+<tr><td>النطاق 3 (اختياري)</td><td>معيار النطاق 3 في البروتوكول؛ الفئة 15 وفق معيار PCAF</td><td>سفر العمل وتنقل العاملين، والانبعاثات الممولة لمحفظة القروض (درجة جودة PCAF من 1 إلى 5)</td></tr>
+<tr><td>الحساب</td><td>طن مكافئ ثاني أكسيد الكربون = الكمية × معامل الانبعاث ÷ 1000</td><td>كل قيد يحفظ معامل الانبعاث ومصدره وسنته المستخدمة وقت الحساب، فلا يتغير التقرير المعتمد إذا صدر معامل جديد</td></tr>
+<tr><td>معاملات الانبعاث</td><td>مكتبة معاملات بإصدارات (مصدر، سنة، تاريخ سريان)</td><td>استخدم معامل السنة نفسها؛ المعامل المؤقت أو العام يُعلَّم تلقائياً كتحذير جودة</td></tr>
+<tr><td>الحدود التنظيمية</td><td>السيطرة التشغيلية أو المالية أو حصة الملكية (البروتوكول، الفصل 3)</td><td>اختر نهجاً واحداً واثبت عليه؛ النهج المختار يظهر في التقرير</td></tr>
+<tr><td>سنة الأساس</td><td>البروتوكول، الفصل 5</td><td>يُعاد حساب سنة الأساس إذا غيّر تغيير هيكلي أو منهجي الانبعاثات بأكثر من النسبة المحددة (5% افتراضياً)</td></tr>
+{% else %}
+<tr><td>Scope 1</td><td>GHG Protocol Corporate Standard</td><td>Fuel burned in generators and company vehicles, refrigerant leaks from air-conditioning (from the maintenance log)</td></tr>
+<tr><td>Scope 2</td><td>GHG Protocol Scope 2 Guidance (location-based)</td><td>Purchased electricity per site from the distribution company bills × the Egyptian grid emission factor for that year</td></tr>
+<tr><td>Scope 3 (optional)</td><td>GHG Protocol Scope 3 Standard; category 15 per PCAF</td><td>Business travel and commuting; financed emissions of the loan book (PCAF data-quality score 1–5)</td></tr>
+<tr><td>Calculation</td><td>tCO2e = quantity × emission factor ÷ 1,000</td><td>Each entry stores the factor, source and vintage used at the time, so an approved report does not change when a new factor is published</td></tr>
+<tr><td>Emission factors</td><td>Versioned factor library (source, vintage, effective date)</td><td>Use the factor for the same year; indicative or generic factors are flagged automatically as a data-quality warning</td></tr>
+<tr><td>Organisational boundary</td><td>Operational control, financial control or equity share (GHG Protocol ch. 3)</td><td>Choose one approach and keep it; the approach chosen is printed on the report</td></tr>
+<tr><td>Base year</td><td>GHG Protocol ch. 5</td><td>Recalculate the base year when a structural or methodology change moves emissions by more than the set threshold (5% by default)</td></tr>
+{% endif %}
+</tbody></table></div>
+<div class="card-footer bg-white small"><a href="{{ url_for('carbon.methodology') }}">{{ _('Methodology') }}</a> · <a href="{{ url_for('carbon.factor_versions') }}">{{ _('Factor versions') }}</a> · <a href="{{ url_for('carbon.boundary') }}">{{ _('Boundary') }}</a></div></div>
+
+{{ sec(5, _('Data quality: what the checks look for')) }}
+<div class="card border-0 shadow-sm"><div class="card-body small">
+{% if ar %}
+<ul class="mb-2"><li>شهر بلا قيد لموقع ونشاط مستمرين (فاتورة مفقودة).</li><li>قفزة غير معتادة عن متوسط الأشهر الأخرى أكبر من النسبة المحددة (معامل carbon.outlier_pct، 50% افتراضياً) — يجب شرحها أو تصحيحها.</li><li>وحدة لا تتفق مع المعامل (مثل كيلووات ساعة بدلاً من لتر).</li><li>معامل مؤقت أو عام بدلاً من معامل السنة.</li><li>قيد بلا مستند (فاتورة/إيصال) — جهة التحقق تأخذ عيناتها من المستندات.</li></ul>
+<p class="mb-0">التقرير لا يُرسل للاعتماد وبه تحذيرات مفتوحة دون شرح؛ مسار الاعتماد: إعداد ← مراجعة (المخاطر) ← اعتماد (المدير المالي) ← جهة التحقق ← الهيئة.</p>
+{% else %}
+<ul class="mb-2"><li>A month with no entry for a running site and activity (missing bill).</li><li>A jump above the average of the other months bigger than the set percentage (parameter carbon.outlier_pct, 50% by default) — explain or correct it.</li><li>A unit that does not match the factor (e.g. kWh instead of litres).</li><li>An indicative or generic factor instead of the year's factor.</li><li>An entry without a document (bill/receipt) — the verifier samples from the documents.</li></ul>
+<p class="mb-0">The inventory is not sent for approval with unexplained warnings; approval path: prepare → review (risk) → approve (CFO) → verifier → FRA.</p>
+{% endif %}
+{{ guide_panel('carbon.activity_quality', 'gx3') }}
+<a href="{{ url_for('carbon.quality') }}">{{ _('Open the data-quality page') }}</a>
+</div></div>
+
+{{ sec(6, _('Financed emissions (PCAF)')) }}
+<div class="card border-0 shadow-sm"><div class="card-body small">
+{% if ar %}<p>الانبعاثات الممولة = نسبة التمويل (الرصيد القائم ÷ إجمالي حقوق الملكية والديون للعميل، أو ÷ قيمة الأصل) × انبعاثات العميل. كل تمويل يأخذ درجة جودة PCAF حسب مصدر البيانات؛ أفصح عن المتوسط المرجح للدرجة واعمل على تحسينه سنوياً.</p>
+{% else %}<p>Financed emissions = attribution factor (outstanding amount ÷ the client's total equity and debt, or ÷ asset value) × the client's emissions. Each exposure gets a PCAF data-quality score from its data source; disclose the weighted average score and improve it every year.</p>{% endif %}
+{{ guide_panel('carbon.pcaf', 'gx4') }}
+</div></div>
+
+{{ sec(7, _('Verification, report and offset')) }}
+<div class="card border-0 shadow-sm"><div class="card-body small">
+{% if ar %}
+<ol class="mb-0"><li>اعتماد الجرد داخلياً (المدير المالي) بعد معالجة تحذيرات الجودة.</li><li>إرسال الجرد والمستندات إلى جهة تحقق <strong>معتمدة من الهيئة</strong> (القائمة في النظام من سجل الهيئة؛ حدّثها عند صدور قائمة جديدة).</li><li>تقديم التقرير المتحقق منه للهيئة في الموعد (معامل carbon.first_report_deadline).</li><li>شراء وإعدام (retire) أرصدة كربون معتمدة بالنسبة المحددة من انبعاثات النطاقين 1 و2 خلال المدة المحددة من التقديم (المعاملان carbon.offset_pct وcarbon.offset_deadline_days)، مع تسجيل سنة الإصدار ومرجع المشروع.</li></ol>
+{% else %}
+<ol class="mb-0"><li>Approve the inventory internally (CFO) after the data-quality warnings are dealt with.</li><li>Send the inventory and documents to an <strong>FRA-accredited verifier</strong> (the list in the system comes from the FRA register; update it when the FRA publishes a new one).</li><li>Submit the verified report to the FRA on time (parameter carbon.first_report_deadline).</li><li>Buy and retire certified carbon credits for the set share of Scope 1 and 2 emissions within the set period after submission (parameters carbon.offset_pct and carbon.offset_deadline_days), recording the vintage and project reference.</li></ol>
+{% endif %}
+<a href="{{ url_for('carbon.fra_compliance') }}">{{ _('Open FRA compliance') }}</a>
+</div></div>
+
+{{ sec(8, _('Yearly calendar')) }}
+<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-sm small mb-0"><tbody>
+{% if ar %}
+<tr><td class="fw-semibold">شهرياً</td><td>إدخال فواتير الكهرباء والوقود وسجل غازات التبريد لكل موقع مع المستندات.</td></tr>
+<tr><td class="fw-semibold">ربع سنوي</td><td>مراجعة صفحة جودة البيانات؛ تحديث مؤشرات الاستدامة التي تُقاس ربع سنوياً.</td></tr>
+<tr><td class="fw-semibold">نهاية السنة</td><td>إقفال الجرد، تحديث تقييم الأهمية النسبية، تقييم مؤشرات الاستدامة (1–5)، اعتماد المدير المالي.</td></tr>
+<tr><td class="fw-semibold">بعد السنة</td><td>التحقق الخارجي، تقديم تقرير الهيئة، التعويض الكربوني خلال المدة المحددة، رفع النتائج للمجلس.</td></tr>
+{% else %}
+<tr><td class="fw-semibold">Monthly</td><td>Enter electricity and fuel bills and the refrigerant log for each site, with the documents.</td></tr>
+<tr><td class="fw-semibold">Quarterly</td><td>Review the data-quality page; update ESG indicators measured quarterly.</td></tr>
+<tr><td class="fw-semibold">Year end</td><td>Close the inventory, refresh materiality, score the ESG indicators (1–5), CFO approval.</td></tr>
+<tr><td class="fw-semibold">After year end</td><td>External verification, FRA report, carbon offset within the set period, results to the board.</td></tr>
+{% endif %}
+</tbody></table></div></div>
+<p class="small text-muted mt-3">{{ _('References: FRA decrees and decisions as listed above; GHG Protocol Corporate Standard, Scope 2 Guidance and Scope 3 Standard (WRI/WBCSD); PCAF Global GHG Accounting and Reporting Standard for the Financial Industry; TCFD recommendations; ISO 14064-3 for verification.') }}</p>
+<script src="{{ url_for('static', filename='js/print-button.js') }}" nonce="{{ csp_nonce }}"></script>
+{% endblock %}

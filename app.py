@@ -235,6 +235,8 @@ def create_app(config_name=None):
             v = 0
         return url_for('static', filename=filename) + '?v=' + str(v)
     app.jinja_env.globals.update(static_v=static_v)
+    from utils.rating_guides import guide as _rating_guide
+    app.jinja_env.globals.update(rating_guide=_rating_guide)
     from utils.insights import module_insights
     app.jinja_env.globals.update(module_insights=module_insights)
     
@@ -424,6 +426,10 @@ def create_app(config_name=None):
     from academy import academy_bp, academy_admin_bp
     app.register_blueprint(academy_bp)
     app.register_blueprint(academy_admin_bp)
+
+    # Rating guides (what each score means) and the ESG / carbon guideline
+    from guides import guides_bp
+    app.register_blueprint(guides_bp)
 
     # Versioned REST API
     try:

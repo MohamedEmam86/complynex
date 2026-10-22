@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from 'partials/rating_guide.html' import guide_panel with context %}
 {% import 'cyber/resilience/_nav.html' as cn with context %}
 {% block title %}{{ a.title }} - ComplyNex CMS{% endblock %}
 {% block content %}
@@ -7,6 +8,7 @@
     <p class="small text-muted">{{ a.framework_code }} · {{ a.framework_name }} · {{ _('average') }} {{ summary.avg_current or '-' }} / {{ _('target') }} {{ summary.avg_target or '-' }} · {{ summary.gaps|length }} {{ _('below target') }} · {{ summary.unrated }} {{ _('not rated') }}</p>
     {{ cn.nav('cyber.res_maturity') }}
     {% set locked = a.status == 'final' or not cy_can_edit %}
+    {{ guide_panel('cyber.maturity') }}
     <form method="post" class="card"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Requirement') }}</th><th style="width: 110px">{{ _('Current (0-5)') }}</th><th style="width: 110px">{{ _('Target (0-5)') }}</th><th>{{ _('Evidence / note') }}</th></tr></thead><tbody>
         {% for s in scores %}<tr class="{{ 'table-warning' if s.current_level is not none and s.target_level is not none and s.current_level < s.target_level }}"><td><strong>{{ s.ref_code }}</strong> {{ rc_loc(s.title_en, s.title_ar) }}</td>

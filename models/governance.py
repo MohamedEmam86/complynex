@@ -220,6 +220,8 @@ class BoardCommittee:
         self.charter_file = charter_file
         self.meeting_frequency = meeting_frequency
         self.is_active = is_active
+        self.committee_name_arabic = kwargs.get('committee_name_arabic')
+        self.requires_fit_proper = kwargs.get('requires_fit_proper', True)
 
     @staticmethod
     def get_all():
@@ -239,8 +241,8 @@ class BoardCommittee:
         cursor = db.execute('''
             INSERT INTO board_committees (
                 committee_name, committee_type, chairman_id,
-                charter_file, meeting_frequency, is_active
-            ) VALUES (%s, %s, %s, %s, %s, %s)
+                charter_file, meeting_frequency, is_active, committee_name_arabic, requires_fit_proper
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         ''', (
             data.get('committee_name'),
@@ -248,7 +250,9 @@ class BoardCommittee:
             data.get('chairman_id'),
             data.get('charter_file'),
             data.get('meeting_frequency'),
-            1 if data.get('is_active', True) else 0
+            1 if data.get('is_active', True) else 0,
+            data.get('committee_name_arabic'),
+            bool(data.get('requires_fit_proper', True))
         ))
         db.commit()
         return cursor.fetchone()['id']
@@ -258,7 +262,8 @@ class BoardCommittee:
         db.execute('''
             UPDATE board_committees SET 
                 committee_name = %s, committee_type = %s, chairman_id = %s, 
-                charter_file = %s, meeting_frequency = %s, is_active = %s
+                charter_file = %s, meeting_frequency = %s, is_active = %s,
+                committee_name_arabic = %s, requires_fit_proper = %s
             WHERE id = %s
         ''', (
             data.get('committee_name', self.committee_name),
@@ -267,6 +272,8 @@ class BoardCommittee:
             data.get('charter_file', self.charter_file),
             data.get('meeting_frequency', self.meeting_frequency),
             1 if data.get('is_active', self.is_active) else 0,
+            data.get('committee_name_arabic', getattr(self, 'committee_name_arabic', None)),
+            bool(data.get('requires_fit_proper', getattr(self, 'requires_fit_proper', True))),
             self.id
         ))
         db.commit()
@@ -293,7 +300,7 @@ class CommitteeMembership:
             SELECT cm.*, bm.member_name, bm.role as member_role
             FROM committee_memberships cm
             JOIN board_members bm ON cm.member_id = bm.id
-            WHERE cm.committee_id = %s
+            WHERE cm.committee_id = %s AND COALESCE(cm.is_active, 1) = 1
         ''', (committee_id,)).fetchall()
         return rows
 

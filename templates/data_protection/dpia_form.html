@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'partials/rating_guide.html' import guide_panel with context %}
 
 {% block title %}Initiate DPIA - PDPL{% endblock %}
 
@@ -31,7 +32,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">{{ _('Initial Risk Level') }}</label>
+                            <label class="form-label">{{ _('Initial Risk Level') }}</label>{{ guide_panel('privacy.dpia_risk') }}
                             <select name="risk_level" class="form-select" required>
                                 <option value="LOW">{{ _('Low Risk') }}</option>
                                 <option value="MEDIUM" selected>{{ _('Medium Risk') }}</option>

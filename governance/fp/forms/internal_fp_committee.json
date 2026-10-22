@@ -1,0 +1,631 @@
+{
+ "code": "internal_fp_committee",
+ "regulator": null,
+ "kind": "internal",
+ "locked": false,
+ "title_en": "Fit & Proper Questionnaire — Committee Member (not a board member)",
+ "title_ar": "استبيان الجدارة والصلاحية — عضو لجنة (من غير أعضاء مجلس الإدارة)",
+ "basis_en": "Internal form for external members of board committees (e.g. independent audit or risk committee experts), aligned with the regulator's fit and proper criteria. Board members who sit on committees use the regulator form.",
+ "basis_ar": "نموذج داخلي للأعضاء الخارجيين في لجان المجلس (مثل خبراء لجنة المراجعة أو المخاطر المستقلين)، متوافق مع شروط الجدارة والصلاحية الرقابية. أعضاء مجلس الإدارة الأعضاء في اللجان يستخدمون النموذج الرقابي.",
+ "guidance": [
+  {
+   "en": "All questions must be answered; write \"N/A\" where a question does not apply. \"Yes\" answers need full details.",
+   "ar": "يجب الإجابة عن جميع الأسئلة؛ اكتب \"لا ينطبق\" إذا لم ينطبق السؤال. الإجابات بـ\"نعم\" تتطلب تفاصيل كاملة."
+  }
+ ],
+ "sections": [
+  {
+   "id": "c1",
+   "no": "1",
+   "en": "Committee and role",
+   "ar": "اللجنة والدور",
+   "items": [
+    {
+     "id": "c1_committee",
+     "no": "1.1",
+     "en": "Committee",
+     "ar": "اللجنة",
+     "type": "text",
+     "prefill": "form.committee_name"
+    },
+    {
+     "id": "c1_role",
+     "no": "1.2",
+     "en": "Role in the committee",
+     "ar": "الصفة في اللجنة",
+     "type": "choice",
+     "options": [
+      {
+       "v": "chair",
+       "en": "Chair",
+       "ar": "رئيس"
+      },
+      {
+       "v": "member",
+       "en": "Member",
+       "ar": "عضو"
+      },
+      {
+       "v": "expert",
+       "en": "External expert / adviser",
+       "ar": "خبير / مستشار خارجي"
+      }
+     ]
+    },
+    {
+     "id": "c1_expertise",
+     "no": "1.3",
+     "en": "Expertise the member brings to the committee (as required by its charter)",
+     "ar": "الخبرة التي يضيفها العضو للجنة (وفق ميثاقها)",
+     "type": "textarea"
+    },
+    {
+     "id": "c1_start",
+     "no": "1.4",
+     "en": "Date of appointment",
+     "ar": "تاريخ التعيين",
+     "type": "date"
+    },
+    {
+     "id": "c1_term",
+     "no": "1.5",
+     "en": "Term",
+     "ar": "مدة العضوية",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "id": "c2",
+   "no": "2",
+   "en": "Personal information",
+   "ar": "البيانات الشخصية",
+   "items": [
+    {
+     "id": "s2_name",
+     "no": "2.1",
+     "en": "Full name as stated in the National ID / Passport",
+     "ar": "الاسم بالكامل وفقاً للرقم القومي / جواز السفر",
+     "type": "text",
+     "prefill": "official.full_name"
+    },
+    {
+     "id": "s2_dob",
+     "no": "2.2",
+     "en": "Date of Birth",
+     "ar": "تاريخ الميلاد",
+     "type": "date"
+    },
+    {
+     "id": "s2_nat",
+     "no": "2.4",
+     "en": "Nationality / Nationalities",
+     "ar": "الجنسية / الجنسيات",
+     "type": "text",
+     "prefill": "official.nationality"
+    },
+    {
+     "id": "s2_id_no",
+     "no": "2.6",
+     "en": "National ID / Passport Number",
+     "ar": "الرقم القومي / رقم جواز السفر",
+     "type": "text"
+    },
+    {
+     "id": "s2_mobile",
+     "no": "2.12",
+     "en": "Mobile number (including country code)",
+     "ar": "رقم الهاتف المحمول (متضمناً كود الدولة)",
+     "type": "text",
+     "prefill": "official.phone"
+    },
+    {
+     "id": "s2_email",
+     "no": "2.14",
+     "en": "Email address",
+     "ar": "البريد الإلكتروني",
+     "type": "text",
+     "prefill": "official.email"
+    }
+   ]
+  },
+  {
+   "id": "c3",
+   "no": "3",
+   "en": "Experience, qualifications and competence",
+   "ar": "الخبرة والمؤهلات والكفاءة",
+   "items": [
+    {
+     "id": "s4_history",
+     "no": "4.1",
+     "en": "Employment history",
+     "ar": "التاريخ الوظيفي",
+     "type": "grid",
+     "columns": [
+      {
+       "key": "employer",
+       "en": "Employer / Entity",
+       "ar": "جهة العمل"
+      },
+      {
+       "key": "title",
+       "en": "Job Title",
+       "ar": "المسمى الوظيفي"
+      },
+      {
+       "key": "from",
+       "en": "From",
+       "ar": "من",
+       "kind": "date"
+      },
+      {
+       "key": "to",
+       "en": "To",
+       "ar": "إلى",
+       "kind": "date"
+      },
+      {
+       "key": "reason",
+       "en": "Reason for leaving (resignation / retirement / dismissal / end of contract / other reasons)",
+       "ar": "سبب ترك العمل (استقالة\\تقاعد\\فصل\\نهاية عقد\\أسباب أخرى)"
+      }
+     ],
+     "rows": 6
+    },
+    {
+     "id": "s7_academic",
+     "no": "7.1",
+     "en": "Academic qualifications",
+     "ar": "المؤهلات العلمية",
+     "type": "grid",
+     "columns": [
+      {
+       "key": "qualification",
+       "en": "Qualification",
+       "ar": "المؤهل"
+      },
+      {
+       "key": "major",
+       "en": "Major",
+       "ar": "التخصص"
+      },
+      {
+       "key": "institution",
+       "en": "Institution",
+       "ar": "الجهة"
+      },
+      {
+       "key": "country",
+       "en": "Country",
+       "ar": "الدولة"
+      },
+      {
+       "key": "year",
+       "en": "Year Obtained",
+       "ar": "سنة الحصول"
+      }
+     ],
+     "rows": 5
+    },
+    {
+     "id": "s7_professional",
+     "no": "7.2",
+     "en": "Professional qualifications / certifications",
+     "ar": "المؤهلات/ الشهادات المهنية",
+     "type": "grid",
+     "columns": [
+      {
+       "key": "certification",
+       "en": "Certification",
+       "ar": "الشهادة"
+      },
+      {
+       "key": "specialization",
+       "en": "Specialization",
+       "ar": "التخصص"
+      },
+      {
+       "key": "institution",
+       "en": "Institution",
+       "ar": "الجهة"
+      },
+      {
+       "key": "country",
+       "en": "Country",
+       "ar": "الدولة"
+      },
+      {
+       "key": "year",
+       "en": "Year obtained",
+       "ar": "سنة الحصول"
+      },
+      {
+       "key": "expiry",
+       "en": "Expiry Date",
+       "ar": "تاريخ الانتهاء"
+      }
+     ],
+     "rows": 4
+    }
+   ]
+  },
+  {
+   "id": "c4",
+   "no": "4",
+   "en": "Other commitments and time",
+   "ar": "الالتزامات الأخرى والتفرغ",
+   "items": [
+    {
+     "id": "s4_boards",
+     "no": "4.5",
+     "en": "Other Board/committee memberships and managerial positions.",
+     "ar": "عضويات مجالس الإدارة واللجان والمناصب الإدارية الأخرى.",
+     "type": "grid",
+     "columns": [
+      {
+       "key": "entity",
+       "en": "Entity",
+       "ar": "الجهة"
+      },
+      {
+       "key": "activity",
+       "en": "Activity",
+       "ar": "النشاط"
+      },
+      {
+       "key": "capacity",
+       "en": "Capacity",
+       "ar": "الصفة"
+      },
+      {
+       "key": "represented",
+       "en": "Represented Party",
+       "ar": "الجهة التي يمثلها"
+      },
+      {
+       "key": "from",
+       "en": "From",
+       "ar": "من",
+       "kind": "date"
+      },
+      {
+       "key": "to",
+       "en": "To",
+       "ar": "إلى",
+       "kind": "date"
+      },
+      {
+       "key": "pct",
+       "en": "Ownership %",
+       "ar": "نسبة الملكية"
+      }
+     ],
+     "rows": 4
+    },
+    {
+     "id": "s4_commitments",
+     "no": "4.6",
+     "en": "Other current businesses or professional commitments and the estimated time devoted to each.",
+     "ar": "الأعمال أو الالتزامات المهنية الأخرى الحالية والوقت المتوقع تخصيصه لكل منها.",
+     "type": "grid",
+     "columns": [
+      {
+       "key": "business",
+       "en": "Business / professional commitment",
+       "ar": "العمل / الالتزام المهني"
+      },
+      {
+       "key": "role",
+       "en": "Capacity / role",
+       "ar": "الصفة/الدور"
+      },
+      {
+       "key": "time",
+       "en": "Estimated time devoted",
+       "ar": "الوقت المتوقع تخصيصه"
+      }
+     ],
+     "rows": 3
+    },
+    {
+     "id": "s4_time_issue",
+     "no": "4.7",
+     "en": "Is there anything that may adversely affect your ability to devote sufficient time and effort to performing your duties? If yes, provide full details:",
+     "ar": "هل يوجد ما قد يؤثر سلباً على التزامك بتوفير الوقت والجهد الكافي لأداء وظيفتك؟",
+     "type": "yesno"
+    }
+   ]
+  },
+  {
+   "id": "c5",
+   "no": "5",
+   "en": "Honesty, integrity and reputation",
+   "ar": "المصداقية والنزاهة وحسن السمعة",
+   "items": [
+    {
+     "id": "s6_q1",
+     "no": "6.1",
+     "en": "Have you ever been convicted of any criminal offence, including a felony or an offence involving dishonesty, breach of trust, or fraud, in Egypt or abroad?",
+     "ar": "هل سبق أن صدر ضدك حكم في أي جريمة، بما في ذلك جناية أو جنحة ماسة بالشرف أو الأمانة أو تتعلق بالاحتيال، داخل مصر أو خارجها؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s6_q2",
+     "no": "6.2",
+     "en": "Have you ever been subject to any disciplinary action or sanction imposed by a regulatory, supervisory, professional, or similar authority?",
+     "ar": "هل سبق اتخاذ إجراء أو جزاء تأديبي ضدك من جهة رقابية، أو إشرافية، أو مهنية، أو جهة مماثلة؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s6_q3",
+     "no": "6.3",
+     "en": "Have you ever been prohibited or restricted from carrying on a trade, business, financial activity, or profession requiring a license, or registration?",
+     "ar": "هل سبق منعك أو تقييدك من ممارسة تجارة، أو عمل تجاري، أو نشاط مالي، أو مهنة تتطلب ترخيصاً أو تسجيلاً؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s6_q4",
+     "no": "6.4",
+     "en": "Has any judgment or settlement ever been issued against you in connection with commercial, investment, or other financial business, misconduct, or misappropriation of funds?",
+     "ar": "هل سبق صدور حكم أو قرار تسوية ضدك مرتبط بأعمال تجارية، أو استثمارية، أو مالية أخرى، أو سوء سلوك، أو اختلاس أموال؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s6_q5",
+     "no": "6.5",
+     "en": "Has any decision ever been issued against you by a violations/disputes committee or a judicial or quasi-judicial committee?",
+     "ar": "هل سبق أن صدر ضدك قرار من لجنة فصل في مخالفات أو منازعات أو لجنة قضائية؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s6_q6",
+     "no": "6.6",
+     "en": "Have you ever been dismissed or removed from a position, or delisted from a professional association, pursuant to a final disciplinary decision or judgment?",
+     "ar": "هل سبق فصلك أو تنحيتك من العمل بإحدى الوظائف أو شطبك من إحدى النقابات بقرار أو بحكم تأديبي نهائي؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s6_details",
+     "no": "6.d",
+     "en": "If you answered “Yes” to any of the above questions, please provide full details of all relevant circumstances.",
+     "ar": "في حال كانت إجابتك بـ«نعم» على أي من الأسئلة أعلاه، يرجى توضيح كافة التفاصيل ذات الصلة.",
+     "type": "grid",
+     "columns": [
+      {
+       "key": "qno",
+       "en": "Question No.",
+       "ar": "رقم السؤال"
+      },
+      {
+       "key": "details",
+       "en": "Details of the Matter",
+       "ar": "تفاصيل الواقعة",
+       "kind": "textarea"
+      }
+     ],
+     "rows": 4
+    }
+   ]
+  },
+  {
+   "id": "c6",
+   "no": "6",
+   "en": "Financial soundness",
+   "ar": "الوضع المالي",
+   "items": [
+    {
+     "id": "s8_q1",
+     "no": "8.1",
+     "en": "Have you ever failed to meet your financial obligations, including loans and credit facilities, when due, or been classified as a non-performing customer?",
+     "ar": "هل سبق أن عجزت عن الوفاء بالتزاماتك المالية، بما في ذلك القروض والتسهيلات الائتمانية، عند استحقاقها أو تم تصنيفك كعميل غير منتظم؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s8_q2",
+     "no": "8.2",
+     "en": "Have you ever entered any settlement or arrangement in respect of your financial obligations, or are any such obligations currently subject to settlement arrangements?",
+     "ar": "هل سبق أن دخلت في مصالحة أو ترتيبات لتسوية التزاماتك المالية أو جاري تسويتها؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s8_q3",
+     "no": "8.3",
+     "en": "Have you ever failed to pay a due and payable debt pursuant to a court judgment or a decision issued by a competent judicial committee?",
+     "ar": "هل سبق أن عجزت عن الوفاء بدين مستحق وواجب الدفع بموجب حكم محكمة أو قرار لجنة قضائية مختصة؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s8_q4",
+     "no": "8.4",
+     "en": "Have you ever filed a petition or application for bankruptcy, had a bankruptcy petition or application filed against you, been declared bankrupt by a court, or been subject to any similar proceedings?",
+     "ar": "هل سبق أن تقدمت بعريضة/طلب إشهار إفلاسك أو قُدم ضدك طلب إفلاس أو صدر حكم بإفلاسك أو خضعت لإجراءات مماثلة؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s8_details",
+     "no": "8.d",
+     "en": "If you answered “Yes” to any of the above questions, please provide full details of all relevant circumstances.",
+     "ar": "في حال كانت إجابتك بـ«نعم» على أي من الأسئلة أعلاه، يرجى توضيح كافة التفاصيل ذات الصلة.",
+     "type": "grid",
+     "columns": [
+      {
+       "key": "qno",
+       "en": "Question No.",
+       "ar": "رقم السؤال"
+      },
+      {
+       "key": "details",
+       "en": "Details of the Matter",
+       "ar": "تفاصيل الواقعة",
+       "kind": "textarea"
+      }
+     ],
+     "rows": 6
+    }
+   ]
+  },
+  {
+   "id": "c7",
+   "no": "7",
+   "en": "Independence and conflicts of interest",
+   "ar": "الاستقلالية وتعارض المصالح",
+   "items": [
+    {
+     "id": "s9_q1",
+     "no": "9.1",
+     "en": "Are any of the following considered a related party to you: a shareholder, Board member, executive manager, external auditor, or subsidiary??",
+     "ar": "هل يُعد أياً مما يلي طرفاً ذا صلة بك؟ (مساهم، أو عضو مجلس إدارة ،أو مدير تنفيذي ،أو مراقب حسابات أو شركة تابعة)",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s9_q2",
+     "no": "9.2",
+     "en": "Do you have, or will you have, any commercial or financial relationship with the Payment Institution other than the proposed position?",
+     "ar": "هل تربطك أو سوف تربطك أي علاقة تجارية/مالية بمؤسسة الدفع بخلاف الوظيفة المقترحة؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s9_q3",
+     "no": "9.3",
+     "en": "Are you a shareholder, Board member, manager, legal adviser, or technical adviser of an entity that carries out an activity that competes with or is similar to the activities of the Payment Institution?",
+     "ar": "هل أنت مساهم، أو عضو مجلس إدارة، أو مدير، أو مستشار قانوني/فني في مؤسسة تمارس نشاطاً منافساً أو مماثلاً لنشاط مؤسسة الدفع؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s9_q4",
+     "no": "9.4",
+     "en": "For a non-executive or Independent Board member, do you provide any paid service to the payment institution?",
+     "ar": "بالنسبة لعضو مجلس الإدارة غير التنفيذي أو المستقل، هل تقدم أي خدمة مدفوعة الأجر لمؤسسة الدفع؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s9_q5",
+     "no": "9.5",
+     "en": "Are you aware of any commercial or financial interests, professional obligations, or other circumstances that may give rise to a conflict of interest or affect your independence?",
+     "ar": "هل أنت على علم بأي مصالح تجارية، أو مالية، أو التزامات وظيفية، أو ظروف أخرى قد تنشئ تعارض مصالح أو تؤثر على استقلاليتك؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s9_details",
+     "no": "9.d",
+     "en": "If you answered “Yes” to any of the above questions, please provide full details of all relevant circumstances.",
+     "ar": "في حال كانت إجابتك بـ«نعم» على أي من الأسئلة أعلاه، يرجى توضيح كافة التفاصيل ذات الصلة.",
+     "type": "grid",
+     "columns": [
+      {
+       "key": "qno",
+       "en": "Question No.",
+       "ar": "رقم السؤال"
+      },
+      {
+       "key": "details",
+       "en": "Details of the Matter",
+       "ar": "تفاصيل الواقعة",
+       "kind": "textarea"
+      }
+     ],
+     "rows": 5
+    },
+    {
+     "id": "s9_q6",
+     "no": "9.6",
+     "en": "Do you have any relatives within the payment institution, for which you are nominated, up to the second degree? If yes, provide full details:",
+     "ar": "هل لديك أقارب بمؤسسة الدفع محل الترشح حتى الدرجة الثانية؟",
+     "type": "yesno",
+     "adverse": true
+    },
+    {
+     "id": "s9_relatives",
+     "no": "9.6a",
+     "en": "Relatives within the institution (up to the second degree)",
+     "ar": "الأقارب بمؤسسة الدفع حتى الدرجة الثانية",
+     "type": "grid",
+     "columns": [
+      {
+       "key": "name",
+       "en": "Name",
+       "ar": "الاسم"
+      },
+      {
+       "key": "position",
+       "en": "Position",
+       "ar": "الوظيفة"
+      },
+      {
+       "key": "relation",
+       "en": "Nature of Relationship",
+       "ar": "طبيعة الصلة"
+      }
+     ],
+     "rows": 3
+    }
+   ]
+  },
+  {
+   "id": "c8",
+   "no": "8",
+   "en": "Declaration",
+   "ar": "الإقرار",
+   "declaration": [
+    {
+     "en": "I, the undersigned, hereby declare that I have reviewed and understood the laws, regulations, rules instructions and decrees relevant to the position for which I am nominated within the payment institution, and undertake to comply with their provisions and requirements on an ongoing basis. I further declare that I have read and understood all guidance, instructions, questions and declarations contained in this Form and have disclosed all information, facts and circumstances relevant to the matters addressed herein.",
+     "ar": "أقر أنا الموقع أدناه بأنني اطلعت على القوانين والقواعد والتعليمات والقرارات ذات الصلة بالوظيفة محل الترشيح بمؤسسة الدفع، وفهمت ما ورد بها، وأتعهد بالالتزام المستمر بأحكامها ومتطلباتها. كما أقر بأنني قرأت وفهمت جميع التعليمات والارشادات والأسئلة والإقرارات الواردة بهذا النموذج، وأفصحت عن كافة المعلومات والوقائع والظروف ذات الصلة بالموضوعات محل الاستفسار."
+    },
+    {
+     "en": "I declare that all data, information, responses and supporting documents provided by me or on my behalf under this Form, whether in hard copy or electronic form, are true, accurate, complete and up to date as of the date of signature, and that I have not concealed or omitted any material information that may affect the assessment of my fitness and propriety for the position for which I am nominated. I accept legal responsibility for the truthfulness, accuracy and completeness of the data, information and documents provided. I further consent to the Payment Institution and the Central Bank of Egypt conducting such enquiries and verification as may be necessary to assure the correctness of data, information and supporting documents provided for the purposes of assessing my fitness and propriety.",
+     "ar": "وأقر بأن جميع البيانات والمعلومات والإجابات والمستندات المقدمة مني أو نيابةً عني بموجب هذا النموذج، سواء ورقيًا أو إلكترونيًا، صحيحة ودقيقة وكاملة ومحدثة حتى تاريخ التوقيع عليه، وأنني لم أخفِ أو أغفل أي معلومات جوهرية من شأنها التأثير على تقييم جدارتي وصلاحيتي لشغل الوظيفة محل الترشيح، وأتحمل المسؤولية القانونية عن صحة ودقة واكتمال ما قدمته من بيانات ومعلومات ومستندات. كما أوافق على قيام مؤسسة الدفع والبنك المركزي المصري بإجراء ما يلزم من استعلامات وتحققات للتأكد من صحة البيانات والمعلومات والمستندات المقدمة لأغراض تقييم جدارتي وصلاحيتي."
+    },
+    {
+     "en": "I further undertake to notify the Payment Institution without delay of any change to the data, information or documents provided under this Form, or of any fact or circumstance that may affect my fitness and propriety for the position, whether during the assessment of my nomination or following the determination thereof and throughout my tenure in the position, to enable the Institution to notify the Central Bank of Egypt in accordance with the applicable requirements and prescribed timeframes.",
+     "ar": "كما أتعهد بإخطار مؤسسة الدفع دون تأخير بأي تغيير يطرأ على البيانات أو المعلومات أو المستندات المقدمة بموجب هذا النموذج، أو بأي واقعة أو ظرف قد يؤثر على جدارتي وصلاحيتي لشغل الوظيفة، وذلك سواء أثناء دراسة طلب الترشيح أو بعد البت فيه وطوال فترة شغلي للوظيفة، ليتسنى للمؤسسة إخطار البنك المركزي المصري وفقًا للقواعد والتعليمات والمدد المقررة."
+    }
+   ],
+   "items": [
+    {
+     "id": "c8_name",
+     "no": "8.a",
+     "en": "Name",
+     "ar": "الاسم",
+     "type": "text",
+     "prefill": "official.full_name"
+    },
+    {
+     "id": "c8_signature",
+     "no": "8.b",
+     "en": "Signature",
+     "ar": "التوقيع",
+     "type": "signature"
+    },
+    {
+     "id": "c8_date",
+     "no": "8.c",
+     "en": "Date",
+     "ar": "التاريخ",
+     "type": "date"
+    },
+    {
+     "id": "c8_confirm",
+     "no": "8.d",
+     "en": "The member has read and accepts this declaration",
+     "ar": "اطلع العضو على هذا الإقرار ويوافق عليه",
+     "type": "confirm"
+    }
+   ]
+  }
+ ]
+}

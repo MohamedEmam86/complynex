@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from 'partials/rating_guide.html' import guide_panel with context %}
 {% block title %}{{ _('Risk Form') }} - ComplyNex CMS{% endblock %}
 {% block content %}
 <div class="container-fluid">
@@ -66,6 +67,7 @@
 
                 <hr>
                 <h5>{{ _('Inherent Risk') }}</h5>
+                <div class="row"><div class="col-md-6">{{ guide_panel('risk.likelihood') }}</div><div class="col-md-6">{{ guide_panel('risk.impact') }}</div></div>
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">{{ _('Likelihood (1-5)') }}</label>
@@ -79,6 +81,7 @@
 
                 {% if risk %}
                 <h5>{{ _('Residual Risk') }}</h5>
+                {{ guide_panel('risk.control_effectiveness') }}
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label class="form-label">{{ _('Residual Likelihood (1-5)') }}</label>

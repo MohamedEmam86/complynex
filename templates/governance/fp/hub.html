@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% from 'governance/fp/_macros.html' import t with context %}
+{% block title %}{{ _('Fit & Proper') }} - ComplyNex{% endblock %}
+{% block content %}
+{% set SL = S.STATUS_LABELS %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div>
+    <h1 class="h3 mb-0">{{ _('Fit & Proper — key officials') }}</h1>
+    <div class="text-muted small">{{ _('Board members, committee members and key-function holders: regulator forms, institution assessment (1–5), signed copies and the regulator decision.') }}</div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if current_user.can_edit('governance') %}
+    <form method="post" action="{{ url_for('governance.fp_import_board') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-user-tie"></i> {{ _('Add board members to the list') }}</button></form>
+    <a href="{{ url_for('governance.fp_official_edit') }}" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i> {{ _('Add key official') }}</a>
+    {% endif %}
+    <a href="{{ url_for('guides.ratings') }}#fp" class="btn btn-sm btn-outline-info"><i class="fas fa-ruler"></i> {{ _('Scoring guide') }}</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  {% set by = d.by_status %}
+  {% for key, cls in [('none', 'secondary'), ('draft', 'warning'), ('under_review', 'info'), ('signed', 'primary'),
+                       ('submitted', 'primary'), ('regulator_approved', 'success')] %}
+  <div class="col-6 col-md-2"><div class="card border-0 shadow-sm h-100"><div class="card-body py-2">
+    <div class="small text-muted">{% if key == 'none' %}{{ _('No form yet') }}{% else %}{{ SL[key][1] if lang == 'ar' else SL[key][0] }}{% endif %}</div>
+    <div class="fs-4 fw-bold text-{{ cls }}">{{ by.get(key, 0) }}</div></div></div></div>
+  {% endfor %}
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white fw-bold">{{ _('Key officials') }} <span class="badge bg-secondary">{{ d.officials|length }}</span></div>
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead class="table-light"><tr><th>{{ _('Name') }}</th><th>{{ _('Type') }}</th><th>{{ _('Key function') }}</th><th>{{ _('Committees') }}</th>
+      <th>{{ _('Latest form') }}</th><th>{{ _('Status') }}</th><th>{{ _('Result') }}</th><th>{{ _('Next review') }}</th><th class="text-end">{{ _('Actions') }}</th></tr></thead>
+    <tbody>
+    {% for o in d.officials %}
+      <tr>
+        <td class="fw-semibold">{{ o.full_name_ar if lang == 'ar' and o.full_name_ar else o.full_name }}</td>
+        <td><span class="badge bg-light text-dark border">{{ {'board': _('Board'), 'executive': _('Executive'), 'committee_external': _('Committee (external)')}[o.official_type] }}</span>
+            {% if o.is_independent %}<span class="badge bg-info-subtle text-info-emphasis">{{ _('Independent') }}</span>{% endif %}</td>
+        <td class="small">{% if o.key_function and S.KF.get(o.key_function) %}{{ S.KF[o.key_function][1] if lang == 'ar' else S.KF[o.key_function][0] }}{% else %}{{ o.position_title or '—' }}{% endif %}</td>
+        <td class="small">{% for c in o.committees %}<span class="badge bg-secondary-subtle text-secondary-emphasis me-1">{{ c.name }}</span>{% else %}—{% endfor %}</td>
+        <td class="small">{% if o.form_id %}<a href="{{ url_for('governance.fp_form_view', fid=o.form_id) }}">{{ o.form_ref }}</a>{% else %}—{% endif %}</td>
+        <td>{% if o.form_status %}<span class="badge bg-{{ {'regulator_approved': 'success', 'regulator_rejected': 'danger', 'draft': 'warning', 'submitted': 'primary', 'signed': 'primary'}.get(o.form_status, 'info') }}">{{ SL[o.form_status][1] if lang == 'ar' else SL[o.form_status][0] }}</span>{% else %}<span class="badge bg-secondary">{{ _('No form yet') }}</span>{% endif %}</td>
+        <td>{% if o.assessment_result %}<span class="badge bg-{{ {'fit': 'success', 'fit_with_conditions': 'warning', 'not_fit': 'danger'}[o.assessment_result] }}">{{ {'fit': _('Fit & proper'), 'fit_with_conditions': _('Fit with conditions'), 'not_fit': _('Not fit')}[o.assessment_result] }}</span>{% else %}—{% endif %}</td>
+        <td class="small">{{ o.next_review_date or '—' }}</td>
+        <td class="text-end text-nowrap">
+          {% if current_user.can_edit('governance') %}
+          <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#nf{{ o.id }}"><i class="fas fa-file-signature"></i> {{ _('New form') }}</button>
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('governance.fp_official_edit', oid=o.id) }}"><i class="fas fa-pen"></i></a>
+          {% endif %}
+        </td>
+      </tr>
+      {% if current_user.can_edit('governance') %}
+      <tr class="collapse" id="nf{{ o.id }}"><td colspan="9" class="bg-light">
+        <form method="post" action="{{ url_for('governance.fp_form_new') }}" class="row g-2 align-items-end">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="official_id" value="{{ o.id }}">
+          <div class="col-md-5"><label class="form-label small">{{ _('Form') }}</label>
+            <select name="template_code" class="form-select form-select-sm">
+              {% for fm in forms %}<option value="{{ fm.code }}" {{ 'selected' if (o.official_type == 'committee_external' and fm.code == 'internal_fp_committee') or (o.official_type != 'committee_external' and fm.kind == 'regulator') }}>{{ fm.title_ar if lang == 'ar' else fm.title_en }}{{ ' — ' ~ fm.regulator if fm.regulator }}</option>{% endfor %}
+            </select></div>
+          <div class="col-md-3"><label class="form-label small">{{ _('Purpose') }}</label>
+            <select name="purpose" class="form-select form-select-sm">{% for k, v in S.PURPOSES.items() %}<option value="{{ k }}">{{ v[1] if lang == 'ar' else v[0] }}</option>{% endfor %}</select></div>
+          <div class="col-md-2"><label class="form-label small">{{ _('Committee') }}</label>
+            <select name="committee_id" class="form-select form-select-sm"><option value="">—</option>{% for c in o.committees %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>
+          <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">{{ _('Create') }}</button></div>
+        </form></td></tr>
+      {% endif %}
+    {% else %}
+      <tr><td colspan="9" class="text-center text-muted py-4">{{ _('No key officials yet. Add board members to the list or add a key official.') }}</td></tr>
+    {% endfor %}
+    </tbody></table></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100"><div class="card-header bg-white fw-bold">{{ _('Committees — fit & proper coverage') }}</div>
+      <ul class="list-group list-group-flush">
+      {% for c in d.committees %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>{{ c.committee_name_arabic if lang == 'ar' and c.committee_name_arabic else c.committee_name }}</span>
+          <span><span class="badge bg-{{ 'success' if c.members and c.approved == c.members else 'warning' }}">{{ c.approved }} / {{ c.members }}</span>
+          <a class="small ms-2" href="{{ url_for('governance.manage_committee_members', id=c.id) }}">{{ _('Members') }}</a></span>
+        </li>
+      {% else %}<li class="list-group-item text-muted">{{ _('No committees.') }}</li>{% endfor %}
+      </ul>
+      <div class="card-footer bg-white small text-muted">{{ _('Approved = regulator approval (or internal approval for non-board committee members). Add, rename or deactivate committees under Governance > Committees.') }}
+        <a href="{{ url_for('governance.list_committees') }}">{{ _('Committees') }}</a></div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100"><div class="card-header bg-white fw-bold">{{ _('Forms available') }}</div>
+      <ul class="list-group list-group-flush">
+      {% for fm in forms %}
+        <li class="list-group-item">
+          <div class="fw-semibold">{{ fm.title_ar if lang == 'ar' else fm.title_en }}</div>
+          <div class="small text-muted">{{ fm.basis_ar if lang == 'ar' else fm.basis_en }}{% if fm.form_no %} · {{ fm.form_no }}{% endif %}</div>
+          <div class="small mt-1">
+            <a href="{{ url_for('governance.fp_template_blank', code=fm.code) }}" target="_blank"><i class="fas fa-print"></i> {{ _('Blank form') }}</a>
+            {% if fm.docx_template %} · <a href="{{ url_for('governance.fp_template_blank', code=fm.code, original=1) }}"><i class="fas fa-file-word"></i> {{ _('Original regulator file') }}</a>{% endif %}
+          </div>
+        </li>
+      {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% if legacy %}
+<div class="card border-0 shadow-sm mt-4"><div class="card-header bg-white fw-bold">{{ _('Earlier assessments (previous screen)') }}</div>
+  <ul class="list-group list-group-flush">{% for r in legacy %}<li class="list-group-item small d-flex justify-content-between">
+    <span>{{ r.member_name }} · {{ r.assessment_date }}</span><span>{{ r.assessment_result or '' }} <a href="{{ url_for('governance.view_fit_proper', id=r.id) }}">{{ _('View') }}</a></span></li>{% endfor %}</ul></div>
+{% endif %}
+{% endblock %}

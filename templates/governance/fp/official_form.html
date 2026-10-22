@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Key official') }} - ComplyNex{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <h1 class="h3 mb-0">{{ _('Edit key official') if o else _('Add key official') }}</h1>
+  <a href="{{ url_for('governance.fit_proper_dashboard') }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left"></i> {{ _('Back') }}</a>
+</div>
+<div class="row g-3">
+<div class="col-lg-7">
+<form method="post" class="card border-0 shadow-sm"><div class="card-body">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="row g-3">
+    <div class="col-md-6"><label class="form-label">{{ _('Full name (as in ID / passport)') }}</label><input class="form-control" name="full_name" value="{{ o.full_name if o else '' }}" required></div>
+    <div class="col-md-6"><label class="form-label">{{ _('Full name (Arabic)') }}</label><input class="form-control" name="full_name_ar" dir="rtl" value="{{ o.full_name_ar or '' if o else '' }}"></div>
+    <div class="col-md-4"><label class="form-label">{{ _('Type') }}</label>
+      <select name="official_type" class="form-select">
+        {% for k, en in [('board', _('Board member')), ('executive', _('Executive / key function')), ('committee_external', _('Committee member (not a board member)'))] %}
+        <option value="{{ k }}" {{ 'selected' if o and o.official_type == k }}>{{ en }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-8"><label class="form-label">{{ _('Key function') }}</label>
+      <select name="key_function" class="form-select"><option value="">—</option>
+        {% for k, en, ar in KF %}<option value="{{ k }}" {{ 'selected' if o and o.key_function == k }}>{{ ar if lang == 'ar' else en }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-6"><label class="form-label">{{ _('Board member record') }}</label>
+      <select name="board_member_id" class="form-select"><option value="">—</option>
+        {% for m in members %}<option value="{{ m.id }}" {{ 'selected' if o and o.board_member_id == m.id }}>{{ m.member_name }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-6"><label class="form-label">{{ _('System user (executives)') }}</label>
+      <select name="user_id" class="form-select"><option value="">—</option>
+        {% for u in users %}<option value="{{ u.id }}" {{ 'selected' if o and o.user_id == u.id }}>{{ u.first_name }} {{ u.last_name }}{{ ' — ' ~ u.job_title if u.job_title }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-6"><label class="form-label">{{ _('Position title') }}</label><input class="form-control" name="position_title" value="{{ o.position_title or '' if o else '' }}"></div>
+    <div class="col-md-6"><label class="form-label">{{ _('Nationality') }}</label><input class="form-control" name="nationality" value="{{ o.nationality or '' if o else '' }}"></div>
+    <div class="col-md-6"><label class="form-label">{{ _('Email') }}</label><input class="form-control" name="email" value="{{ o.email or '' if o else '' }}"></div>
+    <div class="col-md-6"><label class="form-label">{{ _('Mobile') }}</label><input class="form-control" name="phone" value="{{ o.phone or '' if o else '' }}"></div>
+    <div class="col-12"><label class="form-label">{{ _('Notes') }}</label><textarea class="form-control" name="notes" rows="2">{{ o.notes or '' if o else '' }}</textarea></div>
+    {% if o %}<div class="col-12 form-check ms-2"><input class="form-check-input" type="checkbox" name="is_active" id="act" {{ 'checked' if o.is_active }}><label class="form-check-label" for="act">{{ _('Active') }}</label></div>{% endif %}
+  </div>
+</div><div class="card-footer bg-white text-end"><button class="btn btn-primary">{{ _('Save') }}</button></div></form>
+</div>
+{% if o %}
+<div class="col-lg-5">
+  <div class="card border-0 shadow-sm"><div class="card-header bg-white fw-bold">{{ _('Committee seats') }}</div>
+    <ul class="list-group list-group-flush">
+      {% for s in seats %}<li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>{{ s.name }} <span class="badge bg-light text-dark border">{{ s.role }}</span></span>
+        {% if o.official_type != 'board' %}
+        <form method="post" action="{{ url_for('governance.fp_official_committee', oid=o.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="committee_id" value="{{ s.id }}"><input type="hidden" name="remove" value="1">
+          <button class="btn btn-sm btn-link text-danger p-0">{{ _('Remove') }}</button></form>{% endif %}
+      </li>{% else %}<li class="list-group-item text-muted small">{{ _('No committee seat.') }}</li>{% endfor %}
+    </ul>
+    <div class="card-body border-top">
+      {% if o.official_type == 'board' %}
+        <div class="small text-muted">{{ _('Board members are added to committees from the committee page.') }}</div>
+      {% else %}
+      <form method="post" action="{{ url_for('governance.fp_official_committee', oid=o.id) }}" class="row g-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-7"><select name="committee_id" class="form-select form-select-sm">{% for c in committees %}<option value="{{ c.id }}">{{ c.committee_name }}</option>{% endfor %}</select></div>
+        <div class="col-3"><select name="role" class="form-select form-select-sm"><option value="MEMBER">{{ _('Member') }}</option><option value="CHAIR">{{ _('Chair') }}</option><option value="EXPERT">{{ _('Expert') }}</option></select></div>
+        <div class="col-2"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Add') }}</button></div>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+</div>
+{% endblock %}

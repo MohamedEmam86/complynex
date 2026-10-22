@@ -1,0 +1,71 @@
+<!doctype html>
+{% set css_root = '' if pdf else '/' %}
+<html lang="en"><head><meta charset="utf-8">
+<title>{{ f.reference }} {{ defn.title_en }}</title>
+<link rel="stylesheet" href="{{ css_root }}static/vendor/fonts/academy/academy-fonts.css">
+<style>
+  @page { size: A4; margin: 14mm 12mm 22mm 12mm;
+    @bottom-left { content: "{{ 'Candidate Signature / توقيع المرشح: ____________________' if defn.kind == 'regulator' else 'Signature / التوقيع: ____________________' }}"; font-size: 8pt; font-family: Cairo, "DejaVu Sans", sans-serif; }
+    @bottom-right { content: "{{ defn.form_no or defn.code }} · " counter(page) " / " counter(pages); font-size: 7pt; color: #666; font-family: "DejaVu Sans", sans-serif; } }
+  body { font-family: Cairo, "DejaVu Sans", Arial, sans-serif; font-size: 9pt; color: #111; margin: 0; }
+  h1 { font-size: 13pt; text-align: center; margin: 0 0 2pt; }
+  .sub { text-align: center; font-size: 8.5pt; color: #444; margin-bottom: 6pt; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 6pt; page-break-inside: auto; }
+  td, th { border: 0.6pt solid #888; padding: 3pt 4pt; vertical-align: top; }
+  th { background: #e9eef5; font-weight: 600; }
+  .sec { background: #1f3b63; color: #fff; font-weight: 700; }
+  .ar { direction: rtl; text-align: right; }
+  .q { width: 38%; } .a { width: 24%; }
+  .ans { font-weight: 600; white-space: pre-wrap; }
+  .box { font-family: "DejaVu Sans", sans-serif; }
+  .muted { color: #666; font-size: 8pt; }
+  .meta { font-size: 8pt; color: #333; margin-bottom: 6pt; }
+  .sig td { height: 26pt; }
+  .noprint { margin: 10px 0; text-align: center; }
+  @media print { .noprint { display: none; } }
+</style></head><body>
+{% macro box(on) %}<span class="box">{{ '☒' if on else '☐' }}</span>{% endmacro %}
+{% macro val(it) -%}
+  {%- set v = a.get(it.id) -%}
+  {%- if it.type in ('choice', 'docstatus') -%}
+    {%- set chosen = v if v is iterable and v is not string else [v] -%}
+    {% for o in it.options %}{{ box(o.v in chosen) }} {{ o.en }} / {{ o.ar }}<br>{% endfor %}
+  {%- elif it.type == 'yesno' -%}
+    {{ box(v == 'yes') }} Yes / نعم &nbsp; {{ box(v == 'no') }} No / لا{% if v == 'na' %} &nbsp; ☒ N/A{% endif %}
+    {% if a.get(it.id ~ '_details') %}<div class="ans">{{ a.get(it.id ~ '_details') }}</div>{% endif %}
+  {%- elif it.type == 'signature' -%}&nbsp;
+  {%- elif it.type == 'confirm' -%}{{ box(v == 'yes') }}
+  {%- else -%}<span class="ans">{{ v if v else ('' if blank else 'N/A') }}</span>{%- endif -%}
+{%- endmacro %}
+{% if not pdf %}<div class="noprint"><button data-print>Print / طباعة</button></div>{% endif %}
+<h1>{{ defn.title_ar }}<br>{{ defn.title_en }}</h1>
+<div class="sub">{{ defn.basis_ar }}<br>{{ defn.basis_en }}{% if defn.form_no %}<br>{{ defn.form_no }}{% endif %}</div>
+{% if not blank %}<div class="meta">{{ _('Reference') }}: {{ f.reference }} · {{ f.full_name }} · {{ now.strftime('%Y-%m-%d') }}
+  {% if defn.kind == 'regulator' %}<br><em>This print is the system's working copy. For submission use the original regulator form filled by the system (.docx), signed on every page. / هذه نسخة العمل من النظام؛ للتقديم يُستخدم النموذج الأصلي للجهة الرقابية المستوفى من النظام (.docx) موقعاً على كل صفحة.</em>{% endif %}</div>{% endif %}
+{% if defn.guidance %}
+<table><tr><th colspan="2" class="sec">General guidance and instructions — إرشادات وتعليمات عامة</th></tr>
+{% for g in defn.guidance %}<tr><td style="width:50%">{{ g.en }}</td><td class="ar">{{ g.ar }}</td></tr>{% endfor %}</table>
+{% endif %}
+{% for s in defn.sections %}
+<table>
+  <tr><td colspan="3" class="sec">{{ s.no }}. {{ s.en }}</td><td class="sec ar">{{ s.no }}. {{ s.ar }}</td></tr>
+  {% if s.declaration %}{% for d in s.declaration %}<tr><td colspan="2">- {{ d.en }}</td><td colspan="2" class="ar">- {{ d.ar }}</td></tr>{% endfor %}{% endif %}
+  {% for it in s['items'] %}
+    {% if it.type == 'grid' %}
+      <tr><td colspan="2"><strong>{{ it.no }}</strong> {{ it.en }}</td><td colspan="2" class="ar">{{ it.ar }}</td></tr>
+      <tr><td colspan="4" style="padding:0">
+        <table style="margin:0"><tr>{% for c in it.columns %}<th>{{ c.en }}<br><span class="ar">{{ c.ar }}</span></th>{% endfor %}</tr>
+        {% set rows = a.get(it.id) or [] %}
+        {% for r in range(it.rows or 4) %}{% set row = rows[r] if r < rows|length else {} %}
+          <tr>{% for c in it.columns %}<td class="ans">{{ row.get(c.key, '') or ('' if blank else 'N/A') }}</td>{% endfor %}</tr>{% endfor %}
+        </table></td></tr>
+    {% elif it.type == 'signature' %}
+      <tr class="sig"><td class="q"><strong>{{ it.no }}</strong> {{ it.en }}</td><td colspan="2"></td><td class="ar">{{ it.ar }}</td></tr>
+    {% else %}
+      <tr><td class="q"><strong>{{ it.no }}</strong> {{ it.en }}</td><td colspan="2" class="a">{{ val(it) }}</td><td class="q ar">{{ it.ar }}</td></tr>
+    {% endif %}
+  {% endfor %}
+</table>
+{% endfor %}
+{% if not pdf %}<script src="/static/js/print-button.js" nonce="{{ csp_nonce }}"></script>{% endif %}
+</body></html>

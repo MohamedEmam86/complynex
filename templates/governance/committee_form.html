@@ -13,11 +13,21 @@
                     <form method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="row">
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">{{ _('Committee Name') }}</label>
                                 <input type="text" name="committee_name" class="form-control" required
                                     value="{{ committee.committee_name if committee else '' }}"
                                     placeholder="{{ _('e.g. Audit Committee') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ _('Committee Name (Arabic)') }}</label>
+                                <input type="text" name="committee_name_arabic" class="form-control" dir="rtl"
+                                    value="{{ committee.committee_name_arabic or '' if committee else '' }}">
+                            </div>
+                            <div class="col-12 mb-3 form-check ms-2">
+                                <input type="checkbox" class="form-check-input" name="requires_fit_proper" id="rfp"
+                                    {{ 'checked' if not committee or committee.requires_fit_proper }}>
+                                <label class="form-check-label" for="rfp">{{ _('Members need a fit & proper assessment') }}</label>
                             </div>
                         </div>
 
