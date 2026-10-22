@@ -30805,6 +30805,9 @@ msgstr "قيد المراجعة"
 msgid "New list names match existing customers"
 msgstr "أسماء جديدة في القوائم تطابق عملاء حاليين"
 
+msgid "Demo environment: every company, person and figure here is fictional."
+msgstr "بيئة تجريبية: كل الشركات والأشخاص والأرقام هنا وهمية."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

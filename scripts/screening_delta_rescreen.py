@@ -121,6 +121,9 @@ def main():
     ap.add_argument('--init', action='store_true', help='record the current list ids as the starting point')
     ap.add_argument('--since-bl', type=int, help='re-check internal blacklist records with id above this')
     a = ap.parse_args()
+    from utils.demo import skip_in_demo
+    if skip_in_demo("delta re-screening"):
+        return
     from screening.update_lock import wait_until_free
     wait_until_free()  # names written by a running list update are not all committed yet
     conn = psycopg2.connect(**Config.POSTGRES_CONFIG)

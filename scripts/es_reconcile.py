@@ -43,6 +43,9 @@ def _bulk(es, actions):
 
 
 def run(dry_run=False):
+    from utils.demo import skip_in_demo
+    if skip_in_demo("search index check", log):
+        return {}
     es = get_es_client(timeout=120)
     conn = psycopg2.connect(**Config.POSTGRES_CONFIG)
     cur = conn.cursor()

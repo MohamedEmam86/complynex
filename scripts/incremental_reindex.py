@@ -150,6 +150,10 @@ def main():
     parser.add_argument('--dry-run', action='store_true', help="Report counts only, don't touch the index")
     args = parser.parse_args()
 
+    from utils.demo import skip_in_demo
+    if skip_in_demo("semantic index update", logger):
+        return
+
     if _full_rebuild_in_progress():
         logger.info("complynex-semantic-rebuild.service is currently running a full rebuild — "
                      "skipping this incremental run to avoid a race on the index files.")

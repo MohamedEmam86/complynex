@@ -62,6 +62,12 @@
 
             <!-- Main Content Area -->
             <main class="main-content">
+                {% if is_demo_instance %}
+                <div class="alert alert-warning py-1 px-3 mb-2 small d-flex align-items-center gap-2" role="note">
+                    <i class="fas fa-flask"></i>
+                    <span>{{ _('Demo environment: every company, person and figure here is fictional.') }}</span>
+                </div>
+                {% endif %}
                 {% include 'partials/breadcrumbs.html' %}
                 
                 <!-- Flash Messages -->

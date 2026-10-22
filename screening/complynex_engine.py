@@ -1967,6 +1967,11 @@ class ComplyNexScreeningEngine:
                         pep_ids.append(sem_id - INTERNAL_PEP_ID_OFFSET)
                     else:
                         watchlist_ids.append(sem_id - WATCHLIST_ID_OFFSET)
+                from utils.demo import is_demo
+                if is_demo():
+                    # the shared semantic index holds the MAIN instance's internal
+                    # lists; a demo has its own (searched directly in its database)
+                    pep_ids, blacklist_ids = [], []
 
                 if (watchlist_ids or pep_ids or blacklist_ids) and self.db_type == 'postgresql':
                     try:

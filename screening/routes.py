@@ -461,6 +461,9 @@ def trigger_es_incremental_sync():
     never break the sync that already committed to Postgres; failures are
     logged, not swallowed.
     """
+    from utils.demo import is_demo
+    if is_demo():
+        return
     try:
         import subprocess
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

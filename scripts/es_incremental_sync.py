@@ -53,6 +53,9 @@ def build_doc(row):
 
 
 def run():
+    from utils.demo import skip_in_demo
+    if skip_in_demo("search index sync", log):
+        return
     from screening.update_lock import held
     if held():
         # A list update is writing in long transactions: rows written early but

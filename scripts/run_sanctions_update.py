@@ -79,6 +79,10 @@ def main():
     ap.add_argument('--registry-only', action='store_true')
     args = ap.parse_args()
 
+    from utils.demo import skip_in_demo
+    if skip_in_demo("list update", log):
+        return
+
     from config import get_config
     cfg = get_config()
     db_config = dict(cfg.POSTGRES_CONFIG)

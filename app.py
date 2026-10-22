@@ -710,6 +710,13 @@ Message:
     def _inject_csp_nonce():
         return {'csp_nonce': getattr(_g, 'csp_nonce', '')}
 
+    from utils.demo import is_demo as _is_demo
+    _demo = _is_demo()
+
+    @app.context_processor
+    def _inject_demo_flag():
+        return {'is_demo_instance': _demo}
+
     @app.after_request
     def set_security_headers(response):
         nonce = getattr(_g, 'csp_nonce', '')

@@ -154,6 +154,10 @@ class EnhancedDataUpdater:
     def update_watchlist(self, source_id=None, user_id=1):
         """Run a list update while marking it as running (see screening.update_lock),
         so incremental readers of the watchlist wait instead of missing rows."""
+        from utils.demo import is_demo
+        if is_demo():
+            logger.info("demo instance: list update skipped (lists are maintained by the main instance)")
+            return {'added': 0, 'updated': 0, 'unchanged': 0, 'errors': 0, 'demo': True}
         from screening.update_lock import hold
         with hold(f"source_id={source_id}"):
             return self._update_watchlist(source_id=source_id, user_id=user_id)

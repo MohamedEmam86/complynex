@@ -54,6 +54,23 @@ done
 echo "-- restart"
 if restart; then
   echo "DEPLOYED OK: $PREV -> $TARGET  (health 200)"
+  # Demo instance (same code in its own folder, own database of fictional data).
+  # Its problems never roll back or block the main instance.
+  DEMO=/var/www/complynex-demo
+  if [ -f "$DEMO/.demo_instance" ]; then
+    echo "-- demo instance"
+    if git -C "$DEMO" -c safe.directory='*' checkout -q --detach "$TARGET"; then
+      git -C "$DEMO" -c safe.directory='*' ls-files -z | (cd "$DEMO" && xargs -0 chown complynex:complynex) || true
+      for m in $MIGR; do
+        sudo -u postgres psql -d complynex_demo -v ON_ERROR_STOP=1 -q < "$APP/$m" || echo "WARNING: demo migration failed: $m"
+      done
+      systemctl restart complynex-demo || true
+      for i in $(seq 1 30); do sleep 3; [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/health)" = 200 ] && break; done
+      echo "demo health: $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/health)"
+    else
+      echo "WARNING: demo code update failed (main instance is deployed and fine)"
+    fi
+  fi
 else
   echo "UNHEALTHY after deploy — rolling code back to $PREV"
   $G reset --hard --quiet "$PREV"
