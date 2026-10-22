@@ -87,6 +87,9 @@ def main():
     conn = psycopg2.connect(**db_config)
 
     failures = []
+    from screening.update_lock import hold
+    marker = hold('scheduled run')
+    marker.__enter__()
     if not args.registry_only:
         from screening.data_updater_enhanced import EnhancedDataUpdater
         cur = conn.cursor()
@@ -145,6 +148,18 @@ def main():
 
     refresh_registry(conn)
     conn.close()
+    marker.__exit__(None, None, None)
+
+    if not args.registry_only:
+        # Full id-by-id check of the search index against the watchlist
+        # (removes delisted / merged records, adds anything missing).
+        try:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import es_reconcile
+            log.info(f"search index check: {es_reconcile.run()}")
+        except Exception as e:
+            log.error(f"search index check failed: {e}", exc_info=True)
+            failures.append('es_reconcile')
 
     if failures:
         log.error(f"=== run finished WITH FAILURES: {failures} ===")

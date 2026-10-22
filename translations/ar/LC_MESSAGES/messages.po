@@ -30802,6 +30802,9 @@ msgstr "تنبيهات مراقبة المعاملات شهريًا"
 msgid "Under review"
 msgstr "قيد المراجعة"
 
+msgid "New list names match existing customers"
+msgstr "أسماء جديدة في القوائم تطابق عملاء حاليين"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

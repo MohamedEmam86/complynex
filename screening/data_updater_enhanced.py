@@ -152,6 +152,13 @@ class EnhancedDataUpdater:
             self.db_conn = None
             
     def update_watchlist(self, source_id=None, user_id=1):
+        """Run a list update while marking it as running (see screening.update_lock),
+        so incremental readers of the watchlist wait instead of missing rows."""
+        from screening.update_lock import hold
+        with hold(f"source_id={source_id}"):
+            return self._update_watchlist(source_id=source_id, user_id=user_id)
+
+    def _update_watchlist(self, source_id=None, user_id=1):
         """
         Update database from configured sources.
         

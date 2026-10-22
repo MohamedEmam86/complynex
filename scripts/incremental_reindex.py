@@ -155,6 +155,10 @@ def main():
                      "skipping this incremental run to avoid a race on the index files.")
         return
 
+    from screening.update_lock import wait_until_free
+    if not wait_until_free(logger=logger):  # rows of a running list update are not all committed yet
+        return
+
     state = _load_state()
     logger.info(f"Checkpoint: watchlist>{state['watchlist_max_id']}, "
                 f"pep>{state['pep_max_id']}, blacklist>{state['blacklist_max_id']}")

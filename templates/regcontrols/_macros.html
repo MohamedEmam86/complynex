@@ -36,7 +36,8 @@
 
 {% macro alert_type(t) -%}
 {{ {'control_failed': _('Control failed'), 'evidence_expiring': _('Evidence expiring'), 'evidence_expired': _('Evidence expired'),
-    'finding_overdue': _('Finding overdue'), 'repeated_violation': _('Repeated violation')}.get(t, t) }}
+    'finding_overdue': _('Finding overdue'), 'repeated_violation': _('Repeated violation'),
+    'screening_delta_hit': _('New list names match existing customers')}.get(t, t) }}
 {%- endmacro %}
 
 {% macro nav(active) -%}
