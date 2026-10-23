@@ -44,6 +44,20 @@
                 <div class="card mb-3">
                     <div class="card-header">{{ _('Extracted Data (editable)') }}</div>
                     <div class="card-body">
+                        <p class="small text-muted">
+                            {{ _('Compare each field with the card image and type the correct value where the reading is wrong. Date of birth, gender and governorate are filled from a valid national ID when left empty.') }}
+                        </p>
+                        {% if session.declared_national_id or session.declared_name_ar %}
+                        <div class="alert alert-light border small py-2">
+                            <strong>{{ _('Entered by the customer') }}:</strong>
+                            {{ session.declared_name_ar or '-' }} — <span dir="ltr">{{ session.declared_national_id or '-' }}</span>
+                        </div>
+                        {% endif %}
+                        {% if session.status == 'APPROVED' %}
+                        <div class="alert alert-warning small py-2">
+                            {{ _('This session is already approved. Saving corrections withdraws the approval; approve it again afterwards.') }}
+                        </div>
+                        {% endif %}
                         {% for field, label in [
                             ('extracted_full_name_ar', _('Full Name')),
                             ('national_id', _('National ID')),
@@ -63,6 +77,8 @@
                                 <span class="badge bg-primary">{{ _('Manual') }}</span>
                                 {% elif src == 'confirmed' %}
                                 <span class="badge bg-success">{{ _('Confirmed') }}</span>
+                                {% elif src == 'declared' %}
+                                <span class="badge bg-info text-dark">{{ _('From customer entry') }}</span>
                                 {% else %}
                                 <span class="badge bg-warning text-dark">{{ _('Auto / Unverified') }}</span>
                                 {% endif %}
@@ -87,7 +103,7 @@
                             <textarea name="review_notes" class="form-control" rows="3"></textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">{{ _('Submit Review') }}</button>
+                        <button type="submit" class="btn btn-primary">{{ _('Save and submit review') }}</button>
                     </div>
                 </div>
 
@@ -154,6 +170,11 @@
                 .then(data => {
                     if (data.is_valid === null) { feedback.textContent = ''; return; }
                     if (data.is_valid) {
+                        [['field_dob', data.dob], ['field_gender', data.gender], ['field_governorate_name', data.governorate_name_ar]]
+                            .forEach(function(pair) {
+                                const el = document.getElementById(pair[0]);
+                                if (el && !el.value && pair[1]) { el.value = pair[1]; }
+                            });
                         feedback.className = 'form-text text-success';
                         feedback.textContent = '✓ Valid — DOB ' + (data.dob || '-') + ', ' + (data.governorate_name_ar || '-') + ', ' + (data.gender || '-');
                     } else {

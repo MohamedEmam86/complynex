@@ -141,14 +141,20 @@ class EkycSession:
         return datetime.now() > session['expires_at']
 
     @staticmethod
-    def record_consent(session_id, consent_text, ip_address):
+    def record_consent(session_id, consent_text, ip_address, declared_national_id=None, declared_name_ar=None):
+        """declared_*: what the customer typed on the consent page — used by
+        ekyc/pipeline.py when the card cannot be read, and cross-checked
+        against the card read when it can."""
         db = get_db()
         db.execute('''
             UPDATE ekyc_session
             SET consent_given = TRUE, consent_text = %s, consent_given_at = CURRENT_TIMESTAMP,
-                consent_ip = %s, status = 'CONSENT_GIVEN', updated_at = CURRENT_TIMESTAMP
+                consent_ip = %s, status = 'CONSENT_GIVEN', updated_at = CURRENT_TIMESTAMP,
+                declared_national_id = %s, declared_name_ar = %s,
+                declared_at = CASE WHEN %s IS NULL AND %s IS NULL THEN NULL ELSE CURRENT_TIMESTAMP END
             WHERE id = %s
-        ''', (consent_text, ip_address, session_id))
+        ''', (consent_text, ip_address, declared_national_id, declared_name_ar,
+              declared_national_id, declared_name_ar, session_id))
         db.commit()
         EkycAuditLog.log(session_id, 'CONSENT_GIVEN', details=consent_text[:200], ip_address=ip_address)
 
@@ -275,6 +281,20 @@ class EkycSession:
         db.commit()
         EkycAuditLog.log(session_id, 'DECISION_RECORDED', user_id=user_id,
                           details=f'final_decision={decision} notes={notes}')
+
+    @staticmethod
+    def clear_decision(session_id, user_id=None):
+        """Withdraws a final decision after the officer corrected the data,
+        so the session must be approved again on the corrected values."""
+        db = get_db()
+        db.execute('''
+            UPDATE ekyc_session SET final_decision = NULL, decision_by = NULL, decided_at = NULL,
+                   decision_notes = NULL, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        ''', (session_id,))
+        db.commit()
+        EkycAuditLog.log(session_id, 'DECISION_WITHDRAWN', user_id=user_id,
+                          details='data corrected after approval')
 
     @staticmethod
     def record_onboarding(session_id, customer_id, user_id=None):

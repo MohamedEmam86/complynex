@@ -31219,6 +31219,67 @@ msgstr "سحب"
 msgid "Yearly calendar"
 msgstr "التقويم السنوي"
 
+msgid "Review / correct data"
+msgstr "مراجعة / تصحيح البيانات"
+
+msgid "Re-run processing"
+msgstr "إعادة المعالجة"
+
+msgid "Send this session for processing again?"
+msgstr "إرسال الجلسة للمعالجة مرة أخرى؟"
+
+msgid "The customer has finished. Checks run in the background and usually take about a minute — refresh this page. If it stays here for more than 10 minutes, use Re-run processing."
+msgstr "العميل أنهى خطواته. الفحوصات تعمل في الخلفية وتستغرق عادة حوالي دقيقة — حدّث الصفحة. إذا بقيت الجلسة على هذه الحالة أكثر من 10 دقائق استخدم «إعادة المعالجة»."
+
+msgid "Next step: Onboard Customer creates the customer record from the reviewed data. To fix the data first, use Review / correct data (the session then needs approving again)."
+msgstr "الخطوة التالية: «تسجيل العميل» ينشئ سجل العميل من البيانات المراجَعة. لتصحيح البيانات أولًا استخدم «مراجعة / تصحيح البيانات» (وبعدها تحتاج الجلسة اعتمادًا جديدًا)."
+
+msgid "Entered by the customer"
+msgstr "ما أدخله العميل"
+
+msgid "From customer entry"
+msgstr "من إدخال العميل"
+
+msgid "Compare each field with the card image and type the correct value where the reading is wrong. Date of birth, gender and governorate are filled from a valid national ID when left empty."
+msgstr "قارن كل خانة بصورة البطاقة واكتب القيمة الصحيحة حيث تكون القراءة خاطئة. تاريخ الميلاد والنوع والمحافظة تُملأ تلقائيًا من رقم قومي صحيح إذا تُركت فارغة."
+
+msgid "This session is already approved. Saving corrections withdraws the approval; approve it again afterwards."
+msgstr "هذه الجلسة معتمدة بالفعل. حفظ التصحيحات يلغي الاعتماد؛ اعتمدها مرة أخرى بعد ذلك."
+
+msgid "Save and submit review"
+msgstr "حفظ وإرسال المراجعة"
+
+#, python-format
+msgid "National ID is not valid: %(errors)s"
+msgstr "الرقم القومي غير صحيح: %(errors)s"
+
+msgid "Date of birth must be written as YYYY-MM-DD."
+msgstr "يجب كتابة تاريخ الميلاد بالشكل YYYY-MM-DD."
+
+msgid "Full name is required."
+msgstr "الاسم بالكامل مطلوب."
+
+msgid "Data corrected. The earlier approval no longer applies: approve the session again."
+msgstr "تم تصحيح البيانات. الاعتماد السابق لم يعد ساريًا: اعتمد الجلسة مرة أخرى."
+
+msgid "Review submitted. Screening hit(s) found — see the screening queue."
+msgstr "تم إرسال المراجعة. توجد نتيجة/نتائج فحص — راجع قائمة انتظار الفحص."
+
+msgid "Review submitted. Ready for final decision."
+msgstr "تم إرسال المراجعة. الجلسة جاهزة للقرار النهائي."
+
+msgid "Only a failed or waiting session can be processed again."
+msgstr "يمكن إعادة معالجة الجلسة الفاشلة أو المنتظرة فقط."
+
+msgid "Could not reach the processing queue. Try again in a minute."
+msgstr "تعذر الوصول إلى قائمة المعالجة. حاول بعد دقيقة."
+
+msgid "Session sent for processing again."
+msgstr "تم إرسال الجلسة للمعالجة مرة أخرى."
+
+msgid "Name and national ID are needed before onboarding — use Review / correct data first."
+msgstr "الاسم والرقم القومي مطلوبان قبل تسجيل العميل — استخدم «مراجعة / تصحيح البيانات» أولًا."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

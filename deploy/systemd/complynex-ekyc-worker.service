@@ -7,10 +7,13 @@ User=complynex
 Group=complynex
 WorkingDirectory=/var/www/complynex
 Environment="PATH=/var/www/complynex/venv/bin"
-Environment="OMP_NUM_THREADS=1"
-Environment="OPENBLAS_NUM_THREADS=1"
-Environment="MKL_NUM_THREADS=1"
-Environment="NUMEXPR_NUM_THREADS=1"
+Environment="OMP_NUM_THREADS=3"
+Environment="OPENBLAS_NUM_THREADS=3"
+Environment="MKL_NUM_THREADS=3"
+Environment="NUMEXPR_NUM_THREADS=3"
+# Threads for OpenCV/torch inside the worker (ekyc/worker.py). 3 of the 6
+# cores: one session ~4x faster than with 1, web and search keep the rest.
+Environment="EKYC_THREADS=3"
 ExecStart=/var/www/complynex/venv/bin/python -m ekyc.worker
 Restart=always
 NoNewPrivileges=true

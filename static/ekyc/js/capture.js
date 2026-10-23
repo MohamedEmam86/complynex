@@ -36,6 +36,7 @@ const MODEL_URL = '/static/ekyc/models/face_landmarker.task';
 const VISION_WASM_URL = '/static/ekyc/vendor/mediapipe';
 const VISION_BUNDLE_URL = '/static/ekyc/vendor/mediapipe/vision_bundle.mjs';
 const FACE_LANDMARKER_TIMEOUT_MS = 6000;
+const UPLOAD_TIMEOUT_MS = 90000;
 
 // Cheap client-side pre-filter thresholds (0-255 brightness, Laplacian-
 // variance sharpness on a 64px-wide downsample) — loose on purpose, this
@@ -1514,16 +1515,27 @@ async function submitCapture() {
   selfieFrames.forEach((blob, i) => formData.append(`selfie_frame_${i}`, blob, `selfie_${i}.jpg`));
   formData.append('liveness_result', JSON.stringify(livenessResult));
 
+  // Capped wait: on a weak mobile connection the request could otherwise
+  // sit forever with only "Uploading..." on screen. The selfie frames are
+  // still in memory, so the retry button resends them without a retake.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
   try {
-    const response = await fetch(UPLOAD_URL, { method: 'POST', body: formData });
+    const response = await fetch(UPLOAD_URL, { method: 'POST', body: formData, signal: controller.signal });
     const data = await response.json();
+    clearTimeout(timer);
     if (response.ok && data.redirect) {
       window.location.href = data.redirect;
+    } else if (response.status === 409) {
+      // Already submitted (e.g. a retry after a response was lost) — the
+      // verify page shows the right screen for the session's state.
+      window.location.reload();
     } else {
-      showError(T.uploadError);
+      showError(T.uploadError, submitCapture);
     }
   } catch (err) {
-    showError(T.uploadError);
+    clearTimeout(timer);
+    showError(T.uploadError, submitCapture);
   }
 }
 

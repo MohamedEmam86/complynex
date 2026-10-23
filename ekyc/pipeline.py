@@ -175,26 +175,43 @@ def run_pipeline(session_id):
                        active_liveness_challenge, document_pad_result, weights, threshold_pass, threshold_review)
     decision, override_reasons = fused['decision'], []
 
+    # ---- Cross-check against what the customer typed on the consent page ----
+    # The card read is authoritative when it is readable; the customer's
+    # own entry fills the gap when it is not (bad light, worn card), and a
+    # disagreement between the two always goes to an officer.
+    decoded = ocr_result.get('national_id_decoded') or {}
+    name_field = ocr_result.get('fields', {}).get('full_name') or {}
+    name = name_field.get('text')
+    if name and not _name_tokens(name):
+        name = None  # nothing but OCR noise (digits, symbols) — never screen that
+    identity = _apply_declared_identity(session, decoded, name, name_field.get('confidence'),
+                                        existing_result.get('field_sources'))
+    decoded, name = identity['decoded'], identity['name']
+    if identity['reasons'] and decision == 'PASS':
+        decision = 'REVIEW'
+
     # ---- Screening hook ----
     # Hits are written into screening_history/screening_queue with
     # source_module='eKYC' — the same tables and disposition workflow
     # Customer KYC and Merchant KYC already use (see aml/routes.py) — so
     # officers disposition eKYC hits in the existing /screening/queue UI
     # rather than a second, eKYC-only disposition system.
-    decoded = ocr_result.get('national_id_decoded') or {}
     screening_result = None
     screening_history_id = None
     pending_screening_matches = 0
-    name = (ocr_result.get('fields', {}).get('full_name') or {}).get('text')
-    if name:
-        screening_history_id, screening_result, pending_screening_matches = _run_screening(
-            session_id, name, decoded)
-        EkycAuditLog.log(session_id, 'SCREENING_COMPLETED', details=screening_result)
+    for screen_name in identity['names_to_screen']:
+        history_id, result_label, pending = _run_screening(session_id, screen_name, decoded)
+        pending_screening_matches += pending
+        if screening_history_id is None or pending:
+            screening_history_id = history_id
+        if result_label and (screening_result is None or pending):
+            screening_result = result_label
+        EkycAuditLog.log(session_id, 'SCREENING_COMPLETED', details=f"{screen_name}: {result_label}")
 
     if screening_result:
         decision, override_reasons = apply_screening_override(decision, screening_result)
 
-    reasons = fused['reasons'] + override_reasons
+    reasons = fused['reasons'] + identity['reasons'] + override_reasons
 
     EkycResult.upsert(
         session_id,
@@ -224,7 +241,9 @@ def run_pipeline(session_id):
         decision_reasons=json.dumps(reasons),
         screening_result=screening_result,
         screening_history_id=screening_history_id,
+        field_sources=json.dumps(identity['field_sources']),
         raw_signals=json.dumps({
+            'declared': identity['declared'],
             'ocr': _json_safe(ocr_result), 'ocr_back': _json_safe(ocr_back_result),
             'face_match': _json_safe(face_match_result),
             'passive_liveness': _json_safe(passive_liveness_result),
@@ -246,6 +265,74 @@ def run_pipeline(session_id):
         EkycSession.update_status(session_id, 'DECISION_PENDING')
     else:
         EkycSession.update_status(session_id, 'NEEDS_REVIEW')
+
+
+_ARABIC_FOLD = str.maketrans({'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ة': 'ه', 'ى': 'ي'})
+
+
+def _name_tokens(name):
+    """Arabic-letter words of a name, with common spelling variants folded."""
+    import re
+    letters_only = re.sub(r'[^\u0621-\u064A\s]', ' ', name or '')
+    return [t for t in letters_only.translate(_ARABIC_FOLD).split() if len(t) > 1]
+
+
+def names_agree(a, b):
+    """Same person by name: first names match and most words are shared."""
+    ta, tb = _name_tokens(a), _name_tokens(b)
+    if not ta or not tb or ta[0] != tb[0]:
+        return False
+    shared = len(set(ta) & set(tb))
+    return shared / min(len(set(ta)), len(set(tb))) >= 0.6
+
+
+def _apply_declared_identity(session, decoded, name, name_confidence, field_sources):
+    """Merge the card read with the customer's own entry (consent page).
+
+    Returns dict(decoded, name, reasons, field_sources, names_to_screen, declared).
+    """
+    from ekyc.national_id import decode as decode_national_id
+    from ekyc.ocr_pipeline import MIN_FIELD_CONFIDENCE
+
+    sources = dict(field_sources or {})
+    reasons = []
+    declared_nid = (session or {}).get('declared_national_id')
+    declared_name = (session or {}).get('declared_name_ar')
+    ocr_nid = decoded.get('national_id') if decoded.get('is_valid') else None
+    names = []
+
+    if declared_nid:
+        if ocr_nid and ocr_nid != declared_nid:
+            reasons.append(f"National ID read from the card ({ocr_nid}) differs from the number "
+                           f"the customer entered ({declared_nid}) — check the card image")
+        elif not ocr_nid:
+            declared_decoded = decode_national_id(declared_nid)
+            if declared_decoded.get('is_valid'):
+                decoded = declared_decoded
+                for field in ('national_id', 'dob', 'gender', 'governorate_name'):
+                    sources[field] = 'declared'
+                reasons.append('National ID could not be read from the card; the number the customer '
+                               'entered is used — check it against the card image')
+
+    name_readable = bool(name) and len(_name_tokens(name)) >= 2 and (name_confidence or 0) >= MIN_FIELD_CONFIDENCE
+    if declared_name:
+        if name_readable and not names_agree(name, declared_name):
+            reasons.append(f"Name read from the card ({name}) differs from the name the customer "
+                           f"entered ({declared_name}) — check the card image")
+            names = [name, declared_name]
+        elif not name_readable:
+            name = declared_name
+            sources['extracted_full_name_ar'] = 'declared'
+            reasons.append('Name could not be read from the card with confidence; the name the customer '
+                           'entered is used — check it against the card image')
+    if not names and name:
+        names = [name]
+
+    return {
+        'decoded': decoded, 'name': name, 'reasons': reasons, 'field_sources': sources,
+        'names_to_screen': names,
+        'declared': {'national_id': declared_nid, 'name_ar': declared_name},
+    }
 
 
 def _run_screening(session_id, name, decoded):

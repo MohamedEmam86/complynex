@@ -57,6 +57,28 @@ def _get_app():
     return _app
 
 
+def warm_up():
+    """Load the OCR, face and liveness models once at start-up, so the
+    first customer after a restart does not wait ~40s for them."""
+    import time
+    started = time.time()
+    try:
+        from ekyc.ocr_engine import get_reader
+        from ekyc.face_match import get_face_app
+        from ekyc.face_liveness import get_models
+        get_reader()
+        get_face_app()
+        get_models()
+        try:
+            from ekyc.ocr_pipeline import _get_yolo_session
+            _get_yolo_session()
+        except Exception:
+            pass
+        logger.info(f"eKYC models loaded in {time.time() - started:.1f}s")
+    except Exception:
+        logger.exception("eKYC model warm-up failed; models will load on the first job")
+
+
 def process_session(session_id):
     """RQ job entrypoint: run the full verification pipeline for one session."""
     app = _get_app()
@@ -101,20 +123,25 @@ if __name__ == '__main__':
     # here since systemd's Restart=always (see complynex-ekyc-worker.service)
     # already brings it back up, and a crash mid-job already requires
     # investigation regardless of which process it happened in.
-    # Backstop for the OMP_NUM_THREADS/OPENBLAS_NUM_THREADS/MKL_NUM_THREADS
-    # env vars set in complynex-ekyc-worker.service: pin BLAS/OpenMP thread
-    # pools to 1 in-process too, so this worker stays memory/CPU-safe on the
-    # 8GB box even if a future deploy script drops those env vars. cv2 and
-    # torch each maintain their own thread pool independently of the env
-    # vars above, so both need pinning explicitly.
+    # EKYC_THREADS (default 3 on this 6-core box) replaces the earlier
+    # hard pin to 1 thread, which made one session take over two minutes
+    # (about 20s of OCR per frame). Memory does not grow with threads; the
+    # unit's OMP/OPENBLAS/MKL env vars carry the same value.
+    import os
     import cv2
     import torch
-    cv2.setNumThreads(1)
-    torch.set_num_threads(1)
+    threads = max(1, int(os.environ.get('EKYC_THREADS') or 3))
+    cv2.setNumThreads(threads)
+    torch.set_num_threads(threads)
 
     from rq.worker import SimpleWorker
-    from ekyc.queue import _redis_connection, QUEUE_NAME
+    from ekyc.queue import _redis_connection
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-    worker = SimpleWorker([QUEUE_NAME], connection=_redis_connection())
+    _get_app()  # loads .env (app.py) so queue_name() sees this instance's EKYC_QUEUE
+    from ekyc.queue import queue_name
+    if os.environ.get('EKYC_WARMUP', '1') == '1':
+        warm_up()
+    worker = SimpleWorker([queue_name()], connection=_redis_connection())
+    logger.info(f"eKYC worker listening on queue '{queue_name()}' with {threads} threads")
     worker.work(with_scheduler=False)

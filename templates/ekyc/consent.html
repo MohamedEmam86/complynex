@@ -20,6 +20,35 @@
 
             <form method="POST" action="{{ url_for('ekyc.give_consent', token=session.session_token) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                {% if errors %}
+                <div class="alert alert-danger py-2">
+                    <ul class="mb-0 ps-3">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                </div>
+                {% endif %}
+                {% if session.document_type == 'NATIONAL_ID' %}
+                <p class="fw-semibold mb-2">
+                    {% if session.locale == 'ar' %}اكتب بياناتك كما هي في البطاقة:{% else %}Enter your details exactly as printed on your card:{% endif %}
+                </p>
+                <div class="mb-3">
+                    <label class="form-label" for="declared_national_id">
+                        {% if session.locale == 'ar' %}الرقم القومي (14 رقمًا){% else %}National ID number (14 digits){% endif %}
+                    </label>
+                    <input type="text" class="form-control" id="declared_national_id" name="declared_national_id"
+                           inputmode="numeric" autocomplete="off" maxlength="20" dir="ltr" required
+                           value="{{ declared_nid or '' }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="declared_name_ar">
+                        {% if session.locale == 'ar' %}الاسم بالكامل بالعربي{% else %}Full name in Arabic{% endif %}
+                    </label>
+                    <input type="text" class="form-control" id="declared_name_ar" name="declared_name_ar"
+                           autocomplete="name" maxlength="150" dir="rtl" lang="ar" required
+                           value="{{ declared_name or '' }}">
+                    <div class="form-text">
+                        {% if session.locale == 'ar' %}نستخدمها لو صورة البطاقة لم تكن واضحة، ونقارنها بالبطاقة.{% else %}Used if the card photo is unclear, and checked against the card.{% endif %}
+                    </div>
+                </div>
+                {% endif %}
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="agree" required>
                     <label class="form-check-label" for="agree">

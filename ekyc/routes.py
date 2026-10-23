@@ -301,10 +301,13 @@ def verify(token):
                                 front_done='ID_FRONT_VIDEO' in existing_roles,
                                 back_done='ID_BACK_VIDEO' in existing_roles)
 
-    if session['status'] in ('CAPTURED', 'QUEUED', 'PROCESSING'):
-        return render_template('ekyc/processing.html', session=session)
-
-    if session['status'] in POST_SUBMISSION_STATUSES:
+    if session['status'] in ('CAPTURED', 'QUEUED', 'PROCESSING', 'FAILED') \
+            or session['status'] in POST_SUBMISSION_STATUSES:
+        # The customer's part ends the moment the selfie is uploaded:
+        # processing runs in the background (a minute or more on this CPU-
+        # only server) and its outcome goes to staff, not to the customer.
+        # Showing a spinner that polls until processing ends made the page
+        # look frozen, so the "received" page is shown straight away.
         # Same "thank you, under review" page regardless of where the
         # session landed (NEEDS_REVIEW awaiting an officer, DECISION_PENDING
         # awaiting final approve/reject, or already APPROVED/ONBOARDED) —
@@ -313,9 +316,6 @@ def verify(token):
         # plus screening_queue's standard practice of not tipping off a
         # confirmed match), staff follow up separately if needed.
         return render_template('ekyc/done.html', session=session)
-
-    if session['status'] == 'FAILED':
-        return render_template('ekyc/failed.html', session=session)
 
     return render_template('ekyc/capture.html', session=session)
 
@@ -328,9 +328,48 @@ def give_consent(token):
     if EkycSession.is_expired(session):
         return render_template('ekyc/expired.html'), 410
 
+    if session['consent_given']:
+        return redirect(url_for('ekyc.verify', token=token))
+
     consent_text = CONSENT_TEXT_AR if session['locale'] == 'ar' else CONSENT_TEXT_EN
-    EkycSession.record_consent(session['id'], consent_text, request.remote_addr)
+    declared_nid, declared_name, errors = _read_declared_identity(session)
+    if errors:
+        return render_template('ekyc/consent.html', session=session, consent_text=consent_text,
+                                errors=errors, declared_nid=request.form.get('declared_national_id', ''),
+                                declared_name=request.form.get('declared_name_ar', '')), 400
+    EkycSession.record_consent(session['id'], consent_text, request.remote_addr,
+                                declared_national_id=declared_nid, declared_name_ar=declared_name)
     return redirect(url_for('ekyc.verify', token=token))
+
+
+_ARABIC_DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹', '01234567890123456789')
+
+
+def _read_declared_identity(session):
+    """The national ID and Arabic name the customer types before capture.
+    Required for a national ID card; returns (nid, name, errors)."""
+    import re
+    from ekyc.national_id import decode as decode_national_id
+
+    ar = session['locale'] == 'ar'
+    raw_nid = (request.form.get('declared_national_id') or '').translate(_ARABIC_DIGITS)
+    nid = re.sub(r'\D', '', raw_nid) or None
+    name = ' '.join((request.form.get('declared_name_ar') or '').split()) or None
+    errors = []
+    if session['document_type'] != 'NATIONAL_ID':
+        return None, name, errors
+    if not nid:
+        errors.append('اكتب الرقم القومي (14 رقمًا).' if ar else 'Enter your national ID number (14 digits).')
+    elif not decode_national_id(nid)['is_valid']:
+        errors.append('الرقم القومي غير صحيح، راجعه من البطاقة.' if ar
+                      else 'The national ID number is not valid; check it against your card.')
+    if not name:
+        errors.append('اكتب اسمك بالعربي كما هو في البطاقة.' if ar
+                      else 'Enter your name in Arabic as printed on the card.')
+    elif not re.fullmatch(r'[\u0621-\u064A\s]+', name) or len(name.split()) < 3:
+        errors.append('اكتب الاسم بالحروف العربية كما هو في البطاقة (ثلاثة أسماء على الأقل).' if ar
+                      else 'Write the name in Arabic letters as on the card (at least three names).')
+    return nid, name, errors
 
 
 @ekyc_bp.route('/verify/<token>/check_side', methods=['POST'])
@@ -477,8 +516,14 @@ def upload_capture(token):
     )
 
     EkycSession.update_status(session['id'], 'CAPTURED', ip_address=request.remote_addr)
-    enqueue_session(session['id'])
-    EkycSession.update_status(session['id'], 'QUEUED', ip_address=request.remote_addr)
+    try:
+        enqueue_session(session['id'])
+        EkycSession.update_status(session['id'], 'QUEUED', ip_address=request.remote_addr)
+    except Exception:
+        # Capture is safely stored; staff can start processing from the
+        # session page Re-run processing. The customer is done either way.
+        current_app.logger.exception(f"eKYC enqueue failed for session {session['id']}")
+        EkycAuditLog.log(session['id'], 'ENQUEUE_FAILED', ip_address=request.remote_addr)
 
     return jsonify({'ok': True, 'redirect': url_for('ekyc.verify', token=token)})
 
@@ -603,6 +648,12 @@ def session_report(session_id):
 #  COMPLIANCE REVIEW QUEUE (manual OCR/data correction)
 # ─────────────────────────────────────────────
 
+# Statuses in which an officer may open "Correct data": anything the
+# pipeline has finished with, up to (not including) onboarding. Correcting
+# an APPROVED session sends it back to DECISION_PENDING for a fresh approval.
+CORRECTABLE_STATUSES = ('NEEDS_REVIEW', 'FAILED', 'DECISION_PENDING', 'APPROVED')
+REPROCESSABLE_STATUSES = ('FAILED', 'CAPTURED', 'QUEUED', 'PROCESSING')
+
 REVIEWABLE_RESULT_FIELDS = (
     'extracted_full_name_ar', 'national_id', 'dob', 'gender', 'governorate_name',
     'extracted_address', 'extracted_occupation', 'extracted_marital_status', 'id_expiry_raw',
@@ -647,28 +698,51 @@ def review_detail(session_id):
     if not session:
         flash(gettext('eKYC session not found.'), 'danger')
         return redirect(url_for('ekyc.review_queue'))
-    if session['status'] not in ('NEEDS_REVIEW', 'FAILED'):
+    if session['status'] not in CORRECTABLE_STATUSES:
         flash(gettext('This session is not available for manual review.'), 'warning')
         return redirect(url_for('ekyc.view_session', session_id=session_id))
 
     result = EkycResult.get_for_session(session_id) or {}
     documents = EkycDocument.list_for_session(session_id)
+    form_values, field_sources = _review_prefill(session, result)
 
     if request.method == 'POST':
         submitted = {field: (request.form.get(field) or '').strip() or None
                      for field in REVIEWABLE_RESULT_FIELDS}
 
+        if submitted['national_id']:
+            submitted['national_id'] = submitted['national_id'].translate(_ARABIC_DIGITS).replace(' ', '')
         decoded = decode_national_id(submitted['national_id']) if submitted['national_id'] else None
+        problems = []
         if submitted['national_id'] and not decoded['is_valid']:
-            flash('National ID is not valid: ' + '; '.join(decoded['errors']), 'danger')
+            problems.append(gettext('National ID is not valid: %(errors)s', errors='; '.join(decoded['errors'])))
+        if decoded and decoded['is_valid']:
+            # Blank fields the national ID itself encodes are filled from it.
+            submitted['dob'] = submitted['dob'] or decoded['dob'].isoformat()
+            submitted['gender'] = submitted['gender'] or decoded.get('gender')
+            submitted['governorate_name'] = submitted['governorate_name'] or decoded.get('governorate_name_ar')
+        if submitted['dob']:
+            from datetime import date
+            try:
+                date.fromisoformat(submitted['dob'].translate(_ARABIC_DIGITS))
+                submitted['dob'] = submitted['dob'].translate(_ARABIC_DIGITS)
+            except ValueError:
+                problems.append(gettext('Date of birth must be written as YYYY-MM-DD.'))
+        if not submitted['extracted_full_name_ar']:
+            problems.append(gettext('Full name is required.'))
+        if problems:
+            for problem in problems:
+                flash(problem, 'danger')
             return render_template('ekyc/review_detail.html', session=session, result=result,
-                                    documents=documents, field_sources=result.get('field_sources') or {},
+                                    documents=documents, field_sources=field_sources,
                                     form_values=submitted)
 
         field_sources = dict(result.get('field_sources') or {})
         manually_changed = []
         for field in REVIEWABLE_RESULT_FIELDS:
             old_val, new_val = result.get(field), submitted[field]
+            if old_val is not None and not isinstance(old_val, str):
+                old_val = old_val.isoformat() if hasattr(old_val, 'isoformat') else str(old_val)
             if new_val != old_val and not (new_val is None and old_val is None):
                 field_sources[field] = 'manual'
                 manually_changed.append(field)
@@ -712,12 +786,67 @@ def review_detail(session_id):
             session_id, current_user.id, notes=review_notes,
             new_status='DECISION_PENDING' if pending_matches == 0 else 'NEEDS_REVIEW',
         )
-        flash('Review submitted.' + (' Screening hit(s) found — see the screening queue.'
-                                      if pending_matches else ' Ready for final decision.'), 'success')
+        if session['status'] == 'APPROVED':
+            EkycSession.clear_decision(session_id, user_id=current_user.id)
+            flash(gettext('Data corrected. The earlier approval no longer applies: approve the session again.'), 'warning')
+        if pending_matches:
+            flash(gettext('Review submitted. Screening hit(s) found — see the screening queue.'), 'warning')
+        else:
+            flash(gettext('Review submitted. Ready for final decision.'), 'success')
         return redirect(url_for('ekyc.view_session', session_id=session_id))
 
     return render_template('ekyc/review_detail.html', session=session, result=result, documents=documents,
-                            field_sources=result.get('field_sources') or {}, form_values=result)
+                            field_sources=field_sources, form_values=form_values)
+
+
+def _review_prefill(session, result):
+    """Form values for the correction screen: the saved result, with the
+    customer's own entry filling any field the card read left empty."""
+    from ekyc.national_id import decode as decode_national_id
+
+    values = dict(result)
+    sources = dict(result.get('field_sources') or {})
+    declared_nid = session.get('declared_national_id')
+    declared_name = session.get('declared_name_ar')
+    if declared_nid and not values.get('national_id'):
+        decoded = decode_national_id(declared_nid)
+        values['national_id'] = declared_nid
+        sources['national_id'] = 'declared'
+        if decoded['is_valid']:
+            for field, value in (('dob', decoded['dob']), ('gender', decoded.get('gender')),
+                                 ('governorate_name', decoded.get('governorate_name_ar'))):
+                if not values.get(field):
+                    values[field] = value
+                    sources[field] = 'declared'
+    if declared_name and not values.get('extracted_full_name_ar'):
+        values['extracted_full_name_ar'] = declared_name
+        sources['extracted_full_name_ar'] = 'declared'
+    return values, sources
+
+
+@ekyc_bp.route('/session/<int:session_id>/reprocess', methods=['POST'])
+@login_required
+@permission_required('ekyc', level='edit')
+def session_reprocess(session_id):
+    """Puts a captured session back on the processing queue — for a
+    session that failed, or that has sat in the queue because the worker
+    was down. Officer corrections made later still go through Correct data."""
+    session = EkycSession.get_by_id(session_id)
+    if not session:
+        flash(gettext('eKYC session not found.'), 'danger')
+        return redirect(url_for('ekyc.dashboard'))
+    if session['status'] not in REPROCESSABLE_STATUSES:
+        flash(gettext('Only a failed or waiting session can be processed again.'), 'warning')
+        return redirect(url_for('ekyc.view_session', session_id=session_id))
+    try:
+        enqueue_session(session_id)
+    except Exception:
+        current_app.logger.exception(f"eKYC re-enqueue failed for session {session_id}")
+        flash(gettext('Could not reach the processing queue. Try again in a minute.'), 'danger')
+        return redirect(url_for('ekyc.view_session', session_id=session_id))
+    EkycSession.update_status(session_id, 'QUEUED', user_id=current_user.id, ip_address=request.remote_addr)
+    flash(gettext('Session sent for processing again.'), 'success')
+    return redirect(url_for('ekyc.view_session', session_id=session_id))
 
 
 @ekyc_bp.route('/review/<int:session_id>/assign', methods=['POST'])
@@ -737,10 +866,13 @@ def validate_national_id():
     ekyc.national_id.decode() the pipeline itself uses, so the officer sees
     the exact same checksum/century/governorate verdict the AI did."""
     from ekyc.national_id import decode as decode_national_id
-    raw = request.form.get('national_id', '')
+    raw = (request.form.get('national_id', '') or '').translate(_ARABIC_DIGITS).strip()
     if not raw:
         return jsonify({'is_valid': None})
-    return jsonify(decode_national_id(raw))
+    decoded = dict(decode_national_id(raw))
+    if decoded.get('dob') is not None:
+        decoded['dob'] = decoded['dob'].isoformat()  # jsonify would send an HTTP-date string
+    return jsonify(decoded)
 
 
 # ─────────────────────────────────────────────
@@ -825,15 +957,20 @@ def session_onboard(session_id):
         return redirect(url_for('ekyc.view_session', session_id=session_id))
 
     result = EkycResult.get_for_session(session_id) or {}
+    full_name = result.get('final_name') or result.get('extracted_full_name_ar')
+    national_id = result.get('final_national_id') or result.get('national_id')
+    if not full_name or not national_id:
+        flash(gettext('Name and national ID are needed before onboarding — use Review / correct data first.'), 'warning')
+        return redirect(url_for('ekyc.view_session', session_id=session_id))
     customer_id = Customer.create({
         'customer_type': 'INDIVIDUAL',
-        'full_name': result.get('extracted_full_name_ar'),
+        'full_name': full_name,
         'date_of_birth': result.get('dob'),
         'nationality': 'Egypt',
         'id_type': session['document_type'],
-        'id_number': result.get('national_id'),
+        'id_number': national_id,
         'id_expiry_date': result.get('id_expiry_raw'),
-        'address': 'N/A',
+        'address': result.get('final_address') or result.get('extracted_address') or 'N/A',
         'country': 'EGYPT',
     })
     if not customer_id:

@@ -1,0 +1,30 @@
+[Unit]
+Description=ComplyNex DEMO eKYC worker (own queue ekyc_demo, demo folder and database)
+After=network.target postgresql.service redis-server.service complynex-demo.service
+
+[Service]
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex-demo
+Environment="PATH=/var/www/complynex/venv/bin"
+Environment="OMP_NUM_THREADS=2"
+Environment="OPENBLAS_NUM_THREADS=2"
+Environment="MKL_NUM_THREADS=2"
+Environment="NUMEXPR_NUM_THREADS=2"
+# Threads for OpenCV/torch inside the worker (ekyc/worker.py); fewer than
+# the main worker, the demo is for walkthroughs only.
+Environment="EKYC_THREADS=2"
+# Models load on the first demo session, not at start-up (saves ~1 GB while idle).
+Environment="EKYC_WARMUP=0"
+Environment="EKYC_QUEUE=ekyc_demo"
+ExecStart=/var/www/complynex/venv/bin/python -m ekyc.worker
+Restart=always
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/complynex-demo/logs
+MemoryHigh=1500M
+MemoryMax=1800M
+
+[Install]
+WantedBy=multi-user.target

@@ -54,6 +54,8 @@ done
 echo "-- restart"
 if restart; then
   echo "DEPLOYED OK: $PREV -> $TARGET  (health 200)"
+  # The eKYC worker is a separate process: restart it so it runs the same code.
+  systemctl restart complynex-ekyc-worker 2>/dev/null && echo "ekyc worker restarted" || true
   # Demo instance (same code in its own folder, own database of fictional data).
   # Its problems never roll back or block the main instance.
   DEMO=/var/www/complynex-demo
@@ -65,6 +67,7 @@ if restart; then
         sudo -u postgres psql -d complynex_demo -v ON_ERROR_STOP=1 -q < "$APP/$m" || echo "WARNING: demo migration failed: $m"
       done
       systemctl restart complynex-demo || true
+      systemctl is-enabled --quiet complynex-demo-ekyc-worker 2>/dev/null && systemctl restart complynex-demo-ekyc-worker || true
       for i in $(seq 1 30); do sleep 3; [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/health)" = 200 ] && break; done
       echo "demo health: $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/health)"
     else

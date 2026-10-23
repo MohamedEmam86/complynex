@@ -44,7 +44,11 @@
                     {% else %}
                     <p><strong>{{ _('Customer Reference') }}:</strong> {{ session.customer_reference or '-' }}</p>
                     {% endif %}
-                    <p><strong>{{ _('Consent Given') }}:</strong> {{ 'Yes' if session.consent_given else 'No' }}</p>
+                    <p><strong>{{ _('Consent Given') }}:</strong> {{ _('Yes') if session.consent_given else _('No') }}</p>
+                    {% if session.declared_national_id or session.declared_name_ar %}
+                    <p><strong>{{ _('Entered by the customer') }}:</strong>
+                        {{ session.declared_name_ar or '-' }} — <span dir="ltr">{{ session.declared_national_id or '-' }}</span></p>
+                    {% endif %}
                     <p><strong>{{ _('Created') }}:</strong> {{ session.created_at }}</p>
                     <p><strong>{{ _('Expires') }}:</strong> {{ session.expires_at }}</p>
                     {% if session.status in ('CREATED',) %}
@@ -62,15 +66,18 @@
                     <a href="{{ url_for('ekyc.session_screening', session_id=session.id) }}" class="btn btn-sm btn-outline-dark">
                         <i class="bi bi-search"></i> {{ _('Screening') }}
                     </a>
-                    {% if session.status == 'NEEDS_REVIEW' %}
+                    {% if session.status in ('NEEDS_REVIEW', 'FAILED', 'DECISION_PENDING', 'APPROVED') %}
                     <a href="{{ url_for('ekyc.review_detail', session_id=session.id) }}" class="btn btn-sm btn-warning">
-                        <i class="bi bi-pencil-square"></i> {{ _('Start Review') }}
+                        <i class="bi bi-pencil-square"></i> {{ _('Review / correct data') }}
                     </a>
                     {% endif %}
-                    {% if session.status == 'FAILED' %}
-                    <a href="{{ url_for('ekyc.review_detail', session_id=session.id) }}" class="btn btn-sm btn-warning">
-                        <i class="bi bi-pencil-square"></i> {{ _('Manual Data Entry') }}
-                    </a>
+                    {% if session.status in ('FAILED', 'CAPTURED', 'QUEUED', 'PROCESSING') %}
+                    <form method="POST" action="{{ url_for('ekyc.session_reprocess', session_id=session.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" data-confirm="{{ _('Send this session for processing again?') }}">
+                            <i class="bi bi-arrow-repeat"></i> {{ _('Re-run processing') }}
+                        </button>
+                    </form>
                     {% endif %}
                     {% if session.status == 'DECISION_PENDING' %}
                     <form method="POST" action="{{ url_for('ekyc.session_decision', session_id=session.id) }}" class="d-inline">
@@ -104,6 +111,17 @@
                     </span>
                     {% endif %}
                 </div>
+                {% if session.status in ('CAPTURED', 'QUEUED', 'PROCESSING') %}
+                <div class="card-footer small text-muted">
+                    <i class="bi bi-hourglass-split"></i>
+                    {{ _('The customer has finished. Checks run in the background and usually take about a minute — refresh this page. If it stays here for more than 10 minutes, use Re-run processing.') }}
+                </div>
+                {% endif %}
+                {% if session.status == 'APPROVED' %}
+                <div class="card-footer small text-muted">
+                    {{ _('Next step: Onboard Customer creates the customer record from the reviewed data. To fix the data first, use Review / correct data (the session then needs approving again).') }}
+                </div>
+                {% endif %}
                 {% if session.final_decision %}
                 <div class="card-footer small text-muted">
                     {{ _('Final Decision') }}: <strong>{{ session.final_decision }}</strong>
@@ -124,8 +142,12 @@
                         </span>
                     </p>
                     <p><strong>{{ _('Risk Score') }}:</strong> {{ result.risk_score if result.risk_score is not none else '-' }} / 100</p>
-                    <p><strong>{{ _('Extracted Name') }}:</strong> {{ result.extracted_full_name_ar or '-' }}</p>
-                    <p><strong>{{ _('National ID') }}:</strong> {{ result.national_id or '-' }}
+                    {% set fs = result.field_sources or {} %}
+                    <p><strong>{{ _('Extracted Name') }}:</strong> {{ result.final_name or result.extracted_full_name_ar or '-' }}
+                        {% if fs.get('extracted_full_name_ar') == 'declared' %}<span class="badge bg-info text-dark">{{ _('From customer entry') }}</span>
+                        {% elif fs.get('extracted_full_name_ar') in ('manual', 'confirmed') %}<span class="badge bg-primary">{{ _('Reviewed') }}</span>{% endif %}</p>
+                    <p><strong>{{ _('National ID') }}:</strong> {{ result.final_national_id or result.national_id or '-' }}
+                        {% if fs.get('national_id') == 'declared' %}<span class="badge bg-info text-dark">{{ _('From customer entry') }}</span>{% endif %}
                         {% if result.national_id_valid %}<span class="badge bg-success">{{ _('Valid') }}</span>
                         {% elif result.national_id %}<span class="badge bg-danger">{{ _('Invalid') }}</span>{% endif %}
                     </p>

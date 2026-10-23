@@ -320,6 +320,35 @@ def _consensus(readings):
     return winner, sum(matching_confidences) / len(matching_confidences), count / len(readings)
 
 
+def _max_ocr_frames(side):
+    """EKYC_OCR_MAX_FRAMES caps frames read per side (default 4 front, 3 back)."""
+    try:
+        configured = int(os.environ.get('EKYC_OCR_MAX_FRAMES') or 0)
+    except ValueError:
+        configured = 0
+    if configured > 0:
+        return configured
+    return 4 if side == 'front' else 3
+
+
+def _readings_settled(per_frame, side):
+    """True when two frames already agree, so reading more adds nothing.
+    Front: the same valid national ID twice and a confident name twice.
+    Back: every field read confidently in two frames."""
+    if side == 'front':
+        ids = [r['fields'].get('national_id', {}).get('text') for r in per_frame]
+        valid_ids = [t for t in ids if t and decode_national_id(t)['is_valid']]
+        if not valid_ids or max(Counter(valid_ids).values()) < 2:
+            return False
+        confident_names = [r for r in per_frame
+                           if (r['fields'].get('full_name') or {}).get('confidence', 0) >= MIN_FIELD_CONFIDENCE]
+        return len(confident_names) >= 2
+    confident = [r for r in per_frame
+                 if r['fields'] and all((f.get('confidence') or 0) >= MIN_FIELD_CONFIDENCE
+                                        for f in r['fields'].values())]
+    return len(confident) >= 2
+
+
 def extract_id_fields_multiframe(frames, side='front', debug_sink=None):
     """
     frames: list of raw video frames (np.ndarray, BGR) of the same card.
@@ -345,10 +374,18 @@ def extract_id_fields_multiframe(frames, side='front', debug_sink=None):
             'low_confidence_fields': [], 'retake_required': True,
         }
 
-    per_frame = [
-        extract_id_fields(f, side=side, debug_sink=(debug_sink if i == 0 else None))
-        for i, f in enumerate(usable_frames)
-    ]
+    # Sharpest frames first, and stop once the readings agree: each frame
+    # costs several seconds of OCR on this CPU-only box, and reading all of
+    # a burst made the customer wait minutes for no extra accuracy.
+    sharpness = [m.get('sharpness', 0.0) for ok, _, m in assessments if ok]
+    ordered = [f for _, f in sorted(zip(sharpness, range(len(usable_frames))), reverse=True)]
+    ordered = [usable_frames[i] for i in ordered]
+    max_frames = _max_ocr_frames(side)
+    per_frame = []
+    for i, f in enumerate(ordered[:max_frames]):
+        per_frame.append(extract_id_fields(f, side=side, debug_sink=(debug_sink if i == 0 else None)))
+        if len(per_frame) >= 2 and _readings_settled(per_frame, side):
+            break
     card_detected = sum(r['card_detected'] for r in per_frame) >= len(per_frame) / 2
 
     field_names = set()
@@ -387,6 +424,7 @@ def extract_id_fields_multiframe(frames, side='front', debug_sink=None):
         'national_id_decoded': national_id_decoded,
         'frames_total': len(frames),
         'frames_usable': len(usable_frames),
+        'frames_read': len(per_frame),
         'frame_quality_issues': quality_issues,
         'frame_agreement': frame_agreement,
         'low_confidence_fields': low_confidence_fields,

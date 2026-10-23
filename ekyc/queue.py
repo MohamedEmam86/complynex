@@ -36,6 +36,25 @@ from redis import Redis
 from rq import Queue
 
 QUEUE_NAME = 'ekyc'
+DEMO_QUEUE_NAME = 'ekyc_demo'
+
+
+def queue_name():
+    """The RQ queue this instance uses. Read at call time (after app.py's
+    load_dotenv) so each instance can set its own EKYC_QUEUE in its .env.
+    The demo instance defaults to its own queue: a shared queue would let
+    the main instance's worker pick up demo jobs and run them against the
+    main database and storage folder."""
+    name = (os.environ.get('EKYC_QUEUE') or '').strip()
+    if name:
+        return name
+    try:
+        from utils.demo import is_demo
+        if is_demo():
+            return DEMO_QUEUE_NAME
+    except Exception:
+        pass
+    return QUEUE_NAME
 
 
 def _redis_connection():
@@ -45,7 +64,7 @@ def _redis_connection():
 
 
 def get_queue():
-    return Queue(QUEUE_NAME, connection=_redis_connection())
+    return Queue(queue_name(), connection=_redis_connection())
 
 
 def enqueue_session(session_id):
