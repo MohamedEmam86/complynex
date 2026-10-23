@@ -22,7 +22,7 @@ load_dotenv(os.path.join(BASE, '.env'))
 from utils.demo import is_demo  # noqa: E402
 
 AREAS = ['base', 'regcontrols', 'fincrime', 'risk', 'audit', 'governance', 'policies', 'conduct', 'training',
-         'consumer', 'whistleblowing', 'privacy', 'cyber', 'esg', 'fp', 'finish']
+         'consumer', 'whistleblowing', 'privacy', 'cyber', 'esg', 'fp', 'ekyc', 'finish']
 
 
 def main(only=None):
