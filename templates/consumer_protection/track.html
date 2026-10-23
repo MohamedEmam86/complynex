@@ -87,8 +87,12 @@
                                 {{ complaint.statutory_deadline_date.strftime('%Y-%m-%d') if
                                 complaint.statutory_deadline_date is not string else
                                 complaint.statutory_deadline_date[:10] }}
+                                {% if complaint.status in ('RESOLVED', 'CLOSED') %}
+                                <span class="text-success small">({{ _("Resolved") }})</span>
+                                {% else %}
                                 <span class="text-muted small">({{ complaint.days_remaining_to_deadline }} {{ _("days
                                     remaining") }})</span>
+                                {% endif %}
                             </div>
                         </div>
 

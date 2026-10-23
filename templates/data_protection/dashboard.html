@@ -52,8 +52,7 @@
                 <div class="card h-100 shadow-sm border-success">
                     <div class="card-body">
                         <h6 class="card-subtitle mb-2 text-muted">{{ _('ROPA Activities') }}</h6>
-                        <h2 class="card-title mb-0 text-success">{% if activities_count %}{{ activities_count }}{% else
-                            %}-{% endif %}</h2>
+                        <h2 class="card-title mb-0 text-success">{{ activities_count if activities_count is not none else '-' }}</h2>
                     </div>
                 </div>
             </a>

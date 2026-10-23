@@ -442,6 +442,8 @@ class WhistleblowingCase:
             'anonymous_cases': 0,
             'open_cases': 0,
             'resolved_cases': 0,
+            'pending_cases': 0,
+            'investigating_cases': 0,
             'avg_resolution_days': 0,
             'by_type': {},
             'by_severity': {},
@@ -465,7 +467,15 @@ class WhistleblowingCase:
         # Resolved
         result = db.execute("SELECT COUNT(*) as count FROM whistleblowing_cases WHERE status = 'RESOLVED'").fetchone()
         stats['resolved_cases'] = result['count']
-        
+
+        # Dashboard cards: waiting for triage vs. under investigation
+        result = db.execute(
+            "SELECT COUNT(*) as count FROM whistleblowing_cases WHERE status IN ('SUBMITTED', 'UNDER_REVIEW')"
+        ).fetchone()
+        stats['pending_cases'] = result['count']
+        result = db.execute("SELECT COUNT(*) as count FROM whistleblowing_cases WHERE status = 'INVESTIGATING'").fetchone()
+        stats['investigating_cases'] = result['count']
+
         # Average resolution time
         result = db.execute("""
             SELECT AVG(EXTRACT(EPOCH FROM (resolved_at::timestamp - submitted_at::timestamp))/86400) as avg_days

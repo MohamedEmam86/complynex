@@ -68,7 +68,8 @@
                             </td>
                             <td>
                                 {{ complaint.statutory_deadline_date }}
-                                {% if complaint.days_remaining_to_deadline < 0 %} <span
+                                {% if complaint.status in ('RESOLVED', 'CLOSED') %}<span class="text-success small">({{ _("Resolved") }})</span>
+                                {% elif complaint.days_remaining_to_deadline < 0 %} <span
                                     class="text-danger font-weight-bold">({{ _("Overdue") }})</span>
                                     {% else %}
                                     <small class="text-muted">({{ complaint.days_remaining_to_deadline }} {{ _("days")

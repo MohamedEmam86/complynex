@@ -85,7 +85,9 @@
                                         string else complaint.created_at[:10] }}</td>
                                     <td>{{ _(complaint.complaint_category) }}</td>
                                     <td>
-                                        {% if complaint.days_remaining_to_deadline < 3 %}
+                                        {% if complaint.status in ('RESOLVED', 'CLOSED') %}
+                                            <span class="text-muted">—</span>
+                                        {% elif complaint.days_remaining_to_deadline < 3 %}
                                             {{ priority_badge('HIGH') }}
                                         {% elif complaint.days_remaining_to_deadline < 10 %}
                                             {{ priority_badge('MEDIUM') }}
@@ -109,7 +111,8 @@
                                     </td>
                                     <td>
                                         {{ complaint.statutory_deadline_date }}
-                                        {% if complaint.days_remaining_to_deadline < 0 %} <span
+                                        {% if complaint.status in ('RESOLVED', 'CLOSED') %}<span class="text-success small">({{ _("Resolved") }})</span>
+                                {% elif complaint.days_remaining_to_deadline < 0 %} <span
                                             class="text-danger font-weight-bold">({{ _("Overdue") }})</span>
                                             {% else %}
                                             <small class="text-muted">({{ complaint.days_remaining_to_deadline }} {{

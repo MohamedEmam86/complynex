@@ -126,6 +126,20 @@ def create_app(config_name=None):
     from utils.timezone_utils import to_cairo_display, now_cairo
     app.jinja_env.globals.update(to_cairo=to_cairo_display, now_cairo=now_cairo)
     app.jinja_env.filters['from_json'] = json.loads
+
+    def _username(user_id):
+        """{{ some_user_id | username }} -> "First Last" (or the e-mail), for
+        tables that store a user id where people expect a name."""
+        if user_id in (None, ''):
+            return '-'
+        try:
+            from database.db import query_db
+            row = query_db("SELECT NULLIF(TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')), '') AS name, "
+                           "email FROM users WHERE id = %s", (int(user_id),), one=True)
+            return (row['name'] or row['email']) if row else str(user_id)
+        except (TypeError, ValueError):
+            return str(user_id)
+    app.jinja_env.filters['username'] = _username
     app.jinja_env.add_extension('jinja2.ext.do')
     
     # Initialize Flask-Login

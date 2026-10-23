@@ -32,6 +32,7 @@ def dashboard():
     open_dsrs = db.execute("SELECT COUNT(*) as count FROM data_subject_requests WHERE status NOT IN ('COMPLETED', 'REJECTED')").fetchone()['count']
     pending_dpias = db.execute("SELECT COUNT(*) as count FROM dpias WHERE status = 'PENDING_APPROVAL'").fetchone()['count']
     active_consents = db.execute("SELECT COUNT(*) as count FROM consents WHERE withdrawn = 0").fetchone()['count']
+    activities_count = db.execute("SELECT COUNT(*) as count FROM data_processing_activities").fetchone()['count']
     
     active_breaches = db.execute("""
         SELECT * FROM data_breaches 
@@ -44,6 +45,7 @@ def dashboard():
                           open_dsrs=open_dsrs,
                           pending_dpias=pending_dpias,
                           active_consents=active_consents,
+                          activities_count=activities_count,
                           active_breaches=active_breaches)
 
 @dp_bp.route('/dsrs')
@@ -323,20 +325,14 @@ def dpia_detail(id):
         mitigations = request.form.get('mitigations')
         status = request.form.get('status')
 
-        # risks_identified and updated_at aren't real columns on dpias (that
-        # was the bug — this crashed on every save). There's no existing
-        # free-text column for "risks identified" (dpias only has structured
-        # risk_likelihood/risk_impact/risk_level scoring fields, not a risks
-        # narrative) — folding the officer's risks text into
-        # mitigation_measures is a stopgap, not a real fix; flagged in the
-        # audit report as needing an actual schema decision.
-        combined_mitigations = f"Risks identified: {risks}\n\nMitigation measures: {mitigations}" if risks else mitigations
+        # dpias.risks_identified / updated_at added by migration 20261104
+        # (risks used to be folded into mitigation_measures as a stopgap).
         db.execute("""
             UPDATE dpias
-            SET processing_description = %s,
-                mitigation_measures = %s, status = %s
+            SET processing_description = %s, risks_identified = %s,
+                mitigation_measures = %s, status = %s, updated_at = CURRENT_TIMESTAMP
             WHERE id = %s
-        """, (processing, combined_mitigations, status, id))
+        """, (processing, risks, mitigations, status, id))
         db.commit()
         flash(gettext('DPIA assessment updated.'))
         return redirect(url_for('dp.dpia_detail', id=id))

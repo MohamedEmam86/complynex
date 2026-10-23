@@ -22,7 +22,7 @@
         <div class="ecx-slider-row">
           <div style="flex:1;">
             <div class="fw-semibold small">{{ ind.name_ar if get_locale()|string == 'ar' and ind.name_ar else ind.name }} <span class="text-muted">({{ (ind.weight*100)|round(0)|int }}% {{ _('of pillar') }})</span></div>
-            {% if ind.description %}<div class="text-muted small">{{ ind.description }}</div>{% endif %}
+            {% set ind_desc = ind.description_ar if get_locale()|string == 'ar' and ind.description_ar else ind.description %}{% if ind_desc %}<div class="text-muted small">{{ ind_desc }}</div>{% endif %}
             {% set f = ind.carbon_feed %}
             {% set mf = ind.module_feed %}{% if mf %}<div class="ecx-feed"><i class="bi {{ mf.icon }}"></i> {{ _('From %(m)s', m=mf.module) }} — {{ mf.text }}</div>{% endif %}
             {% if f %}<div class="ecx-feed"><i class="bi bi-cloud-haze2"></i> {{ _('From Carbon') }} — {{ metric_labels[f.metric] }}:
@@ -40,7 +40,7 @@
             <select name="score_{{ ind.id }}" class="form-select form-select-sm" {{ 'disabled' if not current_user.can_edit('esg') }}>
               <option value="">{{ _('— not scored —') }}</option>
               {% for v in range(1,6) %}
-              <option value="{{ v }}" {{ 'selected' if ind.score == v }}>{{ v }} — {{ maturity_labels[v] }}</option>
+              <option value="{{ v }}" {{ 'selected' if ind.score == v }}>{{ v }} — {{ _(maturity_labels[v]) }}</option>
               {% endfor %}
             </select>
           </div>

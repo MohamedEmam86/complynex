@@ -115,9 +115,14 @@
 
                     <div class="mb-4">
                         <label class="font-weight-bold d-block">{{ _("Statutory Deadline") }}:</label>
-                        <h5 class="text-danger">{{ complaint.statutory_deadline_date }}</h5>
+                        {% if complaint.status in ('RESOLVED', 'CLOSED') %}
+                        <h5 class="text-muted">{{ complaint.statutory_deadline_date }}</h5>
+                        <small class="text-success">{{ _("Resolved") }}</small>
+                        {% else %}
+                        <h5 class="{{ 'text-danger' if complaint.days_remaining_to_deadline is not none and complaint.days_remaining_to_deadline < 0 else 'text-dark' }}">{{ complaint.statutory_deadline_date }}</h5>
                         <small class="text-muted">{{ complaint.days_remaining_to_deadline }} {{ _("days remaining")
                             }}</small>
+                        {% endif %}
                     </div>
 
                     <hr>

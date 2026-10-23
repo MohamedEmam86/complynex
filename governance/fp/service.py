@@ -194,17 +194,29 @@ def officials(db=None, active_only=True):
     rows = db.execute(f"""
         SELECT o.*, bm.member_type, bm.is_independent, bm.is_executive, bm.position AS board_position,
                f.id AS form_id, f.reference AS form_ref, f.status AS form_status, f.template_code,
-               f.assessment_result, f.next_review_date, f.updated_at AS form_updated
+               f.assessment_result, f.next_review_date, f.updated_at AS form_updated,
+               a.id AS approved_form_id, a.status AS approved_status, a.reference AS approved_ref,
+               a.assessment_result AS approved_result, a.next_review_date AS approved_next_review
         FROM fp_officials o
         LEFT JOIN board_members bm ON bm.id = o.board_member_id
         LEFT JOIN LATERAL (SELECT * FROM fp_forms x WHERE x.official_id = o.id AND x.status <> 'withdrawn'
                            ORDER BY x.created_at DESC LIMIT 1) f ON TRUE
+        -- The approval still in force: a newer draft (e.g. the annual
+        -- re-assessment) must not hide the regulator decision already held.
+        LEFT JOIN LATERAL (SELECT * FROM fp_forms y WHERE y.official_id = o.id
+                             AND (y.status = 'regulator_approved'
+                                  OR (y.status IN ('approved_internal', 'signed') AND y.template_code = 'internal_fp_committee'))
+                           ORDER BY y.created_at DESC LIMIT 1) a ON TRUE
         {'WHERE o.is_active' if active_only else ''}
         ORDER BY CASE o.official_type WHEN 'board' THEN 0 WHEN 'executive' THEN 1 ELSE 2 END, o.full_name""").fetchall()
     out = [dict(r) for r in rows]
     comm = committee_seats(db)
     for r in out:
         r['committees'] = comm.get(r['id'], [])
+        r['next_review_date'] = r['next_review_date'] or r['approved_next_review']
+        r['assessment_result'] = r['assessment_result'] or r['approved_result']
+        # the latest form is a newer one than the approval in force
+        r['approval_in_force'] = r['approved_form_id'] if r['approved_form_id'] and r['approved_form_id'] != r['form_id'] else None
     return out
 
 

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}DSR Detail - {{ dsr.request_number }}{% endblock %}
+{% block title %}DSR Detail - {{ dsr.request_reference }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Request Details: {{ dsr.request_number }}</h1>
+        <h1 class="h2">Request Details: {{ dsr.request_reference }}</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
             <a href="{{ url_for('dp.dsr_list') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> {{ _('Back to List') }}
@@ -57,8 +57,8 @@
                     <div class="alert alert-success d-flex align-items-center mb-0">
                         <i class="bi bi-check-circle-fill me-2"></i>
                         <div>
-                            Identity verified on {{ dsr.identity_verification_date }} via <strong>{{
-                                dsr.identity_verification_method }}</strong>.
+                            Identity verified on {{ dsr.verification_date }} via <strong>{{
+                                dsr.verification_method }}</strong>.
                         </div>
                     </div>
                     {% else %}

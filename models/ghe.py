@@ -347,7 +347,7 @@ class GHEDeclaration:
         if not team_ids:
             return []
         
-        placeholders = ','.join('%s' * len(team_ids))
+        placeholders = ','.join(['%s'] * len(team_ids))
         rows = db.execute(
             f'''SELECT g.*,
                        u.first_name || ' ' || u.last_name as employee_name,

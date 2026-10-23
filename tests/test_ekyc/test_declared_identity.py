@@ -72,3 +72,12 @@ def test_queue_name(monkeypatch):
     assert queue.queue_name() == 'ekyc_demo'
     monkeypatch.setenv('EKYC_QUEUE', 'custom')
     assert queue.queue_name() == 'custom'
+
+
+def test_expiry_date_parsing():
+    from ekyc.routes import _expiry_date
+    assert _expiry_date('البطاقة سارية حتى ٢٠٢٩/٠٥/١٢') == '2029-05-12'
+    assert _expiry_date('12/05/2029') == '2029-05-12'
+    assert _expiry_date('2029-05-12') == '2029-05-12'
+    assert _expiry_date('البطاقة سارية حتى ٥٠٥٥١٢ ٢٠٢٩') is None
+    assert _expiry_date(None) is None

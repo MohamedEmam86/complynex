@@ -31,18 +31,19 @@
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header bg-white fw-bold">{{ _('Key officials') }} <span class="badge bg-secondary">{{ d.officials|length }}</span></div>
   <div class="table-responsive"><table class="table table-hover align-middle mb-0">
-    <thead class="table-light"><tr><th>{{ _('Name') }}</th><th>{{ _('Type') }}</th><th>{{ _('Key function') }}</th><th>{{ _('Committees') }}</th>
+    <thead class="table-light"><tr><th style="min-width:210px">{{ _('Name') }}</th><th>{{ _('Type') }}</th><th>{{ _('Key function') }}</th><th>{{ _('Committees') }}</th>
       <th>{{ _('Latest form') }}</th><th>{{ _('Status') }}</th><th>{{ _('Result') }}</th><th>{{ _('Next review') }}</th><th class="text-end">{{ _('Actions') }}</th></tr></thead>
     <tbody>
     {% for o in d.officials %}
       <tr>
-        <td class="fw-semibold">{{ o.full_name_ar if lang == 'ar' and o.full_name_ar else o.full_name }}</td>
+        <td class="fw-semibold" style="min-width:210px">{{ o.full_name_ar if lang == 'ar' and o.full_name_ar else o.full_name }}</td>
         <td><span class="badge bg-light text-dark border">{{ {'board': _('Board'), 'executive': _('Executive'), 'committee_external': _('Committee (external)')}[o.official_type] }}</span>
             {% if o.is_independent %}<span class="badge bg-info-subtle text-info-emphasis">{{ _('Independent') }}</span>{% endif %}</td>
         <td class="small">{% if o.key_function and S.KF.get(o.key_function) %}{{ S.KF[o.key_function][1] if lang == 'ar' else S.KF[o.key_function][0] }}{% else %}{{ o.position_title or '—' }}{% endif %}</td>
         <td class="small">{% for c in o.committees %}<span class="badge bg-secondary-subtle text-secondary-emphasis me-1">{{ c.name }}</span>{% else %}—{% endfor %}</td>
         <td class="small">{% if o.form_id %}<a href="{{ url_for('governance.fp_form_view', fid=o.form_id) }}">{{ o.form_ref }}</a>{% else %}—{% endif %}</td>
-        <td>{% if o.form_status %}<span class="badge bg-{{ {'regulator_approved': 'success', 'regulator_rejected': 'danger', 'draft': 'warning', 'submitted': 'primary', 'signed': 'primary'}.get(o.form_status, 'info') }}">{{ SL[o.form_status][1] if lang == 'ar' else SL[o.form_status][0] }}</span>{% else %}<span class="badge bg-secondary">{{ _('No form yet') }}</span>{% endif %}</td>
+        <td>{% if o.form_status %}<span class="badge bg-{{ {'regulator_approved': 'success', 'regulator_rejected': 'danger', 'draft': 'warning', 'submitted': 'primary', 'signed': 'primary'}.get(o.form_status, 'info') }}">{{ SL[o.form_status][1] if lang == 'ar' else SL[o.form_status][0] }}</span>{% else %}<span class="badge bg-secondary">{{ _('No form yet') }}</span>{% endif %}
+          {% if o.approval_in_force %}<div class="small mt-1"><a class="text-success" href="{{ url_for('governance.fp_form_view', fid=o.approval_in_force) }}"><i class="fas fa-check-circle"></i> {{ _('Approval in force') }}: {{ SL[o.approved_status][1] if lang == 'ar' else SL[o.approved_status][0] }}</a></div>{% endif %}</td>
         <td>{% if o.assessment_result %}<span class="badge bg-{{ {'fit': 'success', 'fit_with_conditions': 'warning', 'not_fit': 'danger'}[o.assessment_result] }}">{{ {'fit': _('Fit & proper'), 'fit_with_conditions': _('Fit with conditions'), 'not_fit': _('Not fit')}[o.assessment_result] }}</span>{% else %}—{% endif %}</td>
         <td class="small">{{ o.next_review_date or '—' }}</td>
         <td class="text-end text-nowrap">

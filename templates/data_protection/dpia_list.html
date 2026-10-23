@@ -31,8 +31,8 @@
                     <tbody>
                         {% for dpia in dpias %}
                         <tr>
-                            <td><code>{{ dpia.dpia_number }}</code></td>
-                            <td>{{ dpia.project_name }}</td>
+                            <td><code>{{ dpia.assessment_reference }}</code></td>
+                            <td>{{ dpia.system_name }}</td>
                             <td>
                                 <span
                                     class="badge {% if dpia.risk_level == 'VERY_HIGH' %}bg-dark{% elif dpia.risk_level == 'HIGH' %}bg-danger{% elif dpia.risk_level == 'MEDIUM' %}bg-warning text-dark{% else %}bg-info{% endif %}">

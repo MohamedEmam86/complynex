@@ -31280,6 +31280,147 @@ msgstr "تم إرسال الجلسة للمعالجة مرة أخرى."
 msgid "Name and national ID are needed before onboarding — use Review / correct data first."
 msgstr "الاسم والرقم القومي مطلوبان قبل تسجيل العميل — استخدم «مراجعة / تصحيح البيانات» أولًا."
 
+msgid "Main navigation"
+msgstr "القائمة الرئيسية"
+
+msgid "Collapse sidebar"
+msgstr "طي القائمة الجانبية"
+
+msgid "Search menu…"
+msgstr "بحث في القائمة…"
+
+msgid "Search navigation"
+msgstr "البحث في القائمة"
+
+msgid "CMS Dashboard"
+msgstr "لوحة إدارة الالتزام"
+
+msgid "Screening & AML"
+msgstr "الفحص ومكافحة غسل الأموال"
+
+msgid "Confirmed Matches"
+msgstr "التطابقات المؤكدة"
+
+msgid "Ongoing Screening"
+msgstr "الفحص المستمر"
+
+msgid "Monitoring Dashboard"
+msgstr "لوحة المراقبة"
+
+msgid "Customers & Merchants"
+msgstr "العملاء والتجار"
+
+msgid "Merchants"
+msgstr "التجار"
+
+msgid "Governance & Conduct"
+msgstr "الحوكمة والسلوك"
+
+msgid "Conflicts of Interest"
+msgstr "تعارض المصالح"
+
+msgid "Declaration Campaigns"
+msgstr "حملات الإقرارات"
+
+msgid "My COI Declarations"
+msgstr "إقراراتي بتعارض المصالح"
+
+msgid "My Gift Declarations"
+msgstr "إقراراتي بالهدايا"
+
+msgid "My Ethics Declarations"
+msgstr "إقراراتي الأخلاقية"
+
+msgid "All Ethics Declarations"
+msgstr "كل الإقرارات الأخلاقية"
+
+msgid "Risk & Audit"
+msgstr "المخاطر والمراجعة"
+
+msgid "Risk Dashboard"
+msgstr "لوحة المخاطر"
+
+msgid "Audit Dashboard"
+msgstr "لوحة المراجعة الداخلية"
+
+msgid "ESG Dashboard"
+msgstr "لوحة الاستدامة (ESG)"
+
+msgid "Carbon Dashboard"
+msgstr "لوحة الكربون"
+
+msgid "Protection & Security"
+msgstr "الحماية والأمن"
+
+msgid "Case Tracking"
+msgstr "متابعة الحالات"
+
+msgid "Whistleblowing Dashboard"
+msgstr "لوحة الإبلاغ عن المخالفات"
+
+msgid "Complaints Dashboard"
+msgstr "لوحة الشكاوى"
+
+msgid "Phishing Dashboard"
+msgstr "لوحة محاكاة التصيد"
+
+msgid "Integrys Academy"
+msgstr "أكاديمية Integrys"
+
+msgid "Document Types"
+msgstr "أنواع المستندات"
+
+msgid "Multi-Factor Auth"
+msgstr "التحقق متعدد العوامل"
+
+msgid "Organisation"
+msgstr "المؤسسة"
+
+msgid "Oversight"
+msgstr "الرقابة والإشراف"
+
+msgid "Auditor"
+msgstr "مراجع"
+
+msgid "Viewer"
+msgstr "مستخدم للاطلاع فقط"
+
+msgid "MLRO"
+msgstr "مسؤول الإبلاغ عن غسل الأموال"
+
+msgid "Approval in force"
+msgstr "الاعتماد الساري"
+
+msgid "Enter Reference Number or Email"
+msgstr "أدخل الرقم المرجعي أو البريد الإلكتروني"
+
+msgid "Closed / Resolved"
+msgstr "مغلقة / تم حلها"
+
+msgid "Please save these details. You will need both the Reference Number and PIN to track your complaint."
+msgstr "يرجى حفظ هذه البيانات. ستحتاج إلى الرقم المرجعي والرقم السري لمتابعة شكواك."
+
+msgid "Severity and PDPC notification requirements will be automatically calculated upon submission."
+msgstr "سيتم حساب درجة الخطورة ومتطلبات إخطار مركز حماية البيانات الشخصية تلقائيًا عند الإرسال."
+
+msgid "This is an initial registration. You will be able to perform the full necessity and proportionality assessment in the next step."
+msgstr "هذا تسجيل مبدئي. ستتمكن من إجراء تقييم الضرورة والتناسب الكامل في الخطوة التالية."
+
+msgid "Identity MUST be verified before processing data erasure or access requests."
+msgstr "يجب التحقق من الهوية قبل تنفيذ طلبات محو البيانات أو الاطلاع عليها."
+
+msgid "Basic / Ad-hoc"
+msgstr "أساسي / غير منظم"
+
+msgid "Managed"
+msgstr "مُدار"
+
+msgid "Optimized"
+msgstr "مُحسَّن"
+
+msgid "Compliant with Central Bank of Egypt Banking Law No. 194 of 2020. All information is confidential."
+msgstr "متوافق مع قانون البنك المركزي والجهاز المصرفي رقم 194 لسنة 2020. جميع البيانات سرية."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

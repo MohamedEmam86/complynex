@@ -126,9 +126,14 @@ def calendar_items(start=None, end=None, db=None):
     start = start or date.today() - timedelta(days=30)
     end = end or date.today() + timedelta(days=180)
     items = []
-    subs = _rows(db, """SELECT s.id, s.due_date, s.status, r.id AS report_id, r.report_code, r.report_name
-                        FROM regulatory_report_submissions s JOIN regulatory_reports r ON r.id = s.report_id
-                        WHERE s.due_date BETWEEN %s AND %s AND COALESCE(s.status, 'pending') NOT IN ('submitted', 'approved')""",
+    # regulatory_report_submissions.due_date is TEXT: compare as a date, not as text.
+    subs = _rows(db, """SELECT * FROM (
+                            SELECT s.id, CASE WHEN s.due_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+                                              THEN substr(s.due_date, 1, 10)::date END AS due_date,
+                                   s.status, r.id AS report_id, r.report_code, r.report_name
+                            FROM regulatory_report_submissions s JOIN regulatory_reports r ON r.id = s.report_id
+                            WHERE COALESCE(s.status, 'pending') NOT IN ('submitted', 'approved')) x
+                        WHERE x.due_date BETWEEN %s AND %s""",
                      (start, end))
     have = {(s['report_id'], s['due_date']) for s in subs}
     for s in subs:

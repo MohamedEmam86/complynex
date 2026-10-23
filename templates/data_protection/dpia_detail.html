@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}DPIA Review - {{ dpia.dpia_number }}{% endblock %}
+{% block title %}DPIA Review - {{ dpia.assessment_reference }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">DPIA Review: {{ dpia.dpia_number }}</h1>
+        <h1 class="h2">DPIA Review: {{ dpia.assessment_reference }}</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
             <a href="{{ url_for('dp.dpia_list') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> {{ _('Back to List') }}
@@ -19,14 +19,14 @@
         <div class="col-md-9">
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Project: {{ dpia.project_name }}</h5>
+                    <h5 class="mb-0">Project: {{ dpia.system_name }}</h5>
                     <span
                         class="badge {% if dpia.status == 'APPROVED' %}bg-success{% elif dpia.status == 'REJECTED' %}bg-danger{% else %}bg-primary{% endif %}">
                         {{ dpia.status }}
                     </span>
                 </div>
                 <div class="card-body">
-                    <p class="lead text-muted">{{ dpia.project_description }}</p>
+                    <p class="lead text-muted">{{ dpia.processing_description }}</p>
                     <hr>
 
                     <form action="{{ url_for('dp.dpia_detail', id=dpia.id) }}" method="POST">

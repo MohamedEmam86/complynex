@@ -36,6 +36,16 @@ from regcontrols.api import raise_finding, register_check, register_expected_sou
 from . import logic, service
 
 
+def _as_date(value):
+    """regulatory_report_submissions.due_date is TEXT ('2026-11-15'); None if unreadable."""
+    if value is None or isinstance(value, date):
+        return value
+    try:
+        return date.fromisoformat(str(value).strip()[:10])
+    except ValueError:
+        return None
+
+
 def _rec(l, **extra):
     return dict({'table': 'ln_loans', 'id': l['id'], 'label': l.get('loan_ref')}, **extra)
 
@@ -293,7 +303,7 @@ def pricing_disclosure(ctx):
     if not rows:
         return ctx.warn('No FRA-RPD submissions are scheduled in the regulatory calendar '
                         '(Regulatory Reports > FRA-RPD > generate schedule)')
-    late = [r for r in rows if r['due_date'] and r['due_date'] < ctx.as_of
+    late = [r for r in rows if _as_date(r['due_date']) and _as_date(r['due_date']) < ctx.as_of
             and r['status'] not in ('submitted',)]
     if late:
         return ctx.fail(f'{len(late)} responsible-pricing disclosure(s) past due and not submitted',

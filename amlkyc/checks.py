@@ -51,6 +51,21 @@ from regcontrols.api import register_check, register_sweep
 from . import logic, service, subjects
 
 
+def _as_date(value):
+    """policies.updated_at/created_at are TEXT columns ('2026-10-01 09:00:00');
+    other tables give datetime/date. None when it cannot be read."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    try:
+        return date.fromisoformat(str(value).strip()[:10])
+    except ValueError:
+        return None
+
+
 def _roles(ctx):
     codes = ctx.config.get('role_codes') or ['mlro']
     return codes, [service.effective_role(r) for r in service.key_roles(ctx.db) if r['role_code'] in codes]
@@ -117,8 +132,8 @@ def policy_board_approval(ctx):
     for p in scope:
         if p['board_approved_on']:
             continue
-        since = (p.get('updated_at') or p.get('created_at'))
-        age = (today - since.date()).days if since else None
+        since = _as_date(p.get('updated_at') or p.get('created_at'))
+        age = (today - since).days if since else None
         rec = {'table': 'policies', 'id': p['id'], 'label': f"{p['policy_number'] or ''} {p['policy_name']}".strip(),
                'status': p['status'], 'days_waiting': age}
         if age is None or age > int(max_days):

@@ -398,7 +398,7 @@ def run_qa(user_id=None, screen_fn=None, threshold=None, db=None):
         except Exception as e:
             error = f'{type(e).__name__}: {e}'[:500]
             break
-        names = [m.get('name') or m.get('matched_name') or m.get('entity_name') or '' for m in matches]
+        names = [m.get('name') or m.get('matched_name') or m.get('full_name') or m.get('entity_name') or '' for m in matches]
         if c['expect_match']:
             found = any(logic.same_name(n, c['expected_name'] or c['query_name']) for n in names) or \
                 any(logic.same_name(a, c['expected_name'] or '') for m in matches for a in (m.get('aliases') or [])

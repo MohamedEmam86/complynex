@@ -938,6 +938,26 @@ def session_decision(session_id):
     return redirect(url_for('ekyc.view_session', session_id=session_id))
 
 
+def _expiry_date(raw):
+    """The card's expiry as YYYY-MM-DD from the raw back-side read
+    ("البطاقة سارية حتى ٢٠٢٩/٠٥/١٢", "12/05/2029", "2029-05-12"), or None —
+    the customer record should hold a date, not the OCR line."""
+    import re
+    from datetime import date
+    text = (raw or '').translate(_ARABIC_DIGITS)
+    for pattern, order in ((r'(\d{4})\D{1,3}(\d{1,2})\D{1,3}(\d{1,2})', 'ymd'),
+                           (r'(\d{1,2})\D{1,3}(\d{1,2})\D{1,3}(\d{4})', 'dmy')):
+        m = re.search(pattern, text)
+        if m:
+            a, b, c = (int(x) for x in m.groups())
+            y, mo, d = (a, b, c) if order == 'ymd' else (c, b, a)
+            try:
+                return date(y, mo, d).isoformat()
+            except ValueError:
+                continue
+    return None
+
+
 @ekyc_bp.route('/session/<int:session_id>/onboard', methods=['POST'])
 @login_required
 @permission_required('ekyc', level='edit')
@@ -969,7 +989,7 @@ def session_onboard(session_id):
         'nationality': 'Egypt',
         'id_type': session['document_type'],
         'id_number': national_id,
-        'id_expiry_date': result.get('id_expiry_raw'),
+        'id_expiry_date': _expiry_date(result.get('id_expiry_raw')),
         'address': result.get('final_address') or result.get('extracted_address') or 'N/A',
         'country': 'EGYPT',
     })
