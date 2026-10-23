@@ -39,6 +39,10 @@ def _install_host_guard(state):
         if host == S.ACADEMY_HOST:
             if path.startswith('/static/'):
                 return None
+            # other public pages that optional modules register for this host
+            from utils import public_paths
+            if public_paths.match(path):
+                return None
             if path == '/':
                 return redirect('/academy/')
             if not path.startswith('/academy/') and path != '/academy' or path.startswith('/academy/admin'):

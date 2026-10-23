@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% import 'talent_pool/_nav.html' as tn with context %}
+{% block title %}{{ rc_loc('E-mail addresses', 'عناوين البريد') }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  {{ tn.nav('list') }}
+  <h4>{{ rc_loc('E-mail addresses of the selected applicants', 'عناوين بريد المتقدمين المحددين') }} ({{ emails|length }})</h4>
+  <p class="small text-muted">{{ rc_loc('Paste them in the BCC field so applicants do not see each other.', 'الصقها في خانة BCC علشان المتقدمين ما يشوفوش بعض.') }}</p>
+  <textarea class="form-control" rows="6" readonly dir="ltr">{{ emails|join('; ') }}</textarea>
+  <a class="btn btn-sm btn-outline-secondary mt-2" href="{{ url_for('talent.index') }}">{{ rc_loc('Back', 'رجوع') }}</a>
+</div>
+{% endblock %}

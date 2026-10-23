@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% import 'talent_pool/_nav.html' as tn with context %}
+{% block title %}{{ rc_loc('Talent pool settings', 'إعدادات بنك المواهب') }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  {{ tn.nav('settings') }}
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <form class="card" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="section" value="general">
+        <div class="card-header"><strong>{{ rc_loc('Public form', 'نموذج التقديم العام') }}</strong></div>
+        <div class="card-body small">
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" name="public_enabled" id="pe" {{ 'checked' if s.public_enabled == '1' }}>
+            <label class="form-check-label fw-bold" for="pe">{{ rc_loc('Accept applications', 'استقبال الطلبات') }}</label>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Organisation name (English)', 'اسم الجهة (إنجليزي)') }}</label><input class="form-control form-control-sm" name="org_name_en" value="{{ s.org_name_en }}" maxlength="120"></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Organisation name (Arabic)', 'اسم الجهة (عربي)') }}</label><input class="form-control form-control-sm" name="org_name_ar" value="{{ s.org_name_ar }}" maxlength="120" dir="rtl"></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Website', 'الموقع') }}</label><input class="form-control form-control-sm" name="website" value="{{ s.website }}" maxlength="200" dir="ltr"></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Logo (path under /static)', 'الشعار (مسار داخل static)') }}</label><input class="form-control form-control-sm" name="logo" value="{{ s.logo }}" maxlength="200" dir="ltr"></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Intro text (English)', 'نص التعريف (إنجليزي)') }}</label><textarea class="form-control form-control-sm" name="intro_en" rows="4" maxlength="3000">{{ s.intro_en }}</textarea></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Intro text (Arabic)', 'نص التعريف (عربي)') }}</label><textarea class="form-control form-control-sm" name="intro_ar" rows="4" maxlength="3000" dir="rtl">{{ s.intro_ar }}</textarea></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('"Good to know" (English)', '«معلومات مهمة» (إنجليزي)') }}</label><textarea class="form-control form-control-sm" name="terms_en" rows="4" maxlength="3000">{{ s.terms_en }}</textarea></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('"Good to know" (Arabic)', '«معلومات مهمة» (عربي)') }}</label><textarea class="form-control form-control-sm" name="terms_ar" rows="4" maxlength="3000" dir="rtl">{{ s.terms_ar }}</textarea></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Privacy contact (shown to applicants)', 'جهة التواصل للخصوصية (تظهر للمتقدمين)') }}</label><input class="form-control form-control-sm" name="privacy_contact" value="{{ s.privacy_contact }}" maxlength="200" dir="ltr"></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Notify this e-mail on each new application', 'إخطار هذا البريد عند كل طلب جديد') }}</label><input class="form-control form-control-sm" name="notify_email" value="{{ s.notify_email }}" maxlength="200" dir="ltr"></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Sender name on e-mails', 'اسم المرسل في الرسائل') }}</label><input class="form-control form-control-sm" name="sender_name" value="{{ s.sender_name }}" maxlength="120"></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Staff link base (for notifications)', 'رابط النظام (للإخطارات)') }}</label><input class="form-control form-control-sm" name="staff_base_url" value="{{ s.staff_base_url }}" maxlength="200" dir="ltr" placeholder="https://…"></div>
+          </div>
+        </div>
+        <div class="card-footer"><button class="btn btn-sm btn-primary">{{ rc_loc('Save', 'حفظ') }}</button></div>
+      </form>
+    </div>
+    <div class="col-lg-5">
+      <div class="card"><div class="card-header"><strong>{{ rc_loc('Areas of expertise (shown on the form)', 'مجالات الخبرة (تظهر في النموذج)') }}</strong></div>
+        <ul class="list-group list-group-flush small">
+          {% for c in categories %}
+          <li class="list-group-item">
+            <form method="post" class="row g-1 align-items-center">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="section" value="category"><input type="hidden" name="cat_id" value="{{ c.id }}">
+              <div class="col-5"><input class="form-control form-control-sm" name="name_en" value="{{ c.name_en }}" maxlength="120"></div>
+              <div class="col-4"><input class="form-control form-control-sm" name="name_ar" value="{{ c.name_ar or '' }}" maxlength="120" dir="rtl"></div>
+              <div class="col-1"><input class="form-control form-control-sm px-1" name="sort_order" value="{{ c.sort_order }}" type="number"></div>
+              <div class="col-2 d-flex gap-1">
+                <select class="form-select form-select-sm px-1" name="is_active"><option value="1" {{ 'selected' if c.is_active }}>✓</option><option value="0" {{ 'selected' if not c.is_active }}>✗</option></select>
+                <button class="btn btn-sm btn-outline-primary" title="{{ rc_loc('Save', 'حفظ') }}"><i class="bi bi-check"></i></button>
+              </div>
+            </form>
+          </li>
+          {% endfor %}
+          <li class="list-group-item bg-light">
+            <form method="post" class="row g-1">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="section" value="category">
+              <div class="col-5"><input class="form-control form-control-sm" name="name_en" placeholder="{{ rc_loc('New area (English)', 'مجال جديد (إنجليزي)') }}" maxlength="120" required></div>
+              <div class="col-4"><input class="form-control form-control-sm" name="name_ar" placeholder="{{ rc_loc('Arabic', 'عربي') }}" maxlength="120" dir="rtl"></div>
+              <div class="col-1"><input class="form-control form-control-sm px-1" name="sort_order" value="100" type="number"></div>
+              <div class="col-2"><button class="btn btn-sm btn-primary w-100">{{ rc_loc('Add', 'إضافة') }}</button></div>
+            </form>
+          </li>
+        </ul>
+      </div>
+      <p class="small text-muted mt-2">{{ rc_loc('Who can see applicants: Users → edit user → "Content pack modules" → Talent pool (View / Edit / Admin).', 'مين يشوف المتقدمين: المستخدمين ← تعديل مستخدم ← «وحدات الحزم» ← بنك المواهب (عرض / تعديل / مسؤول).') }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

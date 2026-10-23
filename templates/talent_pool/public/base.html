@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="{{ 'ar' if ar else 'en' }}" dir="{{ 'rtl' if ar else 'ltr' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% set org = L((brand.org_name_en, brand.org_name_ar)) %}
+  <title>{% block title %}{{ t('Join our consulting network', 'انضم لشبكة الاستشاريين') }}{% endblock %} · {{ org }}</title>
+  <meta name="description" content="{{ t('Part-time and project-based consulting and training opportunities in governance, compliance, AML/CFT and financial crime.', 'فرص استشارات وتدريب بدوام جزئي أو بالمشروع في الحوكمة والالتزام ومكافحة غسل الأموال والجرائم المالية.') }}">
+  <meta name="robots" content="{% block robots %}index, follow{% endblock %}">
+  {% if brand.logo %}<link rel="icon" href="{{ url_for('static', filename=brand.logo) }}">{% endif %}
+  <link href="{{ static_v('vendor/fonts/academy/academy-fonts.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/academy.css') }}?v=4">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/talent_public.css') }}?v=1">
+</head>
+<body class="ia tp {% block body_class %}{% endblock %}">
+<header class="ia-top">
+  <div class="ia-wrap ia-top__in">
+    <a class="ia-brand" href="{{ brand.website or url_for('talent_public.landing') }}">
+      {% if brand.logo %}<img src="{{ url_for('static', filename=brand.logo) }}" alt="" width="40" height="40">{% endif %}
+      <span><b>{{ org }}</b><small>{{ t('Careers · Consultants network', 'الوظائف · شبكة الاستشاريين') }}</small></span>
+    </a>
+    <nav class="ia-nav">
+      <a href="{{ url_for('talent_public.landing') }}">{{ t('How it works', 'إزاي بنشتغل') }}</a>
+      <a class="ia-btn ia-btn--sm" href="{{ url_for('talent_public.apply') }}">{{ t('Apply now', 'قدّم الآن') }}</a>
+      <a class="ia-lang" href="{{ url_for('talent_public.set_lang', code='en' if ar else 'ar', next=request.path) }}">{{ 'English' if ar else 'العربية' }}</a>
+    </nav>
+  </div>
+</header>
+<main class="ia-main">
+  <div class="ia-wrap">
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% for cat, m in msgs %}<div class="ia-alert ia-alert--{{ cat }}">{{ m }}</div>{% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</main>
+<footer class="ia-foot">
+  <div class="ia-wrap ia-foot__in">
+    <div><b>{{ brand.org_name_en }}</b>{% if brand.org_name_ar %} · {{ brand.org_name_ar }}{% endif %}<br>
+      <span>{{ t('Governance · Risk · Compliance · Financial Crime', 'الحوكمة · المخاطر · الالتزام · الجرائم المالية') }}</span></div>
+    <div class="ia-foot__links">
+      {% if brand.website %}<a href="{{ brand.website }}">{{ brand.website|replace('https://','')|replace('/','') }}</a>{% endif %}
+      <a href="{{ url_for('talent_public.privacy') }}">{{ t('Applicant privacy notice', 'إشعار خصوصية المتقدمين') }}</a>
+      <span class="ia-powered">{{ t('Powered by', 'مدعوم من') }} <b>ComplyNex</b></span>
+    </div>
+  </div>
+</footer>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/talent_public.js') }}?v=1"></script>
+</body>
+</html>

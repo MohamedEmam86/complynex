@@ -1,0 +1,11 @@
+{% extends 'talent_pool/public/base.html' %}
+{% block title %}{{ t('Application received', 'تم استلام الطلب') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow ia-center">
+  <h1>{{ t('Thank you — application received', 'شكرًا — تم استلام طلبك') }}</h1>
+  <p>{{ t('Your reference', 'الرقم المرجعي') }}: <b dir="ltr">{{ ref }}</b></p>
+  <p class="ia-muted">{{ t('Our team reviews applications by area of expertise. We will contact you by e-mail or phone when a project matches your experience.', 'فريقنا بيراجع الطلبات حسب مجال الخبرة، وهنتواصل معاك بالإيميل أو التليفون لما يكون في مشروع مناسب لخبرتك.') }}</p>
+  {% if brand.website %}<p><a class="ia-btn ia-btn--ghost" href="{{ brand.website }}">{{ t('Back to our website', 'رجوع للموقع') }}</a></p>{% endif %}
+</div>
+{% endblock %}

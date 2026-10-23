@@ -1,0 +1,10 @@
+{% macro nav(active) -%}
+<ul class="nav nav-pills mb-3 small flex-wrap">
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == 'list' }}" href="{{ url_for('talent.index') }}"><i class="bi bi-people me-1"></i>{{ rc_loc('Applicants', 'المتقدمون') }}</a></li>
+    {% if tp_can_admin %}<li class="nav-item"><a class="nav-link {{ 'active' if active == 'settings' }}" href="{{ url_for('talent.settings') }}"><i class="bi bi-gear me-1"></i>{{ rc_loc('Settings & categories', 'الإعدادات والتصنيفات') }}</a></li>{% endif %}
+    <li class="nav-item ms-auto"><a class="nav-link" href="{{ url_for('talent_public.landing') }}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1"></i>{{ rc_loc('Public page', 'الصفحة العامة') }}</a></li>
+</ul>
+{%- endmacro %}
+{% macro status_badge(s) -%}
+<span class="badge bg-{{ TP.STATUS_COLORS.get(s, 'secondary') }}{{ ' text-dark' if s in ('contacted', 'interview', 'withdrawn') }}">{{ rc_loc(*TP.STATUS_LABELS.get(s, (s, s))) }}</span>
+{%- endmacro %}

@@ -1,0 +1,20 @@
+/* Talent pool public pages — on top of academy.css */
+.tp-form { max-width: 820px; margin: 0 auto; }
+.tp-sec { font-size: 1.05rem; margin: 1.6rem 0 .6rem; padding-top: .9rem; border-top: 1px solid #e5e7eb; color: #006B75; }
+.tp-multi { border: 1px solid #e5e7eb; border-radius: 10px; padding: .6rem .8rem; margin: .4rem 0 1rem; }
+.tp-multi legend { font-size: .9rem; padding: 0 .3rem; }
+.tp-inline { display: inline-flex; width: auto; margin: .2rem .9rem .2rem 0; }
+[dir=rtl] .tp-inline { margin: .2rem 0 .2rem .9rem; }
+.tp-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.5rem; }
+.tp-chip { background: #e8f4f5; color: #0e2340; border: 1px solid #b9dde0; border-radius: 999px; padding: .35rem .9rem; font-size: .92rem; }
+.tp-pre { white-space: pre-line; margin: 0; }
+.tp-cta-box { margin-top: 2rem; }
+.tp-code { font-size: 1.6rem; letter-spacing: .5rem; text-align: center; }
+.tp-steps .ia-tag { font-size: 1.4rem; font-weight: 700; color: #006B75; }
+.tp-steps { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.tp-form textarea { display: block; width: 100%; box-sizing: border-box; margin-top: .35rem; padding: .7rem .85rem;
+  border: 1px solid #cfd8dc; border-radius: 10px; font: inherit; min-height: 130px; background: #fff; resize: vertical; }
+.tp-form textarea:focus { outline: 2px solid #9fd3d8; border-color: #006B75; }
+.tp-multi { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: .1rem .8rem; }
+.tp-multi legend { grid-column: 1 / -1; }
+.tp-multi .tp-inline { margin: .15rem 0; }

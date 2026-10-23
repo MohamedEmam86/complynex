@@ -177,6 +177,11 @@ def create_app(config_name=None):
     def csrf_error(e):
         if request.path.startswith('/api/') or request.is_json:
             return jsonify({'error': 'CSRF validation failed', 'message': 'Your session expired. Please log in again and resubmit.'}), 400
+        from utils import public_paths as _pp
+        if _pp.match(request.path):
+            # public forms registered by optional modules: back to the form, never the staff login
+            flash(gettext('Your session expired. Please submit the form again.'), 'warning')
+            return redirect(request.path if request.method == 'POST' else _pp.match(request.path))
         if request.path.startswith('/academy') and not request.path.startswith('/academy/admin'):
             # Public Academy learners never see the staff login page.
             flash(gettext('Your session expired. Please submit the form again.'), 'warning')

@@ -1,0 +1,24 @@
+{% extends 'talent_pool/public/base.html' %}
+{% block title %}{{ t('Applicant privacy notice', 'إشعار خصوصية المتقدمين') }}{% endblock %}
+{% block content %}
+{% set org = L((brand.org_name_en, brand.org_name_ar)) %}
+<div class="ia-panel">
+  <h1>{{ t('Applicant privacy notice', 'إشعار خصوصية المتقدمين') }}</h1>
+  {% if ar %}
+  <p><b>من يعالج البيانات:</b> {{ org }}، عبر منصة ComplyNex المستضافة على خوادم مؤمّنة.</p>
+  <p><b>البيانات:</b> الاسم، البريد الإلكتروني، أرقام التواصل، المدينة والدولة، مجالات الخبرة وسنواتها، المسمى الوظيفي، الشهادات واللغات، رابط لينكدإن، الأتعاب المتوقعة، النبذة، والسيرة الذاتية إن رفعتها، بالإضافة إلى عنوان IP ووقت التقديم لأغراض الأمان.</p>
+  <p><b>الغرض:</b> تقييم ملاءمتك للمشروعات الاستشارية والتدريبية والتواصل معك بخصوصها فقط. لا نبيع البيانات ولا نشاركها مع جهة عملك ولا مع أي طرف آخر دون موافقتك، باستثناء ما يفرضه القانون.</p>
+  <p><b>من يطّلع عليها:</b> أعضاء فريق الاختيار المصرّح لهم فقط، ويتم تسجيل كل اطلاع على السيرة الذاتية.</p>
+  <p><b>مدة الحفظ:</b> الطلبات غير المؤكدة تُحذف خلال 24 ساعة. الطلبات المؤكدة تُحفظ طوال مدة اهتمامك بالعمل معنا، ويمكنك طلب حذفها في أي وقت.</p>
+  <p><b>حقوقك</b> (وفقًا لقانون حماية البيانات الشخصية المصري رقم 151 لسنة 2020): الاطلاع على بياناتك وتصحيحها وطلب حذفها وسحب الموافقة.{% if brand.privacy_contact %} للتواصل: <span dir="ltr">{{ brand.privacy_contact }}</span>{% endif %}</p>
+  {% else %}
+  <p><b>Who processes your data:</b> {{ org }}, using the ComplyNex platform hosted on secured servers.</p>
+  <p><b>What we collect:</b> name, e-mail, phone numbers, city and country, areas and years of expertise, job title, certifications and languages, LinkedIn link, expected rate, your summary and, if you upload it, your CV — plus the IP address and time of submission for security.</p>
+  <p><b>Why:</b> only to assess your fit for consulting and training projects and to contact you about them. We do not sell your data or share it with your employer or anyone else without your consent, except where the law requires.</p>
+  <p><b>Who sees it:</b> only authorised members of the selection team; every CV download is logged.</p>
+  <p><b>How long:</b> unconfirmed applications are deleted within 24 hours. Confirmed applications are kept while you are interested in working with us; you can ask us to delete them at any time.</p>
+  <p><b>Your rights</b> (Egyptian Personal Data Protection Law No. 151 of 2020): access, correction, deletion and withdrawal of consent.{% if brand.privacy_contact %} Contact: <span dir="ltr">{{ brand.privacy_contact }}</span>{% endif %}</p>
+  {% endif %}
+  <p><a href="{{ url_for('talent_public.apply') }}">{{ t('Back to the application form', 'رجوع لنموذج التقديم') }}</a></p>
+</div>
+{% endblock %}

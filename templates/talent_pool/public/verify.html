@@ -1,0 +1,21 @@
+{% extends 'talent_pool/public/base.html' %}
+{% block title %}{{ t('Confirm your e-mail', 'تأكيد البريد') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow">
+  <h1>{{ t('Confirm your e-mail', 'أكّد بريدك الإلكتروني') }}</h1>
+  <p class="ia-muted">{{ t('We sent a 6-digit code to', 'بعتنا رمز من 6 أرقام على') }} <b dir="ltr">{{ masked }}</b>. {{ t('Your application reaches our team once you confirm it. Check spam if you do not see it.', 'طلبك هيوصل لفريقنا بعد التأكيد. لو مش لاقي الرسالة بُص في الـ Spam.') }}</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>{{ t('Code', 'الرمز') }}
+      <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required dir="ltr" class="tp-code"></label>
+    <button class="ia-btn ia-btn--block">{{ t('Confirm', 'تأكيد') }}</button>
+  </form>
+  <form method="post" class="ia-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="resend" value="1">
+    <button class="ia-link">{{ t('Send a new code', 'أرسل رمزًا جديدًا') }}</button>
+  </form>
+  <p class="ia-muted ia-small">{{ t('Unconfirmed applications are deleted automatically after 24 hours.', 'الطلبات اللي ما اتأكدتش بتتمسح تلقائيًا بعد 24 ساعة.') }}</p>
+</div>
+{% endblock %}

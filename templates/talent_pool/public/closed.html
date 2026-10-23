@@ -1,0 +1,10 @@
+{% extends 'talent_pool/public/base.html' %}
+{% block title %}{{ t('Applications closed', 'التقديم مغلق') }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block content %}
+<div class="ia-panel ia-panel--narrow ia-center">
+  <h1>{{ t('Applications are closed for now', 'التقديم مغلق حاليًا') }}</h1>
+  <p class="ia-muted">{{ t('Please check again soon.', 'من فضلك ارجع لنا قريبًا.') }}</p>
+  {% if brand.website %}<p><a class="ia-btn ia-btn--ghost" href="{{ brand.website }}">{{ t('Back to our website', 'رجوع للموقع') }}</a></p>{% endif %}
+</div>
+{% endblock %}

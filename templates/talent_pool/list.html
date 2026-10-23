@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% import 'talent_pool/_nav.html' as tn with context %}
+{% block title %}{{ rc_loc('Talent pool', 'بنك المواهب') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <h3 class="mb-0"><i class="bi bi-person-badge me-2"></i>{{ rc_loc('Talent pool — consultants & trainers', 'بنك المواهب — الاستشاريون والمدربون') }}</h3>
+    <div class="d-flex gap-2 align-items-center">
+      <span class="badge {{ 'bg-success' if public_enabled else 'bg-secondary' }}">{{ rc_loc('Public form open', 'نموذج التقديم مفتوح') if public_enabled else rc_loc('Public form closed', 'نموذج التقديم مغلق') }}</span>
+      {% if tp_can_edit %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('talent.export', **args.to_dict()) }}"><i class="bi bi-download me-1"></i>{{ rc_loc('Export (filtered)', 'تصدير (حسب الفلتر)') }}</a>{% endif %}
+    </div>
+  </div>
+  {{ tn.nav('list') }}
+
+  <div class="row g-2 mb-3">
+    {% for s in TP.STAFF_STATUSES %}
+    <div class="col-6 col-md-3 col-xl"><a class="text-decoration-none" href="{{ url_for('talent.index', status=s) }}">
+      <div class="card text-center {{ 'border-primary' if args.get('status') == s }}"><div class="card-body py-2">
+        <div class="fs-4">{{ by_status.get(s, 0) }}</div><div class="small text-muted">{{ rc_loc(*TP.STATUS_LABELS[s]) }}</div>
+      </div></div></a></div>
+    {% endfor %}
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-3">
+      <div class="card mb-3"><div class="card-header"><strong>{{ rc_loc('Areas of expertise', 'مجالات الخبرة') }}</strong></div>
+        <ul class="list-group list-group-flush small">
+          <a class="list-group-item list-group-item-action d-flex justify-content-between {{ 'active' if not args.get('category') }}" href="{{ url_for('talent.index', status=args.get('status')) }}">{{ rc_loc('All areas', 'كل المجالات') }}</a>
+          {% for c in by_cat %}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between {{ 'active' if args.get('category') == c.id|string }}" href="{{ url_for('talent.index', category=c.id, status=args.get('status')) }}">
+            <span>{{ rc_loc(c.name_en, c.name_ar) }}</span><span class="badge bg-light text-dark">{{ c.n }}</span></a>
+          {% endfor %}
+        </ul>
+      </div>
+      <form class="card card-body small" method="get">
+        <input type="hidden" name="category" value="{{ args.get('category', '') }}">
+        <label class="form-label mb-1">{{ rc_loc('Search', 'بحث') }}</label>
+        <input class="form-control form-control-sm mb-2" name="q" value="{{ args.get('q', '') }}" maxlength="100" placeholder="{{ rc_loc('Name, e-mail, phone, title, certification…', 'الاسم، البريد، التليفون، المسمى، الشهادة…') }}">
+        <label class="form-label mb-1">{{ rc_loc('Status', 'الحالة') }}</label>
+        <select class="form-select form-select-sm mb-2" name="status">
+          <option value="">{{ rc_loc('All (confirmed)', 'الكل (المؤكد)') }}</option>
+          {% for s in TP.STATUSES %}<option value="{{ s }}" {{ 'selected' if args.get('status') == s }}>{{ rc_loc(*TP.STATUS_LABELS[s]) }}</option>{% endfor %}
+        </select>
+        <label class="form-label mb-1">{{ rc_loc('Availability', 'الوقت المتاح') }}</label>
+        <select class="form-select form-select-sm mb-2" name="availability"><option value="">—</option>
+          {% for k, v in TP.AVAILABILITY.items() %}<option value="{{ k }}" {{ 'selected' if args.get('availability') == k }}>{{ rc_loc(*v) }}</option>{% endfor %}
+        </select>
+        <label class="form-label mb-1">{{ rc_loc('Minimum years of experience', 'أقل عدد سنوات خبرة') }}</label>
+        <input class="form-control form-control-sm mb-2" type="number" min="0" max="60" name="min_years" value="{{ args.get('min_years', '') }}">
+        <label class="form-label mb-1">{{ rc_loc('Sort', 'الترتيب') }}</label>
+        <select class="form-select form-select-sm mb-2" name="sort">
+          {% for k, v in [('newest', rc_loc('Newest', 'الأحدث')), ('experience', rc_loc('Most experience', 'الأكثر خبرة')), ('rating', rc_loc('Rating', 'التقييم')), ('name', rc_loc('Name', 'الاسم')), ('oldest', rc_loc('Oldest', 'الأقدم'))] %}
+          <option value="{{ k }}" {{ 'selected' if args.get('sort') == k }}>{{ v }}</option>{% endfor %}
+        </select>
+        <button class="btn btn-sm btn-primary">{{ rc_loc('Apply filters', 'تطبيق') }}</button>
+      </form>
+    </div>
+
+    <div class="col-lg-9">
+      <form method="post" action="{{ url_for('talent.bulk') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if tp_can_edit %}
+        <div class="d-flex gap-2 mb-2 flex-wrap align-items-center small">
+          <span class="text-muted">{{ rc_loc('Selected:', 'المحدد:') }}</span>
+          <select class="form-select form-select-sm w-auto" name="action">
+            <option value="shortlisted">{{ rc_loc('Mark shortlisted', 'إضافة للقائمة المختصرة') }}</option>
+            <option value="contacted">{{ rc_loc('Mark contacted', 'تم التواصل') }}</option>
+            <option value="interview">{{ rc_loc('Mark interview', 'مقابلة') }}</option>
+            <option value="on_hold">{{ rc_loc('Put on hold', 'تعليق') }}</option>
+            <option value="rejected">{{ rc_loc('Not suitable', 'غير مناسب') }}</option>
+            <option value="emails">{{ rc_loc('Copy e-mail addresses', 'نسخ عناوين البريد') }}</option>
+            <option value="export">{{ rc_loc('Export selected (CSV)', 'تصدير المحدد (CSV)') }}</option>
+          </select>
+          <button class="btn btn-sm btn-outline-primary">{{ rc_loc('Apply', 'تنفيذ') }}</button>
+        </div>
+        {% endif %}
+        <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead><tr>
+            {% if tp_can_edit %}<th><input type="checkbox" class="form-check-input" data-check-all="ids" aria-label="all"></th>{% endif %}
+            <th>{{ rc_loc('Applicant', 'المتقدم') }}</th><th>{{ rc_loc('Main area', 'المجال الأساسي') }}</th>
+            <th class="text-center">{{ rc_loc('Years', 'سنوات') }}</th><th>{{ rc_loc('Availability', 'الوقت المتاح') }}</th>
+            <th>{{ rc_loc('Contact', 'التواصل') }}</th><th>{{ rc_loc('Status', 'الحالة') }}</th><th>{{ rc_loc('Applied', 'تاريخ التقديم') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for r in rows %}
+          <tr>
+            {% if tp_can_edit %}<td><input type="checkbox" class="form-check-input" name="ids" value="{{ r.id }}" aria-label="select"></td>{% endif %}
+            <td><a href="{{ url_for('talent.detail', app_id=r.id) }}" class="fw-semibold">{{ r.full_name }}</a>
+              {% if r.rating %}<span class="text-warning small ms-1">{{ '★' * r.rating }}</span>{% endif %}
+              <div class="small text-muted">{{ r.current_title or '' }}{% if r.cv_path %} · <i class="bi bi-file-earmark-text" title="CV"></i> CV{% endif %}{% if r.other_apps %} · <span class="badge bg-light text-dark">{{ rc_loc('applied before', 'تقدم سابقًا') }}</span>{% endif %}</div></td>
+            <td class="small">{{ rc_loc(r.cat_en, r.cat_ar) }}</td>
+            <td class="text-center">{{ r.years_experience if r.years_experience is not none else '—' }}</td>
+            <td class="small">{{ rc_loc(*TP.AVAILABILITY[r.availability]) if r.availability in TP.AVAILABILITY else '—' }}</td>
+            <td class="small text-nowrap"><a href="mailto:{{ r.email }}" title="{{ r.email }}"><i class="bi bi-envelope"></i></a>
+              <a class="ms-2" href="tel:{{ r.phone }}" dir="ltr">{{ r.phone }}</a></td>
+            <td>{{ tn.status_badge(r.status) }}</td>
+            <td class="small text-muted">{{ r.created_at.strftime('%Y-%m-%d') if r.created_at }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="text-center text-muted py-4">{{ rc_loc('No applicants match these filters.', 'لا يوجد متقدمون بهذه الفلاتر.') }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+        {% if rows|length >= 500 %}<p class="small text-muted">{{ rc_loc('Showing the first 500 — narrow the filters.', 'عرض أول 500 — ضيّق الفلاتر.') }}</p>{% endif %}
+      </form>
+    </div>
+  </div>
+</div>
+<script nonce="{{ csp_nonce }}">
+document.querySelectorAll('[data-check-all]').forEach(function (box) {
+  box.addEventListener('change', function () {
+    document.querySelectorAll('input[name="' + box.getAttribute('data-check-all') + '"]').forEach(function (c) { c.checked = box.checked; });
+  });
+});
+</script>
+{% endblock %}

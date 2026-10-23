@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% import 'talent_pool/_nav.html' as tn with context %}
+{% block title %}{{ a.ref }} - {{ rc_loc('Talent pool', 'بنك المواهب') }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  {{ tn.nav('list') }}
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+      <div class="small text-muted">{{ a.ref }} · {{ rc_loc('applied', 'تاريخ التقديم') }} {{ a.created_at.strftime('%Y-%m-%d %H:%M') if a.created_at }}{% if a.email_verified_at %} · <i class="bi bi-patch-check text-success"></i> {{ rc_loc('e-mail confirmed', 'البريد مؤكد') }}{% endif %}</div>
+      <h3 class="mb-1">{{ a.full_name }} {% if a.rating %}<span class="text-warning fs-5">{{ '★' * a.rating }}</span>{% endif %}</h3>
+      <div>{{ tn.status_badge(a.status) }} <span class="ms-2">{{ rc_loc(a.cat_en, a.cat_ar) }}</span>
+        {% for c in others %}<span class="badge bg-light text-dark border ms-1">{{ rc_loc(c.name_en, c.name_ar) }}</span>{% endfor %}</div>
+    </div>
+    {% if not a.erased_at %}
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-sm btn-outline-primary" href="mailto:{{ a.email }}"><i class="bi bi-envelope me-1"></i>{{ a.email }}</a>
+      <a class="btn btn-sm btn-outline-primary" href="tel:{{ a.phone }}" dir="ltr"><i class="bi bi-telephone me-1"></i>{{ a.phone }}</a>
+      {% set wa = (a.whatsapp or a.phone)|replace('+', '') %}
+      <a class="btn btn-sm btn-outline-success" href="https://wa.me/{{ ('2' ~ wa) if wa.startswith('01') else wa }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1"></i>WhatsApp</a>
+      {% if a.linkedin_url %}<a class="btn btn-sm btn-outline-secondary" href="{{ a.linkedin_url }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-linkedin me-1"></i>LinkedIn</a>{% endif %}
+      {% if a.cv_path %}<a class="btn btn-sm btn-primary" href="{{ url_for('talent.cv_download', app_id=a.id) }}"><i class="bi bi-file-earmark-arrow-down me-1"></i>{{ rc_loc('Download CV', 'تحميل السيرة الذاتية') }}</a>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card mb-3"><div class="card-header"><strong>{{ rc_loc('Profile', 'الملف') }}</strong></div>
+        <div class="card-body">
+          <dl class="row small mb-0">
+            <dt class="col-sm-4">{{ rc_loc('Years of experience', 'سنوات الخبرة') }}</dt><dd class="col-sm-8">{{ a.years_experience if a.years_experience is not none else '—' }}</dd>
+            <dt class="col-sm-4">{{ rc_loc('Level', 'المستوى') }}</dt><dd class="col-sm-8">{{ rc_loc(*TP.SENIORITY[a.seniority]) if a.seniority in TP.SENIORITY else '—' }}</dd>
+            <dt class="col-sm-4">{{ rc_loc('Current / last title', 'المسمى الحالي / الأخير') }}</dt><dd class="col-sm-8">{{ a.current_title or '—' }}</dd>
+            <dt class="col-sm-4">{{ rc_loc('Certifications', 'الشهادات') }}</dt><dd class="col-sm-8">{{ a.certifications or '—' }}</dd>
+            <dt class="col-sm-4">{{ rc_loc('Languages', 'اللغات') }}</dt><dd class="col-sm-8">{{ a.languages or '—' }}</dd>
+            <dt class="col-sm-4">{{ rc_loc('Availability', 'الوقت المتاح') }}</dt><dd class="col-sm-8">{{ rc_loc(*TP.AVAILABILITY[a.availability]) if a.availability in TP.AVAILABILITY else '—' }}</dd>
+            <dt class="col-sm-4">{{ rc_loc('Engagement', 'نوع التعاون') }}</dt><dd class="col-sm-8">{{ rc_loc(*TP.ENGAGEMENT[a.engagement]) if a.engagement in TP.ENGAGEMENT else '—' }}</dd>
+            <dt class="col-sm-4">{{ rc_loc('Work mode', 'مكان العمل') }}</dt><dd class="col-sm-8">{{ rc_loc(*TP.WORK_MODE[a.work_mode]) if a.work_mode in TP.WORK_MODE else '—' }}</dd>
+            <dt class="col-sm-4">{{ rc_loc('Expected rate', 'الأتعاب المتوقعة') }}</dt><dd class="col-sm-8">{{ a.expected_rate or '—' }}</dd>
+            <dt class="col-sm-4">{{ rc_loc('Location', 'المكان') }}</dt><dd class="col-sm-8">{{ [a.city, a.country]|select|join(', ') or '—' }}</dd>
+            {% if a.whatsapp %}<dt class="col-sm-4">WhatsApp</dt><dd class="col-sm-8" dir="ltr">{{ a.whatsapp }}</dd>{% endif %}
+            <dt class="col-sm-4">{{ rc_loc('CV', 'السيرة الذاتية') }}</dt><dd class="col-sm-8">{% if a.cv_path %}{{ a.cv_original_name }} ({{ (a.cv_size / 1024)|round|int }} KB){% else %}—{% endif %}</dd>
+            <dt class="col-sm-4">{{ rc_loc('Source', 'المصدر') }}</dt><dd class="col-sm-8">{{ a.source or '—' }}</dd>
+          </dl>
+          {% if a.summary %}<hr><div class="small" style="white-space: pre-wrap;" dir="auto">{{ a.summary }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      {% if tp_can_edit and not a.erased_at %}
+      <div class="card mb-3"><div class="card-header"><strong>{{ rc_loc('Decision & follow-up', 'القرار والمتابعة') }}</strong></div>
+        <div class="card-body">
+          <form method="post" action="{{ url_for('talent.update', app_id=a.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="row g-2 mb-2">
+              <div class="col-7"><label class="form-label small mb-1">{{ rc_loc('Status', 'الحالة') }}</label>
+                <select class="form-select form-select-sm" name="status">
+                  {% for s in TP.STAFF_STATUSES %}<option value="{{ s }}" {{ 'selected' if a.status == s }}>{{ rc_loc(*TP.STATUS_LABELS[s]) }}</option>{% endfor %}
+                </select></div>
+              <div class="col-5"><label class="form-label small mb-1">{{ rc_loc('Rating', 'التقييم') }}</label>
+                <select class="form-select form-select-sm" name="rating"><option value="">—</option>
+                  {% for n in range(1, 6) %}<option value="{{ n }}" {{ 'selected' if a.rating == n }}>{{ '★' * n }}</option>{% endfor %}
+                </select></div>
+            </div>
+            <label class="form-label small mb-1">{{ rc_loc('Add a note (call, e-mail, meeting…)', 'أضف ملاحظة (مكالمة، بريد، اجتماع…)') }}</label>
+            <div class="input-group input-group-sm mb-2">
+              <select class="form-select" name="kind" style="max-width: 120px;">
+                {% for k, v in [('note', rc_loc('Note', 'ملاحظة')), ('call', rc_loc('Call', 'مكالمة')), ('email', rc_loc('E-mail', 'بريد')), ('meeting', rc_loc('Meeting', 'اجتماع'))] %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+              </select>
+              <textarea class="form-control" name="note" rows="2" maxlength="4000"></textarea>
+            </div>
+            <button class="btn btn-sm btn-primary">{{ rc_loc('Save', 'حفظ') }}</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+      <div class="card mb-3"><div class="card-header"><strong>{{ rc_loc('History', 'السجل') }}</strong></div>
+        <ul class="list-group list-group-flush small">
+          {% for n in notes %}
+          <li class="list-group-item"><div class="d-flex justify-content-between">{% set kinds = {'note': ('Note', 'ملاحظة'), 'call': ('Call', 'مكالمة'), 'email': ('E-mail', 'بريد'), 'meeting': ('Meeting', 'اجتماع'), 'status': ('Status', 'الحالة'), 'erasure': ('Erasure', 'حذف بيانات')} %}<span class="badge bg-light text-dark">{{ rc_loc(*kinds.get(n.kind, (n.kind, n.kind))) }}</span>
+            <span class="text-muted">{{ n.who or '—' }} · {{ n.created_at.strftime('%Y-%m-%d %H:%M') }}</span></div>
+            <div style="white-space: pre-wrap;" dir="auto">{{ n.body }}</div></li>
+          {% else %}<li class="list-group-item text-muted">{{ rc_loc('No notes yet.', 'لا توجد ملاحظات بعد.') }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% if tp_can_admin and not a.erased_at %}
+      <div class="card border-danger"><div class="card-body small">
+        <strong class="text-danger">{{ rc_loc('Erase personal data', 'حذف البيانات الشخصية') }}</strong>
+        <p class="mb-2 text-muted">{{ rc_loc('Use when the applicant asks to be deleted. Name, contacts, summary and CV file are removed; the reference stays.', 'يُستخدم عند طلب المتقدم حذف بياناته. يتم حذف الاسم ووسائل التواصل والنبذة وملف السيرة الذاتية، ويبقى الرقم المرجعي.') }}</p>
+        <form method="post" action="{{ url_for('talent.erase', app_id=a.id) }}" class="d-flex gap-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input class="form-control form-control-sm" name="confirm" placeholder="ERASE" autocomplete="off">
+          <button class="btn btn-sm btn-outline-danger">{{ rc_loc('Erase', 'حذف') }}</button>
+        </form>
+      </div></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
