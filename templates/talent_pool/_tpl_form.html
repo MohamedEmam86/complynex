@@ -1,0 +1,20 @@
+{% macro tpl_form(t) %}
+<form method="post" class="small">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="section" value="template">
+  <input type="hidden" name="tpl_id" value="{{ t.id if t else '' }}">
+  <div class="row g-2">
+    <div class="col-md-6"><label class="form-label mb-1">{{ rc_loc('Name (English)', 'الاسم (إنجليزي)') }}</label><input class="form-control form-control-sm" name="name_en" value="{{ t.name_en if t else '' }}" maxlength="120" required></div>
+    <div class="col-md-6"><label class="form-label mb-1">{{ rc_loc('Name (Arabic)', 'الاسم (عربي)') }}</label><input class="form-control form-control-sm" name="name_ar" value="{{ t.name_ar if t else '' }}" maxlength="120" dir="rtl"></div>
+    <div class="col-md-6"><label class="form-label mb-1">{{ rc_loc('Subject (English)', 'العنوان (إنجليزي)') }}</label><input class="form-control form-control-sm" name="subject_en" value="{{ t.subject_en if t else '' }}" maxlength="200" required></div>
+    <div class="col-md-6"><label class="form-label mb-1">{{ rc_loc('Subject (Arabic)', 'العنوان (عربي)') }}</label><input class="form-control form-control-sm" name="subject_ar" value="{{ t.subject_ar if t else '' }}" maxlength="200" dir="rtl"></div>
+    <div class="col-md-6"><label class="form-label mb-1">{{ rc_loc('Message (English)', 'النص (إنجليزي)') }}</label><textarea class="form-control form-control-sm" name="body_en" rows="8" maxlength="6000" required>{{ t.body_en if t else '' }}</textarea></div>
+    <div class="col-md-6"><label class="form-label mb-1">{{ rc_loc('Message (Arabic)', 'النص (عربي)') }}</label><textarea class="form-control form-control-sm" name="body_ar" rows="8" maxlength="6000" dir="rtl">{{ t.body_ar if t else '' }}</textarea></div>
+    <div class="col-md-5"><label class="form-label mb-1">{{ rc_loc('Suggested status after sending', 'الحالة المقترحة بعد الإرسال') }}</label>
+      <select class="form-select form-select-sm" name="set_status"><option value="">—</option>
+        {% for st in TP.STAFF_STATUSES %}<option value="{{ st }}" {{ 'selected' if t and t.set_status == st }}>{{ rc_loc(*TP.STATUS_LABELS[st]) }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><label class="form-label mb-1">{{ rc_loc('Active', 'مفعّلة') }}</label>
+      <select class="form-select form-select-sm" name="is_active"><option value="1" {{ 'selected' if not t or t.is_active }}>✓</option><option value="0" {{ 'selected' if t and not t.is_active }}>✗</option></select></div>
+    <div class="col-md-4 d-flex align-items-end"><button class="btn btn-sm btn-primary w-100">{{ rc_loc('Save', 'حفظ') }}</button></div>
+  </div>
+</form>
+{% endmacro %}

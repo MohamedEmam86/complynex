@@ -31,6 +31,11 @@ def install(db):
     return S.install_defaults(db)
 
 
+def badges(user):
+    """Sidebar: number of confirmed applications nobody has handled yet."""
+    return {'talent.index': S.new_count()} if user.can_view(S.MODULE) else {}
+
+
 PACK = register_pack(Pack(
     code='talent_pool',
     name_en='Talent pool (consultants & trainers)',
@@ -46,6 +51,7 @@ PACK = register_pack(Pack(
     blueprints=['packs.talent_pool.routes:bp', 'packs.talent_pool.public:public_bp'],
     menu_title_en='Talent pool', menu_title_ar='بنك المواهب', menu_icon='bi-person-badge',
     menu=[('talent.index', 'Applicants', 'المتقدمون', 'talent')],
+    badges=badges,
     permissions=[('talent', 'Talent pool (applicants & CVs)', 'بنك المواهب (المتقدمون والسير الذاتية)',
                   ('none', 'view', 'edit', 'admin'))],
 ))

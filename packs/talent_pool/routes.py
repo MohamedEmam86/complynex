@@ -73,8 +73,15 @@ def detail(app_id):
         abort(404)
     cats = {c['id']: c for c in S.categories(active_only=False)}
     _audit('view_applicant', app_id)
+    tpls = S.email_templates()
+    sender = ' '.join(x for x in (getattr(current_user, 'first_name', ''), getattr(current_user, 'last_name', '')) if x)
+    previews = [{'id': t['id'], 'name_en': t['name_en'], 'name_ar': t['name_ar'], 'set_status': t['set_status'],
+                 'subject_en': S.fill(t['subject_en'], a, sender, False), 'body_en': S.fill(t['body_en'], a, sender, False),
+                 'subject_ar': S.fill(t['subject_ar'] or t['subject_en'], a, sender, True),
+                 'body_ar': S.fill(t['body_ar'] or t['body_en'], a, sender, True)} for t in tpls]
     return render_template('talent_pool/detail.html', a=a, notes=S.notes(app_id), cats=cats,
-                           others=[c for i, c in cats.items() if i in (a['other_category_ids'] or [])])
+                           others=[c for i, c in cats.items() if i in (a['other_category_ids'] or [])],
+                           email_tpls=previews)
 
 
 @bp.route('/<int:app_id>/cv')
@@ -108,6 +115,32 @@ def update(app_id):
     if f.get('note'):
         S.add_note(app_id, current_user.id, f['note'], kind=f.get('kind') if f.get('kind') in ('note', 'call', 'email', 'meeting') else 'note')
     flash(S.label({'ok': ('Saved.', 'تم الحفظ.')}, 'ok', _is_ar()), 'success')
+    return redirect(url_for('talent.detail', app_id=app_id))
+
+
+@bp.route('/<int:app_id>/email', methods=['POST'])
+@perm('edit')
+def send_email(app_id):
+    a = S.get(app_id)
+    if not a or a['erased_at'] or a['status'] == 'unverified':
+        abort(404)
+    f = request.form
+    subject = (f.get('subject') or '').strip()[:200]
+    body = (f.get('body') or '').strip()[:8000]
+    lang = f.get('lang') if f.get('lang') in ('ar', 'en') else 'en'
+    ar = _is_ar()
+    if not subject or not body:
+        flash(S.label({'x': ('Subject and message are required.', 'العنوان ونص الرسالة مطلوبان.')}, 'x', ar), 'warning')
+        return redirect(url_for('talent.detail', app_id=app_id))
+    if not S.send_staff_email(a, subject, body, lang):
+        flash(S.label({'x': ('The e-mail could not be sent. Try again later.', 'تعذر إرسال الرسالة. حاول لاحقًا.')}, 'x', ar), 'danger')
+        return redirect(url_for('talent.detail', app_id=app_id))
+    S.add_note(app_id, current_user.id, f'{subject}\n\n{body}', kind='email')
+    _audit('email_applicant', app_id, subject[:120])
+    st = f.get('set_status')
+    if st in S.STAFF_STATUSES and st != a['status'] and S.set_status([app_id], st, current_user.id):
+        _audit('status', app_id, st)
+    flash(S.label({'ok': ('E-mail sent to the applicant.', 'تم إرسال الرسالة إلى المتقدم.')}, 'ok', ar), 'success')
     return redirect(url_for('talent.detail', app_id=app_id))
 
 
@@ -180,9 +213,12 @@ def settings():
             for k, n in (('org_name_en', 120), ('org_name_ar', 120), ('website', 200), ('logo', 200),
                          ('intro_en', 3000), ('intro_ar', 3000), ('terms_en', 3000), ('terms_ar', 3000),
                          ('privacy_contact', 200), ('notify_email', 200), ('sender_name', 120),
-                         ('staff_base_url', 200)):
+                         ('staff_base_url', 200), ('reply_to', 200)):
                 S.set_setting(k, (f.get(k) or '').strip()[:n], current_user.id)
             _audit('settings')
+        elif f.get('section') == 'template':
+            S.save_template(int(f['tpl_id']) if (f.get('tpl_id') or '').isdigit() else None, f, current_user.id)
+            _audit('email_template', None, f.get('name_en'))
         elif f.get('section') == 'category':
             S.save_category(int(f['cat_id']) if (f.get('cat_id') or '').isdigit() else None,
                             f.get('name_en'), f.get('name_ar'), f.get('is_active') == '1', f.get('sort_order'))
@@ -190,9 +226,9 @@ def settings():
         flash(S.label({'ok': ('Saved.', 'تم الحفظ.')}, 'ok', _is_ar()), 'success')
         return redirect(url_for('talent.settings'))
     keys = ('public_enabled', 'org_name_en', 'org_name_ar', 'website', 'logo', 'intro_en', 'intro_ar', 'terms_en',
-            'terms_ar', 'privacy_contact', 'notify_email', 'sender_name', 'staff_base_url')
+            'terms_ar', 'privacy_contact', 'notify_email', 'sender_name', 'staff_base_url', 'reply_to')
     return render_template('talent_pool/settings.html', s={k: S.setting(k, '') for k in keys},
-                           categories=S.categories(active_only=False))
+                           categories=S.categories(active_only=False), templates=S.email_templates(active_only=False))
 
 
 def _is_ar():

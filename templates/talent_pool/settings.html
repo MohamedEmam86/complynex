@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% import 'talent_pool/_nav.html' as tn with context %}
+{% from 'talent_pool/_tpl_form.html' import tpl_form with context %}
 {% block title %}{{ rc_loc('Talent pool settings', 'إعدادات بنك المواهب') }}{% endblock %}
 {% block content %}
 <div class="container-fluid">
@@ -28,6 +29,7 @@
             <div class="col-md-6"><label class="form-label">{{ rc_loc('Notify this e-mail on each new application', 'إخطار هذا البريد عند كل طلب جديد') }}</label><input class="form-control form-control-sm" name="notify_email" value="{{ s.notify_email }}" maxlength="200" dir="ltr"></div>
             <div class="col-md-6"><label class="form-label">{{ rc_loc('Sender name on e-mails', 'اسم المرسل في الرسائل') }}</label><input class="form-control form-control-sm" name="sender_name" value="{{ s.sender_name }}" maxlength="120"></div>
             <div class="col-md-6"><label class="form-label">{{ rc_loc('Staff link base (for notifications)', 'رابط النظام (للإخطارات)') }}</label><input class="form-control form-control-sm" name="staff_base_url" value="{{ s.staff_base_url }}" maxlength="200" dir="ltr" placeholder="https://…"></div>
+            <div class="col-md-6"><label class="form-label">{{ rc_loc('Replies from applicants go to', 'ردود المتقدمين تصل إلى') }}</label><input class="form-control form-control-sm" name="reply_to" value="{{ s.reply_to }}" maxlength="200" dir="ltr" placeholder="{{ s.notify_email or 'name@company.com' }}"></div>
           </div>
         </div>
         <div class="card-footer"><button class="btn btn-sm btn-primary">{{ rc_loc('Save', 'حفظ') }}</button></div>
@@ -62,6 +64,26 @@
         </ul>
       </div>
       <p class="small text-muted mt-2">{{ rc_loc('Who can see applicants: Users → edit user → "Content pack modules" → Talent pool (View / Edit / Admin).', 'مين يشوف المتقدمين: المستخدمين ← تعديل مستخدم ← «وحدات الحزم» ← بنك المواهب (عرض / تعديل / مسؤول).') }}</p>
+    </div>
+  </div>
+
+  <div class="card mt-3"><div class="card-header"><strong>{{ rc_loc('Ready-made e-mails to applicants', 'الرسائل الجاهزة للمتقدمين') }}</strong>
+    <span class="small text-muted ms-2">{{ rc_loc('Placeholders:', 'المتغيرات:') }} <code>{first_name}</code> <code>{full_name}</code> <code>{ref}</code> <code>{org}</code> <code>{area}</code> <code>{sender}</code></span></div>
+    <div class="accordion accordion-flush" id="tplAcc">
+      {% for t in templates %}
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button collapsed py-2 small" type="button" data-bs-toggle="collapse" data-bs-target="#tpl{{ t.id }}">
+          {{ rc_loc(t.name_en, t.name_ar) }}{% if not t.is_active %} <span class="badge bg-secondary ms-2">{{ rc_loc('off', 'متوقفة') }}</span>{% endif %}
+          {% if t.set_status %}<span class="badge bg-light text-dark ms-2">→ {{ rc_loc(*TP.STATUS_LABELS[t.set_status]) }}</span>{% endif %}</button></h2>
+        <div id="tpl{{ t.id }}" class="accordion-collapse collapse" data-bs-parent="#tplAcc"><div class="accordion-body">
+          {{ tpl_form(t) }}
+        </div></div>
+      </div>
+      {% endfor %}
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button collapsed py-2 small" type="button" data-bs-toggle="collapse" data-bs-target="#tplNew"><i class="bi bi-plus-lg me-1"></i>{{ rc_loc('New message', 'رسالة جديدة') }}</button></h2>
+        <div id="tplNew" class="accordion-collapse collapse" data-bs-parent="#tplAcc"><div class="accordion-body">{{ tpl_form(None) }}</div></div>
+      </div>
     </div>
   </div>
 </div>

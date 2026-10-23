@@ -62,6 +62,7 @@ class Pack:
     menu_title_ar: str = ''
     menu_icon: str = 'bi-box-seam'
     permissions: list = field(default_factory=list)  # [(module, label_en, label_ar, levels)]
+    badges: object = None                            # callable(user) -> {endpoint: count} shown in the sidebar
 
 
 PACKS = {}
@@ -212,8 +213,20 @@ def menus(user):
     for p in enabled_packs():
         items = [(ep, en, ar) for ep, en, ar, perm in p.menu if not perm or user.can_view(perm)]
         if items:
+            badges = {}
+            if p.badges:
+                try:
+                    badges = {ep: int(n) for ep, n in (p.badges(user) or {}).items()
+                              if n and ep in {i[0] for i in items}}
+                except Exception:
+                    logger.warning('regcontrols: sidebar badges of pack %s failed', p.code, exc_info=True)
+                    try:
+                        get_db().rollback()
+                    except Exception:
+                        pass
             out.append({'title_en': p.menu_title_en or p.name_en, 'title_ar': p.menu_title_ar or p.name_ar,
-                        'icon': p.menu_icon, 'links': items, 'code': p.code})
+                        'icon': p.menu_icon, 'links': items, 'code': p.code,
+                        'badges': badges, 'badge_total': sum(badges.values())})
     return out
 
 

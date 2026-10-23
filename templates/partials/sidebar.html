@@ -858,6 +858,7 @@
       <button class="cnx-nav__toggle" type="button" aria-expanded="false">
         <i class="bi {{ pm.icon }} cnx-nav__icon"></i>
         <span class="cnx-nav__label">{{ rc_loc(pm.title_en, pm.title_ar) }}</span>
+        {% if pm.badge_total %}<span class="badge rounded-pill bg-danger" style="margin-inline-start:auto;font-size:.68rem" title="{{ rc_loc('New', 'جديد') }}">{{ pm.badge_total }}</span>{% endif %}
         <i class="bi bi-chevron-down cnx-nav__caret"></i>
       </button>
       <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
@@ -865,6 +866,7 @@
           <li class="cnx-nav__subitem">
             <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for(ep) }}">
               <span class="cnx-nav__label">{{ rc_loc(en, ar) }}</span>
+              {% if pm.badges and pm.badges.get(ep) %}<span class="badge rounded-pill bg-danger" style="margin-inline-start:auto;font-size:.68rem">{{ pm.badges.get(ep) }}</span>{% endif %}
             </a>
           </li>
         {% endfor %}

@@ -74,6 +74,62 @@
         </div>
       </div>
       {% endif %}
+      {% if tp_can_edit and not a.erased_at and a.status != 'unverified' %}
+      <div class="card mb-3" id="tp-mail"><div class="card-header d-flex justify-content-between align-items-center">
+        <strong><i class="bi bi-envelope-paper me-1"></i>{{ rc_loc('Send an e-mail from the system', 'إرسال رسالة من النظام') }}</strong>
+        <span class="small text-muted" dir="ltr">{{ a.email }}</span></div>
+        <div class="card-body">
+          {% if email_tpls %}
+          <form method="post" action="{{ url_for('talent.send_email', app_id=a.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="row g-2 mb-2">
+              <div class="col-md-7"><label class="form-label small mb-1">{{ rc_loc('Ready-made message', 'رسالة جاهزة') }}</label>
+                <select class="form-select form-select-sm" id="tp-tpl">
+                  <option value="">{{ rc_loc('Choose…', 'اختر…') }}</option>
+                  {% for t in email_tpls %}<option value="{{ loop.index0 }}">{{ rc_loc(t.name_en, t.name_ar) }}</option>{% endfor %}
+                </select></div>
+              <div class="col-md-5"><label class="form-label small mb-1">{{ rc_loc('Language', 'اللغة') }}</label>
+                <select class="form-select form-select-sm" name="lang" id="tp-lang">
+                  <option value="ar">العربية</option><option value="en">English</option>
+                </select></div>
+            </div>
+            <input class="form-control form-control-sm mb-2" name="subject" id="tp-subject" maxlength="200" required placeholder="{{ rc_loc('Subject', 'العنوان') }}">
+            <textarea class="form-control form-control-sm mb-2" name="body" id="tp-body" rows="9" maxlength="8000" required placeholder="{{ rc_loc('Message', 'نص الرسالة') }}"></textarea>
+            <div class="row g-2 align-items-end">
+              <div class="col-md-7"><label class="form-label small mb-1">{{ rc_loc('After sending, set status to', 'بعد الإرسال، غيّر الحالة إلى') }}</label>
+                <select class="form-select form-select-sm" name="set_status" id="tp-setstatus">
+                  <option value="">{{ rc_loc('Keep as is', 'بدون تغيير') }}</option>
+                  {% for st in TP.STAFF_STATUSES %}<option value="{{ st }}">{{ rc_loc(*TP.STATUS_LABELS[st]) }}</option>{% endfor %}
+                </select></div>
+              <div class="col-md-5 text-end"><button class="btn btn-sm btn-primary w-100"><i class="bi bi-send me-1"></i>{{ rc_loc('Send', 'إرسال') }}</button></div>
+            </div>
+            <p class="small text-muted mt-2 mb-0">{{ rc_loc('You can edit the text before sending. Replies go to', 'يمكنك تعديل النص قبل الإرسال. الردود تصل إلى') }} <span dir="ltr">{{ TP.setting('reply_to') or TP.setting('notify_email') or '—' }}</span>. {{ rc_loc('The message is saved in the history.', 'تُحفظ الرسالة في السجل.') }}</p>
+          </form>
+          <script type="application/json" id="tp-tpl-data" nonce="{{ csp_nonce }}">{{ email_tpls|tojson }}</script>
+          <script nonce="{{ csp_nonce }}">
+          (function () {
+            var data = JSON.parse(document.getElementById('tp-tpl-data').textContent || '[]');
+            var sel = document.getElementById('tp-tpl'), lang = document.getElementById('tp-lang');
+            var subj = document.getElementById('tp-subject'), body = document.getElementById('tp-body'), st = document.getElementById('tp-setstatus');
+            function fillIn() {
+              var t = data[sel.value]; if (!t) return;
+              var ar = lang.value === 'ar';
+              subj.value = ar ? t.subject_ar : t.subject_en;
+              body.value = ar ? t.body_ar : t.body_en;
+              body.dir = subj.dir = ar ? 'rtl' : 'ltr';
+              st.value = t.set_status || '';
+            }
+            sel.addEventListener('change', fillIn);
+            lang.addEventListener('change', function () { if (sel.value !== '') fillIn(); else { body.dir = subj.dir = lang.value === 'ar' ? 'rtl' : 'ltr'; } });
+            body.dir = subj.dir = 'rtl';
+          })();
+          </script>
+          {% else %}
+          <p class="small text-muted mb-0">{{ rc_loc('No ready-made messages yet — add them in Settings.', 'لا توجد رسائل جاهزة بعد — أضفها من الإعدادات.') }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
       <div class="card mb-3"><div class="card-header"><strong>{{ rc_loc('History', 'السجل') }}</strong></div>
         <ul class="list-group list-group-flush small">
           {% for n in notes %}

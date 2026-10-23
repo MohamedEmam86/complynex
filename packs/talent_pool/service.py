@@ -283,14 +283,17 @@ def _sender():
     return (setting('sender_name', setting('org_name_en', 'Careers')), addr)
 
 
-def _mail(to, subject, html, text, log_tag):
+def _mail(to, subject, html, text, log_tag, reply_to=None):
     from flask_mail import Message
     from extensions import mail
     if current_app.config.get('EMAIL_MOCK_MODE', True):
         current_app.logger.info(f'[TALENT MOCK MAIL] {log_tag}')
         return True
     try:
-        mail.send(Message(subject=subject, recipients=[to], html=html, body=text, sender=_sender()))
+        msg = Message(subject=subject, recipients=[to], html=html, body=text, sender=_sender())
+        if reply_to:
+            msg.reply_to = reply_to
+        mail.send(msg)
         return True
     except Exception as e:
         current_app.logger.error(f'talent mail failed ({log_tag}): {e}')
@@ -478,3 +481,80 @@ def label(mapping, key, ar=False):
     if not v:
         return key or ''
     return v[1] if ar else v[0]
+
+
+# ------------------------------------------------------- ready-made e-mails
+PLACEHOLDERS = ('first_name', 'full_name', 'ref', 'org', 'area', 'sender')
+
+
+def email_templates(active_only=True):
+    try:
+        sql = "SELECT * FROM talent_email_templates"
+        if active_only:
+            sql += " WHERE is_active"
+        return get_db().execute(sql + " ORDER BY sort_order, id").fetchall()
+    except Exception:
+        get_db().rollback()
+        return []
+
+
+def save_template(tpl_id, f, user_id):
+    vals = {k: (f.get(k) or '').strip()[:n] for k, n in (
+        ('name_en', 120), ('name_ar', 120), ('subject_en', 200), ('subject_ar', 200),
+        ('body_en', 6000), ('body_ar', 6000))}
+    if not vals['name_en'] or not vals['subject_en'] or not vals['body_en']:
+        return False
+    st = f.get('set_status') if f.get('set_status') in STAFF_STATUSES else None
+    active = f.get('is_active') == '1'
+    db = get_db()
+    if tpl_id:
+        db.execute("""UPDATE talent_email_templates SET name_en=%s, name_ar=%s, subject_en=%s, subject_ar=%s,
+                      body_en=%s, body_ar=%s, set_status=%s, is_active=%s, updated_by=%s, updated_at=now()
+                      WHERE id=%s""", (vals['name_en'], vals['name_ar'], vals['subject_en'], vals['subject_ar'],
+                                       vals['body_en'], vals['body_ar'], st, active, user_id, tpl_id))
+    else:
+        code = re.sub(r'[^a-z0-9]+', '_', vals['name_en'].lower()).strip('_')[:40] + '_' + secrets.token_hex(2)
+        db.execute("""INSERT INTO talent_email_templates (code, name_en, name_ar, subject_en, subject_ar, body_en,
+                      body_ar, set_status, is_active, sort_order, updated_by) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,TRUE,100,%s)""",
+                   (code, vals['name_en'], vals['name_ar'], vals['subject_en'], vals['subject_ar'],
+                    vals['body_en'], vals['body_ar'], st, user_id))
+    db.commit()
+    return True
+
+
+def fill(text, app_row, sender_name, ar):
+    """Replace only the known {placeholders}; anything else stays as typed."""
+    org = (setting('org_name_ar') if ar else None) or setting('org_name_en', '')
+    area = (app_row.get('cat_ar') if ar else None) or app_row.get('cat_en') or ''
+    vals = {'first_name': (app_row.get('full_name') or '').split(' ')[0], 'full_name': app_row.get('full_name') or '',
+            'ref': app_row.get('ref') or '', 'org': org, 'area': area, 'sender': sender_name or org}
+    for k in PLACEHOLDERS:
+        text = (text or '').replace('{' + k + '}', vals[k])
+    return text
+
+
+def send_staff_email(app_row, subject, body, lang):
+    """lang: 'ar' | 'en' | 'both' — body is already filled. Returns True when handed to the mail server."""
+    reply_to = setting('reply_to') or setting('notify_email')
+    if lang == 'ar':
+        html = f'<div dir="rtl" style="text-align:right">{_text_html(body)}</div>'
+    else:
+        html = _text_html(body)
+    html = (f'<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:auto;color:#0e2340;'
+            f'line-height:1.6"><div style="border-top:4px solid #006B75;padding:20px 8px">{html}'
+            f'<p style="font-size:11px;color:#888;margin-top:24px">Ref. {escape(app_row["ref"])}</p></div></div>')
+    return _mail(app_row['email'], subject, html, body, f'staff app={app_row["id"]}', reply_to=reply_to)
+
+
+def _text_html(text):
+    return ''.join(f'<p style="margin:0 0 12px">{escape(par).replace(chr(10), "<br>")}</p>'
+                   for par in (text or '').split('\n\n'))
+
+
+def new_count():
+    try:
+        r = get_db().execute("SELECT count(*) AS n FROM talent_applications WHERE status='new' AND erased_at IS NULL").fetchone()
+        return int(r['n'] or 0)
+    except Exception:
+        get_db().rollback()
+        return 0
