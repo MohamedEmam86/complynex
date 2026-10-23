@@ -44,6 +44,21 @@ logger = logging.getLogger(__name__)
 
 whistleblowing_bp = Blueprint('whistleblowing', __name__, url_prefix='/whistleblowing')
 
+
+def _eligible_assignees(case):
+    """Active users who hold whistleblowing permission, never the named reporter.
+
+    Offering every user let a case be handed to someone outside the
+    whistleblowing team — or back to the person who reported it."""
+    reporter = None if (case or {}).get('is_anonymous') else (case or {}).get('submitter_id')
+    rows = get_db().execute(
+        """SELECT * FROM users
+           WHERE is_active = 1
+             AND (role = 'admin' OR perm_whistleblowing IN ('view', 'use', 'edit', 'admin'))
+           ORDER BY first_name, last_name""").fetchall()
+    from models.user import User
+    return [User._from_row(r) for r in rows if not reporter or r['id'] != reporter]
+
 # ============================================
 # PUBLIC ROUTES (Anonymous Access - No Login Required)
 # ============================================
@@ -375,9 +390,8 @@ def view_case(case_id):
         (case_id,)
     ).fetchall()
     
-    # Get all users for assignment
-    from models.user import User
-    users = User.get_all()
+    # Only whistleblowing-permitted staff, never the reporter
+    users = _eligible_assignees(case)
     
     return render_template('whistleblowing/case_detail.html', 
                            case=case, 
@@ -658,14 +672,45 @@ def my_cases():
     return render_template('whistleblowing/my_cases.html', cases=cases)
 
 
+@whistleblowing_bp.route('/my-cases/<int:case_id>')
+@login_required
+def my_case_status(case_id):
+    """Read-only status of the reporter's own named case: status and the
+    updates marked visible to the submitter — no internal notes and no
+    investigator identity (the case management screen is staff-only)."""
+    db = get_db()
+    case = db.execute("""SELECT * FROM whistleblowing_cases
+                          WHERE id = %s AND submitter_id = %s AND is_anonymous = 0""",
+                      (case_id, current_user.id)).fetchone()
+    if not case:
+        flash(_('Case not found.'), 'error')
+        return redirect(url_for('whistleblowing.my_cases'))
+    updates = db.execute("""SELECT update_type, update_text, created_at
+                             FROM whistleblowing_updates
+                             WHERE case_id = %s AND is_visible_to_submitter = 1
+                             ORDER BY created_at DESC""", (case_id,)).fetchall()
+    return render_template('whistleblowing/case_status.html', case=case,
+                           updates=[dict(u) for u in updates], is_anonymous=False)
+
+
 # =============================================================================
 # Assignment engine (Phase 4)
 # =============================================================================
 
 @whistleblowing_bp.route('/case/<int:case_id>/assign', methods=['POST'])
 @login_required
+@permission_required('whistleblowing', level='edit')
 def case_assignment(case_id):
     from services import whistleblowing_service as W
+    target = request.form.get('assigned_to') or None
+    if target:
+        case = WhistleblowingCase.get_by_id(case_id)
+        if not case:
+            flash(_('Case not found.'), 'error')
+            return redirect(url_for('whistleblowing.dashboard'))
+        if str(target) not in {str(u.id) for u in _eligible_assignees(case)}:
+            flash(_('A case can only be assigned to whistleblowing staff, and never to its reporter.'), 'danger')
+            return redirect(url_for('whistleblowing.view_case', case_id=case_id))
     ok, msg = W.assign(
         case_id,
         request.form.get('assigned_to') or None,
@@ -681,6 +726,7 @@ def case_assignment(case_id):
 
 @whistleblowing_bp.route('/case/<int:case_id>/remind', methods=['POST'])
 @login_required
+@permission_required('whistleblowing', level='edit')
 def case_remind(case_id):
     from services import whistleblowing_service as W
     sent, skipped = W.send_reminder(case_id, current_user.id,
@@ -695,6 +741,7 @@ def case_remind(case_id):
 
 @whistleblowing_bp.route('/tracking')
 @login_required
+@permission_required('whistleblowing')
 def case_tracking():
     """One board answering "where does every case sit and who owns it".
 
@@ -717,6 +764,7 @@ def case_tracking():
 
 @whistleblowing_bp.route('/tracking/remind-bulk', methods=['POST'])
 @login_required
+@permission_required('whistleblowing', level='edit')
 def bulk_remind():
     from services import whistleblowing_service as W
     ids = [int(x) for x in request.form.getlist('case_ids') if x.isdigit()]

@@ -298,6 +298,15 @@ def verify(finding_id, user_id, manual_note=None, db=None):
         raise FindingError('finding not found')
     if f['status'] == 'closed':
         raise FindingError('finding is already closed')
+    req = db.execute("""SELECT user_id FROM rc_finding_events
+                         WHERE finding_id = %s AND event_type = 'verification_requested'
+                         ORDER BY created_at DESC, id DESC LIMIT 1""", (finding_id,)).fetchone()
+    done_by = [r['completed_by'] for r in _rows(
+        db, "SELECT completed_by FROM rc_corrective_actions WHERE finding_id = %s AND status = 'done'",
+        (finding_id,))]
+    err = logic.four_eyes_error(user_id, dict(req)['user_id'] if req else None, done_by)
+    if err:
+        raise FindingError(err)
     runs = [run_control(c, triggered_by='verification', user_id=user_id, finding_id=finding_id, db=db)
             for c in f['controls'] if c['is_active']]
     outcome = logic.verification_outcome([r['status'] for r in runs])

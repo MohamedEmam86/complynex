@@ -379,6 +379,23 @@ def verification_outcome(run_statuses):
 AGE_BUCKETS = (('0-30', 0, 30), ('31-60', 31, 60), ('61-90', 61, 90), ('90+', 91, None))
 
 
+def four_eyes_error(verifier_id, requested_by=None, completed_by=()):
+    """Segregation of duties for closing a finding on verification.
+
+    The verifier must be someone other than the person who asked for
+    verification and anyone who marked a corrective action done. Returns the
+    (untranslated) reason it is refused, or None when the verifier is
+    independent.
+    """
+    if verifier_id is None:
+        return None
+    if requested_by is not None and requested_by == verifier_id:
+        return 'you requested verification of this finding; another person must verify it'
+    if verifier_id in {u for u in (completed_by or ()) if u is not None}:
+        return 'you marked a corrective action done; another person must verify the finding'
+    return None
+
+
 def age_bucket(opened, today=None):
     today = _as_date(today) or date.today()
     opened = _as_date(opened)

@@ -374,6 +374,9 @@ class User(UserMixin):
         
         if User.get_by_email(email):
             raise ValueError(f"Email {email} already exists")
+        # New accounts are active unless the caller says otherwise; the column
+        # has no default, so leaving it out stored NULL and the user could not log in.
+        is_active = 1 if kwargs.get('is_active', 1) else 0
         
         password_hash = User.hash_password(password)
         db = get_db()
@@ -409,15 +412,15 @@ class User(UserMixin):
                 perm_training, perm_screening, perm_config, perm_cyber,
                 perm_consumer_protection, perm_whistleblowing,
                 perm_ghe, perm_coi, perm_cobec, perm_merchant_kyc, perm_tm, perm_ekyc,
-                perm_risk_management, perm_internal_audit, perm_esg, perm_carbon)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+                perm_risk_management, perm_internal_audit, perm_esg, perm_carbon, is_active)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
             (email, password_hash, first_name, last_name, role,
              employee_id, department, job_title, manager_id, cms_access_level,
              perm_governance, perm_aml, perm_policies, perm_reports, perm_pdpl,
              perm_training, perm_screening, perm_config, perm_cyber,
              perm_consumer_protection, perm_whistleblowing,
              perm_ghe, perm_coi, perm_cobec, perm_merchant_kyc, perm_tm, perm_ekyc,
-             perm_risk_management, perm_internal_audit, perm_esg, perm_carbon)
+             perm_risk_management, perm_internal_audit, perm_esg, perm_carbon, is_active)
         )
         db.commit()
 
@@ -543,6 +546,10 @@ class User(UserMixin):
             if _k in row.keys():
                 setattr(_u, _k, row[_k] or 'none')
         _u.auth_version = (row['auth_version'] if 'auth_version' in row.keys() else 0) or 0
+        # Organisation scope fields, so the edit form can pre-select what is saved
+        # (otherwise re-saving the form silently widened the user to 'group').
+        for _k in ('authority_level', 'authority_unit_id', 'org_unit_id'):
+            setattr(_u, _k, row[_k] if _k in row.keys() else None)
         return _u
     
     @staticmethod

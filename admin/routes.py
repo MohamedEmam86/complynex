@@ -15,14 +15,14 @@
 # ComplyNex Full Compliance Platform (CMS) — Proprietary & Confidential
 # =============================================================================
 
-import os, subprocess
+import os, re, subprocess
 from datetime import datetime
 from functools import wraps
 
 from flask_babel import gettext
 from flask import render_template, request, redirect, url_for, flash, jsonify, abort, current_app
 from flask_login import login_required, current_user
-from utils.decorators import permission_required
+from utils.decorators import permission_required, admin_required
 from admin import admin_bp
 from models.user import User
 from models.department import Department
@@ -32,6 +32,24 @@ import io
 
 ALLOWED_ROLES = {'employee', 'viewer', 'analyst', 'compliance_officer',
                  'compliance_manager', 'manager', 'admin'}
+
+EMAIL_RE = re.compile(r'^[A-Za-z0-9._%+\-]{1,64}@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,24}$')
+
+
+def validate_new_user(email, password, role):
+    """Checks shared by single add and bulk upload. Returns an untranslated
+    error message, or None when the values are acceptable. An empty password
+    is left to the caller (single add allows it, bulk upload uses a default)."""
+    email = (email or '').strip()
+    if not email or len(email) > 254 or not EMAIL_RE.match(email):
+        return 'Enter a valid email address.'
+    if role not in ALLOWED_ROLES:
+        return 'Invalid role selected.'
+    if password:
+        ok, msg = User.validate_password_strength(password)
+        if not ok:
+            return msg
+    return None
 
 @admin_bp.route('/')
 @admin_bp.route('')
@@ -88,13 +106,10 @@ def admin_index():
 
 @admin_bp.route('/users')
 @login_required
+@admin_required
 def list_users():
-    """List all users"""
-    # Only Admin and Compliance Officer (users with management rights) can see this
-    if not current_user.can_manage_users():
-        flash(gettext('Access denied.'), 'danger')
-        return redirect(url_for('dashboard'))
-        
+    """List all users (administrators only — user management can grant any role)."""
+
     # We need a get_all method in User model or just raw SQL
     from database.db import get_db
     db = get_db()
@@ -159,11 +174,9 @@ def _authority_context(user_id=None):
 
 @admin_bp.route('/users/add', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def add_user():
     """Add a single user"""
-    if not current_user.can_manage_users():
-        flash(gettext('Access denied.'), 'danger')
-        return redirect(url_for('dashboard'))
 
     departments = Department.get_all()
     from database.db import get_db as _get_db_managers
@@ -172,17 +185,16 @@ def add_user():
     ).fetchall()
 
     if request.method == 'POST':
-        email = request.form.get('email')
+        email = (request.form.get('email') or '').strip()
         password = request.form.get('password') # Should be auto-generated or set by admin
-        if password:
-            _ok, _msg = User.validate_password_strength(password)
-            if not _ok:
-                from flask_babel import gettext as _t
-                flash(_t(_msg), 'danger')
-                return redirect(request.url)
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         role = request.form.get('role', 'employee')
+        _err = validate_new_user(email, password, role)
+        if _err:
+            flash(gettext(_err), 'danger')
+            return redirect(request.url)
+        is_active = 1 if request.form.get('is_active') else 0
         employee_id = request.form.get('employee_id')
         department_id = request.form.get('department_id')
         manager_id = request.form.get('manager_id') or None
@@ -244,7 +256,8 @@ def add_user():
                 expires_at = (datetime.now() + timedelta(days=int(duration))).isoformat()
 
         try:
-            new_user = User.create_user(email, password, first_name, last_name, role, employee_id, department, job_title, manager_id=manager_id, **perms)
+            new_user = User.create_user(email, password, first_name, last_name, role, employee_id, department, job_title,
+                                        manager_id=manager_id, is_active=is_active, **perms)
             # Permissions for modules added by optional content packs.
             from regcontrols.packs import save_module_perms
             save_module_perms(new_user.id, request.form)
@@ -319,10 +332,8 @@ def add_user():
 
 @admin_bp.route('/users/delete/<int:user_id>', methods=['POST'])
 @login_required
+@admin_required
 def delete_user(user_id):
-    if not current_user.can_manage_users():
-        flash(gettext('Access denied.'), 'danger')
-        return redirect(url_for('admin.list_users'))
     if user_id == current_user.id:
         flash(gettext('You cannot delete your own account.'), 'danger')
         return redirect(url_for('admin.list_users'))
@@ -350,12 +361,10 @@ def delete_user(user_id):
 
 @admin_bp.route('/users/upload', methods=['POST'])
 @login_required
+@admin_required
 def upload_users():
     """Upload users from CSV"""
-    if not current_user.can_manage_users():
-        flash(gettext('Access denied.'), 'danger')
-        return redirect(url_for('dashboard'))
-        
+
     if 'file' not in request.files:
         flash(gettext('No file part'), 'danger')
         return redirect(url_for('admin.list_users'))
@@ -372,26 +381,44 @@ def upload_users():
             
             count = 0
             errors = 0
-            
-            for row in csv_input:
+            failed = []   # (line number, reason) — reported back so nothing fails silently
+            dept_names = {(d.name or '').strip().lower(): d.name for d in Department.get_all()}
+
+            for line_no, row in enumerate(csv_input, start=2):   # line 1 is the header
                 try:
                     # Basic mapping check
-                    email = row.get('Email') or row.get('email')
+                    email = (row.get('Email') or row.get('email') or '').strip()
                     first_name = row.get('First Name') or row.get('first_name')
                     last_name = row.get('Last Name') or row.get('last_name')
                     password = row.get('Password') or row.get('password') or 'ComplyNex123!' # Default if missing
-                    department = row.get('Department') or row.get('department')
+                    department = (row.get('Department') or row.get('department') or '').strip()
                     job_title = row.get('Job Title') or row.get('job_title')
-                    role_raw = (row.get('Role') or row.get('role') or 'employee').strip().lower()
-                    role = role_raw if role_raw in ALLOWED_ROLES else 'employee'
+                    role = (row.get('Role') or row.get('role') or 'employee').strip().lower()
 
-                    if email and first_name and last_name:
-                         User.create_user(email, password, first_name, last_name, role, None, department, job_title)
-                         count += 1
-                except Exception:
+                    if not (email and first_name and last_name):
+                        reason = gettext('Email, first name and last name are required.')
+                    elif department and department.lower() not in dept_names:
+                        reason = gettext('Unknown department: %(name)s', name=department)
+                    else:
+                        _err = validate_new_user(email, password, role)
+                        reason = gettext(_err) if _err else None
+                    if reason:
+                        errors += 1
+                        failed.append((line_no, reason))
+                        continue
+                    department = dept_names.get(department.lower()) if department else None
+                    User.create_user(email, password, first_name, last_name, role, None, department, job_title)
+                    count += 1
+                except Exception as e:
                     errors += 1
-                    
+                    failed.append((line_no, str(e)[:120]))
+
             flash(gettext('Successfully imported %(count)s users. %(errors)s failed.', count=count, errors=errors), 'success' if errors == 0 else 'warning')
+            if failed:
+                detail = '; '.join(gettext('Row %(row)s: %(reason)s', row=n, reason=r) for n, r in failed[:20])
+                if len(failed) > 20:
+                    detail += ' …'
+                flash(detail, 'danger')
             
         except Exception as e:
             flash(f'Error processing file: {str(e)}', 'danger')
@@ -413,12 +440,10 @@ def _excluded_unit_ids(user_id):
 
 @admin_bp.route('/users/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def edit_user(id):
     """Edit an existing user"""
-    if not current_user.can_manage_users():
-        flash(gettext('Access denied.'), 'danger')
-        return redirect(url_for('dashboard'))
-        
+
     user = User.get_by_id(id)
     if not user:
         flash(gettext('User not found.'), 'danger')
@@ -441,6 +466,9 @@ def edit_user(id):
         job_title = request.form.get('job_title')
         _role_raw = request.form.get('role', '')
         role = _role_raw if _role_raw in ALLOWED_ROLES else 'viewer'
+        if id == current_user.id and role != user.role:
+            flash(gettext('You cannot change your own role.'), 'danger')
+            return redirect(request.url)
         cms_access_level = request.form.get('cms_access_level')
         is_active = 1 if request.form.get('is_active') else False
         new_password = request.form.get('new_password')
@@ -1637,7 +1665,7 @@ def document_workflow(type_id):
 
 @admin_bp.route('/users/<int:user_id>/mfa', methods=['POST'])
 @login_required
-@permission_required('config')
+@admin_required
 def user_mfa(user_id):
     from database.db import execute_db, query_db
 
@@ -1697,7 +1725,7 @@ def user_mfa(user_id):
 
 @admin_bp.route('/security/mfa')
 @login_required
-@permission_required('config')
+@admin_required
 def mfa_overview():
     """Who has a second factor, who is required to, and who is outstanding."""
     from database.db import query_db

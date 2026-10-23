@@ -59,9 +59,15 @@
             </div>
 
             <div class="mt-5 text-center">
+                {% if is_anonymous is defined and not is_anonymous %}
+                <a href="{{ url_for('whistleblowing.my_cases') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>{{ _('My Reports') }}
+                </a>
+                {% else %}
                 <a href="{{ url_for('whistleblowing.track_case') }}" class="btn btn-outline-primary">
                     <i class="fas fa-arrow-left me-2"></i>{{ _('Back to Tracking') }}
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>

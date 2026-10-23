@@ -110,7 +110,7 @@ def view_declaration(id):
 @permission_required('cobec', level='view')
 def all_declarations():
     """View all COBEC declarations (compliance/admin only)"""
-    if current_user.role not in ['admin', 'compliance_officer']:
+    if not current_user.is_compliance_officer():   # admin, compliance officer, compliance manager (MLRO)
         flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
     

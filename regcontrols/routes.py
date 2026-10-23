@@ -63,15 +63,34 @@ def rc_required(level='view'):
     return decorator
 
 
+def _unscoped():
+    """Compliance roles oversee regulatory compliance across the whole
+    organisation, so organisation scope does not narrow what they see here."""
+    return current_user.is_compliance_officer()
+
+
 def _scope(column):
+    """List filter. Must agree with _check_unit: a record a user can open
+    must also appear in their lists, and the other way round."""
+    if _unscoped():
+        return '', ()
     try:
         from services import org_service
-        return org_service.scope_filter(column)
+        ids = org_service.resolve_scope()
     except Exception:
         return '', ()
+    if ids is None:
+        return '', ()
+    if not ids:
+        # No unit visible: records not yet assigned to a unit stay visible,
+        # exactly as their detail pages are.
+        return f' AND {column} IS NULL ', ()
+    return org_service.scope_filter(column)
 
 
 def _check_unit(row):
+    if _unscoped():
+        return
     if row and row.get('org_unit_id'):
         try:
             from services import org_service

@@ -31477,6 +31477,35 @@ msgstr "داخل النسخة التجريبية يستطيع دور مدير ا
 msgid "This is the demo. Open the invitation link you received to enter without a password, or sign in with a user created for you."
 msgstr "هذه هي النسخة التجريبية. افتح رابط الدعوة الذي وصلك للدخول بدون كلمة مرور، أو سجّل الدخول بمستخدم تم إنشاؤه لك."
 
+msgid "Enter a valid email address."
+msgstr "أدخل عنوان بريد إلكتروني صحيحًا."
+
+msgid "Email, first name and last name are required."
+msgstr "البريد الإلكتروني والاسم الأول واسم العائلة مطلوبة."
+
+#, python-format
+msgid "Unknown department: %(name)s"
+msgstr "إدارة غير معروفة: %(name)s"
+
+#, python-format
+msgid "Row %(row)s: %(reason)s"
+msgstr "السطر %(row)s: %(reason)s"
+
+msgid "You cannot change your own role."
+msgstr "لا يمكنك تغيير دورك بنفسك."
+
+msgid "A case can only be assigned to whistleblowing staff, and never to its reporter."
+msgstr "لا يجوز إسناد البلاغ إلا لموظفي الإبلاغ عن المخالفات، ولا يجوز إسناده أبدًا إلى مقدّم البلاغ."
+
+msgid "You do not have permission to view this page."
+msgstr "ليس لديك صلاحية لعرض هذه الصفحة."
+
+msgid "you requested verification of this finding; another person must verify it"
+msgstr "أنت من طلب التحقق من هذه الملاحظة؛ يجب أن يتحقق منها شخص آخر"
+
+msgid "you marked a corrective action done; another person must verify the finding"
+msgstr "أنت من أنهى أحد الإجراءات التصحيحية؛ يجب أن يتحقق من الملاحظة شخص آخر"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

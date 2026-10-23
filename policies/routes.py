@@ -29,6 +29,7 @@ from models.audit import AuditLog
 from datetime import datetime
 from database.db import get_db
 import csv
+from functools import wraps
 import io
 from flask import Response
 from utils.html_sanitizer import sanitize_html
@@ -64,6 +65,24 @@ def _policy_document_accessible(user, policy):
         except Exception:
             pass
     return False
+
+
+def _can_manage_policies():
+    """Staff-wide acknowledgment lists and the gap analysis are compliance
+    tools: they list every employee's email. Plain policy viewers (every
+    employee) must not see them."""
+    return current_user.is_authenticated and (current_user.can_edit('policies')
+                                              or current_user.is_compliance_officer())
+
+
+def _policy_managers_only(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if not _can_manage_policies():
+            flash(gettext('You do not have permission to view this page.'), 'danger')
+            return redirect(url_for('policies.list_policies'))
+        return f(*args, **kwargs)
+    return wrapped
 
 @policies_bp.route('/')
 @policies_bp.route('/list')
@@ -537,6 +556,7 @@ def submit_for_approval(id):
 @policies_bp.route('/gap-analysis/export')
 @login_required
 @permission_required('policies')
+@_policy_managers_only
 def export_gap_analysis():
     """Export gap analysis to CSV"""
     gaps = Policy.get_gap_analysis()
@@ -580,6 +600,7 @@ def export_gap_analysis():
 @policies_bp.route('/gap-analysis')
 @login_required
 @permission_required('policies')
+@_policy_managers_only
 def gap_analysis():
     """View policies gap analysis against CBE requirements"""
     
@@ -779,6 +800,7 @@ def acknowledge_all():
 @policies_bp.route('/acknowledgment-dashboard')
 @login_required
 @permission_required('policies')
+@_policy_managers_only
 def acknowledgment_dashboard():
     """Admin dashboard for tracking policy acknowledgments"""
     stats = Policy.get_overall_stats()
@@ -811,6 +833,7 @@ def acknowledgment_dashboard():
 @policies_bp.route('/<int:id>/acknowledgments')
 @login_required
 @permission_required('policies')
+@_policy_managers_only
 def policy_acknowledgments(id):
     """Who has (and hasn't) acknowledged a specific policy — compliance-officer view."""
     policy = Policy.get_by_id(id)
