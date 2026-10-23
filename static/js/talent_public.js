@@ -1,5 +1,12 @@
-/* Talent pool public form: early CV size/type feedback (the server re-checks everything). */
+/* Talent pool public form: early CV size/type feedback (the server re-checks everything),
+   and one submission per click. */
 (function () {
+  document.querySelectorAll('form').forEach(function (f) {
+    f.addEventListener('submit', function () {
+      var b = f.querySelector('button:not([type=button])');
+      if (b) { setTimeout(function () { b.disabled = true; b.style.opacity = '.6'; }, 0); }
+    });
+  });
   var input = document.querySelector('input[type=file][name=cv]');
   var msg = document.getElementById('tp-cv-msg');
   if (!input || !msg) return;

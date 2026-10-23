@@ -194,6 +194,9 @@ def apply():
         return render_template('talent_pool/public/apply.html', form=form, categories=cats,
                                stamp=_serializer().dumps('f')), 400
     S.purge_unverified(current_app.root_path)
+    # A double click or a second try before confirming: replace the earlier
+    # unconfirmed submission of this e-mail instead of keeping two copies.
+    S.drop_unverified_for(d['email'], current_app.root_path)
     if cv_data:
         path, sha, size = cv.store(current_app.root_path, cv_data, cv_meta['ext'])
         cv_meta.update(path=path, sha256=sha, size=size)
@@ -229,10 +232,12 @@ def verify():
             session.pop('tp_pending', None)
             session['tp_done'] = app_row['ref']
             try:
+                done = S.get(app_id)
+                S.send_received_email(done, getattr(g, 'tp_ar', False))
                 base = (S.setting('staff_base_url') or request.url_root).rstrip('/')
-                S.notify_staff(S.get(app_id), base + url_for('talent.detail', app_id=app_id))
+                S.notify_staff(done, base + url_for('talent.detail', app_id=app_id))
             except Exception:
-                current_app.logger.warning('talent: staff notification failed', exc_info=True)
+                current_app.logger.warning('talent: confirmation / staff notification failed', exc_info=True)
             return redirect(url_for('talent_public.thanks'))
         flash({'expired': t('That code has expired. Request a new one.', 'انتهت صلاحية الرمز. اطلب رمزًا جديدًا.'),
                'locked': t('Too many attempts. Request a new code.', 'تجاوزت عدد المحاولات. اطلب رمزًا جديدًا.'),

@@ -212,6 +212,17 @@ def purge_unverified(app_root):
     return len(rows)
 
 
+def drop_unverified_for(email, app_root):
+    from . import cv
+    db = get_db()
+    rows = db.execute("""DELETE FROM talent_applications WHERE status='unverified' AND lower(email)=lower(%s)
+                         RETURNING cv_path""", (email,)).fetchall()
+    db.commit()
+    for r in rows:
+        cv.remove(app_root, r['cv_path'])
+    return len(rows)
+
+
 # ---------------------------------------------------------------------- OTP
 def _otp_hash(app_id, code):
     key = current_app.config['SECRET_KEY'].encode()
@@ -304,6 +315,35 @@ def _send_otp_email(app_row, code):
             f'رمز التأكيد: {code}')
     return _mail(app_row['email'], f'{code} — confirm your application to {org}', html, text,
                  f'otp app={app_row["id"]}')
+
+
+def send_received_email(app_row, ar=False):
+    """Confirmation to the applicant once the e-mail is verified."""
+    org = setting('org_name_en', 'Careers')
+    org_ar = setting('org_name_ar', '') or org
+    first = escape((app_row['full_name'] or '').split(' ')[0])
+    ref = escape(app_row['ref'])
+    html = f"""<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:auto;color:#0e2340">
+<div style="border-top:4px solid #006B75;padding:24px 8px">
+<p style="font-size:13px;color:#006B75;font-weight:700;letter-spacing:1px;margin:0">{escape(org.upper())} · CAREERS</p>
+<p>Hello {first},</p>
+<p>Thank you — we have received your application to our consultants network (reference <b>{ref}</b>).</p>
+<p>Our team reviews applications by area of expertise. When a project matches your experience we will contact you
+by e-mail or phone. Any engagement is under a non-disclosure agreement and a consulting contract.</p>
+<p style="color:#555">You can ask us at any time to update or delete your details by replying to this e-mail.</p>
+<hr style="border:none;border-top:1px solid #e5e7eb">
+<div dir="rtl" style="text-align:right">
+<p>مرحبًا {first}،</p>
+<p>شكرًا لك — تم استلام طلبك للانضمام إلى شبكة الاستشاريين لدى {escape(org_ar)} (الرقم المرجعي <b>{ref}</b>).</p>
+<p>يراجع فريقنا الطلبات حسب مجال الخبرة، وسنتواصل معك بالبريد أو الهاتف عندما يتوفر مشروع يناسب خبرتك.
+ويتم أي تعاون بموجب اتفاقية سرية وعقد استشارات.</p>
+<p style="color:#555">يمكنك في أي وقت طلب تحديث بياناتك أو حذفها بالرد على هذه الرسالة.</p></div>
+</div></div>"""
+    text = (f'Thank you — we received your application (reference {app_row["ref"]}). We will contact you when a '
+            f'project matches your experience.\nشكرًا لك — تم استلام طلبك (الرقم المرجعي {app_row["ref"]}).')
+    subject = (f'تم استلام طلبك — {org_ar} ({app_row["ref"]})' if ar
+               else f'Application received — {org} ({app_row["ref"]})')
+    return _mail(app_row['email'], subject, html, text, f'received app={app_row["id"]}')
 
 
 def notify_staff(app_row, staff_url):
