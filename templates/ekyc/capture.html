@@ -3,7 +3,7 @@
 {% block title %}{{ _('Identity Verification') }}{% endblock %}
 
 {% block content %}
-<div id="ekyc-capture-root" class="container" style="max-width: 700px;"
+<div id="ekyc-capture-root" class="container" style="max-width: 700px;" dir="{{ 'rtl' if session.locale == 'ar' else 'ltr' }}"
      data-locale="{{ session.locale }}"
      data-document-type="{{ session.document_type }}"
      data-upload-url="{{ url_for('ekyc.upload_capture', token=session.session_token) }}"

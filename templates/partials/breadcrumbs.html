@@ -1,4 +1,5 @@
-{% if request.path != '/' and request.path != '/dashboard' %}
+{# Not on public pages (eKYC customer link, public complaint form): no app navigation for outsiders. #}
+{% if request.path != '/' and request.path != '/dashboard' and current_user.is_authenticated %}
 <div class="container-fluid pt-3 pb-1 border-bottom bg-light">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-0 px-2 font-monospace small">
