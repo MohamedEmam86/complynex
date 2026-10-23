@@ -26,7 +26,13 @@ def _load():
 
 
 def all_forms():
-    return list(_load().values())
+    """Default form first (the general board questionnaire), then by code.
+    Sector-specific regulator forms carry a "sector" and say so in their title."""
+    return sorted(_load().values(), key=lambda d: (not d.get('default'), d['code']))
+
+
+def default_form():
+    return next((d for d in _load().values() if d.get('default')), None)
 
 
 def get_form(code):

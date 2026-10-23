@@ -5,16 +5,16 @@
  "locked": false,
  "title_en": "Annual Fit & Proper Re-confirmation (incumbent key officials)",
  "title_ar": "إقرار سنوي بتأكيد الجدارة والصلاحية (لشاغلي الوظائف الرئيسية)",
- "basis_en": "Internal form — continuous compliance with the regulator's fit and proper criteria (e.g. CBE criteria, August 2025, guidance item 2: \"continuous compliance\")",
- "basis_ar": "نموذج داخلي — الالتزام المستمر بشروط الجدارة والصلاحية الصادرة عن الجهة الرقابية (مثل شروط البنك المركزي، أغسطس 2025، البند 2 من الإرشادات: \"الالتزام المستمر\")",
+ "basis_en": "Internal form — continuous compliance with the regulator's fit and proper criteria (e.g. the regulator's fit and proper criteria: \"continuous compliance\")",
+ "basis_ar": "نموذج داخلي — الالتزام المستمر بشروط الجدارة والصلاحية الصادرة عن الجهة الرقابية (مثل شروط الجدارة والصلاحية الصادرة عن الجهة الرقابية: \"الالتزام المستمر\")",
  "guidance": [
   {
    "en": "To be completed every year by every incumbent key official, board member and committee member whose full regulator form is on file.",
    "ar": "يستوفى سنوياً من كل شاغل لوظيفة رئيسية وكل عضو مجلس إدارة وعضو لجنة سبق تقديم النموذج الرقابي الكامل له."
   },
   {
-   "en": "Any change answered \"Yes\" below must also be notified to the regulator through the institution without delay (CBE form, guidance items 12–13).",
-   "ar": "أي تغيير تكون إجابته \"نعم\" أدناه يجب إخطار الجهة الرقابية به من خلال المؤسسة دون تأخير (نموذج البنك المركزي، البندان 12–13 من الإرشادات)."
+   "en": "Any change answered \"Yes\" below must also be notified to the regulator through the institution without delay.",
+   "ar": "أي تغيير تكون إجابته \"نعم\" أدناه يجب إخطار الجهة الرقابية به من خلال المؤسسة دون تأخير."
   }
  ],
  "sections": [
@@ -248,24 +248,24 @@
     {
      "id": "s9_q2",
      "no": "9.2",
-     "en": "Do you have, or will you have, any commercial or financial relationship with the Payment Institution other than the proposed position?",
-     "ar": "هل تربطك أو سوف تربطك أي علاقة تجارية/مالية بمؤسسة الدفع بخلاف الوظيفة المقترحة؟",
+     "en": "Do you have, or will you have, any commercial or financial relationship with the Company other than the proposed position?",
+     "ar": "هل تربطك أو سوف تربطك أي علاقة تجارية/مالية بالشركة بخلاف الوظيفة المقترحة؟",
      "type": "yesno",
      "adverse": true
     },
     {
      "id": "s9_q3",
      "no": "9.3",
-     "en": "Are you a shareholder, Board member, manager, legal adviser, or technical adviser of an entity that carries out an activity that competes with or is similar to the activities of the Payment Institution?",
-     "ar": "هل أنت مساهم، أو عضو مجلس إدارة، أو مدير، أو مستشار قانوني/فني في مؤسسة تمارس نشاطاً منافساً أو مماثلاً لنشاط مؤسسة الدفع؟",
+     "en": "Are you a shareholder, Board member, manager, legal adviser, or technical adviser of an entity that carries out an activity that competes with or is similar to the activities of the Company?",
+     "ar": "هل أنت مساهم، أو عضو مجلس إدارة، أو مدير، أو مستشار قانوني/فني في مؤسسة تمارس نشاطاً منافساً أو مماثلاً لنشاط الشركة؟",
      "type": "yesno",
      "adverse": true
     },
     {
      "id": "s9_q4",
      "no": "9.4",
-     "en": "For a non-executive or Independent Board member, do you provide any paid service to the payment institution?",
-     "ar": "بالنسبة لعضو مجلس الإدارة غير التنفيذي أو المستقل، هل تقدم أي خدمة مدفوعة الأجر لمؤسسة الدفع؟",
+     "en": "For a non-executive or Independent Board member, do you provide any paid service to the Company?",
+     "ar": "بالنسبة لعضو مجلس الإدارة غير التنفيذي أو المستقل، هل تقدم أي خدمة مدفوعة الأجر للشركة؟",
      "type": "yesno",
      "adverse": true
     },
@@ -301,8 +301,8 @@
     {
      "id": "s9_q6",
      "no": "9.6",
-     "en": "Do you have any relatives within the payment institution, for which you are nominated, up to the second degree? If yes, provide full details:",
-     "ar": "هل لديك أقارب بمؤسسة الدفع محل الترشح حتى الدرجة الثانية؟",
+     "en": "Do you have any relatives within the Company, for which you are nominated, up to the second degree? If yes, provide full details:",
+     "ar": "هل لديك أقارب بالشركة محل الترشح حتى الدرجة الثانية؟",
      "type": "yesno",
      "adverse": true
     },
@@ -310,7 +310,7 @@
      "id": "s9_relatives",
      "no": "9.6a",
      "en": "Relatives within the institution (up to the second degree)",
-     "ar": "الأقارب بمؤسسة الدفع حتى الدرجة الثانية",
+     "ar": "الأقارب بالشركة حتى الدرجة الثانية",
      "type": "grid",
      "columns": [
       {

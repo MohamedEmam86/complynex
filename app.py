@@ -444,6 +444,8 @@ def create_app(config_name=None):
     # Rating guides (what each score means) and the ESG / carbon guideline
     from guides import guides_bp
     app.register_blueprint(guides_bp)
+    from demo_access import demo_access_bp
+    app.register_blueprint(demo_access_bp)
 
     # Versioned REST API
     try:

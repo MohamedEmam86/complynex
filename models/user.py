@@ -594,6 +594,12 @@ class User(UserMixin):
         override = getattr(self, 'mfa_required_override', None)
         if override is not None:
             return bool(override)
+        try:
+            from utils.demo import is_demo
+            if is_demo():
+                return False  # demo instance: fictional data, visitors and trainees sign in without an authenticator
+        except Exception:
+            pass
         if self.role in ('admin', 'compliance_officer', 'compliance_manager'):
             return True
         # Everyone who can open the CMS back-office handles compliance data.

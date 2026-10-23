@@ -2,8 +2,8 @@
  "code": "cbe_psp_fp_2025",
  "regulator": "CBE",
  "form_no": "CBE-PMT.OVERSIGHT-F&P-FRM-26/10-001",
- "title_en": "Fit and Proper Assessment Form for Key Officials Within Payment Institutions",
- "title_ar": "نموذج تقييم الجدارة والصلاحية الفنية للمسئولين الرئيسيين بمؤسسات الدفع",
+ "title_en": "CBE form — Payment institutions only (PSPs / PSOs)",
+ "title_ar": "نموذج البنك المركزي — لمؤسسات الدفع فقط (مقدمو ومشغلو نظم الدفع)",
  "basis_en": "Central Bank of Egypt — Fit and Proper Criteria for Key Officials of PSOs and PSPs (August 2025)",
  "basis_ar": "البنك المركزي المصري — شروط الجدارة والصلاحية الفنية للمسئولين الرئيسيين لمشغلي نظم الدفع ومقدمي خدمات الدفع (أغسطس 2025)",
  "kind": "regulator",
@@ -3584,5 +3584,6 @@
     }
    ]
   }
- ]
+ ],
+ "sector": "payments"
 }

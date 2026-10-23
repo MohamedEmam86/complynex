@@ -31421,6 +31421,62 @@ msgstr "مُحسَّن"
 msgid "Compliant with Central Bank of Egypt Banking Law No. 194 of 2020. All information is confidential."
 msgstr "متوافق مع قانون البنك المركزي والجهاز المصرفي رقم 194 لسنة 2020. جميع البيانات سرية."
 
+msgid "Enter the demo"
+msgstr "الدخول على النسخة التجريبية"
+
+msgid "This demo link is not valid or has expired"
+msgstr "رابط النسخة التجريبية غير صالح أو انتهت صلاحيته"
+
+msgid "Ask the person who sent it for a new link."
+msgstr "اطلب رابطًا جديدًا ممن أرسله لك."
+
+msgid "Welcome to the ComplyNex demo"
+msgstr "مرحبًا بك في النسخة التجريبية من ComplyNex"
+
+msgid "Choose who you want to be. Every company, person and figure here is fictional; you can change anything, and the demo is reset regularly."
+msgstr "اختر الدور الذي تريد تجربته. كل الشركات والأشخاص والأرقام هنا وهمية، ويمكنك تعديل أي شيء، وتتم إعادة ضبط النسخة التجريبية دوريًا."
+
+#, python-format
+msgid "This link stops working on %(when)s."
+msgstr "ينتهي هذا الرابط في %(when)s."
+
+msgid "This demo link has expired. Ask for a new one."
+msgstr "انتهت صلاحية رابط النسخة التجريبية. اطلب رابطًا جديدًا."
+
+msgid "Demo access links"
+msgstr "روابط دخول النسخة التجريبية"
+
+msgid "Create a time-limited link to the demo instance for a trainee or a prospect. The link opens the demo, where they pick a role (MLRO, compliance officer, manager, employee or administrator) and are signed in without a password. When the link expires they are signed out and the link stops working."
+msgstr "أنشئ رابطًا محدد المدة للنسخة التجريبية لمتدرب أو عميل محتمل. الرابط يفتح النسخة التجريبية ويختار منه الدور (مسؤول الإبلاغ، مسؤول الالتزام، مدير، موظف أو مدير النظام) ويدخل بدون كلمة مرور. عند انتهاء المدة يتم تسجيل خروجه ويتوقف الرابط."
+
+msgid "Demo links are not configured on this server (DEMO_LINK_SECRET is missing). Ask the system administrator."
+msgstr "روابط النسخة التجريبية غير مفعلة على هذا الخادم (DEMO_LINK_SECRET غير موجود). تواصل مع مدير النظام."
+
+msgid "For whom (shown in the demo audit log)"
+msgstr "لمن الرابط (يظهر في سجل التدقيق بالنسخة التجريبية)"
+
+msgid "e.g. Academy batch 12, or the client name"
+msgstr "مثال: دفعة الأكاديمية 12 أو اسم العميل"
+
+msgid "Valid for (days)"
+msgstr "صالح لمدة (أيام)"
+
+msgid "Create link"
+msgstr "إنشاء الرابط"
+
+#, python-format
+msgid "Link (valid %(days)s day(s)) — copy and send it"
+msgstr "الرابط (صالح %(days)s يوم) — انسخه وأرسله"
+
+msgid "Anyone with this link can enter the demo until it expires. Send it only to the intended person."
+msgstr "أي شخص لديه هذا الرابط يستطيع دخول النسخة التجريبية حتى انتهاء مدته، فأرسله للشخص المقصود فقط."
+
+msgid "Inside the demo, the Administrator persona can also create users under Administration > Users; those users sign in with the password set for them. A demo reset removes them."
+msgstr "داخل النسخة التجريبية يستطيع دور مدير النظام إنشاء مستخدمين من الإدارة > المستخدمون، ويدخلون بكلمة المرور المحددة لهم. إعادة ضبط النسخة التجريبية تحذفهم."
+
+msgid "This is the demo. Open the invitation link you received to enter without a password, or sign in with a user created for you."
+msgstr "هذه هي النسخة التجريبية. افتح رابط الدعوة الذي وصلك للدخول بدون كلمة مرور، أو سجّل الدخول بمستخدم تم إنشاؤه لك."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

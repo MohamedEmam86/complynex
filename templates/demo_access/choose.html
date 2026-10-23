@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Enter the demo') }}{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width: 860px;">
+  {% if invalid %}
+  <div class="card shadow-sm"><div class="card-body text-center py-5">
+    <i class="fas fa-link-slash fa-2x text-warning mb-3"></i>
+    <h4>{{ _('This demo link is not valid or has expired') }}</h4>
+    <p class="text-muted mb-0">{{ _('Ask the person who sent it for a new link.') }}</p>
+  </div></div>
+  {% else %}
+  <h3 class="mb-1">{{ _('Welcome to the ComplyNex demo') }}</h3>
+  <p class="text-muted">{{ _('Choose who you want to be. Every company, person and figure here is fictional; you can change anything, and the demo is reset regularly.') }}</p>
+  <div class="row g-3">
+    {% for p in personas %}
+    <div class="col-md-6">
+      <form method="POST" action="{{ url_for('demo_access.sign_in_as', user_id=p.id) }}" class="h-100">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="card h-100 w-100 text-start shadow-sm border-0 p-0" style="cursor:pointer;">
+          <div class="card-body">
+            <div class="fw-semibold">{{ p.name or p.email }}</div>
+            <div class="small text-muted">{{ p.ar if ar else p.en }}</div>
+          </div>
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="small text-muted mt-3 mb-0">{{ _('This link stops working on %(when)s.', when=until_text) }}</p>
+  {% endif %}
+</div>
+{% endblock %}

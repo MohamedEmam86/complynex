@@ -41,7 +41,7 @@
 <h1>{{ defn.title_ar }}<br>{{ defn.title_en }}</h1>
 <div class="sub">{{ defn.basis_ar }}<br>{{ defn.basis_en }}{% if defn.form_no %}<br>{{ defn.form_no }}{% endif %}</div>
 {% if not blank %}<div class="meta">{{ _('Reference') }}: {{ f.reference }} · {{ f.full_name }} · {{ now.strftime('%Y-%m-%d') }}
-  {% if defn.kind == 'regulator' %}<br><em>This print is the system's working copy. For submission use the original regulator form filled by the system (.docx), signed on every page. / هذه نسخة العمل من النظام؛ للتقديم يُستخدم النموذج الأصلي للجهة الرقابية المستوفى من النظام (.docx) موقعاً على كل صفحة.</em>{% endif %}</div>{% endif %}
+  {% if defn.docx_template %}<br><em>This print is the system's working copy. For submission use the original regulator form filled by the system (.docx), signed on every page. / هذه نسخة العمل من النظام؛ للتقديم يُستخدم النموذج الأصلي للجهة الرقابية المستوفى من النظام (.docx) موقعاً على كل صفحة.</em>{% endif %}</div>{% endif %}
 {% if defn.guidance %}
 <table><tr><th colspan="2" class="sec">General guidance and instructions — إرشادات وتعليمات عامة</th></tr>
 {% for g in defn.guidance %}<tr><td style="width:50%">{{ g.en }}</td><td class="ar">{{ g.ar }}</td></tr>{% endfor %}</table>

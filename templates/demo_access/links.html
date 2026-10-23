@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Demo access links') }}{% endblock %}
+{% block content %}
+<div class="container-fluid" style="max-width: 900px;">
+  <h3 class="mb-1">{{ _('Demo access links') }}</h3>
+  <p class="text-muted">{{ _('Create a time-limited link to the demo instance for a trainee or a prospect. The link opens the demo, where they pick a role (MLRO, compliance officer, manager, employee or administrator) and are signed in without a password. When the link expires they are signed out and the link stops working.') }}</p>
+  {% if not configured %}
+  <div class="alert alert-warning">{{ _('Demo links are not configured on this server (DEMO_LINK_SECRET is missing). Ask the system administrator.') }}</div>
+  {% else %}
+  <div class="card shadow-sm mb-3"><div class="card-body">
+    <form method="POST" class="row g-3 align-items-end">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="col-md-7">
+        <label class="form-label">{{ _('For whom (shown in the demo audit log)') }}</label>
+        <input type="text" name="label" class="form-control" maxlength="80" value="{{ label }}" placeholder="{{ _('e.g. Academy batch 12, or the client name') }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">{{ _('Valid for (days)') }}</label>
+        <input type="number" name="days" class="form-control" min="1" max="{{ max_days }}" value="{{ days }}">
+      </div>
+      <div class="col-md-2"><button type="submit" class="btn btn-primary w-100">{{ _('Create link') }}</button></div>
+    </form>
+  </div></div>
+  {% if link %}
+  <div class="card border-success shadow-sm"><div class="card-body">
+    <label class="form-label fw-semibold">{{ _('Link (valid %(days)s day(s)) — copy and send it', days=days) }}</label>
+    <input type="text" class="form-control" readonly value="{{ link }}" data-autoselect dir="ltr">
+    <div class="small text-muted mt-2">{{ _('Anyone with this link can enter the demo until it expires. Send it only to the intended person.') }}</div>
+  </div></div>
+  {% endif %}
+  <div class="small text-muted mt-3">
+    {{ _('Inside the demo, the Administrator persona can also create users under Administration > Users; those users sign in with the password set for them. A demo reset removes them.') }}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

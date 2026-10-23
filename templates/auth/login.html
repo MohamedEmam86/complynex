@@ -425,6 +425,11 @@
                 </button>
             </form>
 
+            {% if is_demo_instance %}
+            <div class="alert alert-info small mt-3 mb-0">
+                {{ _('This is the demo. Open the invitation link you received to enter without a password, or sign in with a user created for you.') }}
+            </div>
+            {% endif %}
             <div class="security-note">
                 <i class="bi bi-shield-lock-fill me-1"></i>
                 {{ _('Secure access for authorized personnel only') }}

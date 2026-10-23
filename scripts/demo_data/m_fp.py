@@ -1,11 +1,11 @@
-"""Fit & proper: key officials of the group's payments subsidiary "Nile Pay S.A.E."
-(PSP licence application to the CBE) on the CBE form, the annual re-confirmation
-and a non-board audit committee expert - every status of the workflow."""
+"""Fit & proper: key officials of Nile Microfinance S.A.E. (an FRA-supervised
+microfinance company) on the general board fit & proper questionnaire, the annual
+re-confirmation and a non-board audit committee expert - every status of the workflow."""
 import io
 import json
 from datetime import date, timedelta
 
-INST = 'Nile Pay S.A.E. (demo — payments subsidiary, PSP licence application)'
+INST = 'Nile Microfinance S.A.E. (demo)'
 CEO = 'Mostafa El-Sayed'
 
 
@@ -13,7 +13,7 @@ def _cbe_answers(ctx, o, n, adverse=False, independent=False, represents=None, p
     r = ctx.rnd
     born = date(1962 + (n * 3) % 22, 1 + n % 12, 3 + n % 25)
     a = {
-        's1_q1': INST, 's1_q2': 'Nile Pay', 's1_q3': 'psp', 's1_q4': 'DEMO-CR-220871 — Egypt',
+        's1_q1': INST, 's1_q2': 'Nile Micro', 's1_q3': 'microfinance', 's1_q4': 'CR DEMO-220871; FRA licence DEMO-MF-0412 — Egypt',
         's2_name': o['full_name'], 's2_dob': str(born), 's2_pob': r.choice(['Cairo, Egypt', 'Alexandria, Egypt', 'Mansoura, Egypt', 'Assiut, Egypt']),
         's2_nat': 'Egyptian', 's2_gender': 'female' if o['full_name'].split()[-2 if o['full_name'].startswith('Dr.') else 0] in ('Nadia', 'Ghada', 'Laila', 'Nour', 'Mona') else 'male',
         's2_id_no': f'DEMO{2 if born.year < 2000 else 3}{born:%y%m%d}{n:07d}', 's2_id_issue': str(date(2021, 3, 1) + timedelta(days=n * 40)),
@@ -62,7 +62,7 @@ def _cbe_answers(ctx, o, n, adverse=False, independent=False, represents=None, p
                                                     'non-executive director, for late filing of quarterly statements. No fine; the matter was '
                                                     'closed in 2017 (letter attached). (demo)'}]
         a['s9_q5'] = 'yes'
-        a['s9_details'] = [{'qno': '9.5', 'details': 'Board member of a fintech lending platform that may compete in digital wallets. '
+        a['s9_details'] = [{'qno': '9.5', 'details': 'Board member of a digital lender that offers small-business loans similar to the Company’s. '
                                                     'Will recuse from related decisions; resignation planned within 6 months. (demo)'}]
     if partial:
         for k in [k for k in a if k.startswith(('s7_', 's8_', 's9_', 's10_', 's11_', 's13_', 's14_'))]:
@@ -80,7 +80,7 @@ def _history(ctx, roles):
 
 
 PEOPLE = {  # key function, duties, history (employer, title, years, reason), academic
-    'board_chair': ('Chair the board; set the agenda; lead board evaluation and the relationship with the CBE and shareholders.',
+    'board_chair': ('Chair the board; set the agenda; lead board evaluation and the relationship with the FRA and shareholders.',
                     [('Example National Bank (demo)', 'Deputy Chairman', 8, 'retirement'), ('Example Investment Bank (demo)', 'Managing Director', 10, 'resignation')],
                     [{'qualification': 'PhD', 'major': 'Economics', 'institution': 'Cairo University', 'country': 'Egypt', 'year': '1992'}]),
     'board_deputy': ('Deputy chair; chairs the board in the chair\'s absence; member of the risk and nomination committees.',
@@ -101,7 +101,7 @@ PEOPLE = {  # key function, duties, history (employer, title, years, reason), ac
     'head_audit': ('Head of internal audit; reports to the audit committee.',
                    [('Nile Microfinance S.A.E. (demo)', 'Head of Internal Audit', 4, ''), ('Example Audit Firm (demo)', 'Senior Manager', 8, 'resignation')],
                    [{'qualification': 'BCom', 'major': 'Accounting', 'institution': 'Ain Shams University', 'country': 'Egypt', 'year': '2004'}]),
-    'head_it': ('Head of IT and information security for the payment platform.',
+    'head_it': ('Head of IT and information security for the lending and collections platforms.',
                 [('Nile Microfinance S.A.E. (demo)', 'Head of IT & Information Security', 2, ''), ('Example Payments Co. (demo)', 'Security Architect', 6, 'resignation')],
                 [{'qualification': 'BSc', 'major': 'Computer Science', 'institution': 'Helwan University', 'country': 'Egypt', 'year': '2008'}]),
     'head_finance': ('Head of finance; financial reporting, capital and liquidity.',
@@ -166,8 +166,8 @@ def seed(ctx):
         a = _cbe_answers(ctx, o2, n, adverse=(name == 'Ghada El-Masry'), independent=bool(o.get('is_independent')),
                          represents='Nile Holding S.A.E. (demo shareholder)' if name == 'Ghada El-Masry' else None,
                          partial=(target == 'draft'))
-        purpose = 'licensing'
-        fid = S.create_form(o['id'], 'cbe_psp_fp_2025', purpose, mlro, db=db)
+        purpose = 'new_nomination'
+        fid = S.create_form(o['id'], 'general_board_fp', purpose, mlro, db=db)
         S.save_answers(fid, a, mlro, db)
         steps = stop_at[target]
         for i, act in enumerate(flow[:steps]):
@@ -188,14 +188,14 @@ def seed(ctx):
                 S.attach_signed(fid, aid, mlro, db)
                 continue
             S.transition(fid, act, mlro, note=None,
-                         extra={'regulator_reference': f'CBE/PSO-PSP/FP/{2026}/{100 + n:04d} (demo)'}, db=db)
+                         extra={'regulator_reference': f'FRA/MF/FP/{2026}/{100 + n:04d} (demo)'}, db=db)
         if name == 'Ghada El-Masry':
             S.save_assessment(fid, {'honesty': {'score': '3', 'justification': 'Old regulator warning (2016) fully disclosed and closed; no fine; references positive.'},
                                     'competence': {'score': '4', 'justification': 'Former leasing company director; finance background verified.'},
                                     'financial': {'score': '4', 'justification': 'Clean credit report.'},
-                                    'independence': {'score': '2', 'justification': 'Board seat at a potentially competing fintech; recusal agreed; resignation within 6 months as a condition.'},
+                                    'independence': {'score': '2', 'justification': 'Board seat at a potentially competing digital lender; recusal agreed; resignation within 6 months as a condition.'},
                                     'time': {'score': '3', 'justification': 'Two other board seats; time declared is adequate.'}},
-                              'Resign from the competing fintech board within 6 months; recuse from wallet-related decisions until then.', mlro, db)
+                              'Resign from the competing lender’s board within 6 months; recuse from decisions on competing products until then.', mlro, db)
         # spread the timeline over the past months
         age = 160 - n * 6
         db.execute("UPDATE fp_forms SET created_at = %s, updated_at = %s WHERE id = %s", (ctx.ago(age, 10), ctx.ago(max(age - 60, 3), 15), fid))

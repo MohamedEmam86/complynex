@@ -1372,6 +1372,13 @@
             {% endif %}
             {% endif %}
             {% if current_user.is_admin() %}
+            {% if not is_demo_instance %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('demo_access.links') }}">
+                <span class="cnx-nav__label">{{ _('Demo access links') }}</span>
+              </a>
+            </li>
+            {% endif %}
             {% if current_user.can_view('config') %}
             <li class="cnx-nav__subitem">
               <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.document_types') }}">
