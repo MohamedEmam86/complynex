@@ -131,12 +131,12 @@ def remove(app_root, rel_path):
 
 
 MESSAGES = {
-    'missing': ('Please choose a file.', 'من فضلك اختر ملفًا.'),
-    'double_ext': ('File names with more than one extension are not accepted.', 'لا نقبل ملفات بأكثر من امتداد.'),
-    'type': ('Your CV must be a PDF or Word (.docx) file.', 'السيرة الذاتية لازم تكون ملف PDF أو Word (.docx).'),
-    'size': ('Your CV must be 5 MB or smaller.', 'حجم السيرة الذاتية لازم يكون 5 ميجابايت أو أقل.'),
+    'missing': ('Please choose a file.', 'يُرجى اختيار ملف.'),
+    'double_ext': ('File names with more than one extension are not accepted.', 'لا نقبل الملفات ذات الامتدادات المتعددة.'),
+    'type': ('Your CV must be a PDF or Word (.docx) file.', 'يجب أن تكون السيرة الذاتية ملف PDF أو Word (.docx).'),
+    'size': ('Your CV must be 5 MB or smaller.', 'يجب ألا يتجاوز حجم السيرة الذاتية 5 ميجابايت.'),
     'empty': ('The file looks empty.', 'الملف يبدو فارغًا.'),
     'signature': ('The file is not a valid PDF / Word document.', 'الملف ليس مستند PDF أو Word صالحًا.'),
     'active': ('The file contains macros, scripts or embedded content. Please upload a plain PDF or Word file.',
-               'الملف يحتوي على ماكرو أو أكواد أو محتوى مضمّن. من فضلك ارفع ملف PDF أو Word عادي.'),
+               'الملف يحتوي على ماكرو أو أكواد أو محتوى مضمّن. يُرجى رفع ملف PDF أو Word عادي.'),
 }

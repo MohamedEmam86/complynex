@@ -5,14 +5,14 @@
     <p class="ia-eyebrow">{{ t('PART-TIME · PROJECT-BASED · TRAINING', 'دوام جزئي · بالمشروع · تدريب') }}</p>
     <h1>{{ t('Join our network of compliance consultants', 'انضم لشبكة استشاريي الالتزام لدينا') }}</h1>
     <p class="ia-lead">{% if L((brand.intro_en, brand.intro_ar)) %}{{ L((brand.intro_en, brand.intro_ar)) }}{% else %}{{ t('We deliver consulting and training projects in governance, compliance, AML/CFT and financial crime. If you have the expertise and some time alongside your current work, apply once and we will contact you when a project matches your experience.',
-      'بننفذ مشروعات استشارية وتدريبية في الحوكمة والالتزام ومكافحة غسل الأموال والجرائم المالية. لو عندك الخبرة ووقت إضافي جنب شغلك الحالي، قدّم مرة واحدة وهنتواصل معاك لما يكون في مشروع مناسب لخبرتك.') }}{% endif %}</p>
+      'ننفذ مشروعات استشارية وتدريبية في الحوكمة والالتزام ومكافحة غسل الأموال والجرائم المالية. إذا كانت لديك الخبرة ووقت إضافي إلى جانب عملك الحالي، قدّم مرة واحدة وسنتواصل معك عندما يتوفر مشروع يناسب خبرتك.') }}{% endif %}</p>
     <div class="ia-cta">
       <a class="ia-btn" href="{{ url_for('talent_public.apply') }}">{{ t('Apply in 5 minutes', 'قدّم في 5 دقائق') }}</a>
     </div>
     <ul class="ia-ticks">
-      <li>{{ t('Personal e-mail is fine — your current employer is not contacted', 'البريد الشخصي مقبول — مش هنتواصل مع جهة عملك الحالية') }}</li>
-      <li>{{ t('Confidential: your application is seen only by our hiring team', 'سرّي: طلبك بيطّلع عليه فريق الاختيار فقط') }}</li>
-      <li>{{ t('Every engagement is under an NDA and a consulting contract', 'أي تعاون بيكون باتفاقية سرية (NDA) وعقد استشارات') }}</li>
+      <li>{{ t('Personal e-mail is fine — your current employer is not contacted', 'البريد الشخصي مقبول — لن نتواصل مع جهة عملك الحالية') }}</li>
+      <li>{{ t('Confidential: your application is seen only by our hiring team', 'سرّي: لا يطّلع على طلبك إلا فريق الاختيار') }}</li>
+      <li>{{ t('Every engagement is under an NDA and a consulting contract', 'يتم أي تعاون بموجب اتفاقية سرية (NDA) وعقد استشارات') }}</li>
     </ul>
   </div>
   <div class="ia-hero__card">
@@ -21,19 +21,19 @@
   </div>
 </section>
 
-<h2 class="ia-h2">{{ t('How it works', 'إزاي بنشتغل') }}</h2>
+<h2 class="ia-h2">{{ t('How it works', 'كيف نعمل') }}</h2>
 <div class="ia-grid tp-steps">
   <article class="ia-card"><p class="ia-tag">1</p><h3>{{ t('Apply once', 'قدّم مرة واحدة') }}</h3>
-    <p>{{ t('Tell us your area, experience and availability. Attach your CV if you like. We confirm your e-mail with a one-time code.', 'اكتب مجالك وخبرتك والوقت المتاح لك، وارفع سيرتك الذاتية لو حابب. هنأكد بريدك برمز لمرة واحدة.') }}</p></article>
-  <article class="ia-card"><p class="ia-tag">2</p><h3>{{ t('We match by expertise', 'بنختار حسب الخبرة') }}</h3>
-    <p>{{ t('When a project needs your area and level, our team contacts you for a short call.', 'لما يكون في مشروع محتاج مجالك ومستواك، فريقنا هيتواصل معاك لمكالمة قصيرة.') }}</p></article>
+    <p>{{ t('Tell us your area, experience and availability. Attach your CV if you like. We confirm your e-mail with a one-time code.', 'اذكر مجالك وخبرتك والوقت المتاح لك، وارفع سيرتك الذاتية إن رغبت. نؤكد بريدك برمز لمرة واحدة.') }}</p></article>
+  <article class="ia-card"><p class="ia-tag">2</p><h3>{{ t('We match by expertise', 'نختار حسب الخبرة') }}</h3>
+    <p>{{ t('When a project needs your area and level, our team contacts you for a short call.', 'عندما يحتاج مشروع إلى مجالك ومستواك، يتواصل معك فريقنا لمكالمة قصيرة.') }}</p></article>
   <article class="ia-card"><p class="ia-tag">3</p><h3>{{ t('NDA and consulting contract', 'NDA وعقد استشارات') }}</h3>
-    <p>{{ t('Before any work you sign a non-disclosure agreement and a consulting contract that set the scope, timeline and fee — based on your expertise.', 'قبل أي شغل بتوقّع اتفاقية سرية وعقد استشارات بيحددوا النطاق والمدة والأتعاب — حسب خبرتك وكفاءتك.') }}</p></article>
+    <p>{{ t('Before any work you sign a non-disclosure agreement and a consulting contract that set the scope, timeline and fee — based on your expertise.', 'قبل بدء أي عمل توقّع اتفاقية سرية وعقد استشارات يحددان النطاق والمدة والأتعاب — وفقًا لخبرتك وكفاءتك.') }}</p></article>
   <article class="ia-card"><p class="ia-tag">4</p><h3>{{ t('Deliver with our team', 'نفّذ مع فريقنا') }}</h3>
-    <p>{{ t('Work part-time or per project, remotely or on site, alongside our consultants.', 'اشتغل بدوام جزئي أو بالمشروع، عن بُعد أو في موقع العميل، مع فريق الاستشاريين.') }}</p></article>
+    <p>{{ t('Work part-time or per project, remotely or on site, alongside our consultants.', 'اعمل بدوام جزئي أو بالمشروع، عن بُعد أو في موقع العميل، مع فريق الاستشاريين.') }}</p></article>
 </div>
 
-<h2 class="ia-h2">{{ t('Areas we work in', 'المجالات اللي بنشتغل فيها') }}</h2>
+<h2 class="ia-h2">{{ t('Areas we work in', 'مجالات عملنا') }}</h2>
 <div class="tp-chips">
   {% for c in categories if c.code != 'other' %}<span class="tp-chip">{{ L(c, 'name') }}</span>{% endfor %}
 </div>
@@ -45,7 +45,7 @@
 
 <div class="ia-panel ia-center tp-cta-box">
   <h2>{{ t('Ready?', 'جاهز؟') }}</h2>
-  <p class="ia-muted">{{ t('It takes about 5 minutes. PDF or Word CV, up to 5 MB.', 'بياخد حوالي 5 دقائق. السيرة الذاتية PDF أو Word لحد 5 ميجابايت.') }}</p>
+  <p class="ia-muted">{{ t('It takes about 5 minutes. PDF or Word CV, up to 5 MB.', 'يستغرق نحو 5 دقائق. السيرة الذاتية بصيغة PDF أو Word حتى 5 ميجابايت.') }}</p>
   <a class="ia-btn" href="{{ url_for('talent_public.apply') }}">{{ t('Apply now', 'قدّم الآن') }}</a>
 </div>
 {% endblock %}

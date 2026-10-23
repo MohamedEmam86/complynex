@@ -20,7 +20,7 @@
       <span><b>{{ org }}</b><small>{{ t('Careers · Consultants network', 'الوظائف · شبكة الاستشاريين') }}</small></span>
     </a>
     <nav class="ia-nav">
-      <a href="{{ url_for('talent_public.landing') }}">{{ t('How it works', 'إزاي بنشتغل') }}</a>
+      <a href="{{ url_for('talent_public.landing') }}">{{ t('How it works', 'كيف نعمل') }}</a>
       <a class="ia-btn ia-btn--sm" href="{{ url_for('talent_public.apply') }}">{{ t('Apply now', 'قدّم الآن') }}</a>
       <a class="ia-lang" href="{{ url_for('talent_public.set_lang', code='en' if ar else 'ar', next=request.path) }}">{{ 'English' if ar else 'العربية' }}</a>
     </nav>

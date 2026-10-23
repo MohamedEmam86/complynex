@@ -4,7 +4,7 @@
 {% block content %}
 <div class="ia-panel tp-form">
   <h1>{{ t('Apply to join our consultants network', 'قدّم للانضمام لشبكة الاستشاريين') }}</h1>
-  <p class="ia-muted">{{ t('Personal e-mail is fine. We will send a 6-digit code to confirm it. Fields marked * are required.', 'البريد الشخصي مقبول، وهنبعتلك رمز من 6 أرقام لتأكيده. الحقول اللي عليها * مطلوبة.') }}</p>
+  <p class="ia-muted">{{ t('Personal e-mail is fine. We will send a 6-digit code to confirm it. Fields marked * are required.', 'البريد الشخصي مقبول، وسنرسل إليك رمزًا من 6 أرقام لتأكيده. الحقول المميزة بـ * مطلوبة.') }}</p>
   <form method="post" enctype="multipart/form-data" novalidate id="tp-apply">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="stamp" value="{{ stamp }}">
@@ -16,11 +16,11 @@
     <div class="ia-row">
       <label>{{ t('E-mail (personal is fine)', 'البريد الإلكتروني (الشخصي مقبول)') }} *
         <input type="email" name="email" required maxlength="254" value="{{ form.get('email','') }}" autocomplete="email" dir="ltr"></label>
-      <label>{{ t('Mobile', 'الموبايل') }} *
+      <label>{{ t('Mobile', 'الهاتف المحمول') }} *
         <input type="tel" name="phone" required maxlength="24" value="{{ form.get('phone','') }}" autocomplete="tel" dir="ltr" placeholder="01xxxxxxxxx / +9715xxxxxxx"></label>
     </div>
     <div class="ia-row">
-      <label>{{ t('WhatsApp (if different)', 'واتساب (لو مختلف)') }}
+      <label>{{ t('WhatsApp (if different)', 'واتساب (إن كان مختلفًا)') }}
         <input type="tel" name="whatsapp" maxlength="24" value="{{ form.get('whatsapp','') }}" dir="ltr"></label>
       <label>{{ t('City', 'المدينة') }}
         <input name="city" maxlength="80" value="{{ form.get('city','') }}" autocomplete="address-level2"></label>
@@ -37,7 +37,7 @@
         <option value="">{{ t('Choose…', 'اختر…') }}</option>
         {% for c in categories %}<option value="{{ c.id }}" {% if form.get('primary_category') == c.id|string %}selected{% endif %}>{{ L(c, 'name') }}</option>{% endfor %}
       </select></label>
-    <fieldset class="tp-multi"><legend>{{ t('Other areas you can cover (optional)', 'مجالات أخرى تقدر تغطيها (اختياري)') }}</legend>
+    <fieldset class="tp-multi"><legend>{{ t('Other areas you can cover (optional)', 'مجالات أخرى يمكنك تغطيتها (اختياري)') }}</legend>
       {% set chosen = form.getlist('other_categories') if form.getlist is defined else [] %}
       {% for c in categories %}<label class="ia-check tp-inline"><input type="checkbox" name="other_categories" value="{{ c.id }}" {% if c.id|string in chosen %}checked{% endif %}><span>{{ L(c, 'name') }}</span></label>{% endfor %}
     </fieldset>
@@ -51,13 +51,13 @@
     </div>
     <label>{{ t('Current or last job title', 'المسمى الوظيفي الحالي أو الأخير') }}
       <input name="current_title" maxlength="120" value="{{ form.get('current_title','') }}" placeholder="{{ t('e.g. AML Manager', 'مثال: مدير مكافحة غسل الأموال') }}"></label>
-    <p class="ia-muted ia-small">{{ t('You do not need to name your current employer.', 'مش لازم تذكر اسم جهة عملك الحالية.') }}</p>
+    <p class="ia-muted ia-small">{{ t('You do not need to name your current employer.', 'لا يلزم ذكر اسم جهة عملك الحالية.') }}</p>
     <label>{{ t('Certifications', 'الشهادات المهنية') }}
       <input name="certifications" maxlength="400" value="{{ form.get('certifications','') }}" placeholder="CAMS, CIA, CISA, ICA, CISSP…" dir="auto"></label>
     <label>{{ t('Languages', 'اللغات') }}
       <input name="languages" maxlength="120" value="{{ form.get('languages','') }}" placeholder="{{ t('Arabic, English…', 'العربية، الإنجليزية…') }}"></label>
     <label>{{ t('Short summary of your experience', 'نبذة مختصرة عن خبرتك') }} *
-      <textarea name="summary" rows="5" maxlength="2000" required placeholder="{{ t('What have you done in this area? Sectors, regulators, typical projects…', 'إيه اللي اشتغلت عليه في المجال ده؟ القطاعات، الجهات الرقابية، نوع المشروعات…') }}">{{ form.get('summary','') }}</textarea></label>
+      <textarea name="summary" rows="5" maxlength="2000" required placeholder="{{ t('What have you done in this area? Sectors, regulators, typical projects…', 'ما الأعمال التي نفذتها في هذا المجال؟ القطاعات، الجهات الرقابية، نوع المشروعات…') }}">{{ form.get('summary','') }}</textarea></label>
 
     <h2 class="tp-sec">{{ t('How you would like to work', 'طريقة العمل المناسبة لك') }}</h2>
     <div class="ia-row">
@@ -85,7 +85,7 @@
     <p class="ia-muted ia-small" id="tp-cv-msg"></p>
 
     <label class="ia-check"><input type="checkbox" name="ack_terms" value="1" {% if form.get('ack_terms') %}checked{% endif %}>
-      <span>{{ t('I understand that applying does not guarantee work, and that any engagement is under a non-disclosure agreement (NDA) and a consulting contract based on my expertise.', 'أفهم إن التقديم مش ضمان لوجود شغل، وإن أي تعاون بيكون باتفاقية سرية (NDA) وعقد استشارات حسب خبرتي.') }} <em>*</em></span></label>
+      <span>{{ t('I understand that applying does not guarantee work, and that any engagement is under a non-disclosure agreement (NDA) and a consulting contract based on my expertise.', 'أفهم أن التقديم لا يضمن وجود عمل، وأن أي تعاون يتم بموجب اتفاقية سرية (NDA) وعقد استشارات وفقًا لخبرتي.') }} <em>*</em></span></label>
     <label class="ia-check"><input type="checkbox" name="consent_privacy" value="1" {% if form.get('consent_privacy') %}checked{% endif %}>
       <span>{{ t('I agree that my details and CV are kept and used to contact me about suitable projects, as described in the', 'أوافق على حفظ بياناتي وسيرتي الذاتية واستخدامها للتواصل معي بخصوص المشروعات المناسبة، كما هو موضح في') }}
         <a href="{{ url_for('talent_public.privacy') }}" target="_blank" rel="noopener">{{ t('applicant privacy notice', 'إشعار خصوصية المتقدمين') }}</a>. <em>*</em></span></label>

@@ -11,10 +11,10 @@
     var max = parseInt(input.getAttribute('data-max'), 10) || 5242880;
     var ok = /\.(pdf|docx)$/i.test(f.name);
     if (!ok) {
-      msg.textContent = ar ? 'السيرة الذاتية لازم تكون PDF أو Word (.docx).' : 'Your CV must be a PDF or Word (.docx) file.';
+      msg.textContent = ar ? 'يجب أن تكون السيرة الذاتية PDF أو Word (.docx).' : 'Your CV must be a PDF or Word (.docx) file.';
       input.value = '';
     } else if (f.size > max) {
-      msg.textContent = ar ? 'حجم الملف أكبر من 5 ميجابايت.' : 'The file is larger than 5 MB.';
+      msg.textContent = ar ? 'حجم الملف يتجاوز 5 ميجابايت.' : 'The file is larger than 5 MB.';
       input.value = '';
     }
   });
