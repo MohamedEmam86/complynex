@@ -96,7 +96,7 @@
               <td><code>{{ t.transaction_reference }}</code></td>
               <td>{{ t.full_name or t.company_name or '-' }}<br><small class="text-muted">{{ t.customer_reference }}</small></td>
               <td>{{ t.transaction_date[:10] }}</td>
-              <td>{{ t.transaction_type }}</td>
+              <td>{{ t.transaction_type|label }}</td>
               <td><strong>{{ "{:,.2f}".format(t.amount) }}</strong> {{ t.currency }}</td>
               <td>{{ t.counterparty_country or '-' }}</td>
               <td class="text-danger small">{{ t.sim_reason }}</td>

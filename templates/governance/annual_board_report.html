@@ -48,7 +48,7 @@
       <tr>
         <td>{{ m.member_name }}{% if m.member_name_arabic %} <span class="text-muted small">({{ m.member_name_arabic }})</span>{% endif %}</td>
         <td>{{ m.role or '-' }}</td>
-        <td>{{ m.member_type }}</td>
+        <td>{{ m.member_type|label }}</td>
         <td>{{ m.appointment_date or '-' }}</td>
         <td><span class="badge {{ 'bg-success' if m.status == 'ACTIVE' else 'bg-secondary' }}">{{ m.status }}</span></td>
       </tr>
@@ -164,7 +164,7 @@
     </thead>
     <tbody>
       {% for e in evaluations %}
-      <tr><td>{{ e.evaluation_type }}</td><td>{{ e.methodology or '-' }}</td><td>{{ e.overall_rating or '-' }}</td></tr>
+      <tr><td>{{ e.evaluation_type|label }}</td><td>{{ e.methodology or '-' }}</td><td>{{ e.overall_rating or '-' }}</td></tr>
       {% endfor %}
     </tbody>
   </table>

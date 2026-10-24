@@ -77,7 +77,7 @@
         <td>{{ c.regulator_name or '-' }}</td>
         <td>
           <span class="badge {{ 'bg-success' if c.compliance_status == 'COMPLIANT' else ('bg-danger' if c.compliance_status == 'NON_COMPLIANT' else 'bg-warning text-dark') }}">
-            {{ c.compliance_status }}
+            {{ c.compliance_status|label }}
           </span>
         </td>
       </tr>
@@ -108,7 +108,7 @@
     </thead>
     <tbody>
       {% for d in independence_rows %}
-      <tr><td>{{ d.member_name }}</td><td>{{ d.declaration_date }}</td><td>{{ d.independence_status or '-' }}</td></tr>
+      <tr><td>{{ d.member_name }}</td><td>{{ d.declaration_date }}</td><td>{{ d.independence_status|label if d.independence_status else '-' }}</td></tr>
       {% else %}
       <tr><td colspan="3" class="text-center text-muted">{{ _('No independence declarations recorded for %(y)s.', y=year) }}</td></tr>
       {% endfor %}

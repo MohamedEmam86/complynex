@@ -53,7 +53,7 @@
             <thead class="table-light"><tr><th>{{ _('Reference') }}</th><th>{{ _('Date') }}</th><th>{{ _('Type') }}</th><th>{{ _('Amount') }}</th><th>{{ _('Counterparty') }}</th><th>{{ _('Country') }}</th></tr></thead>
             <tbody>
               {% for t in transactions %}
-              <tr><td><code>{{ t.transaction_reference }}</code></td><td>{{ (t.transaction_date or '')[:10] }}</td><td>{{ t.transaction_type }}</td>
+              <tr><td><code>{{ t.transaction_reference }}</code></td><td>{{ (t.transaction_date or '')[:10] }}</td><td>{{ t.transaction_type|label }}</td>
                 <td><strong>{{ "{:,.2f}".format(t.amount or 0) }} {{ t.currency }}</strong></td><td>{{ t.counterparty_name or '-' }}</td><td>{{ t.counterparty_country or '-' }}</td></tr>
               {% endfor %}
             </tbody>
@@ -89,7 +89,7 @@
             <tbody>
               {% for t in recent_txs %}
               <tr class="{% if t.alert_raised %}table-warning{% endif %}">
-                <td>{{ (t.transaction_date or '')[:10] }}</td><td>{{ t.transaction_type }}</td><td>{{ "{:,.2f}".format(t.amount or 0) }} {{ t.currency }}</td>
+                <td>{{ (t.transaction_date or '')[:10] }}</td><td>{{ t.transaction_type|label }}</td><td>{{ "{:,.2f}".format(t.amount or 0) }} {{ t.currency }}</td>
                 <td>{{ t.counterparty_name or '-' }}</td><td>{% if t.alert_raised %}<span class="badge bg-danger">{{ t.rule_triggered }}</span>{% else %}-{% endif %}</td>
               </tr>
               {% endfor %}

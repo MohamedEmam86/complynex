@@ -215,7 +215,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="text-muted small d-block">{{ _('ID / Registration Number') }}</label>
-                                    <div class="fw-bold">{{ customer.id_type or 'ID' }}: {{ customer.id_number or 'N/A'
+                                    <div class="fw-bold">{{ customer.id_type|label if customer.id_type else _('ID') }}: {{ customer.id_number or 'N/A'
                                         }}</div>
                                 </div>
                                 <div class="col-md-6">
@@ -264,7 +264,7 @@
                                         <tr>
                                             <td><small>{{ alert.alert_date }}</small></td>
                                             <td>{{ alert.rule_name }}</td>
-                                            <td><span class="badge bg-light text-dark border">{{ alert.status }}</span>
+                                            <td><span class="badge bg-light text-dark border">{{ alert.status|label }}</span>
                                             </td>
                                             <td><a href="#" class="btn btn-sm btn-link">{{ _('Details') }}</a></td>
                                         </tr>

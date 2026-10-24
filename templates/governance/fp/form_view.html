@@ -128,7 +128,7 @@
   {# ---- history #}
   <div class="card border-0 shadow-sm"><div class="card-header bg-white fw-bold">{{ _('History') }}</div>
     <ul class="list-group list-group-flush small">{% for e in events %}<li class="list-group-item">
-      <span class="text-muted">{{ e.created_at.strftime('%Y-%m-%d %H:%M') if e.created_at }}</span> · {{ e.user_name or '' }} · <strong>{{ e.action }}</strong>
+      <span class="text-muted">{{ e.created_at.strftime('%Y-%m-%d %H:%M') if e.created_at }}</span> · {{ e.user_name or '' }} · <strong>{{ e.action|label }}</strong>
       {% if e.status_to %}→ {{ SL[e.status_to][1] if lang == 'ar' and e.status_to in SL else (SL[e.status_to][0] if e.status_to in SL else e.status_to) }}{% endif %}
       {% if e.note %}<div>{{ e.note }}</div>{% endif %}</li>{% endfor %}</ul></div>
 </div>

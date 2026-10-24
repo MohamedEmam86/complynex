@@ -16,7 +16,7 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">{{ _('Incident') }} <code>{{ inc.incident_number }}</code></h5>
-                    <span class="badge {% if inc.status in ('RESOLVED', 'CLOSED') %}bg-success{% elif inc.status == 'CONTAINED' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ _(inc.status or 'NEW') }}</span>
+                    <span class="badge {% if inc.status in ('RESOLVED', 'CLOSED') %}bg-success{% elif inc.status == 'CONTAINED' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ (inc.status or 'NEW')|code_label }}</span>
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
@@ -38,7 +38,7 @@
                     {% for u in updates %}
                     <li class="list-group-item">
                         <div class="d-flex justify-content-between">
-                            <span>{% if u.old_status != u.new_status %}<span class="badge bg-secondary">{{ _(u.old_status or 'NEW') }}</span> &rarr; <span class="badge bg-primary">{{ u.new_status|code_label }}</span>{% endif %}</span>
+                            <span>{% if u.old_status != u.new_status %}<span class="badge bg-secondary">{{ (u.old_status or 'NEW')|code_label }}</span> &rarr; <span class="badge bg-primary">{{ u.new_status|code_label }}</span>{% endif %}</span>
                             <small class="text-muted">{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '' }} · {{ u.user_name or '—' }}</small>
                         </div>
                         {% if u.note %}<div class="mt-1" style="white-space: pre-wrap">{{ u.note }}</div>{% endif %}

@@ -118,7 +118,7 @@
                                 <small class="text-muted">{{ m.trade_name }}</small>
                                 {% endif %}
                             </td>
-                            <td><code>{{ m.cr_number or 'N/A' }}</code></td>
+                            <td><code>{{ m.cr_number or _('N/A') }}</code></td>
                             <td>
                                 <div>{{ m.contact_person or '-' }}</div>
                                 <small class="text-muted">{{ m.contact_email or '' }}</small>

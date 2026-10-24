@@ -237,7 +237,7 @@
                         {% for entry in audit_trail %}
                         <li class="mb-2 pb-2 border-bottom">
                             <small class="text-muted">{{ entry.created_at|fmt_dt }}</small><br>
-                            <strong>{{ entry.action }}</strong>
+                            <strong>{{ entry.action|label }}</strong>
                             {% if entry.user_name %} &mdash; {{ entry.user_name }}{% endif %}
                             {% if entry.details %}<br><span class="text-muted">{{ entry.details }}</span>{% endif %}
                         </li>

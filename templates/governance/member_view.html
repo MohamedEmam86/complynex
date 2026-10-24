@@ -29,7 +29,7 @@
                 </span>
                 <hr>
                 <div class="text-start">
-                    <p class="small mb-1"><strong>{{ _('Type:') }}</strong> {{ member.member_type }}</p>
+                    <p class="small mb-1"><strong>{{ _('Type:') }}</strong> {{ member.member_type|label }}</p>
                     <p class="small mb-1"><strong>{{ _('Position:') }}</strong> {{ member.position }}</p>
                     <p class="small mb-1"><strong>{{ _('Independence:') }}</strong>
                         <span class="badge {{ 'bg-info' if member.is_independent else 'bg-warning text-dark' }}">

@@ -22,10 +22,10 @@
                         <td>{{ c.control_code }}</td>
                         <td>{{ c.control_name }}</td>
                         <td><span class="badge bg-secondary">{{ c.control_type|label }}</span></td>
-                        <td>{{ c.control_nature }}</td>
+                        <td>{{ c.control_nature|label }}</td>
                         <td>
                             {% if c.last_test_result %}
-                            <span class="badge {{ 'bg-success' if c.last_test_result == 'EFFECTIVE' else ('bg-warning text-dark' if c.last_test_result == 'PARTIALLY_EFFECTIVE' else 'bg-danger') }}">{{ c.last_test_result }}</span>
+                            <span class="badge {{ 'bg-success' if c.last_test_result == 'EFFECTIVE' else ('bg-warning text-dark' if c.last_test_result == 'PARTIALLY_EFFECTIVE' else 'bg-danger') }}">{{ c.last_test_result|label }}</span>
                             {% else %}<span class="text-muted">{{ _('Not tested') }}</span>{% endif %}
                         </td>
                         <td>{{ c.next_test_due_date or '-' }} {% if overdue %}<i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="{{ _('Overdue for testing') }}"></i>{% endif %}</td>

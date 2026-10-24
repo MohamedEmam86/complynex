@@ -113,7 +113,7 @@
                         {{ req.requirement_description|truncate(40) }}
                     </span>
                     <span class="badge {{ 'bg-success' if req.compliance_status == 'COMPLIANT' else 'bg-danger' }}">
-                        {{ req.compliance_status }}
+                        {{ req.compliance_status|label }}
                     </span>
                 </div>
             </div>

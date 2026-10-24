@@ -28,7 +28,7 @@
                 <label class="form-label fw-bold">{{ _('Type *') }}</label>
                 <select name="transaction_type" class="form-select" required>
                   {% for t in ['CREDIT','DEBIT','TRANSFER_IN','TRANSFER_OUT','CASH_DEPOSIT','CASH_WITHDRAWAL','PAYMENT','REFUND'] %}
-                  <option value="{{ t }}">{{ t }}</option>
+                  <option value="{{ t }}">{{ t|label }}</option>
                   {% endfor %}
                 </select>
               </div>

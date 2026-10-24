@@ -77,7 +77,7 @@
         <td>{{ c.requirement_code or '-' }}</td>
         <td>
           <span class="badge {{ 'bg-success' if c.compliance_status == 'COMPLIANT' else ('bg-danger' if c.compliance_status == 'NON_COMPLIANT' else 'bg-warning text-dark') }}">
-            {{ c.compliance_status }}
+            {{ c.compliance_status|label }}
           </span>
         </td>
         <td>{{ c.last_audit_date or '-' }}</td>

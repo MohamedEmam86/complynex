@@ -36,7 +36,7 @@
                             <td>
                                 <span
                                     class="badge {% if dpia.risk_level == 'VERY_HIGH' %}bg-dark{% elif dpia.risk_level == 'HIGH' %}bg-danger{% elif dpia.risk_level == 'MEDIUM' %}bg-warning text-dark{% else %}bg-info{% endif %}">
-                                    {{ dpia.risk_level }}
+                                    {{ dpia.risk_level|label }}
                                 </span>
                             </td>
                             <td>

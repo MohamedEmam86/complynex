@@ -36568,6 +36568,348 @@ msgstr "لا يرى أي سجلات مقيدة بنطاق."
 msgid "Related party"
 msgstr "طرف ذو علاقة"
 
+msgid "Regulatory Compliance Gap Analysis"
+msgstr "تحليل فجوات الامتثال التنظيمي"
+
+#, python-format
+msgid "Comparison of the policies required by %(reg)s against currently implemented and published versions."
+msgstr "مقارنة السياسات المطلوبة من قِبل %(reg)s بالإصدارات المطبقة والمنشورة حاليًا."
+
+#, python-format
+msgid "Define the set of policies required for compliance with the requirements of %(reg)s."
+msgstr "حدِّد مجموعة السياسات اللازمة للامتثال لمتطلبات %(reg)s."
+
+msgid "e.g. Circular No. 5 of 2023"
+msgstr "مثال: الكتاب الدوري رقم 5 لسنة 2023"
+
+msgid "I hereby certify that I have read, understood, and agree to comply with the terms of this policy as per applicable regulatory requirements."
+msgstr "أُقر بأنني قرأت هذه السياسة وفهمتها، وأوافق على الالتزام بأحكامها وفقًا للمتطلبات التنظيمية المعمول بها."
+
+msgid "The following policies have been published and require your formal acknowledgment to ensure compliance with internal standards and applicable regulations."
+msgstr "نُشرت السياسات التالية وتتطلب إقرارك الرسمي بها لضمان الامتثال للمعايير الداخلية واللوائح المعمول بها."
+
+msgid "Showing policies due for review within the next 30 days. Regular reviews ensure our procedures remain aligned with applicable regulations."
+msgstr "تُعرض السياسات المستحقة للمراجعة خلال الثلاثين يومًا القادمة. تضمن المراجعة الدورية بقاء إجراءاتنا متوافقة مع اللوائح المعمول بها."
+
+msgid "Gifts, Hospitality & Entertainment Declaration for regulatory compliance."
+msgstr "إقرار الهدايا والضيافة والترفيه لأغراض الامتثال التنظيمي."
+
+msgid "Mandatory for ABAC / regulatory compliance."
+msgstr "إلزامي لأغراض مكافحة الرشوة والفساد والامتثال التنظيمي."
+
+msgid "Monitoring cumulative GHE is a core regulatory requirement to prevent structural corruption."
+msgstr "تُعد متابعة الإجمالي التراكمي للهدايا والضيافة والترفيه متطلبًا تنظيميًا أساسيًا لمنع الفساد الهيكلي."
+
+msgid "Regulatory Requirements"
+msgstr "المتطلبات التنظيمية"
+
+msgid "Financial regulators require licensed institutions to maintain confidential reporting mechanisms"
+msgstr "تُلزم الجهات الرقابية المالية المؤسساتِ المرخَّص لها بتوفير آليات إبلاغ سرية"
+
+msgid "The company has a strict zero-tolerance policy for whistleblower retaliation"
+msgstr "تطبق الشركة سياسة عدم التسامح مطلقًا مع أي انتقام من المبلّغين"
+
+msgid "e.g. Aligned to the AML risk methodology approved by the Compliance Committee on ..."
+msgstr "مثال: متوافق مع منهجية مخاطر غسل الأموال المعتمدة من لجنة الامتثال بتاريخ ..."
+
+#, python-format
+msgid "In a production environment, this report would be transmitted through the secure reporting channel of %(reg)s using the required format."
+msgstr "في بيئة التشغيل الفعلية يُرسَل هذا التقرير عبر قناة الإبلاغ الآمنة لدى %(reg)s وبالصيغة المطلوبة."
+
+msgid "Regulator Notif."
+msgstr "إخطار الجهة الرقابية"
+
+msgid "Do not onboard or process. Freeze funds without delay and report to EMLCU and the supervisory regulator."
+msgstr "لا تقبل العميل ولا تنفّذ العملية. جمِّد الأموال دون تأخير وأبلغ وحدة مكافحة غسل الأموال وتمويل الإرهاب والجهة الرقابية المختصة."
+
+msgid "Do not proceed. Freeze funds without delay, file the report to EMLCU and notify the supervisory regulator. Document the decision below."
+msgstr "لا تتابع. جمِّد الأموال دون تأخير، وقدِّم الإخطار إلى وحدة مكافحة غسل الأموال وتمويل الإرهاب، وأخطِر الجهة الرقابية المختصة. وثّق القرار أدناه."
+
+msgid "Score (0 - 100)"
+msgstr "الدرجة (0 - 100)"
+
+msgid "Weight for Levenshtein fuzzy ratio"
+msgstr "وزن نسبة التشابه التقريبي (Levenshtein)"
+
+msgid "Weight for Jaro-Winkler algorithm"
+msgstr "وزن خوارزمية Jaro-Winkler"
+
+msgid "Weight for Soundex/Metaphone phonetic"
+msgstr "وزن المطابقة الصوتية (Soundex/Metaphone)"
+
+msgid "Weight for partial substring matching"
+msgstr "وزن المطابقة الجزئية للنص"
+
+msgid "Threshold for confirmed hit"
+msgstr "حد التطابق المؤكد"
+
+msgid "Threshold for potential match"
+msgstr "حد التطابق المحتمل"
+
+msgid "Threshold for low match"
+msgstr "حد التطابق المنخفض"
+
+msgid "Rule Name (Arabic)"
+msgstr "اسم القاعدة (بالعربية)"
+
+msgid "Shown to Arabic-language users"
+msgstr "يظهر لمستخدمي الواجهة العربية"
+
+#, python-format
+msgid "Edited rule submitted for approval (v%(old)s → v%(new)s)."
+msgstr "أُرسلت القاعدة المعدَّلة للاعتماد (الإصدار %(old)s ← الإصدار %(new)s)."
+
+msgid "Capital, solvency, licensing & key functions"
+msgstr "رأس المال والملاءة والترخيص والوظائف الرئيسية"
+
+msgid "Origination, client files & portfolio follow-up"
+msgstr "منح التمويل وملفات العملاء ومتابعة المحفظة"
+
+msgid "Pricing, fees, penalties & consumer protection"
+msgstr "التسعير والرسوم والغرامات وحماية العملاء"
+
+msgid "Accounting, financial statements & related parties"
+msgstr "المحاسبة والقوائم المالية والأطراف ذات العلاقة"
+
+msgid "IT, cyber & continuity"
+msgstr "تكنولوجيا المعلومات والأمن السيبراني واستمرارية الأعمال"
+
+msgid "Remediation of findings"
+msgstr "معالجة الملاحظات"
+
+msgid "Climate & carbon footprint"
+msgstr "المناخ والبصمة الكربونية"
+
+msgid "Edit Merchant KYC"
+msgstr "تعديل ملف اعرف عميلك للتاجر"
+
+msgid "New Merchant KYC"
+msgstr "ملف اعرف عميلك لتاجر جديد"
+
+msgid "New Merchant"
+msgstr "تاجر جديد"
+
+msgid "New Merchant KYC Onboarding"
+msgstr "تسجيل تاجر جديد (اعرف عميلك)"
+
+msgid "Update Merchant"
+msgstr "تحديث بيانات التاجر"
+
+msgid "Create Merchant"
+msgstr "إنشاء التاجر"
+
+msgid "KB"
+msgstr "ك.ب"
+
+msgid "Resend KYC Form"
+msgstr "إعادة إرسال نموذج اعرف عميلك"
+
+msgid "Send KYC Form"
+msgstr "إرسال نموذج اعرف عميلك"
+
+msgid "Attached Documents"
+msgstr "المستندات المرفقة"
+
+msgid "Uploaded by"
+msgstr "رفعه"
+
+msgid "Merchant (online form)"
+msgstr "التاجر (النموذج الإلكتروني)"
+
+msgid "No phone registered"
+msgstr "لا يوجد رقم هاتف مسجل"
+
+#, python-format
+msgid "Open WhatsApp & Send to %(phone)s"
+msgstr "فتح واتساب والإرسال إلى %(phone)s"
+
+#, python-format
+msgid "Screening error for \"%(name)s\": %(error)s"
+msgstr "خطأ في فحص \"%(name)s\": %(error)s"
+
+msgid "Commercial Registration"
+msgstr "السجل التجاري"
+
+msgid "Unauthorised transaction"
+msgstr "عملية غير مصرح بها"
+
+msgid "No mail server (MX record)"
+msgstr "لا يوجد خادم بريد (سجل MX)"
+
+msgid "Cash deposit"
+msgstr "إيداع نقدي"
+
+msgid "Cash withdrawal"
+msgstr "سحب نقدي"
+
+msgid "Repayment"
+msgstr "سداد"
+
+msgid "Transfer in"
+msgstr "تحويل وارد"
+
+msgid "Transfer out"
+msgstr "تحويل صادر"
+
+msgid "Card fraud"
+msgstr "احتيال البطاقات"
+
+msgid "Pattern"
+msgstr "نمط"
+
+msgid "Behavioral"
+msgstr "سلوكي"
+
+msgid "Geographic"
+msgstr "جغرافي"
+
+msgid "Velocity"
+msgstr "سرعة التكرار"
+
+msgid "Cash"
+msgstr "نقدي"
+
+msgid "Non executive"
+msgstr "غير تنفيذي"
+
+msgid "Non independent"
+msgstr "غير مستقل"
+
+msgid "Collection"
+msgstr "التحصيل"
+
+msgid "Customer service"
+msgstr "خدمة العملاء"
+
+msgid "Data privacy"
+msgstr "خصوصية البيانات"
+
+msgid "Fees"
+msgstr "الرسوم"
+
+msgid "Loan terms"
+msgstr "شروط التمويل"
+
+msgid "Service delay"
+msgstr "تأخر الخدمة"
+
+msgid "Service failure"
+msgstr "تعطل الخدمة"
+
+msgid "Staff conduct"
+msgstr "سلوك الموظفين"
+
+msgid "System error"
+msgstr "خطأ في النظام"
+
+msgid "Consent given"
+msgstr "تم منح الموافقة"
+
+msgid "Decision recorded"
+msgstr "تم تسجيل القرار"
+
+msgid "Document captured"
+msgstr "تم التقاط المستند"
+
+msgid "Manual review submitted"
+msgstr "أُحيلت للمراجعة اليدوية"
+
+msgid "Onboarded"
+msgstr "تم الإلحاق"
+
+msgid "Result recorded"
+msgstr "تم تسجيل النتيجة"
+
+msgid "Sessions exported"
+msgstr "تم تصدير الجلسات"
+
+msgid "Session created"
+msgstr "تم إنشاء الجلسة"
+
+msgid "Session viewed"
+msgstr "تم عرض الجلسة"
+
+msgid "Status needs review"
+msgstr "الحالة: تحتاج إلى مراجعة"
+
+msgid "Exact"
+msgstr "مطابق تمامًا"
+
+msgid "Initial"
+msgstr "الأحرف الأولى"
+
+msgid "Middle dropped"
+msgstr "حذف الاسم الأوسط"
+
+msgid "Reordered"
+msgstr "ترتيب مختلف للأسماء"
+
+msgid "Synthetic negative"
+msgstr "حالة سلبية مصطنعة"
+
+msgid "Typo"
+msgstr "خطأ إملائي"
+
+msgid "Free provider"
+msgstr "مزود بريد مجاني"
+
+msgid "Behaviour"
+msgstr "سلوك المعاملات"
+
+msgid "Customer type"
+msgstr "نوع العميل"
+
+msgid "Residence"
+msgstr "بلد الإقامة"
+
+msgid "Micro loan"
+msgstr "تمويل متناهي الصغر"
+
+msgid "Any Role"
+msgstr "أي دور"
+
+msgid "Tax card issuing office"
+msgstr "مأمورية الضرائب المصدِرة للبطاقة الضريبية"
+
+msgid "Penetration test"
+msgstr "اختبار الاختراق"
+
+msgid "Application penetration test"
+msgstr "اختبار اختراق التطبيقات"
+
+msgid "Malware test"
+msgstr "اختبار البرمجيات الخبيثة"
+
+msgid "Vulnerability scan"
+msgstr "فحص الثغرات"
+
+msgid "CIS benchmark review"
+msgstr "مراجعة معايير CIS"
+
+msgid "Phishing simulation"
+msgstr "محاكاة التصيد الاحتيالي"
+
+msgid "Incomplete KYC file:"
+msgstr "ملف اعرف عميلك غير مكتمل:"
+
+msgid "no risk rating"
+msgstr "لا يوجد تصنيف للمخاطر"
+
+msgid "high risk: enhanced due diligence not completed"
+msgstr "مخاطر مرتفعة: العناية الواجبة المعززة غير مكتملة"
+
+msgid "high risk: senior management approval missing"
+msgstr "مخاطر مرتفعة: موافقة الإدارة العليا غير موجودة"
+
+msgid "no signed beneficial-owner declaration"
+msgstr "لا يوجد إقرار موقّع بالمستفيد الحقيقي"
+
+msgid "SAR created"
+msgstr "تم إنشاء بلاغ اشتباه"
+
+msgid "SME loan"
+msgstr "تمويل المشروعات الصغيرة والمتوسطة"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

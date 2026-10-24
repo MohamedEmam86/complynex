@@ -86,7 +86,7 @@
                                     <td>CP-{{ complaint.id }}</td>
                                     <td>{{ complaint.created_at.strftime('%Y-%m-%d') if complaint.created_at is not
                                         string else complaint.created_at[:10] }}</td>
-                                    <td>{{ _(complaint.complaint_category) }}</td>
+                                    <td>{{ complaint.complaint_category|label }}</td>
                                     <td>
                                         {% if complaint.status in ('RESOLVED', 'CLOSED') %}
                                             <span class="text-muted">—</span>

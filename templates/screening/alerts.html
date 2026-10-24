@@ -61,7 +61,7 @@
                                 <td><input type="checkbox" class="rowCheck" value="{{ a.id }}"/></td>
                                 <td>{{ a.id }}</td>
                                 <td>{{ a.matched_name or '-' }}</td>
-                                <td class="small">{{ a.alert_type or '-' }}</td>
+                                <td class="small">{{ a.alert_type|label if a.alert_type else '-' }}</td>
                                 <td>{{ a.match_score or '-' }}</td>
                                 <td class="small">{{ a.source_list or '-' }}</td>
                                 <td>

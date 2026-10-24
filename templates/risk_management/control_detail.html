@@ -15,7 +15,7 @@
                     <p>{{ control.control_description or _('No description.') }}</p>
                     <dl class="row mb-0">
                         <dt class="col-sm-3">{{ _('Type') }}</dt><dd class="col-sm-9">{{ control.control_type|label }}</dd>
-                        <dt class="col-sm-3">{{ _('Nature') }}</dt><dd class="col-sm-9">{{ control.control_nature }}</dd>
+                        <dt class="col-sm-3">{{ _('Nature') }}</dt><dd class="col-sm-9">{{ control.control_nature|label }}</dd>
                         <dt class="col-sm-3">{{ _('Testing Frequency') }}</dt><dd class="col-sm-9">{{ control.testing_frequency }}</dd>
                         <dt class="col-sm-3">{{ _('Last Test') }}</dt><dd class="col-sm-9">{{ control.last_test_result or '-' }} ({{ control.last_tested_date or '-' }})</dd>
                     </dl>

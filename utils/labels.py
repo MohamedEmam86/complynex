@@ -138,6 +138,23 @@ LABELS = {
     'fuel_energy_related': _l('Fuel- and Energy-related Activities'),
     'business_loans': _l('Business Loans'), 'equity_share': _l('Equity Share'),
     'operational_control': _l('Operational Control'), 'financial_control': _l('Financial Control'),
+    # ── regulatory-controls areas (installed by the regulator packs into rc_areas) ──
+    'capital_licensing': _l('Capital, solvency, licensing & key functions'),
+    'origination': _l('Origination, client files & portfolio follow-up'),
+    'pricing_conduct': _l('Pricing, fees, penalties & consumer protection'),
+    'aml_cft': _l('AML/CFT'),
+    'financial_reporting': _l('Accounting, financial statements & related parties'),
+    'it_cyber': _l('IT, cyber & continuity'),
+    'remediation': _l('Remediation of findings'),
+    'climate': _l('Climate & carbon footprint'),
+    # ── codes whose humanised form would read badly ──
+    'unauth_txn': _l('Unauthorised transaction'), 'no_mx': _l('No mail server (MX record)'),
+    'no_str': _l('No STR'), 'str_filed': _l('STR filed'), 'under_study': _l('Under study'),
+    'national_id': _l('National ID'), 'passport': _l('Passport'), 'tax_card_issuer': _l('Tax card issuing office'),
+    'pentest': _l('Penetration test'), 'app_pentest': _l('Application penetration test'),
+    'malware_test': _l('Malware test'), 'vulnerability_scan': _l('Vulnerability scan'),
+    'cis_benchmark': _l('CIS benchmark review'), 'phishing_simulation': _l('Phishing simulation'),
+    'sar_created': _l('SAR created'), 'sme_loan': _l('SME loan'), 'micro_loan': _l('Micro loan'),
 }
 
 # Permission modules shown in administration (code, English label).

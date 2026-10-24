@@ -90,7 +90,7 @@
                         {% if residual_band %}<span class="badge" style="background-color: {{ residual_band.color_hex }};">{{ residual_band.band_name|label }}</span>{% endif %}
                     </p>
                     {% if risk.control_effectiveness %}
-                    <p class="mb-1">{{ _('Control Effectiveness') }}: <span class="badge bg-secondary">{{ risk.control_effectiveness }}</span></p>
+                    <p class="mb-1">{{ _('Control Effectiveness') }}: <span class="badge bg-secondary">{{ risk.control_effectiveness|label }}</span></p>
                     {% endif %}
                     <p class="mb-0">{{ _('Appetite Aligned') }}:
                         {% if risk.risk_appetite_aligned is none %}<span class="text-muted">{{ _('N/A') }}</span>

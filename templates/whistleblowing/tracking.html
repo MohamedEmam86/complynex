@@ -42,7 +42,7 @@
           <td><input type="checkbox" name="case_ids" value="{{ t.case.id }}" class="ccheck"></td>
           <td><strong>{{ t.case.case_number or t.case.id }}</strong>
               <div class="text-muted small">{{ (t.case.title or '')[:46] }}</div></td>
-          <td><span class="badge bg-secondary">{{ t.stage }}</span></td>
+          <td><span class="badge bg-secondary">{{ t.stage|label }}</span></td>
           <td>{% if t.owner and t.owner.first_name %}
                 {{ t.owner.first_name }} {{ t.owner.last_name }}
               {% else %}<span class="badge bg-danger">{{ _('Unassigned') }}</span>{% endif %}</td>

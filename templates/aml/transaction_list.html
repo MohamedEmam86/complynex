@@ -18,7 +18,7 @@
       <select name="type" class="form-select form-select-sm">
         <option value="">{{ _('All Types') }}</option>
         {% for t in ['CREDIT','DEBIT','TRANSFER_IN','TRANSFER_OUT','CASH_DEPOSIT','CASH_WITHDRAWAL','PAYMENT','REFUND'] %}
-        <option value="{{ t }}" {% if filters.get('type')==t %}selected{% endif %}>{{ t }}</option>
+        <option value="{{ t }}" {% if filters.get('type')==t %}selected{% endif %}>{{ t|label }}</option>
         {% endfor %}
       </select>
     </div>
@@ -44,7 +44,7 @@
             <td><code>{{ t.transaction_reference }}</code></td>
             <td>{{ t.full_name or t.company_name or '-' }}<br><small class="text-muted">{{ t.customer_reference }}</small></td>
             <td>{{ t.transaction_date[:10] }}</td>
-            <td><span class="badge bg-secondary">{{ t.transaction_type }}</span></td>
+            <td><span class="badge bg-secondary">{{ t.transaction_type|label }}</span></td>
             <td><strong>{{ "{:,.2f}".format(t.amount) }}</strong> {{ t.currency }}</td>
             <td>{{ t.counterparty_name or '-' }}</td>
             <td>{{ t.counterparty_country or '-' }}</td>

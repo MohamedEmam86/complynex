@@ -12,7 +12,7 @@
         <thead><tr><th>{{ _('Name') }}</th><th>{{ _('Type') }}</th><th class="text-end">{{ _('Complete') }}</th><th>{{ _('Missing') }}</th><th>{{ _('Risk') }}</th><th>{{ _('Next review') }}</th><th>{{ _('BO declaration') }}</th><th>{{ _('Onboarding') }}</th></tr></thead><tbody>
         {% for r in rows %}<tr class="{{ 'text-muted' if not r.active }}"><td><a href="{{ url_for('amlkyc.kyc_file', code=code, subject_id=r.id) }}">{{ r.name }}</a></td>
             <td>{{ _('Entity') if r.kind == 'entity' else _('Individual') }}</td>
-            <td class="text-end {{ 'text-danger' if r.score < 100 }}">{{ r.score }}%</td><td>{{ r.missing|join(', ')|truncate(60) or '-' }}</td>
+            <td class="text-end {{ 'text-danger' if r.score < 100 }}">{{ r.score }}%</td><td>{{ r.missing|map('label')|join(', ')|truncate(60) or '-' }}</td>
             <td>{% if r.rating %}<span class="badge bg-{{ {'high': 'danger', 'medium': 'warning text-dark', 'low': 'success'}.get(r.rating.band, 'secondary') }}">{{ r.rating.band }} {{ r.rating.score }}</span>{% else %}<span class="text-danger">{{ _('not rated') }}</span>{% endif %}</td>
             <td class="{{ 'text-danger' if r.rating and r.rating.next_review_date and r.rating.next_review_date < today }}">{{ r.rating.next_review_date if r.rating and r.rating.next_review_date else '-' }}</td>
             <td>{% if r.kind == 'entity' %}{{ _('Yes') if r.declaration else _('No') }}{% else %}-{% endif %}</td>

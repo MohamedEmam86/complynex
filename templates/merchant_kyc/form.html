@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Edit' if merchant else 'New' }} Merchant KYC{% endblock %}
+{% block title %}{{ _('Edit Merchant KYC') if merchant else _('New Merchant KYC') }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <nav aria-label="{{ _('breadcrumb') }}">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url_for('merchant_kyc.merchant_list') }}">{{ _('Merchant KYC') }}</a></li>
-            <li class="breadcrumb-item active">{{ 'Edit' if merchant else 'New Merchant' }}</li>
+            <li class="breadcrumb-item active">{{ _('Edit') if merchant else _('New Merchant') }}</li>
         </ol>
     </nav>
 
@@ -15,7 +15,7 @@
         <div class="col-md-10">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">{{ 'Edit Merchant KYC' if merchant else 'New Merchant KYC Onboarding' }}</h5>
+                    <h5 class="mb-0">{{ _('Edit Merchant KYC') if merchant else _('New Merchant KYC Onboarding') }}</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" enctype="multipart/form-data">
@@ -235,8 +235,8 @@
                                     {% for doc in documents %}
                                     <tr>
                                         <td><i class="bi bi-file-earmark"></i> {{ doc.original_filename }}</td>
-                                        <td>{{ doc.doc_type or 'N/A' }}</td>
-                                        <td>{{ (doc.file_size / 1024)|round(1) }} KB</td>
+                                        <td>{{ _(doc.doc_type) if doc.doc_type else _('N/A') }}</td>
+                                        <td>{{ (doc.file_size / 1024)|round(1) }} {{ _('KB') }}</td>
                                         <td>{{ doc.uploaded_at }}</td>
                                         <td>
                                             <a href="{{ url_for('merchant_kyc.download_document', doc_id=doc.id) }}"
@@ -283,7 +283,7 @@
                             <a href="{{ url_for('merchant_kyc.merchant_list') }}"
                                 class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
                             <button type="submit" class="btn btn-primary">
-                                {{ 'Update Merchant' if merchant else 'Create Merchant' }}
+                                {{ _('Update Merchant') if merchant else _('Create Merchant') }}
                             </button>
                         </div>
                     </form>

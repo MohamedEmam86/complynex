@@ -778,7 +778,7 @@ def run_screening(id):
             })
 
         except Exception as e:
-            flash(f'Screening error for "{name}": {str(e)}', 'danger')
+            flash(gettext('Screening error for "%(name)s": %(error)s', name=name, error=str(e)), 'danger')
             results_summary.append({'name': name, 'result': 'ERROR', 'error': str(e)})
 
     # Update merchant screening status

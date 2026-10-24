@@ -124,7 +124,7 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light small fw-bold uppercase">{{ _('Assessment Metadata') }}</div>
                 <div class="card-body small">
-                    <div class="mb-2"><strong>{{ _('Risk Level:') }}</strong> {{ dpia.risk_level }}</div>
+                    <div class="mb-2"><strong>{{ _('Risk Level:') }}</strong> {{ dpia.risk_level|label }}</div>
                     <div class="mb-2"><strong>{{ _('Created:') }}</strong> {{ dpia.created_at|string|truncate(10, True, '') if dpia.created_at else _('N/A') }}</div>
                     <div class="mb-2"><strong>{{ _('Created by:') }}</strong> {{ dpia.created_by_name or '—' }}</div>
                     <div class="mb-0"><strong>{{ _('Last Updated:') }}</strong> {{ dpia.updated_at or 'N/A' }}</div>

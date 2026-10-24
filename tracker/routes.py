@@ -190,7 +190,7 @@ def export_declarations(declaration_type):
         
         rows = db.execute('''
             SELECT u.first_name || ' ' || u.last_name as name, u.department,
-                   d.declaration_date, d.declaration_year,
+                   d.created_at AS declaration_date, d.declaration_year,
                    d.has_read_code, d.understands_responsibilities,
                    d.commits_to_compliance, d.will_report_violations,
                    d.has_known_violations, d.has_prior_misconduct

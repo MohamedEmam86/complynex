@@ -78,7 +78,7 @@
                     <tr style="cursor:pointer" data-href="{{ url_for('ekyc.view_session', session_id=s.id) }}">
                         <td>{{ s.id }}</td>
                         <td>{{ s.customer_reference or '-' }}</td>
-                        <td>{{ s.document_type }}</td>
+                        <td>{{ s.document_type|label }}</td>
                         <td>
                             <span class="badge bg-{{ 'success' if s.status == 'COMPLETED' else ('danger' if s.status == 'FAILED' else 'secondary') }}">
                                 {{ s.status|label }}

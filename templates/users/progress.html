@@ -23,7 +23,7 @@
                     <dd class="col-sm-8">{{ user.email }}</dd>
 
                     <dt class="col-sm-4">{{ _('Role') }}</dt>
-                    <dd class="col-sm-8 text-capitalize">{{ user.role }}</dd>
+                    <dd class="col-sm-8">{{ user.role|label }}</dd>
 
                     <dt class="col-sm-4">{{ _('Dept') }}</dt>
                     <dd class="col-sm-8">{{ user.department or '-' }}</dd>

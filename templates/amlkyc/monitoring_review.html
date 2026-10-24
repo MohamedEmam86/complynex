@@ -3,7 +3,7 @@
 {% block title %}{{ r.unit_label }} - ComplyNex CMS{% endblock %}
 {% block content %}
 <div class="container-fluid">
-    <h3 class="mb-1">{{ r.unit_label }} <span class="badge bg-secondary fs-6">{{ r.status }}</span></h3>
+    <h3 class="mb-1">{{ r.unit_label }} <span class="badge bg-secondary fs-6">{{ r.status|label }}</span></h3>
     <p class="text-muted small"><a href="{{ url_for('amlkyc.monitoring_plan', plan_id=r.plan_id) }}">{{ _('Back to plan') }}</a> · {{ _('On-site') if r.review_type == 'onsite' else _('Off-site') }} · {{ _('planned') }} {{ r.planned_date }}</p>
     {{ aa.nav('amlkyc.monitoring') }}
     <form method="post" class="card"><div class="card-body small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

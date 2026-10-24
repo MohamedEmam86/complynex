@@ -57,7 +57,7 @@
     <div class="card"><div class="card-header bg-light"><strong>{{ _('Rejected registration domains') }}</strong>
       <span class="small text-muted">— {{ _('no personal data kept') }}</span></div>
       <table class="table table-sm mb-0"><thead><tr><th>{{ _('Domain') }}</th><th>{{ _('Reason') }}</th><th class="text-end">{{ _('Attempts') }}</th></tr></thead><tbody>
-      {% for r in rejected %}<tr><td>{{ r.domain }}</td><td><span class="badge bg-light text-dark">{{ r.reason }}</span></td><td class="text-end">{{ r.hits }}</td></tr>
+      {% for r in rejected %}<tr><td>{{ r.domain }}</td><td><span class="badge bg-light text-dark">{{ r.reason|label }}</span></td><td class="text-end">{{ r.hits }}</td></tr>
       {% else %}<tr><td colspan="3" class="text-muted">{{ _('None yet.') }}</td></tr>{% endfor %}
       </tbody></table>
       <div class="card-footer small text-muted">{{ _('If many real prospects appear under free_provider, consider switching the policy to "flag" in Settings.') }}</div></div>

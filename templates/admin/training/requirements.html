@@ -108,7 +108,7 @@
                         <tr>
                             <td>
                                 <div>
-                                    <span class="badge bg-secondary">{{ req.role or 'Any Role' }}</span>
+                                    <span class="badge bg-secondary">{{ req.role|label if req.role else _('Any Role') }}</span>
                                     <span class="badge bg-info text-dark">{{ req.department or 'Any Dept' }}</span>
                                 </div>
                             </td>

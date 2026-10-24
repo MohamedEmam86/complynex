@@ -15,7 +15,7 @@
             <tr><th>{{ _('Reference') }}</th><td><code>{{ tx.transaction_reference }}</code></td></tr>
             <tr><th>{{ _('Customer') }}</th><td><a href="{{ url_for('aml.view_customer', id=tx.customer_id) }}">{{ tx.full_name or tx.company_name }}</a> ({{ tx.customer_reference }})</td></tr>
             <tr><th>{{ _('Date') }}</th><td>{{ tx.transaction_date[:16] }}</td></tr>
-            <tr><th>{{ _('Type') }}</th><td><span class="badge bg-secondary">{{ tx.transaction_type }}</span></td></tr>
+            <tr><th>{{ _('Type') }}</th><td><span class="badge bg-secondary">{{ tx.transaction_type|label }}</span></td></tr>
             <tr><th>{{ _('Amount') }}</th><td><strong>{{ "{:,.2f}".format(tx.amount) }} {{ tx.currency }}</strong></td></tr>
             <tr><th>{{ _('Counterparty') }}</th><td>{{ tx.counterparty_name or '-' }}</td></tr>
             <tr><th>{{ _('Account') }}</th><td>{{ tx.counterparty_account or '-' }}</td></tr>

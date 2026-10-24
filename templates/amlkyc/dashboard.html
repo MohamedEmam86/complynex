@@ -7,7 +7,7 @@
     {{ aa.nav('amlkyc.dashboard') }}
     <div class="row g-3">
         <div class="col-lg-4"><div class="card h-100"><div class="card-header"><strong>{{ _('Key AML roles') }}</strong></div><ul class="list-group list-group-flush small">
-            {% for r in roles %}<li class="list-group-item d-flex justify-content-between"><span><strong>{{ r.role_code|upper }}</strong> · {{ r.holder_name or r.holder_user_name or '-' }}</span>
+            {% for r in roles %}<li class="list-group-item d-flex justify-content-between"><span><strong>{{ r.title or r.role_code|label }}</strong> · {{ r.holder_name or r.holder_user_name or '-' }}</span>
                 {% if r.conflicts %}<span class="badge bg-danger">{{ r.conflicts|length }} {{ _('conflict(s)') }}</span>{% elif not r.reports_to_board %}<span class="badge bg-warning text-dark">{{ _('no board line') }}</span>{% else %}<span class="badge bg-success">{{ _('OK') }}</span>{% endif %}</li>
             {% else %}<li class="list-group-item text-danger">{{ _('No key role registered.') }} <a href="{{ url_for('amlkyc.roles') }}">{{ _('Add the MLRO') }}</a></li>{% endfor %}</ul></div></div>
         <div class="col-lg-4"><div class="card h-100"><div class="card-header"><strong>{{ _('Screening assurance') }}</strong></div><div class="card-body small">

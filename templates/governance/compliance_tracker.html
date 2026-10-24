@@ -67,7 +67,7 @@
                                     {% elif req.compliance_status == 'NON_COMPLIANT' %}
                                     <span class="badge bg-danger">{{ _('Non-Compliant') }}</span>
                                     {% else %}
-                                    <span class="badge bg-secondary">{{ req.compliance_status }}</span>
+                                    <span class="badge bg-secondary">{{ req.compliance_status|label }}</span>
                                     {% endif %}
                                     {% if not req.is_active %}
                                     <span class="badge bg-light text-muted border ms-1">{{ _('Retired') }}</span>

@@ -35,7 +35,7 @@
                 </div>{% endif %}
             </div>
             <div class="card"><div class="table-responsive" style="max-height: 360px"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Query') }}</th><th>{{ _('Must find') }}</th><th>{{ _('Variant') }}</th><th>{{ _('List') }}</th><th></th></tr></thead><tbody>
-                {% for c in cases %}<tr class="{{ 'text-muted' if not c.is_active }}"><td>{{ c.query_name }}</td><td>{{ c.expected_name or _('(no match)') }}</td><td>{{ c.variant_type }}</td><td>{{ c.list_label or '-' }}</td>
+                {% for c in cases %}<tr class="{{ 'text-muted' if not c.is_active }}"><td>{{ c.query_name }}</td><td>{{ c.expected_name or _('(no match)') }}</td><td>{{ c.variant_type|label }}</td><td>{{ c.list_label or '-' }}</td>
                     <td>{% if aa_can_edit %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="case_id" value="{{ c.id }}"><button class="btn btn-sm btn-link p-0">{{ _('Disable') if c.is_active else _('Enable') }}</button></form>{% endif %}</td></tr>
                 {% else %}<tr><td colspan="5" class="text-muted">{{ _('No test cases yet.') }}</td></tr>{% endfor %}</tbody></table></div></div>
         </div>

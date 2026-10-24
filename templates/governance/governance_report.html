@@ -39,7 +39,7 @@
                                     {{ member.status }}
                                 </span>
                             </td>
-                            <td>{{ member.member_type }}</td>
+                            <td>{{ member.member_type|label }}</td>
                             <td>{{ member.appointment_date }}</td>
                             <td>
                                 {% if member.document_path %}

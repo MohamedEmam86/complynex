@@ -3,7 +3,7 @@
 {% block title %}{{ u.reference }} - ComplyNex CMS{% endblock %}
 {% block content %}
 <div class="container-fluid">
-    <h3 class="mb-1">{{ u.reference }} <span class="badge bg-secondary fs-6">{{ u.status }}</span></h3>
+    <h3 class="mb-1">{{ u.reference }} <span class="badge bg-secondary fs-6">{{ u.status|label }}</span></h3>
     <p class="small text-muted">{{ u.source_module }} · {{ u.detection_rule }} · {{ _('detected') }} {{ u.detected_at.strftime('%Y-%m-%d') }} · {{ _('study due') }} {{ u.study_due_date or '-' }}</p>
     {{ aa.nav('amlkyc.unusual') }}
     <div class="row g-3"><div class="col-lg-7">

@@ -13,7 +13,7 @@
         {% for u in rows %}{% set late = u.status in ('candidate', 'under_study') and u.study_due_date and u.study_due_date < today %}
         <tr class="{{ 'table-danger' if late }}"><td><a href="{{ url_for('amlkyc.unusual_item', item_id=u.id) }}">{{ u.reference }}</a></td><td>{{ u.detected_at.strftime('%Y-%m-%d') }}</td>
             <td>{{ u.source_module }} · {{ u.detection_rule }}</td><td>{{ u.subject_name or '-' }} {{ u.subject_ref or '' }}</td><td>{{ (u.description or '')|truncate(90) }}</td>
-            <td>{{ u.study_due_date or '-' }}</td><td>{{ u.status }}</td></tr>
+            <td>{{ u.study_due_date or '-' }}</td><td>{{ u.status|label }}</td></tr>
         {% else %}<tr><td colspan="7" class="text-muted text-center py-3">{{ _('Register is empty.') }}</td></tr>{% endfor %}</tbody></table></div></div>
 </div>
 {% endblock %}

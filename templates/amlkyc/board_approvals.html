@@ -9,7 +9,7 @@
     <div class="card"><div class="table-responsive"><table class="table table-sm mb-0 align-middle small">
         <thead><tr><th>{{ _('Policy') }}</th><th>{{ _('Version') }}</th><th>{{ _('Status') }}</th><th>{{ _('Needs board approval') }}</th><th>{{ _('Board approved (this version)') }}</th><th></th></tr></thead><tbody>
         {% for p in policies %}<tr class="{{ 'table-warning' if p.requires_board_approval and not p.board_approved_on }}">
-            <td>{{ p.policy_number or '' }} {{ p.policy_name }}</td><td>{{ p.version or '-' }}</td><td>{{ p.status }}</td>
+            <td>{{ p.policy_number or '' }} {{ p.policy_name }}</td><td>{{ p.version or '-' }}</td><td>{{ p.status|label }}</td>
             <td>{% if aa_can_edit %}<form method="post" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="policy_id" value="{{ p.id }}"><input type="hidden" name="required" value="{{ '0' if p.requires_board_approval else '1' }}">
                 <button class="btn btn-sm {{ 'btn-primary' if p.requires_board_approval else 'btn-outline-secondary' }}">{{ _('Yes') if p.requires_board_approval else _('No') }}</button></form>{% else %}{{ _('Yes') if p.requires_board_approval else _('No') }}{% endif %}</td>
             <td>{{ p.board_approved_on or '-' }}</td>

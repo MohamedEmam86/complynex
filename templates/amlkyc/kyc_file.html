@@ -6,13 +6,13 @@
     <h3 class="mb-1">{{ name }} <span class="badge bg-secondary fs-6">{{ _('Entity') if st.kind == 'entity' else _('Individual') }}</span></h3>
     <p class="small text-muted"><a href="{{ url_for('amlkyc.kyc_home', subject=code) }}">{{ s.label_ar if get_locale() == 'ar' else s.label_en }}</a>{% if source_link %} · <a href="{{ source_link }}">{{ _('Open the source record') }}</a>{% endif %} · {{ _('complete') }} {{ st.score }}%</p>
     {{ aa.nav('amlkyc.kyc_home') }}
-    {% if blockers %}<div class="alert alert-warning small"><strong>{{ _('Onboarding cannot be approved yet') }}</strong><ul class="mb-0">{% for b in blockers %}<li>{{ b }}</li>{% endfor %}</ul></div>
+    {% if blockers %}<div class="alert alert-warning small"><strong>{{ _('Onboarding cannot be approved yet') }}</strong><ul class="mb-0">{% for b in blockers %}<li>{% if b.startswith('incomplete KYC file: ') %}{{ _('Incomplete KYC file:') }} {{ b[21:].split(', ')|map('label')|join(', ') }}{% else %}{{ _(b) }}{% endif %}</li>{% endfor %}</ul></div>
     {% elif onb.status == 'approved' %}<div class="alert alert-success small">{{ _('Onboarding approved') }} {{ onb.approved_at.strftime('%Y-%m-%d') if onb.approved_at }}</div>{% endif %}
     <div class="row g-3"><div class="col-lg-7">
         <form method="post" class="card mb-3"><div class="card-header"><strong>{{ _('KYC fields') }}</strong></div><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="profile">
             <table class="table table-sm mb-0 small align-middle"><tbody>
             {% for fr in field_rows %}<tr class="{{ 'table-danger' if fr.value is none and fr.f.is_required }}"><td style="width: 35%">{{ fr.f.label_ar if get_locale() == 'ar' and fr.f.label_ar else fr.f.label_en }}{% if fr.f.is_required %} *{% endif %}</td>
-                <td>{% if fr.f.source == 'column' and fr.captured %}{{ fr.value }}{% elif aa_can_edit %}<input name="pf_{{ fr.f.field_key }}" class="form-control form-control-sm" value="{{ fr.profile or '' }}">{% else %}{{ fr.value or '-' }}{% endif %}</td></tr>{% endfor %}</tbody></table>
+                <td>{% if fr.f.source == 'column' and fr.captured %}{{ fr.value|label }}{% elif aa_can_edit %}<input name="pf_{{ fr.f.field_key }}" class="form-control form-control-sm" value="{{ fr.profile or '' }}">{% else %}{{ fr.value|label if fr.value else '-' }}{% endif %}</td></tr>{% endfor %}</tbody></table>
             {% if aa_can_edit %}<div class="card-footer"><button class="btn btn-sm btn-primary">{{ _('Save fields') }}</button> <span class="small text-muted">{{ _('Values held in the source system are shown read-only; others are captured here.') }}</span></div>{% endif %}
         </form>
         {% if st.kind == 'entity' %}
@@ -47,7 +47,7 @@
                 {% if cur %}<p class="mb-1"><span class="badge bg-{{ {'high': 'danger', 'medium': 'warning text-dark', 'low': 'success'}.get(cur.band, 'secondary') }} fs-6">{{ cur.band }} · {{ cur.score }}</span> {{ cur.rated_at.strftime('%Y-%m-%d') }} · {{ cur.trigger }}</p>
                     <p class="mb-2 {{ 'text-danger' if cur.next_review_date and cur.next_review_date < today }}">{{ _('Next review') }}: {{ cur.next_review_date or _('cycle not set') }}</p>
                     <table class="table table-sm mb-0"><thead><tr><th>{{ _('Factor') }}</th><th>{{ _('Value') }}</th><th class="text-end">{{ _('Score') }}</th><th class="text-end">{{ _('Weight') }}</th></tr></thead><tbody>
-                    {% for b in cur.factors %}<tr><td>{{ b.factor }}</td><td>{{ b.value if b.value is not none else '-' }}</td><td class="text-end">{{ b.score }}</td><td class="text-end">{{ b.weight }}</td></tr>{% endfor %}</tbody></table>
+                    {% for b in cur.factors %}<tr><td>{{ b.factor|label }}</td><td>{{ b.value|label if b.value is not none else '-' }}</td><td class="text-end">{{ b.score }}</td><td class="text-end">{{ b.weight }}</td></tr>{% endfor %}</tbody></table>
                 {% else %}<p class="text-danger mb-0">{{ _('Not rated.') }}</p>{% endif %}
             </div></div>
         <form method="post" class="card mb-3"><div class="card-header"><strong>{{ _('Enhanced due diligence') }}</strong> {% if onb.edd_completed %}<span class="badge bg-success">{{ _('complete') }}</span>{% endif %}</div><div class="card-body small">

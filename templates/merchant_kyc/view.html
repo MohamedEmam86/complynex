@@ -73,8 +73,7 @@
             <form method="POST" action="{{ url_for('merchant_kyc.send_kyc_link', id=merchant.id) }}" class="d-inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-sm btn-info text-white">
-                    <i class="bi bi-send"></i> {% if merchant.kyc_sent_at %}Resend KYC Form{% else %}Send KYC Form{%
-                    endif %}
+                    <i class="bi bi-send"></i> {% if merchant.kyc_sent_at %}{{ _('Resend KYC Form') }}{% else %}{{ _('Send KYC Form') }}{% endif %}
                 </button>
             </form>
             {% endif %}
@@ -107,7 +106,7 @@
             <i class="bi bi-link-45deg me-2 fs-5"></i>
             <h6 class="mb-0 flex-grow-1">{{ _('Merchant KYC Onboarding Form Link') }}</h6>
             {% if merchant.kyc_sent_at %}
-            <small class="ms-2"><i class="bi bi-clock me-1"></i>Sent: {{ merchant.kyc_sent_at }}</small>
+            <small class="ms-2"><i class="bi bi-clock me-1"></i>{{ _('Sent:') }} {{ merchant.kyc_sent_at }}</small>
             {% endif %}
         </div>
         <div class="card-body py-2">
@@ -192,11 +191,11 @@
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted d-block">{{ _('Last Screened') }}</small>
-                    <strong>{{ merchant.last_screening_date or 'Never' }}</strong>
+                    <strong>{{ merchant.last_screening_date or _('Never') }}</strong>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted d-block">{{ _('Internal Ref') }}</small>
-                    <strong>{{ merchant.internal_reference_number or 'Not assigned' }}</strong>
+                    <strong>{{ merchant.internal_reference_number or _('Not assigned') }}</strong>
                 </div>
             </div>
             {% if merchant.pep_status %}
@@ -225,27 +224,27 @@
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Trade Name') }}</td>
-                            <td>{{ merchant.trade_name or 'N/A' }}</td>
+                            <td>{{ merchant.trade_name or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('CR Number') }}</td>
-                            <td><code>{{ merchant.cr_number or 'N/A' }}</code></td>
+                            <td><code>{{ merchant.cr_number or _('N/A') }}</code></td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Tax ID') }}</td>
-                            <td>{{ merchant.tax_id or 'N/A' }}</td>
+                            <td>{{ merchant.tax_id or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Business Type') }}</td>
-                            <td>{{ merchant.business_type|kyc_label('legal_form') if merchant.business_type else 'N/A' }}</td>
+                            <td>{{ merchant.business_type|kyc_label('legal_form') if merchant.business_type else _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Industry') }}</td>
-                            <td>{{ merchant.industry or 'N/A' }}</td>
+                            <td>{{ merchant.industry or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Website') }}</td>
-                            <td>{{ merchant.website or 'N/A' }}</td>
+                            <td>{{ merchant.website or _('N/A') }}</td>
                         </tr>
                     </table>
                 </div>
@@ -262,27 +261,27 @@
                     <table class="table table-sm table-borderless mb-0">
                         <tr>
                             <td class="text-muted" style="width:40%">{{ _('Contact Person') }}</td>
-                            <td>{{ merchant.contact_person or 'N/A' }}</td>
+                            <td>{{ merchant.contact_person or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Email') }}</td>
-                            <td>{{ merchant.contact_email or 'N/A' }}</td>
+                            <td>{{ merchant.contact_email or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Phone') }}</td>
-                            <td>{{ merchant.contact_phone or 'N/A' }}</td>
+                            <td>{{ merchant.contact_phone or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Address') }}</td>
-                            <td>{{ merchant.address or 'N/A' }}</td>
+                            <td>{{ merchant.address or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('City') }}</td>
-                            <td>{{ merchant.city or 'N/A' }}</td>
+                            <td>{{ merchant.city or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Country') }}</td>
-                            <td>{{ merchant.country or 'N/A' }}</td>
+                            <td>{{ merchant.country or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('GPS Location') }}</td>
@@ -343,15 +342,15 @@
                     <table class="table table-sm table-borderless mb-0">
                         <tr>
                             <td class="text-muted" style="width:40%">{{ _('Bank Name') }}</td>
-                            <td>{{ merchant.bank_name or 'N/A' }}</td>
+                            <td>{{ merchant.bank_name or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Account Number') }}</td>
-                            <td>{{ merchant.bank_account_number or 'N/A' }}</td>
+                            <td>{{ merchant.bank_account_number or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('IBAN') }}</td>
-                            <td>{{ merchant.iban or 'N/A' }}</td>
+                            <td>{{ merchant.iban or _('N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Risk Level') }}</td>
@@ -405,7 +404,7 @@
     {% if documents %}
     <div class="card mb-4">
         <div class="card-header bg-secondary text-white">
-            <h6 class="mb-0"><i class="bi bi-paperclip"></i> Attached Documents ({{ documents|length }})</h6>
+            <h6 class="mb-0"><i class="bi bi-paperclip"></i> {{ _('Attached Documents') }} ({{ documents|length }})</h6>
         </div>
         <div class="card-body p-0">
             <table class="table table-sm table-striped mb-0">
@@ -415,7 +414,7 @@
                         <th>{{ _('Type') }}</th>
                         <th>{{ _('Size') }}</th>
                         <th>{{ _('Uploaded') }}</th>
-                        <th>By</th>
+                        <th>{{ _('Uploaded by') }}</th>
                         <th class="no-print" style="width:100px">{{ _('Actions') }}</th>
                     </tr>
                 </thead>
@@ -423,10 +422,10 @@
                     {% for doc in documents %}
                     <tr>
                         <td><i class="bi bi-file-earmark-text"></i> {{ doc.original_filename }}</td>
-                        <td><span class="badge bg-info text-dark">{{ doc.doc_type or 'Other' }}</span></td>
-                        <td>{{ (doc.file_size / 1024)|round(1) }} KB</td>
+                        <td><span class="badge bg-info text-dark">{{ _(doc.doc_type) if doc.doc_type else _('Other') }}</span></td>
+                        <td>{{ (doc.file_size / 1024)|round(1) }} {{ _('KB') }}</td>
                         <td>{{ doc.uploaded_at }}</td>
-                        <td>{{ doc.uploaded_by or 'N/A' }}</td>
+                        <td>{{ _('Merchant (online form)') if doc.uploaded_by == 'public' else (doc.uploaded_by or _('N/A')) }}</td>
                         <td class="no-print">
                             <a href="{{ url_for('merchant_kyc.download_document', doc_id=doc.id) }}"
                                 class="btn btn-sm btn-outline-primary" title="{{ _('Download') }}"><i
