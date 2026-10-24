@@ -221,6 +221,22 @@ def scoring(pillar_code):
             return redirect(url_for('esg.scoring', pillar_code=pillar_code))
 
         indicators = query_db("SELECT * FROM esg_indicators WHERE pillar_id = %s", (pillar['id'],)) or []
+        # Validate every score first: one bad value rejects the whole form, so no
+        # stored score is changed or cleared by a partial save.
+        bad = []
+        for ind in indicators:
+            raw = (request.form.get(f"score_{ind['id']}") or '').strip()
+            if raw:
+                try:
+                    ok = 1 <= float(raw) <= 5
+                except ValueError:
+                    ok = False
+                if not ok:
+                    bad.append(ind.get('code') or ind.get('name') or str(ind['id']))
+        if bad:
+            flash(_('Scores must be between 1 and 5 (check: %(items)s). Nothing was saved.',
+                    items=', '.join(bad)), 'danger')
+            return redirect(url_for('esg.scoring', pillar_code=pillar_code))
         for ind in indicators:
             if f"metric_{ind['id']}" in request.form:   # which carbon figure feeds this indicator (display only)
                 try:
@@ -228,9 +244,9 @@ def scoring(pillar_code):
                                (_metric_from_form(request.form.get(f"metric_{ind['id']}")), ind['id']))
                 except Exception:
                     get_db().rollback()
-            score_raw = request.form.get(f"score_{ind['id']}")
+            score_raw = (request.form.get(f"score_{ind['id']}") or '').strip()
             notes = request.form.get(f"notes_{ind['id']}") or None
-            if score_raw in (None, ''):
+            if score_raw == '':
                 continue
             score = float(score_raw)
             existing = query_db(

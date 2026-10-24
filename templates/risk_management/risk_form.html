@@ -101,8 +101,8 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">{{ _('Reason for change') }}</label>
-                    <input type="text" name="change_reason" class="form-control">
+                    <label class="form-label">{{ _('Reason for change') }} <span class="text-danger">*</span></label>
+                    <input type="text" name="change_reason" class="form-control" required>
                 </div>
                 {% endif %}
 

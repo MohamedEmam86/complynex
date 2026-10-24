@@ -7,7 +7,7 @@
     {{ pn.nav('prudential.related_parties') }}
     <div class="row g-3"><div class="col-lg-4">
         <div class="card mb-3"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Party') }}</th><th>{{ _('Relation') }}</th><th class="text-end">{{ _('Items') }}</th></tr></thead><tbody>
-            {% for p in parties %}<tr><td>{{ p.name }}{% if p.ownership_pct %} <span class="text-muted">{{ p.ownership_pct }}%</span>{% endif %}</td><td>{{ p.relation }}{% if p.exited_on %} ({{ p.exited_on }}){% endif %}</td><td class="text-end">{{ p.items }}</td></tr>
+            {% for p in parties %}<tr><td>{{ p.name }}{% if p.ownership_pct %} <span class="text-muted">{{ p.ownership_pct }}%</span>{% endif %}</td><td>{{ p.relation }}{% if p.exited_on %} ({{ p.exited_on }}){% endif %}</td><td class="text-end">{{ p['items'] }}</td></tr>
             {% else %}<tr><td colspan="3" class="text-muted">{{ _('No related parties.') }}</td></tr>{% endfor %}</tbody></table></div>
         {% if pr_can_edit %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Add a related party') }}</strong></div><div class="card-body row g-1 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="party">
             <div class="col-12"><input name="name" class="form-control form-control-sm" placeholder="{{ _('Name') }}" required></div>

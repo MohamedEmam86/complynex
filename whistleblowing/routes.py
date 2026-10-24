@@ -59,6 +59,29 @@ def _eligible_assignees(case):
     from models.user import User
     return [User._from_row(r) for r in rows if not reporter or r['id'] != reporter]
 
+MIN_DESCRIPTION_LENGTH = 50
+SEVERITIES = ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')
+CASE_STATUSES = ('SUBMITTED', 'UNDER_REVIEW', 'INVESTIGATING', 'ESCALATED', 'RESOLVED', 'DISMISSED')
+
+
+def _validate_submission(data):
+    """Server-side checks the browser form already makes, so a direct POST cannot
+    bypass them. Normalises incident_type / severity in place; returns an error
+    message or None."""
+    if len((data.get('description') or '').strip()) < MIN_DESCRIPTION_LENGTH:
+        return _('Description must be at least 50 characters.')
+    codes = {(c.get('category_code') or '').upper(): c.get('category_code')
+             for c in WhistleblowingCategory.get_all_categories()}
+    incident_type = codes.get((data.get('incident_type') or '').strip().upper())
+    if not incident_type:
+        return _('Invalid incident type.')
+    data['incident_type'] = incident_type
+    severity = (data.get('severity') or WhistleblowingCase.SEVERITY_MEDIUM).strip().upper()
+    if severity not in SEVERITIES:
+        return _('Invalid severity.')
+    data['severity'] = severity
+    return None
+
 # ============================================
 # PUBLIC ROUTES (Anonymous Access - No Login Required)
 # ============================================
@@ -163,6 +186,10 @@ def public_report():
                 'success': False,
                 'error': _('Please provide title, description, and incident type')
             }), 200
+
+        err = _validate_submission(data)
+        if err:
+            return jsonify({'success': False, 'error': err}), 400
         
         # Validate description length
         if len(data.get('description', '')) < 50:
@@ -249,6 +276,10 @@ def submit_case():
                 'success': False,
                 'error': _('Please provide title, description, and incident type')
             }), 200
+
+        err = _validate_submission(data)
+        if err:
+            return jsonify({'success': False, 'error': err}), 400
         
         # Create case
         result = WhistleblowingCase.create(
@@ -329,7 +360,7 @@ def track_case():
         return render_template('whistleblowing/track.html')
     
     # POST - Retrieve case
-    anonymous_code = request.form.get('anonymous_code')
+    anonymous_code = (request.form.get('anonymous_code') or '').strip().upper()
     
     if not anonymous_code:
         flash(_('Please enter your case tracking code.'), 'warning')
@@ -362,11 +393,48 @@ def dashboard():
     # Get statistics
     stats = WhistleblowingCase.get_statistics()
     
-    # Get recent cases
-    filters = {'status': request.args.get('status')} if request.args.get('status') else None
-    cases = WhistleblowingCase.get_all_cases(filters=filters, limit=20)
-    
-    return render_template('whistleblowing/dashboard.html', stats=stats, cases=cases)
+    filters = _case_filters()
+    cases = WhistleblowingCase.get_all_cases(filters=filters or None, limit=200 if filters else 20)
+
+    return render_template('whistleblowing/dashboard.html', stats=stats, cases=cases,
+                           filters=filters, statuses=CASE_STATUSES,
+                           categories=WhistleblowingCategory.get_all_categories())
+
+
+def _case_filters():
+    """Status / type filters from the query string (unknown values ignored)."""
+    f = {}
+    status = (request.args.get('status') or '').strip().upper()
+    if status in CASE_STATUSES:
+        f['status'] = status
+    itype = (request.args.get('incident_type') or '').strip()
+    if itype:
+        f['incident_type'] = itype
+    return f
+
+
+@whistleblowing_bp.route('/cases/export')
+@login_required
+@permission_required('whistleblowing')
+def export_cases():
+    """CSV of the (filtered) case list. Excel-friendly UTF-8 with BOM.
+
+    Only register-level fields — no description, reporter identity or codes."""
+    import csv
+    from flask import Response
+    cases = WhistleblowingCase.get_all_cases(filters=_case_filters() or None, limit=10000)
+    out = io.StringIO()
+    w = csv.writer(out)
+    w.writerow([_('Case #'), _('Title'), _('Type'), _('Severity'), _('Status'),
+                _('Anonymity'), _('Assigned to'), _('Submitted'), _('Resolved')])
+    for c in cases:
+        w.writerow([c.get('case_number'), c.get('title'), c.get('incident_type'),
+                    c.get('severity'), c.get('status'),
+                    _('Anonymous') if c.get('is_anonymous') else _('Named'),
+                    (c.get('assigned_to_name') or '').strip(), c.get('submitted_at'),
+                    c.get('resolved_at') or ''])
+    return Response(out.getvalue().encode('utf-8-sig'), mimetype='text/csv; charset=utf-8',
+                    headers={'Content-Disposition': 'attachment; filename=whistleblowing_cases.csv'})
 
 
 @whistleblowing_bp.route('/case/<int:case_id>')
@@ -393,11 +461,58 @@ def view_case(case_id):
     # Only whistleblowing-permitted staff, never the reporter
     users = _eligible_assignees(case)
     
+    assigned_to_name = None
+    if case.get('assigned_to'):
+        row = db.execute("SELECT first_name, last_name, email FROM users WHERE id = %s",
+                         (case['assigned_to'],)).fetchone()
+        if row:
+            assigned_to_name = (f"{row['first_name'] or ''} {row['last_name'] or ''}".strip()
+                                or row['email'])
+
     return render_template('whistleblowing/case_detail.html', 
                            case=case, 
                            attachments=attachments,
                            updates=case.get('updates', []),
-                           users=users)
+                           users=users,
+                           assigned_to_name=assigned_to_name)
+
+
+@whistleblowing_bp.route('/case/<int:case_id>/resolve', methods=['POST'])
+@login_required
+@permission_required('whistleblowing', level='edit')
+def resolve_case_form(case_id):
+    """'Mark as Resolved' modal: stores the resolution and sets RESOLVED."""
+    summary = (request.form.get('resolution_summary') or '').strip()
+    action = (request.form.get('resolution_action') or '').strip()
+    if not summary or not action:
+        flash(_('Resolution summary and action taken are both required.'), 'warning')
+        return redirect(url_for('whistleblowing.view_case', case_id=case_id))
+    if not WhistleblowingCase.get_by_id(case_id):
+        flash(_('Case not found.'), 'error')
+        return redirect(url_for('whistleblowing.dashboard'))
+    WhistleblowingCase.resolve_case(case_id=case_id, resolution_summary=summary,
+                                    resolution_action=action, resolved_by=current_user.id)
+    flash(_('Case resolved successfully'), 'success')
+    return redirect(url_for('whistleblowing.view_case', case_id=case_id))
+
+
+@whistleblowing_bp.route('/case/<int:case_id>/escalate', methods=['POST'])
+@login_required
+@permission_required('whistleblowing', level='edit')
+def escalate_case(case_id):
+    """'Escalate to HR/Legal': status ESCALATED with a mandatory note."""
+    note = (request.form.get('note') or '').strip()
+    if not note:
+        flash(_('Please explain why the case is being escalated.'), 'warning')
+        return redirect(url_for('whistleblowing.view_case', case_id=case_id))
+    ok = WhistleblowingCase.update_status(
+        case_id=case_id, new_status=WhistleblowingCase.STATUS_ESCALATED,
+        updated_by=current_user.id, note=_('Escalated to HR/Legal') + ': ' + note)
+    if not ok:
+        flash(_('Case not found.'), 'error')
+        return redirect(url_for('whistleblowing.dashboard'))
+    flash(_('Case escalated to HR/Legal.'), 'success')
+    return redirect(url_for('whistleblowing.view_case', case_id=case_id))
 
 @whistleblowing_bp.route('/case/<int:case_id>/update', methods=['POST'])
 @login_required
@@ -702,7 +817,16 @@ def my_case_status(case_id):
 @permission_required('whistleblowing', level='edit')
 def case_assignment(case_id):
     from services import whistleblowing_service as W
-    target = request.form.get('assigned_to') or None
+    try:
+        sla_days = int(request.form.get('sla_days') or W.DEFAULT_SLA_DAYS)
+    except ValueError:
+        sla_days = 0
+    if sla_days < 1:
+        flash(_('SLA must be at least 1 day.'), 'danger')
+        return redirect(url_for('whistleblowing.view_case', case_id=case_id))
+    assigned_to = request.form.get('assigned_to') or None
+    action = request.form.get('action_type') or 'assign'
+    target = assigned_to
     if target:
         case = WhistleblowingCase.get_by_id(case_id)
         if not case:
@@ -713,13 +837,22 @@ def case_assignment(case_id):
             return redirect(url_for('whistleblowing.view_case', case_id=case_id))
     ok, msg = W.assign(
         case_id,
-        request.form.get('assigned_to') or None,
+        assigned_to,
         current_user.id,
-        action=request.form.get('action_type') or 'assign',
+        action=action,
         reason=request.form.get('reason'),
         comments=request.form.get('comments'),
         to_org_unit_id=request.form.get('to_org_unit_id') or None,
-        sla_days=int(request.form.get('sla_days') or 5))
+        sla_days=sla_days)
+    if ok:
+        # Investigation history entry (internal only — never shown to the reporter).
+        owner = W.current_owner(case_id) or {}
+        name = f"{owner.get('first_name') or ''} {owner.get('last_name') or ''}".strip()
+        text = f"{W.ACTIONS.get(action, action)}: {name or assigned_to}"
+        if (request.form.get('reason') or '').strip():
+            text += f" — {request.form.get('reason').strip()}"
+        WhistleblowingCase.add_update(case_id=case_id, update_type='ASSIGNMENT', update_text=text,
+                                      created_by=current_user.id, visible_to_submitter=False)
     flash(msg, 'success' if ok else 'danger')
     return redirect(url_for('whistleblowing.view_case', case_id=case_id))
 

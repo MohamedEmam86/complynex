@@ -23,6 +23,9 @@
                     <dt class="col-sm-3">{{ _('Target Date') }}</dt><dd class="col-sm-9">{{ finding.target_date or '-' }}</dd>
                     <dt class="col-sm-3">{{ _('Management Response') }}</dt><dd class="col-sm-9">{{ finding.management_response or '-' }}</dd>
                     <dt class="col-sm-3">{{ _('Agreed Action') }}</dt><dd class="col-sm-9">{{ finding.agreed_action or '-' }}</dd>
+                    {% if finding.remediation_note %}
+                    <dt class="col-sm-3">{{ _('Remediation evidence') }}</dt><dd class="col-sm-9">{{ finding.remediation_note }}{% if finding.remediated_at %} <small class="text-muted">({{ finding.remediated_at.strftime('%Y-%m-%d') }})</small>{% endif %}</dd>
+                    {% endif %}
                     {% if verifier %}
                     <dt class="col-sm-3">{{ _('Verified By') }}</dt><dd class="col-sm-9">{{ verifier.first_name }} {{ verifier.last_name }} ({{ finding.verified_at }})</dd>
                     <dt class="col-sm-3">{{ _('Verification Notes') }}</dt><dd class="col-sm-9">{{ finding.verification_notes or '-' }}</dd>
@@ -53,6 +56,8 @@
             {% elif finding.status == 'MANAGEMENT_RESPONSE_RECEIVED' %}
             <form method="post" action="{{ url_for('internal_audit.finding_remediate', finding_id=finding.id) }}" class="mb-3">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-2"><textarea name="remediation_note" class="form-control" rows="2" required
+                    placeholder="{{ _('What was done and where is the evidence (attach files below)') }}"></textarea></div>
                 <button type="submit" class="btn btn-sm btn-outline-primary">{{ _('Mark Remediation Complete') }}</button>
             </form>
             {% elif finding.status == 'REMEDIATED_PENDING_VERIFICATION' %}

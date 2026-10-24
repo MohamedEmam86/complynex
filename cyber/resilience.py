@@ -128,6 +128,12 @@ def add_dr_test(data, user_id, db=None):
     d = _date(data.get('test_date'))
     if not d or data.get('result') not in ('pass', 'partial', 'fail'):
         raise ResilienceError(N_('test date and result are required'))
+    if d > date.today():
+        raise ResilienceError(N_('the test date cannot be in the future'))
+    for k in ('rto_achieved_hours', 'rpo_achieved_hours'):
+        v = _num(data.get(k))
+        if v is not None and v < 0:
+            raise ResilienceError(N_('RTO and RPO cannot be negative'))
     tid = db.execute("""INSERT INTO cy_dr_tests (site_id, test_date, scope, result, rto_achieved_hours, rpo_achieved_hours,
                         issues, created_by) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
                      (data.get('site_id') or None, d, data.get('scope') or None, data['result'],
@@ -398,6 +404,19 @@ def maturity_scores(assessment_id, db=None):
                         ORDER BY q.sort_order, q.id""", (assessment_id,))
 
 
+def _level(v):
+    """A maturity level: empty, or a whole number 0-5 (the DB check constraint)."""
+    if v in (None, ''):
+        return None
+    try:
+        n = int(str(v).strip())
+    except ValueError:
+        raise ResilienceError(N_('maturity levels must be whole numbers from 0 to 5'))
+    if not 0 <= n <= 5:
+        raise ResilienceError(N_('maturity levels must be whole numbers from 0 to 5'))
+    return n
+
+
 def save_maturity(assessment_id, levels, finalise=False, db=None):
     """levels: {requirement_id: (current, target, note)}."""
     db = db or get_db()
@@ -406,11 +425,11 @@ def save_maturity(assessment_id, levels, finalise=False, db=None):
         raise ResilienceError(N_('assessment not found'))
     if a['status'] == 'final':
         raise ResilienceError(N_('a final assessment cannot be changed'))
-    for rid, (cur, tgt, note) in levels.items():
+    parsed = {rid: (_level(cur), _level(tgt), note) for rid, (cur, tgt, note) in levels.items()}
+    for rid, (cur, tgt, note) in parsed.items():
         db.execute("""UPDATE cy_maturity_scores SET current_level = %s, target_level = %s, note = %s
                       WHERE assessment_id = %s AND requirement_id = %s""",
-                   (None if cur in (None, '') else int(cur), None if tgt in (None, '') else int(tgt), note or None,
-                    assessment_id, rid))
+                   (cur, tgt, note or None, assessment_id, rid))
     if finalise:
         if db.execute("SELECT count(*) AS n FROM cy_maturity_scores WHERE assessment_id = %s AND current_level IS NULL",
                       (assessment_id,)).fetchone()['n']:

@@ -10,9 +10,11 @@
         <h1 class="h2">{{ _('Cybersecurity Incident Management') }}</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
             <a href="{{ url_for('cyber.res_dashboard') }}" class="btn btn-sm btn-outline-primary me-2">{{ _('IT resilience') }}</a>
+            {% if current_user.can_edit('cyber') %}
             <a href="{{ url_for('cyber.report_incident') }}" class="btn btn-sm btn-danger pulse-button">
                 <i class="bi bi-shield-slash"></i> {{ _('Report New Incident') }}
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -75,7 +77,7 @@
                     <tbody>
                         {% for inc in active_incidents %}
                         <tr>
-                            <td><code>{{ inc.incident_number }}</code></td>
+                            <td><a href="{{ url_for('cyber.incident_detail', incident_id=inc.id) }}"><code>{{ inc.incident_number }}</code></a></td>
                             <td>{{ inc.incident_type }}</td>
                             <td>
                                 <span
@@ -95,7 +97,7 @@
                                 <span class="badge bg-secondary">{{ inc.status }}</span>
                             </td>
                             <td>
-                                <a href="#" class="btn btn-sm btn-outline-danger">{{ _('Response Hub') }}</a>
+                                <a href="{{ url_for('cyber.incident_detail', incident_id=inc.id) }}" class="btn btn-sm btn-outline-danger">{{ _('Response Hub') }}</a>
                             </td>
                         </tr>
                         {% else %}

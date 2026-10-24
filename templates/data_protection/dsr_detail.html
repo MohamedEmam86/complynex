@@ -96,7 +96,7 @@
                         <li class="list-group-item px-0">
                             <div class="d-flex justify-content-between">
                                 <span class="fw-bold text-primary small">{{ event.action_type }}</span>
-                                <span class="text-muted smaller">{{ event.action_date }}</span>
+                                <span class="text-muted smaller">{{ event.action_date or '—' }}</span>
                             </div>
                             <div class="small">{{ event.action_description }}</div>
                             <div class="smaller text-muted">By: {{ event.user_name }}</div>

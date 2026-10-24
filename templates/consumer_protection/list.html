@@ -29,6 +29,9 @@
                         <option value="CLOSED" {% if request.args.get('status')=='CLOSED' %}selected{% endif %}>{{
                             _("Closed") }}</option>
                     </select>
+                    <input type="search" name="q" value="{{ q or '' }}" class="form-control mr-2 d-inline-block w-auto"
+                        placeholder="{{ _('Search reference or name') }}" aria-label="{{ _('Search reference or name') }}">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">{{ _('Search') }}</button>
                 </form>
             </div>
 
@@ -36,7 +39,7 @@
                 <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
-                            <th>{{ _("PIN") }}</th>
+                            <th>{{ _("Reference") }}</th>
                             <th>{{ _("Date") }}</th>
                             <th>{{ _("Category") }}</th>
                             <th>{{ _("Customer") }}</th>
@@ -48,7 +51,7 @@
                     <tbody>
                         {% for complaint in complaints %}
                         <tr>
-                            <td>{{ complaint.complaint_pin }}</td>
+                            <td>CP-{{ complaint.id }}</td>
                             <td>{{ complaint.created_at.strftime('%Y-%m-%d') if complaint.created_at is not string else
                                 complaint.created_at[:10] }}</td>
                             <td>{{ _(complaint.complaint_category) }}</td>

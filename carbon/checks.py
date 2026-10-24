@@ -107,7 +107,7 @@ def verification(ctx):
 def offsets(ctx):
     rows = [dict(r) for r in ctx.db.execute("""
         SELECT o.*, COALESCE((SELECT sum(quantity_tco2e) FROM carbon_offset_purchases x WHERE x.obligation_id = o.id), 0) AS bought
-        FROM carbon_offset_obligations o ORDER BY o.deadline_date""").fetchall()]
+        FROM carbon_offset_obligations o WHERE o.status <> 'CANCELLED' ORDER BY o.deadline_date""").fetchall()]
     if not rows:
         return ctx.not_applicable('No offset obligation')
     late = [o for o in rows if float(o['bought']) < float(o['required_tco2e'] or 0) and o['deadline_date'] < ctx.as_of]

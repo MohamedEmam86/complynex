@@ -115,6 +115,9 @@
                             {% if breach.pdpc_notification_required %}
                             <span class="badge bg-danger">{{ _('REQUIRED') }}</span>
                             <div class="text-danger small mt-1">{{ _('Must notify within 72h of discovery.') }}</div>
+                            {% if notification_overdue %}
+                            <span class="badge bg-danger mt-1">{{ _('Overdue (72h passed)') }}</span>
+                            {% endif %}
                             {% else %}
                             <span class="badge bg-secondary">{{ _('NOT REQUIRED') }}</span>
                             {% endif %}

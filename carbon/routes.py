@@ -453,7 +453,7 @@ def _fra_context():
     days_left = None
     if period:
         obligation = query_db(
-            "SELECT * FROM carbon_offset_obligations WHERE reporting_period_id = %s",
+            "SELECT * FROM carbon_offset_obligations WHERE reporting_period_id = %s AND status <> 'CANCELLED'",
             (period['id'],), one=True)
         if obligation:
             purchases = query_db(
@@ -552,9 +552,20 @@ def fra_status():
         flash(_('Invalid status.'), 'error')
         return redirect(url_for('carbon.fra_compliance'))
 
-    verifier_name = request.form.get('verifier_name') or None
+    verifier_name = (request.form.get('verifier_name') or '').strip() or None
     verifier_contact = request.form.get('verifier_contact') or None
     notes = request.form.get('verification_notes') or None
+
+    # A certified or submitted report must rest on an approved inventory and a
+    # named independent verifier.
+    if new_status in ('Certified', 'Submitted'):
+        from carbon.service import workflow
+        if (workflow(period['id']) or {}).get('status') != 'approved':
+            flash(_('Approve the emissions inventory (workflow) before marking the report %(s)s.', s=_(new_status)), 'error')
+            return redirect(url_for('carbon.fra_compliance'))
+        if not (verifier_name or period.get('verifier_name')):
+            flash(_('Name the independent verifier before marking the report %(s)s.', s=_(new_status)), 'error')
+            return redirect(url_for('carbon.fra_compliance'))
 
     sets = ["fra_status = %s"]
     params = [new_status]
@@ -587,9 +598,17 @@ def fra_status():
         pct = float(_param('carbon.offset_pct', 20))
         days = int(_param('carbon.offset_deadline_days', 90))
         required = round(total * pct / 100.0, 3)
-        existing = query_db("SELECT id FROM carbon_offset_obligations WHERE reporting_period_id = %s",
+        existing = query_db("SELECT id, status FROM carbon_offset_obligations WHERE reporting_period_id = %s",
                             (period['id'],), one=True)
-        if not existing:
+        if existing and existing['status'] == 'CANCELLED':
+            # Re-submitted after a revert: the cancelled obligation starts again.
+            execute_db("""
+                UPDATE carbon_offset_obligations SET total_emissions_tco2e = %s, offset_pct = %s, required_tco2e = %s,
+                    report_submitted_date = CURRENT_DATE, deadline_date = CURRENT_DATE + %s, status = 'OPEN'
+                WHERE id = %s""", (total, pct, required, days, existing['id']))
+            flash(_('Report marked as submitted. Offset obligation created: %(req)s tCO2e (%(pct)s%%) due within %(days)s days.',
+                    req=required, pct=pct, days=days), 'info')
+        elif not existing:
             execute_db("""
                 INSERT INTO carbon_offset_obligations
                     (reporting_period_id, total_emissions_tco2e, offset_pct, required_tco2e,
@@ -598,6 +617,18 @@ def fra_status():
             """, (period['id'], total, pct, required, days, current_user.id))
             flash(_('Report marked as submitted. Offset obligation created: %(req)s tCO2e (%(pct)s%%) due within %(days)s days.',
                     req=required, pct=pct, days=days), 'info')
+
+    # Back to Draft: the report is no longer submitted, so the offset obligation
+    # its submission created is cancelled (kept, with any purchases, for the record).
+    if new_status == 'Draft':
+        cancelled = query_db("SELECT id FROM carbon_offset_obligations WHERE reporting_period_id = %s "
+                             "AND status <> 'CANCELLED'", (period['id'],), one=True)
+        if cancelled:
+            execute_db("UPDATE carbon_offset_obligations SET status = 'CANCELLED' WHERE id = %s", (cancelled['id'],))
+        execute_db("UPDATE esg_reporting_periods SET submitted_to_fra_at = NULL, certified_at = NULL WHERE id = %s",
+                   (period['id'],))
+        if cancelled:
+            flash(_('The offset obligation created by the submission was cancelled.'), 'info')
 
     AuditLog.log(current_user.id, 'UPDATE', module='carbon',
                  details=f"FRA report status -> {new_status} (period {period['label']})")
@@ -610,8 +641,8 @@ def fra_status():
 @permission_required('carbon', level='edit')
 def fra_offset_purchase():
     period = _current_period()
-    obligation = query_db("SELECT * FROM carbon_offset_obligations WHERE reporting_period_id = %s",
-                          (period['id'],), one=True) if period else None
+    obligation = query_db("SELECT * FROM carbon_offset_obligations WHERE reporting_period_id = %s "
+                          "AND status <> 'CANCELLED'", (period['id'],), one=True) if period else None
     if not obligation:
         flash(_('No open offset obligation - submit the FRA report first.'), 'warning')
         return redirect(url_for('carbon.fra_compliance'))

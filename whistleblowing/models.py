@@ -51,6 +51,7 @@ class WhistleblowingCase:
     STATUS_INVESTIGATING = 'INVESTIGATING'
     STATUS_RESOLVED = 'RESOLVED'
     STATUS_DISMISSED = 'DISMISSED'
+    STATUS_ESCALATED = 'ESCALATED'
     
     # Severity levels
     SEVERITY_LOW = 'LOW'
@@ -278,6 +279,11 @@ class WhistleblowingCase:
         every case (including non-anonymous ones) just by walking WB-YYYY-#### values.
         """
         db = get_db()
+        # Codes are generated upper-case (WB-ABC-123-XYZ); people paste them with
+        # stray spaces or type them in lower case.
+        anonymous_code = (anonymous_code or '').strip().upper()
+        if not anonymous_code:
+            return None
 
         case = db.execute(
             """SELECT * FROM whistleblowing_cases

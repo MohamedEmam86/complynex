@@ -317,6 +317,15 @@ class RegulatoryReportSubmission:
         self.regulator_name = kwargs.get('regulator_name')
         self.regulatory_reference = kwargs.get('regulatory_reference')
 
+    STATUSES = ('pending', 'in_progress', 'submitted', 'late')
+
+    @property
+    def is_overdue(self):
+        """Due date passed and the report has not been submitted."""
+        if self.status == 'submitted' or not self.due_date:
+            return False
+        return str(self.due_date)[:10] < date.today().isoformat()
+
     @staticmethod
     def get_all(status=None):
         db = get_db()
@@ -399,10 +408,14 @@ class RegulatoryReportSubmission:
         db.commit()
         return cursor.fetchone()['id']
 
-    def update_status(self, status, user_id, submission_date=None, reference=None, notes=None):
+    def update_status(self, status, user_id, submission_date=None, reference=None, notes=None,
+                      attachment_path=None):
         db = get_db()
         sql = "UPDATE regulatory_report_submissions SET status = %s, updated_at = CURRENT_TIMESTAMP"
         params = [status]
+        if attachment_path:
+            sql += ", attachment_path = %s"
+            params.append(attachment_path)
         
         if status == 'submitted':
             sql += ", submission_date = %s, submission_reference = %s, approved_by = %s"

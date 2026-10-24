@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Incident') }} {{ inc.incident_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <nav aria-label="{{ _('breadcrumb') }}">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('cyber.dashboard') }}">{{ _('Cybersecurity Incident Management') }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ inc.incident_number }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ _('Incident') }} <code>{{ inc.incident_number }}</code></h5>
+                    <span class="badge {% if inc.status in ('RESOLVED', 'CLOSED') %}bg-success{% elif inc.status == 'CONTAINED' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ _(inc.status or 'NEW') }}</span>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">{{ _('Incident Type') }}</dt><dd class="col-sm-8">{{ inc.incident_type or '—' }}</dd>
+                        <dt class="col-sm-4">{{ _('Severity') }}</dt><dd class="col-sm-8">{{ inc.severity or '—' }}</dd>
+                        <dt class="col-sm-4">{{ _('Discovery') }}</dt><dd class="col-sm-8">{{ inc.discovery_date or '—' }}</dd>
+                        <dt class="col-sm-4">{{ _('CBE Notif') }}</dt>
+                        <dd class="col-sm-8">{% if inc.cbe_notification_required %}<span class="badge bg-dark">{{ _('REQUIRED') }}</span>{% else %}{{ _('N/A') }}{% endif %}</dd>
+                        {% if inc.containment_date %}<dt class="col-sm-4">{{ _('Contained on') }}</dt><dd class="col-sm-8">{{ inc.containment_date }}</dd>{% endif %}
+                        {% if inc.closed_date %}<dt class="col-sm-4">{{ _('Closed on') }}</dt><dd class="col-sm-8">{{ inc.closed_date }}</dd>{% endif %}
+                        <dt class="col-sm-4">{{ _('Description') }}</dt><dd class="col-sm-8" style="white-space: pre-wrap">{{ inc.incident_description or '—' }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light"><h6 class="mb-0">{{ _('Response log') }}</h6></div>
+                <ul class="list-group list-group-flush">
+                    {% for u in updates %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>{% if u.old_status != u.new_status %}<span class="badge bg-secondary">{{ _(u.old_status or 'NEW') }}</span> &rarr; <span class="badge bg-primary">{{ _(u.new_status) }}</span>{% endif %}</span>
+                            <small class="text-muted">{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '' }} · {{ u.user_name or '—' }}</small>
+                        </div>
+                        {% if u.note %}<div class="mt-1" style="white-space: pre-wrap">{{ u.note }}</div>{% endif %}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('No updates yet.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            {% if can_edit %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-light"><h6 class="mb-0">{{ _('Update incident') }}</h6></div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('cyber.incident_detail', incident_id=inc.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label" for="incStatus">{{ _('Status') }}</label>
+                            <select name="status" id="incStatus" class="form-select">
+                                {% for st in statuses %}
+                                <option value="{{ st }}" {{ 'selected' if (inc.status or 'NEW') == st }}>{{ _(st) }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="incNote">{{ _('Note') }}</label>
+                            <textarea name="note" id="incNote" class="form-control" rows="4"
+                                placeholder="{{ _('Actions taken, findings, next steps...') }}"></textarea>
+                            <div class="form-text">{{ _('Required when resolving or closing.') }}</div>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100">{{ _('Save') }}</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -31591,6 +31591,506 @@ msgstr "تاريخ الميلاد %(dob)s لا يطابق التاريخ الو�
 msgid "Your session expired. Please reload the page and try again."
 msgstr "انتهت صلاحية الجلسة. يرجى إعادة تحميل الصفحة والمحاولة مرة أخرى."
 
+# Governance / COI / policies / training fixes (2026-11)
+msgid "You answered Yes to being aware of violations: please give the details."
+msgstr "أجبت بنعم على العلم بمخالفات: يُرجى ذكر التفاصيل."
+
+msgid "You answered Yes to prior misconduct: please give the details."
+msgstr "أجبت بنعم على وجود سوء سلوك سابق: يُرجى ذكر التفاصيل."
+
+msgid "Write what feedback you need from the employee before requesting it."
+msgstr "اكتب الإيضاحات المطلوبة من الموظف قبل إرسال الطلب."
+
+msgid "Feedback requested on your Code of Conduct declaration"
+msgstr "مطلوب إيضاحات بشأن إقرارك بمدونة قواعد السلوك"
+
+msgid "Clarification requested. The employee has been notified."
+msgstr "تم طلب الإيضاح وإخطار الموظف."
+
+msgid "Campaign name is required."
+msgstr "اسم الحملة مطلوب."
+
+msgid "A valid year is required."
+msgstr "يجب إدخال سنة صحيحة."
+
+msgid "End date cannot be before the start date."
+msgstr "لا يمكن أن يسبق تاريخ الانتهاء تاريخ البدء."
+
+msgid "Valid start and end dates are required."
+msgstr "يجب إدخال تاريخي بدء وانتهاء صحيحين."
+
+msgid "The campaign could not be created. Please try again."
+msgstr "تعذر إنشاء الحملة. يُرجى المحاولة مرة أخرى."
+
+msgid "Conflict of interest declaration"
+msgstr "إقرار تعارض المصالح"
+
+#, python-format
+msgid "Please complete your conflict of interest declaration for %(name)s by %(date)s."
+msgstr "يُرجى استكمال إقرار تعارض المصالح الخاص بك لـ %(name)s قبل %(date)s."
+
+#, python-format
+msgid "Campaign created and %(n)s employees notified."
+msgstr "تم إنشاء الحملة وإخطار %(n)s موظف."
+
+msgid "COI declaration escalated to you"
+msgstr "تم تصعيد إقرار تعارض مصالح إليك"
+
+#, python-format
+msgid "A conflict of interest declaration by %(name)s has been escalated to you for a decision."
+msgstr "تم تصعيد إقرار تعارض المصالح الخاص بـ %(name)s إليك لاتخاذ قرار."
+
+#, python-format
+msgid "Declaration escalated to %(name)s (management) and they have been notified."
+msgstr "تم تصعيد الإقرار إلى %(name)s (الإدارة) وتم إخطاره."
+
+msgid "Declaration marked as escalated, but no manager is set for this employee, so nobody was notified. Set the employee's manager in user management."
+msgstr "تم تسجيل الإقرار كمُصعَّد، لكن لا يوجد مدير محدد لهذا الموظف فلم يتم إخطار أحد. حدد مدير الموظف من إدارة المستخدمين."
+
+msgid "Recording the regulator decision needs the regulator reference and the decision date (not in the future)."
+msgstr "تسجيل قرار الجهة الرقابية يتطلب رقم مرجع الجهة الرقابية وتاريخ القرار (على ألا يكون تاريخاً مستقبلياً)."
+
+msgid "Four-eyes rule: you saved the assessment of this form, so another user must give the internal approval."
+msgstr "مبدأ العينين الأربع: أنت من حفظ تقييم هذه الاستمارة، لذا يجب أن يعتمدها داخلياً مستخدم آخر."
+
+msgid "Meeting type is required."
+msgstr "نوع الاجتماع مطلوب."
+
+msgid "A valid meeting date is required."
+msgstr "يجب إدخال تاريخ اجتماع صحيح."
+
+msgid "A valid meeting time is required."
+msgstr "يجب إدخال وقت اجتماع صحيح."
+
+msgid "Member name is required."
+msgstr "اسم العضو مطلوب."
+
+msgid "Role is required."
+msgstr "الصفة مطلوبة."
+
+msgid "Please enter a valid email address."
+msgstr "يُرجى إدخال بريد إلكتروني صحيح."
+
+msgid "Appointment date is not a valid date."
+msgstr "تاريخ التعيين غير صحيح."
+
+msgid "Term end date is not a valid date."
+msgstr "تاريخ انتهاء العضوية غير صحيح."
+
+msgid "Term end date cannot be before the appointment date."
+msgstr "لا يمكن أن يسبق تاريخ انتهاء العضوية تاريخ التعيين."
+
+msgid "Committee name is required."
+msgstr "اسم اللجنة مطلوب."
+
+msgid "Committee type is required."
+msgstr "نوع اللجنة مطلوب."
+
+msgid "The chairman must be an active board member."
+msgstr "يجب أن يكون رئيس اللجنة عضواً فعالاً بمجلس الإدارة."
+
+msgid "Invalid committee role."
+msgstr "صفة غير صحيحة في اللجنة."
+
+msgid "Please select a board member."
+msgstr "يُرجى اختيار عضو من مجلس الإدارة."
+
+msgid "Only active board members can be added to a committee."
+msgstr "لا يمكن إضافة سوى أعضاء مجلس الإدارة الفعالين إلى اللجنة."
+
+msgid "This member is already on the committee."
+msgstr "هذا العضو موجود بالفعل في اللجنة."
+
+msgid "This committee already has a chairman."
+msgstr "هذه اللجنة لها رئيس بالفعل."
+
+msgid "Requirement code is required."
+msgstr "رمز المتطلب مطلوب."
+
+msgid "Requirement description is required."
+msgstr "وصف المتطلب مطلوب."
+
+msgid "Due date is not a valid date."
+msgstr "تاريخ الاستحقاق غير صحيح."
+
+msgid "Invalid compliance status."
+msgstr "حالة الالتزام غير صحيحة."
+
+msgid "That member is not on this committee."
+msgstr "هذا العضو ليس ضمن هذه اللجنة."
+
+msgid "The estimated value cannot be negative."
+msgstr "لا يمكن أن تكون القيمة التقديرية سالبة."
+
+msgid "Please enter a valid estimated value."
+msgstr "يُرجى إدخال قيمة تقديرية صحيحة."
+
+msgid "The event date cannot be in the future."
+msgstr "لا يمكن أن يكون تاريخ الواقعة في المستقبل."
+
+msgid "Please enter a valid event date."
+msgstr "يُرجى إدخال تاريخ واقعة صحيح."
+
+msgid "For a government official, give the government entity and the official's position."
+msgstr "في حالة الموظف العام، اذكر الجهة الحكومية ومنصب الموظف."
+
+msgid "Effective date is not a valid date."
+msgstr "تاريخ السريان غير صحيح."
+
+msgid "Next review date is not a valid date."
+msgstr "تاريخ المراجعة القادمة غير صحيح."
+
+msgid "Next review date cannot be before the effective date."
+msgstr "لا يمكن أن يسبق تاريخ المراجعة القادمة تاريخ السريان."
+
+msgid "An approval stage rejected this document."
+msgstr "تم رفض هذه الوثيقة في إحدى مراحل الاعتماد."
+
+#, python-format
+msgid "Approval stages still pending: %(stages)s"
+msgstr "مراحل اعتماد لم تُستكمل بعد: %(stages)s"
+
+msgid "Assigned reviewers have not all decided yet."
+msgstr "لم يتخذ جميع المراجعين المكلفين قراراتهم بعد."
+
+msgid "A reviewer rejected this policy."
+msgstr "رفض أحد المراجعين هذه السياسة."
+
+msgid "You cannot approve a policy you created. Another approver must approve it."
+msgstr "لا يمكنك اعتماد سياسة قمت بإنشائها. يجب أن يعتمدها شخص آخر."
+
+msgid "Only an approved policy can be published. Submit it for approval and complete all approval stages first."
+msgstr "لا يمكن نشر إلا السياسة المعتمدة. أرسلها للاعتماد واستكمل جميع مراحل الاعتماد أولاً."
+
+msgid "This stage is not awaiting a decision."
+msgstr "هذه المرحلة ليست بانتظار قرار."
+
+msgid "You are not the approver for this stage."
+msgstr "لست المعتمِد المحدد لهذه المرحلة."
+
+msgid "Invalid decision."
+msgstr "قرار غير صحيح."
+
+msgid "Please give the reason for rejecting."
+msgstr "يُرجى ذكر سبب الرفض."
+
+msgid "An earlier stage is still awaiting a decision."
+msgstr "ما زالت مرحلة سابقة بانتظار القرار."
+
+msgid "Please select the type of conflict and describe it."
+msgstr "يُرجى اختيار نوع التعارض ووصفه."
+
+msgid "Parties involved"
+msgstr "الأطراف المعنية"
+
+msgid "Required when requesting feedback; it is sent to the employee."
+msgstr "مطلوب عند طلب إيضاحات، ويُرسل إلى الموظف."
+
+msgid "Disclosed Conflict (ad-hoc)"
+msgstr "التعارض المُفصح عنه (إفصاح فوري)"
+
+msgid "Decision date"
+msgstr "تاريخ القرار"
+
+msgid "Internal approval must be given by a different user than the one who saved the assessment."
+msgstr "يجب أن يصدر الاعتماد الداخلي من مستخدم غير الذي حفظ التقييم."
+
+msgid "Members who did not attend: tick Apology Received if they apologised, or enter the proxy who represented them."
+msgstr "للأعضاء غير الحاضرين: حدد \"تم استلام اعتذار\" إذا اعتذروا، أو أدخل اسم من أنابوه."
+
+msgid "Proxy Name"
+msgstr "اسم المُناب"
+
+msgid "Represented by proxy"
+msgstr "ممثَّل بالإنابة"
+
+msgid "Approval Stages"
+msgstr "مراحل الاعتماد"
+
+msgid "Approver"
+msgstr "المعتمِد"
+
+msgid "Your decision for stage"
+msgstr "قرارك في مرحلة"
+
+msgid "Comments (required to reject)"
+msgstr "ملاحظات (مطلوبة عند الرفض)"
+
+msgid "Approve stage"
+msgstr "اعتماد المرحلة"
+
+msgid "Status changes only through the approval workflow (submit, approve, publish, archive)."
+msgstr "تتغير الحالة فقط من خلال مسار الاعتماد (إرسال، اعتماد، نشر، أرشفة)."
+
+msgid "Clarification requested"
+msgstr "مطلوب إيضاح"
+
+#, python-format
+msgid "Approve the emissions inventory (workflow) before marking the report %(s)s."
+msgstr "اعتمد حصر الانبعاثات (مسار العمل) قبل تعيين حالة التقرير إلى %(s)s."
+
+#, python-format
+msgid "Name the independent verifier before marking the report %(s)s."
+msgstr "حدد اسم جهة التحقق المستقلة قبل تعيين حالة التقرير إلى %(s)s."
+
+msgid "The offset obligation created by the submission was cancelled."
+msgstr "تم إلغاء التزام التعويض الذي نشأ عن تقديم التقرير."
+
+msgid "quantity cannot be negative"
+msgstr "لا يمكن أن تكون الكمية سالبة"
+
+msgid "the unit must match the unit of the chosen factor"
+msgstr "يجب أن تطابق الوحدة وحدة معامل الانبعاث المختار"
+
+msgid "Please enter a valid phone number."
+msgstr "يرجى إدخال رقم هاتف صحيح."
+
+msgid "Please select a valid category."
+msgstr "يرجى اختيار تصنيف صحيح."
+
+msgid "Subject is required."
+msgstr "الموضوع مطلوب."
+
+msgid "Please describe the complaint in at least 20 characters."
+msgstr "يرجى وصف الشكوى في 20 حرفًا على الأقل."
+
+msgid "A resolution is required to resolve or close a complaint. The customer sees it when tracking the complaint."
+msgstr "يجب كتابة الحل لحل الشكوى أو إغلاقها، ويظهر للعميل عند متابعة الشكوى."
+
+msgid "the test date cannot be in the future"
+msgstr "لا يمكن أن يكون تاريخ الاختبار في المستقبل"
+
+msgid "RTO and RPO cannot be negative"
+msgstr "لا يمكن أن تكون قيم RTO وRPO سالبة"
+
+msgid "maturity levels must be whole numbers from 0 to 5"
+msgstr "مستويات النضج يجب أن تكون أرقامًا صحيحة من 0 إلى 5"
+
+msgid "Change the status or add a note."
+msgstr "غيّر الحالة أو أضف ملاحظة."
+
+msgid "A note is required to resolve or close an incident."
+msgstr "يجب إضافة ملاحظة لحل الحادث أو إغلاقه."
+
+msgid "Incident updated."
+msgstr "تم تحديث الحادث."
+
+msgid "Breach date and discovery date are required."
+msgstr "تاريخ الاختراق وتاريخ اكتشافه مطلوبان."
+
+msgid "The breach date cannot be after the discovery date."
+msgstr "لا يمكن أن يكون تاريخ الاختراق بعد تاريخ اكتشافه."
+
+msgid "The discovery date cannot be in the future."
+msgstr "لا يمكن أن يكون تاريخ الاكتشاف في المستقبل."
+
+msgid "Affected individuals cannot be negative."
+msgstr "لا يمكن أن يكون عدد الأفراد المتأثرين سالبًا."
+
+msgid "Affected individuals must be a whole number."
+msgstr "عدد الأفراد المتأثرين يجب أن يكون رقمًا صحيحًا."
+
+msgid "This request is closed and can no longer be changed."
+msgstr "هذا الطلب مغلق ولا يمكن تعديله."
+
+msgid "Select how the identity was verified."
+msgstr "اختر طريقة التحقق من الهوية."
+
+msgid "A rejection reason is required."
+msgstr "سبب الرفض مطلوب."
+
+msgid "Verify the data subject's identity before completing an access or erasure request."
+msgstr "تحقق من هوية صاحب البيانات قبل إتمام طلب الاطلاع أو المحو."
+
+msgid "Request completed."
+msgstr "تم إتمام الطلب."
+
+msgid "Request rejected."
+msgstr "تم رفض الطلب."
+
+msgid "The approver must be a different person from the DPIA author."
+msgstr "يجب أن يكون المعتمِد شخصًا غير مُعِدّ تقييم الأثر."
+
+msgid "Only a DPIA pending approval can be approved or rejected."
+msgstr "لا يمكن اعتماد أو رفض تقييم الأثر إلا إذا كان بانتظار الاعتماد."
+
+msgid "DPIA approved."
+msgstr "تم اعتماد تقييم الأثر."
+
+msgid "DPIA rejected."
+msgstr "تم رفض تقييم الأثر."
+
+msgid "Activity code is required."
+msgstr "رمز النشاط مطلوب."
+
+msgid "Select a valid legal basis."
+msgstr "اختر أساسًا قانونيًا صحيحًا."
+
+#, python-format
+msgid "Activity code %(code)s already exists in the ROPA."
+msgstr "رمز النشاط %(code)s موجود بالفعل في سجل أنشطة المعالجة."
+
+#, python-format
+msgid "Scores must be between 1 and 5 (check: %(items)s). Nothing was saved."
+msgstr "يجب أن تكون الدرجات بين 1 و5 (راجع: %(items)s). لم يتم حفظ أي شيء."
+
+msgid "Enter a valid plan year."
+msgstr "أدخل سنة خطة صحيحة."
+
+#, python-format
+msgid "An annual audit plan for %(year)s already exists."
+msgstr "توجد بالفعل خطة مراجعة سنوية لعام %(year)s."
+
+msgid "The planned end date cannot be before the start date."
+msgstr "لا يمكن أن يكون تاريخ الانتهاء المخطط قبل تاريخ البدء."
+
+msgid "The management response text is required."
+msgstr "نص رد الإدارة مطلوب."
+
+msgid "Describe the remediation and the evidence for it before marking it complete."
+msgstr "صف المعالجة والدليل عليها قبل تعيينها كمكتملة."
+
+msgid "A submission reference or the submitted file is required to mark the report as submitted."
+msgstr "يلزم رقم مرجعي للتقديم أو الملف المُقدَّم لتعيين التقرير كمُقدَّم."
+
+msgid "Dates must be valid (YYYY-MM-DD)."
+msgstr "يجب أن تكون التواريخ صحيحة (YYYY-MM-DD)."
+
+msgid "The reporting period start cannot be after its end."
+msgstr "لا يمكن أن تكون بداية فترة التقرير بعد نهايتها."
+
+msgid "For a KRI where higher is worse, target ≤ warning ≤ breach threshold."
+msgstr "للمؤشر الذي يكون فيه الارتفاع أسوأ: المستهدف ≤ حد التحذير ≤ حد التجاوز."
+
+msgid "For a KRI where lower is worse, target ≥ warning ≥ breach threshold."
+msgstr "للمؤشر الذي يكون فيه الانخفاض أسوأ: المستهدف ≥ حد التحذير ≥ حد التجاوز."
+
+msgid "Likelihood and impact must be whole numbers from 1 to 5."
+msgstr "الاحتمالية والأثر يجب أن يكونا أرقامًا صحيحة من 1 إلى 5."
+
+msgid "Enter both residual likelihood and residual impact, or neither."
+msgstr "أدخل الاحتمالية والأثر المتبقيين معًا أو اتركهما فارغين."
+
+msgid "The residual score cannot be higher than the inherent score."
+msgstr "لا يمكن أن تكون درجة الخطر المتبقي أعلى من درجة الخطر الكامن."
+
+msgid "A reason for the change is required."
+msgstr "سبب التغيير مطلوب."
+
+msgid "Thresholds must be numbers."
+msgstr "يجب أن تكون الحدود أرقامًا."
+
+msgid "Invalid direction."
+msgstr "اتجاه غير صالح."
+
+msgid "Enter a valid target date."
+msgstr "أدخل تاريخًا مستهدفًا صحيحًا."
+
+msgid "The target date cannot be in the past."
+msgstr "لا يمكن أن يكون التاريخ المستهدف في الماضي."
+
+msgid "Estimated cost must be a number."
+msgstr "التكلفة التقديرية يجب أن تكون رقمًا."
+
+msgid "Estimated cost cannot be negative."
+msgstr "لا يمكن أن تكون التكلفة التقديرية سالبة."
+
+msgid "Search reference or name"
+msgstr "ابحث بالمرجع أو الاسم"
+
+msgid "Your complaint is handled confidentially under the applicable consumer-protection rules."
+msgstr "يتم التعامل مع شكواك بسرية وفقًا لقواعد حماية المستهلك المعمول بها."
+
+msgid "Resolution (shown to the customer)"
+msgstr "الحل (يظهر للعميل)"
+
+msgid "Required when resolving or closing"
+msgstr "مطلوب عند الحل أو الإغلاق"
+
+msgid "Required when resolving or closing."
+msgstr "مطلوب عند الحل أو الإغلاق."
+
+msgid "Incident"
+msgstr "الحادث"
+
+msgid "Contained on"
+msgstr "تم الاحتواء في"
+
+msgid "Closed on"
+msgstr "تم الإغلاق في"
+
+msgid "Response log"
+msgstr "سجل الاستجابة"
+
+msgid "No updates yet."
+msgstr "لا توجد تحديثات بعد."
+
+msgid "Update incident"
+msgstr "تحديث الحادث"
+
+msgid "Actions taken, findings, next steps..."
+msgstr "الإجراءات المتخذة، النتائج، الخطوات التالية..."
+
+msgid "Overdue (72h passed)"
+msgstr "متأخر (مرت 72 ساعة)"
+
+msgid "By:"
+msgstr "بواسطة:"
+
+msgid "On:"
+msgstr "في:"
+
+msgid "Created by:"
+msgstr "أنشأه:"
+
+msgid "Remediation evidence"
+msgstr "دليل المعالجة"
+
+msgid "What was done and where is the evidence (attach files below)"
+msgstr "ما الذي تم وأين الدليل (أرفق الملفات بالأسفل)"
+
+msgid "Reason for escalation"
+msgstr "سبب التصعيد"
+
+msgid "Description must be at least 50 characters."
+msgstr "يجب ألا يقل الوصف عن 50 حرفًا."
+
+msgid "Invalid incident type."
+msgstr "نوع بلاغ غير صالح."
+
+msgid "Resolution summary and action taken are both required."
+msgstr "ملخص الحل والإجراء المتخذ مطلوبان."
+
+msgid "Please explain why the case is being escalated."
+msgstr "يرجى توضيح سبب تصعيد البلاغ."
+
+msgid "Escalated to HR/Legal"
+msgstr "تم التصعيد إلى الموارد البشرية/الشؤون القانونية"
+
+msgid "Case escalated to HR/Legal."
+msgstr "تم تصعيد البلاغ إلى الموارد البشرية/الشؤون القانونية."
+
+msgid "SLA must be at least 1 day."
+msgstr "يجب ألا تقل مدة مستوى الخدمة عن يوم واحد."
+
+msgid "Assigned to"
+msgstr "مُسندة إلى"
+
+msgid "OPEN"
+msgstr "مفتوح"
+
+msgid "CONTAINED"
+msgstr "تم الاحتواء"
+
+msgid "ESCALATED"
+msgstr "مُصعَّد"
+
+msgid "NEW"
+msgstr "جديد"
+
+msgid "RESOLVED"
+msgstr "تم الحل"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 
@@ -32250,237 +32750,3 @@ msgstr "انتهت صلاحية الجلسة. يرجى إعادة تحميل ا�
 #~ msgid "Charter document not found."
 #~ msgstr "لم يتم العثور على مستند النظام الأساسي."
 
-
-# Governance / COI / policies / training fixes (2026-11)
-msgid "You answered Yes to being aware of violations: please give the details."
-msgstr "أجبت بنعم على العلم بمخالفات: يُرجى ذكر التفاصيل."
-
-msgid "You answered Yes to prior misconduct: please give the details."
-msgstr "أجبت بنعم على وجود سوء سلوك سابق: يُرجى ذكر التفاصيل."
-
-msgid "Write what feedback you need from the employee before requesting it."
-msgstr "اكتب الإيضاحات المطلوبة من الموظف قبل إرسال الطلب."
-
-msgid "Feedback requested on your Code of Conduct declaration"
-msgstr "مطلوب إيضاحات بشأن إقرارك بمدونة قواعد السلوك"
-
-msgid "Clarification requested. The employee has been notified."
-msgstr "تم طلب الإيضاح وإخطار الموظف."
-
-msgid "Campaign name is required."
-msgstr "اسم الحملة مطلوب."
-
-msgid "A valid year is required."
-msgstr "يجب إدخال سنة صحيحة."
-
-msgid "End date cannot be before the start date."
-msgstr "لا يمكن أن يسبق تاريخ الانتهاء تاريخ البدء."
-
-msgid "Valid start and end dates are required."
-msgstr "يجب إدخال تاريخي بدء وانتهاء صحيحين."
-
-msgid "The campaign could not be created. Please try again."
-msgstr "تعذر إنشاء الحملة. يُرجى المحاولة مرة أخرى."
-
-msgid "Conflict of interest declaration"
-msgstr "إقرار تعارض المصالح"
-
-#, python-format
-msgid "Please complete your conflict of interest declaration for %(name)s by %(date)s."
-msgstr "يُرجى استكمال إقرار تعارض المصالح الخاص بك لـ %(name)s قبل %(date)s."
-
-#, python-format
-msgid "Campaign created and %(n)s employees notified."
-msgstr "تم إنشاء الحملة وإخطار %(n)s موظف."
-
-msgid "COI declaration escalated to you"
-msgstr "تم تصعيد إقرار تعارض مصالح إليك"
-
-#, python-format
-msgid "A conflict of interest declaration by %(name)s has been escalated to you for a decision."
-msgstr "تم تصعيد إقرار تعارض المصالح الخاص بـ %(name)s إليك لاتخاذ قرار."
-
-#, python-format
-msgid "Declaration escalated to %(name)s (management) and they have been notified."
-msgstr "تم تصعيد الإقرار إلى %(name)s (الإدارة) وتم إخطاره."
-
-msgid "Declaration marked as escalated, but no manager is set for this employee, so nobody was notified. Set the employee's manager in user management."
-msgstr "تم تسجيل الإقرار كمُصعَّد، لكن لا يوجد مدير محدد لهذا الموظف فلم يتم إخطار أحد. حدد مدير الموظف من إدارة المستخدمين."
-
-msgid "Recording the regulator decision needs the regulator reference and the decision date (not in the future)."
-msgstr "تسجيل قرار الجهة الرقابية يتطلب رقم مرجع الجهة الرقابية وتاريخ القرار (على ألا يكون تاريخاً مستقبلياً)."
-
-msgid "Four-eyes rule: you saved the assessment of this form, so another user must give the internal approval."
-msgstr "مبدأ العينين الأربع: أنت من حفظ تقييم هذه الاستمارة، لذا يجب أن يعتمدها داخلياً مستخدم آخر."
-
-msgid "Meeting type is required."
-msgstr "نوع الاجتماع مطلوب."
-
-msgid "A valid meeting date is required."
-msgstr "يجب إدخال تاريخ اجتماع صحيح."
-
-msgid "A valid meeting time is required."
-msgstr "يجب إدخال وقت اجتماع صحيح."
-
-msgid "Member name is required."
-msgstr "اسم العضو مطلوب."
-
-msgid "Role is required."
-msgstr "الصفة مطلوبة."
-
-msgid "Please enter a valid email address."
-msgstr "يُرجى إدخال بريد إلكتروني صحيح."
-
-msgid "Appointment date is not a valid date."
-msgstr "تاريخ التعيين غير صحيح."
-
-msgid "Term end date is not a valid date."
-msgstr "تاريخ انتهاء العضوية غير صحيح."
-
-msgid "Term end date cannot be before the appointment date."
-msgstr "لا يمكن أن يسبق تاريخ انتهاء العضوية تاريخ التعيين."
-
-msgid "Committee name is required."
-msgstr "اسم اللجنة مطلوب."
-
-msgid "Committee type is required."
-msgstr "نوع اللجنة مطلوب."
-
-msgid "The chairman must be an active board member."
-msgstr "يجب أن يكون رئيس اللجنة عضواً فعالاً بمجلس الإدارة."
-
-msgid "Invalid committee role."
-msgstr "صفة غير صحيحة في اللجنة."
-
-msgid "Please select a board member."
-msgstr "يُرجى اختيار عضو من مجلس الإدارة."
-
-msgid "Only active board members can be added to a committee."
-msgstr "لا يمكن إضافة سوى أعضاء مجلس الإدارة الفعالين إلى اللجنة."
-
-msgid "This member is already on the committee."
-msgstr "هذا العضو موجود بالفعل في اللجنة."
-
-msgid "This committee already has a chairman."
-msgstr "هذه اللجنة لها رئيس بالفعل."
-
-msgid "Requirement code is required."
-msgstr "رمز المتطلب مطلوب."
-
-msgid "Requirement description is required."
-msgstr "وصف المتطلب مطلوب."
-
-msgid "Due date is not a valid date."
-msgstr "تاريخ الاستحقاق غير صحيح."
-
-msgid "Invalid compliance status."
-msgstr "حالة الالتزام غير صحيحة."
-
-msgid "That member is not on this committee."
-msgstr "هذا العضو ليس ضمن هذه اللجنة."
-
-msgid "The estimated value cannot be negative."
-msgstr "لا يمكن أن تكون القيمة التقديرية سالبة."
-
-msgid "Please enter a valid estimated value."
-msgstr "يُرجى إدخال قيمة تقديرية صحيحة."
-
-msgid "The event date cannot be in the future."
-msgstr "لا يمكن أن يكون تاريخ الواقعة في المستقبل."
-
-msgid "Please enter a valid event date."
-msgstr "يُرجى إدخال تاريخ واقعة صحيح."
-
-msgid "For a government official, give the government entity and the official's position."
-msgstr "في حالة الموظف العام، اذكر الجهة الحكومية ومنصب الموظف."
-
-msgid "Effective date is not a valid date."
-msgstr "تاريخ السريان غير صحيح."
-
-msgid "Next review date is not a valid date."
-msgstr "تاريخ المراجعة القادمة غير صحيح."
-
-msgid "Next review date cannot be before the effective date."
-msgstr "لا يمكن أن يسبق تاريخ المراجعة القادمة تاريخ السريان."
-
-msgid "An approval stage rejected this document."
-msgstr "تم رفض هذه الوثيقة في إحدى مراحل الاعتماد."
-
-#, python-format
-msgid "Approval stages still pending: %(stages)s"
-msgstr "مراحل اعتماد لم تُستكمل بعد: %(stages)s"
-
-msgid "Assigned reviewers have not all decided yet."
-msgstr "لم يتخذ جميع المراجعين المكلفين قراراتهم بعد."
-
-msgid "A reviewer rejected this policy."
-msgstr "رفض أحد المراجعين هذه السياسة."
-
-msgid "You cannot approve a policy you created. Another approver must approve it."
-msgstr "لا يمكنك اعتماد سياسة قمت بإنشائها. يجب أن يعتمدها شخص آخر."
-
-msgid "Only an approved policy can be published. Submit it for approval and complete all approval stages first."
-msgstr "لا يمكن نشر إلا السياسة المعتمدة. أرسلها للاعتماد واستكمل جميع مراحل الاعتماد أولاً."
-
-msgid "This stage is not awaiting a decision."
-msgstr "هذه المرحلة ليست بانتظار قرار."
-
-msgid "You are not the approver for this stage."
-msgstr "لست المعتمِد المحدد لهذه المرحلة."
-
-msgid "Invalid decision."
-msgstr "قرار غير صحيح."
-
-msgid "Please give the reason for rejecting."
-msgstr "يُرجى ذكر سبب الرفض."
-
-msgid "An earlier stage is still awaiting a decision."
-msgstr "ما زالت مرحلة سابقة بانتظار القرار."
-
-msgid "Please select the type of conflict and describe it."
-msgstr "يُرجى اختيار نوع التعارض ووصفه."
-
-msgid "Parties involved"
-msgstr "الأطراف المعنية"
-
-msgid "Required when requesting feedback; it is sent to the employee."
-msgstr "مطلوب عند طلب إيضاحات، ويُرسل إلى الموظف."
-
-msgid "Disclosed Conflict (ad-hoc)"
-msgstr "التعارض المُفصح عنه (إفصاح فوري)"
-
-msgid "Decision date"
-msgstr "تاريخ القرار"
-
-msgid "Internal approval must be given by a different user than the one who saved the assessment."
-msgstr "يجب أن يصدر الاعتماد الداخلي من مستخدم غير الذي حفظ التقييم."
-
-msgid "Members who did not attend: tick Apology Received if they apologised, or enter the proxy who represented them."
-msgstr "للأعضاء غير الحاضرين: حدد \"تم استلام اعتذار\" إذا اعتذروا، أو أدخل اسم من أنابوه."
-
-msgid "Proxy Name"
-msgstr "اسم المُناب"
-
-msgid "Represented by proxy"
-msgstr "ممثَّل بالإنابة"
-
-msgid "Approval Stages"
-msgstr "مراحل الاعتماد"
-
-msgid "Approver"
-msgstr "المعتمِد"
-
-msgid "Your decision for stage"
-msgstr "قرارك في مرحلة"
-
-msgid "Comments (required to reject)"
-msgstr "ملاحظات (مطلوبة عند الرفض)"
-
-msgid "Approve stage"
-msgstr "اعتماد المرحلة"
-
-msgid "Status changes only through the approval workflow (submit, approve, publish, archive)."
-msgstr "تتغير الحالة فقط من خلال مسار الاعتماد (إرسال، اعتماد، نشر، أرشفة)."
-
-msgid "Clarification requested"
-msgstr "مطلوب إيضاح"

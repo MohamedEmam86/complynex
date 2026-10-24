@@ -50,6 +50,9 @@
                             {% else %}
                             <span class="badge bg-secondary">{{ _('Pending') }}</span>
                             {% endif %}
+                            {% if submission.is_overdue %}
+                            <span class="badge bg-danger">{{ _('Overdue') }}</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

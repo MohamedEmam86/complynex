@@ -56,7 +56,7 @@ def escalate_overdue_complaints():
             complaint = dict(row)
             complaint_id = complaint['id']
             
-            logger.info(f"Escalating complaint #{complaint['complaint_pin']} (ID: {complaint_id})")
+            logger.info(f"Escalating complaint CP-{complaint_id}")
             
             # Update status
             ConsumerComplaint.update_status(complaint_id, 'ESCALATED')

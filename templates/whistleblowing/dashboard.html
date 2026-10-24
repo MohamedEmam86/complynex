@@ -53,12 +53,23 @@
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0">{{ _('Recent Cases') }}</h5>
-            <div class="btn-group">
-                <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-filter me-1"></i>{{ _('Filter')
-                    }}</button>
-                <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-download me-1"></i>{{ _('Export')
-                    }}</button>
-            </div>
+            <form method="GET" action="{{ url_for('whistleblowing.dashboard') }}" class="d-flex flex-wrap gap-2 align-items-center">
+                <select name="status" class="form-select form-select-sm w-auto" aria-label="{{ _('Status') }}">
+                    <option value="">{{ _('All statuses') }}</option>
+                    {% for st in statuses %}
+                    <option value="{{ st }}" {{ 'selected' if filters.status == st }}>{{ _(st) }}</option>
+                    {% endfor %}
+                </select>
+                <select name="incident_type" class="form-select form-select-sm w-auto" aria-label="{{ _('Type') }}">
+                    <option value="">{{ _('All types') }}</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category_code }}" {{ 'selected' if filters.incident_type == cat.category_code }}>{{ cat.category_name_ar if get_locale()|string == 'ar' and cat.category_name_ar else cat.category_name_en or cat.category_code }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="fas fa-filter me-1"></i>{{ _('Filter') }}</button>
+                {% if filters %}<a href="{{ url_for('whistleblowing.dashboard') }}" class="btn btn-link btn-sm">{{ _('Clear') }}</a>{% endif %}
+                <a href="{{ url_for('whistleblowing.export_cases', **filters) }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-download me-1"></i>{{ _('Export') }}</a>
+            </form>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
