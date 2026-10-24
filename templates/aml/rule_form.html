@@ -28,6 +28,12 @@
                   placeholder="{{ _('e.g. Large Wire Transfer') }}">
               </div>
               <div class="col-md-12">
+                <label class="form-label fw-bold">{{ _('Rule Name (Arabic)') }}</label>
+                <input type="text" name="rule_name_ar" class="form-control" dir="rtl" lang="ar"
+                  value="{{ rule.rule_name_ar or '' if rule else '' }}"
+                  placeholder="{{ _('Shown to Arabic-language users') }}">
+              </div>
+              <div class="col-md-12">
                 <label class="form-label fw-bold">{{ _('Description') }}</label>
                 <textarea name="rule_description" class="form-control" rows="2"
                   placeholder="{{ _('Explain what this rule detects...') }}">{{ rule.rule_description if rule else '' }}</textarea>
@@ -42,7 +48,7 @@
                 <label class="form-label fw-bold">{{ _('Rule Type *') }}</label>
                 <select name="rule_type" class="form-select" required>
                   {% for t in ['THRESHOLD','VELOCITY','PATTERN','GEOGRAPHIC','BEHAVIORAL'] %}
-                  <option value="{{ t }}" {% if rule and rule.rule_type==t %}selected{% endif %}>{{ t }}</option>
+                  <option value="{{ t }}" {% if rule and rule.rule_type==t %}selected{% endif %}>{{ t|label }}</option>
                   {% endfor %}
                 </select>
               </div>

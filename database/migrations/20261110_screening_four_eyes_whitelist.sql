@@ -9,7 +9,8 @@
 -- 3. screening_hit_decisions: who did what on a hit, when and why.
 -- 4. screening_whitelist governance: reason, review date (default +12 months,
 --    max 24), creator, MLRO approval before an entry suppresses anything.
---    Existing entries keep working: review date = created + 12 months, active
+--    Existing entries keep working: review date = created + 12 months but at
+--    least 30 days from today (old entries must not expire on upgrade), active
 --    entries are recorded as approved on a "legacy" basis.
 -- =============================================================================
 BEGIN;
@@ -66,20 +67,29 @@ ALTER TABLE screening_whitelist ADD COLUMN IF NOT EXISTS request_reason   TEXT;
 ALTER TABLE screening_whitelist ADD COLUMN IF NOT EXISTS rejected_by      INTEGER;
 ALTER TABLE screening_whitelist ADD COLUMN IF NOT EXISTS rejected_at      TIMESTAMP;
 
--- review date: ISO YYYY-MM-DD so it compares as text; created + 12 months
+-- review date: ISO YYYY-MM-DD so it compares as text; created + 12 months,
+-- never earlier than today + 30 days so legacy entries get a review window
 UPDATE screening_whitelist
    SET review_date = substr(review_date, 1, 10)
  WHERE review_date ~ '^\d{4}-\d{2}-\d{2}' AND length(review_date) > 10;
 UPDATE screening_whitelist
-   SET review_date = to_char(
+   SET review_date = to_char(GREATEST(
          (CASE WHEN added_at ~ '^\d{4}-\d{2}-\d{2}' THEN substr(added_at, 1, 10)::date
-               ELSE CURRENT_DATE END) + INTERVAL '12 months', 'YYYY-MM-DD')
+               ELSE CURRENT_DATE END) + INTERVAL '12 months',
+         (CURRENT_DATE + 30)::timestamp), 'YYYY-MM-DD')
  WHERE review_date IS NULL OR review_date !~ '^\d{4}-\d{2}-\d{2}$';
 
 -- existing active entries: approved on a legacy basis, nothing stops working
 UPDATE screening_whitelist
    SET status = 'Active'
  WHERE status IS NULL OR status = '';
+-- a legacy entry that already carried a past/near review date gets the same
+-- 30-day window (runs once: approval_basis is set right after)
+UPDATE screening_whitelist
+   SET review_date = to_char(CURRENT_DATE + 30, 'YYYY-MM-DD')
+ WHERE approval_basis IS NULL
+   AND review_date ~ '^\d{4}-\d{2}-\d{2}$'
+   AND review_date < to_char(CURRENT_DATE + 30, 'YYYY-MM-DD');
 UPDATE screening_whitelist
    SET approval_basis = 'legacy'
  WHERE approval_basis IS NULL;

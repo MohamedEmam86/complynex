@@ -1603,12 +1603,13 @@ def create_rule():
 
             db.execute("""
                 INSERT INTO tm_rules 
-                (rule_code, rule_name, rule_description, rule_category, rule_type,
+                (rule_code, rule_name, rule_name_ar, rule_description, rule_category, rule_type,
                  threshold_value, threshold_currency, time_period_days, severity, is_active)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,1)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,1)
             """, (
                 code,
                 request.form.get('rule_name','').strip(),
+                request.form.get('rule_name_ar','').strip() or None,
                 request.form.get('rule_description','').strip(),
                 request.form.get('rule_category','').strip(),
                 request.form.get('rule_type','THRESHOLD'),
@@ -1641,11 +1642,12 @@ def edit_rule(rule_id):
         try:
             db.execute("""
                 UPDATE tm_rules SET
-                    rule_name=%s, rule_description=%s, rule_category=%s, rule_type=%s,
+                    rule_name=%s, rule_name_ar=%s, rule_description=%s, rule_category=%s, rule_type=%s,
                     threshold_value=%s, threshold_currency=%s, time_period_days=%s, severity=%s
                 WHERE id=%s
             """, (
                 request.form.get('rule_name','').strip(),
+                request.form.get('rule_name_ar','').strip() or None,
                 request.form.get('rule_description','').strip(),
                 request.form.get('rule_category','').strip(),
                 request.form.get('rule_type','THRESHOLD'),
@@ -2097,13 +2099,14 @@ def rule_create():
         try:
             db.execute(
                 """INSERT INTO tm_rules
-                   (rule_code, rule_name, rule_description, rule_category, rule_type,
+                   (rule_code, rule_name, rule_name_ar, rule_description, rule_category, rule_type,
                     threshold_value, threshold_currency, time_period_days,
                     severity, is_active, status, created_by, created_at, version)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,0,'PENDING',%s,NOW(),1)""",
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,0,'PENDING',%s,NOW(),1)""",
                 (
                     data['rule_code'].strip().upper(),
                     data['rule_name'].strip(),
+                    data.get('rule_name_ar', '').strip() or None,
                     data.get('rule_description', '').strip(),
                     data.get('rule_category', 'General').strip(),
                     data.get('rule_type', 'THRESHOLD').strip(),
@@ -2138,13 +2141,14 @@ def rule_edit(rule_id):
             # Create a new version pending approval instead of overwriting
             db.execute(
                 """INSERT INTO tm_rules
-                   (rule_code, rule_name, rule_description, rule_category, rule_type,
+                   (rule_code, rule_name, rule_name_ar, rule_description, rule_category, rule_type,
                     threshold_value, threshold_currency, time_period_days,
                     severity, is_active, status, created_by, created_at, version, previous_id)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,0,'PENDING',%s,NOW(),%s,%s)""",
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,0,'PENDING',%s,NOW(),%s,%s)""",
                 (
                     data['rule_code'].strip().upper(),
                     data['rule_name'].strip(),
+                    data.get('rule_name_ar', '').strip() or None,
                     data.get('rule_description', '').strip(),
                     data.get('rule_category', 'General').strip(),
                     data.get('rule_type', 'THRESHOLD').strip(),
@@ -2158,7 +2162,7 @@ def rule_edit(rule_id):
                 )
             )
             db.commit()
-            flash('Edited rule submitted for approval (v%d → v%d).' % (rule['version'], rule['version'] + 1), 'info')
+            flash(gettext('Edited rule submitted for approval (v%(old)s → v%(new)s).', old=rule['version'], new=rule['version'] + 1), 'info')
             return redirect(url_for('aml.rules_list'))
         except Exception as e:
             flash(gettext('Error: %(e)s', e=e), 'danger')

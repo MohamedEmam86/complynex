@@ -55,14 +55,14 @@
                                     {% for s in settings if s.category == 'weights' %}
                                     <tr>
                                         <td>
-                                            <label for="{{ s.key }}" class="fw-bold">{{ s.key|replace('_', ' ')|title
+                                            <label for="{{ s.config_key }}" class="fw-bold">{{ s.config_key|replace('_', ' ')|title
                                                 }}</label>
                                         </td>
                                         <td style="width: 150px;">
-                                            <input type="number" name="{{ s.key }}" id="{{ s.key }}"
-                                                value="{{ s.value }}" step="0.05" min="0" max="1" class="form-control">
+                                            <input type="number" name="{{ s.config_key }}" id="{{ s.config_key }}"
+                                                value="{{ s.config_value }}" step="0.05" min="0" max="1" class="form-control">
                                         </td>
-                                        <td class="small text-muted">{{ s.description }}</td>
+                                        <td class="small text-muted">{{ _(s.description) if s.description else "" }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -81,7 +81,7 @@
                                 <thead>
                                     <tr>
                                         <th>{{ _('Parameter') }}</th>
-                                        <th>{{ _('Value (0.0 - 1.0)') }}</th>
+                                        <th>{{ _('Score (0 - 100)') }}</th>
                                         <th>{{ _('Description') }}</th>
                                     </tr>
                                 </thead>
@@ -89,14 +89,14 @@
                                     {% for s in settings if s.category == 'thresholds' %}
                                     <tr>
                                         <td>
-                                            <label for="{{ s.key }}" class="fw-bold">{{ s.key|replace('_', ' ')|title
+                                            <label for="{{ s.config_key }}" class="fw-bold">{{ s.config_key|replace('_', ' ')|title
                                                 }}</label>
                                         </td>
                                         <td style="width: 150px;">
-                                            <input type="number" name="{{ s.key }}" id="{{ s.key }}"
-                                                value="{{ s.value }}" step="0.01" min="0" max="1" class="form-control">
+                                            <input type="number" name="{{ s.config_key }}" id="{{ s.config_key }}"
+                                                value="{{ s.config_value }}" step="1" min="0" max="100" class="form-control">
                                         </td>
-                                        <td class="small text-muted">{{ s.description }}</td>
+                                        <td class="small text-muted">{{ _(s.description) if s.description else "" }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>

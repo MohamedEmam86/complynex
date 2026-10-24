@@ -46,6 +46,12 @@
                    value="{{ rule.rule_name if rule else '' }}"
                    placeholder="{{ _('e.g. Large Cash Transaction') }}">
           </div>
+              <div class="col-md-12">
+                <label class="form-label fw-bold">{{ _('Rule Name (Arabic)') }}</label>
+                <input type="text" name="rule_name_ar" class="form-control" dir="rtl" lang="ar"
+                  value="{{ rule.rule_name_ar or '' if rule else '' }}"
+                  placeholder="{{ _('Shown to Arabic-language users') }}">
+              </div>
 
           <div class="col-12">
             <label class="form-label fw-bold">{{ _('Description') }}</label>

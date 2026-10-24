@@ -37,7 +37,7 @@
             <select class="form-select form-select-sm" id="simRule">
               <option value="">— {{ _('Select rule') }} —</option>
               {% for r in rules %}
-              <option value="{{ r.id }}">{{ r.rule_code }} — {{ r.rule_name }}</option>
+              <option value="{{ r.id }}">{{ r.rule_code }} — {{ r.rule_name_ar if (get_locale() == 'ar' and r.rule_name_ar) else r.rule_name }}</option>
               {% endfor %}
             </select>
           </div>
@@ -78,7 +78,7 @@
           <tr class="{{ 'table-warning' if r.status == 'PENDING' else ('text-muted' if r.status == 'DISABLED' else '') }}">
             <td><code>{{ r.rule_code }}</code></td>
             <td>
-              <strong>{{ r.rule_name }}</strong>
+              <strong>{{ r.rule_name_ar if (get_locale() == 'ar' and r.rule_name_ar) else r.rule_name }}</strong>
               {% if r.rule_description %}
               <br><small class="text-muted">{{ r.rule_description[:70] }}{% if r.rule_description|length > 70 %}…{% endif %}</small>
               {% endif %}
