@@ -36910,6 +36910,1063 @@ msgstr "تم إنشاء بلاغ اشتباه"
 msgid "SME loan"
 msgstr "تمويل المشروعات الصغيرة والمتوسطة"
 
+msgid "Identity verified. The request is now in progress."
+msgstr "تم التحقق من الهوية. الطلب الآن قيد التنفيذ."
+
+msgid "Manual (ad hoc)"
+msgstr "يدوي (فحص فوري)"
+
+msgid "Public courses for external learners (academy.integrysconsult.com). Separate from the internal ComplyNex Learning Portal for staff."
+msgstr "دورات عامة للمتعلمين من خارج الشركة (academy.integrysconsult.com)، منفصلة عن بوابة التعلم الداخلية للموظفين في ComplyNex."
+
+msgid "Learners"
+msgstr "المتعلمون"
+
+msgid "Results"
+msgstr "النتائج"
+
+msgid "Courses"
+msgstr "الدورات"
+
+msgid "Certificates"
+msgstr "الشهادات"
+
+msgid "Public site"
+msgstr "الموقع العام"
+
+msgid "Academy certificates"
+msgstr "شهادات الأكاديمية"
+
+msgid "Certificate register"
+msgstr "سجل الشهادات"
+
+msgid "number, holder, company"
+msgstr "الرقم، الحامل، الشركة"
+
+msgid "[redacted]"
+msgstr "[محجوب]"
+
+msgid "expired"
+msgstr "منتهية"
+
+msgid "Public verification page"
+msgstr "صفحة التحقق العامة"
+
+msgid "revoke reason"
+msgstr "سبب الإلغاء"
+
+msgid "No certificates issued yet."
+msgstr "لم تصدر أي شهادات بعد."
+
+msgid "Back to courses"
+msgstr "العودة إلى الدورات"
+
+msgid "Edit details"
+msgstr "تعديل البيانات"
+
+msgid "Pass mark"
+msgstr "درجة النجاح"
+
+msgid "Questions per attempt"
+msgstr "عدد الأسئلة في كل محاولة"
+
+msgid "Retry after"
+msgstr "إعادة المحاولة بعد"
+
+msgid "Certificate valid"
+msgstr "صلاحية الشهادة"
+
+msgid "Lessons"
+msgstr "الدروس"
+
+msgid "Add lesson"
+msgstr "إضافة درس"
+
+msgid "Material"
+msgstr "المادة"
+
+msgid "Handout"
+msgstr "ملف للتحميل"
+
+msgid "Move up"
+msgstr "نقل لأعلى"
+
+msgid "Move down"
+msgstr "نقل لأسفل"
+
+msgid "Delete this lesson and its uploaded files?"
+msgstr "حذف هذا الدرس وملفاته المرفوعة؟"
+
+msgid "No lessons yet."
+msgstr "لا توجد دروس بعد."
+
+msgid "Question bank"
+msgstr "بنك الأسئلة"
+
+msgid "each attempt draws"
+msgstr "كل محاولة تسحب"
+
+msgid "Add question"
+msgstr "إضافة سؤال"
+
+msgid "CSV template"
+msgstr "نموذج CSV"
+
+msgid "disabled"
+msgstr "معطل"
+
+msgid "Delete this question?"
+msgstr "حذف هذا السؤال؟"
+
+msgid "No questions yet."
+msgstr "لا توجد أسئلة بعد."
+
+msgid "Publication"
+msgstr "النشر"
+
+msgid "At least one lesson"
+msgstr "درس واحد على الأقل"
+
+msgid "active questions needed"
+msgstr "أسئلة نشطة مطلوبة"
+
+msgid "Tip: 2× the per-attempt number gives each learner a different paper."
+msgstr "نصيحة: ضعف عدد أسئلة المحاولة يعطي كل متعلم ورقة مختلفة."
+
+msgid "Approval note — e.g. Content reviewed and approved by H. El Gaafary and M. Emam on …"
+msgstr "ملاحظة الاعتماد — مثال: تمت مراجعة المحتوى واعتماده من ح. الجعفري و م. إمام بتاريخ …"
+
+msgid "Preview as a learner: Settings → Preview link, then open"
+msgstr "للمعاينة كمتعلم: الإعدادات ← رابط المعاينة، ثم افتح"
+
+msgid "New course"
+msgstr "دورة جديدة"
+
+msgid "Edit course"
+msgstr "تعديل الدورة"
+
+msgid "Provider — whose course is this?"
+msgstr "الجهة المقدمة — لمن هذه الدورة؟"
+
+msgid "Sets the brand and signatures on the certificate, and the \"by …\" label learners see."
+msgstr "تحدد العلامة التجارية والتوقيعات على الشهادة، وعبارة \"مقدمة من …\" التي يراها المتعلمون."
+
+msgid "Printed on the certificate."
+msgstr "تُطبع على الشهادة."
+
+msgid "Summary (English)"
+msgstr "الملخص (بالإنجليزية)"
+
+msgid "Summary (Arabic)"
+msgstr "الملخص (بالعربية)"
+
+msgid "Assessment & certificate"
+msgstr "التقييم والشهادة"
+
+msgid "Drawn at random from the question bank."
+msgstr "تُسحب عشوائيًا من بنك الأسئلة."
+
+msgid "Retry wait after a fail (minutes)"
+msgstr "مدة الانتظار قبل إعادة المحاولة بعد الرسوب (بالدقائق)"
+
+msgid "Certificate validity (months)"
+msgstr "صلاحية الشهادة (بالأشهر)"
+
+msgid "0 = never expires."
+msgstr "0 = لا تنتهي."
+
+msgid "Save course"
+msgstr "حفظ الدورة"
+
+msgid "Academy courses"
+msgstr "دورات الأكاديمية"
+
+msgid "= Integrys course (Integrys brand, signed by H. El Gaafary & M. Emam)"
+msgstr "= دورة إنتجريس (علامة إنتجريس، بتوقيع ح. الجعفري و م. إمام)"
+
+msgid "= ComplyNex course (ComplyNex brand, signed by M. Emam)"
+msgstr "= دورة ComplyNex (علامة ComplyNex، بتوقيع م. إمام)"
+
+msgid "Per attempt"
+msgstr "لكل محاولة"
+
+msgid "No courses."
+msgstr "لا توجد دورات."
+
+msgid "Publishing requires an approval note and is recorded against your name. Internal staff training lives in Training → Learning Portal."
+msgstr "النشر يتطلب ملاحظة اعتماد ويُسجل باسمك. تدريب الموظفين الداخلي موجود في التدريب ← بوابة التعلم."
+
+msgid "The public portal is CLOSED. Visitors see an \"opening soon\" page. Staff can preview from Settings."
+msgstr "البوابة العامة مغلقة. يرى الزوار صفحة \"قريبًا\". يمكن للموظفين المعاينة من الإعدادات."
+
+msgid "Email verified"
+msgstr "البريد الإلكتروني موثق"
+
+msgid "Awaiting verification"
+msgstr "في انتظار التوثيق"
+
+msgid "Started a course"
+msgstr "بدأ دورة"
+
+msgid "Valid certificates"
+msgstr "شهادات سارية"
+
+msgid "Marketing opt-in"
+msgstr "موافقة على التسويق"
+
+msgid "New in 30 days"
+msgstr "جدد خلال 30 يومًا"
+
+msgid "Pass rate"
+msgstr "نسبة النجاح"
+
+msgid "Avg best score"
+msgstr "متوسط أفضل درجة"
+
+msgid "No courses yet."
+msgstr "لا توجد دورات بعد."
+
+msgid "Top companies (verified learners)"
+msgstr "أكثر الشركات (متعلمون موثقون)"
+
+msgid "No learners yet."
+msgstr "لا يوجد متعلمون بعد."
+
+msgid "Where learners come from"
+msgstr "مصادر المتعلمين"
+
+msgid "Tag LinkedIn links with ?utm_source=linkedin&utm_campaign=… to see campaigns here."
+msgstr "أضف إلى روابط لينكدإن ?utm_source=linkedin&utm_campaign=… لتظهر الحملات هنا."
+
+msgid "Rejected registration domains"
+msgstr "نطاقات تسجيل مرفوضة"
+
+msgid "no personal data kept"
+msgstr "لا تُحفظ بيانات شخصية"
+
+msgid "Attempts"
+msgstr "المحاولات"
+
+msgid "If many real prospects appear under free_provider, consider switching the policy to \"flag\" in Settings."
+msgstr "إذا ظهر كثير من العملاء المحتملين الحقيقيين تحت free_provider فكّر في تغيير السياسة إلى \"تمييز\" من الإعدادات."
+
+msgid "Academy learner"
+msgstr "متعلم في الأكاديمية"
+
+msgid "Learner"
+msgstr "المتعلم"
+
+msgid "Back to learners"
+msgstr "العودة إلى المتعلمين"
+
+msgid "free-mail"
+msgstr "بريد مجاني"
+
+msgid "Certificate name"
+msgstr "الاسم على الشهادة"
+
+msgid "Last active"
+msgstr "آخر نشاط"
+
+msgid "Training consent"
+msgstr "الموافقة على التدريب"
+
+msgid "Marketing consent"
+msgstr "الموافقة على التسويق"
+
+msgid "Reason (recorded in the audit trail)"
+msgstr "السبب (يُسجل في سجل التدقيق)"
+
+msgid "Suspend access"
+msgstr "إيقاف الوصول"
+
+msgid "Erase personal data (PDPL request). Type ERASE to confirm."
+msgstr "محو البيانات الشخصية (طلب وفق قانون حماية البيانات). اكتب ERASE للتأكيد."
+
+msgid "Erase"
+msgstr "محو"
+
+msgid "Best"
+msgstr "الأفضل"
+
+msgid "Not enrolled in any course."
+msgstr "غير مسجل في أي دورة."
+
+msgid "Assessment attempts"
+msgstr "محاولات التقييم"
+
+msgid "learner"
+msgstr "متعلم"
+
+msgid "Lesson"
+msgstr "الدرس"
+
+msgid "Edit lesson"
+msgstr "تعديل الدرس"
+
+msgid "New lesson"
+msgstr "درس جديد"
+
+msgid "Title & written material"
+msgstr "العنوان والمادة المكتوبة"
+
+msgid "Lesson title (English)"
+msgstr "عنوان الدرس (بالإنجليزية)"
+
+msgid "Lesson title (Arabic)"
+msgstr "عنوان الدرس (بالعربية)"
+
+msgid "Material (English)"
+msgstr "المادة (بالإنجليزية)"
+
+msgid "Material (Arabic)"
+msgstr "المادة (بالعربية)"
+
+msgid "Formatting"
+msgstr "التنسيق"
+
+msgid "blank line = new paragraph"
+msgstr "سطر فارغ = فقرة جديدة"
+
+msgid "heading"
+msgstr "عنوان"
+
+msgid "bullet"
+msgstr "نقطة"
+
+msgid "bold"
+msgstr "غامق"
+
+msgid "highlighted box"
+msgstr "مربع مميز"
+
+msgid "YouTube / Vimeo link (recommended)"
+msgstr "رابط يوتيوب / فيميو (موصى به)"
+
+msgid "Upload as \"Unlisted\" on YouTube — plays embedded inside the lesson."
+msgstr "ارفعه على يوتيوب كـ \"غير مدرج\" — يُعرض مضمنًا داخل الدرس."
+
+msgid "…or upload MP4 (max 300 MB)"
+msgstr "…أو ارفع ملف MP4 (بحد أقصى 300 ميجابايت)"
+
+msgid "remove"
+msgstr "إزالة"
+
+msgid "If both are set, the uploaded file is shown."
+msgstr "إذا وُجد الاثنان يُعرض الملف المرفوع."
+
+msgid "PDF is shown inside the lesson (best). PPTX is offered as a download. Max 60 MB."
+msgstr "يُعرض ملف PDF داخل الدرس (الأفضل). يُتاح ملف PPTX للتحميل. الحد الأقصى 60 ميجابايت."
+
+msgid "Downloadable handout (optional)"
+msgstr "ملف للتحميل (اختياري)"
+
+msgid "PDF, Word, Excel, PowerPoint or ZIP. Max 60 MB."
+msgstr "PDF أو Word أو Excel أو PowerPoint أو ZIP. الحد الأقصى 60 ميجابايت."
+
+msgid "Save lesson"
+msgstr "حفظ الدرس"
+
+msgid "Edit question"
+msgstr "تعديل السؤال"
+
+msgid "New question"
+msgstr "سؤال جديد"
+
+msgid "Question (English)"
+msgstr "السؤال (بالإنجليزية)"
+
+msgid "Question (Arabic)"
+msgstr "السؤال (بالعربية)"
+
+msgid "Answer options (English) — one per line, 2 to 6"
+msgstr "خيارات الإجابة (بالإنجليزية) — خيار في كل سطر، من 2 إلى 6"
+
+msgid "Answer options (Arabic) — same order, one per line"
+msgstr "خيارات الإجابة (بالعربية) — بنفس الترتيب، خيار في كل سطر"
+
+msgid "Correct answer"
+msgstr "الإجابة الصحيحة"
+
+msgid "— choose —"
+msgstr "— اختر —"
+
+msgid "Option"
+msgstr "الخيار"
+
+msgid "The line number of the correct option above. Learners see options in this order."
+msgstr "رقم سطر الخيار الصحيح أعلاه. يرى المتعلمون الخيارات بهذا الترتيب."
+
+msgid "Explanation (English)"
+msgstr "الشرح (بالإنجليزية)"
+
+msgid "For reviewers only — never shown to learners, so the bank cannot be harvested."
+msgstr "للمراجعين فقط — لا يظهر للمتعلمين أبدًا حتى لا يمكن جمع بنك الأسئلة."
+
+msgid "Explanation (Arabic)"
+msgstr "الشرح (بالعربية)"
+
+msgid "Save question"
+msgstr "حفظ السؤال"
+
+msgid "Save & add another"
+msgstr "حفظ وإضافة آخر"
+
+msgid "Academy settings"
+msgstr "إعدادات الأكاديمية"
+
+msgid "Portal controls"
+msgstr "ضوابط البوابة"
+
+msgid "Public portal"
+msgstr "البوابة العامة"
+
+msgid "Closed — visitors see \"opening soon\""
+msgstr "مغلقة — يرى الزوار \"قريبًا\""
+
+msgid "Open — anyone can register"
+msgstr "مفتوحة — يمكن لأي شخص التسجيل"
+
+msgid "Open only after a course is published and Integrys has approved the pages and certificate."
+msgstr "لا تُفتح إلا بعد نشر دورة واعتماد إنتجريس للصفحات والشهادة."
+
+msgid "Free / personal email addresses"
+msgstr "عناوين البريد المجانية / الشخصية"
+
+msgid "Reject (work email only)"
+msgstr "رفض (بريد العمل فقط)"
+
+msgid "Accept but flag in the learner database"
+msgstr "قبول مع التمييز في قاعدة بيانات المتعلمين"
+
+msgid "Disposable addresses and domains without a mail server are always rejected."
+msgstr "العناوين المؤقتة والنطاقات التي ليس لها خادم بريد تُرفض دائمًا."
+
+msgid "Retention (months of inactivity before erasure)"
+msgstr "مدة الاحتفاظ (أشهر عدم النشاط قبل المحو)"
+
+msgid "Applied by the monthly retention job. Unverified registrations are erased after 30 days."
+msgstr "تُطبق بواسطة مهمة الاحتفاظ الشهرية. التسجيلات غير الموثقة تُمحى بعد 30 يومًا."
+
+msgid "Preview link (staff)"
+msgstr "رابط المعاينة (للموظفين)"
+
+msgid "Opens the portal in preview mode while it is closed — includes draft courses. Valid 14 days. Do not share publicly."
+msgstr "يفتح البوابة في وضع المعاينة أثناء إغلاقها — يشمل الدورات المسودة. صالح 14 يومًا. لا تشاركه علنًا."
+
+msgid "OTP email"
+msgstr "بريد رمز التحقق"
+
+msgid "live"
+msgstr "فعلي"
+
+msgid "mock mode — codes are not emailed"
+msgstr "وضع تجريبي — لا تُرسل الرموز بالبريد"
+
+msgid "sender name"
+msgstr "اسم المرسل"
+
+msgid "Privacy notice version"
+msgstr "إصدار إشعار الخصوصية"
+
+msgid "Public host"
+msgstr "النطاق العام"
+
+msgid "Staff activity"
+msgstr "نشاط الموظفين"
+
+msgid "Customer Profile"
+msgstr "ملف العميل"
+
+msgid "Close – no action"
+msgstr "إغلاق – بدون إجراء"
+
+msgid "Edit TM Rule"
+msgstr "تعديل قاعدة المراقبة"
+
+msgid "Create TM Rule"
+msgstr "إنشاء قاعدة مراقبة"
+
+msgid "Edit Transaction Monitoring Rule"
+msgstr "تعديل قاعدة مراقبة المعاملات"
+
+msgid "Create Transaction Monitoring Rule"
+msgstr "إنشاء قاعدة مراقبة المعاملات"
+
+msgid "Save Rule"
+msgstr "حفظ القاعدة"
+
+msgid "Upload Transactions"
+msgstr "رفع المعاملات"
+
+msgid "Configurable for any regulator: CBE, FRA, EMLCU and others"
+msgstr "قابل للضبط لأي جهة رقابية: البنك المركزي، الهيئة العامة للرقابة المالية، وحدة مكافحة غسل الأموال وغيرها"
+
+msgid ""
+"&nbsp; ComplyNex Full Compliance Platform V3.1.1 &nbsp;|&nbsp; Regulator-ready &nbsp;|&nbsp;\n"
+"                Secure &amp; Trusted"
+msgstr ""
+"&nbsp; منصة ComplyNex المتكاملة للالتزام V3.1.1 &nbsp;|&nbsp; جاهزة للجهات الرقابية &nbsp;|&nbsp;\n"
+"                آمنة وموثوقة"
+
+msgid "Already Logged In"
+msgstr "أنت مسجل الدخول بالفعل"
+
+msgid "Add Blacklist Entry"
+msgstr "إضافة سجل إلى القائمة السوداء"
+
+msgid "Bulk Upload Blacklist"
+msgstr "رفع مجمع للقائمة السوداء"
+
+msgid "Edit Blacklist Entry"
+msgstr "تعديل سجل القائمة السوداء"
+
+msgid "Added Date"
+msgstr "تاريخ الإضافة"
+
+msgid "Bulk Upload PEP List"
+msgstr "رفع مجمع لقائمة الأشخاص المعرضين سياسيًا"
+
+msgid "View Blacklist Entry"
+msgstr "عرض سجل القائمة السوداء"
+
+msgid "All COBEC Declarations"
+msgstr "جميع إقرارات قواعد السلوك"
+
+msgid "COBEC Declaration Details"
+msgstr "تفاصيل إقرار قواعد السلوك"
+
+msgid "Create Annual Declaration Cycle"
+msgstr "إنشاء دورة الإقرار السنوية"
+
+msgid "Create Mitigation Plan"
+msgstr "إنشاء خطة معالجة"
+
+msgid "Mitigation Plan Detail"
+msgstr "تفاصيل خطة المعالجة"
+
+msgid "Register Activity - ROPA"
+msgstr "تسجيل نشاط - سجل أنشطة المعالجة"
+
+msgid "Report Data Breach - PDPL"
+msgstr "الإبلاغ عن خرق بيانات - حماية البيانات الشخصية"
+
+msgid "Data Breaches - PDPL"
+msgstr "خروقات البيانات - حماية البيانات الشخصية"
+
+msgid "Data Protection Dashboard"
+msgstr "لوحة حماية البيانات"
+
+msgid "DPIA Review"
+msgstr "مراجعة تقييم الأثر"
+
+msgid "Initiate DPIA - PDPL"
+msgstr "بدء تقييم أثر حماية البيانات"
+
+msgid "DPIA Assessments - PDPL"
+msgstr "تقييمات أثر حماية البيانات"
+
+msgid "Not submitted"
+msgstr "لم يُقدم"
+
+msgid "Completion"
+msgstr "نسبة الإنجاز"
+
+msgid "Participants"
+msgstr "المشاركون"
+
+msgid "Optional custom reminder message"
+msgstr "رسالة تذكير مخصصة (اختيارية)"
+
+msgid "Remind selected"
+msgstr "تذكير المحددين"
+
+msgid "Remind all outstanding"
+msgstr "تذكير كل المتأخرين"
+
+msgid "Reminders"
+msgstr "التذكيرات"
+
+msgid "Reminder history"
+msgstr "سجل التذكيرات"
+
+msgid "recipients"
+msgstr "المستلمون"
+
+msgid "No reminders sent yet."
+msgstr "لم تُرسل أي تذكيرات بعد."
+
+msgid "Refresh picks up joiners and re-reads the declaration tables so the figures match the underlying records."
+msgstr "التحديث يضيف المنضمين الجدد ويعيد قراءة جداول الإقرارات لتطابق الأرقام السجلات الفعلية."
+
+msgid "Refresh participants"
+msgstr "تحديث المشاركين"
+
+msgid "Gifts & Hospitality, Conflict of Interest and Code of Ethics campaigns."
+msgstr "حملات الهدايا والضيافة وتعارض المصالح وقواعد السلوك."
+
+msgid "Reminders are in-app only."
+msgstr "التذكيرات داخل النظام فقط."
+
+msgid "submitted"
+msgstr "مقدم"
+
+msgid "New Declaration Campaign"
+msgstr "حملة إقرارات جديدة"
+
+msgid "Declaration"
+msgstr "الإقرار"
+
+msgid "Cycle year"
+msgstr "سنة الدورة"
+
+msgid "Campaign name"
+msgstr "اسم الحملة"
+
+msgid "e.g. COI Declaration 2026"
+msgstr "مثال: إقرار تعارض المصالح 2026"
+
+msgid "Everyone"
+msgstr "الجميع"
+
+msgid "Include all units below the one selected"
+msgstr "تضمين كل الوحدات التابعة للوحدة المختارة"
+
+msgid "Send Declaration Reminders"
+msgstr "إرسال تذكيرات الإقرارات"
+
+msgid "Chase GHE, COI and COBEC together. Anyone owing more than one gets a single message listing all of them, not three separate nags."
+msgstr "متابعة إقرارات الهدايا وتعارض المصالح وقواعد السلوك معًا. من عليه أكثر من إقرار يتلقى رسالة واحدة بها كلها بدلًا من ثلاث رسائل منفصلة."
+
+msgid "Campaigns"
+msgstr "الحملات"
+
+msgid "Email delivery is active."
+msgstr "إرسال البريد الإلكتروني مفعّل."
+
+msgid "Email is not configured — reminders will be in-app only."
+msgstr "البريد الإلكتروني غير مُعد — التذكيرات ستكون داخل النظام فقط."
+
+msgid "Which declarations"
+msgstr "الإقرارات المطلوبة"
+
+msgid "open campaign(s)"
+msgstr "حملة (حملات) مفتوحة"
+
+msgid "No open campaign — create one first."
+msgstr "لا توجد حملة مفتوحة — أنشئ واحدة أولًا."
+
+msgid "Select all"
+msgstr "تحديد الكل"
+
+msgid "Who to remind"
+msgstr "من يتم تذكيره"
+
+msgid "Everyone outstanding"
+msgstr "كل المتأخرين"
+
+msgid "Pending and overdue"
+msgstr "المعلقون والمتأخرون"
+
+msgid "Overdue only"
+msgstr "المتأخرون فقط"
+
+msgid "Past the due date"
+msgstr "تجاوز تاريخ الاستحقاق"
+
+msgid "Leave blank to use the standard text, which lists each outstanding declaration by name and cycle year."
+msgstr "اتركه فارغًا لاستخدام النص المعتاد الذي يذكر كل إقرار متأخر باسمه وسنته."
+
+msgid "Sent in-app, and by email once configured."
+msgstr "يُرسل داخل النظام، وبالبريد بعد إعداده."
+
+msgid "Send reminders now?"
+msgstr "إرسال التذكيرات الآن؟"
+
+msgid "Send reminders"
+msgstr "إرسال التذكيرات"
+
+msgid "Ready to send for"
+msgstr "جاهز للإرسال لـ"
+
+msgid "declaration type(s)."
+msgstr "نوع (أنواع) إقرار."
+
+msgid "Edit Declaration"
+msgstr "تعديل الإقرار"
+
+msgid "New Fit & Proper Assessment"
+msgstr "تقييم جدارة وصلاحية جديد"
+
+msgid "Send KYB Link"
+msgstr "إرسال رابط اعرف عميلك للشركات"
+
+msgid "New Phishing Campaign"
+msgstr "حملة تصيد احتيالي جديدة"
+
+msgid "Phishing Reports"
+msgstr "تقارير التصيد الاحتيالي"
+
+msgid "Policy Acknowledgment Dashboard"
+msgstr "لوحة الإقرار بالسياسات"
+
+msgid "The approval workflow for this type is applied automatically."
+msgstr "يُطبق مسار الاعتماد الخاص بهذا النوع تلقائيًا."
+
+msgid "Owning Unit"
+msgstr "الوحدة المالكة"
+
+msgid "Used to resolve “head of unit” approval stages."
+msgstr "تُستخدم لتحديد مراحل اعتماد \"رئيس الوحدة\"."
+
+msgid "Applies To"
+msgstr "ينطبق على"
+
+msgid "Leave empty to apply to the owning unit only."
+msgstr "اتركه فارغًا ليطبق على الوحدة المالكة فقط."
+
+msgid "Units (and everything below them)"
+msgstr "الوحدات (وكل ما يتبعها)"
+
+msgid "Ctrl/Cmd-click for several."
+msgstr "استخدم Ctrl/Cmd مع النقر لاختيار أكثر من واحدة."
+
+msgid "Cross-company targeting"
+msgstr "الاستهداف عبر الشركات"
+
+msgid "Every unit coded"
+msgstr "كل وحدة برمز"
+
+msgid "e.g. every Compliance department in every company."
+msgstr "مثال: كل إدارات الالتزام في كل الشركات."
+
+msgid "Exclude"
+msgstr "استثناء"
+
+msgid "Exclusions always win over inclusions."
+msgstr "الاستثناءات لها الأولوية دائمًا على الإدراج."
+
+msgid "This type requires approval. The chain is applied on save."
+msgstr "هذا النوع يتطلب اعتمادًا. يُطبق المسار عند الحفظ."
+
+msgid "This type does not require approval — it becomes active immediately."
+msgstr "هذا النوع لا يتطلب اعتمادًا — يصبح ساريًا فورًا."
+
+msgid "Mandatory policy document for employee review."
+msgstr "وثيقة سياسة إلزامية لمراجعة الموظفين."
+
+msgid "Review Policy"
+msgstr "مراجعة السياسة"
+
+msgid "Workflow Management"
+msgstr "إدارة مسارات العمل"
+
+msgid "Edit Regulator"
+msgstr "تعديل الجهة الرقابية"
+
+msgid "New Regulator"
+msgstr "جهة رقابية جديدة"
+
+msgid "Bulk Screening Results"
+msgstr "نتائج الفحص المجمع"
+
+msgid "Bulk Screening Upload"
+msgstr "رفع ملف للفحص المجمع"
+
+msgid "Ongoing Sanctions Screening"
+msgstr "الفحص المستمر للعقوبات"
+
+msgid "Whitelisted names are re-screened on a cycle. A name cleared today can become a genuine match later because the person was listed — not because the name changed. That is what this catches."
+msgstr "الأسماء في القائمة البيضاء يُعاد فحصها دوريًا. الاسم الذي تمت تبرئته اليوم قد يصبح مطابقة حقيقية لاحقًا لأن الشخص أُدرج — لا لأن الاسم تغير. هذا ما يكشفه هذا الفحص."
+
+msgid "Re-screen every monitored name now?"
+msgstr "إعادة فحص كل الأسماء المراقبة الآن؟"
+
+msgid "Monitored names"
+msgstr "الأسماء المراقبة"
+
+msgid "cleared against a match set"
+msgstr "تمت تبرئتها مقابل مجموعة مطابقات"
+
+msgid "Matches cleared"
+msgstr "المطابقات المبرأة"
+
+msgid "listings accepted as false positives"
+msgstr "إدراجات قُبلت كإنذارات كاذبة"
+
+msgid "Due now"
+msgstr "مستحق الآن"
+
+msgid "past their next screening date"
+msgstr "تجاوزت موعد الفحص التالي"
+
+msgid "quarantined, not suppressing"
+msgstr "معزولة، لا تحجب النتائج"
+
+msgid "Legacy entries"
+msgstr "السجلات القديمة"
+
+msgid "name-scoped, excluded from runs"
+msgstr "مرتبطة بالاسم، مستبعدة من الدورات"
+
+msgid "legacy entries are excluded from routine runs."
+msgstr "السجلات القديمة مستبعدة من الدورات المعتادة."
+
+msgid "They were cleared before the matched listings were recorded, so there is no baseline to compare against — every match would look new. They need a one-off re-adjudication: open each, re-screen, and clear it against its current match set."
+msgstr "تمت تبرئتها قبل تسجيل الإدراجات المطابقة، فلا يوجد أساس للمقارنة — وكل مطابقة ستبدو جديدة. تحتاج إلى إعادة بت لمرة واحدة: افتح كل سجل، أعد الفحص، وبرئه مقابل مجموعة المطابقات الحالية."
+
+msgid "Review legacy entries"
+msgstr "مراجعة السجلات القديمة"
+
+msgid "Screening frequency"
+msgstr "دورية الفحص"
+
+msgid "Nothing is configured."
+msgstr "لا يوجد إعداد."
+
+msgid "No cadence has been set, so ongoing screening will not run. A compliance manager decides these — the system does not assume them."
+msgstr "لم تُحدد دورية، لذا لن يعمل الفحص المستمر. يحدد مدير الالتزام ذلك — النظام لا يفترضه."
+
+msgid "band(s) still have no cadence set."
+msgstr "فئة (فئات) بلا دورية محددة."
+
+msgid "A name is re-screened at the cadence of its risk band. Which band a case falls into is decided by the criteria you define below — not by any default."
+msgstr "يُعاد فحص الاسم وفق دورية فئة المخاطر الخاصة به. تحدد المعايير التي تضعها أدناه فئة كل حالة — وليس أي إعداد افتراضي."
+
+msgid "Set by"
+msgstr "حددها"
+
+msgid "unknown"
+msgstr "غير معروف"
+
+msgid "Why these cadences?"
+msgstr "لماذا هذه الدوريات؟"
+
+msgid "Recorded against your name. An auditor will ask who set these and on what basis."
+msgstr "يُسجل باسمك. سيسأل المدقق من حدد هذه القيم وعلى أي أساس."
+
+msgid "Save cadences"
+msgstr "حفظ الدوريات"
+
+msgid "You have view-only access to ongoing screening."
+msgstr "لديك صلاحية اطلاع فقط على الفحص المستمر."
+
+msgid "Risk band criteria"
+msgstr "معايير فئات المخاطر"
+
+msgid "Define"
+msgstr "تحديد"
+
+msgid "criteria defined across the bands."
+msgstr "معيار محدد عبر الفئات."
+
+msgid "These decide which band a case falls into, and therefore how often it is re-screened."
+msgstr "تحدد هذه المعايير فئة كل حالة، وبالتالي عدد مرات إعادة فحصها."
+
+msgid "No criteria defined."
+msgstr "لا توجد معايير محددة."
+
+msgid "Nothing decides whether a case is CRITICAL or LOW, so every case falls to the default cadence. Define them so the classification is yours and defensible, rather than an assumption baked into the tool."
+msgstr "لا شيء يحدد ما إذا كانت الحالة حرجة أم منخفضة، فتقع كل الحالات تحت الدورية الافتراضية. حدد المعايير ليكون التصنيف قرارك ويمكن الدفاع عنه، لا افتراضًا مدمجًا في الأداة."
+
+msgid "names"
+msgstr "أسماء"
+
+msgid "changed"
+msgstr "تغيرت"
+
+msgid "de-listed"
+msgstr "شُطبت من القوائم"
+
+msgid "nothing new"
+msgstr "لا جديد"
+
+msgid "New match"
+msgstr "مطابقة جديدة"
+
+msgid "outside the cleared set"
+msgstr "خارج المجموعة المبرأة"
+
+msgid "basis of clearance moved"
+msgstr "تغير أساس التبرئة"
+
+msgid "Nothing outstanding — no new matches or amended listings."
+msgstr "لا شيء معلق — لا مطابقات جديدة ولا إدراجات معدلة."
+
+msgid "Review finding"
+msgstr "نتيجة المراجعة"
+
+msgid "e.g. Different date of birth and national ID; not the listed individual."
+msgstr "مثال: تاريخ ميلاد ورقم قومي مختلفان؛ ليس الشخص المدرج."
+
+msgid "Recorded permanently in the whitelist audit trail."
+msgstr "يُسجل بشكل دائم في سجل تدقيق القائمة البيضاء."
+
+msgid "Escalate — possible true match"
+msgstr "تصعيد — مطابقة حقيقية محتملة"
+
+msgid "Accept as false positive"
+msgstr "قبول كإنذار كاذب"
+
+msgid "This listing was not in the cleared set. Accepting adds it, so it will stay silent in future runs."
+msgstr "هذا الإدراج لم يكن ضمن المجموعة المبرأة. القبول يضيفه فلا يظهر في الدورات القادمة."
+
+msgid "This listing has been amended since it was cleared. Accepting re-baselines it against the current version."
+msgstr "عُدل هذا الإدراج منذ تبرئته. القبول يعيد ضبط الأساس على النسخة الحالية."
+
+msgid "Review Match"
+msgstr "مراجعة المطابقة"
+
+msgid "Risk Band Criteria"
+msgstr "معايير فئات المخاطر"
+
+msgid "What makes a case CRITICAL rather than LOW — and therefore how often it is re-screened. You define this; the system assumes nothing."
+msgstr "ما الذي يجعل الحالة حرجة بدلًا من منخفضة — وبالتالي عدد مرات إعادة فحصها. أنت تحدد ذلك؛ النظام لا يفترض شيئًا."
+
+msgid "No criteria defined yet."
+msgstr "لا توجد معايير محددة بعد."
+
+msgid "Until you define them, every case falls to the default cadence and the risk bands mean nothing. An auditor will ask how a case was classified and on what basis — this screen is the answer."
+msgstr "حتى تحددها، تقع كل حالة تحت الدورية الافتراضية ولا معنى لفئات المخاطر. سيسأل المدقق كيف صُنفت الحالة وعلى أي أساس — وهذه الشاشة هي الإجابة."
+
+msgid "Defined criteria"
+msgstr "المعايير المحددة"
+
+msgid "Band"
+msgstr "الفئة"
+
+msgid "Defined by"
+msgstr "حددها"
+
+msgid "Remove this criterion?"
+msgstr "إزالة هذا المعيار؟"
+
+msgid "Nothing defined yet."
+msgstr "لا شيء محدد بعد."
+
+msgid "Add a criterion"
+msgstr "إضافة معيار"
+
+msgid "Condition"
+msgstr "الشرط"
+
+msgid "e.g. 95, or EMLCU, or EG"
+msgstr "مثال: 95، أو EMLCU، أو EG"
+
+msgid "How strongly this factor pulls a case into the band."
+msgstr "مدى قوة تأثير هذا العامل في وضع الحالة ضمن الفئة."
+
+msgid "Rationale"
+msgstr "المبرر"
+
+msgid "Why does this make a case that risk level?"
+msgstr "لماذا يجعل هذا الحالة بهذا المستوى من المخاطر؟"
+
+msgid "Add criterion"
+msgstr "إضافة المعيار"
+
+msgid "Screening Whitelist Management"
+msgstr "إدارة القائمة البيضاء للفحص"
+
+msgid "New Course"
+msgstr "دورة جديدة"
+
+msgid "Training Audit Report"
+msgstr "تقرير تدقيق التدريب"
+
+msgid "User Progress"
+msgstr "تقدم المستخدم"
+
+msgid "Whistleblowing case"
+msgstr "حالة إبلاغ عن مخالفة"
+
+msgid "Report a Concern"
+msgstr "الإبلاغ عن مخاوف"
+
+msgid "Whistleblowing Reports"
+msgstr "تقارير الإبلاغ عن المخالفات"
+
+msgid "Where every case sits, who owns it, and how long it has been there."
+msgstr "أين تقف كل حالة، ومن يتولاها، ومنذ متى."
+
+msgid "Total cases"
+msgstr "إجمالي الحالات"
+
+msgid "SLA breached"
+msgstr "تجاوزت مدة الخدمة"
+
+msgid "Cases"
+msgstr "الحالات"
+
+msgid "Optional message"
+msgstr "رسالة اختيارية"
+
+msgid "Current owner"
+msgstr "المسؤول الحالي"
+
+msgid "Previous owners"
+msgstr "المسؤولون السابقون"
+
+msgid "Days held"
+msgstr "أيام الحيازة"
+
+msgid "Breached"
+msgstr "متجاوزة"
+
+msgid "File STR"
+msgstr "إبلاغ عن معاملة مشبوهة"
+
+msgid "Cash in"
+msgstr "إيداع نقدي"
+
+msgid "Cash out"
+msgstr "سحب نقدي"
+
+msgid "Incoming transfer"
+msgstr "تحويل وارد"
+
+msgid "Outgoing transfer"
+msgstr "تحويل صادر"
+
+msgid "Commercial register"
+msgstr "السجل التجاري"
+
+msgid "Tax card"
+msgstr "البطاقة الضريبية"
+
+msgid "OpenSanctions PEP data"
+msgstr "بيانات OpenSanctions للأشخاص المعرضين سياسيًا"
+
+msgid "Internal blacklist"
+msgstr "القائمة السوداء الداخلية"
+
+msgid "UN Security Council sanctions"
+msgstr "عقوبات مجلس الأمن الدولي"
+
+msgid "HR notice"
+msgstr "إشعار موارد بشرية"
+
+msgid "IT notice"
+msgstr "إشعار تقنية معلومات"
+
+msgid "Disaster-recovery readiness"
+msgstr "جاهزية التعافي من الكوارث"
+
+msgid "Tracking mandatory submissions to:"
+msgstr "متابعة التقارير الإلزامية المقدمة إلى:"
+
+msgid "Tracking mandatory regulatory submissions and periodicity"
+msgstr "متابعة التقارير الرقابية الإلزامية ودوريتها"
+
+msgid "In-app only. Email delivery is not configured — contact the system administrator."
+msgstr "داخل النظام فقط. إرسال البريد الإلكتروني غير مُعد — تواصل مع مسؤول النظام."
+
+msgid "In-app and email."
+msgstr "داخل النظام وبالبريد الإلكتروني."
+
+msgid "Other sector forms"
+msgstr "نماذج قطاعات أخرى"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

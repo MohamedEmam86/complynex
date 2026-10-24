@@ -87,3 +87,16 @@ def breadcrumb_trail():
         url = None if (last or adapter is None) else _get_page(adapter, cur)
         trail.append((_title(seg), url))
     return trail
+
+
+def breadcrumb_page_title():
+    """Fallback page title (pages without their own title block): the last
+    readable breadcrumb, e.g. "Screening configuration" rather than the
+    company name alone."""
+    try:
+        for title, _url in reversed(breadcrumb_trail()):
+            if title and not str(title).startswith('#'):
+                return title
+    except Exception:
+        return ''
+    return ''

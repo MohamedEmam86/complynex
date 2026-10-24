@@ -280,7 +280,7 @@
                                 {% for log in logs %}
                                 <tr>
                                     <td class="small">{{ log.activity_timestamp }}</td>
-                                    <td>{{ log.activity_description }}</td>
+                                    <td>{{ log.activity_description|history }}</td>
                                     <td>
                                         {% if log.performed_by_name %}
                                         {{ log.performed_by_name }}

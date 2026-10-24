@@ -8,7 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="ComplyNex Full Compliance Platform">
-    <title>{% block title %}{{ company_name }} CMS{% endblock %}</title>
+    <title>{% block title %}{% set _pt = breadcrumb_page_title() %}{% if _pt %}{{ _pt }} - {% endif %}{{ company_name }}{% endblock %}</title>
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">

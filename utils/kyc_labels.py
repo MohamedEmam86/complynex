@@ -61,7 +61,7 @@ LABELS = {
                      'senior_manager': N_('Senior managing official')},
     'signing_authority': {'sole': N_('Sole signatory'), 'joint': N_('Joint signatory')},
     'id_type': {'NATIONAL_ID': N_('National ID'), 'PASSPORT': N_('Passport'),
-                'RESIDENCE_PERMIT': N_('Residence permit')},
+                'RESIDENCE_PERMIT': N_('Residence permit'), 'COMMERCIAL_REG': N_('Commercial Register')},
     'monitoring': {'Monthly': N_('Monthly'), 'Quarterly': N_('Quarterly'), 'Semi-annual': N_('Semi-annual')},
     'merchant_action': {'created': N_('Created'), 'link_sent': N_('KYB link sent'),
                         'submitted': N_('Submitted for approval'), 'public_submitted': N_('Submitted by the merchant'),

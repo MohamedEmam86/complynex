@@ -8,10 +8,10 @@
         <h1 class="h2">{{ _('Regulatory Reporting Hub') }}</h1>
         <p class="text-muted">
             {% if regulators %}
-            Tracking mandatory submissions across {{ regulators|length }} regulator{{ 's' if regulators|length != 1 }}:
-            {{ regulators|map(attribute='regulator_name')|join(', ') }}
+            {{ _('Tracking mandatory submissions to:') }}
+            {{ regulators|map(attribute='regulator_name')|join('، ' if get_locale()|string == 'ar' else ', ') }}
             {% else %}
-            Tracking mandatory regulatory submissions and periodicity
+            {{ _('Tracking mandatory regulatory submissions and periodicity') }}
             {% endif %}
         </p>
     </div>

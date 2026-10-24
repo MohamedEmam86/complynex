@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Internal PEP List{% endblock %}
+{% block title %}{{ _('Internal PEP List') }}{% endblock %}
 {% block extra_css %}
 <link href="{{ url_for('static', filename='vendor/fonts/noto-naskh-arabic/noto-naskh-arabic.css') }}" rel="stylesheet">
 <style>
@@ -122,7 +122,7 @@
                                     <th>
                                         <a class="text-decoration-none text-dark"
                                            href="?sort=added_date&dir={{ 'asc' if sort_by=='added_date' and sort_dir=='desc' else 'desc' }}{% for key, value in filters.items() %}&{{ key }}={{ value }}{% endfor %}">
-                                            Added Date
+                                            {{ _('Added Date') }}
                                             {% if sort_by == 'added_date' %}
                                             <i class="fas fa-sort-{{ 'up' if sort_dir=='asc' else 'down' }}"></i>
                                             {% else %}
@@ -146,16 +146,16 @@
                                     <td>
                                         <span
                                             class="badge bg-{% if entry.entity_type == 'INDIVIDUAL' %}info{% else %}secondary{% endif %}">
-                                            {{ entry.entity_type }}
+                                            {{ entry.entity_type|label }}
                                         </span>
                                     </td>
                                     <td>
                                         <span
                                             class="badge bg-{% if entry.risk_level == 'HIGH' %}danger{% elif entry.risk_level == 'MEDIUM' %}warning{% else %}success{% endif %}">
-                                            {{ entry.risk_level }}
+                                            {{ entry.risk_level|label }}
                                         </span>
                                     </td>
-                                    <td>{{ entry.category or '-' }}</td>
+                                    <td>{{ entry.category|label('-') }}</td>
                                     <td>{{ entry.reason[:50] }}{% if entry.reason|length > 50 %}...{% endif %}</td>
                                     <td>{{ entry.added_date[:10] if entry.added_date else "—" }}</td>
                                     <td>

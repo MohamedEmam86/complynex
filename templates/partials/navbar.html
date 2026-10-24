@@ -91,7 +91,7 @@
                                         {% endif %}
                                     </div>
                                     <div class="flex-grow-1">
-                                        <div class="small text-dark fw-bold">{{ notif.message }}</div>
+                                        <div class="small text-dark fw-bold">{{ notif.message|history }}</div>
                                         <div class="x-small text-muted" style="font-size:0.7rem;">{{ notif.created_at }}</div>
                                     </div>
                                 </div>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Customer Profile - {{ customer.full_name or customer.company_name }}{% endblock %}
+{% block title %}{{ _('Customer Profile') }} - {{ customer.full_name or customer.company_name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">

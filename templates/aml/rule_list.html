@@ -24,7 +24,7 @@
             <td><strong>{{ r.rule_name_ar if (get_locale() == 'ar' and r.rule_name_ar) else r.rule_name }}</strong><br><small class="text-muted">{{ r.rule_description[:60] }}...</small></td>
             <td>{{ r.rule_category|label }}</td>
             <td><span class="badge bg-info">{{ r.rule_type|label }}</span></td>
-            <td>{{ r.threshold_value or '-' }} {{ r.threshold_currency or '' }}</td>
+            <td>{{ r.threshold_value|num if r.threshold_value else '-' }} {{ r.threshold_currency or '' }}</td>
             <td>{{ r.time_period_days or '-' }} {{ _('days') }}</td>
             <td>
               {% if r.severity == 'HIGH' %}<span class="badge bg-danger">{{ _('HIGH') }}</span>

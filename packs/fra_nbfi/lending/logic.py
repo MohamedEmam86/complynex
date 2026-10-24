@@ -314,7 +314,7 @@ def costlier_refinance(early_repayments, loans, window_days):
             reason = None
             if D(new.get('apr_pct')) is not None and D(old.get('apr_pct')) is not None:
                 if D(new['apr_pct']) > D(old['apr_pct']):
-                    reason = f"APR {new['apr_pct']}% vs {old['apr_pct']}%"
+                    reason = f"APR {float(new['apr_pct']):g}% vs {float(old['apr_pct']):g}%"
             else:
                 fo, fn = fee_pct(old), fee_pct(new)
                 if fo is not None and fn is not None and fn > fo:

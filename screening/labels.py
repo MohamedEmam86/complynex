@@ -93,6 +93,7 @@ SOURCE = {
 MODULE = {
     'merchant kyc': _l('Merchant KYC'), 'customer kyc': _l('Customer KYC'), 'ekyc': _l('eKYC'),
     'manual': _l('Manual'), 'api': _l('API'), 'bulk': _l('Bulk'),
+    'manual_ad-hoc': _l('Manual (ad hoc)'), 'manual ad-hoc': _l('Manual (ad hoc)'), 'manual_ad_hoc': _l('Manual (ad hoc)'),
 }
 
 _KINDS = {'status': STATUS, 'decision': DECISION, 'action': ACTION, 'entity': ENTITY,
@@ -107,7 +108,8 @@ def label(value, kind='status'):
     v = str(value)
     hit = table.get(v)
     if hit is None:
-        hit = table.get(v.strip().lower())
+        k = v.strip().lower()
+        hit = table.get(k) or table.get(k.replace('_', ' ')) or table.get(k.replace(' ', '_'))
     if hit is None and kind == 'source':
         # list codes the module knows a long name for
         try:
@@ -117,4 +119,8 @@ def label(value, kind='status'):
                 return name
         except Exception:
             pass
-    return str(hit) if hit is not None else v
+    if hit is not None:
+        return str(hit)
+    from utils.labels import label as _generic_label
+    out = _generic_label(v)      # unknown code -> readable, translated form (never the raw code)
+    return out if isinstance(out, str) else v

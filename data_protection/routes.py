@@ -251,7 +251,7 @@ def verify_identity(id):
     
     db.commit()
     sync_case('DSR', id)
-    flash(gettext('Identity verified. Request moved to IN_PROGRESS.'))
+    flash(gettext('Identity verified. The request is now in progress.'))
     return redirect(url_for('dp.dsr_detail', id=id))
 
 @dp_bp.route('/dsrs/<int:id>/assign', methods=['POST'])

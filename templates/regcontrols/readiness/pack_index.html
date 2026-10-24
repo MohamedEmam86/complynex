@@ -2,7 +2,7 @@
 <style>body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 9pt; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #bbb; padding: 3pt; text-align: start; } @page { size: A4; margin: 1.5cm; }</style></head><body>
 {% include 'partials/corp_letterhead.html' %}
 <h2>{{ _('Inspection evidence pack') }} — {{ label }}</h2>
-<p>{{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }} · {{ _('Readiness score') }} {{ s.score if s.score is not none else '-' }} / 100 · {{ s.controls }} {{ _('controls') }}</p>
+<p>{{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }} · {{ _('Readiness score') }} {{ s.score|num if s.score is not none else '-' }} / 100 · {{ s.controls }} {{ _('controls') }}</p>
 <p>{{ _('Contents: this index, controls.csv (control list and latest result), run_history.csv (every automated run and manual test), evidence/<control>/ (approved evidence files).') }}</p>
 <table><thead><tr><th>{{ _('Control') }}</th><th>{{ _('Title') }}</th><th>{{ _('Criticality') }}</th><th>{{ _('Last result') }}</th><th>{{ _('Last run') }}</th></tr></thead><tbody>
 {% for c in controls %}<tr><td>{{ c.control_code }}</td><td>{{ rc_loc(c.title_en, c.title_ar) }}</td><td>{{ c.criticality }}</td><td>{{ c.last_status|label('-') }}</td><td>{{ c.last_run_at.strftime('%Y-%m-%d') if c.last_run_at else '-' }}</td></tr>{% endfor %}</tbody></table>

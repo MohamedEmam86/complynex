@@ -48,7 +48,7 @@
           <div class="col-md-2">
             <label class="form-label small fw-bold">{{ _('Transaction Type') }}</label>
             <select class="form-select form-select-sm" id="simType">
-              <option>CASH_IN</option><option>CASH_OUT</option><option>TRANSFER</option>
+              <option value="CASH_IN">{{ 'CASH_IN'|label }}</option><option value="CASH_OUT">{{ 'CASH_OUT'|label }}</option><option value="TRANSFER">{{ 'TRANSFER'|label }}</option>
             </select>
           </div>
           <div class="col-md-2">
@@ -83,20 +83,20 @@
               <br><small class="text-muted">{{ r.rule_description[:70] }}{% if r.rule_description|length > 70 %}…{% endif %}</small>
               {% endif %}
             </td>
-            <td><span class="badge bg-secondary">{{ r.rule_type }}</span></td>
-            <td class="text-nowrap">{{ r.threshold_value or '—' }} {{ r.threshold_currency or '' }}</td>
-            <td class="text-nowrap">{{ r.time_period_days or '—' }}d</td>
+            <td><span class="badge bg-secondary">{{ r.rule_type|label }}</span></td>
+            <td class="text-nowrap">{{ r.threshold_value|num if r.threshold_value else '—' }} {{ r.threshold_currency or '' }}</td>
+            <td class="text-nowrap">{% if r.time_period_days %}{{ r.time_period_days }} {{ _('days') }}{% else %}—{% endif %}</td>
             <td>
               {% if r.severity == 'HIGH' %}<span class="badge bg-danger">{{ _('HIGH') }}</span>
               {% elif r.severity == 'MEDIUM' %}<span class="badge bg-warning text-dark">{{ _('MEDIUM') }}</span>
-              {% else %}<span class="badge bg-success">{{ r.severity }}</span>{% endif %}
+              {% else %}<span class="badge bg-success">{{ r.severity|label }}</span>{% endif %}
             </td>
             <td class="text-center">v{{ r.version or 1 }}</td>
             <td>
               {% if r.status == 'PENDING' %}<span class="badge bg-warning text-dark">{{ _('PENDING') }}</span>
               {% elif r.status == 'ACTIVE' %}<span class="badge bg-success">{{ _('ACTIVE') }}</span>
               {% elif r.status == 'DISABLED' %}<span class="badge bg-secondary">{{ _('DISABLED') }}</span>
-              {% else %}<span class="badge bg-light text-dark">{{ r.status }}</span>{% endif %}
+              {% else %}<span class="badge bg-light text-dark">{{ r.status|label }}</span>{% endif %}
             </td>
             <td>
               {% if r.approved_by_email %}
