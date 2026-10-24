@@ -35,7 +35,7 @@ class COBECDeclaration:
         self.employee_id = employee_id
         self.employee_name = employee_name
         self.department = department
-        self.declaration_date = declaration_date
+        self.declaration_date = declaration_date or created_at  # submission date = row creation
         self.declaration_year = declaration_year
         self.has_read_code = has_read_code
         self.understands_responsibilities = understands_responsibilities
@@ -69,8 +69,8 @@ class COBECDeclaration:
                     commits_to_compliance, will_report_violations,
                     has_known_violations, violation_details,
                     has_prior_misconduct, misconduct_details,
-                    digital_signature, status
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'under_review')
+                    digital_signature, status, created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'under_review', %s)
                 RETURNING id
             ''', (
                 employee_id, year,
@@ -82,7 +82,8 @@ class COBECDeclaration:
                 data.get('violation_details'),
                 1 if data.get('has_prior_misconduct') == '1' or data.get('has_prior_misconduct') is True else 0,
                 data.get('misconduct_details'),
-                data.get('digital_signature')
+                data.get('digital_signature'),
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             ))
             db.commit()
             return cursor.fetchone()['id']

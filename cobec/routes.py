@@ -43,8 +43,19 @@ def declare():
         return redirect(url_for('cobec.view_declaration', id=existing.id))
     
     if request.method == 'POST':
+        data = request.form.to_dict()
+        errors = []
+        if data.get('has_known_violations') == '1' and not (data.get('violation_details') or '').strip():
+            errors.append(gettext('You answered Yes to being aware of violations: please give the details.'))
+        if data.get('has_prior_misconduct') == '1' and not (data.get('misconduct_details') or '').strip():
+            errors.append(gettext('You answered Yes to prior misconduct: please give the details.'))
+        if not (data.get('digital_signature') or '').strip():
+            errors.append(gettext('Digital signature is required.'))
+        if errors:
+            for e in errors:
+                flash(e, 'danger')
+            return render_template('cobec/declare.html', year=year)
         try:
-            data = request.form.to_dict()
             declaration_id = COBECDeclaration.create(data, current_user.id)
             AuditLog.log(current_user.id, 'COBEC Submission', 'COBEC', declaration_id, f'Submitted annual COBEC declaration for {year}', request.remote_addr)
             
@@ -166,7 +177,11 @@ def review_declaration(id):
 
     if request.method == 'POST':
         action = request.form.get('action')
-        comments = request.form.get('comments')
+        comments = (request.form.get('comments') or '').strip() or None
+
+        if action == 'clarify' and not comments:
+            flash(gettext('Write what feedback you need from the employee before requesting it.'), 'danger')
+            return redirect(url_for('cobec.review_declaration', id=id))
 
         if action == 'approve':
             declaration.approve(current_user.id, comments)
@@ -175,7 +190,10 @@ def review_declaration(id):
         elif action == 'clarify':
             declaration.request_clarification(current_user.id, comments)
             AuditLog.log(current_user.id, 'COBEC Clarification', 'COBEC', id, 'Requested clarification for COBEC declaration', request.remote_addr)
-            flash(gettext('Clarification requested.'), 'info')
+            from services.notification_service import notify
+            notify(declaration.employee_id, gettext('Feedback requested on your Code of Conduct declaration'),
+                   comments, link=url_for('cobec.view_declaration', id=id), category='cobec')
+            flash(gettext('Clarification requested. The employee has been notified.'), 'info')
         elif action == 'escalate':
             declaration.escalate(current_user.id, comments)
             AuditLog.log(current_user.id, 'COBEC Escalation', 'COBEC', id, 'Escalated COBEC declaration to compliance', request.remote_addr)

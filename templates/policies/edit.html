@@ -144,18 +144,8 @@
 
                                 <div class="mb-4">
                                     <label class="form-label fw-semibold">{{ _('Current Status') }}</label>
-                                    <select name="status" class="form-select rounded-3 border-0 shadow-sm">
-                                        <option value="draft" {% if policy.status=='draft' %}selected{% endif %}>{{
-                                            _('Draft') }}</option>
-                                        <option value="pending_approval" {% if policy.status=='pending_approval'
-                                            %}selected{% endif %}>{{ _('Pending Approval') }}</option>
-                                        <option value="approved" {% if policy.status=='approved' %}selected{% endif %}>
-                                            {{ _('Approved') }}</option>
-                                        <option value="published" {% if policy.status=='published' %}selected{% endif
-                                            %}>{{ _('Published') }}</option>
-                                        <option value="archived" {% if policy.status=='archived' %}selected{% endif %}>
-                                            {{ _('Archived') }}</option>
-                                    </select>
+                                    <div class="form-control-plaintext"><span class="badge bg-secondary">{{ policy.status }}</span></div>
+                                    <div class="form-text">{{ _('Status changes only through the approval workflow (submit, approve, publish, archive).') }}</div>
                                 </div>
 
                                 <div class="row g-3 mb-4">

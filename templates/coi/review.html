@@ -39,6 +39,23 @@
 
                 <hr>
 
+                {% if declaration.conflict_type or declaration.details %}
+                {% set coi_types = {'financial': _('Financial Interest'), 'employment': _('Outside Employment'), 'family': _('Family Relationship'), 'gifts': _('Gifts & Hospitality'), 'other': _('Other')} %}
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">{{ _('Disclosed Conflict (ad-hoc)') }}</h6>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">{{ _('Type of Conflict') }}</dt>
+                        <dd class="col-sm-8">{{ coi_types.get(declaration.conflict_type, declaration.conflict_type or '---') }}</dd>
+                        <dt class="col-sm-4">{{ _('Description of Conflict') }}</dt>
+                        <dd class="col-sm-8" style="white-space: pre-line">{{ declaration.details or '---' }}</dd>
+                        <dt class="col-sm-4">{{ _('Parties Involved') }}</dt>
+                        <dd class="col-sm-8" style="white-space: pre-line">{{ declaration.parties_involved or '---' }}</dd>
+                        <dt class="col-sm-4">{{ _('Proposed Mitigation') }}</dt>
+                        <dd class="col-sm-8 mb-0" style="white-space: pre-line">{{ declaration.mitigation_plan or '---' }}</dd>
+                    </dl>
+                </div>
+                {% endif %}
+
                 <div class="mb-3">
                     <h6 class="border-bottom pb-2">{{ _('Full Declaration Form') }}</h6>
 
@@ -54,32 +71,32 @@
                             <tbody>
                                 <tr>
                                     <td>{{ _('Financial Interests') }}</td>
-                                    <td>{{ 'Yes' if declaration.has_financial_interests else 'No' }}</td>
+                                    <td>{{ _('Yes') if declaration.has_financial_interests else _('No') }}</td>
                                     <td>{{ declaration.financial_interests_details or '---' }}</td>
                                 </tr>
                                 <tr>
                                     <td>{{ _('Family in Competitor') }}</td>
-                                    <td>{{ 'Yes' if declaration.has_family_in_competitor else 'No' }}</td>
+                                    <td>{{ _('Yes') if declaration.has_family_in_competitor else _('No') }}</td>
                                     <td>{{ declaration.family_competitor_details or '---' }}</td>
                                 </tr>
                                 <tr>
                                     <td>{{ _('Family in Supplier') }}</td>
-                                    <td>{{ 'Yes' if declaration.has_family_in_supplier else 'No' }}</td>
+                                    <td>{{ _('Yes') if declaration.has_family_in_supplier else _('No') }}</td>
                                     <td>{{ declaration.family_supplier_details or '---' }}</td>
                                 </tr>
                                 <tr>
                                     <td>{{ _('Outside Employment') }}</td>
-                                    <td>{{ 'Yes' if declaration.has_outside_employment else 'No' }}</td>
+                                    <td>{{ _('Yes') if declaration.has_outside_employment else _('No') }}</td>
                                     <td>{{ declaration.outside_employment_details or '---' }}</td>
                                 </tr>
                                 <tr>
                                     <td>{{ _('Gifts Received') }}</td>
-                                    <td>{{ 'Yes' if declaration.has_received_gifts else 'No' }}</td>
+                                    <td>{{ _('Yes') if declaration.has_received_gifts else _('No') }}</td>
                                     <td>{{ declaration.gifts_details or '---' }}</td>
                                 </tr>
                                 <tr>
                                     <td>{{ _('Other Conflicts') }}</td>
-                                    <td>{{ 'Yes' if declaration.has_other_conflicts else 'No' }}</td>
+                                    <td>{{ _('Yes') if declaration.has_other_conflicts else _('No') }}</td>
                                     <td>{{ declaration.other_conflicts_details or '---' }}</td>
                                 </tr>
                             </tbody>

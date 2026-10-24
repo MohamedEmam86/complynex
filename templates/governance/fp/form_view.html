@@ -88,14 +88,15 @@
       <div class="col-12"><textarea class="form-control form-control-sm" name="note" rows="2" placeholder="{{ _('Note (optional)') }}"></textarea></div>
       {% if f.status in ('submitted',) %}
         <div class="col-6"><input class="form-control form-control-sm" name="regulator_reference" placeholder="{{ _('Regulator reference') }}" value="{{ f.regulator_reference or '' }}"></div>
-        <div class="col-6"><input type="date" class="form-control form-control-sm" name="decision_on"></div>
+        <div class="col-6"><input type="date" class="form-control form-control-sm" name="decision_on" max="{{ today_iso }}" required title="{{ _('Decision date') }}"></div>
       {% elif f.status in ('signed', 'approved_internal') %}
         <div class="col-12"><input class="form-control form-control-sm" name="regulator_reference" placeholder="{{ _('Submission email / letter reference') }}"></div>
       {% endif %}
       <div class="col-12 d-flex flex-wrap gap-2">
         {% if f.status == 'draft' %}<a class="btn btn-sm btn-primary" href="{{ url_for('governance.fp_form_edit', fid=f.id) }}">{{ _('Complete the answers') }}</a>{% endif %}
         {% if f.status == 'candidate_completed' %}<button class="btn btn-sm btn-primary" name="action" value="start_review">{{ _('Start compliance review') }}</button>{% endif %}
-        {% if f.status == 'under_review' %}<button class="btn btn-sm btn-success" name="action" value="approve">{{ _('Approve internally') }}</button>{% endif %}
+        {% if f.status == 'under_review' %}<button class="btn btn-sm btn-success" name="action" value="approve">{{ _('Approve internally') }}</button>
+        <span class="small text-muted align-self-center">{{ _('Internal approval must be given by a different user than the one who saved the assessment.') }}</span>{% endif %}
         {% if f.status in ('signed', 'approved_internal') %}<button class="btn btn-sm btn-primary" name="action" value="submit">{{ _('Mark as submitted to the regulator') }}</button>{% endif %}
         {% if f.status == 'submitted' %}<button class="btn btn-sm btn-success" name="action" value="regulator_approved">{{ _('Regulator approved') }}</button>
           <button class="btn btn-sm btn-danger" name="action" value="regulator_rejected">{{ _('Regulator rejected') }}</button>{% endif %}

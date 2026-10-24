@@ -260,6 +260,17 @@ class IndependenceDeclaration:
         return [IndependenceDeclaration(**dict(row)) for row in rows]
     
     @staticmethod
+    def get_latest(member_id):
+        """Latest declaration row (id, declaration_date, independence_status) or None."""
+        db = get_db()
+        return db.execute('''
+            SELECT id, declaration_date, independence_status FROM independence_declarations
+            WHERE member_id = %s
+            ORDER BY declaration_date DESC NULLS LAST, id DESC
+            LIMIT 1
+        ''', (member_id,)).fetchone()
+
+    @staticmethod
     def get_current_status(member_id):
         """Get member's current independence status"""
         db = get_db()

@@ -271,9 +271,9 @@ class TrainingEnrollment:
             # Generate certificate
             cert_num = f"CERT-{self.id}-{self.employee_id}-{datetime.now().strftime('%Y%m%d')}"
             db.execute('''
-                INSERT INTO training_certificates (certificate_number, enrollment_id, employee_id, course_id, score)
-                VALUES (%s, %s, %s, %s, %s)
-            ''', (cert_num, self.id, self.employee_id, self.course_id, score))
+                INSERT INTO training_certificates (certificate_number, enrollment_id, employee_id, course_id, score, issue_date)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            ''', (cert_num, self.id, self.employee_id, self.course_id, score, datetime.now().strftime('%Y-%m-%d')))
             db.commit()
             return True, cert_num
         else:

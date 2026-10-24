@@ -30,6 +30,7 @@ from database.db import get_db
 from attachments.service import list_attachments
 from werkzeug.utils import secure_filename
 import os
+import re
 import logging
 from datetime import datetime, timedelta
 from flask import current_app
@@ -37,6 +38,77 @@ from flask import current_app
 logger = logging.getLogger(__name__)
 
 governance_bp = Blueprint('governance', __name__, url_prefix='/governance')
+
+_EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+
+
+def _parse_date(value):
+    """'YYYY-MM-DD' -> date, or None when blank/invalid."""
+    try:
+        return datetime.strptime((value or '').strip(), '%Y-%m-%d').date()
+    except ValueError:
+        return None
+
+
+def _flash_errors(errors):
+    for e in errors:
+        flash(e, 'danger')
+
+
+def _meeting_errors(data):
+    errors = []
+    if not (data.get('meeting_type') or '').strip():
+        errors.append(_('Meeting type is required.'))
+    if not _parse_date(data.get('meeting_date')):
+        errors.append(_('A valid meeting date is required.'))
+    try:
+        datetime.strptime((data.get('meeting_time') or '').strip()[:5], '%H:%M')
+    except ValueError:
+        errors.append(_('A valid meeting time is required.'))
+    return errors
+
+
+def _member_errors(data):
+    errors = []
+    if not (data.get('member_name') or '').strip():
+        errors.append(_('Member name is required.'))
+    if not (data.get('role') or '').strip():
+        errors.append(_('Role is required.'))
+    email = (data.get('email') or '').strip()
+    if email and not _EMAIL_RE.match(email):
+        errors.append(_('Please enter a valid email address.'))
+    appointed = _parse_date(data.get('appointment_date'))
+    term_end = _parse_date(data.get('term_end_date'))
+    if (data.get('appointment_date') or '').strip() and not appointed:
+        errors.append(_('Appointment date is not a valid date.'))
+    if (data.get('term_end_date') or '').strip() and not term_end:
+        errors.append(_('Term end date is not a valid date.'))
+    if appointed and term_end and term_end < appointed:
+        errors.append(_('Term end date cannot be before the appointment date.'))
+    return errors
+
+
+def _clean_member_data(data):
+    for k in ('member_name', 'member_name_arabic', 'email', 'phone', 'expertise_areas', 'bio',
+              'appointment_date', 'term_end_date'):
+        data[k] = (data.get(k) or '').strip() or None
+    if data.get('status') not in ('ACTIVE', 'INACTIVE'):
+        data['status'] = 'ACTIVE'
+    return data
+
+
+def _committee_errors(data):
+    errors = []
+    if not (data.get('committee_name') or '').strip():
+        errors.append(_('Committee name is required.'))
+    if not (data.get('committee_type') or '').strip():
+        errors.append(_('Committee type is required.'))
+    chairman_id = data.get('chairman_id')
+    if chairman_id:
+        chairman = BoardMember.get_by_id(chairman_id) if str(chairman_id).isdigit() else None
+        if not chairman or chairman.status != 'ACTIVE':
+            errors.append(_('The chairman must be an active board member.'))
+    return errors
 
 @governance_bp.route('/')
 @governance_bp.route('/dashboard')
@@ -85,6 +157,13 @@ def add_member():
             'status': request.form.get('status')
         }
         
+        _clean_member_data(data)
+        errors = _member_errors(data)
+        if errors:
+            _flash_errors(errors)
+            return render_template('governance/member_form.html', roles=BoardRole.get_all(),
+                                   member=BoardMember(**data))
+
         # Handle Board Member Document Upload
         file = request.files.get('document_file')
         if file and file.filename:
@@ -128,6 +207,14 @@ def edit_member(id):
             'status': request.form.get('status')
         }
         
+        _clean_member_data(data)
+        errors = _member_errors(data)
+        if errors:
+            _flash_errors(errors)
+            return render_template('governance/member_form.html', roles=BoardRole.get_all(),
+                                   member=BoardMember(id=member.id, document_path=member.document_path, **data),
+                                   title=_('Edit Board Member'))
+
         # Handle Board Member Document Upload
         file = request.files.get('document_file')
         if file and file.filename:
@@ -206,6 +293,11 @@ def add_committee():
             'chairman_id': request.form.get('chairman_id'),
             'meeting_frequency': request.form.get('meeting_frequency')
         }
+        data['chairman_id'] = data['chairman_id'] or None
+        errors = _committee_errors(data)
+        if errors:
+            _flash_errors(errors)
+            return render_template('governance/committee_form.html', members=BoardMember.get_all())
         
         # Handle Committee Charter Upload
         file = request.files.get('charter_file')
@@ -242,6 +334,12 @@ def edit_committee(id):
             'meeting_frequency': request.form.get('meeting_frequency'),
             'is_active': 'is_active' in request.form
         }
+        data['chairman_id'] = data['chairman_id'] or None
+        errors = _committee_errors(data)
+        if errors:
+            _flash_errors(errors)
+            return render_template('governance/committee_form.html', committee=committee,
+                                   members=BoardMember.get_all())
         
         # Handle Committee Charter Upload
         file = request.files.get('charter_file')
@@ -322,10 +420,23 @@ def manage_committee_members(id):
         flash(_('Committee not found.'), 'danger')
         return redirect(url_for('governance.list_committees'))
     if request.method == 'POST':
-        member_id = request.form.get('member_id')
-        role = request.form.get('role', 'MEMBER')
-        CommitteeMembership.add_member(id, member_id, role)
-        flash(_('Member added to committee.'), 'success')
+        member_id = request.form.get('member_id') or ''
+        role = (request.form.get('role') or 'MEMBER').upper()
+        member = BoardMember.get_by_id(member_id) if member_id.isdigit() else None
+        current = CommitteeMembership.get_by_committee(id)
+        if role not in ('MEMBER', 'CHAIRMAN', 'SECRETARY'):
+            flash(_('Invalid committee role.'), 'danger')
+        elif not member:
+            flash(_('Please select a board member.'), 'danger')
+        elif member.status != 'ACTIVE':
+            flash(_('Only active board members can be added to a committee.'), 'danger')
+        elif any(r['member_id'] == member.id for r in current):
+            flash(_('This member is already on the committee.'), 'warning')
+        elif role == 'CHAIRMAN' and any((r['role'] or '').upper() == 'CHAIRMAN' for r in current):
+            flash(_('This committee already has a chairman.'), 'danger')
+        else:
+            CommitteeMembership.add_member(id, member.id, role)
+            flash(_('Member added to committee.'), 'success')
         return redirect(url_for('governance.manage_committee_members', id=id))
     
     current_members = CommitteeMembership.get_by_committee(id)
@@ -373,6 +484,10 @@ def schedule_meeting():
             'meeting_reference': request.form.get('meeting_reference') or None,
             'agenda': request.form.get('agenda')
         }
+        errors = _meeting_errors(data)
+        if errors:
+            _flash_errors(errors)
+            return redirect(url_for('governance.schedule_meeting'))
         attendee_ids = request.form.getlist('attendees')
         BoardMeeting.create(data, attendee_ids=attendee_ids)
         flash(_('Meeting scheduled successfully.'), 'success')
@@ -401,6 +516,10 @@ def edit_meeting(id):
             'meeting_reference': request.form.get('meeting_reference'),
             'status': request.form.get('status')
         }
+        errors = _meeting_errors(data)
+        if errors:
+            _flash_errors(errors)
+            return redirect(url_for('governance.edit_meeting', id=id))
         meeting.update(data)
         flash(_('Meeting updated successfully.'), 'success')
         return redirect(url_for('governance.list_meetings'))
@@ -429,26 +548,32 @@ def record_attendance(id):
         return redirect(url_for('governance.list_meetings'))
     if request.method == 'POST':
         # Processing attendance dictionary from form
+        # Every listed member posts a hidden member_id_<id>; unchecked boxes are
+        # simply absent from the form, so read them per member.
         attendance_data = {}
         for key, value in request.form.items():
-            if key.startswith('attended_'):
-                member_id = key.split('_')[1]
+            if key.startswith('member_id_') and value.isdigit():
+                member_id = int(value)
                 attendance_data[member_id] = {
-                    'attended': value == 'on',
+                    'attended': request.form.get(f'attended_{member_id}') == 'on',
                     'apology_received': request.form.get(f'apology_{member_id}') == 'on',
-                    'proxy_name': request.form.get(f'proxy_{member_id}')
+                    'proxy_name': (request.form.get(f'proxy_{member_id}') or '').strip() or None
                 }
-        MeetingAttendance.record_attendance(id, attendance_data)
+        MeetingAttendance.record_attendance(id, attendance_data, recorded_by=current_user.id)
         flash(_('Attendance recorded.'), 'success')
         return redirect(url_for('governance.list_meetings'))
     
     # Logic to get relevant members (Board or Committee)
+    # Rows always carry the BOARD MEMBER id (committee rows are memberships,
+    # so use their member_id) — the summary joins on board_members.id.
     if meeting.committee_id:
-        members = CommitteeMembership.get_by_committee(meeting.committee_id)
+        members = [{'id': r['member_id'], 'member_name': r['member_name']}
+                   for r in CommitteeMembership.get_by_committee(meeting.committee_id)]
     else:
-        members = BoardMember.get_all()
-        
-    return render_template('governance/meeting_attendance.html', meeting=meeting, members=members)
+        members = [{'id': m.id, 'member_name': m.member_name} for m in BoardMember.get_all()]
+    existing = MeetingAttendance.get_for_meeting(id)
+    return render_template('governance/meeting_attendance.html', meeting=meeting, members=members,
+                           existing=existing)
 
 @governance_bp.route('/meeting/invite/<int:id>')
 @login_required
@@ -558,7 +683,10 @@ def independence_dashboard():
     members = BoardMember.get_all()
     # Enhance members with current status
     for m in members:
-        m.independence_status = IndependenceDeclaration.get_current_status(m.id)
+        latest = IndependenceDeclaration.get_latest(m.id)
+        m.latest_declaration_id = latest['id'] if latest else None
+        m.last_declaration_date = latest['declaration_date'] if latest else None
+        m.independence_status = latest['independence_status'] if latest else None
     return render_template('governance/independence_dashboard.html', members=members)
 
 @governance_bp.route('/independence/declare/<int:member_id>', methods=['GET', 'POST'])
@@ -739,6 +867,20 @@ def add_compliance():
             'compliance_status': request.form.get('compliance_status', 'NON_COMPLIANT'),
             'due_date': request.form.get('due_date') or None,
         }
+        errors = []
+        if not (data['requirement_code'] or '').strip():
+            errors.append(_('Requirement code is required.'))
+        if not (data['requirement_description'] or '').strip():
+            errors.append(_('Requirement description is required.'))
+        if data['due_date'] and not _parse_date(data['due_date']):
+            errors.append(_('Due date is not a valid date.'))
+        if data['compliance_status'] not in ('COMPLIANT', 'PARTIALLY_COMPLIANT', 'NON_COMPLIANT', 'NOT_APPLICABLE', 'IN_PROGRESS'):
+            errors.append(_('Invalid compliance status.'))
+        if errors:
+            _flash_errors(errors)
+            return render_template('governance/compliance_form.html', regulators=Regulator.get_all())
+        data['requirement_code'] = data['requirement_code'].strip()
+        data['requirement_description'] = data['requirement_description'].strip()
         new_id = GovernanceCompliance.create(data)
         AuditLog.log(current_user.id, 'Add Compliance Requirement', 'Governance', new_id,
                      f'Added requirement {data["requirement_code"]}', request.remote_addr)
@@ -845,7 +987,7 @@ def _report_years_available():
     the current year so the report is usable even with zero history yet."""
     db = get_db()
     rows = db.execute("""
-        SELECT DISTINCT EXTRACT(YEAR FROM meeting_date::date)::int AS y
+        SELECT DISTINCT EXTRACT(YEAR FROM (CASE WHEN meeting_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(meeting_date, 10)::date END))::int AS y
         FROM board_meetings WHERE meeting_date IS NOT NULL
         UNION
         SELECT DISTINCT EXTRACT(YEAR FROM training_date::date)::int AS y
@@ -866,7 +1008,7 @@ def annual_board_report():
 
     meetings = db.execute("""
         SELECT * FROM board_meetings
-        WHERE EXTRACT(YEAR FROM meeting_date::date) = %s
+        WHERE EXTRACT(YEAR FROM (CASE WHEN meeting_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(meeting_date, 10)::date END)) = %s
         ORDER BY meeting_date
     """, (year,)).fetchall()
 
@@ -874,7 +1016,7 @@ def annual_board_report():
         SELECT d.*, m.meeting_date, m.meeting_type
         FROM board_decisions d
         JOIN board_meetings m ON d.meeting_id = m.id
-        WHERE EXTRACT(YEAR FROM m.meeting_date::date) = %s
+        WHERE EXTRACT(YEAR FROM (CASE WHEN m.meeting_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(m.meeting_date, 10)::date END)) = %s
         ORDER BY m.meeting_date
     """, (year,)).fetchall()
 
@@ -886,7 +1028,7 @@ def annual_board_report():
         FROM meeting_attendance a
         JOIN board_meetings mt ON a.meeting_id = mt.id
         JOIN board_members m2 ON a.member_id = m2.id
-        WHERE EXTRACT(YEAR FROM mt.meeting_date::date) = %s
+        WHERE EXTRACT(YEAR FROM (CASE WHEN mt.meeting_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(mt.meeting_date, 10)::date END)) = %s
         GROUP BY a.member_id, m2.member_name
         ORDER BY m2.member_name
     """, (year,)).fetchall()
@@ -896,7 +1038,7 @@ def annual_board_report():
     for c in committees:
         cnt = db.execute("""
             SELECT COUNT(*) AS n FROM board_meetings
-            WHERE committee_id = %s AND EXTRACT(YEAR FROM meeting_date::date) = %s
+            WHERE committee_id = %s AND EXTRACT(YEAR FROM (CASE WHEN meeting_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(meeting_date, 10)::date END)) = %s
         """, (c.id, year)).fetchone()
         committee_meeting_counts[c.id] = cnt['n'] if cnt else 0
 
@@ -958,7 +1100,7 @@ def annual_governance_report():
 
     meetings_count = db.execute("""
         SELECT COUNT(*) AS n FROM board_meetings
-        WHERE EXTRACT(YEAR FROM meeting_date::date) = %s
+        WHERE EXTRACT(YEAR FROM (CASE WHEN meeting_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(meeting_date, 10)::date END)) = %s
     """, (year,)).fetchone()
 
     # ESG Governance ('G') pillar score, if the ESG framework/period is set up —
@@ -1020,7 +1162,7 @@ def fra_governance_report():
     committees = BoardCommittee.get_all()
     meetings_count = db.execute("""
         SELECT COUNT(*) AS n FROM board_meetings
-        WHERE EXTRACT(YEAR FROM meeting_date::date) = %s
+        WHERE EXTRACT(YEAR FROM (CASE WHEN meeting_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(meeting_date, 10)::date END)) = %s
     """, (year,)).fetchone()
 
     return render_template(
@@ -1050,10 +1192,13 @@ def _column_exists(db, table, column):
 def remove_committee_member(id, membership_id):
     """End a board member's committee seat (kept for history: is_active = 0 and a departure date)."""
     db = get_db()
-    db.execute("""UPDATE committee_memberships SET is_active = 0, departure_date = %s, departure_reason = %s
-                  WHERE id = %s AND committee_id = %s""",
+    cur = db.execute("""UPDATE committee_memberships SET is_active = 0, departure_date = %s, departure_reason = %s
+                  WHERE id = %s AND committee_id = %s AND COALESCE(is_active, 1) = 1""",
                (datetime.now().strftime('%Y-%m-%d'), (request.form.get('reason') or '').strip() or None, membership_id, id))
     db.commit()
+    if not cur.rowcount:
+        flash(_('That member is not on this committee.'), 'danger')
+        return redirect(url_for('governance.manage_committee_members', id=id))
     AuditLog.log(current_user.id, 'Remove committee member', 'Governance', id, str(membership_id), request.remote_addr)
     flash(_('Member removed from the committee.'), 'success')
     return redirect(url_for('governance.manage_committee_members', id=id))

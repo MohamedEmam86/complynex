@@ -17,7 +17,7 @@
 
 
 from flask_babel import gettext
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from utils.decorators import permission_required
 from models.coi import COICampaign, COIDeclaration, COIMitigationPlan
@@ -59,22 +59,49 @@ def create_campaign():
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
+        # The form posts cycle_name / cycle_year; accept the older names too.
+        form = request.form
+        data = {
+            'campaign_name': (form.get('cycle_name') or form.get('campaign_name') or '').strip(),
+            'campaign_year': (form.get('cycle_year') or form.get('campaign_year') or '').strip(),
+            'start_date': (form.get('start_date') or '').strip(),
+            'end_date': (form.get('end_date') or '').strip(),
+            'description': (form.get('description') or '').strip() or None,
+        }
+        errors = []
+        if not data['campaign_name']:
+            errors.append(gettext('Campaign name is required.'))
+        if not data['campaign_year'].isdigit():
+            errors.append(gettext('A valid year is required.'))
         try:
-            data = {
-                'campaign_name': request.form['campaign_name'],
-                'campaign_year': request.form['campaign_year'],
-                'start_date': request.form['start_date'],
-                'end_date': request.form['end_date'],
-                'description': request.form['description']
-            }
-            camp = COICampaign.create(data, current_user.id)
-            AuditLog.log(current_user.id, 'Create COI Campaign', 'COI', camp.id, f'Created campaign {data["campaign_name"]} ({data["campaign_year"]})', request.remote_addr)
-            flash(gettext('Campaign created successfully! All active employees have been notified.'), 'success')
-            return redirect(url_for('coi.list_campaigns'))
-        except Exception as e:
-            flash(f'Error creating campaign: {str(e)}', 'danger')
-    
-    return render_template('coi/create_campaign.html')
+            start = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+            end = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+            if end < start:
+                errors.append(gettext('End date cannot be before the start date.'))
+        except ValueError:
+            errors.append(gettext('Valid start and end dates are required.'))
+        if errors:
+            for e in errors:
+                flash(e, 'danger')
+            return render_template('coi/create_campaign.html', current_year=datetime.now().year)
+        try:
+            camp_id = COICampaign.create(data, current_user.id)
+        except Exception:
+            current_app.logger.exception('COI campaign creation failed')
+            flash(gettext('The campaign could not be created. Please try again.'), 'danger')
+            return render_template('coi/create_campaign.html', current_year=datetime.now().year)
+        AuditLog.log(current_user.id, 'Create COI Campaign', 'COI', camp_id, f'Created campaign {data["campaign_name"]} ({data["campaign_year"]})', request.remote_addr)
+        from services.notification_service import notify
+        campaign = COICampaign.get_by_id(camp_id)
+        employee_ids = [m['user_id'] for m in campaign.get_members()] if campaign else []
+        notify(employee_ids, gettext('Conflict of interest declaration'),
+               gettext('Please complete your conflict of interest declaration for %(name)s by %(date)s.',
+                       name=data['campaign_name'], date=data['end_date']),
+               link=url_for('coi.declare', campaign_id=camp_id), category='coi')
+        flash(gettext('Campaign created and %(n)s employees notified.', n=len(employee_ids)), 'success')
+        return redirect(url_for('coi.view_campaign', id=camp_id))
+
+    return render_template('coi/create_campaign.html', current_year=datetime.now().year)
 
 @coi_bp.route('/campaigns/<int:id>')
 @login_required
@@ -333,6 +360,15 @@ def pending_review():
     
     return render_template('coi/pending_review.html', declarations=declarations)
 
+def _escalation_manager(employee_id):
+    """The employee's line manager; if the reviewer is that manager, the next one up."""
+    employee = User.get_by_id(employee_id)
+    manager = User.get_by_id(employee.manager_id) if employee and getattr(employee, 'manager_id', None) else None
+    if manager and manager.id == current_user.id:
+        manager = User.get_by_id(manager.manager_id) if getattr(manager, 'manager_id', None) else None
+    return manager if manager and manager.is_active else None
+
+
 @coi_bp.route('/declarations/<int:id>/review', methods=['GET', 'POST'])
 @login_required
 @permission_required('coi', level='edit')
@@ -360,8 +396,21 @@ def review_declaration(id):
             declaration.request_clarification(current_user.id, comments)
             flash(gettext('Clarification requested.'), 'info')
         elif action == 'escalate':
-            declaration.escalate(current_user.id, comments)
-            flash(gettext('Declaration escalated to compliance.'), 'warning')
+            manager = _escalation_manager(declaration.employee_id)
+            note = comments
+            if manager:
+                note = f"{comments or ''}\n[Escalated to {manager.get_full_name()}]".strip()
+            declaration.escalate(current_user.id, note)
+            if manager:
+                from services.notification_service import notify
+                notify(manager.id, gettext('COI declaration escalated to you'),
+                       gettext('A conflict of interest declaration by %(name)s has been escalated to you for a decision.',
+                               name=declaration.employee_name),
+                       link=url_for('coi.review_declaration', id=declaration.id), category='coi')
+                flash(gettext('Declaration escalated to %(name)s (management) and they have been notified.',
+                              name=manager.get_full_name()), 'warning')
+            else:
+                flash(gettext('Declaration marked as escalated, but no manager is set for this employee, so nobody was notified. Set the employee\'s manager in user management.'), 'warning')
         elif action == 'mitigate':
             # Create a draft mitigation plan if needed, or redirect to creation form
             return redirect(url_for('coi.create_mitigation_plan', declaration_id=id))

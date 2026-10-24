@@ -433,7 +433,12 @@ def incident_ghe():
             'government_official_details': request.form.get('government_official_details'),
             'government_official_position': request.form.get('government_official_position')
         }
-        
+        errors = GHEDeclaration.validation_errors(data)
+        if errors:
+            for e in errors:
+                flash(e, 'danger')
+            return render_template('portal/incident_ghe.html', email=current_user.email, today=datetime.now().strftime('%Y-%m-%d'))
+
         try:
             # Handle file upload
             if 'attachment' in request.files:
@@ -479,6 +484,16 @@ def incident_ghe():
 # ============================================
 # Ad-hoc COI Submission
 # ============================================
+# Ad-hoc COI form "type of conflict" -> declaration area (flag, details column).
+ADHOC_COI_AREAS = {
+    'financial': ('has_financial_interests', 'financial_interests_details'),
+    'employment': ('has_outside_employment', 'outside_employment_details'),
+    'gifts': ('has_received_gifts', 'gifts_details'),
+    'family': ('has_other_conflicts', 'other_conflicts_details'),
+    'other': ('has_other_conflicts', 'other_conflicts_details'),
+}
+
+
 @portal_bp.route('/incident/coi', methods=['GET', 'POST'])
 @login_required
 def incident_coi():
@@ -509,12 +524,32 @@ def incident_coi():
         # Create declaration
         try:
             from models.coi import COIDeclaration
-            data = request.form.to_dict()
-            data['campaign_id'] = campaign_id
-            
-            if not data.get('digital_signature'):
+            form = request.form
+            conflict_type = (form.get('conflict_type') or '').strip()
+            description = (form.get('conflict_description') or '').strip()
+            parties = (form.get('parties_involved') or '').strip()
+            mitigation = (form.get('mitigation') or '').strip()
+            signature = (form.get('digital_signature') or '').strip()
+            if not signature:
                 flash(_('Digital signature is required.'), 'danger')
                 return render_template('portal/incident_coi.html', email=email)
+            if conflict_type not in ADHOC_COI_AREAS or not description:
+                flash(_('Please select the type of conflict and describe it.'), 'danger')
+                return render_template('portal/incident_coi.html', email=email)
+            # Build the declaration server-side (not from the page script): the
+            # disclosed area is answered "Yes" with the description as details.
+            flag, details_field = ADHOC_COI_AREAS[conflict_type]
+            summary = description + (('\n' + _('Parties involved') + ': ' + parties) if parties else '')
+            data = {
+                'campaign_id': campaign_id,
+                'digital_signature': signature,
+                flag: 1,
+                details_field: summary,
+                'conflict_type': conflict_type,
+                'details': description,
+                'parties_involved': parties or None,
+                'mitigation_plan': mitigation or None,
+            }
             
             status_code_adhoc, pin_code = COIDeclaration.create(data, current_user.id)
             

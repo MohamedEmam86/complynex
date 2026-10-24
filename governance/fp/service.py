@@ -3,6 +3,7 @@ import json
 from datetime import datetime, date, timedelta
 
 from database.db import get_db
+from models.settings import Settings
 from . import forms as F
 
 KEY_FUNCTIONS = [  # code, EN, AR  (the CBE list; usable for any regulator)
@@ -23,6 +24,10 @@ KEY_FUNCTIONS = [  # code, EN, AR  (the CBE list; usable for any regulator)
     ('head_audit', 'Head of Internal Audit', 'رئيس إدارة المراجعة الداخلية'),
     ('head_compliance', 'Head of Compliance', 'رئيس إدارة الالتزام'),
     ('head_infosec', 'Head of Information Security', 'رئيس إدارة أمن المعلومات'),
+    ('head_credit', 'Head of Credit / Lending', 'رئيس إدارة الائتمان / التمويل'),
+    ('mlro', 'MLRO / Head of AML', 'مسئول الإبلاغ عن غسل الأموال / رئيس إدارة مكافحة غسل الأموال'),
+    ('head_collections', 'Head of Collections', 'رئيس إدارة التحصيل'),
+    ('branch_network_manager', 'Branch network manager', 'مدير شبكة الفروع'),
     ('committee_member', 'Committee member (not a board member)', 'عضو لجنة (من غير أعضاء المجلس)'),
     ('other', 'Other key function', 'وظيفة رئيسية أخرى'),
 ]
@@ -154,14 +159,29 @@ def score_and_result(assessment):
 
 
 # ------------------------------------------------------------------ prefill
+# sector / licence type values that name one of the "activity" options differently
+_ACTIVITY_ALIASES = {'psp': 'payments', 'payment': 'payments', 'payment_services': 'payments',
+                     'mfi': 'microfinance', 'nbfi_microfinance': 'microfinance', 'consumer': 'consumer_finance'}
+
+
+def _activity(cp):
+    """Company activity for item 1.3, from the company sector setting when one exists."""
+    raw = Settings.get('company_sector') or cp.get('licence_type') or Settings.get('rc_licence_type') or ''
+    raw = str(raw).strip().lower().replace(' ', '_').replace('-', '_')
+    return _ACTIVITY_ALIASES.get(raw, raw) or None
+
+
 def institution(db=None):
     db = db or get_db()
     cp = db.execute("SELECT * FROM corp_profile WHERE id = 1").fetchone()
     cp = dict(cp) if cp else {}
     ceo = db.execute("""SELECT o.full_name FROM fp_officials o WHERE o.key_function = 'ceo' AND o.is_active
                         ORDER BY o.id LIMIT 1""").fetchone()
+    # Trade name: an explicit setting, else the company name used across the app
+    # (address_aliases are alternative spellings of the ADDRESS, not names).
+    trade_name = Settings.get('company_trade_name') or Settings.get('company_name') or ''
     return {'legal_name': cp.get('legal_name_en') or '', 'legal_name_ar': cp.get('legal_name_ar') or '',
-            'trade_name': ', '.join(cp.get('address_aliases') or []) if isinstance(cp.get('address_aliases'), list) else '',
+            'trade_name': trade_name, 'activity': _activity(cp),
             'cr': cp.get('commercial_register_no') or '', 'signatory': ceo['full_name'] if ceo else '',
             'signatory_capacity': 'Chief Executive Officer' if ceo else ''}
 
@@ -182,6 +202,8 @@ def prefill(defn, official, form_row=None, db=None):
         v = ctx.get(a, {}).get(b)
         if v in (None, ''):
             continue
+        if it['type'] == 'choice' and it.get('options') and v not in {o['v'] for o in it['options']}:
+            continue  # e.g. a sector setting that is not one of this form's options
         if it['type'] == 'choice' and it.get('multi'):
             v = [v]
         out[it['id']] = v
@@ -383,6 +405,9 @@ def transition(fid, action, user_id, note=None, extra=None, db=None):
     if action == 'approve':
         if not f.get('assessment_result'):
             raise ValueError('assessment missing')
+        assessor = last_assessor(fid, db)
+        if assessor and assessor == user_id:
+            raise FourEyesError('approver saved the assessment')
         sets.update(approved_by=user_id, approved_at=now)
     if action == 'submit':
         sets.update(submitted_at=now, regulator_reference=(extra or {}).get('regulator_reference') or f.get('regulator_reference'))
@@ -400,6 +425,17 @@ def transition(fid, action, user_id, note=None, extra=None, db=None):
     log(fid, action, f['status'], to, note, user_id, db)
     db.commit()
     return to
+
+
+class FourEyesError(ValueError):
+    """Internal approval by the same user who saved the assessment."""
+
+
+def last_assessor(fid, db=None):
+    db = db or get_db()
+    r = db.execute("""SELECT user_id FROM fp_form_events WHERE form_id = %s AND action = 'assessed'
+                     ORDER BY created_at DESC, id DESC LIMIT 1""", (fid,)).fetchone()
+    return r['user_id'] if r else None
 
 
 def save_assessment(fid, assessment, conditions, user_id, db=None):

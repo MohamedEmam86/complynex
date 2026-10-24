@@ -162,6 +162,11 @@ def create_declaration():
             return render_template('ghe/create.html', 
                                  today=datetime.now().strftime('%Y-%m-%d'),
                                  data=data)
+        errors = GHEDeclaration.validation_errors(data)
+        if errors:
+            for e in errors:
+                flash(e, 'danger')
+            return render_template('ghe/create.html', today=datetime.now().strftime('%Y-%m-%d'), data=data)
         
         # Handle file upload
         if 'attachment' in request.files:
@@ -312,9 +317,17 @@ def edit_declaration(id):
             'provider_recipient_company': request.form.get('provider_recipient_company'),
             'business_purpose': request.form.get('business_purpose'),
             'is_government_official': request.form.get('is_government_official'),
-            'government_official_details': request.form.get('government_official_details')
+            'government_official_details': request.form.get('government_official_details'),
+            'government_official_position': request.form.get('government_official_position')
+                                            or getattr(declaration, 'government_official_position', None)
         }
-        
+        errors = GHEDeclaration.validation_errors(data)
+        if errors:
+            for e in errors:
+                flash(e, 'danger')
+            return render_template('ghe/edit.html', declaration=declaration,
+                                   today=datetime.now().strftime('%Y-%m-%d'))
+
         if declaration.update(data, current_user.id):
             flash(gettext('Declaration updated successfully!'), 'success')
             return redirect(url_for('ghe.view_declaration', id=id))

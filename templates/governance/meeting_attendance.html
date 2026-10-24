@@ -8,6 +8,9 @@
                 meeting.meeting_date }}</h6>
             <span class="badge bg-info text-dark">{{ meeting.meeting_type }}</span>
         </div>
+        <div class="px-3 pt-3 small text-muted">
+            {{ _('Members who did not attend: tick Apology Received if they apologised, or enter the proxy who represented them.') }}
+        </div>
         <div class="card-body">
             <form method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -23,6 +26,7 @@
                         </thead>
                         <tbody>
                             {% for member in members %}
+                            {% set saved = existing.get(member.id) %}
                             <tr>
                                 <td>
                                     {{ member.member_name }}
@@ -31,17 +35,19 @@
                                 <td class="text-center">
                                     <div class="form-check form-switch d-inline-block">
                                         <input class="form-check-input" type="checkbox" name="attended_{{ member.id }}"
-                                            checked>
+                                            {{ 'checked' if not saved or saved.attended else '' }}>
                                     </div>
                                 </td>
                                 <td class="text-center">
                                     <div class="form-check form-switch d-inline-block">
-                                        <input class="form-check-input" type="checkbox" name="apology_{{ member.id }}">
+                                        <input class="form-check-input" type="checkbox" name="apology_{{ member.id }}"
+                                            {{ 'checked' if saved and saved.apology_received else '' }}>
                                     </div>
                                 </td>
                                 <td>
                                     <input type="text" name="proxy_{{ member.id }}" class="form-control form-control-sm"
-                                        placeholder="Proxy Name">
+                                        value="{{ saved.proxy_name or '' if saved else '' }}"
+                                        placeholder="{{ _('Proxy Name') }}">
                                 </td>
                             </tr>
                             {% endfor %}

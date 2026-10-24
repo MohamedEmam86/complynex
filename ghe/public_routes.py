@@ -114,6 +114,13 @@ def public_submit():
                 errors.append('Estimated value must be greater than 0')
         except ValueError:
             errors.append('Invalid estimated value')
+        try:
+            if datetime.strptime((event_date or '')[:10], '%Y-%m-%d').date() > datetime.now().date():
+                errors.append('Event date cannot be in the future')
+        except ValueError:
+            errors.append('Invalid event date')
+        if is_govt_official and not govt_details:
+            errors.append('Government entity is required')
         
         if errors:
             for error in errors:
