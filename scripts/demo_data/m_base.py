@@ -98,6 +98,13 @@ def seed(ctx):
             mfa_enabled=False, mfa_required_override=False, failed_login_count=0, auth_version=0,
             last_login=ctx.ago(ctx.rnd.randrange(0, 6), hour=9), can_assign_training=key in ('hr', 'mlro'),
             **vals)
+    # 'group' authority = the whole organisation: give each such user the root-unit scope rule
+    # (without a rule a non-admin user sees no scoped record at all).
+    ctx.q("""INSERT INTO user_org_scope_rules (user_id, rule_type, org_unit_id)
+             SELECT u.id, 'subtree', (SELECT id FROM org_units WHERE parent_id IS NULL ORDER BY id LIMIT 1)
+               FROM users u
+              WHERE u.authority_level = 'group'
+                AND NOT EXISTS (SELECT 1 FROM user_org_scope_rules r WHERE r.user_id = u.id)""")
     for key, mgr in MANAGER.items():
         ctx.q("UPDATE users SET manager_id = %s WHERE id = %s", (ctx.users[mgr], ctx.users[key]))
     for code, key in HEADS.items():

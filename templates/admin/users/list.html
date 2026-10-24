@@ -89,6 +89,7 @@
                 <div class="modal-body">
                     <p>{{ _('Upload a CSV file with the following columns: Email, First Name, Last Name, Password, Role,
                         Department, Job Title.') }}</p>
+                    <p class="small text-muted">{{ _('Leave Password empty: each user then gets a random one-time password, shown once after the upload with a CSV download. Every imported user must change the password at the first login.') }}</p>
                     <div class="mb-3">
                         <label for="file" class="form-label">{{ _('CSV File') }}</label>
                         <input class="form-control" type="file" id="file" name="file" accept=".csv" required>

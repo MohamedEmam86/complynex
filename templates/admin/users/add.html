@@ -38,8 +38,9 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="password" class="form-label">{{ _('Initial Password *') }}</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <label for="password" class="form-label">{{ _('Initial password (optional)') }}</label>
+                        <input type="password" class="form-control" id="password" name="password" autocomplete="new-password">
+                        <div class="form-text">{{ _('Leave empty to issue a random one-time password, shown once after saving. The user must change it at the first login.') }}</div>
                     </div>
 
                     <div class="row mb-3">

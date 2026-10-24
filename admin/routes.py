@@ -39,7 +39,7 @@ EMAIL_RE = re.compile(r'^[A-Za-z0-9._%+\-]{1,64}@([A-Za-z0-9\-]+\.)+[A-Za-z]{2,2
 def validate_new_user(email, password, role):
     """Checks shared by single add and bulk upload. Returns an untranslated
     error message, or None when the values are acceptable. An empty password
-    is left to the caller (single add allows it, bulk upload uses a default)."""
+    is left to the caller (both then issue a random one-time password)."""
     email = (email or '').strip()
     if not email or len(email) > 254 or not EMAIL_RE.match(email):
         return 'Enter a valid email address.'
@@ -186,7 +186,12 @@ def add_user():
 
     if request.method == 'POST':
         email = (request.form.get('email') or '').strip()
-        password = request.form.get('password') # Should be auto-generated or set by admin
+        password = request.form.get('password')
+        # No password typed: issue a random one-time password, shown once below.
+        issued_password = None
+        if not password:
+            from utils.temp_password import generate as _gen_pw
+            password = issued_password = _gen_pw()
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         role = request.form.get('role', 'employee')
@@ -280,9 +285,9 @@ def add_user():
                                    request.form.getlist('authority_exclude'),
                                    granted_by=current_user.id)
             from database.db import execute_db as _ex
-            if request.form.get('org_unit_id'):
-                _ex("UPDATE users SET org_unit_id=%s WHERE id=%s",
-                    (request.form.get('org_unit_id'), new_user.id))
+            # Organisation unit: the one chosen, otherwise the company's root unit.
+            _ex("UPDATE users SET org_unit_id=%s, must_change_password=TRUE WHERE id=%s",
+                (request.form.get('org_unit_id') or _O.root_unit_id(), new_user.id))
             
             # Set the primary department_id on the new user
             if department_id:
@@ -321,6 +326,13 @@ def add_user():
             assigned = TrainingRequirement.assign_requirements(new_user.id, role, department, current_user.id)
             
             flash(gettext('User created successfully. %(assigned)s training items assigned.', assigned=assigned), 'success')
+            AuditLog.log(current_user.id, 'Create User', 'Admin', new_user.id,
+                         f'Created user {email} ({role}); ' + ('one-time password issued' if issued_password
+                                                               else 'password set by administrator') +
+                         '; password change required at first login', request.remote_addr)
+            if issued_password:
+                return _credentials_page([{'email': email, 'first_name': first_name, 'last_name': last_name,
+                                           'password': issued_password}])
             return redirect(url_for('admin.list_users'))
         except ValueError as e:
             flash(str(e), 'danger')
@@ -382,6 +394,11 @@ def upload_users():
             count = 0
             errors = 0
             failed = []   # (line number, reason) — reported back so nothing fails silently
+            issued = []   # one-time credentials, shown once to the administrator
+            from utils.temp_password import generate as _gen_pw
+            from services import org_service as _O
+            from database.db import execute_db as _ex
+            root_unit = _O.root_unit_id()
             dept_names = {(d.name or '').strip().lower(): d.name for d in Department.get_all()}
 
             for line_no, row in enumerate(csv_input, start=2):   # line 1 is the header
@@ -390,7 +407,9 @@ def upload_users():
                     email = (row.get('Email') or row.get('email') or '').strip()
                     first_name = row.get('First Name') or row.get('first_name')
                     last_name = row.get('Last Name') or row.get('last_name')
-                    password = row.get('Password') or row.get('password') or 'ComplyNex123!' # Default if missing
+                    # A password column is still accepted; otherwise every user gets their own random one.
+                    given_pw = (row.get('Password') or row.get('password') or '').strip()
+                    password = given_pw or _gen_pw()
                     department = (row.get('Department') or row.get('department') or '').strip()
                     job_title = row.get('Job Title') or row.get('job_title')
                     role = (row.get('Role') or row.get('role') or 'employee').strip().lower()
@@ -407,7 +426,12 @@ def upload_users():
                         failed.append((line_no, reason))
                         continue
                     department = dept_names.get(department.lower()) if department else None
-                    User.create_user(email, password, first_name, last_name, role, None, department, job_title)
+                    new_u = User.create_user(email, password, first_name, last_name, role, None, department, job_title)
+                    _ex("UPDATE users SET org_unit_id = COALESCE(org_unit_id, %s), must_change_password = TRUE "
+                        "WHERE id = %s", (root_unit, new_u.id))
+                    _O.apply_authority(new_u.id, 'group', None, [], granted_by=current_user.id)
+                    issued.append({'email': email, 'first_name': first_name, 'last_name': last_name,
+                                   'password': '' if given_pw else password})
                     count += 1
                 except Exception as e:
                     errors += 1
@@ -419,11 +443,28 @@ def upload_users():
                 if len(failed) > 20:
                     detail += ' …'
                 flash(detail, 'danger')
+            if issued:
+                AuditLog.log(current_user.id, 'Bulk Upload Users', 'Admin', None,
+                             f'{len(issued)} users imported with one-time passwords; change required at first login',
+                             request.remote_addr)
+                return _credentials_page(issued)
             
         except Exception as e:
             flash(f'Error processing file: {str(e)}', 'danger')
             
     return redirect(url_for('admin.list_users'))
+
+def _credentials_page(rows):
+    """Show newly issued one-time passwords once, with a CSV download built in
+    the page itself (nothing is stored in clear on the server)."""
+    from flask import make_response
+    from utils.temp_password import credentials_csv
+    resp = make_response(render_template('admin/users/credentials.html', rows=rows,
+                                         csv_text=credentials_csv(rows)))
+    resp.headers['Cache-Control'] = 'no-store, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    return resp
+
 
 def _excluded_unit_ids(user_id):
     """Units explicitly excluded for a user, for pre-selecting the form field.
@@ -581,6 +622,11 @@ def edit_user(id):
             if request.form.get('org_unit_id'):
                 _ex("UPDATE users SET org_unit_id=%s WHERE id=%s",
                     (request.form.get('org_unit_id'), id))
+            elif not getattr(user, 'org_unit_id', None):
+                _ex("UPDATE users SET org_unit_id=%s WHERE id=%s AND org_unit_id IS NULL", (_O.root_unit_id(), id))
+            if new_password:
+                # an administrator-set password is temporary: the user replaces it at the next login
+                _ex("UPDATE users SET must_change_password=TRUE WHERE id=%s", (id,))
 
             # Audit log: track what changed
             changes = []

@@ -550,6 +550,8 @@ class User(UserMixin):
         # (otherwise re-saving the form silently widened the user to 'group').
         for _k in ('authority_level', 'authority_unit_id', 'org_unit_id'):
             setattr(_u, _k, row[_k] if _k in row.keys() else None)
+        # set by an administrator-issued (temporary) password; enforced in users/__init__.py
+        _u.must_change_password = bool(row['must_change_password']) if 'must_change_password' in row.keys() else False
         return _u
     
     @staticmethod
