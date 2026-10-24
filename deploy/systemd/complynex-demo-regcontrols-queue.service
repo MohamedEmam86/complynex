@@ -1,0 +1,14 @@
+[Unit]
+Description=ComplyNex DEMO regulatory controls: process queued control runs (rc_run_queue, demo database)
+After=network.target postgresql.service complynex-demo.service
+
+[Service]
+Type=oneshot
+User=complynex
+Group=complynex
+# The demo folder's app.py loads /var/www/complynex-demo/.env (demo database) and
+# .demo_instance marks it as the demo; the venv is shared with the main instance.
+WorkingDirectory=/var/www/complynex-demo
+Environment="PATH=/var/www/complynex/venv/bin"
+ExecStart=/var/www/complynex/venv/bin/python /var/www/complynex-demo/scripts/regcontrols_process_queue.py
+TimeoutStartSec=3600
