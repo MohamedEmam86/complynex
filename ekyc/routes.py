@@ -25,6 +25,7 @@ from flask_babel import gettext
 from flask import render_template, redirect, url_for, flash, request, jsonify, Response, make_response, current_app
 from flask_login import login_required, current_user
 from extensions import limiter
+from ekyc.public_csrf import public_token_csrf
 
 from utils.decorators import permission_required
 from database.db import query_db
@@ -141,8 +142,8 @@ def export_sessions():
     EkycAuditLog.log(None, 'SESSIONS_EXPORTED', user_id=current_user.id,
                       details=f'filter={status_filter} rows={len(rows)}', ip_address=request.remote_addr)
     return Response(
-        output.getvalue(),
-        mimetype='text/csv',
+        '\ufeff' + output.getvalue(),  # BOM: Excel otherwise garbles Arabic
+        mimetype='text/csv; charset=utf-8',
         headers={'Content-Disposition': f'attachment; filename=ekyc_sessions_{status_filter}.csv'}
     )
 
@@ -156,6 +157,9 @@ def new_session():
         document_type = request.form.get('document_type', 'NATIONAL_ID')
         customer_reference = request.form.get('customer_reference') or None
         locale = request.form.get('locale', 'ar')
+        if document_type not in dict(DOCUMENT_TYPES):
+            flash(gettext('Select a valid document type.'), 'danger')
+            return render_template('ekyc/new.html', document_types=DOCUMENT_TYPES), 400
         session = EkycSession.create(
             document_type=document_type,
             customer_reference=customer_reference,
@@ -321,6 +325,7 @@ def verify(token):
 
 
 @ekyc_bp.route('/verify/<token>/consent', methods=['POST'])
+@public_token_csrf
 def give_consent(token):
     session = EkycSession.get_by_token(token)
     if not session:
@@ -373,6 +378,7 @@ def _read_declared_identity(session):
 
 
 @ekyc_bp.route('/verify/<token>/check_side', methods=['POST'])
+@public_token_csrf(json_errors=True)
 def check_side(token):
     """
     Accepts a customer-confirmed burst of ID-side frames (front/back) and
@@ -448,6 +454,7 @@ def check_side(token):
 
 @ekyc_bp.route('/verify/<token>/upload', methods=['POST'])
 @limiter.limit('10 per minute')
+@public_token_csrf(json_errors=True)
 def upload_capture(token):
     """
     Receives the selfie frames (multipart, fields selfie_frame_0..) plus the
@@ -728,6 +735,12 @@ def review_detail(session_id):
                 submitted['dob'] = submitted['dob'].translate(_ARABIC_DIGITS)
             except ValueError:
                 problems.append(gettext('Date of birth must be written as YYYY-MM-DD.'))
+            else:
+                if decoded and decoded['is_valid'] and decoded['dob'] \
+                        and submitted['dob'] != decoded['dob'].isoformat():
+                    problems.append(gettext(
+                        'Date of birth %(dob)s does not match the one in the national ID (%(nid_dob)s).',
+                        dob=submitted['dob'], nid_dob=decoded['dob'].isoformat()))
         if not submitted['extracted_full_name_ar']:
             problems.append(gettext('Full name is required.'))
         if problems:
@@ -982,9 +995,21 @@ def session_onboard(session_id):
     if not full_name or not national_id:
         flash(gettext('Name and national ID are needed before onboarding — use Review / correct data first.'), 'warning')
         return redirect(url_for('ekyc.view_session', session_id=session_id))
+    dup = Customer.find_duplicate_id(session['document_type'], national_id)
+    if dup:
+        flash(gettext('A customer with this ID number already exists: %(ref)s (%(name)s).',
+                      ref=dup['customer_reference'], name=dup['name'] or ''), 'warning')
+        return redirect(url_for('ekyc.view_session', session_id=session_id))
+    import re
+    arabic_name = result.get('final_name') or result.get('extracted_full_name_ar')
+    if not (arabic_name and re.search(r'[\u0600-\u06FF]', arabic_name)):
+        arabic_name = result.get('extracted_full_name_ar')
     customer_id = Customer.create({
         'customer_type': 'INDIVIDUAL',
         'full_name': full_name,
+        'full_name_arabic': arabic_name,
+        'occupation': result.get('extracted_occupation'),
+        'created_by': current_user.id,
         'date_of_birth': result.get('dob'),
         'nationality': 'Egypt',
         'id_type': session['document_type'],

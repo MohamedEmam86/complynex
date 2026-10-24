@@ -652,24 +652,24 @@ def manual_screen():
         national_id = request.form.get('national_id')
         employer = request.form.get('employer')
         
-        if not name:
+        if not name or not name.strip():
             flash(gettext('Name is required'), 'error')
             return redirect(url_for('screening.manual_screen'))
-            
-        # Parse Threshold
-        try:
-            slider_val = int(request.form.get('threshold', 55))
-        except ValueError:
-            slider_val = 55
-            
-        # Parse DOB
-        formatted_dob = None
-        if dob:
-            try:
-                formatted_dob = datetime.strptime(dob, '%Y-%m-%d').date()
-            except ValueError:
-                pass
-        
+
+        # Server-side validation: entity type, threshold range, DOB, national ID.
+        from screening.input_validation import validate_screen_inputs
+        errors, cleaned = validate_screen_inputs(entity_type, request.form.get('threshold'),
+                                                 dob, national_id, country, _=gettext)
+        if errors:
+            for err in errors:
+                flash(err, 'error')
+            return redirect(url_for('screening.manual_screen'))
+        entity_type = cleaned['entity_type']
+        slider_val = cleaned['threshold']
+        formatted_dob = cleaned['dob']
+        dob = formatted_dob.isoformat() if formatted_dob else None
+        national_id = cleaned['national_id']
+
         engine = get_engine()
         engine.active_threshold = slider_val
         
@@ -704,10 +704,11 @@ def manual_screen():
         t_db = time.time()
 
         write_ok = False
-        history_id = None
+        history_id = result_id = None
         for attempt in (1, 2):
             try:
-                history_id = _save_screening_result(
+                history_id, result_id = _save_screening_result(
+                    return_ids=True,
                     name=name,
                     entity_type=entity_type,
                     dob=dob,
@@ -744,15 +745,11 @@ def manual_screen():
             )
             return redirect(url_for('screening.manual_screen'))
 
-        # Fetches latest screening_results id (view_result() keys off this
-        # table's id, not screening_history's - they are independent
-        # sequences) for the redirect below.
-        if current_app.config.get('DB_TYPE') == 'postgresql':
-            latest = query_db("SELECT id FROM screening_results WHERE created_by = %s ORDER BY created_at DESC LIMIT 1", (current_user.id,), one=True)
-        else:
-            latest = query_db("SELECT id FROM screening_results ORDER BY id DESC LIMIT 1", one=True)
-
-        if not latest:
+        # view_result() keys off the screening_results id (not
+        # screening_history's - independent sequences). Use the id returned by
+        # the INSERT itself: re-reading "the latest row" could pick up the
+        # previous subject's result (e.g. two rows with the same created_at).
+        if not result_id:
             logger.error(
                 f"[SCREENING WRITE FAILURE] _save_screening_result() reported success "
                 f"(history_id={history_id}) but no screening_results row found on "
@@ -763,7 +760,7 @@ def manual_screen():
 
         logger.info(f"[TIMER] DB write: {round((time.time()-t_db)*1000)}ms (history_id={history_id})")
 
-        return redirect(url_for('screening.view_result', id=latest['id']))
+        return redirect(url_for('screening.view_result', id=result_id))
 
     # Fetch current threshold for UI slider
     try:
@@ -1244,6 +1241,13 @@ def _parse_whitelist_excel(file):
     return rows
 
 
+# Allowed decisions. Anything else is rejected with an error instead of being
+# stored as-is (an empty or unknown value used to be accepted silently).
+RESULT_RESOLUTIONS = ('TRUE_HIT', 'FALSE_POSITIVE')
+QUEUE_RESOLUTIONS = ('false_positive', 'true_match', 'pep', 'escalate')
+QUEUE_BULK_RESOLUTIONS = ('false_positive', 'true_match')
+
+
 @screening_bp.route('/resolve_hit', methods=['POST'])
 @login_required
 @permission_required('screening', level='edit')
@@ -1251,12 +1255,26 @@ def resolve_hit():
     if not current_user.is_admin() and not current_user.is_compliance_officer():
          return jsonify({'success': False, 'error': 'Access denied'}), 403
          
-    result_id = request.form.get('result_id')
-    status = request.form.get('status') # TRUE_HIT, FALSE_POSITIVE
-    notes = request.form.get('notes')
+    result_id = request.form.get('result_id', type=int)
+    status = (request.form.get('status') or '').strip().upper()  # TRUE_HIT, FALSE_POSITIVE
+    notes = (request.form.get('notes') or '').strip()
     whitelist_too = request.form.get('whitelist') == 'true'
-    
+
     param = get_param_style()
+    current = query_db(f"SELECT id, status FROM screening_results WHERE id = {param}",
+                       (result_id,), one=True) if result_id else None
+    if not current:
+        flash(gettext('Screening result not found'), 'error')
+        return redirect(url_for('screening.dashboard'))
+    if status not in RESULT_RESOLUTIONS:
+        flash(gettext('Select a valid decision (true match or false positive).'), 'error')
+        return redirect(url_for('screening.view_result', id=result_id))
+    if not notes:
+        flash(gettext('Reviewer rationale is required to record a decision.'), 'error')
+        return redirect(url_for('screening.view_result', id=result_id))
+    if current['status'] and current['status'] != 'PENDING':
+        flash(gettext('This result has already been decided and cannot be decided again.'), 'error')
+        return redirect(url_for('screening.view_result', id=result_id))
     execute_db(f"""
         UPDATE screening_results 
         SET status = {param}, resolution_notes = {param}, resolved_by = {param}, resolved_at = CURRENT_TIMESTAMP
@@ -2843,8 +2861,17 @@ def queue_review(id):
             pass
 
     if request.method == 'POST':
-        action = request.form.get('resolution')  # false_positive, true_match, pep, escalate
-        notes = request.form.get('resolution_notes', '')
+        action = (request.form.get('resolution') or '').strip()  # false_positive, true_match, pep, escalate
+        notes = (request.form.get('resolution_notes') or '').strip()
+        if item['status'] == 'Resolved':
+            flash(gettext('This item has already been resolved and cannot be decided again.'), 'error')
+            return redirect(url_for('screening.queue_review', id=id))
+        if action not in QUEUE_RESOLUTIONS:
+            flash(gettext('Select a valid resolution.'), 'error')
+            return redirect(url_for('screening.queue_review', id=id))
+        if not notes:
+            flash(gettext('Resolution notes are required.'), 'error')
+            return redirect(url_for('screening.queue_review', id=id))
 
         if action == 'false_positive':
             # Mark resolved + optionally whitelist
@@ -3057,9 +3084,15 @@ def queue_assign(id):
 @permission_required('screening', level='view')
 def queue_bulk_resolve():
     """Resolve multiple queue items at once."""
-    action = request.form.get('action') # false_positive, true_match
-    notes = request.form.get('resolution_notes', '')
+    action = (request.form.get('action') or '').strip()  # false_positive, true_match
+    notes = (request.form.get('resolution_notes') or '').strip()
     selected_ids_str = request.form.get('selected_ids', '')
+    if action not in QUEUE_BULK_RESOLUTIONS:
+        flash(gettext('Select a valid resolution.'), 'error')
+        return redirect(url_for('screening.screening_queue'))
+    if not notes:
+        flash(gettext('Resolution notes are required.'), 'error')
+        return redirect(url_for('screening.screening_queue'))
     
     if not selected_ids_str:
         flash(gettext('No items selected.'), 'warning')
@@ -3158,10 +3191,10 @@ def queue_bulk_resolve():
 
     flash(gettext('Successfully resolved %(processed_count)s items.', processed_count=processed_count), 'success')
     return redirect(url_for('screening.screening_queue'))
-def _save_screening_result(name, entity_type, dob, nationality, source_module, source_record_id, result, user_id, screening_type='API', inputs=None):
+def _save_screening_result(name, entity_type, dob, nationality, source_module, source_record_id, result, user_id, screening_type='API', inputs=None, return_ids=False):
     """
     Helper to save screening result to history, results, and queue.
-    Returns: history_id
+    Returns: history_id, or (history_id, screening_results id) with return_ids=True
     """
     matches = result.get('matches', [])
     total_matches = result.get('total_matches', len(matches))
@@ -3190,13 +3223,19 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
 
     # Save to screening_history
     param = get_param_style()
-    execute_db(f"""
+    db = get_db()
+    # screening_date has no column default: without it the History page showed
+    # "None" and sorted the row below older screenings.
+    screened_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cur = db.execute(f"""
         INSERT INTO screening_history
             (entity_name, entity_type, screening_type, initiated_by,
              source_module, source_record_id, total_matches_found,
              high_risk_matches, auto_cleared_matches, highest_score,
-             screening_result, matches_json, status, processing_time_ms)
-        VALUES ({param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param})
+             screening_result, matches_json, status, processing_time_ms,
+             screening_date, created_at)
+        VALUES ({param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, CURRENT_TIMESTAMP)
+        RETURNING id
     """, (
         name, entity_type, screening_type,
         user_id, source_module, source_record_id,
@@ -3208,21 +3247,21 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
             'adverse_media_summary': result.get('adverse_media_summary', {}),
             'search_degraded': bool(result.get('search_degraded', False))
         }), status,
-        result.get('processing_time_ms', 0)
+        result.get('processing_time_ms', 0),
+        screened_at,
     ))
-
-    # Get the history ID
-    history_row = query_db(f"SELECT id FROM screening_history WHERE entity_name = {param} AND initiated_by = {param} ORDER BY id DESC LIMIT 1", (name, user_id), one=True)
-    history_id = history_row['id'] if history_row else None
+    history_id = cur.fetchone()['id']
+    db.commit()
 
     # Also save to screening_results for backward compat
-    execute_db(f"""
+    cur = db.execute(f"""
         INSERT INTO screening_results (
             screening_type, screened_name, screened_dob,
             screening_method, total_matches_found, highest_match_score,
             screening_result, matches, adverse_media, adverse_media_summary,
             processing_time_ms, created_by, search_degraded, status, match_details
         ) VALUES ({param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, 'PENDING', {param})
+        RETURNING id
     """, (
         source_module.upper().replace(' ', '_'), name, dob, screening_type,
         total_matches, highest_score, screening_result,
@@ -3234,20 +3273,17 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
         json.dumps({'inputs': dict(inputs or {}, dob=str(dob) if dob else None, nationality=nationality,
                                    entity_type=entity_type)}, default=str)
     ))
+    result_id = cur.fetchone()['id']
+    db.commit()
 
     # Tie the history row to the results row so an adjudication made on either
     # screen is visible on both. Without this, resolving from the result page
     # left Screening History showing nothing.
     if history_id:
         try:
-            res_row = query_db(
-                f"SELECT id FROM screening_results WHERE screened_name = {param} "
-                f"AND created_by = {param} ORDER BY id DESC LIMIT 1",
-                (name, user_id), one=True)
-            if res_row:
-                execute_db(
-                    f"UPDATE screening_history SET screening_result_id = {param} "
-                    f"WHERE id = {param}", (res_row['id'], history_id))
+            execute_db(
+                f"UPDATE screening_history SET screening_result_id = {param} "
+                f"WHERE id = {param}", (result_id, history_id))
         except Exception as _e:
             logger.warning(f"Could not link history to result row: {_e}")
 
@@ -3320,7 +3356,7 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
                 WHERE id = {param}
             """, (ss, user_id, source_record_id))
 
-    return history_id
+    return (history_id, result_id) if return_ids else history_id
 
 @login_required
 @permission_required('screening', level='edit')
@@ -3457,9 +3493,9 @@ def screening_history_full():
             LEFT JOIN LATERAL (
                 SELECT
                     CASE
-                        WHEN bool_or(q.resolution LIKE 'True Match%') THEN 'True Match'
-                        WHEN bool_or(q.resolution LIKE 'PEP%') THEN 'PEP'
-                        WHEN bool_or(q.resolution LIKE 'False Positive%') THEN 'False Positive'
+                        WHEN bool_or(q.resolution LIKE 'True Match%%') THEN 'True Match'
+                        WHEN bool_or(q.resolution LIKE 'PEP%%') THEN 'PEP'
+                        WHEN bool_or(q.resolution LIKE 'False Positive%%') THEN 'False Positive'
                         WHEN count(*) > 0 THEN 'Pending'
                         ELSE NULL
                     END AS decision,

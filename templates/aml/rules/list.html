@@ -115,10 +115,20 @@
               </form>
               {% endif %}
               {% if r.status == 'ACTIVE' %}
-              <form method="post" action="{{ url_for('aml.rule_disable', rule_id=r.id) }}" class="d-inline"
+              <form method="post" action="{{ url_for('aml.rule_disable', rule_id=r.id) }}" class="d-inline-flex align-items-center me-1"
                     data-confirm="{{ _('Disable this rule?') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button class="btn btn-sm btn-warning me-1" title="{{ _('Disable') }}"><i class="fas fa-pause"></i></button>
+                <input type="text" name="reason" class="form-control form-control-sm me-1" style="width: 140px;"
+                       placeholder="{{ _('Reason (required)') }}" aria-label="{{ _('Reason for disabling') }}" required>
+                <button class="btn btn-sm btn-warning" title="{{ _('Disable') }}"><i class="fas fa-pause"></i></button>
+              </form>
+              {% elif r.status == 'DISABLED' %}
+              <form method="post" action="{{ url_for('aml.rule_enable', rule_id=r.id) }}" class="d-inline-flex align-items-center me-1"
+                    data-confirm="{{ _('Enable this rule?') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="reason" class="form-control form-control-sm me-1" style="width: 140px;"
+                       placeholder="{{ _('Reason (required)') }}" aria-label="{{ _('Reason for enabling') }}" required>
+                <button class="btn btn-sm btn-success" title="{{ _('Enable') }}"><i class="fas fa-play"></i></button>
               </form>
               {% endif %}
               {% if r.previous_id %}
