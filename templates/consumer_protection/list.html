@@ -6,6 +6,7 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">{{ _("Complaints Management") }}</h1>
+        <a href="{{ url_for('consumer_protection.periodic_report') }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-bar-graph"></i> {{ _("Periodic complaints report") }}</a>
     </div>
 
     <div class="card shadow mb-4">
@@ -24,6 +25,7 @@
                         </option>
                         <option value="IN_PROGRESS" {% if request.args.get('status')=='IN_PROGRESS' %}selected{% endif
                             %}>{{ _("In Progress") }}</option>
+                        <option value="ESCALATED" {% if request.args.get('status')=='ESCALATED' %}selected{% endif %}>{{ _("Escalated") }}</option>
                         <option value="RESOLVED" {% if request.args.get('status')=='RESOLVED' %}selected{% endif %}>{{
                             _("Resolved") }}</option>
                         <option value="CLOSED" {% if request.args.get('status')=='CLOSED' %}selected{% endif %}>{{
@@ -43,6 +45,7 @@
                             <th>{{ _("Date") }}</th>
                             <th>{{ _("Category") }}</th>
                             <th>{{ _("Customer") }}</th>
+                            <th>{{ _("Owner") }}</th>
                             <th>{{ _("Status") }}</th>
                             <th>{{ _("Deadline") }}</th>
                             <th>{{ _("Action") }}</th>
@@ -54,8 +57,9 @@
                             <td>CP-{{ complaint.id }}</td>
                             <td>{{ complaint.created_at.strftime('%Y-%m-%d') if complaint.created_at is not string else
                                 complaint.created_at[:10] }}</td>
-                            <td>{{ _(complaint.complaint_category) }}</td>
+                            <td>{{ cats.get(complaint.complaint_category, complaint.complaint_category) if cats else complaint.complaint_category }}</td>
                             <td>{{ complaint.customer_name }}</td>
+                            <td>{{ complaint.assigned_to_user_id|username }}</td>
                             <td>
                                 {% if complaint.status == 'NEW' %}
                                 <span class="badge bg-primary">{{ _("New") }}</span>
@@ -66,7 +70,7 @@
                                 {% elif complaint.status == 'CLOSED' %}
                                 <span class="badge bg-secondary">{{ _("Closed") }}</span>
                                 {% else %}
-                                <span class="badge bg-light text-dark">{{ complaint.status }}</span>
+                                <span class="badge bg-warning text-dark">{{ complaint.status|code_label }}</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -88,7 +92,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center">{{ _("No complaints found matching criteria.") }}</td>
+                            <td colspan="8" class="text-center">{{ _("No complaints found matching criteria.") }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}DSR Detail - {{ dsr.request_reference }}{% endblock %}
+{% block title %}{{ _('Request Details') }} - {{ dsr.request_reference }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Request Details: {{ dsr.request_reference }}</h1>
+        <h1 class="h2">{{ _('Request Details') }}: {{ dsr.request_reference }}</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
             <a href="{{ url_for('dp.dsr_list') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> {{ _('Back to List') }}
@@ -22,7 +22,7 @@
                     <h5 class="mb-0">{{ _('Request Information') }}</h5>
                     <span
                         class="badge {% if dsr.status == 'NEW' %}bg-primary{% elif dsr.status == 'OVERDUE' %}bg-danger{% elif dsr.status == 'COMPLETED' %}bg-success{% else %}bg-info{% endif %}">
-                        {{ dsr.status }}
+                        {{ dsr.status|code_label }}
                     </span>
                 </div>
                 <div class="card-body">
@@ -32,8 +32,23 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4 text-muted">{{ _('Request Type:') }}</div>
-                        <div class="col-md-8"><span class="badge bg-light text-dark border">{{ dsr.request_type
-                                }}</span></div>
+                        <div class="col-md-8"><span class="badge bg-light text-dark border">{{ dsr.request_type|code_label }}</span></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">{{ _('Contact') }}:</div>
+                        <div class="col-md-8">{{ dsr.data_subject_email or '' }}{% if dsr.data_subject_email and dsr.data_subject_phone %} · {% endif %}{{ dsr.data_subject_phone or '' }}{% if not dsr.data_subject_email and not dsr.data_subject_phone %}<span class="text-muted">{{ _('Not provided') }}</span>{% endif %}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">{{ _('Channel received') }}:</div>
+                        <div class="col-md-8">{{ dsr.request_channel|code_label }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">{{ _('Date received') }}:</div>
+                        <div class="col-md-8">{{ dsr.received_date or dsr.request_date or '-' }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-muted">{{ _('Owner') }}:</div>
+                        <div class="col-md-8">{{ dsr.assigned_to|username }}</div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4 text-muted">{{ _('Due Date:') }}</div>
@@ -42,7 +57,7 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4 text-muted">{{ _('Description:') }}</div>
-                        <div class="col-md-8">{{ dsr.request_description or 'No description provided.' }}</div>
+                        <div class="col-md-8">{{ dsr.request_description or _('No description provided.') }}</div>
                     </div>
                 </div>
             </div>
@@ -57,8 +72,7 @@
                     <div class="alert alert-success d-flex align-items-center mb-0">
                         <i class="bi bi-check-circle-fill me-2"></i>
                         <div>
-                            Identity verified on {{ dsr.verification_date }} via <strong>{{
-                                dsr.verification_method }}</strong>.
+                            {{ _('Identity verified on %(date)s via', date=dsr.verification_date) }} <strong>{{ dsr.verification_method|code_label }}</strong>.
                         </div>
                     </div>
                     {% else %}
@@ -68,11 +82,8 @@
                         <div class="col-12">
                             <label class="visually-hidden" for="method">{{ _('Verification Method') }}</label>
                             <select class="form-select" id="method" name="method" required>
-                                <option value="" selected disabled>{{ _('Choose method...') }}</option>
-                                <option value="ID_CARD">{{ _('National ID Card') }}</option>
-                                <option value="PASSPORT">{{ _('Passport') }}</option>
-                                <option value="EMAIL_TOKEN">{{ _('Email Verification') }}</option>
-                                <option value="IN_PERSON">{{ _('In-Person') }}</option>
+                                <option value="" {{ 'selected' if not dsr.verification_method else '' }} disabled>{{ _('Choose method...') }}</option>
+                                {% for m in R.VERIFY_METHODS %}<option value="{{ m }}" {{ 'selected' if dsr.verification_method == m else '' }}>{{ m|code_label }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="col-12">
@@ -95,11 +106,11 @@
                         {% for event in timeline %}
                         <li class="list-group-item px-0">
                             <div class="d-flex justify-content-between">
-                                <span class="fw-bold text-primary small">{{ event.action_type }}</span>
+                                <span class="fw-bold text-primary small">{{ event.action_type|code_label }}</span>
                                 <span class="text-muted smaller">{{ event.action_date or '—' }}</span>
                             </div>
                             <div class="small">{{ event.action_description }}</div>
-                            <div class="smaller text-muted">By: {{ event.user_name }}</div>
+                            <div class="smaller text-muted">{{ _('By') }}: {{ event.user_name or '-' }}</div>
                         </li>
                         {% endfor %}
                     </ul>

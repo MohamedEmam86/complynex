@@ -169,12 +169,38 @@ class ConsumerComplaint:
             (status, resolution_summary, id)
         )
         db.commit()
+        # Resolution timestamp (for resolution-time reporting); cleared again if the complaint is reopened.
         try:
-            from models.case import Case
-            Case.sync_from_source('CONSUMER_COMPLAINT', id)
+            db.execute("""UPDATE consumer_complaints SET resolved_at = CASE
+                              WHEN %s IN ('RESOLVED', 'CLOSED') THEN COALESCE(resolved_at, NOW()) ELSE NULL END
+                          WHERE id = %s""", (status, id))
+            db.commit()
         except Exception:
-            import logging
-            logging.getLogger(__name__).exception('Failed to sync case registry for consumer_complaints %s', id)
+            db.rollback()  # column arrives with migration 20261110_complaints_handling
+        from models.case import sync_case
+        sync_case('CONSUMER_COMPLAINT', id)
+
+    @staticmethod
+    def assign(id, user_id, by_user_id, reason=None):
+        """Set the complaint owner; logged in the activity log and pushed to the case registry."""
+        db = get_db()
+        row = db.execute("SELECT assigned_to_user_id FROM consumer_complaints WHERE id = %s", (id,)).fetchone()
+        if not row:
+            return False
+        db.execute("""UPDATE consumer_complaints SET assigned_to_user_id = %s, assigned_at = NOW(),
+                          assigned_by = %s, updated_at = NOW() WHERE id = %s""", (user_id, by_user_id, id))
+        db.commit()
+        from models.case import sync_case
+        sync_case('CONSUMER_COMPLAINT', id)
+        return True
+
+    @staticmethod
+    def set_resolution_details(id, root_cause_category, redress_type, redress_amount, redress_date):
+        db = get_db()
+        db.execute("""UPDATE consumer_complaints SET root_cause_category = %s, redress_type = %s,
+                          redress_amount = %s, redress_date = %s, updated_at = NOW() WHERE id = %s""",
+                   (root_cause_category, redress_type, redress_amount, redress_date, id))
+        db.commit()
 
     @staticmethod
     def get_stats():
@@ -189,6 +215,31 @@ class ConsumerComplaint:
         ).fetchone()['count']
         
         return {'total_open': total_open, 'overdue': overdue}
+
+class ComplaintInternalNote:
+    """Staff-only notes. Append-only (no edit/delete; enforced by a DB trigger too)."""
+
+    @staticmethod
+    def add(complaint_id, note, user_id):
+        db = get_db()
+        db.execute("INSERT INTO complaint_internal_notes (complaint_id, note, created_by) VALUES (%s, %s, %s)",
+                   (complaint_id, note, user_id))
+        db.commit()
+
+    @staticmethod
+    def list(complaint_id):
+        db = get_db()
+        try:
+            rows = db.execute("""
+                SELECT n.*, NULLIF(TRIM(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')), '') AS author,
+                       u.email AS author_email
+                FROM complaint_internal_notes n LEFT JOIN users u ON u.id = n.created_by
+                WHERE n.complaint_id = %s ORDER BY n.created_at DESC, n.id DESC""", (complaint_id,)).fetchall()
+        except Exception:
+            db.rollback()
+            return []
+        return [dict(r) for r in rows]
+
 
 class ComplaintDocument:
     """Document model"""

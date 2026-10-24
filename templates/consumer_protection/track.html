@@ -63,7 +63,7 @@
                                 {% elif complaint.status == 'CLOSED' %}
                                 <span class="badge bg-secondary">{{ _("Closed") }}</span>
                                 {% else %}
-                                <span class="badge bg-light text-dark">{{ complaint.status }}</span>
+                                <span class="badge bg-light text-dark">{{ complaint.status|code_label }}</span>
                                 {% endif %}
                             </div>
                         </div>

@@ -10,7 +10,7 @@
             <select name="case_type" class="form-select form-select-sm" data-auto-submit>
                 <option value="">{{ _('All types') }}</option>
                 {% for t in case_types %}
-                <option value="{{ t }}" {{ 'selected' if t == selected_type else '' }}>{{ t }}</option>
+                <option value="{{ t }}" {{ 'selected' if t == selected_type else '' }}>{{ t|code_label }}</option>
                 {% endfor %}
             </select>
             <input type="hidden" name="show_all" value="0">
@@ -32,6 +32,7 @@
                         <th>{{ _('Title') }}</th>
                         <th>{{ _('Status') }}</th>
                         <th>{{ _('Priority') }}</th>
+                        <th>{{ _('Owner') }}</th>
                         <th>{{ _('Due') }}</th>
                         <th>{{ _('Opened') }}</th>
                     </tr>
@@ -40,16 +41,17 @@
                     {% for c in cases %}
                     <tr data-href="{{ url_for('cases.case_detail', case_id=c.id) }}" style="cursor:pointer;"
                         class="{{ 'table-danger' if c.is_overdue else '' }}" style="cursor:pointer;">
-                        <td><span class="badge bg-info-subtle text-info border">{{ c.case_type }}</span></td>
+                        <td><span class="badge bg-info-subtle text-info border">{{ c.case_type|code_label }}</span></td>
                         <td>{{ c.reference or '-' }}</td>
                         <td>{{ (c.title or '-')[:80] }}</td>
-                        <td>{{ c.status }}</td>
-                        <td>{{ c.priority or '-' }}</td>
+                        <td>{{ c.status|code_label }}</td>
+                        <td>{{ c.priority|code_label }}</td>
+                        <td>{{ c.assigned_to|username }}</td>
                         <td>{{ c.due_date or '-' }} {% if c.is_overdue %}<i class="bi bi-exclamation-triangle-fill text-danger ms-1"></i>{% endif %}</td>
                         <td class="small text-muted">{{ c.opened_at }}</td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="7" class="text-center text-muted py-5">{{ _('No cases match.') }}</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted py-5">{{ _('No cases match.') }}</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

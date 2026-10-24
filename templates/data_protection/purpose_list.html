@@ -1,18 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}Consent Purposes - PDPL{% endblock %}
+{% block title %}{{ _('Consent Purposes') }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">{{ _('Consent Purposes') }}</h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <button class="btn btn-sm btn-primary" disabled>
-                <i class="bi bi-plus-square"></i> {{ _('Define New Purpose') }}
-            </button>
+        <a href="{{ url_for('dp.consent_log') }}" class="btn btn-sm btn-outline-secondary">{{ _('Consent Register') }}</a>
+    </div>
+
+    {% if current_user.has_permission('pdpl', 'edit') %}
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light"><h6 class="mb-0"><i class="bi bi-plus-square"></i> {{ _('Define New Purpose') }}</h6></div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('dp.create_purpose') }}" class="row g-2 align-items-end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-md-2"><label class="form-label small">{{ _('Code') }} *</label><input name="purpose_code" class="form-control form-control-sm" required></div>
+                <div class="col-md-3"><label class="form-label small">{{ _('Purpose Name (EN)') }}</label><input name="purpose_name_en" class="form-control form-control-sm"></div>
+                <div class="col-md-3"><label class="form-label small">{{ _('Purpose Name (AR)') }}</label><input name="purpose_name_ar" class="form-control form-control-sm" dir="rtl"></div>
+                <div class="col-md-2"><label class="form-label small">{{ _('Legal Basis') }}</label>
+                    <select name="legal_basis" class="form-select form-select-sm">{% for b in legal_bases %}<option value="{{ b }}">{{ b|code_label }}</option>{% endfor %}</select></div>
+                <div class="col-md-2"><label class="form-label small">{{ _('Retention period') }}</label><input name="retention_period" class="form-control form-control-sm"></div>
+                <div class="col-12 text-end"><button class="btn btn-sm btn-primary">{{ _('Add purpose') }}</button></div>
+            </form>
         </div>
     </div>
+    {% endif %}
 
     <div class="card shadow-sm">
         <div class="card-body p-0">
@@ -34,7 +48,7 @@
                             <td><code>{{ purp.purpose_code }}</code></td>
                             <td>{{ purp.purpose_name }}</td>
                             <td class="text-end">{{ purp.purpose_name_arabic or '-' }}</td>
-                            <td>{{ purp.legal_basis }}</td>
+                            <td>{{ purp.legal_basis|code_label }}</td>
                             <td>
                                 {% if purp.is_required %}
                                 <span class="badge bg-danger">{{ _('YES') }}</span>

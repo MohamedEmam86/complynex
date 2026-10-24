@@ -6,15 +6,16 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">{{ case.reference or ('Case #' ~ case.id) }}</h4>
-        <span class="badge bg-info-subtle text-info border fs-6">{{ case.case_type }}</span>
+        <span class="badge bg-info-subtle text-info border fs-6">{{ case.case_type|code_label }}</span>
     </div>
 
     <div class="card shadow-sm mb-3">
         <div class="card-body">
             <dl class="row mb-0">
                 <dt class="col-3">{{ _('Title') }}</dt><dd class="col-9">{{ case.title or '-' }}</dd>
-                <dt class="col-3">{{ _('Status') }}</dt><dd class="col-9">{{ case.status }}</dd>
-                <dt class="col-3">{{ _('Priority') }}</dt><dd class="col-9">{{ case.priority or '-' }}</dd>
+                <dt class="col-3">{{ _('Status') }}</dt><dd class="col-9">{{ case.status|code_label }}</dd>
+                <dt class="col-3">{{ _('Priority') }}</dt><dd class="col-9">{{ case.priority|code_label }}</dd>
+                <dt class="col-3">{{ _('Owner') }}</dt><dd class="col-9">{{ case.assigned_to|username }}</dd>
                 <dt class="col-3">{{ _('Opened') }}</dt><dd class="col-9">{{ case.opened_at }}</dd>
                 <dt class="col-3">{{ _('Due') }}</dt><dd class="col-9">{{ case.due_date or '-' }}</dd>
                 <dt class="col-3">{{ _('Resolved') }}</dt><dd class="col-9">{{ case.resolved_at or '-' }}</dd>

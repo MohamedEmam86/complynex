@@ -38,7 +38,7 @@
                     {% for u in updates %}
                     <li class="list-group-item">
                         <div class="d-flex justify-content-between">
-                            <span>{% if u.old_status != u.new_status %}<span class="badge bg-secondary">{{ _(u.old_status or 'NEW') }}</span> &rarr; <span class="badge bg-primary">{{ _(u.new_status) }}</span>{% endif %}</span>
+                            <span>{% if u.old_status != u.new_status %}<span class="badge bg-secondary">{{ _(u.old_status or 'NEW') }}</span> &rarr; <span class="badge bg-primary">{{ u.new_status|code_label }}</span>{% endif %}</span>
                             <small class="text-muted">{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '' }} · {{ u.user_name or '—' }}</small>
                         </div>
                         {% if u.note %}<div class="mt-1" style="white-space: pre-wrap">{{ u.note }}</div>{% endif %}
@@ -61,7 +61,7 @@
                             <label class="form-label" for="incStatus">{{ _('Status') }}</label>
                             <select name="status" id="incStatus" class="form-select">
                                 {% for st in statuses %}
-                                <option value="{{ st }}" {{ 'selected' if (inc.status or 'NEW') == st }}>{{ _(st) }}</option>
+                                <option value="{{ st }}" {{ 'selected' if (inc.status or 'NEW') == st }}>{{ st|code_label }}</option>
                                 {% endfor %}
                             </select>
                         </div>

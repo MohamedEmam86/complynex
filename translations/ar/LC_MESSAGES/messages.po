@@ -32220,6 +32220,849 @@ msgstr "الرقم المرجعي لدى الوحدة"
 msgid "Mark as filed"
 msgstr "تسجيل كمُخطَر"
 
+msgid "Select a root cause category."
+msgstr "اختر فئة السبب الجذري."
+
+msgid "Select a redress type."
+msgstr "اختر نوع المعالجة."
+
+msgid "The redress amount must be a positive number."
+msgstr "يجب أن يكون مبلغ المعالجة رقمًا موجبًا."
+
+msgid "Enter the redress amount for a refund, fee waiver or compensation."
+msgstr "أدخل مبلغ المعالجة في حالة الاسترداد أو الإعفاء من الرسوم أو التعويض."
+
+msgid "Invalid redress date."
+msgstr "تاريخ المعالجة غير صالح."
+
+msgid "The redress date cannot be in the future."
+msgstr "لا يمكن أن يكون تاريخ المعالجة في المستقبل."
+
+msgid "Enter the date the redress was provided."
+msgstr "أدخل تاريخ تقديم المعالجة."
+
+msgid "You do not have permission to change complaints."
+msgstr "ليست لديك صلاحية تعديل الشكاوى."
+
+msgid "Select a staff member who handles complaints."
+msgstr "اختر موظفًا مختصًا بمعالجة الشكاوى."
+
+msgid "The complaint is already assigned to this person."
+msgstr "الشكوى مسندة بالفعل إلى هذا الشخص."
+
+msgid "A reason is required when reassigning a complaint."
+msgstr "يلزم ذكر سبب عند إعادة إسناد الشكوى."
+
+msgid "Owner updated."
+msgstr "تم تحديث المسؤول."
+
+msgid "The note is empty."
+msgstr "الملاحظة فارغة."
+
+msgid "Internal note added."
+msgstr "تمت إضافة الملاحظة الداخلية."
+
+msgid "Root cause and redress recorded."
+msgstr "تم تسجيل السبب الجذري والمعالجة."
+
+msgid "Record the root cause and redress before resolving or closing the complaint."
+msgstr "سجّل السبب الجذري والمعالجة قبل حل الشكوى أو إغلاقها."
+
+msgid "Received"
+msgstr "الاستلام"
+
+msgid "Resolution days"
+msgstr "أيام المعالجة"
+
+msgid "Root cause"
+msgstr "السبب الجذري"
+
+msgid "Redress"
+msgstr "المعالجة"
+
+msgid "Redress amount"
+msgstr "مبلغ المعالجة"
+
+msgid "Redress date"
+msgstr "تاريخ المعالجة"
+
+msgid "Complaints received"
+msgstr "الشكاوى المستلمة"
+
+msgid "Resolved / closed"
+msgstr "المحلولة / المغلقة"
+
+msgid "Average resolution days"
+msgstr "متوسط أيام المعالجة"
+
+msgid "Open past deadline"
+msgstr "مفتوحة بعد المهلة"
+
+msgid "Resolved after deadline"
+msgstr "حُلّت بعد المهلة"
+
+msgid "By category"
+msgstr "حسب الفئة"
+
+msgid "By status"
+msgstr "حسب الحالة"
+
+msgid "By channel"
+msgstr "حسب القناة"
+
+msgid "Data subject name is required."
+msgstr "اسم صاحب البيانات مطلوب."
+
+msgid "Select a valid request type."
+msgstr "اختر نوع طلب صالحًا."
+
+msgid "Enter the requester's email address or phone number."
+msgstr "أدخل البريد الإلكتروني أو رقم هاتف مقدم الطلب."
+
+msgid "Select the channel."
+msgstr "اختر القناة."
+
+msgid "Invalid received date."
+msgstr "تاريخ الاستلام غير صالح."
+
+msgid "The received date cannot be in the future."
+msgstr "لا يمكن أن يكون تاريخ الاستلام في المستقبل."
+
+msgid "Select a valid method."
+msgstr "اختر طريقة صالحة."
+
+msgid "Select a purpose."
+msgstr "اختر غرضًا."
+
+msgid "List the destination countries for the cross-border transfer."
+msgstr "اذكر دول الوجهة للنقل عبر الحدود."
+
+msgid "Describe the safeguards for the cross-border transfer."
+msgstr "صِف الضمانات المطبقة على النقل عبر الحدود."
+
+msgid "The retention period is required."
+msgstr "مدة الاحتفاظ مطلوبة."
+
+msgid "Invalid date."
+msgstr "تاريخ غير صالح."
+
+msgid "The date cannot be in the future."
+msgstr "لا يمكن أن يكون التاريخ في المستقبل."
+
+msgid "The data subject is required."
+msgstr "صاحب البيانات مطلوب."
+
+msgid "Record the evidence of consent (e.g. form number, recording or log reference)."
+msgstr "سجّل دليل الموافقة (مثل رقم النموذج أو التسجيل أو مرجع السجل)."
+
+msgid "A reason is required."
+msgstr "السبب مطلوب."
+
+msgid "The withdrawal date cannot be before the consent date."
+msgstr "لا يمكن أن يسبق تاريخ السحب تاريخ الموافقة."
+
+msgid "A notification date cannot be before the discovery date."
+msgstr "لا يمكن أن يسبق تاريخ الإخطار تاريخ الاكتشاف."
+
+msgid "Enter the regulator's reference for the notification."
+msgstr "أدخل الرقم المرجعي للإخطار لدى الجهة الرقابية."
+
+msgid "Enter the date the regulator was notified."
+msgstr "أدخل تاريخ إخطار الجهة الرقابية."
+
+msgid "Enter the date the data subjects were notified."
+msgstr "أدخل تاريخ إخطار أصحاب البيانات."
+
+msgid "The number of notified individuals must be a whole number."
+msgstr "يجب أن يكون عدد الأفراد المُخطَرين عددًا صحيحًا."
+
+msgid "Invalid input."
+msgstr "مدخلات غير صالحة."
+
+msgid "Notification record saved."
+msgstr "تم حفظ سجل الإخطار."
+
+msgid "A note is required to close a breach."
+msgstr "يلزم إدخال ملاحظة لإغلاق الاختراق."
+
+#, python-format
+msgid "Activity %(code)s registered in ROPA. Complete the remaining record fields."
+msgstr "تم تسجيل النشاط %(code)s في سجل أنشطة المعالجة. أكمل باقي حقول السجل."
+
+msgid "Activity not found."
+msgstr "النشاط غير موجود."
+
+msgid "No changes."
+msgstr "لا توجد تغييرات."
+
+msgid "ROPA record updated."
+msgstr "تم تحديث سجل أنشطة المعالجة."
+
+msgid "Consent recorded."
+msgstr "تم تسجيل الموافقة."
+
+msgid "Consent record not found."
+msgstr "سجل الموافقة غير موجود."
+
+msgid "This consent has already been withdrawn."
+msgstr "تم سحب هذه الموافقة بالفعل."
+
+msgid "Consent withdrawal recorded."
+msgstr "تم تسجيل سحب الموافقة."
+
+msgid "Purpose code and name are required."
+msgstr "رمز الغرض واسمه مطلوبان."
+
+msgid "This purpose code already exists."
+msgstr "رمز الغرض هذا موجود بالفعل."
+
+msgid "Consent purpose added."
+msgstr "تمت إضافة غرض الموافقة."
+
+msgid "Periodic complaints report"
+msgstr "التقرير الدوري للشكاوى"
+
+msgid "Root Cause & Redress"
+msgstr "السبب الجذري والمعالجة"
+
+msgid "Response letter (Arabic)"
+msgstr "خطاب الرد (عربي)"
+
+msgid "Response letter (English)"
+msgstr "خطاب الرد (إنجليزي)"
+
+msgid "Root cause category"
+msgstr "فئة السبب الجذري"
+
+msgid "Redress type"
+msgstr "نوع المعالجة"
+
+msgid "Redress amount (EGP)"
+msgstr "مبلغ المعالجة (جنيه مصري)"
+
+msgid "staff only — never shown to the customer; notes cannot be edited or deleted"
+msgstr "للموظفين فقط — لا تظهر للعميل؛ ولا يمكن تعديل الملاحظات أو حذفها"
+
+msgid "No internal notes yet."
+msgstr "لا توجد ملاحظات داخلية بعد."
+
+msgid "Add an internal note..."
+msgstr "أضف ملاحظة داخلية..."
+
+msgid "Add note"
+msgstr "إضافة ملاحظة"
+
+msgid "since"
+msgstr "منذ"
+
+msgid "by"
+msgstr "بواسطة"
+
+msgid "Select staff member..."
+msgstr "اختر الموظف..."
+
+msgid "Reason for reassignment"
+msgstr "سبب إعادة الإسناد"
+
+msgid "Reassign"
+msgstr "إعادة الإسناد"
+
+msgid "Cross-border transfer"
+msgstr "النقل عبر الحدود"
+
+msgid "Retention period"
+msgstr "مدة الاحتفاظ"
+
+msgid "DPO review date"
+msgstr "تاريخ مراجعة مسؤول حماية البيانات"
+
+msgid "Breach Investigation"
+msgstr "التحقيق في الاختراق"
+
+msgid "Status change note"
+msgstr "ملاحظة تغيير الحالة"
+
+msgid "Required when closing"
+msgstr "مطلوبة عند الإغلاق"
+
+msgid "Not yet"
+msgstr "لم يتم بعد"
+
+msgid "Data subjects notified"
+msgstr "إخطار أصحاب البيانات"
+
+msgid "Notification Record"
+msgstr "سجل الإخطار"
+
+msgid "Regulator notification"
+msgstr "إخطار الجهة الرقابية"
+
+msgid "Date notified"
+msgstr "تاريخ الإخطار"
+
+msgid "Data subjects notification"
+msgstr "إخطار أصحاب البيانات"
+
+msgid "Number of individuals notified"
+msgstr "عدد الأفراد المُخطَرين"
+
+msgid "Save notification record"
+msgstr "حفظ سجل الإخطار"
+
+msgid "Last recorded by"
+msgstr "آخر تسجيل بواسطة"
+
+msgid "Status History"
+msgstr "سجل الحالات"
+
+msgid "Consent Register"
+msgstr "سجل الموافقات"
+
+msgid "Record consent"
+msgstr "تسجيل موافقة"
+
+msgid "No consent purposes are defined yet."
+msgstr "لم تُعرَّف أغراض للموافقة بعد."
+
+msgid "Add a purpose first."
+msgstr "أضف غرضًا أولًا."
+
+msgid "Data subject"
+msgstr "صاحب البيانات"
+
+msgid "Name or customer number"
+msgstr "الاسم أو رقم العميل"
+
+msgid "Subject reference"
+msgstr "مرجع صاحب البيانات"
+
+msgid "e.g. email or ID"
+msgstr "مثل البريد الإلكتروني أو رقم الهوية"
+
+msgid "Consent date"
+msgstr "تاريخ الموافقة"
+
+msgid "Signed form number, call recording ID, web log reference..."
+msgstr "رقم النموذج الموقّع، أو معرّف تسجيل المكالمة، أو مرجع سجل الموقع..."
+
+msgid "Consent wording shown"
+msgstr "نص الموافقة المعروض"
+
+msgid "Search data subject"
+msgstr "البحث عن صاحب البيانات"
+
+msgid "Withdrawn"
+msgstr "مسحوبة"
+
+msgid "Request Details"
+msgstr "تفاصيل الطلب"
+
+msgid "Channel received"
+msgstr "قناة الاستلام"
+
+msgid "Date received"
+msgstr "تاريخ الاستلام"
+
+#, python-format
+msgid "Identity verified on %(date)s via"
+msgstr "تم التحقق من الهوية في %(date)s عبر"
+
+msgid "Requester email"
+msgstr "البريد الإلكتروني لمقدم الطلب"
+
+msgid "Requester phone"
+msgstr "هاتف مقدم الطلب"
+
+msgid "At least one contact detail is required to respond to the requester."
+msgstr "يلزم توفر وسيلة تواصل واحدة على الأقل للرد على مقدم الطلب."
+
+msgid "Identity verification method"
+msgstr "طريقة التحقق من الهوية"
+
+msgid "To be decided"
+msgstr "تُحدَّد لاحقًا"
+
+msgid "Identity is confirmed as verified on the request page."
+msgstr "يُؤكَّد التحقق من الهوية من صفحة الطلب."
+
+msgid "Request details"
+msgstr "تفاصيل الطلب"
+
+msgid "Response deadline: 30 days from the date received."
+msgstr "مهلة الرد: 30 يومًا من تاريخ الاستلام."
+
+msgid "Add purpose"
+msgstr "إضافة غرض"
+
+msgid "Messages with the reporter"
+msgstr "المراسلات مع المُبلِّغ"
+
+msgid "The reporter sees your replies as \"Compliance team\" only."
+msgstr "يرى المُبلِّغ ردودك باسم \"فريق الالتزام\" فقط."
+
+msgid "This is a named report without a tracking code; the reporter cannot read messages here. Contact them through the usual channel."
+msgstr "هذا بلاغ باسم صاحبه دون رمز تتبع؛ لا يستطيع المُبلِّغ قراءة الرسائل هنا. تواصل معه عبر القناة المعتادة."
+
+msgid "Compliance team"
+msgstr "فريق الالتزام"
+
+msgid "No messages yet."
+msgstr "لا توجد رسائل بعد."
+
+msgid "Message to the reporter (do not reveal names of staff or other people involved)"
+msgstr "رسالة إلى المُبلِّغ (لا تكشف أسماء الموظفين أو الأشخاص المعنيين)"
+
+msgid "Send to reporter"
+msgstr "إرسال إلى المُبلِّغ"
+
+msgid "Assign / Transfer Case"
+msgstr "إسناد / تحويل البلاغ"
+
+msgid "Reassign to someone else"
+msgstr "إعادة الإسناد إلى شخص آخر"
+
+msgid "Transfer to another department"
+msgstr "التحويل إلى إدارة أخرى"
+
+msgid "Return to a previous owner"
+msgstr "الإعادة إلى مسؤول سابق"
+
+msgid "Assign to"
+msgstr "إسناد إلى"
+
+msgid "Why is this case moving?"
+msgstr "لماذا يتم نقل هذا البلاغ؟"
+
+msgid "Required for reassign, transfer, escalate and return. Recorded permanently in the case timeline."
+msgstr "مطلوب لإعادة الإسناد والتحويل والتصعيد والإعادة، ويُسجَّل بشكل دائم في سجل البلاغ."
+
+msgid "Optional instructions for the assignee..."
+msgstr "تعليمات اختيارية للمسؤول المكلَّف..."
+
+msgid "SLA (days)"
+msgstr "مهلة الخدمة (بالأيام)"
+
+msgid "Save assignment"
+msgstr "حفظ الإسناد"
+
+msgid "Messages with the Compliance team"
+msgstr "المراسلات مع فريق الالتزام"
+
+msgid "Your identity is not shared. Keep your tracking code to read replies."
+msgstr "لا تتم مشاركة هويتك. احتفظ برمز التتبع لقراءة الردود."
+
+msgid "You"
+msgstr "أنت"
+
+msgid "No messages yet. You can send additional information or questions to the compliance team below."
+msgstr "لا توجد رسائل بعد. يمكنك إرسال معلومات إضافية أو أسئلة إلى فريق الالتزام أدناه."
+
+msgid "Write your message. Do not include your name if you wish to stay anonymous."
+msgstr "اكتب رسالتك. لا تذكر اسمك إذا كنت ترغب في البقاء مجهول الهوية."
+
+msgid "Send message"
+msgstr "إرسال الرسالة"
+
+msgid "This case is closed. Please submit a new report if you have new information."
+msgstr "هذا البلاغ مغلق. يُرجى تقديم بلاغ جديد إذا كانت لديك معلومات جديدة."
+
+msgid "Apply"
+msgstr "تطبيق"
+
+#, python-format
+msgid "Charts cover %(n)s report(s) in the selected period."
+msgstr "تغطي الرسوم البيانية %(n)s بلاغًا في الفترة المحددة."
+
+msgid "Reports by month"
+msgstr "البلاغات حسب الشهر"
+
+msgid "Reports by type"
+msgstr "البلاغات حسب النوع"
+
+msgid "Reports by status"
+msgstr "البلاغات حسب الحالة"
+
+msgid "Please write a message."
+msgstr "يُرجى كتابة رسالة."
+
+msgid "Your message has been sent to the compliance team."
+msgstr "تم إرسال رسالتك إلى فريق الالتزام."
+
+msgid "Message sent to the reporter."
+msgstr "تم إرسال الرسالة إلى المُبلِّغ."
+
+msgid "Transaction monitoring alert"
+msgstr "تنبيه مراقبة المعاملات"
+
+msgid "Whistleblowing report"
+msgstr "بلاغ مخالفات"
+
+msgid "Consumer complaint"
+msgstr "شكوى عميل"
+
+msgid "Cyber incident"
+msgstr "حادث سيبراني"
+
+msgid "Data subject request"
+msgstr "طلب صاحب بيانات"
+
+msgid "Personal data breach"
+msgstr "اختراق بيانات شخصية"
+
+msgid "Unusual transaction"
+msgstr "معاملة غير اعتيادية"
+
+msgid "Normal"
+msgstr "عادية"
+
+msgid "Status change"
+msgstr "تغيير الحالة"
+
+msgid "Message"
+msgstr "رسالة"
+
+msgid "Online form"
+msgstr "نموذج إلكتروني"
+
+msgid "Mobile app"
+msgstr "تطبيق الهاتف"
+
+msgid "Social media"
+msgstr "وسائل التواصل الاجتماعي"
+
+msgid "Referred by regulator"
+msgstr "محالة من الجهة الرقابية"
+
+msgid "Call centre"
+msgstr "مركز الاتصال"
+
+msgid "Process failure"
+msgstr "خلل في الإجراءات"
+
+msgid "Staff error"
+msgstr "خطأ من الموظف"
+
+msgid "System / technical error"
+msgstr "خطأ في النظام / خطأ فني"
+
+msgid "Product design"
+msgstr "تصميم المنتج"
+
+msgid "Third party / outsourced provider"
+msgstr "طرف ثالث / مقدم خدمة خارجي"
+
+msgid "Miscommunication / disclosure"
+msgstr "سوء تواصل / قصور في الإفصاح"
+
+msgid "Customer misunderstanding"
+msgstr "سوء فهم من العميل"
+
+msgid "No fault found"
+msgstr "لم يثبت وجود خطأ"
+
+msgid "Refund"
+msgstr "استرداد"
+
+msgid "Fee waiver / reversal"
+msgstr "إعفاء من الرسوم / ردّها"
+
+msgid "Compensation"
+msgstr "تعويض"
+
+msgid "Record / account correction"
+msgstr "تصحيح السجل / الحساب"
+
+msgid "Apology / explanation"
+msgstr "اعتذار / توضيح"
+
+msgid "Service restored"
+msgstr "استعادة الخدمة"
+
+msgid "Access"
+msgstr "الاطلاع"
+
+msgid "Rectification"
+msgstr "التصحيح"
+
+msgid "Erasure"
+msgstr "المحو"
+
+msgid "Restriction of processing"
+msgstr "تقييد المعالجة"
+
+msgid "Data portability"
+msgstr "نقل البيانات"
+
+msgid "Objection"
+msgstr "الاعتراض"
+
+msgid "National ID card"
+msgstr "بطاقة الرقم القومي"
+
+msgid "Email verification"
+msgstr "التحقق عبر البريد الإلكتروني"
+
+msgid "In person"
+msgstr "حضوريًا"
+
+msgid "SMS one-time code"
+msgstr "رمز لمرة واحدة عبر رسالة نصية"
+
+msgid "Match to KYC record"
+msgstr "المطابقة مع سجل اعرف عميلك"
+
+msgid "Given"
+msgstr "ممنوحة"
+
+msgid "Consent"
+msgstr "الموافقة"
+
+msgid "Legal obligation"
+msgstr "التزام قانوني"
+
+msgid "Vital interests"
+msgstr "مصالح حيوية"
+
+msgid "Public interest"
+msgstr "المصلحة العامة"
+
+msgid "Legitimate interests"
+msgstr "مصالح مشروعة"
+
+msgid "Paper form"
+msgstr "نموذج ورقي"
+
+msgid "Recorded call"
+msgstr "مكالمة مسجلة"
+
+msgid "In-app"
+msgstr "داخل التطبيق"
+
+msgid "Hotline"
+msgstr "الخط الساخن"
+
+msgid "Internal note"
+msgstr "ملاحظة داخلية"
+
+msgid "Root cause / redress"
+msgstr "السبب الجذري / المعالجة"
+
+msgid "Automatic escalation"
+msgstr "تصعيد تلقائي"
+
+msgid "Denial of service (DDoS)"
+msgstr "حجب الخدمة (DDoS)"
+
+msgid "Malware"
+msgstr "برمجيات خبيثة"
+
+msgid "Phishing"
+msgstr "تصيد احتيالي"
+
+msgid "System outage"
+msgstr "انقطاع النظام"
+
+msgid "Unauthorised access"
+msgstr "وصول غير مصرح به"
+
+msgid "Accidental disclosure"
+msgstr "إفصاح غير مقصود"
+
+msgid "Data theft"
+msgstr "سرقة بيانات"
+
+msgid "Hacking"
+msgstr "اختراق إلكتروني"
+
+msgid "Loss of device"
+msgstr "فقدان جهاز"
+
+msgid "Pending approval"
+msgstr "بانتظار الاعتماد"
+
+msgid "Very high"
+msgstr "مرتفع جدًا"
+
+msgid "Identity verified"
+msgstr "تم التحقق من الهوية"
+
+msgid "Public notice"
+msgstr "إعلان عام"
+
+msgid "Corruption & bribery"
+msgstr "فساد ورشوة"
+
+msgid "Harassment & discrimination"
+msgstr "تحرش وتمييز"
+
+msgid "Health & safety"
+msgstr "الصحة والسلامة"
+
+msgid "Regulatory violation"
+msgstr "مخالفة تنظيمية"
+
+msgid "Retaliation"
+msgstr "انتقام"
+
+msgid "Conflict of interest"
+msgstr "تضارب المصالح"
+
+msgid "Misuse of company assets"
+msgstr "إساءة استخدام أصول الشركة"
+
+msgid "Unethical behaviour"
+msgstr "سلوك غير أخلاقي"
+
+msgid "AML/CFT violation"
+msgstr "مخالفة مكافحة غسل الأموال وتمويل الإرهاب"
+
+msgid "Complaint response"
+msgstr "الرد على الشكوى"
+
+msgid "Back to complaint"
+msgstr "العودة إلى الشكوى"
+
+msgid "DRAFT — the complaint has no recorded final resolution yet"
+msgstr "مسودة — لم تُسجَّل نتيجة نهائية للشكوى بعد"
+
+msgid "Complaint reference"
+msgstr "رقم الشكوى"
+
+msgid "Received on"
+msgstr "تاريخ الاستلام"
+
+#, python-format
+msgid "Dear %(name)s,"
+msgstr "السيد/السيدة %(name)s،"
+
+msgid "Thank you for contacting us. We have completed our review of your complaint referenced above and set out the outcome below."
+msgstr "نشكركم على تواصلكم معنا. لقد انتهينا من دراسة شكواكم المشار إليها أعلاه، ونوضح فيما يلي النتيجة."
+
+msgid "Outcome of our review"
+msgstr "نتيجة الدراسة"
+
+msgid "The review is still in progress."
+msgstr "الدراسة لا تزال جارية."
+
+msgid "Corrective action / redress"
+msgstr "الإجراء التصحيحي / المعالجة"
+
+#, python-format
+msgid "provided on %(date)s"
+msgstr "بتاريخ %(date)s"
+
+msgid "If you are not satisfied with this response, you may reply to us quoting the complaint reference, and you also have the right to refer the complaint to the competent supervisory authority."
+msgstr "إذا لم تكن راضيًا عن هذا الرد، يمكنك مراسلتنا مع ذكر رقم الشكوى، كما يحق لك إحالة الشكوى إلى الجهة الرقابية المختصة."
+
+msgid "We value your feedback and remain at your disposal for any further clarification."
+msgstr "نقدّر ملاحظاتكم ونبقى في خدمتكم لأي استفسار إضافي."
+
+msgid "Yours sincerely,"
+msgstr "وتفضلوا بقبول فائق الاحترام،"
+
+msgid "Customer Complaints Unit"
+msgstr "وحدة شكاوى العملاء"
+
+msgid "No data"
+msgstr "لا توجد بيانات"
+
+msgid "This month"
+msgstr "هذا الشهر"
+
+msgid "Last month"
+msgstr "الشهر الماضي"
+
+msgid "This quarter"
+msgstr "هذا الربع"
+
+msgid "Last quarter"
+msgstr "الربع الماضي"
+
+msgid "This year"
+msgstr "هذا العام"
+
+msgid "Custom dates"
+msgstr "تواريخ محددة"
+
+#, python-format
+msgid "Complaints received from %(start)s to %(end)s."
+msgstr "الشكاوى المستلمة من %(start)s إلى %(end)s."
+
+msgid "Choose 'Custom dates' to use the From / To fields."
+msgstr "اختر \"تواريخ محددة\" لاستخدام حقلي من / إلى."
+
+msgid "Complaints in the period"
+msgstr "الشكاوى خلال الفترة"
+
+msgid "No complaints were received in this period."
+msgstr "لم تُستلم أي شكاوى خلال هذه الفترة."
+
+msgid "ROPA record"
+msgstr "سجل نشاط المعالجة"
+
+msgid "System / application"
+msgstr "النظام / التطبيق"
+
+msgid "Recipients (internal and external)"
+msgstr "الجهات المستلمة (الداخلية والخارجية)"
+
+msgid "Destination countries"
+msgstr "دول الوجهة"
+
+msgid "Safeguards"
+msgstr "الضمانات"
+
+msgid "e.g. regulator licence, contractual clauses, adequacy"
+msgstr "مثل ترخيص الجهة الرقابية أو البنود التعاقدية أو كفاية مستوى الحماية"
+
+msgid "e.g. 5 years after account closure"
+msgstr "مثل 5 سنوات بعد إغلاق الحساب"
+
+msgid "Retention justification"
+msgstr "مبرر الاحتفاظ"
+
+msgid "Security measures"
+msgstr "إجراءات الأمان"
+
+msgid "Data owner"
+msgstr "مالك البيانات"
+
+msgid "Next review date"
+msgstr "تاريخ المراجعة التالية"
+
+msgid "No changes recorded yet."
+msgstr "لم تُسجَّل تغييرات بعد."
+
+msgid "Consent record"
+msgstr "سجل الموافقة"
+
+msgid "Back to register"
+msgstr "العودة إلى السجل"
+
+msgid "Recorded by"
+msgstr "سُجّل بواسطة"
+
+msgid "Withdrawal date"
+msgstr "تاريخ السحب"
+
+msgid "Withdrawal reason"
+msgstr "سبب السحب"
+
+msgid "Withdrawal channel"
+msgstr "قناة السحب"
+
+msgid "Withdrawal recorded by"
+msgstr "سُجّل السحب بواسطة"
+
+msgid "Record withdrawal"
+msgstr "تسجيل سحب الموافقة"
+
+msgid "No history recorded."
+msgstr "لا يوجد سجل."
+
+msgid "Other consents of this data subject"
+msgstr "موافقات أخرى لصاحب البيانات"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

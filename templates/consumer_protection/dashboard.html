@@ -11,6 +11,9 @@
             class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
             <i class="fas fa-list fa-sm text-white-50 mr-2"></i>{{ _("View All Complaints") }}
         </a>
+        <a href="{{ url_for('consumer_protection.periodic_report') }}" class="d-none d-sm-inline-block btn btn-sm btn-outline-primary shadow-sm ms-2">
+            <i class="bi bi-file-earmark-bar-graph"></i> {{ _("Periodic complaints report") }}
+        </a>
     </div>
 
     <!-- Content Row -->
@@ -106,7 +109,7 @@
                                         {% elif complaint.status == 'CLOSED' %}
                                         <span class="badge bg-secondary">{{ _("Closed") }}</span>
                                         {% else %}
-                                        <span class="badge bg-light text-dark">{{ complaint.status }}</span>
+                                        <span class="badge bg-light text-dark">{{ complaint.status|code_label }}</span>
                                         {% endif %}
                                     </td>
                                     <td>

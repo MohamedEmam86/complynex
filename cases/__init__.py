@@ -25,3 +25,10 @@ stay authoritative for workflow; this is oversight/SLA visibility only.
 from flask import Blueprint
 
 cases_bp = Blueprint('cases', __name__, url_prefix='/cases')
+
+
+@cases_bp.app_template_filter('code_label')
+def _code_label(code):
+    """{{ status|code_label }} -> translated label for case / source-module codes."""
+    from .labels import label
+    return label(code)

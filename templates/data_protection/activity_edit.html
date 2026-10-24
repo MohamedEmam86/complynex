@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}{{ _('ROPA record') }} - {{ act.activity_code }}{% endblock %}
+{% macro field(name, label, rows=2, help=None) %}
+<div class="mb-3">
+    <label class="form-label">{{ label }}</label>
+    <textarea name="{{ name }}" class="form-control" rows="{{ rows }}">{{ act[name] or '' }}</textarea>
+    {% if help %}<div class="form-text">{{ help }}</div>{% endif %}
+</div>
+{% endmacro %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h3 mb-0">{{ _('ROPA record') }}: <code>{{ act.activity_code }}</code></h1>
+        <a href="{{ url_for('dp.activity_list') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> {{ _('Back to ROPA') }}</a>
+    </div>
+    <div class="row">
+        <div class="col-lg-8">
+            <form method="POST" class="card shadow-sm mb-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">{{ _('Activity Name') }} *</label>
+                            <input type="text" name="activity_name" class="form-control" required value="{{ act.activity_name or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ _('Status') }}</label>
+                            <select name="is_active" class="form-select">
+                                <option value="1" {{ 'selected' if act.is_active not in (0, '0') else '' }}>{{ _('Active') }}</option>
+                                <option value="0" {{ 'selected' if act.is_active in (0, '0') else '' }}>{{ _('Inactive') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    {{ field('activity_description', _('Description')) }}
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Processing Purpose') }} *</label>
+                        <textarea name="processing_purpose" class="form-control" rows="2" required>{{ act.processing_purpose or '' }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Legal Basis (PDPL)') }} *</label>
+                            <select name="legal_basis" class="form-select" required>
+                                {% for b in legal_bases %}<option value="{{ b }}" {{ 'selected' if act.legal_basis == b else '' }}>{{ b|code_label }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('System / application') }}</label>
+                            <input type="text" name="system_name" class="form-control" value="{{ act.system_name or '' }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">{{ field('data_subject_categories', _('Data Subject Categories'), 3) }}</div>
+                        <div class="col-md-6">{{ field('data_categories', _('Data Categories'), 3) }}</div>
+                    </div>
+                    {{ field('recipients', _('Recipients (internal and external)')) }}
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="international_transfer" value="1" id="xb" {{ 'checked' if act.international_transfer in (1, '1') else '' }}>
+                            <label class="form-check-label fw-bold" for="xb">{{ _('Cross-border transfer') }}</label>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6"><label class="form-label small">{{ _('Destination countries') }}</label>
+                                <input type="text" name="transfer_countries" class="form-control form-control-sm" value="{{ act.transfer_countries or '' }}"></div>
+                            <div class="col-md-6"><label class="form-label small">{{ _('Safeguards') }}</label>
+                                <input type="text" name="transfer_safeguards" class="form-control form-control-sm" value="{{ act.transfer_safeguards or '' }}"
+                                       placeholder="{{ _('e.g. regulator licence, contractual clauses, adequacy') }}"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ _('Retention period') }} *</label>
+                            <input type="text" name="retention_period" class="form-control" required value="{{ act.retention_period or '' }}" placeholder="{{ _('e.g. 5 years after account closure') }}">
+                        </div>
+                        <div class="col-md-6">{{ field('retention_justification', _('Retention justification'), 1) }}</div>
+                    </div>
+                    {{ field('security_measures', _('Security measures'), 3) }}
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ _('Data owner') }}</label>
+                            <select name="data_owner" class="form-select">
+                                <option value="">--</option>
+                                {% for u in users %}<option value="{{ u.id }}" {{ 'selected' if act.data_owner|string == u.id|string else '' }}>{{ u.full_name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ _('DPO review date') }}</label>
+                            <input type="date" name="dpo_review_date" class="form-control" value="{{ act.dpo_review_date or '' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ _('Next review date') }}</label>
+                            <input type="date" name="next_review_date" class="form-control" value="{{ (act.next_review_date or '')[:10] if act.next_review_date is string else (act.next_review_date or '') }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-end"><button class="btn btn-success">{{ _('Save') }}</button></div>
+            </form>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light"><h6 class="mb-0">{{ _('Change history') }}</h6></div>
+                <ul class="list-group list-group-flush small">
+                    {% for h in history %}
+                    <li class="list-group-item">
+                        <div class="text-muted">{{ h.changed_at.strftime('%Y-%m-%d %H:%M') if h.changed_at else '' }} · {{ h.user_name or '-' }}</div>
+                        <div style="white-space: pre-wrap;">{{ h.changes }}</div>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('No changes recorded yet.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

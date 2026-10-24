@@ -23,6 +23,50 @@ from utils.decorators import permission_required
 from database.db import get_db
 from . import dp_bp
 from datetime import datetime, timedelta, date
+from data_protection import records as R
+
+
+def sync_case(case_type, source_id):
+    """Push to the unified case registry (lazy import: models.case imports this package)."""
+    from models.case import sync_case as _sync
+    return _sync(case_type, source_id)
+
+_ERR = {
+    'name': lambda: gettext('Data subject name is required.'),
+    'type': lambda: gettext('Select a valid request type.'),
+    'contact': lambda: gettext("Enter the requester's email address or phone number."),
+    'email': lambda: gettext('Please enter a valid email address.'),
+    'phone': lambda: gettext('Please enter a valid phone number.'),
+    'channel': lambda: gettext('Select the channel.'),
+    'received': lambda: gettext('Invalid received date.'),
+    'received_future': lambda: gettext('The received date cannot be in the future.'),
+    'method': lambda: gettext('Select a valid method.'),
+    'purpose': lambda: gettext('Select a purpose.'),
+    'legal_basis': lambda: gettext('Select a valid legal basis.'),
+    'transfer_countries': lambda: gettext('List the destination countries for the cross-border transfer.'),
+    'transfer_safeguards': lambda: gettext('Describe the safeguards for the cross-border transfer.'),
+    'retention': lambda: gettext('The retention period is required.'),
+    'date': lambda: gettext('Invalid date.'),
+    'date_future': lambda: gettext('The date cannot be in the future.'),
+    'subject': lambda: gettext('The data subject is required.'),
+    'evidence': lambda: gettext('Record the evidence of consent (e.g. form number, recording or log reference).'),
+    'reason': lambda: gettext('A reason is required.'),
+    'before_consent': lambda: gettext('The withdrawal date cannot be before the consent date.'),
+    'before_discovery': lambda: gettext('A notification date cannot be before the discovery date.'),
+    'reference': lambda: gettext("Enter the regulator's reference for the notification."),
+    'regulator_date': lambda: gettext('Enter the date the regulator was notified.'),
+    'subjects_date': lambda: gettext('Enter the date the data subjects were notified.'),
+    'count': lambda: gettext('The number of notified individuals must be a whole number.'),
+}
+
+
+def _err(key):
+    return _ERR.get(key, lambda: gettext('Invalid input.'))()
+
+
+def _active_users():
+    return get_db().execute("""SELECT id, COALESCE(NULLIF(TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')), ''), email) AS full_name
+                               FROM users WHERE is_active = 1 ORDER BY first_name, last_name""").fetchall()
 
 DSR_FINAL_STATES = ('COMPLETED', 'REJECTED')
 # Request types that disclose or destroy personal data: never complete them for an
@@ -121,23 +165,33 @@ def dsr_list():
 def create_dsr():
     if request.method == 'POST':
         db = get_db()
+        err, d = R.validate_dsr_intake(request.form)
+        if err:
+            flash(_err(err), 'danger')
+            return render_template('data_protection/dsr_form.html', user=current_user, R=R, form=request.form,
+                                   today=date.today().isoformat())
         request_number = f"DSR-{datetime.now().strftime('%Y%m')}-{os.urandom(2).hex().upper()}"
-        subject_name = request.form.get('subject_name')
-        req_type = request.form.get('request_type')
-        due_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d') # PDPL standard is 30 days
-        
-        db.execute("""
+        due_date = (d['received_date'] + timedelta(days=30)).isoformat()  # 30 days from receipt
+
+        new_id = db.execute("""
             INSERT INTO data_subject_requests
-            (request_reference, request_date, data_subject_name, request_type, due_date, status,
-             identity_verified, created_at, created_by)
-            VALUES (%s, CURRENT_DATE, %s, %s, %s, 'NEW', 0, %s, %s)
-        """, (request_number, subject_name, req_type, due_date, _now_text(), current_user.id))
-        
+            (request_reference, request_date, received_date, data_subject_name, data_subject_email,
+             data_subject_phone, request_channel, request_type, request_description, verification_method,
+             due_date, status, identity_verified, created_at, created_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'NEW', 0, %s, %s)
+            RETURNING id
+        """, (request_number, d['received_date'].isoformat(), d['received_date'], d['data_subject_name'],
+              d['data_subject_email'], d['data_subject_phone'], d['request_channel'], d['request_type'],
+              d['request_description'], d['verification_method'], due_date, _now_text(),
+              current_user.id)).fetchone()['id']
+        _log_dsr(db, new_id, 'RECEIVED', f"Request received via {d['request_channel']} on {d['received_date']}")
         db.commit()
+        sync_case('DSR', new_id)
         flash(gettext('Data Subject Request %(request_number)s registered.', request_number=request_number))
-        return redirect(url_for('dp.dsr_list'))
-        
-    return render_template('data_protection/dsr_form.html', user=current_user)
+        return redirect(url_for('dp.dsr_detail', id=new_id))
+
+    return render_template('data_protection/dsr_form.html', user=current_user, R=R, form={},
+                           today=date.today().isoformat())
 
 @dp_bp.route('/dsrs/<int:id>')
 @login_required
@@ -157,9 +211,9 @@ def dsr_detail(id):
         ORDER BY t.action_date DESC
     """, (id,)).fetchall()
     
-    users = db.execute("SELECT id, first_name || ' ' || last_name as full_name FROM users WHERE is_active = 1").fetchall()
+    users = _active_users()
     
-    return render_template('data_protection/dsr_detail.html', 
+    return render_template('data_protection/dsr_detail.html', R=R, 
                           dsr=dsr, 
                           timeline=timeline, 
                           users=users,
@@ -179,7 +233,7 @@ def verify_identity(id):
     if dsr['status'] in DSR_FINAL_STATES:
         flash(gettext('This request is closed and can no longer be changed.'), 'warning')
         return redirect(url_for('dp.dsr_detail', id=id))
-    if not method:
+    if method not in R.VERIFY_METHODS:
         flash(gettext('Select how the identity was verified.'), 'warning')
         return redirect(url_for('dp.dsr_detail', id=id))
 
@@ -196,6 +250,7 @@ def verify_identity(id):
     _log_dsr(db, id, 'IDENTITY_VERIFIED', f"Identity verified via {method}")
     
     db.commit()
+    sync_case('DSR', id)
     flash(gettext('Identity verified. Request moved to IN_PROGRESS.'))
     return redirect(url_for('dp.dsr_detail', id=id))
 
@@ -213,20 +268,21 @@ def assign_dsr(id):
         flash(gettext('This request is closed and can no longer be changed.'), 'warning')
         return redirect(url_for('dp.dsr_detail', id=id))
     
+    assigned_user = db.execute("SELECT first_name || ' ' || last_name as full_name FROM users "
+                               "WHERE id = %s AND is_active = 1", (request.form.get('user_id', type=int),)).fetchone()
+    if not assigned_user:
+        flash(gettext('Selected user not found.'), 'danger')
+        return redirect(url_for('dp.dsr_detail', id=id))
     db.execute("""
         UPDATE data_subject_requests
         SET assigned_to = %s
         WHERE id = %s
-    """, (user_id, id))
-
-    assigned_user = db.execute("SELECT first_name || ' ' || last_name as full_name FROM users WHERE id = %s", (user_id,)).fetchone()
-    if not assigned_user:
-        flash(gettext('Selected user not found.'), 'danger')
-        return redirect(url_for('dp.dsr_detail', id=id))
+    """, (request.form.get('user_id', type=int), id))
 
     _log_dsr(db, id, 'ASSIGNED', f"Assigned to {assigned_user['full_name']}")
     
     db.commit()
+    sync_case('DSR', id)
     flash(gettext('Request assigned to %(full_name)s.', full_name=assigned_user["full_name"]))
     return redirect(url_for('dp.dsr_detail', id=id))
 
@@ -279,6 +335,7 @@ def complete_dsr(id):
     _log_dsr(db, id, status, f"Request {status.lower()}. Notes: {rationale}")
 
     db.commit()
+    sync_case('DSR', id)
     flash(gettext('Request completed.') if status == 'COMPLETED' else gettext('Request rejected.'))
     return redirect(url_for('dp.dsr_detail', id=id))
 
@@ -311,24 +368,26 @@ def report_breach():
             flash(err, 'danger')
             return render_template('data_protection/breach_form.html', user=current_user)
 
-        db.execute("""
+        breach_id = db.execute("""
             INSERT INTO data_breaches 
             (breach_number, breach_date, discovery_date, breach_type, breach_description, 
              affected_individuals_count, includes_sensitive_data, status, created_at, created_by)
             VALUES (%s, %s, %s, %s, %s, %s, %s, 'NEW', %s, %s)
+            RETURNING id
         """, (breach_number, breach_date, discovery_date, breach_type, description, 
-              int(affected_individuals), sensitive_data, _now_text(), current_user.id))
-        
+              int(affected_individuals), sensitive_data, _now_text(), current_user.id)).fetchone()['id']
+        db.execute("""INSERT INTO data_breach_updates (breach_id, old_status, new_status, note, created_by)
+                      VALUES (%s, NULL, 'NEW', 'Breach reported', %s)""", (breach_id, current_user.id))
         db.commit()
         
         # Calculate initial severity
-        breach_id = db.execute("SELECT LASTVAL() as id").fetchone()['id']
         from .services import calculate_breach_severity, check_pdpc_notification_requirement
         calculate_breach_severity(breach_id)
         check_pdpc_notification_requirement(breach_id)
+        sync_case('DATA_BREACH', breach_id)
         
         flash(gettext('Breach %(breach_number)s reported and severity assessed.', breach_number=breach_number))
-        return redirect(url_for('dp.breach_list'))
+        return redirect(url_for('dp.breach_detail', id=breach_id))
         
     return render_template('data_protection/breach_form.html', user=current_user)
 
@@ -339,20 +398,66 @@ def breach_detail(id):
     db = get_db()
     
     if request.method == 'POST' and current_user.has_permission('pdpl', 'edit'):
+        current = db.execute("SELECT * FROM data_breaches WHERE id = %s", (id,)).fetchone()
+        if not current:
+            flash(gettext('Breach not found.'))
+            return redirect(url_for('dp.breach_list'))
+        current = dict(current)
+        if request.form.get('action') == 'notification':
+            err, n = R.validate_breach_notification(request.form, current.get('discovery_date'))
+            if err:
+                flash(_err(err), 'danger')
+                return redirect(url_for('dp.breach_detail', id=id) + '#notification')
+            db.execute("""UPDATE data_breaches SET pdpc_notified = %s, pdpc_notification_date = %s, pdpc_reference = %s,
+                              individuals_notified = %s, individuals_notification_date = %s,
+                              individuals_notification_method = %s, individuals_notification_count = %s,
+                              notification_notes = %s, notification_recorded_by = %s, updated_at = %s
+                          WHERE id = %s""",
+                       (n['pdpc_notified'], n['pdpc_notification_date'], n['pdpc_reference'],
+                        n['individuals_notified'], n['individuals_notification_date'],
+                        n['individuals_notification_method'], n['individuals_notification_count'],
+                        n['notification_notes'], current_user.id, _now_text(), id))
+            db.execute("""INSERT INTO data_breach_updates (breach_id, old_status, new_status, note, created_by)
+                          VALUES (%s, %s, %s, %s, %s)""",
+                       (id, current.get('status'), current.get('status'),
+                        'Notification record updated: regulator ' + (n['pdpc_notification_date'] or '-')
+                        + ' / data subjects ' + (n['individuals_notification_date'] or '-'), current_user.id))
+            db.commit()
+            sync_case('DATA_BREACH', id)
+            flash(gettext('Notification record saved.'), 'success')
+            return redirect(url_for('dp.breach_detail', id=id) + '#notification')
+
         # Update investigation
         status = request.form.get('status')
         findings = request.form.get('findings')
         root_cause = request.form.get('root_cause')
+        note = (request.form.get('status_note') or '').strip()
+        owner = request.form.get('owner_user_id', type=int)
         if status not in BREACH_STATUSES:
             flash(gettext('Invalid status.'), 'danger')
             return redirect(url_for('dp.breach_detail', id=id))
+        old_status = current.get('status')
+        if status != old_status and status == 'CLOSED' and not note:
+            flash(gettext('A note is required to close a breach.'), 'danger')
+            return redirect(url_for('dp.breach_detail', id=id))
+        if owner and not db.execute("SELECT 1 FROM users WHERE id = %s AND is_active = 1", (owner,)).fetchone():
+            owner = None
 
         db.execute("""
             UPDATE data_breaches 
-            SET status = %s, investigation_findings = %s, root_cause = %s, updated_at = CURRENT_TIMESTAMP
+            SET status = %s, investigation_findings = %s, root_cause = %s, owner_user_id = %s, updated_at = %s,
+                closed_date = CASE WHEN %s = 'CLOSED' THEN COALESCE(closed_date, %s) ELSE NULL END,
+                closed_by = CASE WHEN %s = 'CLOSED' THEN COALESCE(closed_by, %s) ELSE NULL END
             WHERE id = %s
-        """, (status, findings, root_cause, id))
+        """, (status, findings, root_cause, owner, _now_text(), status, _now_text(), status, current_user.id, id))
+        if status != old_status or note or owner != current.get('owner_user_id'):
+            text = note or None
+            if owner != current.get('owner_user_id'):
+                text = ((text + ' | ') if text else '') + 'Owner changed'
+            db.execute("""INSERT INTO data_breach_updates (breach_id, old_status, new_status, note, created_by)
+                          VALUES (%s, %s, %s, %s, %s)""", (id, old_status, status, text, current_user.id))
         db.commit()
+        sync_case('DATA_BREACH', id)
         flash(gettext('Breach investigation updated.'))
         return redirect(url_for('dp.breach_detail', id=id))
 
@@ -368,9 +473,12 @@ def breach_detail(id):
         WHERE r.breach_id = %s
     """, (id,)).fetchall()
     
-    users = db.execute("SELECT id, first_name || ' ' || last_name as full_name FROM users WHERE is_active = 1").fetchall()
+    users = _active_users()
+    history = db.execute("""SELECT h.*, NULLIF(TRIM(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')), '') AS user_name
+                             FROM data_breach_updates h LEFT JOIN users u ON u.id = h.created_by
+                             WHERE h.breach_id = %s ORDER BY h.created_at DESC, h.id DESC""", (id,)).fetchall()
 
-    return render_template('data_protection/breach_detail.html', 
+    return render_template('data_protection/breach_detail.html', R=R, history=history, 
                           breach=breach, 
                           notification_overdue=breach_notification_overdue(breach),
                           remediations=remediations,
@@ -526,36 +634,194 @@ def create_activity():
             flash(gettext('Activity code %(code)s already exists in the ROPA.', code=code), 'danger')
             return render_template('data_protection/activity_form.html', user=current_user)
 
-        db.execute("""
+        new_id = db.execute("""
             INSERT INTO data_processing_activities 
             (activity_code, activity_name, processing_purpose, legal_basis, data_categories, data_subject_categories,
              is_active, created_at)
             VALUES (%s, %s, %s, %s, %s, %s, 1, %s)
-        """, (code, name, purpose, legal_basis, categories, subjects, _now_text()))
-        
+            RETURNING id
+        """, (code, name, purpose, legal_basis, categories, subjects, _now_text())).fetchone()['id']
+        db.execute("INSERT INTO data_processing_activity_history (activity_id, changed_by, changes) VALUES (%s, %s, %s)",
+                   (new_id, current_user.id, 'Created'))
         db.commit()
-        flash(gettext('Activity %(code)s registered in ROPA.', code=code))
-        return redirect(url_for('dp.activity_list'))
+        flash(gettext('Activity %(code)s registered in ROPA. Complete the remaining record fields.', code=code))
+        return redirect(url_for('dp.edit_activity', id=new_id))
         
     return render_template('data_protection/activity_form.html', user=current_user)
+
+@dp_bp.route('/activities/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@permission_required('pdpl', level='edit')
+def edit_activity(id):
+    """ROPA record: all record-of-processing fields, with a who/when change history."""
+    db = get_db()
+    act = db.execute("SELECT * FROM data_processing_activities WHERE id = %s", (id,)).fetchone()
+    if not act:
+        flash(gettext('Activity not found.'), 'danger')
+        return redirect(url_for('dp.activity_list'))
+    act = dict(act)
+    if request.method == 'POST':
+        err, data = R.validate_ropa(request.form, LEGAL_BASES)
+        if err:
+            flash(_err(err), 'danger')
+            act.update({k: request.form.get(k) for k in R.ROPA_FIELDS})
+        else:
+            changes = R.ropa_changes(act, data)
+            if not changes:
+                flash(gettext('No changes.'), 'info')
+                return redirect(url_for('dp.edit_activity', id=id))
+            cols = ', '.join(f'{k} = %s' for k in data)
+            db.execute(f"UPDATE data_processing_activities SET {cols}, updated_at = %s, updated_by = %s WHERE id = %s",
+                       (*data.values(), _now_text(), current_user.id, id))
+            db.execute("INSERT INTO data_processing_activity_history (activity_id, changed_by, changes) VALUES (%s, %s, %s)",
+                       (id, current_user.id, '\n'.join(changes)))
+            db.commit()
+            flash(gettext('ROPA record updated.'), 'success')
+            return redirect(url_for('dp.edit_activity', id=id))
+    history = db.execute("""SELECT h.*, NULLIF(TRIM(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')), '') AS user_name
+                             FROM data_processing_activity_history h LEFT JOIN users u ON u.id = h.changed_by
+                             WHERE h.activity_id = %s ORDER BY h.changed_at DESC, h.id DESC""", (id,)).fetchall()
+    return render_template('data_protection/activity_edit.html', act=act, history=history, users=_active_users(),
+                           legal_bases=LEGAL_BASES)
+
+
+def _purposes(active_only=True):
+    return get_db().execute("SELECT * FROM consent_purposes" + (" WHERE COALESCE(active, 1) = 1" if active_only else "")
+                            + " ORDER BY purpose_code").fetchall()
+
 
 @dp_bp.route('/consents')
 @login_required
 @permission_required('pdpl')
 def consent_log():
+    """Consent register: capture, withdrawal and history."""
     db = get_db()
-    consents = db.execute("""
-        SELECT c.*, p.purpose_name_en AS purpose_name
+    q = (request.args.get('q') or '').strip()
+    state = request.args.get('state') or ''
+    sql = """
+        SELECT c.*, p.purpose_name_en, p.purpose_name_ar, p.purpose_code
         FROM consents c
-        JOIN consent_purposes p ON c.purpose_id = p.id
-        ORDER BY c.consent_date DESC
-    """).fetchall()
-    return render_template('data_protection/consent_log.html', consents=consents, user=current_user)
+        LEFT JOIN consent_purposes p ON c.purpose_id = p.id
+        WHERE 1=1"""
+    args = []
+    if q:
+        sql += " AND (c.data_subject_id ILIKE %s OR c.data_subject_identifier ILIKE %s)"
+        args += [f'%{q}%', f'%{q}%']
+    if state == 'active':
+        sql += " AND COALESCE(c.withdrawn, 0) = 0"
+    elif state == 'withdrawn':
+        sql += " AND COALESCE(c.withdrawn, 0) = 1"
+    sql += " ORDER BY c.consent_date DESC, c.id DESC LIMIT 500"
+    consents = db.execute(sql, args).fetchall()
+    return render_template('data_protection/consent_log.html', consents=consents, user=current_user,
+                           purposes=_purposes(), R=R, q=q, state=state, today=date.today().isoformat())
+
+
+@dp_bp.route('/consents/new', methods=['POST'])
+@login_required
+@permission_required('pdpl', level='edit')
+def capture_consent():
+    db = get_db()
+    err, d = R.validate_consent(request.form, {p['id'] for p in _purposes()})
+    if err:
+        flash(_err(err), 'danger')
+        return redirect(url_for('dp.consent_log'))
+    cid = db.execute("""INSERT INTO consents (data_subject_id, data_subject_identifier, purpose_id, consent_given,
+                                              consent_date, consent_method, consent_text, evidence_ref, withdrawn,
+                                              recorded_by, created_at)
+                         VALUES (%s, %s, %s, 1, %s, %s, %s, %s, 0, %s, %s) RETURNING id""",
+                     (d['data_subject_id'], d['data_subject_identifier'], d['purpose_id'], d['consent_date'].isoformat(),
+                      d['consent_method'], d['consent_text'], d['evidence_ref'], current_user.id,
+                      _now_text())).fetchone()['id']
+    db.execute("""INSERT INTO consent_events (consent_id, event_type, event_date, channel, evidence_ref, created_by)
+                  VALUES (%s, 'GIVEN', %s, %s, %s, %s)""",
+               (cid, d['consent_date'], d['consent_method'], d['evidence_ref'], current_user.id))
+    db.commit()
+    flash(gettext('Consent recorded.'), 'success')
+    return redirect(url_for('dp.consent_detail', id=cid))
+
+
+@dp_bp.route('/consents/<int:id>')
+@login_required
+@permission_required('pdpl')
+def consent_detail(id):
+    db = get_db()
+    con = db.execute("""SELECT c.*, p.purpose_name_en, p.purpose_name_ar, p.purpose_code, p.legal_basis
+                         FROM consents c LEFT JOIN consent_purposes p ON p.id = c.purpose_id
+                         WHERE c.id = %s""", (id,)).fetchone()
+    if not con:
+        flash(gettext('Consent record not found.'), 'danger')
+        return redirect(url_for('dp.consent_log'))
+    events = db.execute("""SELECT e.*, NULLIF(TRIM(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')), '') AS user_name
+                            FROM consent_events e LEFT JOIN users u ON u.id = e.created_by
+                            WHERE e.consent_id = %s ORDER BY e.created_at, e.id""", (id,)).fetchall()
+    others = db.execute("""SELECT c.id, c.consent_date, c.withdrawn, c.withdrawal_date, p.purpose_name_en, p.purpose_name_ar
+                            FROM consents c LEFT JOIN consent_purposes p ON p.id = c.purpose_id
+                            WHERE c.data_subject_id = %s AND c.id <> %s ORDER BY c.consent_date DESC""",
+                         (con['data_subject_id'], id)).fetchall()
+    return render_template('data_protection/consent_detail.html', con=con, events=events, others=others, R=R,
+                           today=date.today().isoformat())
+
+
+@dp_bp.route('/consents/<int:id>/withdraw', methods=['POST'])
+@login_required
+@permission_required('pdpl', level='edit')
+def withdraw_consent(id):
+    db = get_db()
+    con = db.execute("SELECT * FROM consents WHERE id = %s", (id,)).fetchone()
+    if not con:
+        flash(gettext('Consent record not found.'), 'danger')
+        return redirect(url_for('dp.consent_log'))
+    if con['withdrawn']:
+        flash(gettext('This consent has already been withdrawn.'), 'warning')
+        return redirect(url_for('dp.consent_detail', id=id))
+    err, w = R.validate_withdrawal(request.form, con['consent_date'])
+    if err:
+        flash(_err(err), 'danger')
+        return redirect(url_for('dp.consent_detail', id=id))
+    db.execute("""UPDATE consents SET withdrawn = 1, withdrawal_date = %s, withdrawal_reason = %s,
+                      withdrawal_method = %s, withdrawal_recorded_by = %s WHERE id = %s""",
+               (w['withdrawal_date'].isoformat(), w['withdrawal_reason'], w['withdrawal_method'], current_user.id, id))
+    db.execute("""INSERT INTO consent_events (consent_id, event_type, event_date, channel, reason, created_by)
+                  VALUES (%s, 'WITHDRAWN', %s, %s, %s, %s)""",
+               (id, w['withdrawal_date'], w['withdrawal_method'], w['withdrawal_reason'], current_user.id))
+    db.commit()
+    flash(gettext('Consent withdrawal recorded.'), 'success')
+    return redirect(url_for('dp.consent_detail', id=id))
+
+
+@dp_bp.route('/consent-purposes/new', methods=['POST'])
+@login_required
+@permission_required('pdpl', level='edit')
+def create_purpose():
+    db = get_db()
+    code = (request.form.get('purpose_code') or '').strip().upper()
+    name_en = (request.form.get('purpose_name_en') or '').strip()
+    name_ar = (request.form.get('purpose_name_ar') or '').strip()
+    basis = request.form.get('legal_basis')
+    if not code or not (name_en or name_ar):
+        flash(gettext('Purpose code and name are required.'), 'danger')
+        return redirect(url_for('dp.purpose_list'))
+    if basis not in LEGAL_BASES:
+        flash(gettext('Select a valid legal basis.'), 'danger')
+        return redirect(url_for('dp.purpose_list'))
+    if db.execute("SELECT 1 FROM consent_purposes WHERE UPPER(purpose_code) = %s", (code,)).fetchone():
+        flash(gettext('This purpose code already exists.'), 'danger')
+        return redirect(url_for('dp.purpose_list'))
+    db.execute("""INSERT INTO consent_purposes (purpose_code, purpose_name_en, purpose_name_ar, legal_basis,
+                                                retention_period, is_required, version, active, created_at)
+                  VALUES (%s, %s, %s, %s, %s, 0, 1, 1, %s)""",
+               (code, name_en or name_ar, name_ar or name_en, basis,
+                (request.form.get('retention_period') or '').strip() or None, _now_text()))
+    db.commit()
+    flash(gettext('Consent purpose added.'), 'success')
+    return redirect(url_for('dp.purpose_list'))
 
 @dp_bp.route('/consent-purposes')
 @login_required
 @permission_required('pdpl')
 def purpose_list():
     db = get_db()
-    purposes = db.execute("SELECT * FROM consent_purposes").fetchall()
-    return render_template('data_protection/purpose_list.html', purposes=purposes, user=current_user)
+    purposes = db.execute("SELECT * FROM consent_purposes ORDER BY purpose_code").fetchall()
+    return render_template('data_protection/purpose_list.html', purposes=purposes, user=current_user,
+                           legal_bases=LEGAL_BASES)

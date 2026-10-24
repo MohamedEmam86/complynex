@@ -31,7 +31,7 @@
                         <td>
                             <span
                                 class="badge rounded-pill bg-{{ 'primary' if case.status == 'SUBMITTED' else 'info' if case.status == 'UNDER_REVIEW' else 'success' if case.status == 'RESOLVED' else 'secondary' }}">
-                                {{ _(case.status) }}
+                                {{ case.status|code_label }}
                             </span>
                         </td>
                         <td>{{ case.updated_at }}</td>

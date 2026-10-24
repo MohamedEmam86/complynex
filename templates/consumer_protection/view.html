@@ -26,7 +26,11 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4 font-weight-bold">{{ _("Category") }}:</div>
-                        <div class="col-md-8">{{ _(complaint.complaint_category) }}</div>
+                        <div class="col-md-8">{% if category %}{{ category.category_name_ar if get_locale()|string == 'ar' else category.category_name_en }}{% else %}{{ complaint.complaint_category }}{% endif %}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">{{ _("Channel") }}:</div>
+                        <div class="col-md-8">{{ complaint.complaint_channel|code_label }}</div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-4 font-weight-bold">{{ _("Description") }}:</div>
@@ -88,10 +92,108 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Root cause & redress -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ _("Root Cause & Redress") }}</h6>
+                    <div class="btn-group btn-group-sm">
+                        <a class="btn btn-outline-secondary" target="_blank" href="{{ url_for('consumer_protection.response_letter', id=complaint.id, lang='ar') }}"><i class="bi bi-printer"></i> {{ _("Response letter (Arabic)") }}</a>
+                        <a class="btn btn-outline-secondary" target="_blank" href="{{ url_for('consumer_protection.response_letter', id=complaint.id, lang='en') }}"><i class="bi bi-printer"></i> {{ _("Response letter (English)") }}</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <dl class="row small mb-3">
+                        <dt class="col-sm-4">{{ _("Root cause") }}</dt><dd class="col-sm-8">{{ complaint.root_cause_category|code_label }}</dd>
+                        <dt class="col-sm-4">{{ _("Redress") }}</dt>
+                        <dd class="col-sm-8">{{ complaint.redress_type|code_label }}{% if complaint.redress_amount %} — {{ '%.2f'|format(complaint.redress_amount|float) }}{% endif %}{% if complaint.redress_date %} ({{ complaint.redress_date }}){% endif %}</dd>
+                    </dl>
+                    {% if can_edit %}
+                    <form method="POST" class="row g-2 align-items-end">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="resolution_details">
+                        <div class="col-md-6">
+                            <label class="form-label small">{{ _("Root cause category") }}</label>
+                            <select name="root_cause_category" class="form-select form-select-sm" required>
+                                <option value="">--</option>
+                                {% for rc in root_causes %}<option value="{{ rc }}" {{ 'selected' if complaint.root_cause_category == rc else '' }}>{{ rc|code_label }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">{{ _("Redress type") }}</label>
+                            <select name="redress_type" class="form-select form-select-sm" required>
+                                {% for rt in redress_types %}<option value="{{ rt }}" {{ 'selected' if (complaint.redress_type or 'NONE') == rt else '' }}>{{ rt|code_label }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small">{{ _("Redress amount (EGP)") }}</label>
+                            <input type="number" step="0.01" min="0" name="redress_amount" class="form-control form-control-sm" value="{{ complaint.redress_amount if complaint.redress_amount is not none else '' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small">{{ _("Redress date") }}</label>
+                            <input type="date" name="redress_date" class="form-control form-control-sm" value="{{ complaint.redress_date or '' }}">
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <button class="btn btn-sm btn-primary">{{ _("Save") }}</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Internal notes (staff only, append-only) -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-lock me-1"></i>{{ _("Internal Notes") }}
+                        <small class="text-muted fw-normal">({{ _("staff only — never shown to the customer; notes cannot be edited or deleted") }})</small></h6>
+                </div>
+                <div class="card-body">
+                    {% for n in notes %}
+                    <div class="border-bottom pb-2 mb-2">
+                        <div class="small text-muted"><i class="bi bi-person"></i> {{ n.author or n.author_email or '-' }} · {{ n.created_at.strftime('%Y-%m-%d %H:%M') if n.created_at else '' }}</div>
+                        <div style="white-space: pre-wrap;">{{ n.note }}</div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small">{{ _("No internal notes yet.") }}</p>
+                    {% endfor %}
+                    {% if can_edit %}
+                    <form method="POST" class="mt-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="add_note">
+                        <textarea name="note" class="form-control form-control-sm mb-2" rows="2" maxlength="4000" required placeholder="{{ _('Add an internal note...') }}"></textarea>
+                        <button class="btn btn-sm btn-outline-primary">{{ _("Add note") }}</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         <!-- Sidebar: Status & Actions -->
         <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ _("Owner") }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2"><i class="bi bi-person-badge"></i> <strong>{{ complaint.assigned_to_user_id|username if complaint.assigned_to_user_id else _('Unassigned') }}</strong>
+                        {% if complaint.assigned_at %}<div class="small text-muted">{{ _("since") }} {{ complaint.assigned_at.strftime('%Y-%m-%d %H:%M') }}{% if complaint.assigned_by %} · {{ _("by") }} {{ complaint.assigned_by|username }}{% endif %}</div>{% endif %}
+                    </div>
+                    {% if can_edit %}
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="assign">
+                        <select name="assigned_to" class="form-select form-select-sm mb-2" required>
+                            <option value="">{{ _("Select staff member...") }}</option>
+                            {% for u in staff %}<option value="{{ u.id }}" {{ 'selected' if complaint.assigned_to_user_id == u.id else '' }}>{{ u.name }}</option>{% endfor %}
+                        </select>
+                        {% if complaint.assigned_to_user_id %}
+                        <input type="text" name="reason" class="form-control form-control-sm mb-2" required placeholder="{{ _('Reason for reassignment') }}">
+                        {% endif %}
+                        <button class="btn btn-sm btn-outline-primary w-100">{{ _("Assign") if not complaint.assigned_to_user_id else _("Reassign") }}</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">{{ _("Status & Actions") }}</h6>
@@ -108,8 +210,7 @@
                         {% elif complaint.status == 'CLOSED' %}
                         <span class="badge bg-secondary p-2" style="font-size: 1rem;">{{ _("Closed") }}</span>
                         {% else %}
-                        <span class="badge bg-light text-dark p-2" style="font-size: 1rem;">{{ complaint.status
-                            }}</span>
+                        <span class="badge bg-warning text-dark p-2" style="font-size: 1rem;">{{ complaint.status|code_label }}</span>
                         {% endif %}
                     </div>
 
@@ -198,7 +299,7 @@
                                         {% elif log.new_status == 'CLOSED' %}
                                         <span class="badge bg-secondary">{{ _("Closed") }}</span>
                                         {% else %}
-                                        <span class="badge bg-light text-dark">{{ log.new_status }}</span>
+                                        <span class="badge bg-light text-dark">{{ log.new_status|code_label }}</span>
                                         {% endif %}
                                         {% else %}
                                         -

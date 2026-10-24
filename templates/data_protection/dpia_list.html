@@ -42,7 +42,7 @@
                             <td>
                                 <span
                                     class="badge {% if dpia.status == 'APPROVED' %}bg-success{% elif dpia.status == 'REJECTED' %}bg-danger{% else %}bg-primary{% endif %}">
-                                    {{ dpia.status }}
+                                    {{ dpia.status|code_label }}
                                 </span>
                             </td>
                             <td>{{ dpia.created_at[:10] if dpia.created_at else 'N/A' }}</td>

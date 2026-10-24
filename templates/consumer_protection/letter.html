@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ _('Complaint response') }} CP-{{ c.id }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/academy/academy-fonts.css') }}">
+<style>
+  @page { size: A4; margin: 22mm 20mm; }
+  body { font-family: Cairo, "DejaVu Sans", Arial, sans-serif; font-size: 11.5pt; color: #111; margin: 0; background: #f2f2f2; }
+  .page { background: #fff; max-width: 190mm; margin: 12px auto; padding: 18mm 18mm; box-shadow: 0 0 6px rgba(0,0,0,.15); line-height: 1.7; }
+  .head { display: flex; justify-content: space-between; border-bottom: 2px solid #1f3b63; padding-bottom: 6pt; margin-bottom: 14pt; }
+  .org { font-size: 15pt; font-weight: 700; color: #1f3b63; }
+  .meta td { padding: 1pt 8pt 1pt 0; vertical-align: top; }
+  .meta td:first-child { color: #555; white-space: nowrap; }
+  h2 { font-size: 12.5pt; margin: 14pt 0 6pt; }
+  .box { border: 1px solid #ccc; padding: 8pt 10pt; white-space: pre-wrap; background: #fafafa; }
+  .draft { border: 2px dashed #c0392b; color: #c0392b; padding: 6pt; text-align: center; margin-bottom: 10pt; font-weight: 700; }
+  .sig { margin-top: 28pt; }
+  .noprint { text-align: center; margin: 10px; }
+  .noprint button, .noprint a { font: inherit; padding: 6px 14px; margin: 0 4px; }
+  @media print { body { background: #fff; } .page { box-shadow: none; margin: 0; max-width: none; padding: 0; } .noprint { display: none; } }
+</style></head><body>
+<div class="noprint">
+  <button type="button" data-print>{{ _('Print') }}</button>
+  <a href="{{ url_for('consumer_protection.response_letter', id=c.id, lang='en' if lang == 'ar' else 'ar') }}">{{ 'English' if lang == 'ar' else 'العربية' }}</a>
+  <a href="{{ url_for('consumer_protection.view_complaint', id=c.id) }}">{{ _('Back to complaint') }}</a>
+</div>
+<div class="page">
+  {% if not is_final %}<div class="draft">{{ _('DRAFT — the complaint has no recorded final resolution yet') }}</div>{% endif %}
+  <div class="head">
+    <div class="org">{{ company_name }}</div>
+    <div>{{ _('Date') }}: {{ today }}</div>
+  </div>
+  <table class="meta">
+    <tr><td>{{ _('To') }}:</td><td><strong>{{ c.customer_name }}</strong></td></tr>
+    <tr><td>{{ _('Complaint reference') }}:</td><td>CP-{{ c.id }}</td></tr>
+    <tr><td>{{ _('Received on') }}:</td><td>{{ (c.created_at or '')[:10] }}</td></tr>
+    <tr><td>{{ _('Subject') }}:</td><td>{{ c.complaint_subject }}</td></tr>
+    <tr><td>{{ _('Category') }}:</td><td>{{ category }}</td></tr>
+  </table>
+
+  <p>{{ _('Dear %(name)s,', name=c.customer_name) }}</p>
+  <p>{{ _('Thank you for contacting us. We have completed our review of your complaint referenced above and set out the outcome below.') }}</p>
+
+  <h2>{{ _('Outcome of our review') }}</h2>
+  <div class="box">{{ c.resolution_summary or _('The review is still in progress.') }}</div>
+
+  {% if c.redress_type and c.redress_type != 'NONE' %}
+  <h2>{{ _('Corrective action / redress') }}</h2>
+  <p>{{ c.redress_type|code_label }}{% if c.redress_amount %}: {{ '%.2f'|format(c.redress_amount|float) }} {{ _('EGP') }}{% endif %}{% if c.redress_date %} — {{ _('provided on %(date)s', date=c.redress_date) }}{% endif %}.</p>
+  {% endif %}
+
+  <p>{{ _('If you are not satisfied with this response, you may reply to us quoting the complaint reference, and you also have the right to refer the complaint to the competent supervisory authority.') }}</p>
+  <p>{{ _('We value your feedback and remain at your disposal for any further clarification.') }}</p>
+
+  <div class="sig">
+    <p>{{ _('Yours sincerely,') }}</p>
+    <p><strong>{{ _('Customer Complaints Unit') }}</strong><br>{{ company_name }}</p>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/print-button.js') }}" nonce="{{ csp_nonce }}"></script>
+</body></html>

@@ -60,29 +60,9 @@ def _notify_once_per_day(db, user_id, title, message, link, n_type):
 
 
 def resync_all_cases():
-    from database.db import get_db
-    from models.case import Case
-
-    db = get_db()
-    counts = {'TM_ALERT': 0, 'WHISTLEBLOWING': 0, 'CONSUMER_COMPLAINT': 0, 'CYBER_INCIDENT': 0}
-
-    for row in db.execute("SELECT id FROM tm_alerts").fetchall():
-        Case.sync_from_source('TM_ALERT', row['id'])
-        counts['TM_ALERT'] += 1
-
-    for row in db.execute("SELECT id FROM whistleblowing_cases").fetchall():
-        Case.sync_from_source('WHISTLEBLOWING', row['id'])
-        counts['WHISTLEBLOWING'] += 1
-
-    for row in db.execute("SELECT id FROM consumer_complaints").fetchall():
-        Case.sync_from_source('CONSUMER_COMPLAINT', row['id'])
-        counts['CONSUMER_COMPLAINT'] += 1
-
-    for row in db.execute("SELECT id FROM cyber_incidents").fetchall():
-        Case.sync_from_source('CYBER_INCIDENT', row['id'])
-        counts['CYBER_INCIDENT'] += 1
-
-    return counts
+    """Re-sync every case source (see models.case.Case.SOURCES) — idempotent."""
+    from models.case import resync_all
+    return resync_all()
 
 
 def escalate_overdue_cases():

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Consent record') }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h3 mb-0">{{ _('Consent record') }}: {{ con.data_subject_id }}</h1>
+        <a href="{{ url_for('dp.consent_log') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> {{ _('Back to register') }}</a>
+    </div>
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light d-flex justify-content-between">
+                    <h6 class="mb-0">{{ (con.purpose_name_ar if get_locale()|string == 'ar' and con.purpose_name_ar else con.purpose_name_en) or '-' }}</h6>
+                    {% if con.withdrawn %}<span class="badge bg-danger">{{ _('Withdrawn') }}</span>{% else %}<span class="badge bg-success">{{ _('Active') }}</span>{% endif %}
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">{{ _('Data subject') }}</dt><dd class="col-sm-8">{{ con.data_subject_id }} {% if con.data_subject_identifier %}({{ con.data_subject_identifier }}){% endif %}</dd>
+                        <dt class="col-sm-4">{{ _('Legal Basis') }}</dt><dd class="col-sm-8">{{ con.legal_basis|code_label }}</dd>
+                        <dt class="col-sm-4">{{ _('Channel') }}</dt><dd class="col-sm-8">{{ con.consent_method|code_label }}</dd>
+                        <dt class="col-sm-4">{{ _('Consent date') }}</dt><dd class="col-sm-8">{{ con.consent_date }}</dd>
+                        <dt class="col-sm-4">{{ _('Evidence') }}</dt><dd class="col-sm-8">{{ con.evidence_ref or '-' }}</dd>
+                        <dt class="col-sm-4">{{ _('Consent wording shown') }}</dt><dd class="col-sm-8">{{ con.consent_text or '-' }}</dd>
+                        <dt class="col-sm-4">{{ _('Recorded by') }}</dt><dd class="col-sm-8">{{ con.recorded_by|username }}</dd>
+                        {% if con.withdrawn %}
+                        <dt class="col-sm-4">{{ _('Withdrawal date') }}</dt><dd class="col-sm-8">{{ con.withdrawal_date }}</dd>
+                        <dt class="col-sm-4">{{ _('Withdrawal reason') }}</dt><dd class="col-sm-8">{{ con.withdrawal_reason or '-' }}</dd>
+                        <dt class="col-sm-4">{{ _('Withdrawal channel') }}</dt><dd class="col-sm-8">{{ con.withdrawal_method|code_label }}</dd>
+                        <dt class="col-sm-4">{{ _('Withdrawal recorded by') }}</dt><dd class="col-sm-8">{{ con.withdrawal_recorded_by|username }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+            {% if not con.withdrawn and current_user.has_permission('pdpl', 'edit') %}
+            <div class="card shadow-sm mb-3 border-danger">
+                <div class="card-header bg-light"><h6 class="mb-0">{{ _('Record withdrawal') }}</h6></div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('dp.withdraw_consent', id=con.id) }}" class="row g-2 align-items-end">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="col-md-3"><label class="form-label small">{{ _('Withdrawal date') }} *</label>
+                            <input type="date" name="withdrawal_date" class="form-control form-control-sm" max="{{ today }}" value="{{ today }}" required></div>
+                        <div class="col-md-3"><label class="form-label small">{{ _('Channel') }}</label>
+                            <select name="channel" class="form-select form-select-sm"><option value="">--</option>
+                                {% for c in R.CONSENT_CHANNELS %}<option value="{{ c }}">{{ c|code_label }}</option>{% endfor %}</select></div>
+                        <div class="col-md-4"><label class="form-label small">{{ _('Reason') }} *</label>
+                            <input type="text" name="reason" class="form-control form-control-sm" required></div>
+                        <div class="col-md-2 d-grid"><button class="btn btn-sm btn-danger">{{ _('Withdraw') }}</button></div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-lg-5">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light"><h6 class="mb-0">{{ _('History') }}</h6></div>
+                <ul class="list-group list-group-flush small">
+                    {% for e in events %}
+                    <li class="list-group-item">
+                        <strong>{{ e.event_type|code_label }}</strong> · {{ e.event_date }} {% if e.channel %}· {{ e.channel|code_label }}{% endif %}
+                        {% if e.reason %}<div>{{ _('Reason') }}: {{ e.reason }}</div>{% endif %}
+                        {% if e.evidence_ref %}<div>{{ _('Evidence') }}: {{ e.evidence_ref }}</div>{% endif %}
+                        <div class="text-muted">{{ e.user_name or '-' }} · {{ e.created_at.strftime('%Y-%m-%d %H:%M') if e.created_at else '' }}</div>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('No history recorded.') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-header bg-light"><h6 class="mb-0">{{ _('Other consents of this data subject') }}</h6></div>
+                <ul class="list-group list-group-flush small">
+                    {% for o in others %}
+                    <li class="list-group-item"><a href="{{ url_for('dp.consent_detail', id=o.id) }}">{{ (o.purpose_name_ar if get_locale()|string == 'ar' and o.purpose_name_ar else o.purpose_name_en) or '-' }}</a>
+                        · {{ o.consent_date }} {% if o.withdrawn %}<span class="badge bg-danger">{{ _('Withdrawn') }}</span>{% endif %}</li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('None') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

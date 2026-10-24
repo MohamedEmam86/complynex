@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Breach Investigation - {{ breach.breach_number }}{% endblock %}
+{% block title %}{{ _('Breach Investigation') }} - {{ breach.breach_number }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Breach Investigation: {{ breach.breach_number }}</h1>
+        <h1 class="h2">{{ _('Breach Investigation') }}: {{ breach.breach_number }}</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
             <a href="{{ url_for('dp.breach_list') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> {{ _('Back to List') }}
@@ -22,13 +22,13 @@
                     <h5 class="mb-0">{{ _('Incident Overview') }}</h5>
                     <span
                         class="badge {% if breach.severity == 'CRITICAL' %}bg-dark{% elif breach.severity == 'HIGH' %}bg-danger{% else %}bg-warning{% endif %}">
-                        Severity: {{ breach.severity }}
+                        {{ _('Severity') }}: {{ breach.severity|code_label }}
                     </span>
                 </div>
                 <div class="card-body">
                     <div class="row mb-2">
                         <div class="col-md-4 text-muted small">{{ _('Breach Type:') }}</div>
-                        <div class="col-md-8 fw-bold">{{ breach.breach_type }}</div>
+                        <div class="col-md-8 fw-bold">{{ breach.breach_type|code_label }}</div>
                     </div>
                     <div class="row mb-2">
                         <div class="col-md-4 text-muted small">{{ _('Discovery Date:') }}</div>
@@ -44,9 +44,13 @@
                             {% if breach.includes_sensitive_data %}
                             <span class="text-danger fw-bold"><i class="bi bi-shield-lock"></i> {{ _('Yes') }}</span>
                             {% else %}
-                            <span class="text-success">No</span>
+                            <span class="text-success">{{ _('No') }}</span>
                             {% endif %}
                         </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4 text-muted small">{{ _('Owner') }}:</div>
+                        <div class="col-md-8">{{ breach.owner_user_id|username }}</div>
                     </div>
                     <hr>
                     <div class="mb-3">
@@ -78,6 +82,20 @@
                                 <option value="CLOSED" {% if breach.status=='CLOSED' %}selected{% endif %}>{{ _('Closed /
                                     Resolved') }}</option>
                             </select>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('Owner') }}</label>
+                                <select name="owner_user_id" class="form-select">
+                                    <option value="">{{ _('Unassigned') }}</option>
+                                    {% for u in users %}<option value="{{ u.id }}" {{ 'selected' if breach.owner_user_id == u.id else '' }}>{{ u.full_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('Status change note') }}</label>
+                                <input type="text" name="status_note" class="form-control" placeholder="{{ _('Required when closing') }}">
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -137,11 +155,62 @@
 
                     <hr>
 
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-sm btn-outline-danger" disabled>{{ _('Generate PDPC Notice (PDF)') }}</button>
-                        <button class="btn btn-sm btn-outline-secondary" disabled>{{ _('Email Affected Individuals') }}</button>
-                    </div>
+                    <dl class="row small mb-0">
+                        <dt class="col-6">{{ _('Regulator notified') }}</dt>
+                        <dd class="col-6">{% if breach.pdpc_notified %}{{ breach.pdpc_notification_date }}<br><code>{{ breach.pdpc_reference }}</code>{% else %}<span class="text-danger">{{ _('Not yet') }}</span>{% endif %}</dd>
+                        <dt class="col-6">{{ _('Data subjects notified') }}</dt>
+                        <dd class="col-6">{% if breach.individuals_notified %}{{ breach.individuals_notification_date }} — {{ breach.individuals_notification_method|code_label }}{% if breach.individuals_notification_count %} ({{ breach.individuals_notification_count }}){% endif %}{% else %}<span class="text-muted">{{ _('Not yet') }}</span>{% endif %}</dd>
+                    </dl>
                 </div>
+            </div>
+
+            <div class="card shadow-sm mb-4" id="notification">
+                <div class="card-header bg-light"><h5 class="mb-0">{{ _('Notification Record') }}</h5></div>
+                <div class="card-body">
+                    {% if current_user.has_permission('pdpl', 'edit') %}
+                    <form method="POST" action="{{ url_for('dp.breach_detail', id=breach.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="notification">
+                        <h6 class="small fw-bold">{{ _('Regulator notification') }}</h6>
+                        <div class="mb-2"><label class="form-label small">{{ _('Date notified') }}</label>
+                            <input type="date" name="regulator_date" class="form-control form-control-sm" value="{{ breach.pdpc_notification_date or '' }}"></div>
+                        <div class="mb-3"><label class="form-label small">{{ _('Regulator reference') }}</label>
+                            <input type="text" name="regulator_reference" class="form-control form-control-sm" value="{{ breach.pdpc_reference or '' }}"></div>
+                        <h6 class="small fw-bold">{{ _('Data subjects notification') }}</h6>
+                        <div class="mb-2"><label class="form-label small">{{ _('Date notified') }}</label>
+                            <input type="date" name="subjects_date" class="form-control form-control-sm" value="{{ breach.individuals_notification_date or '' }}"></div>
+                        <div class="mb-2"><label class="form-label small">{{ _('Method') }}</label>
+                            <select name="subjects_method" class="form-select form-select-sm">
+                                <option value="">--</option>
+                                {% for m in R.SUBJECT_NOTICE_METHODS %}<option value="{{ m }}" {{ 'selected' if breach.individuals_notification_method == m else '' }}>{{ m|code_label }}</option>{% endfor %}
+                            </select></div>
+                        <div class="mb-2"><label class="form-label small">{{ _('Number of individuals notified') }}</label>
+                            <input type="number" min="0" name="subjects_count" class="form-control form-control-sm" value="{{ breach.individuals_notification_count if breach.individuals_notification_count is not none else '' }}"></div>
+                        <div class="mb-2"><label class="form-label small">{{ _('Notes') }}</label>
+                            <textarea name="notification_notes" class="form-control form-control-sm" rows="2">{{ breach.notification_notes or '' }}</textarea></div>
+                        <button class="btn btn-sm btn-danger w-100">{{ _('Save notification record') }}</button>
+                        {% if breach.notification_recorded_by %}<div class="small text-muted mt-1">{{ _('Last recorded by') }} {{ breach.notification_recorded_by|username }}</div>{% endif %}
+                    </form>
+                    {% else %}
+                    <p class="small mb-0">{{ breach.notification_notes or '-' }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light"><h5 class="mb-0">{{ _('Status History') }}</h5></div>
+                <ul class="list-group list-group-flush small">
+                    {% for h in history %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between"><span>{% if h.old_status and h.old_status != h.new_status %}{{ h.old_status|code_label }} → {% endif %}<strong>{{ h.new_status|code_label }}</strong></span>
+                            <span class="text-muted">{{ h.created_at.strftime('%Y-%m-%d %H:%M') if h.created_at else '' }}</span></div>
+                        {% if h.note %}<div>{{ h.note }}</div>{% endif %}
+                        <div class="text-muted">{{ h.user_name or '-' }}</div>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">{{ _('No history yet.') }}</li>
+                    {% endfor %}
+                </ul>
             </div>
 
             <div class="card shadow-sm mb-4">
@@ -153,7 +222,7 @@
                         {% for rem in remediations %}
                         <li class="list-group-item">
                             <div class="fw-bold">{{ rem.action_description }}</div>
-                            <div class="text-muted">Owner: {{ rem.owner_name }} | Due: {{ rem.target_date }}</div>
+                            <div class="text-muted">{{ _('Owner') }}: {{ rem.owner_name }} | {{ _('Due') }}: {{ rem.target_date }}</div>
                             <span
                                 class="badge {% if rem.status == 'COMPLETED' %}bg-success{% else %}bg-warning{% endif %}">{{
                                 rem.status }}</span>

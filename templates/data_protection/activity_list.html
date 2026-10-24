@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}ROPA - Processing Activities{% endblock %}
+{% block title %}{{ _('Record of Processing Activities (ROPA)') }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -24,6 +24,9 @@
                             <th>{{ _('Activity Name') }}</th>
                             <th>{{ _('Purpose') }}</th>
                             <th>{{ _('Legal Basis') }}</th>
+                            <th>{{ _('Cross-border transfer') }}</th>
+                            <th>{{ _('Retention period') }}</th>
+                            <th>{{ _('DPO review date') }}</th>
                             <th>{{ _('Status') }}</th>
                             <th>{{ _('Actions') }}</th>
                         </tr>
@@ -34,7 +37,10 @@
                             <td><code>{{ act.activity_code }}</code></td>
                             <td>{{ act.activity_name }}</td>
                             <td>{{ act.processing_purpose }}</td>
-                            <td><span class="badge bg-light text-dark border">{{ act.legal_basis }}</span></td>
+                            <td><span class="badge bg-light text-dark border">{{ act.legal_basis|code_label }}</span></td>
+                            <td>{% if act.international_transfer %}<span class="badge bg-warning text-dark">{{ _('Yes') }}</span> <small>{{ act.transfer_countries or '' }}</small>{% else %}{{ _('No') }}{% endif %}</td>
+                            <td class="small">{{ act.retention_period or '-' }}</td>
+                            <td class="small">{{ act.dpo_review_date or '-' }}</td>
                             <td>
                                 {% if act.is_active %}
                                 <span class="badge bg-success">{{ _('ACTIVE') }}</span>
@@ -43,12 +49,14 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-outline-secondary" disabled>{{ _('Edit') }}</button>
+                                {% if current_user.has_permission('pdpl', 'edit') %}
+                                <a href="{{ url_for('dp.edit_activity', id=act.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('Edit') }}</a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">{{ _('No processing activities registered') }}</td>
+                            <td colspan="9" class="text-center py-4 text-muted">{{ _('No processing activities registered') }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
