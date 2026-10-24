@@ -26,8 +26,14 @@ class TrainingCourse:
                  content=None, video_url=None, document_path=None,
                  passing_score=70, is_mandatory=False, is_active=True,
                  created_by=None, created_at=None, content_type='Hybrid',
-                 presentation_path=None, video_file_path=None, external_link=None, **kwargs):
+                 presentation_path=None, video_file_path=None, external_link=None,
+                 language=None, video_duration_seconds=None, completion_threshold_pct=None,
+                 max_quiz_attempts=None, **kwargs):
         self.id = id
+        self.language = language
+        self.video_duration_seconds = video_duration_seconds
+        self.completion_threshold_pct = completion_threshold_pct
+        self.max_quiz_attempts = max_quiz_attempts
         self.course_code = course_code
         self.course_name = course_name
         self.description = description
@@ -79,26 +85,31 @@ class TrainingCourse:
                 SET course_code=%s, course_name=%s, description=%s, category=%s, 
                     duration_minutes=%s, content=%s, video_url=%s, document_path=%s, 
                     passing_score=%s, is_mandatory=%s, is_active=%s, content_type=%s,
-                    presentation_path=%s, video_file_path=%s, external_link=%s
+                    presentation_path=%s, video_file_path=%s, external_link=%s,
+                    language=%s, video_duration_seconds=%s, completion_threshold_pct=%s, max_quiz_attempts=%s
                 WHERE id=%s
             ''', (self.course_code, self.course_name, self.description, self.category,
                   self.duration_minutes, self.content, self.video_url, self.document_path,
                   self.passing_score, self.is_mandatory, self.is_active, self.content_type,
                   self.presentation_path, self.video_file_path, self.external_link,
-                  self.id))
+                  self.language, self.video_duration_seconds, self.completion_threshold_pct,
+                  self.max_quiz_attempts, self.id))
         else:
             cursor = db.execute('''
                 INSERT INTO training_courses (
                     course_code, course_name, description, category, 
                     duration_minutes, content, video_url, document_path, 
                     passing_score, is_mandatory, is_active, created_by, content_type,
-                    presentation_path, video_file_path, external_link
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    presentation_path, video_file_path, external_link,
+                    language, video_duration_seconds, completion_threshold_pct, max_quiz_attempts
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
             ''', (self.course_code, self.course_name, self.description, self.category,
                   self.duration_minutes, self.content, self.video_url, self.document_path,
                   self.passing_score, self.is_mandatory, self.is_active, self.created_by, self.content_type,
-                  self.presentation_path, self.video_file_path, self.external_link))
+                  self.presentation_path, self.video_file_path, self.external_link,
+                  self.language, self.video_duration_seconds, self.completion_threshold_pct,
+                  self.max_quiz_attempts))
             self.id = cursor.fetchone()['id']
         db.commit()
 
@@ -157,6 +168,9 @@ class TrainingEnrollment:
         self.cert_id = kwargs.get('cert_id')
         self.video_progress = kwargs.get('video_progress') or 0
         self.video_completed = kwargs.get('video_completed', 0)
+        self.watched_seconds = kwargs.get('watched_seconds') or 0
+        self.last_heartbeat_at = kwargs.get('last_heartbeat_at')
+        self.extra_quiz_attempts = kwargs.get('extra_quiz_attempts') or 0
         
         # Helpers
         self.course_name = None
@@ -281,33 +295,51 @@ class TrainingEnrollment:
             db.commit()
             return False, None
 
-    def update_progress(self, seconds, completed=False, video_duration=None):
+    def heartbeat(self, course, playing=True, reported_duration=None, now=None):
+        """Credit watch time from a player heartbeat (server clock only) and mark
+        the video watched once the course's threshold is reached. Returns a dict
+        for the player. The client cannot declare completion."""
+        from training import watch as W
         db = get_db()
-        # Only update if NEW progress is further than old progress
-        # and not yet completed
-        if not self.video_completed:
-            if completed:
-                # Don't trust the client's "completed" flag on its own (it can be
-                # forged via a direct API call) - require the reported watch time
-                # to be close to the actual media duration reported by the player.
-                # (The course's admin-entered duration_minutes is an estimate that
-                # doesn't reliably match the real file length, so it isn't used here.)
-                if video_duration and seconds < video_duration * 0.9:
-                    completed = False
+        now = now or datetime.now()
+        row = db.execute("""SELECT watched_seconds, last_heartbeat_at, video_completed FROM training_enrollments
+                            WHERE id = %s FOR UPDATE""", (self.id,)).fetchone()
+        watched = (row['watched_seconds'] or 0) if row else 0
+        completed = bool(row['video_completed']) if row else False
+        length = W.video_length(course.video_duration_seconds, reported_duration, course.duration_minutes)
+        if not course.video_duration_seconds and length and reported_duration:
+            # First time the real length is known: store it on the course (only grows,
+            # so a forged short length can be corrected by a genuine player).
+            db.execute("""UPDATE training_courses SET video_duration_seconds = GREATEST(COALESCE(video_duration_seconds, 0), %s)
+                          WHERE id = %s""", (length, course.id))
+        if not completed:
+            watched += W.credit_seconds(row['last_heartbeat_at'] if row else None, now, playing)
+            if length:
+                watched = min(watched, length)
+            completed = W.completion_reached(watched, length, course.completion_threshold_pct)
+        db.execute("""UPDATE training_enrollments SET watched_seconds = %s, last_heartbeat_at = %s,
+                      video_progress = GREATEST(COALESCE(video_progress, 0), %s), video_completed = %s
+                      WHERE id = %s""",
+                   (watched, now if playing else None, watched, 1 if completed else 0, self.id))
+        db.commit()
+        self.watched_seconds, self.video_completed = watched, 1 if completed else 0
+        return {'watched_seconds': watched, 'length': length, 'pct': W.watched_pct(watched, length),
+                'threshold_pct': W.threshold_pct(course.completion_threshold_pct), 'completed': completed}
 
-            if seconds > self.video_progress or completed:
-                self.video_progress = max(self.video_progress, seconds)
-                if completed:
-                    self.video_completed = 1
+    def quiz_attempts(self):
+        db = get_db()
+        return [dict(r) for r in db.execute(
+            "SELECT * FROM training_quiz_attempts WHERE enrollment_id = %s ORDER BY attempt_no", (self.id,)).fetchall()]
 
-                db.execute('''
-                    UPDATE training_enrollments
-                    SET video_progress = %s, video_completed = %s
-                    WHERE id = %s
-                ''', (self.video_progress, self.video_completed, self.id))
-                db.commit()
-                return True
-        return False
+    def record_attempt(self, score, passed, language=None, ip_address=None):
+        db = get_db()
+        n = db.execute("SELECT COALESCE(MAX(attempt_no), 0) + 1 AS n FROM training_quiz_attempts WHERE enrollment_id = %s",
+                       (self.id,)).fetchone()['n']
+        db.execute("""INSERT INTO training_quiz_attempts (enrollment_id, employee_id, course_id, attempt_no, score, passed,
+                      language, ip_address) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
+                   (self.id, self.employee_id, self.course_id, n, score, passed, language, ip_address))
+        db.commit()
+        return n
 
 
 class TrainingCertificate:

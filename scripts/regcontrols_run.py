@@ -21,7 +21,7 @@ Scheduled entry point for the regcontrols control engine.
     python scripts/regcontrols_run.py            # due controls + all sweeps (cron, e.g. hourly)
     python scripts/regcontrols_run.py --sweeps   # only evidence expiry, overdue findings, escalations
     python scripts/regcontrols_run.py --control FRA-079   # run one control now
-    python scripts/regcontrols_run.py --enqueue  # hand the run to the RQ 'events' worker instead
+    python scripts/regcontrols_run.py --enqueue  # add the sweep to the run queue (rc_run_queue) instead
 
 Suggested crontab (server time Africa/Cairo):
     15 * * * *  cd /var/www/complynex && venv/bin/python scripts/regcontrols_run.py >> logs/regcontrols.log 2>&1
@@ -47,13 +47,12 @@ def main():
     from app import create_app
     from regcontrols import alerts, engine, evidence, findings
 
-    if args.enqueue:
-        job = engine.enqueue_due()
-        log.info('enqueued job %s', job)
-        return 0 if job else 1
-
     app = create_app()
     with app.app_context():
+        if args.enqueue:
+            job = engine.enqueue_due()
+            log.info('queued sweep %s (processed by scripts/regcontrols_process_queue.py)', job)
+            return 0 if job else 1
         if args.control:
             run = engine.run_control(args.control, triggered_by='schedule')
             log.info('%s: %s — %s', args.control, run['status'], run['summary'])

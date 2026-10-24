@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Quiz: {{ course.course_name }} - ComplyNex CMS{% endblock %}
+{% block title %}{{ _('Knowledge Assessment') }}: {{ course.course_name }} - ComplyNex CMS{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center pt-5">
@@ -18,32 +18,23 @@
         <div class="card border-0 shadow-lg">
             <div class="card-header bg-white py-3 sticky-top">
                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
-                    <span class="fw-bold">Total: {{ questions|length }} Questions</span>
-                    <span class="badge bg-primary px-3 py-2">Passing Core: {{ course.passing_score }}%</span>
+                    <span class="fw-bold">{{ _('Questions:') }} {{ questions|length }}</span>
+                    <span class="badge bg-warning text-dark px-3 py-2">{{ _('Attempts remaining: %(left)s', left=attempts_remaining) }}</span>
+                    <span class="badge bg-primary px-3 py-2">{{ _('Passing Score:') }} {{ course.passing_score }}%</span>
                 </div>
             </div>
             <div class="card-body p-4 p-md-5">
-                <form method="POST">
+                <form method="POST" lang="{{ quiz_lang }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {% for q in questions %}
                     <div class="mb-5">
                         <h5 class="fw-bold mb-3 d-flex">
                             <span class="me-2 text-primary">{{ loop.index }}.</span>
-                            <span>
-                                {% if session.get('lang') == 'ar' and q.question_text_ar %}
-                                {{ q.question_text_ar }}
-                                {% else %}
-                                {{ q.question_text }}
-                                {% endif %}
-                            </span>
+                            <span dir="{{ q.display_dir }}">{{ q.display_text }}</span>
                         </h5>
 
-                        <div class="ps-4">
-                            {% set current_options = q.options %}
-                            {% if session.get('lang') == 'ar' and q.options_ar %}
-                            {% set current_options = q.options_ar %}
-                            {% endif %}
-
+                        <div class="ps-4" dir="{{ q.display_dir }}">
+                            {% set current_options = q.display_options %}
                             {% if current_options %}
                             {% for option in current_options %}
                             <div class="form-check mb-3 custom-option p-3 rounded border">

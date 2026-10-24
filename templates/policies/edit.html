@@ -144,7 +144,7 @@
 
                                 <div class="mb-4">
                                     <label class="form-label fw-semibold">{{ _('Current Status') }}</label>
-                                    <div class="form-control-plaintext"><span class="badge bg-secondary">{{ policy.status }}</span></div>
+                                    <div class="form-control-plaintext"><span class="badge bg-secondary">{{ code_label(policy.status, 'policy_status') }}</span></div>
                                     <div class="form-text">{{ _('Status changes only through the approval workflow (submit, approve, publish, archive).') }}</div>
                                 </div>
 

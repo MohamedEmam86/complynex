@@ -76,6 +76,25 @@ def _approval_blockers(policy):
     return reasons
 
 
+def _locked_redirect(policy, allow_published=False):
+    """Published and archived versions are read-only: changes go through
+    "New version". Returns a redirect response when the policy is locked."""
+    from policies import versioning as _V
+    status = (policy.status or '').lower()
+    if status == 'archived' or (status == 'published' and not allow_published):
+        if status == 'archived':
+            flash(gettext('This version is archived and read-only.'), 'warning')
+        else:
+            flash(gettext('A published policy cannot be changed. Start a new version to revise it.'), 'warning')
+        return redirect(url_for('policies.view_policy', id=policy.id))
+    return None
+
+
+def _is_locked(policy):
+    from policies import versioning as _V
+    return _V.is_locked(policy.status)
+
+
 def _can_decide_stage(user, stage):
     if stage['approver_user_id']:
         return stage['approver_user_id'] == user.id
@@ -530,14 +549,52 @@ def create_policy():
 @login_required
 @permission_required('policies')
 def version_history(id):
-    """View version history of a policy"""
+    """Every version of the policy (current, drafts in progress and archived
+    versions) with who published it, when it was superseded and how many
+    employees acknowledged each version."""
+    from policies import versioning as _V
     policy = Policy.get_by_id(id)
     if not policy:
         flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
-    
-    versions = policy.get_versions()
-    return render_template('policies/versions.html', policy=policy, versions=versions)
+    family = _V.versions(id)
+    legacy = policy.get_versions()
+    return render_template('policies/versions.html', policy=policy, family=family, versions=legacy,
+                           can_manage=_can_manage_policies())
+
+
+@policies_bp.route('/<int:id>/new-version', methods=['POST'])
+@login_required
+@permission_required('policies', level='edit')
+def new_version(id):
+    """Start version n+1 of a published policy as a draft (with change notes).
+    The published version stays in force until the new one is published."""
+    from policies import versioning as _V
+    policy = Policy.get_by_id(id)
+    if not policy:
+        flash(gettext('Policy not found.'), 'danger')
+        return redirect(url_for('policies.list_policies'))
+    summary = (request.form.get('change_summary') or '').strip()
+    draft = _V.open_draft(id)
+    err = _V.new_version_error(policy.status, draft['id'] if draft else None, summary)
+    if err:
+        flash({'a new version can only be started from the published version':
+                   gettext('A new version can only be started from the published version.'),
+               'a new version of this policy is already in progress':
+                   gettext('A new version of this policy is already in progress.'),
+               'describe what changes in the new version':
+                   gettext('Describe what changes in the new version.')}[err], 'danger')
+        if draft:
+            return redirect(url_for('policies.view_policy', id=draft['id']))
+        return redirect(url_for('policies.view_policy', id=id))
+    new_id = _V.create_new_version(id, summary, current_user.id)
+    new = Policy.get_by_id(new_id)
+    AuditLog.log(current_user.id, 'New Policy Version', 'Policies', new_id,
+                 f'Started version {new.version} of {policy.policy_name} from version {policy.version}: {summary}',
+                 request.remote_addr)
+    flash(gettext('Draft version %(v)s created. Edit it, then send it through the approval stages; version %(old)s stays in force until it is published.',
+                  v=new.version, old=policy.version), 'success')
+    return redirect(url_for('policies.edit_policy', id=new_id))
 
 @policies_bp.route('/compare-versions/<int:v1_id>/<int:v2_id>')
 @login_required
@@ -564,6 +621,9 @@ def submit_for_approval(id):
     if not policy:
         flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
+    locked = _locked_redirect(policy)
+    if locked:
+        return locked
     
     # Get reviewer from form or fall back to compliance officers / admins
     reviewer_id = request.form.get('reviewer_id')
@@ -751,6 +811,13 @@ def view_policy(id):
     approvers = [dict(a) for a in approvers]
     from services import document_service as _D
     approval = _D.approval_state(id)
+    from policies import versioning as _V
+    _family = _V.versions(id)
+    _open_draft = _V.open_draft(id)
+    _superseded_by = next((v for v in _family if v['id'] == policy.superseded_by_id), None) \
+        if getattr(policy, 'superseded_by_id', None) else None
+    _previous = next((v for v in _family if v['id'] == policy.previous_version_id), None) \
+        if policy.previous_version_id else None
 
     return render_template('policies/detail.html',
                          policy=policy,
@@ -761,8 +828,11 @@ def view_policy(id):
                          reviews=reviews,
                          approvers=approvers,
                          approval=approval,
-                         can_decide_stage=bool(approval['current']) and _can_decide_stage(current_user, approval['current']),
-                         publish_blockers=_approval_blockers(policy))
+                         can_decide_stage=bool(approval['current']) and _can_decide_stage(current_user, approval['current'])
+                         and not _is_locked(policy),
+                         publish_blockers=_approval_blockers(policy),
+                         family=_family, open_draft=_open_draft, superseded_by=_superseded_by,
+                         previous_version=_previous)
 
 @policies_bp.route('/<int:id>/document')
 @login_required
@@ -923,6 +993,9 @@ def edit_policy(id):
     if not policy:
         flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
+    locked = _locked_redirect(policy)
+    if locked:
+        return locked
     
     if request.method == 'POST':
         # Handle file upload
@@ -1014,6 +1087,9 @@ def upload_attachment(id):
         flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     
+    locked = _locked_redirect(policy)
+    if locked:
+        return locked
     files = request.files.getlist('attachments')
     if not files:
         flash(gettext('No files selected.'), 'warning')
@@ -1051,10 +1127,16 @@ def delete_attachment(attachment_id):
         return redirect(url_for('policies.list_policies'))
     
     policy_id = attachment.policy_id
+    parent = Policy.get_by_id(policy_id)
+    if parent:
+        locked = _locked_redirect(parent)
+        if locked:
+            return locked
     result = PolicyAttachment.delete(attachment_id)
     
-    # Try to delete the file from disk
-    if result and result.get('file_path'):
+    # Try to delete the file from disk — unless another version still uses it
+    from policies import versioning as _V
+    if result and result.get('file_path') and not _V.file_still_used(result['file_path']):
         try:
             full_path = os.path.join('static', result['file_path'])
             if os.path.exists(full_path):
@@ -1076,6 +1158,9 @@ def approve_policy(id):
     if not policy:
         flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
+    locked = _locked_redirect(policy)
+    if locked:
+        return locked
     blockers = _approval_blockers(policy)
     if blockers:
         for b in blockers:
@@ -1111,7 +1196,14 @@ def publish_policy(id):
         return redirect(url_for('policies.view_policy', id=id))
 
     policy.publish()
-    AuditLog.log(current_user.id, 'Publish Policy', 'Policies', id, f'Published policy {policy.policy_name}', request.remote_addr)
+    from policies import versioning as _V
+    archived = _V.on_published(id, current_user.id)
+    AuditLog.log(current_user.id, 'Publish Policy', 'Policies', id,
+                 f'Published policy {policy.policy_name} v{policy.version}'
+                 + (f'; archived superseded version(s) {archived}' if archived else ''), request.remote_addr)
+    if archived:
+        flash(gettext('Version %(v)s is now in force. The previous version was archived (read-only) and employees must acknowledge the new version.',
+                      v=policy.version), 'info')
     
     flash(gettext('Policy published. Employees will be notified.'), 'success')
     return redirect(url_for('policies.list_policies'))
@@ -1126,6 +1218,9 @@ def decide_stage(id, stage_order):
     if not policy:
         flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
+    locked = _locked_redirect(policy)
+    if locked:
+        return locked
     st = _D.approval_state(id)
     stage = st['current']
     decision = request.form.get('decision')
@@ -1159,6 +1254,9 @@ def archive_policy(id):
         flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
         
+    if (policy.status or '').lower() == 'archived':
+        flash(gettext('This version is archived and read-only.'), 'warning')
+        return redirect(url_for('policies.view_policy', id=id))
     policy.archive()
     AuditLog.log(current_user.id, 'Archive Policy', 'Policies', id, f'Archived policy {policy.policy_name}', request.remote_addr)
     

@@ -120,7 +120,7 @@
                             <span class="badge bg-primary rounded-pill">{{ meeting.meeting_date }}</span>
                             <small class="text-muted">{{ meeting.meeting_time }}</small>
                         </div>
-                        <h6 class="mb-1">{{ meeting.meeting_type|replace('_', ' ')|title }}</h6>
+                        <h6 class="mb-1">{{ code_label(meeting.meeting_type, 'meeting_type') }}</h6>
                         <small class="text-muted"><i class="bi bi-geo-alt"></i> {{ meeting.location }}</small>
                     </li>
                     {% endfor %}

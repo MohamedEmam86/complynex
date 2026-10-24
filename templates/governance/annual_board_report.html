@@ -67,10 +67,10 @@
       {% for mt in meetings %}
       <tr>
         <td>{{ mt.meeting_reference or '-' }}</td>
-        <td>{{ mt.meeting_type }}</td>
+        <td>{{ code_label(mt.meeting_type, 'meeting_type') }}</td>
         <td>{{ mt.meeting_date }}</td>
         <td>{{ _('Yes') if mt.quorum_met else _('No') }}</td>
-        <td>{{ mt.status }}</td>
+        <td>{{ code_label(mt.status, 'meeting_status') }}</td>
       </tr>
       {% else %}
       <tr><td colspan="5" class="text-center text-muted">{{ _('No board meetings recorded for %(y)s.', y=year) }}</td></tr>
@@ -111,7 +111,7 @@
         <td>{{ d.decision_text }}</td>
         <td>{{ d.responsible_person or '-' }}</td>
         <td>{{ d.deadline or '-' }}</td>
-        <td>{{ d.status }}</td>
+        <td>{{ code_label(d.status, 'action_status') }}</td>
       </tr>
       {% else %}
       <tr><td colspan="6" class="text-center text-muted">{{ _('No decisions recorded for %(y)s.', y=year) }}</td></tr>
@@ -128,7 +128,7 @@
       {% for c in committees %}
       <tr>
         <td>{{ c.committee_name }}</td>
-        <td>{{ c.committee_type }}</td>
+        <td>{{ code_label(c.committee_type, 'committee_type') }}</td>
         <td>{{ committee_meeting_counts.get(c.id, 0) }}</td>
       </tr>
       {% else %}

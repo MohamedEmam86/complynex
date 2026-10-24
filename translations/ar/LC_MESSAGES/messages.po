@@ -34848,6 +34848,750 @@ msgstr "لا يوجد سجل."
 msgid "Other consents of this data subject"
 msgstr "موافقات أخرى لصاحب البيانات"
 
+msgid "Board meeting"
+msgstr "اجتماع مجلس الإدارة"
+
+msgid "Regular meeting"
+msgstr "اجتماع عادي"
+
+msgid "Extraordinary meeting"
+msgstr "اجتماع غير عادي"
+
+msgid "Emergency meeting"
+msgstr "اجتماع طارئ"
+
+msgid "Audit Committee"
+msgstr "لجنة المراجعة"
+
+msgid "Risk Committee"
+msgstr "لجنة المخاطر"
+
+msgid "Compliance Committee"
+msgstr "لجنة الالتزام"
+
+msgid "Nomination & Remuneration Committee"
+msgstr "لجنة الترشيحات والمكافآت"
+
+msgid "Committee meeting"
+msgstr "اجتماع لجنة"
+
+msgid "General assembly"
+msgstr "الجمعية العامة"
+
+msgid "Postponed"
+msgstr "مؤجل"
+
+msgid "Nomination & Remuneration"
+msgstr "الترشيحات والمكافآت"
+
+msgid "Investment"
+msgstr "الاستثمار"
+
+msgid "Information technology"
+msgstr "تكنولوجيا المعلومات"
+
+msgid "Credit"
+msgstr "الائتمان"
+
+msgid "Circulated"
+msgstr "مُعمَّم"
+
+msgid "Superseded"
+msgstr "مُستبدَل"
+
+msgid "Invited"
+msgstr "مدعو"
+
+msgid "Absent with apology"
+msgstr "غائب بعذر"
+
+msgid "Adopted"
+msgstr "اعتُمد"
+
+msgid "Not adopted"
+msgstr "لم يُعتمد"
+
+msgid "Deferred"
+msgstr "مؤجل"
+
+msgid "Delayed"
+msgstr "متأخر"
+
+msgid "Carried forward"
+msgstr "مُرحَّل"
+
+msgid "Minutes drafted"
+msgstr "إعداد مسودة المحضر"
+
+msgid "Minutes draft edited"
+msgstr "تعديل مسودة المحضر"
+
+msgid "Minutes circulated"
+msgstr "تعميم المحضر"
+
+msgid "Minutes returned for changes"
+msgstr "إعادة المحضر للتعديل"
+
+msgid "Minutes approved"
+msgstr "اعتماد المحضر"
+
+msgid "Minutes version superseded"
+msgstr "استبدال إصدار المحضر"
+
+msgid "Resolution recorded"
+msgstr "تسجيل قرار"
+
+msgid "Resolution corrected"
+msgstr "تصحيح قرار"
+
+msgid "Action assigned"
+msgstr "إسناد إجراء"
+
+msgid "Action status changed"
+msgstr "تغيير حالة إجراء"
+
+msgid "Action carried to a later meeting"
+msgstr "ترحيل إجراء إلى اجتماع لاحق"
+
+msgid "Action carried from an earlier meeting"
+msgstr "إجراء مُرحَّل من اجتماع سابق"
+
+msgid "External participant invited"
+msgstr "دعوة مشارك خارجي"
+
+msgid "External participant removed"
+msgstr "حذف مشارك خارجي"
+
+msgid "External attendance recorded"
+msgstr "تسجيل حضور مشارك خارجي"
+
+msgid "Member added to attendees"
+msgstr "إضافة عضو إلى الحضور"
+
+msgid "Member removed from attendees"
+msgstr "حذف عضو من الحضور"
+
+msgid "Mitigation in progress"
+msgstr "المعالجة قيد التنفيذ"
+
+msgid "Mitigation plan created"
+msgstr "إنشاء خطة معالجة"
+
+msgid "Bank"
+msgstr "بنك"
+
+msgid "Banking"
+msgstr "الأعمال المصرفية"
+
+msgid "Microfinance"
+msgstr "التمويل متناهي الصغر"
+
+msgid "Consumer finance"
+msgstr "التمويل الاستهلاكي"
+
+msgid "Financial leasing"
+msgstr "التأجير التمويلي"
+
+msgid "Factoring"
+msgstr "التخصيم"
+
+msgid "Mortgage finance"
+msgstr "التمويل العقاري"
+
+msgid "SME finance"
+msgstr "تمويل المشروعات الصغيرة والمتوسطة"
+
+msgid "Insurance"
+msgstr "التأمين"
+
+msgid "Payment services"
+msgstr "خدمات الدفع"
+
+msgid "Financial technology"
+msgstr "التكنولوجيا المالية"
+
+msgid "Securities / capital markets"
+msgstr "الأوراق المالية / أسواق رأس المال"
+
+msgid "The minutes text is required."
+msgstr "نص المحضر مطلوب."
+
+msgid "Describe what changed in this revision of the minutes."
+msgstr "وضّح ما تغيّر في هذه المراجعة من المحضر."
+
+#, python-format
+msgid "Minutes version %(n)s saved as draft."
+msgstr "حُفظ الإصدار %(n)s من المحضر كمسودة."
+
+msgid "Meeting minutes circulated"
+msgstr "تم تعميم محضر الاجتماع"
+
+#, python-format
+msgid "Version %(n)s of the minutes has been circulated for approval."
+msgstr "تم تعميم الإصدار %(n)s من المحضر للاعتماد."
+
+#, python-format
+msgid "Minutes updated: %(status)s."
+msgstr "تم تحديث المحضر: %(status)s."
+
+#, python-format
+msgid "Resolution %(ref)s recorded."
+msgstr "تم تسجيل القرار %(ref)s."
+
+msgid "The minutes of this meeting are approved; resolutions can no longer be changed."
+msgstr "محضر هذا الاجتماع معتمد؛ لم يعد بالإمكان تعديل القرارات."
+
+msgid "Resolution updated."
+msgstr "تم تحديث القرار."
+
+msgid "Meeting action assigned to you"
+msgstr "أُسند إليك إجراء من اجتماع"
+
+#, python-format
+msgid "An action from meeting %(ref)s is assigned to you, due %(due)s."
+msgstr "أُسند إليك إجراء من الاجتماع %(ref)s، موعد استحقاقه %(due)s."
+
+msgid "Action item added."
+msgstr "تمت إضافة الإجراء."
+
+msgid "Choose the later meeting to carry this action to."
+msgstr "اختر الاجتماع اللاحق الذي سيُرحَّل إليه هذا الإجراء."
+
+msgid "This action is already closed."
+msgstr "هذا الإجراء مغلق بالفعل."
+
+#, python-format
+msgid "Follow-up action from %(ref)s: %(text)s"
+msgstr "متابعة إجراء من %(ref)s: %(text)s"
+
+#, python-format
+msgid "Action carried to the agenda of %(ref)s."
+msgstr "تم ترحيل الإجراء إلى جدول أعمال %(ref)s."
+
+#, python-format
+msgid "%(name)s added as an external participant."
+msgstr "تمت إضافة %(name)s كمشارك خارجي."
+
+msgid "Attendance is already recorded for this participant; it cannot be removed."
+msgstr "تم تسجيل حضور هذا المشارك بالفعل؛ لا يمكن حذفه."
+
+msgid "Participant removed."
+msgstr "تم حذف المشارك."
+
+#, python-format
+msgid "Attendance is already recorded for %(names)s, so they stay on the attendee list."
+msgstr "تم تسجيل حضور %(names)s بالفعل، لذا يبقون ضمن قائمة الحضور."
+
+msgid "Meeting logged for invitation. Note: email delivery is not yet configured, so no invitations have actually been sent."
+msgstr "تم تسجيل الاجتماع للدعوة. ملاحظة: لم يتم إعداد البريد الإلكتروني بعد، لذا لم تُرسل أي دعوات فعلياً."
+
+msgid "Meeting"
+msgstr "الاجتماع"
+
+msgid "Print minutes (English)"
+msgstr "طباعة المحضر (بالإنجليزية)"
+
+msgid "Print minutes (Arabic)"
+msgstr "طباعة المحضر (بالعربية)"
+
+msgid "Record attendance"
+msgstr "تسجيل الحضور"
+
+msgid "Edit meeting / attendees"
+msgstr "تعديل الاجتماع / الحضور"
+
+msgid "Action tracker"
+msgstr "متابعة الإجراءات"
+
+msgid "Minutes:"
+msgstr "المحضر:"
+
+msgid "Not drafted yet"
+msgstr "لم تُعد مسودته بعد"
+
+msgid "No workflow activity yet."
+msgstr "لا يوجد نشاط بعد."
+
+msgid "External"
+msgstr "خارجي"
+
+msgid "Remove this participant?"
+msgstr "حذف هذا المشارك؟"
+
+msgid "Invite an external committee member (not a system user)"
+msgstr "دعوة عضو لجنة خارجي (ليس مستخدماً للنظام)"
+
+msgid "Draft → circulated → approved by the chair or the secretary"
+msgstr "مسودة ← تعميم ← اعتماد من الرئيس أو أمين السر"
+
+#, python-format
+msgid "Version %(n)s approved by %(name)s as %(capacity)s on %(date)s."
+msgstr "اعتمد %(name)s الإصدار %(n)s بصفته %(capacity)s بتاريخ %(date)s."
+
+msgid "chair"
+msgstr "رئيس"
+
+msgid "secretary"
+msgstr "أمين السر"
+
+#, python-format
+msgid "Drafted by %(name)s"
+msgstr "أعدّه %(name)s"
+
+#, python-format
+msgid "circulated by %(name)s on %(date)s"
+msgstr "عمّمه %(name)s بتاريخ %(date)s"
+
+msgid "Minutes of the meeting: discussion of each agenda item, conclusions…"
+msgstr "محضر الاجتماع: مناقشة كل بند من جدول الأعمال والنتائج…"
+
+msgid "Change note (required for a revision)"
+msgstr "ملاحظة التغيير (مطلوبة عند المراجعة)"
+
+msgid "Start a new version"
+msgstr "بدء إصدار جديد"
+
+msgid "Save first draft"
+msgstr "حفظ المسودة الأولى"
+
+msgid "Circulate for approval"
+msgstr "تعميم للاعتماد"
+
+msgid "Approve as…"
+msgstr "الاعتماد بصفة…"
+
+msgid "Secretary"
+msgstr "أمين السر"
+
+msgid "Approve minutes"
+msgstr "اعتماد المحضر"
+
+msgid "Reason for changes"
+msgstr "سبب التعديل"
+
+msgid "Return for changes"
+msgstr "إعادة للتعديل"
+
+msgid "Change note"
+msgstr "ملاحظة التغيير"
+
+msgid "Drafted by"
+msgstr "أعدّه"
+
+msgid "Resolutions"
+msgstr "القرارات"
+
+msgid "No."
+msgstr "رقم"
+
+msgid "For"
+msgstr "موافق"
+
+msgid "Against"
+msgstr "معارض"
+
+msgid "Abstain"
+msgstr "ممتنع"
+
+msgid "Dissent:"
+msgstr "الاعتراض:"
+
+msgid "Correct this resolution"
+msgstr "تصحيح هذا القرار"
+
+msgid "Dissenting members and their reasons"
+msgstr "الأعضاء المعترضون وأسبابهم"
+
+msgid "Reason for the correction"
+msgstr "سبب التصحيح"
+
+msgid "No resolutions recorded."
+msgstr "لا توجد قرارات مسجلة."
+
+msgid "Record a resolution"
+msgstr "تسجيل قرار"
+
+msgid "Number (automatic if blank)"
+msgstr "الرقم (تلقائي إذا تُرك فارغاً)"
+
+msgid "Resolution text"
+msgstr "نص القرار"
+
+msgid "Automatic (simple majority)"
+msgstr "تلقائي (الأغلبية البسيطة)"
+
+msgid "Record resolution"
+msgstr "تسجيل القرار"
+
+msgid "Dissenting members and their reasons (required when anyone voted against)"
+msgstr "الأعضاء المعترضون وأسبابهم (مطلوب عند وجود أصوات معارضة)"
+
+msgid "The minutes are approved; resolutions are locked."
+msgstr "المحضر معتمد؛ القرارات مقفلة."
+
+#, python-format
+msgid "Carried to %(ref)s"
+msgstr "مُرحَّل إلى %(ref)s"
+
+msgid "Note (required to complete, delay or cancel)"
+msgstr "ملاحظة (مطلوبة للإنجاز أو التأجيل أو الإلغاء)"
+
+msgid "Carry to meeting…"
+msgstr "ترحيل إلى اجتماع…"
+
+msgid "Carry to agenda"
+msgstr "ترحيل إلى جدول الأعمال"
+
+msgid "Action items"
+msgstr "بنود الإجراءات"
+
+msgid "No action items."
+msgstr "لا توجد بنود إجراءات."
+
+msgid "Add an action item"
+msgstr "إضافة بند إجراء"
+
+msgid "Owner (user)…"
+msgstr "المسؤول (مستخدم)…"
+
+msgid "…or external owner name"
+msgstr "…أو اسم مسؤول خارجي"
+
+msgid "Linked resolution (optional)"
+msgstr "القرار المرتبط (اختياري)"
+
+msgid "Open actions from earlier meetings"
+msgstr "إجراءات مفتوحة من اجتماعات سابقة"
+
+msgid "Schedule New Meeting"
+msgstr "جدولة اجتماع جديد"
+
+msgid "Add or remove invited members. Members whose attendance is already recorded stay on the list. External participants who are not system users are added on the meeting page."
+msgstr "أضف الأعضاء المدعوين أو احذفهم. يبقى الأعضاء الذين سُجل حضورهم ضمن القائمة. يُضاف المشاركون الخارجيون غير المستخدمين للنظام من صفحة الاجتماع."
+
+msgid "Meeting page"
+msgstr "صفحة الاجتماع"
+
+msgid "External participants (not system users)"
+msgstr "المشاركون الخارجيون (ليسوا مستخدمين للنظام)"
+
+msgid "Minutes of Meeting"
+msgstr "محضر الاجتماع"
+
+#, python-format
+msgid "Approved by %(name)s as %(capacity)s on %(date)s."
+msgstr "اعتمده %(name)s بصفته %(capacity)s بتاريخ %(date)s."
+
+msgid "not approved"
+msgstr "غير معتمد"
+
+msgid "Minutes not drafted yet"
+msgstr "لم تُعد مسودة المحضر بعد"
+
+msgid "Capacity"
+msgstr "الصفة"
+
+msgid "Signatures"
+msgstr "التوقيعات"
+
+#, python-format
+msgid "Printed on %(date)s"
+msgstr "طُبع بتاريخ %(date)s"
+
+msgid "Meeting action tracker"
+msgstr "متابعة إجراءات الاجتماعات"
+
+#, python-format
+msgid "%(n)s action(s) are overdue."
+msgstr "عدد الإجراءات المتأخرة: %(n)s."
+
+msgid "This version is archived and read-only."
+msgstr "هذا الإصدار مؤرشف ومتاح للقراءة فقط."
+
+msgid "A published policy cannot be changed. Start a new version to revise it."
+msgstr "لا يمكن تعديل سياسة منشورة. ابدأ إصداراً جديداً لمراجعتها."
+
+msgid "A new version can only be started from the published version."
+msgstr "لا يمكن بدء إصدار جديد إلا من الإصدار المنشور."
+
+msgid "A new version of this policy is already in progress."
+msgstr "يوجد إصدار جديد من هذه السياسة قيد الإعداد بالفعل."
+
+msgid "Describe what changes in the new version."
+msgstr "وضّح التغييرات في الإصدار الجديد."
+
+#, python-format
+msgid "Draft version %(v)s created. Edit it, then send it through the approval stages; version %(old)s stays in force until it is published."
+msgstr "تم إنشاء مسودة الإصدار %(v)s. عدّلها ثم أرسلها عبر مراحل الاعتماد؛ ويظل الإصدار %(old)s سارياً حتى نشرها."
+
+#, python-format
+msgid "Version %(v)s is now in force. The previous version was archived (read-only) and employees must acknowledge the new version."
+msgstr "أصبح الإصدار %(v)s سارياً. تمت أرشفة الإصدار السابق (للقراءة فقط) ويجب على الموظفين الإقرار بالإصدار الجديد."
+
+msgid "Archived version — read-only."
+msgstr "إصدار مؤرشف — للقراءة فقط."
+
+#, python-format
+msgid "Superseded by version %(v)s on %(date)s."
+msgstr "حلّ محله الإصدار %(v)s بتاريخ %(date)s."
+
+msgid "Open the current version"
+msgstr "فتح الإصدار الحالي"
+
+#, python-format
+msgid "Version %(v)s of this policy is being prepared (%(status)s)."
+msgstr "الإصدار %(v)s من هذه السياسة قيد الإعداد (%(status)s)."
+
+msgid "Open the draft"
+msgstr "فتح المسودة"
+
+#, python-format
+msgid "Revises version %(v)s."
+msgstr "يعدّل الإصدار %(v)s."
+
+msgid "Change notes:"
+msgstr "ملاحظات التغيير:"
+
+msgid "Version history"
+msgstr "سجل الإصدارات"
+
+msgid "Submitted for Approval"
+msgstr "مُقدَّمة للاعتماد"
+
+msgid "Change notes for the new version"
+msgstr "ملاحظات التغيير للإصدار الجديد"
+
+msgid "What changes and why"
+msgstr "ما الذي يتغير ولماذا"
+
+msgid "New version"
+msgstr "إصدار جديد"
+
+msgid "Each version keeps its own approvals and acknowledgements. Archived versions are read-only."
+msgstr "يحتفظ كل إصدار باعتماداته وإقراراته الخاصة. الإصدارات المؤرشفة للقراءة فقط."
+
+msgid "Change notes"
+msgstr "ملاحظات التغيير"
+
+msgid "Acknowledgements"
+msgstr "الإقرارات"
+
+msgid "In force"
+msgstr "سارٍ"
+
+msgid "Initial version"
+msgstr "الإصدار الأول"
+
+msgid "Earlier revision log"
+msgstr "سجل المراجعات السابق"
+
+#, python-format
+msgid "You must watch at least %(pct)s%% of the training video before taking the quiz."
+msgstr "يجب مشاهدة %(pct)s%% على الأقل من الفيديو التدريبي قبل أداء الاختبار."
+
+#, python-format
+msgid "You have used all %(n)s quiz attempts for this course. Ask the training administrator for an additional attempt."
+msgstr "استنفدت جميع محاولات الاختبار (%(n)s) لهذه الدورة. اطلب محاولة إضافية من مسؤول التدريب."
+
+#, python-format
+msgid "Congratulations! You passed with %(score)s%% and earned a certificate."
+msgstr "تهانينا! نجحت بنسبة %(score)s%% وحصلت على شهادة."
+
+#, python-format
+msgid "You scored %(score)s%%, below the passing score of %(pass)s%%. Attempts remaining: %(left)s."
+msgstr "حصلت على %(score)s%%، أقل من درجة النجاح %(pass)s%%. المحاولات المتبقية: %(left)s."
+
+#, python-format
+msgid "You scored %(score)s%%, below the passing score of %(pass)s%%. No attempts remain; ask the training administrator for an additional attempt."
+msgstr "حصلت على %(score)s%%، أقل من درجة النجاح %(pass)s%%. لم تتبقَّ محاولات؛ اطلب محاولة إضافية من مسؤول التدريب."
+
+msgid "Enrollment not found."
+msgstr "التسجيل غير موجود."
+
+msgid "Give the reason for granting an additional attempt."
+msgstr "اذكر سبب منح محاولة إضافية."
+
+msgid "An additional quiz attempt was granted."
+msgstr "تم منح محاولة اختبار إضافية."
+
+#, python-format
+msgid "You must watch at least %(pct)s%% of the video before taking the quiz. Scrubbing is disabled."
+msgstr "يجب مشاهدة %(pct)s%% على الأقل من الفيديو قبل أداء الاختبار. التقديم السريع معطّل."
+
+msgid "watched"
+msgstr "تمت مشاهدته"
+
+#, python-format
+msgid "You have used all %(n)s quiz attempts. Ask the training administrator for an additional attempt."
+msgstr "استنفدت جميع محاولات الاختبار (%(n)s). اطلب محاولة إضافية من مسؤول التدريب."
+
+#, python-format
+msgid "Attempts remaining: %(left)s of %(n)s"
+msgstr "المحاولات المتبقية: %(left)s من %(n)s"
+
+msgid "required"
+msgstr "المطلوب"
+
+msgid "Video requirement met. You can now take the quiz."
+msgstr "تم استيفاء متطلب المشاهدة. يمكنك الآن أداء الاختبار."
+
+#, python-format
+msgid "Attempts remaining: %(left)s"
+msgstr "المحاولات المتبقية: %(left)s"
+
+msgid "Course language"
+msgstr "لغة الدورة"
+
+msgid "Bilingual (follow the user interface language)"
+msgstr "ثنائية اللغة (حسب لغة الواجهة)"
+
+msgid "The quiz is served in this language; a question without a translation falls back to the other language."
+msgstr "يُعرض الاختبار بهذه اللغة؛ ويُعرض السؤال غير المترجم باللغة الأخرى."
+
+msgid "Maximum quiz attempts"
+msgstr "الحد الأقصى لمحاولات الاختبار"
+
+msgid "Video watch threshold"
+msgstr "حد مشاهدة الفيديو"
+
+msgid "Share of the video that must actually be watched (measured by the server) before the quiz opens."
+msgstr "نسبة الفيديو التي يجب مشاهدتها فعلياً (يقيسها الخادم) قبل فتح الاختبار."
+
+msgid "Video length (seconds)"
+msgstr "مدة الفيديو (بالثواني)"
+
+msgid "Leave blank to take it from the video player the first time the video is played."
+msgstr "اتركه فارغاً لتؤخذ المدة من مشغل الفيديو عند أول تشغيل."
+
+#, python-format
+msgid "Quiz attempts: %(used)s of %(allowed)s"
+msgstr "محاولات الاختبار: %(used)s من %(allowed)s"
+
+msgid "Grant attempt"
+msgstr "منح محاولة"
+
+#, python-format
+msgid "Evidence awaiting review: %(code)s"
+msgstr "دليل بانتظار المراجعة: %(code)s"
+
+#, python-format
+msgid "\"%(title)s\" was submitted as evidence for control %(code)s and needs review by someone other than the submitter."
+msgstr "تم تقديم \"%(title)s\" كدليل للضابط %(code)s ويحتاج إلى مراجعة من شخص غير مقدّمه."
+
+#, python-format
+msgid "Verification requested: finding %(ref)s"
+msgstr "طلب تحقق: الملاحظة %(ref)s"
+
+#, python-format
+msgid "The corrective actions for finding %(ref)s (%(title)s) are complete. Please verify the remediation."
+msgstr "اكتملت الإجراءات التصحيحية للملاحظة %(ref)s (%(title)s). يرجى التحقق من المعالجة."
+
+msgid "Scheduled run queued. Process the queue now, or let the queue processor run it."
+msgstr "تمت إضافة التشغيل المجدول إلى قائمة الانتظار. عالج القائمة الآن أو اتركها لمعالج القائمة."
+
+#, python-format
+msgid "Queue processed: %(done)s run(s) finished, %(failed)s failed."
+msgstr "تمت معالجة القائمة: اكتمل %(done)s تشغيل، وفشل %(failed)s."
+
+msgid "Control run queued. It runs when the queue is processed (Run queue page)."
+msgstr "تمت إضافة تشغيل الضابط إلى قائمة الانتظار. يُنفّذ عند معالجة القائمة (صفحة قائمة التشغيل)."
+
+msgid "Control run queue"
+msgstr "قائمة انتظار تشغيل الضوابط"
+
+msgid "Queued control runs and scheduled sweeps. They are processed by the queue processor on the server, or now by an administrator."
+msgstr "عمليات تشغيل الضوابط والفحوص المجدولة المنتظرة. يعالجها معالج القائمة على الخادم، أو مسؤول النظام فوراً."
+
+msgid "Process queue now"
+msgstr "معالجة القائمة الآن"
+
+msgid "What"
+msgstr "البند"
+
+msgid "Scheduled sweep (due controls, evidence expiry, overdue findings, escalations)"
+msgstr "فحص مجدول (الضوابط المستحقة، انتهاء الأدلة، الملاحظات المتأخرة، التصعيدات)"
+
+msgid "Queued"
+msgstr "في الانتظار"
+
+msgid "The queue is empty."
+msgstr "القائمة فارغة."
+
+msgid "Run queue"
+msgstr "قائمة التشغيل"
+
+msgid "Queue scheduled run"
+msgstr "إضافة التشغيل المجدول إلى القائمة"
+
+msgid "Add to the run queue (processed by the queue processor or an administrator)"
+msgstr "إضافة إلى قائمة التشغيل (يعالجها معالج القائمة أو مسؤول النظام)"
+
+msgid "Queue run"
+msgstr "إضافة إلى قائمة التشغيل"
+
+msgid "As the manager this declaration was escalated to, you can approve it, ask for clarification or escalate it further."
+msgstr "بصفتك المدير الذي صُعِّد إليه هذا الإقرار، يمكنك اعتماده أو طلب إيضاح أو تصعيده إلى مستوى أعلى."
+
+msgid "This declaration was escalated to you for a decision. You can approve it, ask for clarification or escalate it further."
+msgstr "صُعِّد إليك هذا الإقرار لاتخاذ قرار. يمكنك اعتماده أو طلب إيضاح أو تصعيده إلى مستوى أعلى."
+
+msgid "This version of the minutes is not in a state that allows this action."
+msgstr "حالة هذا الإصدار من المحضر لا تسمح بهذا الإجراء."
+
+msgid "State whether you approve as chair or as secretary."
+msgstr "حدّد ما إذا كنت تعتمد بصفتك الرئيس أو أمين السر."
+
+msgid "The person who drafted the minutes cannot approve them."
+msgstr "لا يجوز لمن أعدّ المحضر أن يعتمده."
+
+msgid "Give the reason for returning the minutes."
+msgstr "اذكر سبب إعادة المحضر."
+
+msgid "The resolution text is required."
+msgstr "نص القرار مطلوب."
+
+msgid "Votes for must be a whole number."
+msgstr "يجب أن تكون الأصوات الموافقة عدداً صحيحاً."
+
+msgid "Votes against must be a whole number."
+msgstr "يجب أن تكون الأصوات المعارضة عدداً صحيحاً."
+
+msgid "Votes abstain must be a whole number."
+msgstr "يجب أن تكون أصوات الممتنعين عدداً صحيحاً."
+
+msgid "Record the dissenting members and their reasons when votes were cast against."
+msgstr "سجّل الأعضاء المعترضين وأسبابهم عند وجود أصوات معارضة."
+
+msgid "Unknown vote result."
+msgstr "نتيجة تصويت غير معروفة."
+
+msgid "Give the reason for changing a recorded resolution."
+msgstr "اذكر سبب تعديل قرار مسجل."
+
+msgid "Describe the action."
+msgstr "صِف الإجراء."
+
+msgid "Choose an owner (a user, or type the name of an external owner)."
+msgstr "اختر المسؤول (مستخدماً، أو اكتب اسم مسؤول خارجي)."
+
+msgid "A valid due date is required."
+msgstr "تاريخ استحقاق صحيح مطلوب."
+
+msgid "Unknown status."
+msgstr "حالة غير معروفة."
+
+msgid "A note is required to complete, cancel or delay an action."
+msgstr "الملاحظة مطلوبة لإنجاز الإجراء أو إلغائه أو تأجيله."
+
+msgid "The name is required."
+msgstr "الاسم مطلوب."
+
+msgid "The email address is not valid."
+msgstr "عنوان البريد الإلكتروني غير صحيح."
+
+msgid "The role is required (e.g. independent committee member, external auditor)."
+msgstr "الصفة مطلوبة (مثل: عضو لجنة مستقل، مراجع خارجي)."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="{{ print_lang }}" dir="{{ 'rtl' if print_lang == 'ar' else 'ltr' }}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ _('Minutes') }} {{ meeting.meeting_reference or meeting.meeting_date }}</title>
+<link rel="stylesheet" href="/static/vendor/fonts/academy/academy-fonts.css">
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+  body { font-family: Cairo, "DejaVu Sans", Arial, sans-serif; font-size: 10.5pt; color: #111; margin: 0 auto; max-width: 820px; padding: 16px; background: #fff; }
+  h1 { font-size: 15pt; text-align: center; margin: 0 0 4px; }
+  .sub { text-align: center; color: #444; margin-bottom: 14px; }
+  h2 { font-size: 11.5pt; border-bottom: 1px solid #999; padding-bottom: 3px; margin: 18px 0 8px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+  th, td { border: 1px solid #bbb; padding: 4px 6px; vertical-align: top; text-align: start; }
+  th { background: #f2f2f2; }
+  .body { white-space: pre-wrap; }
+  .muted { color: #555; font-size: 9pt; }
+  .stamp { border: 2px solid #198754; color: #198754; display: inline-block; padding: 4px 10px; font-weight: 700; }
+  .draft { border-color: #b02a37; color: #b02a37; }
+  .sig td { height: 46px; }
+  .noprint { margin: 10px 0; text-align: center; }
+  @media print { .noprint { display: none; } body { padding: 0; } }
+</style></head><body>
+<div class="noprint"><button data-action="print">{{ _('Print') }}</button></div>
+<h1>{{ _('Minutes of Meeting') }}</h1>
+<div class="sub">{{ code_label(meeting.meeting_type, 'meeting_type') }}{% if committee %} — {{ committee.committee_name_arabic if print_lang == 'ar' and committee.committee_name_arabic else committee.committee_name }}{% endif %}<br>
+  {{ _('Reference') }}: {{ meeting.meeting_reference or '-' }} · {{ _('Date') }}: {{ meeting.meeting_date or '-' }} {{ meeting.meeting_time or '' }} · {{ _('Location') }}: {{ meeting.location or '-' }}</div>
+
+<p>{% if version and version.status == 'approved' %}<span class="stamp">{{ _('Approved') }} — v{{ version.version_no }}</span>
+   <span class="muted">{{ _('Approved by %(name)s as %(capacity)s on %(date)s.', name=version.approved_by|username, capacity=(_('chair') if version.approver_capacity == 'chair' else _('secretary')), date=version.approved_at.strftime('%Y-%m-%d') if version.approved_at else '') }}</span>
+   {% elif version %}<span class="stamp draft">{{ code_label(version.status, 'minutes_status') }} — v{{ version.version_no }} — {{ _('not approved') }}</span>
+   {% else %}<span class="stamp draft">{{ _('Minutes not drafted yet') }}</span>{% endif %}</p>
+
+<h2>{{ _('Attendance') }}</h2>
+<table><thead><tr><th>{{ _('Name') }}</th><th>{{ _('Capacity') }}</th><th>{{ _('Attendance') }}</th></tr></thead><tbody>
+{% for r in attendance %}<tr><td>{{ r.member_name }}</td><td>{{ _('Member') }}</td>
+  <td>{% if r.attended %}{{ _('Present') }}{% elif r.proxy_name %}{{ _('Represented by proxy') }}: {{ r.proxy_name }}{% elif r.apology_received %}{{ _('Absent with apology') }}{% elif not r.attendance_status %}{{ _('Invited') }}{% else %}{{ _('Absent') }}{% endif %}</td></tr>{% endfor %}
+{% for x in externals %}<tr><td>{{ x.full_name }}{% if x.organisation %} ({{ x.organisation }}){% endif %}</td><td>{{ x.role }} — {{ _('External') }}</td><td>{{ code_label(x.attendance_status, 'attendance') }}</td></tr>{% endfor %}
+{% if not attendance and not externals %}<tr><td colspan="3" class="muted">{{ _('Attendance has not been recorded for this meeting.') }}</td></tr>{% endif %}
+</tbody></table>
+
+<h2>{{ _('Agenda') }}</h2>
+<div class="body">{{ meeting.agenda or _('No agenda provided') }}</div>
+
+<h2>{{ _('Minutes') }}</h2>
+<div class="body" dir="auto">{{ version.body if version else '' }}</div>
+
+<h2>{{ _('Resolutions') }}</h2>
+<table><thead><tr><th>{{ _('No.') }}</th><th>{{ _('Resolution') }}</th><th>{{ _('For') }}</th><th>{{ _('Against') }}</th><th>{{ _('Abstain') }}</th><th>{{ _('Result') }}</th></tr></thead><tbody>
+{% for r in resolutions %}{% set res = r.vote_result or ('passed' if (r.votes_for or 0) > (r.votes_against or 0) else 'deferred') %}
+<tr><td>{{ r.decision_number or r.decision_reference or '-' }}</td>
+  <td dir="auto">{% if r.decision_title %}<strong>{{ r.decision_title }}</strong><br>{% endif %}{{ r.decision_text or r.decision_description }}
+  {% if r.dissent_notes or r.dissenting_reasons %}<div class="muted">{{ _('Dissent:') }} {{ r.dissent_notes or r.dissenting_reasons }}</div>{% endif %}</td>
+  <td>{{ r.votes_for or 0 }}</td><td>{{ r.votes_against or 0 }}</td><td>{{ r.votes_abstain or 0 }}</td><td>{{ code_label(res, 'resolution') }}</td></tr>
+{% else %}<tr><td colspan="6" class="muted">{{ _('No resolutions recorded.') }}</td></tr>{% endfor %}
+</tbody></table>
+
+<h2>{{ _('Action items') }}</h2>
+<table><thead><tr><th>#</th><th>{{ _('Action') }}</th><th>{{ _('Owner') }}</th><th>{{ _('Due date') }}</th><th>{{ _('Status') }}</th></tr></thead><tbody>
+{% for a in actions %}<tr><td>{{ a.action_number or a.id }}</td><td dir="auto">{{ a.action_description }}</td><td>{{ a.owner_display }}</td>
+  <td>{{ a.due_date or '-' }}{% if a.overdue %} ({{ _('Overdue') }}){% endif %}</td><td>{{ code_label(a.status or 'PENDING', 'action_status') }}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">{{ _('No action items.') }}</td></tr>{% endfor %}
+</tbody></table>
+
+<h2>{{ _('Signatures') }}</h2>
+<table class="sig"><tr><th>{{ _('Chair') }}</th><th>{{ _('Secretary') }}</th></tr><tr><td></td><td></td></tr></table>
+<p class="muted">{{ _('Printed on %(date)s', date=today.isoformat()) }}</p>
+</body>
+<script src="/static/js/csp_helpers.js" nonce="{{ csp_nonce }}"></script>
+</html>

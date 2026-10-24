@@ -274,24 +274,48 @@ def dashboard():
         overdue=[f for f in open_findings if f['overdue']],
         expiring=expiring, pending_review=pending_review, open_alerts=open_alerts,
         pending_params=pending_params, review_params=review_params,
-        licence_type=engine.company_licence_type())
+        licence_type=engine.company_licence_type(), run_queue_count=_queued_runs())
+
+
+def _queued_runs():
+    try:
+        from . import run_queue
+        return run_queue.queued_count()
+    except Exception:
+        get_db().rollback()  # table missing before the migration is applied
+        return 0
 
 
 @bp.route('/run-due', methods=['POST'])
 @rc_required('admin')
 def run_due():
-    job = engine.enqueue_due()
-    if job:
-        flash(_('Scheduled run queued. Results appear as each control finishes.'), 'info')
-    else:
-        engine.run_sweeps()
-        counts = engine.run_due()
-        evidence_svc.sweep_expiry()
-        findings_svc.sweep_overdue()
-        alerts_svc.sweep_escalations()
-        flash(_('Due controls run: %(n)s.', n=sum(counts.values())), 'success')
+    """Queue the scheduled sweep; it runs from the queue page or the queue processor."""
+    engine.enqueue_due(current_user.id)
     _log('regcontrols_run_due')
-    return redirect(url_for('regcontrols.dashboard'))
+    flash(_('Scheduled run queued. Process the queue now, or let the queue processor run it.'), 'info')
+    return redirect(url_for('regcontrols.run_queue_page'))
+
+
+@bp.route('/run-queue')
+@rc_required('view')
+def run_queue_page():
+    from . import run_queue
+    return render_template('regcontrols/run_queue.html', items=run_queue.items(),
+                           queued=run_queue.queued_count())
+
+
+@bp.route('/run-queue/process', methods=['POST'])
+@rc_required('admin')
+def run_queue_process():
+    """Administrator: process queued runs now (all, or one item)."""
+    from . import run_queue
+    qid = request.form.get('queue_id', type=int)
+    run_queue.requeue_stale()
+    out = run_queue.process(limit=50, user_id=current_user.id, queue_id=qid)
+    _log('regcontrols_run_queue_process', qid, f"done={out['done']} failed={out['failed']}")
+    flash(_('Queue processed: %(done)s run(s) finished, %(failed)s failed.', done=out['done'], failed=out['failed']),
+          'success' if not out['failed'] else 'warning')
+    return redirect(url_for('regcontrols.run_queue_page'))
 
 
 # ------------------------------------------------------------------ controls
@@ -380,7 +404,7 @@ def control_run(control_id):
         flash(_('Control run finished: %(status)s', status=run['status']),
               'success' if run['status'] == 'pass' else 'warning')
     else:
-        flash(_('Control run queued. Refresh in a moment to see the result.'), 'info')
+        flash(_('Control run queued. It runs when the queue is processed (Run queue page).'), 'info')
     _log('regcontrols_run_control', control_id, control['control_code'])
     return redirect(url_for('regcontrols.control_detail', control_id=control_id))
 

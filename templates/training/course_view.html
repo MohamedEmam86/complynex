@@ -134,13 +134,13 @@
                     {% if has_video and not enrollment.video_completed %}
                     <i class="bi bi-play-circle display-4 text-warning"></i>
                     <h6 class="mt-3 fw-bold">{{ _('Video Completion Required') }}</h6>
-                    <p class="small text-muted">{{ _('You must watch the entire video before taking the quiz. Scrubbing is disabled.') }}</p>
+                    <p class="small text-muted">{{ _('You must watch at least %(pct)s%% of the video before taking the quiz. Scrubbing is disabled.', pct=watch_threshold|default(90)) }}</p>
 
                     <div class="progress mt-3" style="height: 10px;">
                         <div id="videoProgressBar" class="progress-bar bg-warning" role="progressbar" style="width: 0%">
                         </div>
                     </div>
-                    <small id="progressText" class="text-muted">{{ _('0%% watched') }}</small>
+                    <small id="progressText" class="text-muted">{{ watch_pct|default(0) }}% {{ _('watched') }}</small>
                     {% else %}
                     <i class="bi bi-journal-check display-4 text-primary"></i>
                     <h6 class="mt-3 fw-bold">{{ _('Assessment Ready') }}</h6>
@@ -150,10 +150,15 @@
 
                 <div id="quizAction"
                     class="{{ 'd-none' if has_video and not enrollment.video_completed else '' }}">
+                    {% if attempts_left is not none and attempts_left <= 0 %}
+                    <div class="alert alert-danger small mb-0">{{ _('You have used all %(n)s quiz attempts. Ask the training administrator for an additional attempt.', n=attempts_allowed) }}</div>
+                    {% else %}
                     <a href="{{ url_for('training.take_quiz', id=course.id) }}"
                         class="btn btn-primary btn-lg w-100 py-3 shadow-sm">
                         <i class="bi bi-pencil-square me-2"></i> {{ _('Take Course Quiz') }}
                     </a>
+                    {% if attempts_left is not none %}<div class="small text-muted text-center mt-2">{{ _('Attempts remaining: %(left)s of %(n)s', left=attempts_left, n=attempts_allowed) }}</div>{% endif %}
+                    {% endif %}
                 </div>
                 {% endif %}
                 {% else %}
@@ -288,73 +293,53 @@
         video.addEventListener('loadedmetadata', updatePlayerBar);
     }
 
+    // Progress comes from the SERVER (watch time it credited from heartbeats);
+    // the page never declares the video complete itself.
+    let serverPct = {{ watch_pct|default(0) }};
+    const thresholdPct = {{ watch_threshold|default(90) }};
     function updateProgressBar() {
-        const duration = video.duration;
-        if (duration) {
-            const percent = (maxSeenTime / duration) * 100;
-            const bar = document.getElementById('videoProgressBar');
-            const text = document.getElementById('progressText');
-            if (bar) bar.style.width = percent + '%';
-            if (text) text.innerText = Math.round(percent) + '% watched';
-        }
+        const bar = document.getElementById('videoProgressBar');
+        const text = document.getElementById('progressText');
+        if (bar) bar.style.width = Math.min(100, serverPct * 100 / thresholdPct) + '%';
+        if (text) text.innerText = serverPct + '% ' + {{ _('watched')|tojson }} + ' (' + {{ _('required')|tojson }} + ' ' + thresholdPct + '%)';
     }
 
-    setInterval(function () {
-        if (!video.paused && !isCompleted) {
-            saveProgress(false);
-        }
-    }, 5000);
-
-    video.addEventListener('ended', function () {
-        if (!isCompleted) {
-            saveProgress(true);
-        }
-    });
-
-    function saveProgress(completed) {
+    let unlocked = isCompleted;
+    function heartbeat(playing) {
+        if (unlocked) return;
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        fetch("{{ url_for('training.update_progress', id=course.id) }}", {
+        fetch({{ url_for('training.heartbeat', id=course.id)|tojson }}, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({
-                seconds: Math.floor(video.currentTime),
-                completed: completed,
-                duration: video.duration
-            })
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+            body: JSON.stringify({playing: playing, duration: isFinite(video.duration) ? Math.round(video.duration) : null})
         })
             .then(response => response.json())
             .then(data => {
-                if (completed && data.success) {
+                if (!data.success) return;
+                serverPct = data.pct;
+                updateProgressBar();
+                if (data.completed && !unlocked) {
+                    unlocked = true;
                     const quizAction = document.getElementById('quizAction');
                     if (quizAction) quizAction.classList.remove('d-none');
-
-                    // Change UI to Assessment Ready
-                    const learningProgressCard = document.querySelector('.col-md-4 .card-body');
-                    if (learningProgressCard) {
-                        learningProgressCard.innerHTML = `
-                                <div class="text-center mb-4">
-                                    <i class="bi bi-journal-check display-4 text-primary"></i>
-                                    <h6 class="mt-3 fw-bold">{{ _('Assessment Ready') }}</h6>
-                                    <p class="small text-muted">Video completed! Please take the quiz to finish the course.</p>
-                                </div>
-                                <div id="quizAction">
-                                    <a href="{{ url_for('training.take_quiz', id=course.id) }}"
-                                        class="btn btn-primary btn-lg w-100 py-3 shadow-sm">
-                                        <i class="bi bi-pencil-square me-2"></i> {{ _('Take Course Quiz') }}
-                                    </a>
-                                </div>
-                            `;
-                    }
+                    const text = document.getElementById('progressText');
+                    if (text) text.innerText = {{ _('Video requirement met. You can now take the quiz.')|tojson }};
                 }
             });
     }
 
-    // Initial progress bar update
-    if (video.duration) updateProgressBar();
-    else video.addEventListener('loadedmetadata', updateProgressBar);
+    // While playing: a heartbeat every 5 seconds. Pausing/ending closes the
+    // viewing session so idle time is never credited.
+    let hbTimer = null;
+    video.addEventListener('play', function () {
+        heartbeat(true);
+        if (!hbTimer) hbTimer = setInterval(function () { if (!video.paused) heartbeat(true); }, 5000);
+    });
+    video.addEventListener('pause', function () { heartbeat(false); });
+    video.addEventListener('ended', function () { heartbeat(false); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden && !video.paused) video.pause(); });
+
+    updateProgressBar();
     });
 </script>
 {% endblock %}

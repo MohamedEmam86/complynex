@@ -288,6 +288,17 @@
                                     </button>
                                 </form>
                                 {% endif %}
+                                {% set at = attempts.get(e.id) if attempts else none %}
+                                {% if at %}
+                                <div class="small text-muted">{{ _('Quiz attempts: %(used)s of %(allowed)s', used=at.used, allowed=at.allowed) }}</div>
+                                {% if e.status != 'completed' and at.remaining == 0 %}
+                                <form method="POST" action="{{ url_for('training.grant_attempt', enrollment_id=e.id) }}" class="d-flex gap-1 mt-1">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input name="reason" class="form-control form-control-sm" placeholder="{{ _('Reason') }}" required>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">{{ _('Grant attempt') }}</button>
+                                </form>
+                                {% endif %}
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}

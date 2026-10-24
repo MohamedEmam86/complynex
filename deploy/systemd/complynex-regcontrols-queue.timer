@@ -1,0 +1,14 @@
+# Not installed or enabled automatically. To enable (main instance):
+#   sudo cp deploy/systemd/complynex-regcontrols-queue.* /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now complynex-regcontrols-queue.timer
+# For the demo instance, copy with WorkingDirectory/ExecStart pointing at /var/www/complynex-demo.
+[Unit]
+Description=Process queued ComplyNex control runs every 5 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

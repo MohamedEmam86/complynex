@@ -72,8 +72,7 @@
                                                 class="bi bi-hourglass-split me-1"></i>{{ _('Pending Approval')
                                             }}</span>
                                         {% else %}
-                                        <span class="badge bg-secondary-soft text-secondary">{{ policy.status|capitalize
-                                            }}</span>
+                                        <span class="badge bg-secondary-soft text-secondary">{{ code_label(policy.status, 'policy_status') }}</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ policy.effective_date }}</td>

@@ -5,7 +5,11 @@
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">{{ _('Review Declaration') }}</h1>
+    {% if escalation_only %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">{{ _('Back') }}</a>
+    {% else %}
     <a href="{{ url_for('coi.pending_review') }}" class="btn btn-outline-secondary">{{ _('Back to List') }}</a>
+    {% endif %}
 </div>
 
 <div class="row">
@@ -129,17 +133,16 @@
                                 <td class="ps-3">
                                     <span
                                         class="badge {{ 'bg-success' if log.action == 'approved' else 'bg-primary' if log.action == 'submitted' else 'bg-warning' if log.action == 'clarification_requested' else 'bg-info' }}">
-                                        {{ log.action.replace('_', ' ').title() }}
+                                        {{ code_label(log.action, 'coi_status') }}
                                     </span>
                                 </td>
                                 <td>{{ log.performer_name or 'System' }}</td>
                                 <td>
                                     {% if log.status_before %}
-                                    <small class="text-muted">{{ log.status_before.replace('_', ' ') }}</small>
+                                    <small class="text-muted">{{ code_label(log.status_before, 'coi_status') }}</small>
                                     <i class="bi bi-arrow-right mx-1"></i>
                                     {% endif %}
-                                    <span class="fw-bold">{{ log.status_after.replace('_', ' ') if log.status_after else
-                                        'N/A' }}</span>
+                                    <span class="fw-bold">{{ code_label(log.status_after, 'coi_status') if log.status_after else _('N/A') }}</span>
                                 </td>
                                 <td>{{ log.created_at }}</td>
                                 <td class="pe-3 small text-muted">{{ log.comments or '---' }}</td>
@@ -176,7 +179,9 @@
                             <i class="bi bi-check-circle"></i> {{ _('Approve Declaration') }}
                         </button>
 
-                        {% if not mitigation_plan %}
+                        {% if escalation_only %}
+                        <div class="alert alert-warning small py-2 mb-0">{{ _('This declaration was escalated to you for a decision. You can approve it, ask for clarification or escalate it further.') }}</div>
+                        {% elif not mitigation_plan %}
                         <button type="submit" name="action" value="mitigate" class="btn btn-primary">
                             <i class="bi bi-shield-check"></i> {{ _('Require Mitigation Plan') }}
                         </button>

@@ -36,7 +36,7 @@
                         class="btn btn-outline-secondary rounded-pill px-3">
                         <i class="bi bi-clock-history me-2"></i>{{ _('History') }}
                     </a>
-                    {% if current_user.is_compliance_officer() %}
+                    {% if current_user.is_compliance_officer() and (policy.status or '')|lower not in ('published', 'archived') %}
                     <a href="{{ url_for('policies.edit_policy', id=policy.id) }}"
                         class="btn btn-primary rounded-pill px-3">
                         <i class="bi bi-pencil me-2"></i>{{ _('Edit Policy') }}
@@ -47,20 +47,37 @@
         </div>
     </div>
 
+    {% if (policy.status or '')|lower == 'archived' %}
+    <div class="alert alert-secondary d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div><i class="bi bi-lock me-1"></i> {{ _('Archived version — read-only.') }}
+            {% if superseded_by %}{{ _('Superseded by version %(v)s on %(date)s.', v=superseded_by.version, date=(policy.superseded_at.strftime('%Y-%m-%d') if policy.superseded_at else '')) }}{% endif %}</div>
+        {% if superseded_by %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('policies.view_policy', id=superseded_by.id) }}">{{ _('Open the current version') }}</a>{% endif %}
+    </div>
+    {% elif open_draft %}
+    <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div><i class="bi bi-pencil-square me-1"></i> {{ _('Version %(v)s of this policy is being prepared (%(status)s).', v=open_draft.version, status=code_label(open_draft.status, 'policy_status')) }}</div>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('policies.view_policy', id=open_draft.id) }}">{{ _('Open the draft') }}</a>
+    </div>
+    {% endif %}
+    {% if previous_version and (policy.status or '')|lower != 'archived' %}
+    <div class="alert alert-light border small">{{ _('Revises version %(v)s.', v=previous_version.version) }} {% if policy.change_summary %}<strong>{{ _('Change notes:') }}</strong> {{ policy.change_summary }}{% endif %}
+        <a href="{{ url_for('policies.version_history', id=policy.id) }}">{{ _('Version history') }}</a></div>
+    {% endif %}
+
     <!-- Policy Status Stepper -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body py-4 px-5">
             <h6 class="fw-bold text-uppercase text-muted small mb-4">{{ _('Policy Lifecycle Status') }}</h6>
             <div class="policy-stepper d-flex align-items-center justify-content-between position-relative">
                 {% set statuses = [
-                ('draft', 'bi-pencil', 'Draft'),
-                ('pending_approval', 'bi-send-check', 'Submitted for Approval'),
-                ('approved', 'bi-check2-all', 'Approved'),
-                ('published', 'bi-broadcast', 'Published')
+                ('draft', 'bi-pencil', _('Draft')),
+                ('pending_approval', 'bi-send-check', _('Submitted for Approval')),
+                ('approved', 'bi-check2-all', _('Approved')),
+                ('published', 'bi-broadcast', _('Published'))
                 ] %}
                 {% set status_order = {'draft': 0, 'pending_approval': 1, 'approved': 2, 'published': 3, 'archived': 4}
                 %}
-                {% set current_step = status_order.get(policy.status, 0) %}
+                {% set current_step = status_order.get((policy.status or '')|lower, 0) %}
 
                 <!-- Progress line background -->
                 <div class="stepper-line position-absolute"
@@ -114,7 +131,7 @@
                     <td>{{ s.stage_order }}</td>
                     <td>{{ s.stage_name }}</td>
                     <td>{% if s.first_name %}{{ s.first_name }} {{ s.last_name }}{% else %}<span class="text-muted">{{ s.approver_role or _('Unassigned') }}</span>{% endif %}</td>
-                    <td><span class="badge bg-{{ {'approved': 'success', 'rejected': 'danger', 'skipped': 'secondary'}.get(s.status, 'warning') }}">{{ s.status }}</span></td>
+                    <td><span class="badge bg-{{ {'approved': 'success', 'rejected': 'danger', 'skipped': 'secondary'}.get(s.status, 'warning') }}">{{ code_label(s.status, 'policy_status') }}</span></td>
                     <td class="small text-muted">{{ s.comments or '' }}</td>
                 </tr>
                 {% endfor %}
@@ -431,6 +448,16 @@
                         </form>
                         {% endif %}
 
+                        {% if policy.status == 'published' and not open_draft %}
+                        <form method="POST" action="{{ url_for('policies.new_version', id=policy.id) }}" class="border rounded p-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <label class="form-label small fw-semibold text-muted">{{ _('Change notes for the new version') }}</label>
+                            <textarea name="change_summary" class="form-control form-control-sm mb-2" rows="2" required placeholder="{{ _('What changes and why') }}"></textarea>
+                            <button type="submit" class="btn btn-outline-primary w-100 rounded-pill py-2">
+                                <i class="bi bi-files me-2"></i>{{ _('New version') }}
+                            </button>
+                        </form>
+                        {% endif %}
                         {% if policy.status == 'published' %}
                         <form method="POST" action="{{ url_for('policies.archive_policy', id=policy.id) }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

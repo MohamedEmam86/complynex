@@ -281,6 +281,8 @@ def request_verification(finding_id, user_id, db=None):
                (datetime.now(), finding_id))
     add_event(finding_id, 'verification_requested', None, user_id, db=db)
     db.commit()
+    from .notify import verification_requested
+    verification_requested(finding_id, user_id, db=db)
 
 
 def verify(finding_id, user_id, manual_note=None, db=None):

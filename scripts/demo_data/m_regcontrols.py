@@ -36,6 +36,8 @@ def seed(ctx):
              JOIN rc_controls c ON c.id = fc.control_id WHERE fc.finding_id = f.id""")
     ctx.q("""UPDATE rc_corrective_actions a SET owner_user_id = f.owner_user_id FROM rc_findings f
              WHERE f.id = a.finding_id""")
-    lt = ctx.one("SELECT code FROM rc_licence_types WHERE pack_code = 'fra_nbfi' ORDER BY code LIMIT 1")
+    # Nile Microfinance holds a microfinance licence (not the first code alphabetically).
+    lt = ctx.one("SELECT code FROM rc_licence_types WHERE pack_code = 'fra_nbfi' "
+                 "ORDER BY (code = 'microfinance') DESC, code LIMIT 1")
     if lt:
         ctx.q("UPDATE corp_profile SET licence_type = %s", (lt['code'],))
