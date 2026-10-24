@@ -17,6 +17,10 @@
                 <input type="hidden" name="inline" value="1">
                 <button class="btn btn-sm btn-primary"><i class="bi bi-play-circle me-1"></i>{{ _('Run now') }}</button>
             </form>
+            <form method="post" action="{{ url_for('regcontrols.control_run', control_id=control.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-sm btn-outline-secondary" title="{{ _('Add to the run queue (processed by the queue processor or an administrator)') }}"><i class="bi bi-hourglass-split me-1"></i>{{ _('Queue run') }}</button>
+            </form>
             <a class="btn btn-sm btn-outline-primary" href="{{ url_for('regcontrols.evidence_new', control_id=control.id) }}"><i class="bi bi-file-earmark-plus me-1"></i>{{ _('Add evidence') }}</a>
             <a class="btn btn-sm btn-outline-danger" href="{{ url_for('regcontrols.finding_new', control=control.control_code) }}"><i class="bi bi-flag me-1"></i>{{ _('Raise finding') }}</a>
             {% endif %}

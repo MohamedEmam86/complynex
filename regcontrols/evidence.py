@@ -125,6 +125,9 @@ def record_evidence(control, title, *, valid_from=None, valid_to=None, descripti
         attach_file(ev_id, file_path, file_name, submitted_by, db=db)
     if status == 'approved':
         _after_approval(ctrl['id'], db)
+    else:
+        from .notify import evidence_submitted
+        evidence_submitted(ev_id, db=db)  # reviewers: in-app + background email; never raises
     return ev_id
 
 

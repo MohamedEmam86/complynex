@@ -37,8 +37,9 @@ without a bound check fall back to the generic evidence check when they are
 evidence-based; a person can also record a manual test result.
 
 Scheduling: scripts/regcontrols_run.py (cron) calls run_due() and the
-sweeps; the UI "Run now" button enqueues job_run_control() on the existing
-RQ 'events' queue and falls back to running inline when Redis is down.
+sweeps. The UI "Run now" button runs a control inline; queued runs go to the
+database queue rc_run_queue (run_queue.py), processed by
+scripts/regcontrols_process_queue.py or an administrator's "Process queue now".
 """
 
 import importlib
@@ -382,28 +383,26 @@ def latest_runs(control_id, limit=20, db=None):
     """, (control_id, limit)).fetchall()]
 
 
-# ------------------------------------------------------------------ RQ jobs
+# ------------------------------------------------------------------ queued runs
 def enqueue_run(control_code, user_id=None):
-    """Hand a manual run to the RQ worker. Returns the job id, or None when the
-    queue is unavailable (the caller then runs inline)."""
-    try:
-        from events.queue import get_queue
-        job = get_queue().enqueue('regcontrols.engine.job_run_control', control_code, user_id, job_timeout=600)
-        return job.id
-    except Exception:
-        logger.warning('regcontrols: RQ unavailable, running %s inline', control_code, exc_info=True)
+    """Queue a run of one control in this instance's database queue
+    (rc_run_queue, see run_queue.py). Returns the queue id, or None when
+    the control does not exist."""
+    control = get_control(control_code)
+    if not control:
         return None
+    from . import run_queue
+    return run_queue.enqueue(control['id'], user_id, kind='control')
 
 
-def enqueue_due():
-    try:
-        from events.queue import get_queue
-        return get_queue().enqueue('regcontrols.engine.job_run_due', job_timeout=3600).id
-    except Exception:
-        logger.warning('regcontrols: RQ unavailable for scheduled run', exc_info=True)
-        return None
+def enqueue_due(user_id=None):
+    """Queue a full scheduled sweep (due controls + expiry/overdue/escalation sweeps)."""
+    from . import run_queue
+    return run_queue.enqueue(None, user_id, kind='due')
 
 
+# RQ entry points kept for jobs already sitting in an RQ queue from before the
+# database queue existed.
 def _app():
     from events.dispatcher import _get_app
     return _get_app()
