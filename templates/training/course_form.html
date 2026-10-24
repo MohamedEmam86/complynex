@@ -78,6 +78,33 @@
                                 max="100" value="{{ course.passing_score if course else 70 }}">
                         </div>
 
+                        <div class="col-md-6">
+                            <label for="language" class="form-label">{{ _('Course language') }}</label>
+                            <select class="form-select" id="language" name="language">
+                                <option value="" {{ 'selected' if not course or not course.language }}>{{ _('Bilingual (follow the user interface language)') }}</option>
+                                <option value="ar" {{ 'selected' if course and course.language == 'ar' }}>{{ _('Arabic') }}</option>
+                                <option value="en" {{ 'selected' if course and course.language == 'en' }}>{{ _('English') }}</option>
+                            </select>
+                            <div class="form-text">{{ _('The quiz is served in this language; a question without a translation falls back to the other language.') }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="max_quiz_attempts" class="form-label">{{ _('Maximum quiz attempts') }}</label>
+                            <input type="number" class="form-control" id="max_quiz_attempts" name="max_quiz_attempts" min="1" max="20"
+                                value="{{ course.max_quiz_attempts if course and course.max_quiz_attempts else 3 }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="completion_threshold_pct" class="form-label">{{ _('Video watch threshold') ~ ' (%)' }}</label>
+                            <input type="number" class="form-control" id="completion_threshold_pct" name="completion_threshold_pct" min="10" max="100"
+                                value="{{ course.completion_threshold_pct if course and course.completion_threshold_pct else 90 }}">
+                            <div class="form-text">{{ _('Share of the video that must actually be watched (measured by the server) before the quiz opens.') }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="video_duration_seconds" class="form-label">{{ _('Video length (seconds)') }}</label>
+                            <input type="number" class="form-control" id="video_duration_seconds" name="video_duration_seconds" min="1"
+                                value="{{ course.video_duration_seconds if course and course.video_duration_seconds else '' }}">
+                            <div class="form-text">{{ _('Leave blank to take it from the video player the first time the video is played.') }}</div>
+                        </div>
+
                         <!-- Video Section -->
                         <div class="col-12">
                             <h6 class="border-bottom pb-2 mt-3">{{ _('Video Content') }}</h6>

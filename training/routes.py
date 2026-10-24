@@ -86,10 +86,22 @@ def training_report():
         enrollments = TrainingEnrollment.get_all_enrollments(filters)
         users = User.get_by_departments(dept_ids)
 
+    from database.db import get_db as _gdb
+    from training import watch as W
+    used = {r['enrollment_id']: r['n'] for r in _gdb().execute(
+        "SELECT enrollment_id, count(*) AS n FROM training_quiz_attempts GROUP BY enrollment_id").fetchall()}
+    course_by_id = {c.id: c for c in courses}
+    attempts = {}
+    for e in enrollments:
+        c = course_by_id.get(e.course_id)
+        allowed = W.max_attempts(c.max_quiz_attempts if c else None) + int(e.extra_quiz_attempts or 0)
+        attempts[e.id] = {'used': used.get(e.id, 0), 'allowed': allowed,
+                          'remaining': max(0, allowed - used.get(e.id, 0))}
     return render_template('training/report.html',
                          enrollments=enrollments,
                          courses=courses,
-                         users=users)
+                         users=users,
+                         attempts=attempts)
 
 @training_bp.route('/api/unassigned-courses/<int:user_id>')
 @login_required
@@ -144,9 +156,20 @@ def view_course(id):
     enrollment = next((e for e in TrainingEnrollment.get_user_enrollments(current_user.id) 
                       if e.course_id == id), None)
     
+    from training import watch as W
+    length = W.video_length(course.video_duration_seconds, None, course.duration_minutes)
+    attempts_left = None
+    if enrollment:
+        attempts_left = W.attempts_remaining(course.max_quiz_attempts, len(enrollment.quiz_attempts()),
+                                             enrollment.extra_quiz_attempts)
     return render_template('training/course_view.html',
                          course=course,
-                         enrollment=enrollment)
+                         enrollment=enrollment,
+                         watch_pct=W.watched_pct(enrollment.watched_seconds, length) if enrollment else 0,
+                         watch_threshold=W.threshold_pct(course.completion_threshold_pct),
+                         attempts_left=attempts_left,
+                         attempts_allowed=W.max_attempts(course.max_quiz_attempts) +
+                         (int(enrollment.extra_quiz_attempts or 0) if enrollment else 0))
 
 @training_bp.route('/course/<int:id>/asset/<asset_type>')
 @login_required
@@ -174,51 +197,100 @@ def course_asset(id, asset_type):
 @login_required
 @permission_required('training', level='view')
 def take_quiz(id):
-    """Take course quiz"""
+    """Take course quiz. Eligibility, the attempt limit and grading are all
+    enforced here (server side); the quiz is served in the course's language."""
+    from training import watch as W
+    from flask import session as _session
     course = TrainingCourse.get_by_id(id)
     if not course:
         flash(_('Course not found.'), 'danger')
         return redirect(url_for("training.course_library"))
-    enrollment = next((e for e in TrainingEnrollment.get_user_enrollments(current_user.id) 
+    enrollment = next((e for e in TrainingEnrollment.get_user_enrollments(current_user.id)
                       if e.course_id == id), None)
-                      
+
     if not enrollment or enrollment.status == 'completed':
         flash(gettext('You are not eligible for this quiz or have already completed it.'), 'warning')
         return redirect(url_for('training.view_course', id=id))
 
     has_video = bool(course.video_file_path or course.video_url)
     if has_video and not enrollment.video_completed:
-        flash(gettext('You must watch the entire training video before taking the quiz.'), 'warning')
+        flash(gettext('You must watch at least %(pct)s%% of the training video before taking the quiz.',
+                      pct=W.threshold_pct(course.completion_threshold_pct)), 'warning')
         return redirect(url_for('training.view_course', id=id))
 
-    questions = course.get_questions()
-    
+    used = len(enrollment.quiz_attempts())
+    remaining = W.attempts_remaining(course.max_quiz_attempts, used, enrollment.extra_quiz_attempts)
+    if remaining <= 0:
+        flash(gettext('You have used all %(n)s quiz attempts for this course. Ask the training administrator for an additional attempt.',
+                      n=W.max_attempts(course.max_quiz_attempts) + int(enrollment.extra_quiz_attempts or 0)), 'danger')
+        return redirect(url_for('training.view_course', id=id))
+
+    lang = W.quiz_language(getattr(course, 'language', None), _session.get('lang'))
+    questions = [W.localize_question(q, lang) for q in course.get_questions()]
+
     if request.method == 'POST':
-        # Grade quiz
         score = 0
         total = len(questions)
         if total == 0:
-            score_percent = 100 # Auto-pass if no questions
+            score_percent = 100  # Auto-pass if no questions
         else:
-            for i, q in enumerate(questions):
+            for q in questions:
                 answer = request.form.get(f'q_{q["id"]}')
                 if answer == str(q['correct_answer']):
-                    score += q['points']
-            
-            total_points = sum(q['points'] for q in questions)
+                    score += q['points'] or 0
+            total_points = sum((q['points'] or 0) for q in questions)
             score_percent = int((score / total_points) * 100) if total_points > 0 else 100
-            
+
         success, cert_num = enrollment.complete(score_percent)
+        attempt_no = enrollment.record_attempt(score_percent, bool(success), lang, request.remote_addr)
+        left = remaining - 1
         if success:
-            AuditLog.log(current_user.id, 'Training Completion', 'Training', enrollment.id, f'Passed course {course.course_code} with {score_percent}%', request.remote_addr)
-            flash(f'Congratulations! You passed with {score_percent}% and earned a certificate.', 'success')
+            AuditLog.log(current_user.id, 'Training Completion', 'Training', enrollment.id,
+                         f'Passed course {course.course_code} with {score_percent}% (attempt {attempt_no})', request.remote_addr)
+            flash(gettext('Congratulations! You passed with %(score)s%% and earned a certificate.', score=score_percent), 'success')
         else:
-            AuditLog.log(current_user.id, 'Training Failed', 'Training', enrollment.id, f'Failed course {course.course_code} with {score_percent}%', request.remote_addr)
-            flash(f'You scored {score_percent}%, which is below the passing score of {course.passing_score}%. Please review the materials and try again.', 'warning')
-            
+            AuditLog.log(current_user.id, 'Training Failed', 'Training', enrollment.id,
+                         f'Failed course {course.course_code} with {score_percent}% (attempt {attempt_no}, {left} left)', request.remote_addr)
+            if left > 0:
+                flash(gettext('You scored %(score)s%%, below the passing score of %(pass)s%%. Attempts remaining: %(left)s.',
+                              score=score_percent, **{'pass': course.passing_score, 'left': left}), 'warning')
+            else:
+                flash(gettext('You scored %(score)s%%, below the passing score of %(pass)s%%. No attempts remain; ask the training administrator for an additional attempt.',
+                              score=score_percent, **{'pass': course.passing_score}), 'danger')
         return redirect(url_for('training.view_course', id=id))
-        
-    return render_template('training/quiz.html', course=course, questions=questions)
+
+    return render_template('training/quiz.html', course=course, questions=questions, quiz_lang=lang,
+                           attempts_remaining=remaining, attempts_used=used)
+
+
+@training_bp.route('/enrollment/<int:enrollment_id>/grant-attempt', methods=['POST'])
+@login_required
+@permission_required('training', level='view')
+def grant_attempt(enrollment_id):
+    """A training administrator grants one more quiz attempt, with a reason (tracked)."""
+    from database.db import get_db as _gdb
+    db = _gdb()
+    row = db.execute("SELECT * FROM training_enrollments WHERE id = %s", (enrollment_id,)).fetchone()
+    if not row:
+        flash(gettext('Enrollment not found.'), 'danger')
+        return redirect(url_for('training.training_report'))
+    target = User.get_by_id(row['employee_id']) if row['employee_id'] else None
+    if not (current_user.can_manage_training() and (current_user.is_compliance_officer() or
+                                                     current_user.can_assign_training_to(target))):
+        flash(gettext('Access denied.'), 'danger')
+        return redirect(url_for('training.list_courses'))
+    reason = (request.form.get('reason') or '').strip()
+    if not reason:
+        flash(gettext('Give the reason for granting an additional attempt.'), 'danger')
+        return redirect(request.referrer or url_for('training.training_report'))
+    db.execute("INSERT INTO training_attempt_grants (enrollment_id, granted_by, attempts, reason) VALUES (%s,%s,1,%s)",
+               (enrollment_id, current_user.id, reason))
+    db.execute("UPDATE training_enrollments SET extra_quiz_attempts = COALESCE(extra_quiz_attempts, 0) + 1 WHERE id = %s",
+               (enrollment_id,))
+    db.commit()
+    AuditLog.log(current_user.id, 'Training Attempt Granted', 'Training', enrollment_id, reason, request.remote_addr)
+    flash(gettext('An additional quiz attempt was granted.'), 'success')
+    return redirect(request.referrer or url_for('training.training_report'))
 
 @training_bp.route('/certificates')
 @login_required
@@ -239,6 +311,16 @@ def edit_course(id=None):
         
     course = TrainingCourse.get_by_id(id) if id else None
     return render_template('training/course_form.html', course=course)
+
+def _pos_int(v, lo=1, hi=None):
+    try:
+        n = int(str(v).strip())
+    except (TypeError, ValueError):
+        return None
+    if n < lo:
+        return None
+    return min(n, hi) if hi else n
+
 
 @training_bp.route('/manage/course/<int:id>/save', methods=['POST'])
 @login_required
@@ -297,12 +379,16 @@ def save_course(id):
         # must never store raw attacker-controlled HTML/JS (stored-XSS
         # audit finding).
         'content': sanitize_html(request.form.get('content')),
-        'is_mandatory': request.form.get('is_mandatory') == 'on',
-        'is_active': request.form.get('is_active') == 'on',
+        'is_mandatory': 1 if request.form.get('is_mandatory') == 'on' else 0,  # integer columns
+        'is_active': 1 if request.form.get('is_active') == 'on' else 0,
         'created_by': current_user.id,
         'presentation_path': presentation_path,
         'video_file_path': video_path,
-        'external_link': request.form.get('external_link')
+        'external_link': request.form.get('external_link'),
+        'language': request.form.get('language') if request.form.get('language') in ('en', 'ar') else None,
+        'video_duration_seconds': _pos_int(request.form.get('video_duration_seconds')),
+        'completion_threshold_pct': _pos_int(request.form.get('completion_threshold_pct'), 10, 100),
+        'max_quiz_attempts': _pos_int(request.form.get('max_quiz_attempts'), 1, 20),
     }
     
     # If updating, merge new paths with old if not replaced%s 
@@ -530,27 +616,25 @@ def bulk_enroll_users():
 
     return redirect(url_for('training.training_report'))
 
-@training_bp.route('/course/<int:id>/update-progress', methods=['POST'])
+@training_bp.route('/course/<int:id>/heartbeat', methods=['POST'])
+@training_bp.route('/course/<int:id>/update-progress', methods=['POST'])  # older player pages
 @login_required
 @permission_required('training', level='view')
-def update_progress(id):
-    """Update video watching progress"""
-    from flask import request, jsonify
-    
-    enrollment = next((e for e in TrainingEnrollment.get_user_enrollments(current_user.id) 
+def heartbeat(id):
+    """Player heartbeat (every few seconds while the video plays). The server
+    credits watch time from its own clock; any 'completed' flag sent by the
+    client is ignored."""
+    from flask import jsonify
+    course = TrainingCourse.get_by_id(id)
+    enrollment = next((e for e in TrainingEnrollment.get_user_enrollments(current_user.id)
                       if e.course_id == id), None)
-    
-    if not enrollment:
+    if not course or not enrollment:
         return jsonify({'success': False, 'message': 'Enrollment not found'}), 404
-        
-    data = request.get_json()
-    seconds = data.get('seconds', 0)
-    completed = data.get('completed', False)
-    video_duration = data.get('duration')
+    data = request.get_json(silent=True) or {}
+    playing = data.get('playing', True) is not False
+    result = enrollment.heartbeat(course, playing=playing, reported_duration=data.get('duration'))
+    return jsonify(dict(success=True, **result))
 
-    if enrollment.update_progress(seconds, completed, video_duration=video_duration):
-        return jsonify({'success': True})
-    return jsonify({'success': False, 'message': 'No update needed or already completed'})
 @training_bp.route('/certificate/<int:cert_id>/download')
 @login_required
 def download_certificate(cert_id):
