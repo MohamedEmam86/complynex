@@ -39,7 +39,7 @@ IDENTITY_LABEL = {
     'id_conflict': ('Different national ID', 'conflict'),
     'dob_conflict': ('Date of birth differs', 'conflict'),
     'gender_conflict': ('Gender differs (from the national ID)', 'conflict'),
-    'country_conflict': ('Nationality differs', 'conflict'),
+    'country_conflict': ('Nationality differs (does not lower the name score)', 'unknown'),
     'corroborated': ('An identifier agrees', 'match'),
     'unknown': ('No identifier to compare — decided on the name', 'unknown'),
 }
@@ -175,8 +175,13 @@ def match_view(m, kind, inputs):
         return {'label': label, 'screened': screened or '—', 'listed': listed or '—', 'state': state}
 
     nid_state = {'id_match': 'match', 'id_conflict': 'conflict', 'gender_conflict': 'conflict'}.get(ident, 'unknown')
-    dob_state = 'conflict' if ident == 'dob_conflict' else ('match' if ident in ('corroborated', 'id_match') else 'unknown')
-    nat_state = 'conflict' if ident == 'country_conflict' else ('match' if ident in ('corroborated', 'id_match') else 'unknown')
+    _st = {'agree': 'match', 'differ': 'conflict'}
+    if 'dob' in d or 'country' in d:
+        dob_state = _st.get(d.get('dob'), 'unknown')
+        nat_state = _st.get(d.get('country'), 'unknown')
+    else:                       # results saved before these fields existed
+        dob_state = 'conflict' if ident == 'dob_conflict' else ('match' if ident in ('corroborated', 'id_match') else 'unknown')
+        nat_state = 'conflict' if ident == 'country_conflict' else ('match' if ident in ('corroborated', 'id_match') else 'unknown')
     identity_rows = [r for r in (
         row('National ID', _mask_id(inputs.get('national_id')), _mask_id(listed_nid), nid_state),
         row('Date of birth', _first(inputs.get('dob')), listed_dob, dob_state),

@@ -97,7 +97,7 @@ def set_fingerprint(entity_ids):
 
 def whitelist_from_false_positive(name, matches, reason, cleared_by,
                                   customer_id=None, alert_id=None,
-                                  risk_band=None, normalized_name=None):
+                                  risk_band=None, normalized_name=None, approved_by=None):
     """Clear a name against its whole current match set.
 
     `matches` is the list the screening run actually returned — each item
@@ -120,17 +120,29 @@ def whitelist_from_false_positive(name, matches, reason, cleared_by,
                      m.get('match_score') or m.get('score'),
                      fingerprint(ent)))
 
+    # Whitelist governance: an entry suppresses alerts only once someone other
+    # than the person who cleared it has approved it (approved_by); otherwise
+    # it waits as 'Pending Approval'. Review date: 12 months.
+    from screening.clearance import default_review_date
+    status = 'Active' if approved_by and approved_by != cleared_by else 'Pending Approval'
     wl = db.execute("""INSERT INTO screening_whitelist
             (name, normalized_name, reason, added_by, added_at, status,
              scope, screening_frequency, last_screened_at, next_screening_at,
-             source_alert_id, customer_id, cleared_match_count, match_set_fingerprint)
-          VALUES (%s,%s,%s,%s,to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'),'Active',
-                  'match_set',%s,NOW(),NOW() + %s,%s,%s,%s,%s)
+             source_alert_id, customer_id, cleared_match_count, match_set_fingerprint,
+             review_date, requested_by, requested_at, request_reason,
+             approved_by, approval_date, approval_basis)
+          VALUES (%s,%s,%s,%s,to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'),%s,
+                  'match_set',%s,NOW(),NOW() + %s,%s,%s,%s,%s,
+                  %s,%s,NOW(),%s,%s,
+                  CASE WHEN %s = 'Active' THEN to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') END,
+                  CASE WHEN %s = 'Active' THEN 'mlro' END)
           RETURNING id""",
-        (name, norm, reason, cleared_by, freq,
+        (name, norm, reason, cleared_by, status, freq,
          FREQUENCIES.get(freq, FREQUENCIES['monthly']),
          alert_id, customer_id, len(rows),
-         set_fingerprint([r[0] for r in rows]))).fetchone()
+         set_fingerprint([r[0] for r in rows]),
+         default_review_date().isoformat(), cleared_by, reason,
+         approved_by if status == 'Active' else None, status, status)).fetchone()
     wid = dict(wl)['id']
 
     for eid, ename, esrc, score, fp in rows:

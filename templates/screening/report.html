@@ -132,11 +132,11 @@
             <div><span class="label">{{ _('Status:') }}</span>
                 <span
                     class="fw-bold {% if result.screening_result == 'CLEAR' %}text-success{% else %}text-danger{% endif %}">
-                    {{ result.screening_result }}
+                    {{ result.screening_result|scr_label }}
                     {% if result.status and result.status != 'PENDING' %}
                     &nbsp;→&nbsp;
                     <span style="color: {% if result.status == 'FALSE_POSITIVE' %}green{% else %}red{% endif %}; font-weight:bold;">
-                        {% if result.status == 'FALSE_POSITIVE' %}✅ CLEARED (False Positive){% elif result.status == 'TRUE_HIT' %}🚨 CONFIRMED HIT{% else %}{{ result.status }}{% endif %}
+                        {% if result.status == 'FALSE_POSITIVE' %}✅ CLEARED (False Positive){% elif result.status == 'TRUE_HIT' %}🚨 CONFIRMED HIT{% else %}{{ result.status|scr_label }}{% endif %}
                     </span>
                     {% endif %}
                 </span>
@@ -195,7 +195,7 @@
                         <span
                             class="badge {% if match.entity_type == 'ENTITY' %}bg-info{% else %}bg-secondary{% endif %}"
                             style="color: #333; border: 1px solid #ccc; font-weight: normal;">
-                            {{ match.entity_type or 'INDIVIDUAL' }}
+                            {{ (match.entity_type or 'INDIVIDUAL')|scr_label('entity') }}
                         </span>
                     </div>
                     <div><span class="label">{{ _('Nationality:') }}</span> {{ match.nationality or 'N/A' }}</div>

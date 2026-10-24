@@ -1,0 +1,40 @@
+{# Decision history of one hit + pending four-eyes request. Expects: decisions, pending, can_approve #}
+{% if pending %}
+<div class="card border-warning border-2 shadow-sm mb-3">
+  <div class="card-header bg-warning bg-opacity-25"><strong><i class="bi bi-hourglass-split me-1"></i>{{ _('Waiting for MLRO approval') }}</strong></div>
+  <div class="card-body small">
+    <p class="mb-1">{{ _('Proposed decision') }}: <strong>{{ pending.proposed_decision|scr_label('decision') }}</strong></p>
+    <p class="mb-1">{{ _('Decided by') }}: {{ pending.requested_by_name or '—' }} · {{ pending.requested_at.strftime('%d %b %Y %H:%M') if pending.requested_at }}</p>
+    <p class="mb-2">{{ _('Reason') }}: <span class="fst-italic">{{ pending.reason }}</span></p>
+    <p class="text-muted mb-2">{{ _('The clearance does not take effect until the MLRO approves it.') }}</p>
+    {% if can_approve and pending.requested_by != current_user.id %}
+    <form method="POST" action="{{ url_for('screening.approval_decide', rid=pending.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <textarea name="comment" class="form-control form-control-sm mb-2" rows="2" required minlength="5" placeholder="{{ _('Comment (required)') }}"></textarea>
+      <div class="d-flex gap-2">
+        <button name="action" value="approve" class="btn btn-sm btn-success flex-fill"><i class="bi bi-check2"></i> {{ _('Approve') }}</button>
+        <button name="action" value="reject" class="btn btn-sm btn-outline-danger flex-fill"><i class="bi bi-x"></i> {{ _('Reject') }}</button>
+      </div>
+    </form>
+    {% elif pending.requested_by == current_user.id %}
+    <div class="text-muted">{{ _('Your decision — another person must approve it.') }}</div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-header bg-light"><strong><i class="bi bi-clock-history me-1"></i>{{ _('Decision history') }}</strong></div>
+  <ul class="list-group list-group-flush small">
+    {% for d in decisions %}
+    <li class="list-group-item">
+      <div class="d-flex justify-content-between"><strong>{{ d.action|scr_label('action') }}</strong>
+        <span class="text-muted">{{ d.created_at.strftime('%d %b %Y %H:%M') if d.created_at }}</span></div>
+      <div>{{ d.decision|scr_label('decision') }} · {{ d.actor_name or d.actor_email or '—' }}</div>
+      {% if d.reason %}<div class="fst-italic text-muted">{{ d.reason }}</div>{% endif %}
+    </li>
+    {% else %}
+    <li class="list-group-item text-muted">{{ _('No decision recorded yet.') }}</li>
+    {% endfor %}
+  </ul>
+</div>

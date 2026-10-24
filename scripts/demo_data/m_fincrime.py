@@ -1227,6 +1227,7 @@ class Seeder:
         c, r = self.c, self.r
         from services import ongoing_screening as OS
         from screening.routes import get_engine
+        from screening.clearance import add_months
         from database.db import get_db
         db = get_db()
         self.commit()
@@ -1256,12 +1257,15 @@ class Seeder:
             ms = [m for m in matches if (m.get('match_score') or 0) >= 70]
             band = 'MODERATE' if cu['kind'] == 'CORPORATE' else 'LOW'
             wid = OS.whitelist_from_false_positive(cu['en'], ms, f'Cleared at onboarding screening: {notes}', aml,
-                                                   customer_id=cu['id'], risk_band=band)
+                                                   customer_id=cu['id'], risk_band=band, approved_by=mlro)
             nxt = when + OS.FREQUENCIES[OS.frequency_for(band)]
             db.execute("""UPDATE screening_whitelist SET added_at = %s, last_screened_at = %s, next_screening_at = %s,
                           risk_band = %s, risk_band_by = %s, risk_band_at = %s, approved_by = %s, approval_date = %s,
+                          review_date = %s, requested_at = %s, approval_comment = %s,
                           entity_type = %s, date_of_birth = %s, nationality = %s WHERE id = %s""",
-                       (self.ts(when), when, nxt, band, c.uid('co'), when, c.uid('co'), self.ts(when),
+                       (self.ts(when), when, nxt, band, c.uid('co'), when, mlro, self.ts(when + timedelta(hours=6)),
+                        add_months(when.date(), 12).isoformat(),
+                        when, 'Evidence reviewed; clearance approved (four-eyes).',
                         'Entity' if cu['kind'] == 'CORPORATE' else 'Individual',
                         c.one("SELECT date_of_birth FROM customers WHERE id=%s", (cu['id'],))['date_of_birth'],
                         cu['nat'], wid))

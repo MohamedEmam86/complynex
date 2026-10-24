@@ -74,7 +74,7 @@
                                     {% else %}<span class="text-muted small">{{ a.age_days }}d</span>{% endif %}
                                 </td>
                                 <td>
-                                    <span class="badge bg-{{ 'danger' if a.alert_status=='OPEN' else ('warning' if a.alert_status=='ESCALATED' else 'success') }}">{{ a.alert_status }}</span>
+                                    <span class="badge bg-{{ 'danger' if a.alert_status=='OPEN' else ('warning' if a.alert_status=='ESCALATED' else 'success') }}">{{ a.alert_status|scr_label }}</span>
                                     {% if a.false_positive %}<span class="badge bg-secondary">FP</span>{% endif %}
                                 </td>
                                 <td>

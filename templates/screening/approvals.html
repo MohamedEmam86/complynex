@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}{{ _('MLRO approvals') }}{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <nav aria-label="breadcrumb"><ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="{{ url_for('screening.dashboard') }}">{{ _('Screening') }}</a></li>
+    <li class="breadcrumb-item active">{{ _('MLRO approvals') }}</li>
+  </ol></nav>
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <h2 class="mb-0"><i class="bi bi-person-check text-primary"></i> {{ _('MLRO approvals') }}</h2>
+    <div>
+      <a href="{{ url_for('screening.screening_queue') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-inbox"></i> {{ _('Review queue') }}</a>
+      <a href="{{ url_for('screening.manage_whitelist', filter='pending') }}" class="btn btn-sm btn-outline-success"><i class="bi bi-shield-check"></i> {{ _('Whitelist') }}</a>
+    </div>
+  </div>
+  <div class="alert alert-info small">
+    <i class="bi bi-info-circle me-1"></i>
+    {{ _('Four-eyes rule: clearing a hit from a sanctions list, or a hit scoring at or above the threshold, takes effect only after a second person with approval authority approves it. The approver must be someone other than the officer who made the decision.') }}
+    <strong>{{ _('Threshold') }}: {{ '%.0f'|format(threshold) }}</strong>
+    · <a href="{{ url_for('screening.config') }}">{{ _('Change in screening settings') }}</a>
+  </div>
+  {% if not can_approve %}
+  <div class="alert alert-warning small"><i class="bi bi-lock me-1"></i>{{ _('You can follow these requests but only the MLRO (approval authority) can decide them.') }}</div>
+  {% endif %}
+
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link {{ 'active' if show != 'decided' }}" href="{{ url_for('screening.approvals') }}">{{ _('Waiting for approval') }}</a></li>
+    <li class="nav-item"><a class="nav-link {{ 'active' if show == 'decided' }}" href="{{ url_for('screening.approvals', show='decided') }}">{{ _('Decided') }}</a></li>
+  </ul>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-light"><strong><i class="bi bi-shield-exclamation me-1"></i>{{ _('Hit clearances') }}</strong>
+      <span class="badge bg-secondary ms-1">{{ reqs|length }}</span></div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr>
+          <th>{{ _('Screened name') }}</th><th>{{ _('Listed name') }}</th><th>{{ _('Score') }}</th>
+          <th>{{ _('List') }}</th><th>{{ _('Proposed decision') }}</th><th>{{ _('Decided by') }}</th>
+          <th>{{ _('Reason') }}</th><th>{% if show == 'decided' %}{{ _('MLRO decision') }}{% else %}{{ _('Action') }}{% endif %}</th>
+        </tr></thead>
+        <tbody>
+        {% for r in reqs %}
+          <tr>
+            <td><a href="{{ url_for('screening.queue_review', id=r.target_id) if r.target_type == 'queue' else url_for('screening.view_result', id=r.target_id) }}" class="fw-semibold">{{ r.entity_name or '—' }}</a></td>
+            <td class="small">{{ r.match_name or '—' }}</td>
+            <td><span class="badge {{ 'bg-danger' if (r.match_score or 0) >= 90 else 'bg-warning text-dark' }}">{{ '%.1f'|format(r.match_score or 0) }}%</span></td>
+            <td class="small">{% if r.list_source %}{{ r.list_source|scr_label('source') }}{% else %}—{% endif %}
+              {% if r.is_sanctions %}<div><span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ _('Sanctions list') }}</span></div>{% endif %}</td>
+            <td>{{ r.proposed_decision|scr_label('decision') }}</td>
+            <td class="small">{{ r.requested_by_name or '—' }}<div class="text-muted">{{ r.requested_at.strftime('%d %b %Y %H:%M') if r.requested_at }}</div></td>
+            <td class="small" style="max-width:260px">{{ r.reason }}</td>
+            <td style="min-width:250px">
+              {% if r.status == 'pending' %}
+                {% if can_approve and r.requested_by != current_user.id %}
+                <form method="POST" action="{{ url_for('screening.approval_decide', rid=r.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <textarea name="comment" class="form-control form-control-sm mb-1" rows="2" required minlength="5"
+                            placeholder="{{ _('Comment (required)') }}"></textarea>
+                  <div class="d-flex gap-1">
+                    <button name="action" value="approve" class="btn btn-sm btn-success flex-fill"><i class="bi bi-check2"></i> {{ _('Approve') }}</button>
+                    <button name="action" value="reject" class="btn btn-sm btn-outline-danger flex-fill"><i class="bi bi-x"></i> {{ _('Reject') }}</button>
+                  </div>
+                </form>
+                {% elif r.requested_by == current_user.id %}
+                <span class="text-muted small">{{ _('Your decision — another person must approve it.') }}</span>
+                {% else %}<span class="badge bg-warning text-dark">{{ 'pending'|scr_label }}</span>{% endif %}
+              {% else %}
+                <span class="badge {{ 'bg-success' if r.status == 'approved' else 'bg-danger' }}">{{ r.status|scr_label }}</span>
+                <div class="small">{{ r.decided_by_name }} · {{ r.decided_at.strftime('%d %b %Y %H:%M') if r.decided_at }}</div>
+                <div class="small fst-italic">{{ r.decision_comment }}</div>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="text-center text-muted py-4">{{ _('Nothing waiting.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if show != 'decided' %}
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light"><strong><i class="bi bi-shield-check me-1"></i>{{ _('Whitelist entries waiting for approval') }}</strong>
+      <span class="badge bg-secondary ms-1">{{ wl|length }}</span></div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr>
+          <th>{{ _('Name') }}</th><th>{{ _('Reason') }}</th><th>{{ _('Review date') }}</th>
+          <th>{{ _('Requested by') }}</th><th>{{ _('Action') }}</th>
+        </tr></thead>
+        <tbody>
+        {% for w in wl %}
+          <tr>
+            <td><a href="{{ url_for('screening.whitelist_case', id=w.id) }}" class="fw-semibold">{{ w.name }}</a>
+              <div class="small text-muted">{{ (w.entity_type or 'Individual')|scr_label('entity') }}</div></td>
+            <td class="small" style="max-width:320px">{{ w.request_reason or w.reason }}</td>
+            <td class="small">{{ w.review_date or '—' }}</td>
+            <td class="small">{{ w.requested_by_name or '—' }}<div class="text-muted">{{ w.requested_at.strftime('%d %b %Y %H:%M') if w.requested_at }}</div></td>
+            <td style="min-width:250px">
+              {% if can_approve and (w.requested_by or w.added_by) != current_user.id %}
+              <form method="POST" action="{{ url_for('screening.whitelist_approval', id=w.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ url_for('screening.approvals') }}">
+                <textarea name="comment" class="form-control form-control-sm mb-1" rows="2" required minlength="5"
+                          placeholder="{{ _('Comment (required)') }}"></textarea>
+                <div class="d-flex gap-1">
+                  <button name="action" value="approve" class="btn btn-sm btn-success flex-fill">{{ _('Approve') }}</button>
+                  <button name="action" value="reject" class="btn btn-sm btn-outline-danger flex-fill">{{ _('Reject') }}</button>
+                </div>
+              </form>
+              {% elif (w.requested_by or w.added_by) == current_user.id %}
+              <span class="text-muted small">{{ _('Your request — another person must approve it.') }}</span>
+              {% else %}<span class="badge bg-warning text-dark">{{ 'Pending Approval'|scr_label }}</span>{% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="text-center text-muted py-4">{{ _('Nothing waiting.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

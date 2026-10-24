@@ -88,7 +88,7 @@
       <tr class="{% if r.status == 'open' %}table-warning{% endif %}">
         <td><strong>{{ r.entity_name }}</strong></td>
         <td class="small">{{ (r.matched_name or '—')[:38] }}</td>
-        <td><span class="badge bg-dark">{{ r.list_source or '—' }}</span></td>
+        <td><span class="badge bg-dark">{{ (r.list_source or '—')|scr_label('source') }}</span></td>
         <td><span class="badge bg-{{ 'danger' if r.list_type=='sanctions' else ('warning text-dark' if r.list_type=='pep' else 'secondary') }}">{{ r.list_type or '—' }}</span></td>
         <td>{% if r.match_score %}<span class="badge bg-secondary">{{ '%.0f'|format(r.match_score) }}%</span>{% else %}—{% endif %}</td>
         <td class="small">
@@ -98,12 +98,12 @@
         <td class="small">{{ r.action_taken or '—' }}
           {% if r.str_reference %}<div class="text-success" style="font-size:11px">
             <i class="bi bi-file-earmark-check"></i> {{ r.str_reference }}</div>{% endif %}</td>
-        <td><span class="badge bg-{{ 'warning text-dark' if r.status=='open' else ('info' if r.status=='reported' else 'secondary') }}">{{ r.status }}</span></td>
+        <td><span class="badge bg-{{ 'warning text-dark' if r.status=='open' else ('info' if r.status=='reported' else 'secondary') }}">{{ r.status|scr_label }}</span></td>
         <td class="text-end">
           {% if can_edit %}
           <button class="btn btn-sm btn-outline-primary js-cm" data-id="{{ r.id }}"
                   data-name="{{ r.entity_name }}" data-action="{{ r.action_taken or '' }}"
-                  data-str="{{ r.str_reference or '' }}" data-status="{{ r.status }}"
+                  data-str="{{ r.str_reference or '' }}" data-status="{{ r.status|scr_label }}"
                   data-notes="{{ r.notes or '' }}">{{ _('Update') }}</button>
           {% endif %}
         </td>

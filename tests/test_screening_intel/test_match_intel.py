@@ -58,8 +58,10 @@ def _m(score, ar, nid=None, nat=None):
 
 def test_decision_tiers():
     name = 'نبيل علي محمود البوشي'
-    # complete name, no identifiers -> confirmed on the name (agreed rule)
-    assert mi.decide(_m(100, name), name)['decision']['tier'] == 'CONFIRMED'
+    # complete name, no identifiers -> at most a potential match (no
+    # identifier agrees, so the engine never confirms on the name alone)
+    m = mi.decide(_m(100, name), name)
+    assert m['decision']['tier'] == 'POTENTIAL' and m['match_score'] < mi.CONFIRMED
     # same name, different valid ID -> never confirmed
     m = mi.decide(_m(100, name, nid='26404101900276'), name, national_id='28812011234567')
     assert m['decision']['tier'] != 'CONFIRMED'
@@ -119,3 +121,63 @@ def test_gender_from_national_id():
     assert v['verdict'] == 'id_conflict'
     v = mi.identity_verdict('29001011234561', listed_gender='female')            # 13th digit 6 -> female? (6 even)
     assert v['verdict'] in ('gender_conflict', 'unknown', 'corroborated')
+
+
+# ---- identifier rule and nationality only adding (2026-11) ----------------
+def test_name_and_country_alone_never_confirm():
+    name = 'نبيل علي محمود البوشي'
+    m = mi.decide(_m(100, name, nat='Egyptian'), name, nationality='EG')
+    assert m['decision']['tier'] == 'POTENTIAL'
+    assert mi.overall_status([m]) == 'POTENTIAL_MATCH'
+    assert m['decision']['country'] == 'agree' and not m['decision']['identifier_match']
+
+
+def test_dob_agreement_is_an_identifier_and_confirms():
+    name = 'نبيل علي محمود البوشي'
+    hit = dict(_m(100, name), date_of_birth='1964-04-10')
+    m = mi.decide(hit, name, dob='1964-04-10')
+    assert m['decision']['tier'] == 'CONFIRMED' and m['decision']['identifier_match']
+
+
+def test_passport_match_is_an_identifier():
+    name = 'نبيل علي محمود البوشي'
+    hit = dict(_m(90, name), passport_number='A12345678')
+    m = mi.decide(hit, name, passport='a-12345678')
+    assert m['decision']['tier'] == 'CONFIRMED' and m['match_score'] == 100
+
+
+def test_different_nationality_never_lowers_the_name_score():
+    name = 'نبيل علي محمود البوشي'
+    base = mi.decide(_m(90, name), name)['match_score']
+    diff = mi.decide(_m(90, name, nat='Palestinian'), name, nationality='EG')
+    assert diff['match_score'] >= base
+    assert diff['decision']['country'] == 'differ'
+    missing = mi.decide(_m(90, name), name, nationality='EG')
+    assert missing['match_score'] >= base
+
+
+def test_country_agreement_still_counts_without_an_id():
+    # listed record without a national ID: names + country decide, and a
+    # matching country lifts a short-form hit above a plain lead
+    v = mi.identity_verdict(None, None, 'EG', None, None, ['Egyptian'])
+    assert v['verdict'] == 'corroborated' and v['country'] == 'agree'
+    plain = mi.decide(_m(100, 'هاني نبيل'), 'هاني نبيل حمدي الدسوقي')
+    with_c = mi.decide(_m(100, 'هاني نبيل', nat='Egyptian'), 'هاني نبيل حمدي الدسوقي', nationality='EG')
+    assert with_c['match_score'] > plain['match_score']
+    assert with_c['decision']['tier'] != 'CONFIRMED'
+
+
+def test_dob_and_country_disagreement_kept_apart():
+    v = mi.identity_verdict(None, '1964', 'EG', None, '1964', ['Syrian'])
+    assert v['verdict'] == 'corroborated' and v['identifier_match'] and v['country'] == 'differ'
+
+
+def test_engine_country_scoring_only_adds():
+    f = mi.country_score_adjust
+    assert f(80, 'Egypt', 'Egyptian') == 88
+    assert f(80, 'EG', 'مصر') == 88
+    assert f(80, 'Egypt', 'Syria') == 80
+    assert f(80, 'Syria', 'Egypt') == 80
+    assert f(80, 'Syria', 'Syria') == 88
+    assert f(80, None, 'Syria') == 80
+    assert f(80, 'Egypt', '') == 80

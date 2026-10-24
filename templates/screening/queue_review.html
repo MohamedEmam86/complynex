@@ -7,7 +7,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url_for('screening.screening_queue') }}">{{ _('Queue') }}</a></li>
-            <li class="breadcrumb-item active">Review #{{ item.id }}</li>
+            <li class="breadcrumb-item active">{{ _('Review') }} #{{ item.id }}</li>
         </ol>
     </nav>
 
@@ -19,7 +19,7 @@
                     <i class="bi bi-shield-exclamation me-2 fs-4"></i>
                     <div>
                         <h5 class="mb-0">{{ _('Screening Match Review') }}</h5>
-                        <small>Case #{{ item.id }} — {{ item.created_at }}</small>
+                        <small>{{ _('Case') }} #{{ item.id }} — {{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at and item.created_at.strftime is defined else item.created_at }}</small>
                     </div>
                     {% if item.escalated %}
                     <span class="badge bg-danger ms-auto"><i class="bi bi-arrow-up-circle"></i> {{ _('Escalated') }}</span>
@@ -32,9 +32,9 @@
                             <h6 class="text-muted mb-1">{{ _('Screened Entity') }}</h6>
                             <div class="border rounded p-3 bg-light">
                                 <div class="fw-bold fs-5">{{ item.entity_name }}</div>
-                                <span class="badge bg-primary">{{ item.entity_type or 'Individual' }}</span>
+                                <span class="badge bg-primary">{{ (item.entity_type or 'Individual')|scr_label('entity') }}</span>
                                 {% if item.source_module %}
-                                <span class="badge bg-secondary">{{ item.source_module }}</span>
+                                <span class="badge bg-secondary">{{ item.source_module|scr_label('module') }}</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -42,7 +42,7 @@
                             <h6 class="text-muted mb-1">{{ _('Watchlist Match') }}</h6>
                             <div class="border rounded p-3 bg-light">
                                 <div class="fw-bold fs-5 text-danger">{{ item.match_name or 'N/A' }}</div>
-                                <span class="badge bg-secondary">{{ item.list_source or 'Unknown List' }}</span>
+                                <span class="badge bg-secondary">{{ (item.list_source or 'Unknown')|scr_label('source') }}</span>
                             </div>
                         </div>
                     </div>
@@ -79,7 +79,7 @@
                         <div class="alert alert-light border d-flex align-items-center justify-content-between">
                             <div>
                                 <strong>{{ _('Official Record Source') }}</strong><br>
-                                <small class="text-muted">{{ item.list_source }}</small>
+                                <small class="text-muted">{{ item.list_source|scr_label('source') }}</small>
                             </div>
                             <a href="{{ match_details.source_url }}" target="_blank"
                                 class="btn btn-sm btn-outline-primary">
@@ -113,14 +113,14 @@
                             <strong>{{ _('Priority:') }}</strong>
                             <span
                                 class="badge {% if item.priority == 'High' %}bg-danger{% elif item.priority == 'Medium' %}bg-warning text-dark{% else %}bg-info{% endif %}">
-                                {{ item.priority }}
+                                {{ item.priority|scr_label }}
                             </span>
                         </div>
                         <div class="col-auto">
                             <strong>{{ _('Status:') }}</strong>
                             <span
-                                class="badge {% if item.status == 'Pending' %}bg-warning text-dark{% elif item.status == 'In Review' %}bg-info{% else %}bg-success{% endif %}">
-                                {{ item.status }}
+                                class="badge {% if item.status == 'Pending' %}bg-warning text-dark{% elif item.status == 'In Review' %}bg-info{% elif item.status == 'Pending MLRO Approval' %}bg-warning text-dark border border-dark{% else %}bg-success{% endif %}">
+                                {{ item.status|scr_label }}
                             </span>
                         </div>
                         {% if item.assigned_to %}
@@ -133,11 +133,10 @@
                     {% if history %}
                     <div class="alert alert-light border mb-0">
                         <strong><i class="bi bi-info-circle"></i> {{ _('Screening Context:') }}</strong>
-                        Screening #{{ history.id }} — {{ history.screening_type }} via {{ history.source_module or
-                        'Manual' }}
-                        | Total matches: {{ history.total_matches_found }}
-                        | High risk: {{ history.high_risk_matches }}
-                        | Auto-cleared: {{ history.auto_cleared_matches }}
+                        {{ _('Screening') }} #{{ history.id }} — {{ (history.screening_type or 'Manual')|scr_label('module') }} · {{ (history.source_module or 'Manual')|scr_label('module') }}
+                        | {{ _('Total matches') }}: {{ history.total_matches_found or 0 }}
+                        | {{ _('High risk') }}: {{ history.high_risk_matches or 0 }}
+                        | {{ _('Auto-cleared') }}: {{ history.auto_cleared_matches or 0 }}
                     </div>
                     {% endif %}
                 </div>
@@ -146,7 +145,9 @@
 
         <!-- Right: Action Panel -->
         <div class="col-lg-5">
-            {% if item.status != 'Resolved' %}
+            {% include 'screening/_hit_decisions.html' %}
+            {% if item.status == 'Pending MLRO Approval' %}
+            {% elif item.status != 'Resolved' %}
             <div class="card border-0 shadow-sm border-top border-primary border-3">
                 <div class="card-header bg-white">
                     <h5 class="mb-0"><i class="bi bi-lightning-charge text-primary"></i> {{ _('Take Action') }}</h5>
@@ -163,6 +164,7 @@
                                     <i class="bi bi-shield-check text-success"></i>
                                     <strong>{{ _('False Positive') }}</strong> {{ _('→ Add to Whitelist') }}
                                     <br><small class="text-muted">{{ _('Entity cleared, auto-skip in future screenings') }}</small>
+                                    <br><small class="text-warning-emphasis">{{ _('Sanctions-list hits and strong matches take effect only after MLRO approval.') }}</small>
                                 </label>
                             </div>
 
@@ -230,7 +232,7 @@
                     <h5 class="mb-0"><i class="bi bi-check-circle"></i> {{ _('Resolved') }}</h5>
                 </div>
                 <div class="card-body">
-                    <p><strong>{{ _('Resolution:') }}</strong> {{ item.resolution }}</p>
+                    <p><strong>{{ _('Resolution:') }}</strong> {{ item.resolution|scr_label }}</p>
                     <p><strong>{{ _('Notes:') }}</strong> {{ item.resolution_notes or 'N/A' }}</p>
                     <p><strong>{{ _('Resolved by:') }}</strong> {{ item.resolved_name or item.resolved_email or (_('User #') ~ item.resolved_by) }}
                         {% if item.resolved_date %}<span class="text-muted small">&middot; {{ item.resolved_date }}</span>{% endif %}</p>

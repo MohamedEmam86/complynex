@@ -22,6 +22,9 @@
             <a href="{{ url_for('screening.screening_history_full') }}" class="btn btn-outline-secondary btn-sm me-1">
                 <i class="bi bi-clock-history"></i> {{ _('Full History') }}
             </a>
+            <a href="{{ url_for('screening.approvals') }}" class="btn btn-outline-primary btn-sm me-1">
+                <i class="bi bi-person-check"></i> {{ _('MLRO approvals') }}
+            </a>
             <a href="{{ url_for('screening.manage_whitelist') }}" class="btn btn-outline-success btn-sm me-1">
                 <i class="bi bi-shield-check"></i> {{ _('Whitelist') }}
             </a>
@@ -89,6 +92,7 @@
                         <option value="Pending" {{ 'selected' if status_filter=='Pending' }}>{{ _('Pending') }}</option>
                         <option value="In Review" {{ 'selected' if status_filter=='In Review' }}>{{ _('In Review') }}</option>
                         <option value="Resolved" {{ 'selected' if status_filter=='Resolved' }}>{{ _('Resolved') }}</option>
+                        <option value="Pending MLRO Approval" {{ 'selected' if status_filter=='Pending MLRO Approval' }}>{{ _('Pending MLRO approval') }}</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -176,7 +180,7 @@
                             </td>
                             <td>
                                 <strong>{{ entity_name }}</strong>
-                                <br><small class="text-muted">{{ group[0].entity_type or 'Individual' }}</small>
+                                <br><small class="text-muted">{{ (group[0].entity_type or 'Individual')|scr_label('entity') }}</small>
                             </td>
                             <td><span class="badge bg-secondary">{{ group|length }} Matches</span></td>
                             <td>
@@ -188,7 +192,7 @@
                             <td>
                                 <span
                                     class="badge {% if display_priority == 'High' %}bg-danger{% elif display_priority == 'Medium' %}bg-warning text-dark{% else %}bg-info{% endif %}">
-                                    {{ display_priority }}
+                                    {{ display_priority|scr_label }}
                                 </span>
                             </td>
                             <td>
@@ -244,12 +248,11 @@
                                                 <td><span
                                                         class="badge {% if item.match_score >= 90 %}bg-danger{% elif item.match_score >= 80 %}bg-warning text-dark{% else %}bg-info{% endif %}">{{
                                                         "%.1f"|format(item.match_score) }}%</span></td>
-                                                <td><small class="badge bg-secondary">{{ item.list_source or '-'
-                                                        }}</small></td>
+                                                <td><small class="badge bg-secondary">{{ (item.list_source or '-')|scr_label('source') }}</small></td>
                                                 <td>
                                                     <span
-                                                        class="badge {% if item.status == 'Pending' %}bg-warning text-dark{% elif item.status == 'In Review' %}bg-info{% elif item.status == 'Resolved' %}bg-success{% endif %}">
-                                                        {{ item.status }}
+                                                        class="badge {% if item.status == 'Pending' %}bg-warning text-dark{% elif item.status == 'In Review' %}bg-info{% elif item.status == 'Resolved' %}bg-success{% elif item.status == 'Pending MLRO Approval' %}bg-warning text-dark border border-dark{% endif %}">
+                                                        {{ item.status|scr_label }}
                                                     </span>
                                                 </td>
                                                 <td>
@@ -265,7 +268,7 @@
                                                     </div>
                                                     {% endif %}
                                                 </td>
-                                                <td><small>{{ item.resolution or '-' }}</small></td>
+                                                <td><small>{{ (item.resolution or '-')|scr_label }}</small></td>
                                                 <td class="text-end" data-stop-prop>
                                                     {% if item.status != 'Resolved' %}
                                                     <div class="btn-group btn-group-sm">

@@ -187,7 +187,7 @@
                             <td>{{ s.name }}</td>
                             <td>{{ s.last }}{% if s.age_h is not none %} <span class="text-muted">({{ s.age_h }}h)</span>{% endif %}</td>
                             <td>
-                                <span class="badge bg-{{ s.badge }}">{{ s.status }}</span>
+                                <span class="badge bg-{{ s.badge }}">{{ s.status|scr_label }}</span>
                                 {% if s.failures > 0 %}<span class="badge bg-danger">{{ s.failures }} {{ _('fails') }}</span>{% endif %}
                             </td>
                         </tr>
