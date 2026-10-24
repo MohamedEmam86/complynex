@@ -1,61 +1,141 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Suspicious Activity Reports') }}{% endblock %}
+{% block title %}{{ _('STR register') }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <div
-        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">{{ _('Suspicious Activity Reports (SAR)') }}</h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <a href="{{ url_for('aml.create_sar') }}" class="btn btn-sm btn-danger">
-                <i class="bi bi-exclamation-triangle"></i> {{ _('File New SAR') }}
-            </a>
+    <div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-3 border-bottom gap-2">
+        <div>
+            <h1 class="h2 mb-0">{{ _('STR register') }}</h1>
+            <div class="small text-muted">{{ _('One register of suspicion cases from every source — TM alerts, screening hits, employee reports, manual entries and other modules.') }}</div>
         </div>
+        <div class="btn-toolbar gap-2">
+            {% if current_user.role in ('compliance_manager', 'admin') %}
+            <a href="{{ url_for('aml.employee_report_inbox') }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-inbox"></i> {{ _('Employee reports') }}</a>
+            {% endif %}
+            <a href="{{ url_for('aml.alert_list') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-bell"></i> {{ _('TM alerts') }}</a>
+            <a href="{{ url_for('aml.sar_list', export='csv', **f) }}" class="btn btn-sm btn-outline-success"><i class="bi bi-filetype-csv"></i> {{ _('Export CSV') }}</a>
+            {% if current_user.can_edit('aml') %}
+            <a href="{{ url_for('aml.create_sar') }}" class="btn btn-sm btn-danger"><i class="bi bi-exclamation-triangle"></i> {{ _('File New SAR') }}</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="GET" class="row g-2 mb-3 align-items-end">
+        <div class="col-md-3"><label class="form-label small mb-0">{{ _('Search') }}</label>
+            <input type="search" name="q" value="{{ f.q }}" class="form-control form-control-sm" placeholder="{{ _('Reference, customer, description…') }}"></div>
+        <div class="col-auto"><label class="form-label small mb-0">{{ _('Status') }}</label>
+            <select name="status" class="form-select form-select-sm">
+                <option value="">{{ _('All Statuses') }}</option>
+                <option value="OPEN" {{ 'selected' if f.status == 'OPEN' }}>{{ _('Open') }}</option>
+                <option value="CLOSED" {{ 'selected' if f.status == 'CLOSED' }}>{{ _('Closed') }}</option>
+                {% for code, en, a in statuses %}<option value="{{ code }}" {{ 'selected' if f.status == code }}>{{ status_labels[code] }}</option>{% endfor %}
+            </select></div>
+        <div class="col-auto"><label class="form-label small mb-0">{{ _('Source') }}</label>
+            <select name="source" class="form-select form-select-sm">
+                <option value="">{{ _('All sources') }}</option>
+                {% for code, en, a in sources %}<option value="{{ code }}" {{ 'selected' if f.source == code }}>{{ source_labels[code] }}</option>{% endfor %}
+            </select></div>
+        <div class="col-auto"><label class="form-label small mb-0">{{ _('Assigned to') }}</label>
+            <select name="assignee" class="form-select form-select-sm">
+                <option value="">{{ _('Anyone') }}</option>
+                <option value="none" {{ 'selected' if f.assignee == 'none' }}>{{ _('Not assigned') }}</option>
+                {% for u in staff %}<option value="{{ u.id }}" {{ 'selected' if f.assignee == u.id|string }}>{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}
+            </select></div>
+        <div class="col-auto"><label class="form-label small mb-0">{{ _('Deadline') }}</label>
+            <select name="overdue" class="form-select form-select-sm">
+                <option value="">{{ _('Any') }}</option>
+                <option value="1" {{ 'selected' if f.overdue == '1' }}>{{ _('Overdue') }}</option>
+                <option value="soon" {{ 'selected' if f.overdue == 'soon' }}>{{ _('Due within 3 days') }}</option>
+            </select></div>
+        {% if f.register == '1' %}<input type="hidden" name="register" value="1">{% endif %}
+        <div class="col-auto"><button class="btn btn-primary btn-sm">{{ _('Filter') }}</button>
+            <a href="{{ url_for('aml.sar_list') }}" class="btn btn-outline-secondary btn-sm">{{ _('Reset') }}</a></div>
+    </form>
+
+    {% if f.register == '1' %}
+    <div class="alert alert-info py-2 small">{{ _('Showing the cases of the former unusual-transactions register (now part of this register).') }}
+        <a href="{{ url_for('aml.sar_list') }}" class="ms-2">{{ _('Show all cases') }}</a></div>
+    {% endif %}
+    <div class="small text-muted mb-2">
+        {% if cfg.days %}
+        {{ _('Statutory deadline: %(n)s day(s) from the %(basis)s.', n=cfg.days, basis=(_('detection date') if cfg.basis == 'detection' else _('MLRO decision to report'))) }}
+        <span class="badge bg-light text-dark border">{{ _('Regulatory parameter') if cfg.origin == 'parameter' else _('Local setting') }}</span>
+        {% else %}
+        {{ _('No statutory deadline is configured, so no case is flagged as overdue.') }}
+        {% endif %}
+        · {{ sars|length }} {{ _('case(s)') }}
     </div>
 
     <div class="card shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
                             <th>{{ _('Ref') }}</th>
+                            <th>{{ _('Source') }}</th>
                             <th>{{ _('Customer') }}</th>
                             <th>{{ _('Discovery Date') }}</th>
                             <th>{{ _('Amount') }}</th>
                             <th>{{ _('Status') }}</th>
+                            <th>{{ _('Assigned to') }}</th>
+                            <th>{{ _('Links') }}</th>
                             <th>{{ _('Deadline') }}</th>
-                            <th>{{ _('Actions') }}</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for sar in sars %}
-                        <tr>
-                            <td><code>{{ sar.sar_reference }}</code></td>
-                            <td>{{ sar.customer_name or 'N/A' }}</td>
-                            <td>{{ sar.discovery_date }}</td>
+                        {% set st = sar.investigation_status or 'NEW' %}
+                        <tr class="{{ 'table-danger' if sar.due and sar.due.overdue }}">
+                            <td><code>{{ sar.sar_reference }}</code>{% if sar.unusual_reference %}<div class="small text-muted">{{ sar.unusual_reference }}</div>{% endif %}</td>
+                            <td><span class="badge bg-light text-dark border">{{ source_labels.get(sar.source, sar.source) }}</span></td>
+                            <td>{{ sar.customer_display or '-' }}{% if sar.customer_reference %}<div class="small text-muted">{{ sar.customer_reference }}</div>{% endif %}</td>
+                            <td>{{ sar.discovery_date or '-' }}</td>
                             <td>{{ "{:,.2f}".format(sar.amount_involved or 0) }} {{ sar.currency or 'EGP' }}</td>
-                            <td>
-                                <span
-                                    class="badge {% if sar.investigation_status == 'NEW' %}bg-primary{% elif sar.investigation_status == 'FILE_SAR' %}bg-danger{% else %}bg-secondary{% endif %}">
-                                    {{ status_labels.get(sar.investigation_status or 'NEW', sar.investigation_status) }}
-                                </span>
+                            <td><span class="badge {% if st == 'NEW' %}bg-primary{% elif st in ('FILE_SAR', 'FILED') %}bg-danger{% elif st in ('NO_STR', 'CLOSED') %}bg-secondary{% else %}bg-warning text-dark{% endif %}">{{ status_labels.get(st, st) }}</span></td>
+                            <td>{{ sar.assigned_name or '-' }}</td>
+                            <td class="small text-nowrap"><i class="bi bi-bell"></i> {{ sar.alert_links }} · <i class="bi bi-arrow-left-right"></i> {{ sar.tx_links }}</td>
+                            <td class="small">
+                                {% if sar.due %}
+                                <span class="badge {{ 'bg-danger' if sar.due.overdue else ('bg-warning text-dark' if sar.due.days <= 3 else 'bg-info text-dark') }}">{{ due_text(sar.due) }}</span>
+                                <div class="text-muted font-monospace">{{ sar.due.deadline }}</div>
+                                {% else %}-{% endif %}
                             </td>
-                            <td class="text-danger font-monospace">{{ sar.sar_deadline or 'N/A' }}</td>
-                            <td>
-                                <a href="{{ url_for('aml.sar_detail', sar_id=sar.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('Investigate') }}</a>
-                            </td>
+                            <td><a href="{{ url_for('aml.sar_detail', sar_id=sar.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('Open') }}</a></td>
                         </tr>
                         {% else %}
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">{{ _('No SARs reported') }}</td>
-                        </tr>
+                        <tr><td colspan="10" class="text-center py-4 text-muted">{{ _('No SARs reported') }}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+
+    {% if missing %}
+    <div class="alert alert-warning mt-3 small">
+        <strong>{{ _('Detections that are not in the register yet') }}:</strong>
+        {% for m in missing[:20] %}<div>{{ m.source }} — {{ m.label }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% if can_configure %}
+    <div class="card mt-3"><div class="card-header fw-semibold small">{{ _('Statutory deadline setting') }}</div><div class="card-body">
+        <form method="POST" action="{{ url_for('aml.sar_deadline_setting') }}" class="row g-2 align-items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-auto"><label class="form-label small mb-0">{{ _('Days to the deadline') }}</label>
+                <input type="number" min="1" max="365" name="days" class="form-control form-control-sm" value="{{ cfg.days if cfg.origin == 'setting' else '' }}"></div>
+            <div class="col-auto"><label class="form-label small mb-0">{{ _('Counted from') }}</label>
+                <select name="basis" class="form-select form-select-sm">
+                    <option value="detection" {{ 'selected' if cfg.basis == 'detection' }}>{{ _('detection date') }}</option>
+                    <option value="decision" {{ 'selected' if cfg.basis == 'decision' }}>{{ _('MLRO decision to report') }}</option>
+                </select></div>
+            <div class="col-auto"><button class="btn btn-sm btn-outline-primary">{{ _('Save') }}</button></div>
+            <div class="col-12 small text-muted">{{ _('Set the number of days your regulator allows. A regulatory parameter (aml.str_filing_deadline_days), when defined, takes precedence over this local setting.') }}</div>
+        </form>
+    </div></div>
+    {% endif %}
 </div>
 {% endblock %}

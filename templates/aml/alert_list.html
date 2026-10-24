@@ -2,19 +2,22 @@
 {% block title %}{{ _('Transaction Monitoring Alerts') }}{% endblock %}
 {% block extra_css %}
 <style>
-.severity-HIGH { background:#f8d7da;color:#842029;padding:2px 8px;border-radius:4px;font-size:.8em;font-weight:600; }
+.severity-HIGH, .severity-CRITICAL { background:#f8d7da;color:#842029;padding:2px 8px;border-radius:4px;font-size:.8em;font-weight:600; }
 .severity-MEDIUM { background:#fff3cd;color:#664d03;padding:2px 8px;border-radius:4px;font-size:.8em;font-weight:600; }
 .severity-LOW { background:#d1ecf1;color:#0c5460;padding:2px 8px;border-radius:4px;font-size:.8em;font-weight:600; }
 </style>
 {% endblock %}
 {% block content %}
 <div class="container-fluid mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-bell text-warning"></i> {{ _('Alerts Queue') }}</h2>
-    <a href="{{ url_for('aml.tm_dashboard') }}" class="btn btn-outline-secondary"><i class="fas fa-tachometer-alt"></i> {{ _('TM Dashboard') }}</a>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <h2><i class="bi bi-bell text-warning"></i> {{ _('Alerts Queue') }}</h2>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('aml.alert_list', export='csv', **qs) }}" class="btn btn-outline-success btn-sm"><i class="bi bi-filetype-csv"></i> {{ _('Export CSV') }}</a>
+      <a href="{{ url_for('aml.sar_list') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-journal-text"></i> {{ _('STR register') }}</a>
+      <a href="{{ url_for('aml.tm_dashboard') }}" class="btn btn-outline-secondary btn-sm">{{ _('TM Dashboard') }}</a>
+    </div>
   </div>
 
-  <!-- Stats -->
   <div class="row g-2 mb-3">
     <div class="col-auto"><div class="card px-3 py-2 text-center"><div class="text-danger fw-bold fs-5">{{ stats.total_open }}</div><small>{{ _('New') }}</small></div></div>
     <div class="col-auto"><div class="card px-3 py-2 text-center"><div class="text-warning fw-bold fs-5">{{ stats.total_investigating }}</div><small>{{ _('Investigating') }}</small></div></div>
@@ -22,66 +25,71 @@
     <div class="col-auto"><div class="card px-3 py-2 text-center"><div class="text-info fw-bold fs-5">{{ stats.total_escalated }}</div><small>{{ _('Escalated') }}</small></div></div>
   </div>
 
-  <!-- Filters -->
-  <form method="GET" class="row g-2 mb-3">
-    <div class="col-auto">
+  <form method="GET" class="row g-2 mb-3 align-items-end">
+    <div class="col-md-3"><label class="form-label small mb-0">{{ _('Search') }}</label>
+      <input type="search" name="q" value="{{ f.q }}" class="form-control form-control-sm" placeholder="{{ _('Reference, customer, rule…') }}"></div>
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('Status') }}</label>
       <select name="status" class="form-select form-select-sm">
         <option value="OPEN" {% if status_filter=='OPEN' %}selected{% endif %}>{{ _('Open (unresolved)') }}</option>
         <option value="ALL" {% if status_filter=='ALL' %}selected{% endif %}>{{ _('All Statuses') }}</option>
-        {% for s in ['NEW','ASSIGNED','INVESTIGATING','ESCALATED','FALSE_POSITIVE','SAR_CREATED','CLOSED'] %}
-        <option value="{{ s }}" {% if status_filter==s %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-auto">
+        {% for code, en, a in statuses %}<option value="{{ code }}" {% if status_filter==code %}selected{% endif %}>{{ status_labels[code] }}</option>{% endfor %}
+      </select></div>
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('Severity') }}</label>
       <select name="severity" class="form-select form-select-sm">
         <option value="">{{ _('All Severities') }}</option>
-        {% for s in ['HIGH','MEDIUM','LOW'] %}
-        <option value="{{ s }}" {% if severity_filter==s %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-auto"><button class="btn btn-primary btn-sm">{{ _('Filter') }}</button></div>
-    <div class="col-auto"><a href="{{ url_for('aml.alert_list') }}" class="btn btn-outline-secondary btn-sm">{{ _('Reset') }}</a></div>
+        {% for code, en, a in severities %}<option value="{{ code }}" {% if severity_filter==code %}selected{% endif %}>{{ severity_labels[code] }}</option>{% endfor %}
+      </select></div>
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('Rule') }}</label>
+      <select name="rule" class="form-select form-select-sm">
+        <option value="">{{ _('All rules') }}</option>
+        {% for r in rules %}<option value="{{ r.id }}" {{ 'selected' if f.rule == r.id|string }}>{{ r.rule_code }} — {{ rule_label(r.rule_name, r.rule_name_ar, ar) }}</option>{% endfor %}
+      </select></div>
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('Assigned To') }}</label>
+      <select name="assignee" class="form-select form-select-sm">
+        <option value="">{{ _('Anyone') }}</option>
+        <option value="none" {{ 'selected' if f.assignee == 'none' }}>{{ _('Not assigned') }}</option>
+        {% for u in compliance_users %}<option value="{{ u.id }}" {{ 'selected' if f.assignee == u.id|string }}>{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}
+      </select></div>
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('From') }}</label><input type="date" name="date_from" value="{{ f.date_from }}" class="form-control form-control-sm"></div>
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('To') }}</label><input type="date" name="date_to" value="{{ f.date_to }}" class="form-control form-control-sm"></div>
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('Score from') }}</label><input type="number" min="0" max="100" name="score_min" value="{{ f.score_min }}" class="form-control form-control-sm" style="width:6em"></div>
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('Score to') }}</label><input type="number" min="0" max="100" name="score_max" value="{{ f.score_max }}" class="form-control form-control-sm" style="width:6em"></div>
+    <div class="col-auto"><button class="btn btn-primary btn-sm">{{ _('Filter') }}</button>
+      <a href="{{ url_for('aml.alert_list') }}" class="btn btn-outline-secondary btn-sm">{{ _('Reset') }}</a></div>
   </form>
 
   <div class="card shadow-sm">
-    <div class="card-body p-0">
-      <table class="table table-hover mb-0">
+    <div class="card-body p-0 table-responsive">
+      <table class="table table-hover mb-0 align-middle">
         <thead class="table-dark">
-          <tr><th>{{ _('Reference') }}</th><th>{{ _('Customer') }}</th><th>{{ _('Rule Triggered') }}</th><th>{{ _('Severity') }}</th><th>{{ _('Status') }}</th><th>{{ _('Assigned To') }}</th><th>{{ _('Date') }}</th><th></th></tr>
+          <tr><th>{{ _('Reference') }}</th><th>{{ _('Customer') }}</th><th>{{ _('Rule Triggered') }}</th><th>{{ _('Severity') }}</th><th>{{ _('Score') }}</th><th>{{ _('Status') }}</th><th>{{ _('Assigned To') }}</th><th>{{ _('Date') }}</th><th></th></tr>
         </thead>
         <tbody>
           {% for a in alerts %}
           <tr>
             <td><code>{{ a.alert_reference }}</code></td>
-            <td>
-              <strong>{{ a.full_name or a.company_name or 'Unknown' }}</strong>
-              <br><small class="text-muted">{{ a.customer_reference }}</small>
-            </td>
-            <td>{{ a.rule_name }}<br><small class="text-muted">{{ a.rule_code }}</small></td>
-            <td><span class="severity-{{ a.alert_severity }}">{{ a.alert_severity }}</span></td>
-            <td><span class="badge bg-secondary">{{ a.status }}</span></td>
+            <td><strong>{{ a.full_name or a.company_name or _('Unknown') }}</strong><br><small class="text-muted">{{ a.customer_reference }}</small></td>
+            <td>{{ rule_label(a.rule_name, a.rule_name_ar, ar) }}<br><small class="text-muted">{{ a.rule_code }}</small></td>
+            <td><span class="severity-{{ a.alert_severity }}">{{ severity_labels.get(a.alert_severity, a.alert_severity) }}</span></td>
+            <td>{{ a.risk_score if a.risk_score is not none else '-' }}</td>
+            <td><span class="badge bg-secondary">{{ status_labels.get(a.status, a.status) }}</span></td>
             <td>{{ a.assigned_name or '-' }}</td>
             <td>{{ a.alert_date[:10] if a.alert_date else '-' }}</td>
             <td><a href="{{ url_for('aml.view_alert', alert_id=a.id) }}" class="btn btn-sm btn-outline-primary">{{ _('Review') }}</a></td>
           </tr>
           {% else %}
-          <tr><td colspan="8" class="text-center text-muted py-4">{{ _('No alerts found') }}</td></tr>
+          <tr><td colspan="9" class="text-center text-muted py-4">{{ _('No alerts found') }}</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- Pagination -->
   {% if total_pages > 1 %}
   <nav class="mt-3">
-    <ul class="pagination pagination-sm">
+    <ul class="pagination pagination-sm flex-wrap">
       {% for p in range(1, total_pages+1) %}
-      <li class="page-item {% if p==page %}active{% endif %}">
-        <a class="page-link" href="?page={{ p }}&status={{ status_filter }}&severity={{ severity_filter }}">{{ p }}</a>
-      </li>
+      <li class="page-item {% if p==page %}active{% endif %}"><a class="page-link" href="{{ url_for('aml.alert_list', page=p, **qs) }}">{{ p }}</a></li>
       {% endfor %}
     </ul>
   </nav>

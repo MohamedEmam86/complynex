@@ -63,6 +63,11 @@
               <span class="cnx-nav__label">{{ _('Employee Portal') }}</span>
             </a>
           </li>
+          <li class="cnx-nav__subitem">
+            <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('portal.suspicion_reports') }}">
+              <span class="cnx-nav__label">{{ _('Report suspicious activity') }}</span>
+            </a>
+          </li>
           {% if current_user.role == 'employee' %}
           <li class="cnx-nav__subitem">
             <a class="cnx-nav__link cnx-nav__link--l2" href="{{ url_for('portal.status') }}">

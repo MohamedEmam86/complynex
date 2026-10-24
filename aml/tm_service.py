@@ -62,6 +62,15 @@ def create_alert(db, rule, customer_id, transaction_id, description, triggered_t
         description, json.dumps(triggered_txs), rule['severity']
     ))
     alert_id = cursor.fetchone()['id']
+    try:
+        from aml.tm_alerts import alert_score
+        ids = [t for t in (triggered_txs or []) if str(t).isdigit()]
+        scores = [r['risk_score'] for r in db.execute(
+            "SELECT risk_score FROM transactions WHERE id = ANY(%s)", ([int(i) for i in ids],)).fetchall()] if ids else []
+        db.execute("UPDATE tm_alerts SET risk_score = %s WHERE id = %s", (alert_score(rule['severity'], scores), alert_id))
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception('Could not score tm_alert %s', alert_id)
     db.execute("""
         UPDATE transactions SET alert_raised=1, alert_status='OPEN', rule_triggered=%s
         WHERE id = %s

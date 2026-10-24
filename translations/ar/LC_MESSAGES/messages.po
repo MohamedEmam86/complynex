@@ -32220,6 +32220,429 @@ msgstr "الرقم المرجعي لدى الوحدة"
 msgid "Mark as filed"
 msgstr "تسجيل كمُخطَر"
 
+#, python-format
+msgid "Overdue by %(n)s day(s)"
+msgstr "متأخر بمقدار %(n)s يوم"
+
+msgid "Due today"
+msgstr "مستحق اليوم"
+
+#, python-format
+msgid "Due in %(n)s day(s)"
+msgstr "مستحق خلال %(n)s يوم"
+
+msgid "Linked alerts"
+msgstr "التنبيهات المرتبطة"
+
+msgid "Linked transactions"
+msgstr "المعاملات المرتبطة"
+
+msgid "Deadline status"
+msgstr "حالة الموعد النهائي"
+
+msgid "Unit reference"
+msgstr "الرقم المرجعي لدى الوحدة"
+
+msgid "Only the MLRO can change the deadline setting."
+msgstr "لا يغيّر إعداد الموعد النهائي إلا مسؤول الإبلاغ."
+
+msgid "Deadline setting saved."
+msgstr "تم حفظ إعداد الموعد النهائي."
+
+msgid "Screening hit"
+msgstr "نتيجة فحص القوائم"
+
+msgid "Alert or transaction not found."
+msgstr "لم يتم العثور على التنبيه أو المعاملة."
+
+msgid "Link not found."
+msgstr "لم يتم العثور على الربط."
+
+msgid "Only the MLRO can open internal suspicious-activity reports."
+msgstr "لا يطّلع على البلاغات الداخلية عن الأنشطة المشبوهة إلا مسؤول الإبلاغ."
+
+msgid "Report updated."
+msgstr "تم تحديث البلاغ."
+
+msgid "Customer reference"
+msgstr "الرقم المرجعي للعميل"
+
+msgid "You do not have permission to change alerts."
+msgstr "ليست لديك صلاحية تعديل التنبيهات."
+
+msgid "Alert updated."
+msgstr "تم تحديث التنبيه."
+
+msgid "TM alert"
+msgstr "تنبيه مراقبة المعاملات"
+
+msgid "Employee report"
+msgstr "بلاغ داخلي من موظف"
+
+msgid "Manual entry"
+msgstr "إدخال يدوي"
+
+msgid "Detected by another module"
+msgstr "رصد آلي من وحدة أخرى"
+
+msgid "Screening alert"
+msgstr "تنبيه فحص القوائم"
+
+msgid "Transaction"
+msgstr "معاملة"
+
+msgid "Enter the number of days (1 to 365), or leave it empty for no deadline."
+msgstr "أدخل عدد الأيام (من 1 إلى 365)، أو اتركه فارغًا لعدم تحديد موعد نهائي."
+
+msgid "Choose what the deadline is counted from."
+msgstr "اختر التاريخ الذي يُحتسب منه الموعد النهائي."
+
+msgid "Unknown source."
+msgstr "مصدر غير معروف."
+
+msgid "Unknown link type."
+msgstr "نوع ربط غير معروف."
+
+msgid "Already linked to this case."
+msgstr "مرتبط بهذه الحالة بالفعل."
+
+msgid "Give the reason for removing the link."
+msgstr "اذكر سبب إزالة الربط."
+
+msgid "STR case opened"
+msgstr "فُتحت حالة إخطار"
+
+msgid "Investigation started"
+msgstr "بدء الفحص"
+
+msgid "Closed as false positive"
+msgstr "أُغلق كإيجابي كاذب"
+
+msgid "Note added"
+msgstr "أضيفت ملاحظة"
+
+msgid "This alert is closed; only notes can be added."
+msgstr "هذا التنبيه مغلق؛ يمكن إضافة ملاحظات فقط."
+
+msgid "Write the note."
+msgstr "اكتب الملاحظة."
+
+msgid "Converted to STR"
+msgstr "تم تحويله إلى إخطار اشتباه"
+
+msgid "Closed – no action"
+msgstr "مغلق – دون إجراء"
+
+msgid "Review started"
+msgstr "بدء المراجعة"
+
+msgid "Choose who the report is about."
+msgstr "اختر الجهة التي يتعلق بها البلاغ."
+
+msgid "Enter the name of the customer or merchant."
+msgstr "أدخل اسم العميل أو التاجر."
+
+msgid "Describe what you noticed (at least 30 characters)."
+msgstr "صف ما لاحظته (30 حرفًا على الأقل)."
+
+msgid "Enter valid dates."
+msgstr "أدخل تواريخ صحيحة."
+
+msgid "Dates cannot be in the future."
+msgstr "لا يجوز أن تكون التواريخ في المستقبل."
+
+msgid "The start date cannot be after the end date."
+msgstr "لا يجوز أن يكون تاريخ البداية بعد تاريخ النهاية."
+
+msgid "Only a new report can be taken under review."
+msgstr "لا يمكن بدء مراجعة إلا لبلاغ جديد."
+
+msgid "This report is already closed."
+msgstr "هذا البلاغ مغلق بالفعل."
+
+msgid "Four-eyes: you cannot process a report you submitted."
+msgstr "مبدأ الأعين الأربع: لا يمكنك معالجة بلاغ قدمته بنفسك."
+
+msgid "Write the reason for closing without action (at least 20 characters)."
+msgstr "اكتب سبب الإغلاق دون إجراء (20 حرفًا على الأقل)."
+
+#, python-format
+msgid "Some files were not accepted: %(names)s"
+msgstr "لم تُقبل بعض الملفات: %(names)s"
+
+#, python-format
+msgid "Your report %(ref)s was sent to the MLRO. Do not tell the customer or anyone else about it."
+msgstr "تم إرسال بلاغك %(ref)s إلى مسؤول الإبلاغ. لا تُخبر العميل أو أي شخص آخر به."
+
+msgid "STR register"
+msgstr "سجل إخطارات الاشتباه"
+
+msgid "One register of suspicion cases from every source — TM alerts, screening hits, employee reports, manual entries and other modules."
+msgstr "سجل واحد لحالات الاشتباه من جميع المصادر — تنبيهات مراقبة المعاملات، ونتائج فحص القوائم، وبلاغات الموظفين، والإدخالات اليدوية، والوحدات الأخرى."
+
+msgid "Employee reports"
+msgstr "بلاغات الموظفين"
+
+msgid "TM alerts"
+msgstr "تنبيهات مراقبة المعاملات"
+
+msgid "Reference, customer, description…"
+msgstr "الرقم المرجعي، العميل، الوصف…"
+
+msgid "All sources"
+msgstr "جميع المصادر"
+
+msgid "Anyone"
+msgstr "أي شخص"
+
+msgid "Any"
+msgstr "الكل"
+
+msgid "Due within 3 days"
+msgstr "مستحق خلال 3 أيام"
+
+msgid "Showing the cases of the former unusual-transactions register (now part of this register)."
+msgstr "يتم عرض حالات سجل العمليات غير المعتادة السابق (أصبح جزءًا من هذا السجل)."
+
+msgid "Show all cases"
+msgstr "عرض جميع الحالات"
+
+#, python-format
+msgid "Statutory deadline: %(n)s day(s) from the %(basis)s."
+msgstr "الموعد النظامي: %(n)s يوم من %(basis)s."
+
+msgid "detection date"
+msgstr "تاريخ الاكتشاف"
+
+msgid "MLRO decision to report"
+msgstr "قرار مسؤول الإبلاغ بالإخطار"
+
+msgid "Regulatory parameter"
+msgstr "معيار رقابي"
+
+msgid "Local setting"
+msgstr "إعداد محلي"
+
+msgid "No statutory deadline is configured, so no case is flagged as overdue."
+msgstr "لم يُحدَّد موعد نظامي، لذلك لا تُعلَّم أي حالة كمتأخرة."
+
+msgid "case(s)"
+msgstr "حالة"
+
+msgid "Links"
+msgstr "الروابط"
+
+msgid "Detections that are not in the register yet"
+msgstr "حالات رصد لم تُسجَّل في السجل بعد"
+
+msgid "Statutory deadline setting"
+msgstr "إعداد الموعد النظامي"
+
+msgid "Days to the deadline"
+msgstr "عدد الأيام حتى الموعد النهائي"
+
+msgid "Counted from"
+msgstr "يُحتسب من"
+
+msgid "Set the number of days your regulator allows. A regulatory parameter (aml.str_filing_deadline_days), when defined, takes precedence over this local setting."
+msgstr "حدِّد عدد الأيام الذي تسمح به الجهة الرقابية. إذا عُرِّف المعيار الرقابي (aml.str_filing_deadline_days) فإنه يتقدم على هذا الإعداد المحلي."
+
+msgid "Back to the register"
+msgstr "العودة إلى السجل"
+
+msgid "Statutory deadline"
+msgstr "الموعد النظامي"
+
+msgid "Starts when the MLRO decides to report."
+msgstr "يبدأ احتسابه عند قرار مسؤول الإبلاغ بالإخطار."
+
+msgid "No statutory deadline is configured."
+msgstr "لم يُحدَّد موعد نظامي."
+
+msgid "Unusual-transactions register entry"
+msgstr "قيد سجل العمليات غير المعتادة"
+
+msgid "Linked alerts and transactions"
+msgstr "التنبيهات والمعاملات المرتبطة"
+
+msgid "Linked by"
+msgstr "رُبط بواسطة"
+
+msgid "Migrated"
+msgstr "منقول من البيانات السابقة"
+
+msgid "Removed by"
+msgstr "أزاله"
+
+msgid "Remove link"
+msgstr "إزالة الربط"
+
+msgid "Nothing linked yet."
+msgstr "لا توجد روابط بعد."
+
+msgid "Alert or transaction reference"
+msgstr "الرقم المرجعي للتنبيه أو المعاملة"
+
+msgid "Add link"
+msgstr "إضافة ربط"
+
+#, python-format
+msgid "Opened from TM alert %(ref)s. The alert and its transactions will be linked to the case and the alert marked \"STR case opened\"."
+msgstr "فُتحت من تنبيه مراقبة المعاملات %(ref)s. سيُربط التنبيه ومعاملاته بالحالة ويُعلَّم التنبيه بأنه \"فُتحت حالة إخطار\"."
+
+msgid "Opened from a screening alert. The alert will be linked to the case."
+msgstr "فُتحت من تنبيه فحص القوائم. سيُربط التنبيه بالحالة."
+
+msgid "All SAR filings are strictly confidential and protected by tipping-off provisions in AML Law 80/2002."
+msgstr "جميع إخطارات الاشتباه سرية تمامًا وتخضع لأحكام حظر التنبيه الواردة في قانون مكافحة غسل الأموال رقم 80 لسنة 2002."
+
+msgid "Reference, customer, rule…"
+msgstr "الرقم المرجعي، العميل، القاعدة…"
+
+msgid "All rules"
+msgstr "جميع القواعد"
+
+msgid "Score from"
+msgstr "الدرجة من"
+
+msgid "Score to"
+msgstr "الدرجة إلى"
+
+msgid "Create SAR from alert"
+msgstr "إنشاء إخطار اشتباه من التنبيه"
+
+msgid "STR cases"
+msgstr "حالات الإخطار"
+
+msgid "Activity history"
+msgstr "سجل النشاط"
+
+msgid "append-only record of every action"
+msgstr "سجل غير قابل للتعديل لكل إجراء"
+
+msgid "Only staff with AML or transaction-monitoring rights are listed."
+msgstr "تظهر هنا أسماء الموظفين الذين لديهم صلاحيات مكافحة غسل الأموال أو مراقبة المعاملات فقط."
+
+msgid "Each action is saved in the history with your name and the time; it cannot be edited or deleted."
+msgstr "يُحفظ كل إجراء في السجل باسمك ووقته، ولا يمكن تعديله أو حذفه."
+
+msgid "Add note"
+msgstr "إضافة ملاحظة"
+
+msgid "Close this alert?"
+msgstr "هل تريد إغلاق هذا التنبيه؟"
+
+msgid "Internal suspicious-activity reports"
+msgstr "البلاغات الداخلية عن الأنشطة المشبوهة"
+
+msgid "Reports from employees to the MLRO. Confidential — tipping-off rules apply."
+msgstr "بلاغات الموظفين إلى مسؤول الإبلاغ. سرية — تسري قواعد حظر التنبيه."
+
+msgid "Received"
+msgstr "تاريخ الاستلام"
+
+msgid "Reported by"
+msgstr "مقدم البلاغ"
+
+msgid "STR case"
+msgstr "حالة الإخطار"
+
+msgid "No reports."
+msgstr "لا توجد بلاغات."
+
+msgid "Internal suspicious-activity report"
+msgstr "بلاغ داخلي عن نشاط مشبوه"
+
+msgid "Back to the inbox"
+msgstr "العودة إلى صندوق الوارد"
+
+msgid "Activity period"
+msgstr "فترة النشاط"
+
+msgid "What was noticed"
+msgstr "ما تمت ملاحظته"
+
+msgid "Related transactions"
+msgstr "المعاملات ذات الصلة"
+
+msgid "Reason for closing"
+msgstr "سبب الإغلاق"
+
+msgid "Start review"
+msgstr "بدء المراجعة"
+
+msgid "Convert to an STR case"
+msgstr "التحويل إلى حالة إخطار اشتباه"
+
+msgid "Customer in the system (optional)"
+msgstr "العميل في النظام (اختياري)"
+
+msgid "Amount involved (if known)"
+msgstr "المبلغ محل الاشتباه (إن كان معروفًا)"
+
+msgid "Open STR case"
+msgstr "فتح حالة إخطار"
+
+msgid "The case opens in the STR register with source \"Employee report\" and links back to this report."
+msgstr "تُفتح الحالة في سجل إخطارات الاشتباه بمصدر \"بلاغ داخلي من موظف\" وتُربط بهذا البلاغ."
+
+msgid "Close without action"
+msgstr "الإغلاق دون إجراء"
+
+msgid "Reason (at least 20 characters)"
+msgstr "السبب (20 حرفًا على الأقل)"
+
+msgid "Report suspicious activity"
+msgstr "الإبلاغ عن نشاط مشبوه"
+
+msgid "An internal report to the Money Laundering Reporting Officer (MLRO) about a customer or merchant. For misconduct by colleagues, use whistleblowing instead."
+msgstr "بلاغ داخلي إلى مسؤول الإبلاغ عن غسل الأموال بشأن عميل أو تاجر. أما المخالفات من الزملاء فيُبلَّغ عنها عبر نظام الإبلاغ عن المخالفات."
+
+msgid "My reports"
+msgstr "بلاغاتي"
+
+msgid "Tipping-off warning"
+msgstr "تحذير من التنبيه (الإفصاح)"
+
+msgid "Do not tell the customer, the merchant or anyone else — inside or outside the company — that you have made this report or that it may be reported to the authorities. Disclosing it is prohibited by law and can harm the investigation. Only the MLRO and the compliance team will see it."
+msgstr "لا تُخبر العميل أو التاجر أو أي شخص آخر — داخل الشركة أو خارجها — بأنك قدمت هذا البلاغ أو بأنه قد يُبلَّغ عنه إلى الجهات المختصة. الإفصاح عن ذلك محظور قانونًا وقد يضر بالتحقيق. لن يطّلع عليه إلا مسؤول الإبلاغ وفريق الالتزام."
+
+msgid "The report is about"
+msgstr "يتعلق البلاغ بـ"
+
+msgid "Account / merchant number (if known)"
+msgstr "رقم الحساب / التاجر (إن كان معروفًا)"
+
+msgid "What did you notice, and why is it suspicious?"
+msgstr "ماذا لاحظت، ولماذا تعتبره مشبوهًا؟"
+
+msgid "Related transactions (references, amounts, dates)"
+msgstr "المعاملات ذات الصلة (الأرقام المرجعية، المبالغ، التواريخ)"
+
+msgid "Activity from"
+msgstr "النشاط من"
+
+msgid "Activity to"
+msgstr "النشاط إلى"
+
+msgid "Attachments (optional, up to 5 files: PDF, images, Word, Excel)"
+msgstr "المرفقات (اختيارية، حتى 5 ملفات: PDF أو صور أو Word أو Excel)"
+
+msgid "Send to the MLRO"
+msgstr "إرسال إلى مسؤول الإبلاغ"
+
+msgid "My suspicious-activity reports"
+msgstr "بلاغاتي عن الأنشطة المشبوهة"
+
+msgid "You see the status of your reports only. Remember: do not tell the customer or anyone else about a report."
+msgstr "تظهر لك حالة بلاغاتك فقط. تذكّر: لا تُخبر العميل أو أي شخص آخر بأي بلاغ."
+
+msgid "You have not sent any report."
+msgstr "لم ترسل أي بلاغ بعد."
+
+msgid "Suspicious activity (to the MLRO)"
+msgstr "نشاط مشبوه (إلى مسؤول الإبلاغ)"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

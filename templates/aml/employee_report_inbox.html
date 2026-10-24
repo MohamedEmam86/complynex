@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Internal suspicious-activity reports') }}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <div>
+      <h1 class="h3 mb-0">{{ _('Internal suspicious-activity reports') }}</h1>
+      <div class="small text-muted">{{ _('Reports from employees to the MLRO. Confidential — tipping-off rules apply.') }}</div>
+    </div>
+    <a href="{{ url_for('aml.sar_list') }}" class="btn btn-sm btn-outline-secondary">{{ _('STR register') }}</a>
+  </div>
+  <form method="GET" class="row g-2 mb-3">
+    <div class="col-auto"><select name="status" class="form-select form-select-sm">
+      <option value="OPEN" {{ 'selected' if status == 'OPEN' }}>{{ _('Open') }}</option>
+      <option value="ALL" {{ 'selected' if status == 'ALL' }}>{{ _('All Statuses') }}</option>
+      {% for code, en, a in statuses %}<option value="{{ code }}" {{ 'selected' if status == code }}>{{ status_labels[code] }}</option>{% endfor %}
+    </select></div>
+    <div class="col-auto"><button class="btn btn-sm btn-primary">{{ _('Filter') }}</button></div>
+  </form>
+  <div class="card shadow-sm"><div class="card-body p-0 table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light"><tr><th>{{ _('Reference') }}</th><th>{{ _('Received') }}</th><th>{{ _('Reported by') }}</th><th>{{ _('Subject') }}</th><th>{{ _('Status') }}</th><th>{{ _('STR case') }}</th><th></th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr><td><code>{{ r.reference }}</code></td><td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ r.reporter_name }}</td>
+          <td>{{ r.subject_name }} <span class="badge bg-light text-dark border">{{ subject_labels.get(r.subject_type, r.subject_type) }}</span></td>
+          <td><span class="badge {{ 'bg-primary' if r.status == 'NEW' else ('bg-warning text-dark' if r.status == 'UNDER_REVIEW' else ('bg-danger' if r.status == 'CONVERTED' else 'bg-secondary')) }}">{{ status_labels.get(r.status, r.status) }}</span></td>
+          <td>{% if r.sar_id %}<a href="{{ url_for('aml.sar_detail', sar_id=r.sar_id) }}">{{ r.sar_reference }}</a>{% else %}-{% endif %}</td>
+          <td><a href="{{ url_for('aml.employee_report_view', report_id=r.id) }}" class="btn btn-sm btn-outline-primary">{{ _('Open') }}</a></td></tr>
+      {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">{{ _('No reports.') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div></div>
+</div>
+{% endblock %}

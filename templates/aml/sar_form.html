@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}File SAR{% endblock %}
+{% block title %}{{ _('File New SAR') }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -11,16 +11,33 @@
                     <h5 class="mb-0">{{ _('Suspicious Activity Report (SAR) Filing') }}</h5>
                 </div>
                 <div class="card-body">
+                    {% if source_alert and form.get('alert_id') %}
+                    <div class="alert alert-info small">
+                        <i class="bi bi-link-45deg"></i> {{ _('Opened from TM alert %(ref)s. The alert and its transactions will be linked to the case and the alert marked "STR case opened".', ref=source_alert.alert_reference) }}
+                    </div>
+                    {% elif source_alert and form.get('screening_alert_id') %}
+                    <div class="alert alert-info small">
+                        <i class="bi bi-link-45deg"></i> {{ _('Opened from a screening alert. The alert will be linked to the case.') }}
+                    </div>
+                    {% endif %}
                     <form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {% if form.get('alert_id') %}<input type="hidden" name="alert_id" value="{{ form.get('alert_id') }}">{% endif %}
+                        {% if form.get('screening_alert_id') %}<input type="hidden" name="screening_alert_id" value="{{ form.get('screening_alert_id') }}">{% endif %}
+                        {% if not source_alert %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Source') }}</label>
+                            <select class="form-select" name="source">
+                                {% for code, en, a in sources %}<option value="{{ code }}" {{ 'selected' if form.get('source') == code }}>{{ source_labels[code] }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
                         <div class="mb-3">
                             <label class="form-label">{{ _('Subject Customer') }}</label>
                             <select class="form-select" name="customer_id" required>
                                 <option value="">{{ _('Select Customer...') }}</option>
                                 {% for customer in customers %}
-                                <option value="{{ customer.id }}" {{ 'selected' if selected_customer and selected_customer|string == customer.id|string }}>{{ customer.full_name }} ({{
-                                    customer.customer_reference
-                                    }})</option>
+                                <option value="{{ customer.id }}" {{ 'selected' if selected_customer and selected_customer|string == customer.id|string }}>{{ customer.full_name }} ({{ customer.customer_reference }})</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -32,8 +49,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">{{ _('Discovery Date') }}</label>
-                                <input type="date" class="form-control" name="discovery_date" value="{{ now_date }}"
-                                    required>
+                                <input type="date" class="form-control" name="discovery_date" value="{{ form.get('discovery_date') or now_date }}" max="{{ now_date }}" required>
                             </div>
                         </div>
 
@@ -48,10 +64,13 @@
                                 placeholder="{{ _('Detailed description of suspicious patterns, red flags identified, and rationale for suspicion.') }}"
                                 minlength="30" required>{{ form.get('description', '') }}</textarea>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ _('Red flags') }}</label>
+                            <textarea class="form-control" name="red_flags" rows="2">{{ form.get('red_flags', '') }}</textarea>
+                        </div>
 
                         <div class="alert alert-warning">
-                            <small><i class="bi bi-shield-lock"></i> {{ _('All SAR filings are strictly confidential and
-                                protected by tipping-off provisions in AML Law 80/2002.') }}</small>
+                            <small><i class="bi bi-shield-lock"></i> {{ _('All SAR filings are strictly confidential and protected by tipping-off provisions in AML Law 80/2002.') }}</small>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">

@@ -729,3 +729,87 @@ def respond_coi_clarification(id):
             return render_template('portal/thank_you.html', tracking_id='Updated', declaration_type='coi-clarification')
 
     return render_template('portal/coi_respond.html', declaration=row)
+
+
+# ============================================
+# Internal suspicious-activity report to the MLRO (not whistleblowing)
+# ============================================
+@portal_bp.route('/suspicious-activity')
+@login_required
+def suspicion_reports():
+    """The reporter's own reports — status only."""
+    from aml import employee_reports as empr
+    from flask import session
+    ar = session.get('lang') == 'ar'
+    return render_template('portal/suspicion_reports.html', rows=empr.my_reports(get_db(), current_user.id),
+                           status_labels=empr.labels(empr.STATUSES, ar))
+
+
+@portal_bp.route('/suspicious-activity/new', methods=['GET', 'POST'])
+@login_required
+def suspicion_report_new():
+    from aml import employee_reports as empr
+    from flask import session
+    ar = session.get('lang') == 'ar'
+    db = get_db()
+    if request.method == 'POST':
+        errors = empr.validate(request.form)
+        if errors:
+            for e in errors:
+                flash(_(e), 'danger')
+            return render_template('portal/suspicion_report_form.html', form=request.form,
+                                   subject_types=empr.SUBJECT_TYPES, subject_labels=empr.labels(empr.SUBJECT_TYPES, ar),
+                                   today=datetime.now().strftime('%Y-%m-%d')), 400
+        try:
+            rid, ref = empr.submit_report(current_user.id, request.form, db=db)
+        except empr.ReportError as e:
+            flash(_(str(e)), 'danger')
+            return redirect(url_for('portal.suspicion_report_new'))
+        saved, rejected = _save_suspicion_attachments(rid, request.files.getlist('attachments'))
+        from models.audit import AuditLog
+        from models.notification import Notification
+        AuditLog.log(current_user.id, 'Employee suspicion report', 'AML', rid,
+                     f'Employee suspicion report {ref} submitted ({saved} attachment(s))', request.remote_addr)
+        for uid in empr.mlro_user_ids(db):
+            if uid != current_user.id:
+                Notification.create(user_id=uid, title='New internal suspicious-activity report',
+                                    message=f'Report {ref} is waiting in the MLRO inbox.',
+                                    link=url_for('aml.employee_report_view', report_id=rid), n_type='aml_escalation')
+        if rejected:
+            flash(_('Some files were not accepted: %(names)s', names=', '.join(rejected)), 'warning')
+        flash(_('Your report %(ref)s was sent to the MLRO. Do not tell the customer or anyone else about it.', ref=ref),
+              'success')
+        return redirect(url_for('portal.suspicion_reports'))
+    return render_template('portal/suspicion_report_form.html', form={}, subject_types=empr.SUBJECT_TYPES,
+                           subject_labels=empr.labels(empr.SUBJECT_TYPES, ar), today=datetime.now().strftime('%Y-%m-%d'))
+
+
+def _save_suspicion_attachments(report_id, files):
+    """Store the reporter's files in the generic attachment store (module aml);
+    the MLRO downloads them from the inbox. Returns (saved, rejected names)."""
+    import os
+    from flask import current_app
+    from database.db import execute_db
+    from utils.file_validator import validate_file, secure_filename_strict
+    from aml.employee_reports import ATTACH_TYPE
+    saved, rejected = 0, []
+    for f in (files or [])[:5]:
+        if not f or not f.filename:
+            continue
+        ok, _err = validate_file(f, upload_type='document')
+        if not ok:
+            rejected.append(f.filename)
+            continue
+        name = secure_filename_strict(f.filename)
+        rel_dir = os.path.join('uploads', 'attachments', 'aml', ATTACH_TYPE, str(report_id))
+        full_dir = os.path.join(current_app.root_path, rel_dir)
+        os.makedirs(full_dir, exist_ok=True)
+        full = os.path.join(full_dir, name)
+        f.save(full)
+        execute_db("""INSERT INTO generic_attachments (module, record_type, record_id, filename, file_path, file_size,
+                      description, uploaded_by, uploaded_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                   ('aml', ATTACH_TYPE, report_id, f.filename[:255], os.path.join(rel_dir, name).replace('\\', '/'),
+                    os.path.getsize(full), 'Employee suspicion report', current_user.id,
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        saved += 1
+    return saved, rejected

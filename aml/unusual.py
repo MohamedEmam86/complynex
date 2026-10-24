@@ -21,7 +21,8 @@ Unusual-transactions register (aml_unusual_transactions).
 Any module that detects a pattern worth an AML study calls
 register_candidate(); the AML team then studies it and decides STR / no STR.
 Registration is idempotent per (source_table, source_record_id, detection_rule),
-so a scheduled check can call it on every run.
+so a scheduled check can call it on every run. Each entry also has its case in the
+one STR register (suspicious_activities) — see aml/str_register.py.
 """
 
 from datetime import date, datetime, timedelta
@@ -39,6 +40,7 @@ def register_candidate(*, source_module, detection_rule, description, source_tab
                             AND source_record_id = %s AND detection_rule = %s""",
                          (source_table, source_record_id, detection_rule)).fetchone()
         if row:
+            _ensure_case(row['id'], db)
             return row['id'], False
     due = date.today() + timedelta(days=int(study_sla_days)) if study_sla_days else None
     uid = db.execute("""
@@ -56,7 +58,19 @@ def register_candidate(*, source_module, detection_rule, description, source_tab
         Case.sync_from_source('UNUSUAL_TXN', uid)
     except Exception:
         db.rollback()
+    _ensure_case(uid, db)
     return uid, True
+
+
+def _ensure_case(uid, db):
+    """Every entry has its case in the one STR register (aml/str_register.py)."""
+    try:
+        from aml.str_register import ensure_case_for_unusual
+        ensure_case_for_unusual(uid, db=db)
+    except Exception:
+        db.rollback()
+        import logging
+        logging.getLogger(__name__).exception('Could not open the STR register case for unusual entry %s', uid)
 
 
 def list_register(status=None, db=None):

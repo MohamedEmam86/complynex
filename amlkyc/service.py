@@ -498,6 +498,11 @@ def unusual_study(item_id, user_id, analysis, decision=None, str_reference=None,
                    (analysis.strip(), item_id))
     db.commit()
     _sync_case(item_id)
+    try:
+        from aml.str_register import refresh_case_from_unusual
+        refresh_case_from_unusual(item_id, db=db)
+    except Exception:
+        db.rollback()
 
 
 def _sync_case(item_id):

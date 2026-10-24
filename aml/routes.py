@@ -337,21 +337,123 @@ def edit_customer(id):
         
     return render_template('aml/customer_form.html', customer=Customer.form_values(customer), user=current_user)
 
+# ---------------------------------------------------------------- STR register (one list)
+from . import str_register as strreg
+from . import tm_alerts as tmal
+from . import employee_reports as empr
+
+SAR_STATUSES = strreg.STATUSES  # code, EN, AR (kept for older imports)
+
+
+def _ar():
+    from flask_babel import get_locale
+    return str(get_locale()) == 'ar'
+
+
+def _csv_response(header, rows, filename):
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(header)
+    for r in rows:
+        w.writerow(['' if v is None else v for v in r])
+    return Response('﻿' + buf.getvalue(), mimetype='text/csv; charset=utf-8',
+                    headers={'Content-Disposition': f'attachment; filename={filename}'})
+
+
+def _is_mlro(user):
+    return getattr(user, 'role', None) in ('compliance_manager', 'admin')
+
+
+def _due_text(due):
+    if not due:
+        return ''
+    if due['overdue']:
+        return _('Overdue by %(n)s day(s)', n=due['days'])
+    if due['days'] == 0:
+        return _('Due today')
+    return _('Due in %(n)s day(s)', n=due['days'])
+
+
 @aml_bp.route('/sars')
 @login_required
 @permission_required('aml')
 def sar_list():
+    """The single STR register: SARs from every source, with links and deadlines."""
     db = get_db()
-    sars = db.execute("""
-        SELECT s.*, c.full_name as customer_name 
-        FROM suspicious_activities s
-        LEFT JOIN customers c ON s.customer_id = c.id
-        ORDER BY s.report_date DESC
-    """).fetchall()
-    from flask_babel import get_locale
-    ar = str(get_locale()) == 'ar'
-    status_labels = {code: (lab_ar if ar else lab_en) for code, lab_en, lab_ar in SAR_STATUSES}
-    return render_template('aml/sar_list.html', sars=sars, user=current_user, status_labels=status_labels)
+    f = {k: (request.args.get(k) or '').strip() for k in ('status', 'source', 'assignee', 'overdue', 'q', 'register')}
+    rows, cfg = strreg.list_cases(db, status=f['status'] or None, source=f['source'] or None,
+                                  assignee=f['assignee'] or None, overdue=f['overdue'] or None, q=f['q'] or None,
+                                  register=f['register'] == '1')
+    ar = _ar()
+    st_l, src_l = strreg.status_labels(ar), strreg.source_labels(ar)
+    if request.args.get('export') == 'csv':
+        return _csv_response(
+            [_('Ref'), _('Source'), _('Customer'), _('Discovery Date'), _('Amount'), _('Status'), _('Assigned to'),
+             _('Linked alerts'), _('Linked transactions'), _('Deadline'), _('Deadline status'), _('Unit reference')],
+            [[r['sar_reference'], src_l.get(r['source'], r['source']), r['customer_display'], r['discovery_date'],
+              r['amount_involved'], st_l.get(r['investigation_status'] or 'NEW', r['investigation_status']),
+              r['assigned_name'], r['alert_links'], r['tx_links'],
+              r['due']['deadline'].isoformat() if r['due'] else '', _due_text(r['due']), r['emlcu_reference']]
+             for r in rows], 'str_register.csv')
+    missing = []
+    if current_user.can_edit('aml'):
+        try:
+            from amlkyc.service import reconcile_register
+            missing = reconcile_register(db)
+        except Exception:
+            db.rollback()
+    return render_template('aml/sar_list.html', sars=rows, user=current_user, status_labels=st_l,
+                           source_labels=src_l, statuses=strreg.STATUSES, sources=strreg.SOURCES,
+                           staff=strreg.aml_staff(db), f=f, cfg=cfg, due_text=_due_text, missing=missing,
+                           can_configure=_is_mlro(current_user) or current_user.is_admin())
+
+
+@aml_bp.route('/sars/deadline-setting', methods=['POST'])
+@login_required
+@permission_required('aml', level='edit')
+def sar_deadline_setting():
+    if not (_is_mlro(current_user) or current_user.is_admin()):
+        flash(_('Only the MLRO can change the deadline setting.'), 'danger')
+        return redirect(url_for('aml.sar_list'))
+    try:
+        strreg.save_deadline_setting(request.form.get('days'), request.form.get('basis'), current_user.id)
+        flash(_('Deadline setting saved.'), 'success')
+    except strreg.StrError as e:
+        flash(_(str(e)), 'danger')
+    return redirect(url_for('aml.sar_list'))
+
+
+def _prefill_from_alert(db, alert_id):
+    a = db.execute("""SELECT a.*, r.rule_name, r.rule_code FROM tm_alerts a LEFT JOIN tm_rules r ON r.id = a.rule_id
+                      WHERE a.id = %s""", (alert_id,)).fetchone()
+    if not a:
+        return None, {}
+    a = dict(a)
+    ids = tmal.triggered_ids(a)
+    txs = [dict(t) for t in db.execute("SELECT id, transaction_date, amount FROM transactions WHERE id = ANY(%s)",
+                                       (ids,)).fetchall()] if ids else []
+    dates = sorted((t['transaction_date'] or '')[:10] for t in txs if t.get('transaction_date'))
+    form = {'customer_id': str(a['customer_id'] or ''),
+            'activity_date': dates[0] if dates else (a['alert_date'] or '')[:10],
+            'discovery_date': (a['alert_date'] or '')[:10] or datetime.now().strftime('%Y-%m-%d'),
+            'amount': f"{sum(float(t['amount'] or 0) for t in txs):.2f}" if txs else '',
+            'description': f"{a['alert_reference']} — {a.get('rule_code') or ''} {a.get('rule_name') or ''}: "
+                           f"{a.get('alert_description') or ''}",
+            'red_flags': a.get('rule_name') or '', 'source': 'tm_alert', 'alert_id': str(a['id'])}
+    return a, form
+
+
+def _prefill_from_screening(db, sa_id):
+    a = db.execute("SELECT * FROM aml_alerts WHERE id = %s", (sa_id,)).fetchone()
+    if not a:
+        return None, {}
+    a = dict(a)
+    return a, {'customer_id': str(a['customer_id'] or ''), 'discovery_date': (a['created_at'] or '')[:10],
+               'activity_date': (a['created_at'] or '')[:10],
+               'description': f"{_('Screening hit')}: {a.get('matched_name') or ''} ({a.get('source_list') or ''}, "
+                              f"{a.get('match_score') or ''}). {a.get('alert_details') or ''}",
+               'source': 'screening', 'screening_alert_id': str(a['id'])}
+
 
 @aml_bp.route('/sars/new', methods=['GET', 'POST'])
 @login_required
@@ -359,34 +461,42 @@ def sar_list():
 def create_sar():
     db = get_db()
     customers = db.execute("SELECT id, full_name, customer_reference FROM customers ORDER BY full_name").fetchall()
+    src = request.values
+    alert, prefill = (None, {})
+    if (src.get('alert_id') or '').isdigit():
+        alert, prefill = _prefill_from_alert(db, int(src['alert_id']))
+    elif (src.get('screening_alert_id') or '').isdigit():
+        alert, prefill = _prefill_from_screening(db, int(src['screening_alert_id']))
+    ctx = dict(customers=customers, user=current_user, now_date=datetime.now().strftime('%Y-%m-%d'),
+               source_alert=alert, sources=[s for s in strreg.SOURCES if s[0] in ('manual', 'screening')],
+               source_labels=strreg.source_labels(_ar()))
     if request.method == 'POST':
         form = request.form
         errors = _sar_input_errors(form, db)
         if errors:
             for e in errors:
                 flash(e, 'danger')
-            return render_template('aml/sar_form.html', customers=customers, user=current_user,
-                                   now_date=datetime.now().strftime('%Y-%m-%d'), form=form,
-                                   selected_customer=form.get('customer_id')), 400
-        sar_reference = f"SAR-{datetime.now().strftime('%Y%m')}-{os.urandom(2).hex().upper()}"
-        row = db.execute("""
-            INSERT INTO suspicious_activities
-            (sar_reference, activity_date, discovery_date, customer_id, amount_involved, currency, activity_description,
-             red_flags_identified, reported_by, report_date, investigation_status, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, 'EGP', %s, %s, %s, %s, 'NEW', %s, %s) RETURNING id
-        """, (sar_reference, form.get('activity_date'), form.get('discovery_date'), form.get('customer_id'),
-              form.get('amount') or 0, form.get('description').strip(), (form.get('red_flags') or '').strip() or None,
-              current_user.id, datetime.now().strftime('%Y-%m-%d'), datetime.now().isoformat(sep=' ', timespec='seconds'),
-              datetime.now().isoformat(sep=' ', timespec='seconds'))).fetchone()
-        db.commit()
-        AuditLog.log(current_user.id, 'File SAR', 'AML', row['id'],
-                     f'SAR {sar_reference} raised for customer {form.get("customer_id")}', request.remote_addr)
-        flash(gettext('SAR %(sar_reference)s filed successfully and queued for compliance review.', sar_reference=sar_reference))
-        return redirect(url_for('aml.sar_detail', sar_id=row['id']))
-
-    return render_template('aml/sar_form.html', customers=customers, user=current_user,
-                           now_date=datetime.now().strftime('%Y-%m-%d'), form={},
-                           selected_customer=request.args.get('customer_id'))
+            return render_template('aml/sar_form.html', form=form, selected_customer=form.get('customer_id'),
+                                   **ctx), 400
+        links, source = [], (form.get('source') if form.get('source') in ('manual', 'screening') else 'manual')
+        alert_id = form.get('alert_id') if (form.get('alert_id') or '').isdigit() else None
+        if alert_id and alert:
+            source = 'tm_alert'
+            links = [('tm_alert', int(alert_id))] + [('transaction', t) for t in tmal.triggered_ids(alert)]
+        elif (form.get('screening_alert_id') or '').isdigit() and alert:
+            source = 'screening'
+            links = [('screening_alert', int(form['screening_alert_id']))]
+        sid, ref = strreg.create_case(
+            source=source, reported_by=current_user.id, description=form.get('description').strip(),
+            customer_id=int(form.get('customer_id')), activity_date=form.get('activity_date'),
+            discovery_date=form.get('discovery_date'), amount=form.get('amount') or 0,
+            red_flags=(form.get('red_flags') or '').strip() or None, links=links, db=db)
+        if alert_id and alert:
+            tmal.mark_sar_created(int(alert_id), sid, ref, current_user.id, db=db)
+        flash(gettext('SAR %(sar_reference)s filed successfully and queued for compliance review.', sar_reference=ref))
+        return redirect(url_for('aml.sar_detail', sar_id=sid))
+    return render_template('aml/sar_form.html', form=prefill,
+                           selected_customer=prefill.get('customer_id') or request.args.get('customer_id'), **ctx)
 
 
 def _sar_input_errors(form, db):
@@ -415,29 +525,19 @@ def _sar_input_errors(form, db):
     return errors
 
 
-SAR_STATUSES = [  # code, EN, AR
-    ('NEW', 'New', 'جديد'),
-    ('UNDER_INVESTIGATION', 'Under investigation', 'قيد الفحص'),
-    ('PENDING_DECISION', 'Waiting for the MLRO decision', 'بانتظار قرار مسؤول الإبلاغ'),
-    ('NO_STR', 'Closed — no report to the unit', 'مغلق — لا يُرفع إخطار'),
-    ('FILE_SAR', 'Decided — report to the unit', 'تقرر إخطار الوحدة'),
-    ('FILED', 'Filed with the unit', 'تم الإخطار للوحدة'),
-]
-
-
-def _is_mlro(user):
-    return getattr(user, 'role', None) in ('compliance_manager', 'admin')
-
-
 @aml_bp.route('/sars/<int:sar_id>', methods=['GET', 'POST'])
 @login_required
 @permission_required('aml')
 def sar_detail(sar_id):
-    """Work one SAR: assign, investigate, MLRO decision (file / no report, with
-    rationale, by someone other than the reporter), then record the filing."""
+    """Work one case: assign, investigate, MLRO decision (file / no report, with
+    rationale, by someone other than the reporter), record the filing, and keep
+    the linked alerts / transactions."""
     db = get_db()
-    sar = db.execute("""SELECT s.*, c.full_name AS customer_full_name, c.customer_reference
+    sar = db.execute("""SELECT s.*, c.full_name AS customer_full_name, c.customer_reference,
+                               u.reference AS unusual_reference, er.reference AS employee_report_reference
                         FROM suspicious_activities s LEFT JOIN customers c ON c.id = s.customer_id
+                        LEFT JOIN aml_unusual_transactions u ON u.id = s.unusual_txn_id
+                        LEFT JOIN aml_employee_reports er ON er.id = s.employee_report_id
                         WHERE s.id = %s""", (sar_id,)).fetchone()
     if not sar:
         flash(_('SAR not found.'), 'warning')
@@ -448,93 +548,126 @@ def sar_detail(sar_id):
             flash(_('You do not have permission to change SARs.'), 'danger')
             return redirect(url_for('aml.sar_detail', sar_id=sar_id))
         action = request.form.get('action')
-        now = datetime.now().isoformat(sep=' ', timespec='seconds')
-        status = sar.get('investigation_status') or 'NEW'
-        if status in ('NO_STR', 'FILED'):
-            flash(_('This SAR is closed.'), 'warning')
+        try:
+            if action == 'assign':
+                strreg.assign_case(sar_id, request.form.get('assigned_to'), current_user.id, db=db)
+            elif action == 'investigate':
+                strreg.record_investigation(sar_id, request.form.get('notes'), request.form.get('findings'),
+                                            request.form.get('ready') == 'on', current_user.id,
+                                            f"{current_user.first_name or ''} {current_user.last_name or ''}".strip(),
+                                            db=db)
+            elif action == 'decide':
+                strreg.record_decision(sar_id, request.form.get('decision'), request.form.get('rationale'),
+                                       current_user.id, _is_mlro(current_user), db=db)
+            elif action == 'file':
+                strreg.record_filing(sar_id, request.form.get('filing_date'), request.form.get('emlcu_reference'),
+                                     current_user.id, db=db)
+            elif action == 'link':
+                lt = request.form.get('link_type')
+                tid = strreg.resolve_target(db, lt, request.form.get('target_ref'))
+                if not tid:
+                    raise strreg.StrError(strreg.N_('Alert or transaction not found.'))
+                strreg.add_link(sar_id, lt, tid, current_user.id, note=(request.form.get('note') or '').strip() or None,
+                                db=db)
+            elif action == 'unlink':
+                lid = request.form.get('link_id')
+                if not (lid or '').isdigit() or not db.execute(
+                        "SELECT 1 FROM aml_sar_links WHERE id = %s AND sar_id = %s", (lid, sar_id)).fetchone():
+                    raise strreg.StrError(strreg.N_('Link not found.'))
+                strreg.remove_link(int(lid), current_user.id, request.form.get('reason'), db=db)
+            else:
+                raise strreg.StrError(strreg.N_('Unknown action.'))
+        except strreg.StrError as e:
+            flash(_(str(e)), 'danger')
             return redirect(url_for('aml.sar_detail', sar_id=sar_id))
-        if action == 'assign':
-            uid = request.form.get('assigned_to')
-            if not uid or not db.execute("SELECT 1 FROM users WHERE id = %s AND is_active = 1 AND role IN ('admin','compliance_manager','compliance_officer')", (uid,)).fetchone():
-                flash(_('Choose a compliance user.'), 'danger')
-                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
-            db.execute("""UPDATE suspicious_activities SET assigned_to = %s, assignment_date = %s,
-                          investigation_status = CASE WHEN investigation_status IS NULL OR investigation_status = 'NEW'
-                                                      THEN 'UNDER_INVESTIGATION' ELSE investigation_status END, updated_at = %s
-                          WHERE id = %s""", (uid, now[:10], now, sar_id))
-            msg = f'assigned to user {uid}'
-        elif action == 'investigate':
-            notes = (request.form.get('notes') or '').strip()
-            if len(notes) < 10:
-                flash(_('Write the investigation note.'), 'danger')
-                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
-            stamp = f"[{now} — {current_user.first_name or ''} {current_user.last_name or ''}] {notes}"
-            findings = (request.form.get('findings') or '').strip()
-            ready = request.form.get('ready') == 'on'
-            db.execute("""UPDATE suspicious_activities SET
-                          investigation_notes = CASE WHEN COALESCE(investigation_notes, '') = '' THEN %s
-                                                     ELSE investigation_notes || E'\n' || %s END,
-                          investigation_findings = COALESCE(NULLIF(%s, ''), investigation_findings),
-                          investigation_status = %s, updated_at = %s WHERE id = %s""",
-                       (stamp, stamp, findings, 'PENDING_DECISION' if ready else 'UNDER_INVESTIGATION', now, sar_id))
-            msg = 'investigation note' + (' — sent for decision' if ready else '')
-        elif action == 'decide':
-            decision = request.form.get('decision')
-            rationale = (request.form.get('rationale') or '').strip()
-            if not _is_mlro(current_user):
-                flash(_('Only the MLRO decides whether to report to the unit.'), 'danger')
-                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
-            if sar.get('reported_by') == current_user.id:
-                flash(_('Four-eyes: the person who raised the SAR cannot decide it.'), 'danger')
-                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
-            if decision not in ('FILE_SAR', 'NO_STR') or len(rationale) < 20:
-                flash(_('Choose the decision and write the rationale (at least 20 characters).'), 'danger')
-                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
-            db.execute("""UPDATE suspicious_activities SET decision = %s, decision_by = %s, decision_date = %s,
-                          decision_rationale = %s, investigation_status = %s, updated_at = %s WHERE id = %s""",
-                       (decision, current_user.id, now[:10], rationale, decision, now, sar_id))
-            msg = f'decision {decision}'
-        elif action == 'file':
-            ref = (request.form.get('emlcu_reference') or '').strip()
-            fdate = request.form.get('filing_date') or ''
-            if status != 'FILE_SAR':
-                flash(_('Record the filing after the MLRO has decided to report.'), 'warning')
-                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
-            try:
-                from datetime import date
-                if date.fromisoformat(fdate) > date.today():
-                    raise ValueError
-            except ValueError:
-                flash(_('Enter a filing date that is not in the future.'), 'danger')
-                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
-            if not ref:
-                flash(_('Enter the unit\'s reference number.'), 'danger')
-                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
-            db.execute("""UPDATE suspicious_activities SET sar_filed = 1, sar_filing_date = %s, emlcu_reference = %s,
-                          investigation_status = 'FILED', updated_at = %s WHERE id = %s""", (fdate, ref, now, sar_id))
-            msg = f'filed, reference {ref}'
-        else:
-            flash(_('Unknown action.'), 'danger')
-            return redirect(url_for('aml.sar_detail', sar_id=sar_id))
-        db.commit()
-        AuditLog.log(current_user.id, 'UPDATE', 'AML', sar_id, f'SAR {sar["sar_reference"]}: {msg}', request.remote_addr)
         flash(_('SAR updated.'), 'success')
         return redirect(url_for('aml.sar_detail', sar_id=sar_id))
 
-    staff = db.execute("""SELECT id, first_name, last_name FROM users WHERE is_active = 1
-                          AND role IN ('admin','compliance_manager','compliance_officer') ORDER BY first_name""").fetchall()
-    names = {}
-    for key in ('reported_by', 'assigned_to', 'decision_by'):
-        if sar.get(key):
-            u = db.execute("SELECT first_name, last_name FROM users WHERE id = %s", (sar[key],)).fetchone()
-            names[key] = f"{u['first_name'] or ''} {u['last_name'] or ''}".strip() if u else str(sar[key])
+    names = {k: strreg.user_name(db, sar.get(k)) for k in ('reported_by', 'assigned_to', 'decision_by') if sar.get(k)}
     history = db.execute("""SELECT a.created_at AS at, a.details, u.first_name, u.last_name FROM audit_logs a
                             LEFT JOIN users u ON u.id = a.user_id
-                            WHERE a.module = 'AML' AND a.item_id = %s AND a.details LIKE %s ORDER BY a.id DESC LIMIT 50""",
+                            WHERE a.module = 'AML' AND a.item_id = %s AND a.details LIKE %s ORDER BY a.id DESC LIMIT 100""",
                          (sar_id, f'%{sar["sar_reference"]}%')).fetchall()
-    return render_template('aml/sar_detail.html', sar=sar, staff=staff, names=names, history=history,
-                           statuses=SAR_STATUSES, is_mlro=_is_mlro(current_user),
-                           lang='ar' if (request.args.get('lang') or '') == 'ar' else None)
+    cfg = strreg.deadline_config(db)
+    due = strreg.deadline_flag(sar, cfg['days'], cfg['basis'])
+    ar = _ar()
+    return render_template('aml/sar_detail.html', sar=sar, staff=strreg.aml_staff(db), names=names, history=history,
+                           statuses=strreg.STATUSES, status_labels=strreg.status_labels(ar),
+                           source_labels=strreg.source_labels(ar), link_labels=strreg.link_labels(ar),
+                           link_types=strreg.LINK_TYPES, links=strreg.case_links(db, sar_id),
+                           alert_status_labels=tmal.labels(tmal.STATUSES, ar),
+                           due=due, due_text=_due_text, cfg=cfg,
+                           deadline=strreg.case_deadline(sar, cfg['days'], cfg['basis']),
+                           is_mlro=_is_mlro(current_user),
+                           legacy_attachments=(list_attachments('aml', 'aml_unusual', sar['unusual_txn_id'])
+                                               if sar.get('unusual_txn_id') else []),
+                           report_attachments=(list_attachments('aml', empr.ATTACH_TYPE, sar['employee_report_id'])
+                                               if sar.get('employee_report_id') else []))
+
+
+# ---------------------------------------------------------------- employee reports: MLRO inbox
+def _mlro_only():
+    if not (_is_mlro(current_user) or current_user.is_admin()):
+        flash(_('Only the MLRO can open internal suspicious-activity reports.'), 'danger')
+        return redirect(url_for('aml.sar_list'))
+    return None
+
+
+@aml_bp.route('/employee-reports')
+@login_required
+@permission_required('aml')
+def employee_report_inbox():
+    deny = _mlro_only()
+    if deny:
+        return deny
+    db = get_db()
+    status = request.args.get('status', 'OPEN')
+    ar = _ar()
+    return render_template('aml/employee_report_inbox.html', rows=empr.inbox(db, status if status != 'ALL' else None),
+                           status=status, statuses=empr.STATUSES, status_labels=empr.labels(empr.STATUSES, ar),
+                           subject_labels=empr.labels(empr.SUBJECT_TYPES, ar))
+
+
+@aml_bp.route('/employee-reports/<int:report_id>', methods=['GET', 'POST'])
+@login_required
+@permission_required('aml')
+def employee_report_view(report_id):
+    deny = _mlro_only()
+    if deny:
+        return deny
+    db = get_db()
+    try:
+        r = empr.get_report(db, report_id)
+    except empr.ReportError:
+        flash(_('Report not found.'), 'warning')
+        return redirect(url_for('aml.employee_report_inbox'))
+    if request.method == 'POST':
+        action = request.form.get('action')
+        try:
+            if action == 'review':
+                empr.start_review(report_id, current_user.id, db=db)
+                msg = 'review started'
+            elif action == 'convert':
+                sid, sref = empr.convert_to_str(report_id, current_user.id, request.form.get('customer_id'),
+                                                request.form.get('amount'), db=db)
+                msg = f'converted to STR case {sref}'
+            elif action == 'close':
+                empr.close_no_action(report_id, current_user.id, request.form.get('reason'), db=db)
+                msg = 'closed — no action'
+            else:
+                raise empr.ReportError(empr.N_('Unknown action.'))
+            AuditLog.log(current_user.id, 'UPDATE', 'AML', report_id,
+                         f'Employee suspicion report {r["reference"]}: {msg}', request.remote_addr)
+            flash(_('Report updated.'), 'success')
+        except empr.ReportError as e:
+            flash(_(str(e)), 'danger')
+        return redirect(url_for('aml.employee_report_view', report_id=report_id))
+    ar = _ar()
+    customers = db.execute("SELECT id, full_name, customer_reference FROM customers ORDER BY full_name").fetchall()
+    return render_template('aml/employee_report_view.html', r=r, events=empr.report_events(db, report_id),
+                           status_labels=empr.labels(empr.STATUSES, ar), subject_labels=empr.labels(empr.SUBJECT_TYPES, ar),
+                           action_labels=empr.labels(empr.ACTIONS, ar), customers=customers,
+                           attachments=list_attachments('aml', empr.ATTACH_TYPE, report_id))
 
 
 @aml_bp.route('/screening', methods=['GET', 'POST'])
@@ -879,190 +1012,204 @@ def view_transaction(tx_id):
 @login_required
 @permission_required('aml', level='view')
 def alert_list():
-    from database.db import get_db
     from aml.tm_service import get_alert_stats
     db = get_db()
 
-    # Default to OPEN alerts only. Previously this listed every alert
-    # regardless of status, so an alert closed as a false positive stayed
-    # sitting in the working list and looked like the closure had not worked.
-    # 'ALL' explicitly shows everything, including resolved alerts.
-    CLOSED_STATUSES = ('FALSE_POSITIVE', 'CLOSED', 'SAR_CREATED')
+    # Default to OPEN alerts only; 'ALL' explicitly shows everything, including resolved alerts.
+    f = {k: (request.args.get(k) or '').strip() for k in
+         ('severity', 'rule', 'assignee', 'date_from', 'date_to', 'score_min', 'score_max', 'q')}
     status_filter = request.args.get('status', 'OPEN')
-    severity_filter = request.args.get('severity', '')
-    page = int(request.args.get('page', 1))
+    severity_filter = f['severity']
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except ValueError:
+        page = 1
     per_page = 25
-    offset = (page - 1) * per_page
 
-    filters = []
-    params = []
+    filters, params = [], []
     if status_filter == 'OPEN':
         filters.append("a.status NOT IN (%s, %s, %s)")
-        params.extend(CLOSED_STATUSES)
+        params.extend(tmal.CLOSED_STATUSES)
     elif status_filter and status_filter != 'ALL':
         filters.append("a.status = %s")
         params.append(status_filter)
     if severity_filter:
         filters.append("a.alert_severity = %s")
         params.append(severity_filter)
+    if f['rule'].isdigit():
+        filters.append("a.rule_id = %s")
+        params.append(int(f['rule']))
+    if f['assignee'] == 'none':
+        filters.append("a.assigned_to IS NULL")
+    elif f['assignee'].isdigit():
+        filters.append("a.assigned_to = %s")
+        params.append(int(f['assignee']))
+    for key, op in (('date_from', '>='), ('date_to', '<=')):
+        if f[key]:
+            try:
+                datetime.strptime(f[key], '%Y-%m-%d')
+                filters.append(f"substr(CAST(a.alert_date AS TEXT), 1, 10) {op} %s")
+                params.append(f[key])
+            except ValueError:
+                pass
+    for key, op in (('score_min', '>='), ('score_max', '<=')):
+        if f[key].isdigit():
+            filters.append(f"COALESCE(a.risk_score, 0) {op} %s")
+            params.append(int(f[key]))
+    if f['q']:
+        like = f"%{f['q']}%"
+        filters.append("""(a.alert_reference ILIKE %s OR COALESCE(a.alert_description, '') ILIKE %s
+                           OR COALESCE(c.full_name, c.company_name, '') ILIKE %s OR COALESCE(c.customer_reference, '') ILIKE %s
+                           OR COALESCE(r.rule_name, '') ILIKE %s OR COALESCE(r.rule_code, '') ILIKE %s)""")
+        params.extend([like] * 6)
 
     where = "WHERE " + " AND ".join(filters) if filters else ""
-
-    total = db.execute(f"SELECT COUNT(*) as count FROM tm_alerts a {where}", params).fetchone()['count']
-    alerts = db.execute(f"""
-        SELECT a.id, a.alert_reference, CAST(a.alert_date AS TEXT) as alert_date,
-               a.alert_description, a.alert_severity, a.status,
-               a.assigned_to, a.investigation_notes, a.disposition,
-               a.triggered_transactions, a.rule_id, a.customer_id,
-               r.rule_name, r.rule_code,
-               c.full_name, c.company_name, c.customer_reference,
-               u.first_name || ' ' || u.last_name as assigned_name
-        FROM tm_alerts a
+    base = f"""FROM tm_alerts a
         LEFT JOIN tm_rules r ON a.rule_id = r.id
         LEFT JOIN customers c ON a.customer_id = c.id
         LEFT JOIN users u ON a.assigned_to = u.id
-        {where}
-        ORDER BY 
-            CASE a.alert_severity WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 ELSE 3 END,
-            a.alert_date DESC
-        LIMIT %s OFFSET %s
-    """, params + [per_page, offset]).fetchall()
+        {where}"""
+    cols = """SELECT a.id, a.alert_reference, CAST(a.alert_date AS TEXT) as alert_date,
+               a.alert_description, a.alert_severity, a.status, a.risk_score,
+               a.assigned_to, a.investigation_notes, a.disposition, a.sar_id,
+               a.triggered_transactions, a.rule_id, a.customer_id,
+               r.rule_name, r.rule_name_ar, r.rule_code,
+               c.full_name, c.company_name, c.customer_reference,
+               u.first_name || ' ' || u.last_name as assigned_name"""
+    order = """ORDER BY CASE a.alert_severity WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 ELSE 3 END, a.alert_date DESC"""
+    ar = _ar()
+    st_l, sev_l = tmal.labels(tmal.STATUSES, ar), tmal.labels(tmal.SEVERITIES, ar)
+    if request.args.get('export') == 'csv':
+        rows = db.execute(f"{cols} {base} {order} LIMIT 20000", params).fetchall()
+        return _csv_response(
+            [_('Reference'), _('Date'), _('Customer'), _('Customer reference'), _('Rule'), _('Severity'), _('Score'),
+             _('Status'), _('Assigned To'), _('Description')],
+            [[a['alert_reference'], (a['alert_date'] or '')[:16], a['full_name'] or a['company_name'],
+              a['customer_reference'], f"{a['rule_code'] or ''} {tmal.rule_label(a['rule_name'], a['rule_name_ar'], ar)}",
+              sev_l.get(a['alert_severity'], a['alert_severity']), a['risk_score'],
+              st_l.get(a['status'], a['status']), a['assigned_name'], a['alert_description']] for a in rows],
+            'tm_alerts.csv')
 
+    total = db.execute(f"SELECT COUNT(*) as count {base}", params).fetchone()['count']
+    alerts = db.execute(f"{cols} {base} {order} LIMIT %s OFFSET %s",
+                        params + [per_page, (page - 1) * per_page]).fetchall()
     stats = get_alert_stats(db)
     total_pages = (total + per_page - 1) // per_page
-    compliance_users = db.execute("SELECT id, first_name, last_name FROM users WHERE is_active=1").fetchall()
-
+    rules = db.execute("SELECT id, rule_code, rule_name, rule_name_ar FROM tm_rules ORDER BY rule_code").fetchall()
+    qs = {k: v for k, v in f.items() if v}
+    qs['status'] = status_filter
     return render_template('aml/alert_list.html',
                            alerts=alerts, stats=stats, total=total,
                            page=page, total_pages=total_pages,
-                           status_filter=status_filter,
-                           severity_filter=severity_filter,
-                           compliance_users=compliance_users)
+                           status_filter=status_filter, severity_filter=severity_filter, f=f, qs=qs,
+                           rules=rules, compliance_users=strreg.aml_staff(db), ar=ar,
+                           status_labels=st_l, severity_labels=sev_l, statuses=tmal.STATUSES,
+                           severities=tmal.SEVERITIES, rule_label=tmal.rule_label)
+
+
+def _notify_escalation(db, alert_id, notes):
+    """An escalation nobody is told about is not an escalation: notify every
+    compliance officer / admin (except the escalating user) with a link back."""
+    try:
+        from models.notification import Notification
+        from models.user import User as _User
+        ref_row = db.execute("""SELECT a.alert_reference, a.alert_severity, COALESCE(c.full_name, c.company_name) AS cname
+                                  FROM tm_alerts a LEFT JOIN customers c ON a.customer_id = c.id
+                                 WHERE a.id = %s""", (alert_id,)).fetchone()
+        ref = (ref_row['alert_reference'] if ref_row else alert_id)
+        sev = (ref_row['alert_severity'] if ref_row else '') or ''
+        cname = (ref_row['cname'] if ref_row else '') or ''
+        link = url_for('aml.view_alert', alert_id=alert_id)
+        recipients = [u for u in _User.get_all_compliance_officers() if u.id != current_user.id]
+        for u in recipients:
+            Notification.create(
+                user_id=u.id, title='Escalated AML alert %s' % ref,
+                message='%s escalated alert %s%s%s. %s' % (
+                    current_user.first_name or 'A reviewer', ref, (' (%s)' % sev) if sev else '',
+                    (' for %s' % cname) if cname else '', (notes or 'No notes provided.')),
+                link=link, n_type='aml_escalation')
+        AuditLog.log(current_user.id, 'Escalate AML Alert', 'AML', alert_id,
+                     'Escalated alert %s to %d compliance staff' % (ref, len(recipients)), request.remote_addr)
+        if recipients:
+            flash(_('Escalated. %(n)d compliance staff notified.', n=len(recipients)), 'info')
+        else:
+            flash(_('Escalated, but no other compliance officer exists to notify.'), 'warning')
+    except Exception as exc:
+        current_app.logger.error('Escalation notification failed for alert %s: %s', alert_id, exc)
+        flash(_('Alert escalated, but notifying the team failed.'), 'warning')
 
 
 @aml_bp.route('/alerts/<int:alert_id>', methods=['GET', 'POST'])
 @login_required
 @permission_required('aml', level='view')
 def view_alert(alert_id):
-    from database.db import get_db
     db = get_db()
 
     if request.method == 'POST':
+        if not current_user.can_edit('aml'):
+            flash(_('You do not have permission to change alerts.'), 'danger')
+            return redirect(url_for('aml.view_alert', alert_id=alert_id))
         action = request.form.get('action')
         notes = (request.form.get('notes') or '').strip()
-        if action in ('close', 'false_positive') and not notes:
-            flash(_('Notes are required to close an alert or mark it as a false positive.'), 'danger')
-            return redirect(url_for('aml.view_alert', alert_id=alert_id))
-        status_map = {
-            'assign': 'ASSIGNED', 'investigate': 'INVESTIGATING',
-            'escalate': 'ESCALATED', 'false_positive': 'FALSE_POSITIVE',
-            'close': 'CLOSED'
-        }
-        new_status = status_map.get(action)
-        if new_status:
-            assigned_to = request.form.get('assigned_to') or None
-            db.execute("""
-                UPDATE tm_alerts SET status=%s, investigation_notes=%s,
-                assigned_to=COALESCE(%s,assigned_to),
-                disposition=%s, disposition_by=%s, disposition_date=%s
-                WHERE id=%s
-            """, (new_status, notes, assigned_to,
-                  action.upper(), current_user.id,
-                  datetime.now().date().isoformat(), alert_id))
-            db.commit()
-
-            # An escalation nobody is told about is not an escalation. Notify
-            # every compliance officer / admin (except the person who just
-            # escalated) with a direct link back to this alert.
-            if action == 'escalate':
-                try:
-                    from models.notification import Notification
-                    from models.user import User as _User
-                    ref_row = db.execute(
-                        """SELECT a.alert_reference, a.alert_severity,
-                                  COALESCE(c.full_name, c.company_name) AS cname
-                             FROM tm_alerts a
-                             LEFT JOIN customers c ON a.customer_id = c.id
-                            WHERE a.id = %s""", (alert_id,)).fetchone()
-                    ref = (ref_row['alert_reference'] if ref_row else alert_id)
-                    sev = (ref_row['alert_severity'] if ref_row else '') or ''
-                    cname = (ref_row['cname'] if ref_row else '') or ''
-                    link = url_for('aml.view_alert', alert_id=alert_id)
-                    recipients = [u for u in _User.get_all_compliance_officers()
-                                  if u.id != current_user.id]
-                    for u in recipients:
-                        Notification.create(
-                            user_id=u.id,
-                            title='Escalated AML alert %s' % ref,
-                            message='%s escalated alert %s%s%s. %s' % (
-                                current_user.first_name or 'A reviewer',
-                                ref,
-                                (' (%s)' % sev) if sev else '',
-                                (' for %s' % cname) if cname else '',
-                                (notes or 'No notes provided.')),
-                            link=link,
-                            n_type='aml_escalation',
-                        )
-                    AuditLog.log(
-                        current_user.id, 'Escalate AML Alert', 'AML', alert_id,
-                        'Escalated alert %s to %d compliance staff'
-                        % (ref, len(recipients)), request.remote_addr)
-                    if recipients:
-                        flash(_('Escalated. %(n)d compliance staff notified.',
-                                n=len(recipients)), 'info')
-                    else:
-                        flash(_('Escalated, but no other compliance officer '
-                                'exists to notify.'), 'warning')
-                except Exception as exc:
-                    current_app.logger.error(
-                        'Escalation notification failed for alert %s: %s',
-                        alert_id, exc)
-                    flash(_('Alert escalated, but notifying the team failed.'),
-                          'warning')
-
-            # A TM false positive closes this alert only. It deliberately does
-            # NOT touch the sanctions-screening whitelist: suppressing future
-            # sanctions hits is a screening decision, taken in Screening.
-
-            flash(gettext('Alert updated to %(new_status)s', new_status=new_status), 'success')
+        try:
+            if action == 'assign':
+                tmal.assign_alert(alert_id, request.form.get('assigned_to'), current_user.id, notes, db=db)
+            elif action == 'investigate':
+                tmal.start_investigation(alert_id, current_user.id, notes, db=db)
+            elif action == 'escalate':
+                tmal.escalate_alert(alert_id, current_user.id, notes, db=db)
+                _notify_escalation(db, alert_id, notes)
+            elif action == 'false_positive':
+                # Closes this alert only — it does NOT touch the screening whitelist.
+                tmal.mark_false_positive(alert_id, current_user.id, notes, db=db)
+            elif action == 'close':
+                tmal.close_alert(alert_id, current_user.id, notes, db=db)
+            elif action == 'note':
+                tmal.add_note(alert_id, current_user.id, notes, db=db)
+            else:
+                raise tmal.AlertError(tmal.N_('Unknown action.'))
+            AuditLog.log(current_user.id, 'UPDATE', 'AML', alert_id, f'TM alert {alert_id}: {action}',
+                         request.remote_addr)
+            flash(_('Alert updated.'), 'success')
+        except tmal.AlertError as e:
+            flash(_(str(e)), 'danger')
         return redirect(url_for('aml.view_alert', alert_id=alert_id))
 
     alert = db.execute("""
         SELECT a.id, a.alert_reference, CAST(a.alert_date AS TEXT) as alert_date,
-               a.alert_description, a.alert_severity, a.status,
+               a.alert_description, a.alert_severity, a.status, a.risk_score, a.sar_id,
                a.assigned_to, a.investigation_notes, a.disposition,
                a.triggered_transactions, a.rule_id, a.customer_id,
                a.disposition_by, a.disposition_date,
-               r.rule_name, r.rule_code, r.rule_description,
+               r.rule_name, r.rule_name_ar, r.rule_code, r.rule_description,
                c.full_name, c.company_name, c.customer_reference, c.risk_classification,
-               c.id as cust_id
+               c.id as cust_id, u.first_name || ' ' || u.last_name AS assigned_name
         FROM tm_alerts a
         LEFT JOIN tm_rules r ON a.rule_id = r.id
         LEFT JOIN customers c ON a.customer_id = c.id
+        LEFT JOIN users u ON u.id = a.assigned_to
         WHERE a.id = %s
     """, (alert_id,)).fetchone()
-
     if not alert:
         flash(gettext('Alert not found'), 'danger')
         return redirect(url_for('aml.alert_list'))
 
-    tx_ids = json.loads(alert['triggered_transactions'] or '[]')
-    transactions = []
-    if tx_ids:
-        placeholders = ','.join(['%s'] * len(tx_ids))
-        transactions = db.execute(f"SELECT * FROM transactions WHERE id IN ({placeholders})", tx_ids).fetchall()
-
-    recent_txs = db.execute("""
-        SELECT * FROM transactions WHERE customer_id=%s
-        ORDER BY transaction_date DESC LIMIT 10
-    """, (alert['cust_id'],)).fetchall()
-
-    compliance_users = db.execute("SELECT id, first_name, last_name FROM users WHERE is_active=1").fetchall()
-
+    tx_ids = tmal.triggered_ids(dict(alert))
+    transactions = db.execute("SELECT * FROM transactions WHERE id = ANY(%s)", (tx_ids,)).fetchall() if tx_ids else []
+    recent_txs = db.execute("SELECT * FROM transactions WHERE customer_id=%s ORDER BY transaction_date DESC LIMIT 10",
+                            (alert['cust_id'],)).fetchall()
+    linked_cases = db.execute("""SELECT DISTINCT s.id, s.sar_reference, s.investigation_status
+                                   FROM aml_sar_links l JOIN suspicious_activities s ON s.id = l.sar_id
+                                  WHERE l.link_type = 'tm_alert' AND l.target_id = %s AND l.unlinked_at IS NULL
+                                  ORDER BY s.id""", (alert_id,)).fetchall()
+    ar = _ar()
     return render_template('aml/alert_view.html',
-                           alert=alert, transactions=transactions,
-                           recent_txs=recent_txs,
-                           compliance_users=compliance_users)
+                           alert=alert, transactions=transactions, recent_txs=recent_txs,
+                           compliance_users=strreg.aml_staff(db), events=tmal.events(db, alert_id),
+                           linked_cases=linked_cases, closed=alert['status'] in tmal.CLOSED_STATUSES,
+                           status_labels=tmal.labels(tmal.STATUSES, ar), severity_labels=tmal.labels(tmal.SEVERITIES, ar),
+                           action_labels=tmal.labels(tmal.ACTIONS, ar), case_status_labels=strreg.status_labels(ar),
+                           rule_label=tmal.rule_label(alert['rule_name'], alert['rule_name_ar'], ar))
 
 
 @aml_bp.route('/tm-rules')
