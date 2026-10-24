@@ -188,6 +188,8 @@ def seed(ctx):
     lap('aml assurance')
     s.finish()
     lap('finish')
+    s.consistency()
+    lap('consistency')
 
 
 class Seeder:
@@ -1244,6 +1246,8 @@ class Seeder:
                       approval_date=str((when + timedelta(days=5)).date()) if edd_done else None,
                       completion_date=str((when + timedelta(days=5)).date()) if edd_done else None,
                       outcome='Continue with enhanced monitoring' if edd_done else None,
+                      **({'prepared_by': aml, 'submitted_at': self.ts(when + timedelta(days=2))}
+                         if edd_done and 'prepared_by' in c.cols('edd_cases') else {}),
                       relationship_continued=1, monitoring_enhanced=1, enhanced_monitoring_frequency='Monthly',
                       created_at=self.ts(when), created_by=aml, updated_at=self.ts(when + timedelta(days=5)))
         db.commit()
@@ -1289,6 +1293,12 @@ class Seeder:
         except Exception as e:
             db.rollback()
             print('    risk floor / EDD reassessment skipped:', e)
+        # the application's rule: a high-risk customer whose EDD is not approved is
+        # not active - the relationship waits for the EDD decision (e.g. Walid)
+        c.q("""UPDATE customers SET status = 'PENDING',
+               status_reason = 'High risk: EDD must be approved before activation'
+               WHERE requires_edd = 1 AND COALESCE(edd_completed, 0) = 0 AND status = 'ACTIVE'""")
+        self.commit()
         print('      customer risk bands:', counts)
 
     # ------------------------------------------------------------ ongoing + delta
@@ -1528,3 +1538,39 @@ class Seeder:
         c.q("UPDATE aml_alerts SET assigned_to = %s WHERE alert_status = 'OPEN' AND assigned_to IS NULL",
             (c.uid('aml'),))
         self.commit()
+
+    # ------------------------------------------------------------ consistency
+    def consistency(self):
+        """Last pass: records the seed wrote separately must agree with each other."""
+        from database.db import get_db
+        db = get_db()
+        self.commit()
+        # STR register is the authority: an old unusual-transactions entry follows its case
+        from aml import str_register as SR
+        n = 0
+        for row in db.execute("""SELECT s.id, s.investigation_status, u.status FROM suspicious_activities s
+                                 JOIN aml_unusual_transactions u ON u.id = s.unusual_txn_id""").fetchall():
+            if SR.UNUSUAL_STATUS.get(row['investigation_status'] or 'NEW', 'under_study') != row['status']:
+                SR._mirror_to_unusual(db, SR.get_case(db, row['id']))
+                n += 1
+        print(f'      STR cases aligned with the unusual-transactions register: {n}')
+        # KYB owners and signatories: screened, so a demo merchant / corporate can be decided
+        try:
+            from screening.routes import get_engine
+            get_engine()
+        except Exception as e:
+            db.rollback()
+            print('      KYB people left unscreened (screening engine unavailable):', str(e)[:120])
+            return
+        from kyb import service as KYB
+        aml = self.c.uid('aml')
+        subjects = [('merchant', m['id']) for m in self.merch] + \
+                   [('aml_customer', cu['id']) for cu in self.cust if cu['kind'] == 'CORPORATE']
+        done = 0
+        for subject, sid in subjects:
+            try:
+                done += KYB.screen_all(subject, sid, aml, db=db)
+            except Exception as e:  # one failure must not stop the demo
+                db.rollback()
+                print(f'      KYB screening {subject} {sid}: {str(e)[:120]}')
+        print(f'      KYB people screened: {done}')

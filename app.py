@@ -234,6 +234,11 @@ def create_app(config_name=None):
 
     # Initialize Babel
     def get_locale():
+        # Outside a request (scheduled jobs, CLI scripts, demo seed) there is no
+        # user: messages built there use English instead of failing.
+        from flask import has_request_context
+        if not has_request_context():
+            return 'en'
         # Check URL parameter first
         lang = request.args.get('lang')
         if lang in ['ar', 'en']:

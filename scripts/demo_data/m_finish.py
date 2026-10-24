@@ -8,6 +8,16 @@ SCALE = 10  # prudential demo figures x10: a mid-size MFI (assets ~EGP 1.7bn, eq
 
 
 def seed(ctx):
+    # reference rows copied from the main instance name its regulator; the demo
+    # company is supervised by the FRA, so its own pages must not cite the CBE
+    ctx.q(r"""UPDATE required_policies SET regulatory_reference = regexp_replace(regulatory_reference, '\mCBE\M', 'FRA', 'g')
+             WHERE regulatory_reference ~ '\mCBE\M'""")
+    ctx.q(r"""UPDATE risk_categories SET category_description = regexp_replace(category_description, '\mCBE\M', 'FRA', 'g')
+             WHERE category_description ~ '\mCBE\M'""")
+    ctx.q(r"""UPDATE whistleblowing_categories
+             SET description_en = regexp_replace(description_en, '\mCBE\M', 'FRA', 'g'),
+                 description_ar = replace(description_ar, 'البنك المركزي', 'الهيئة العامة للرقابة المالية')
+             WHERE description_en ~ '\mCBE\M' OR description_ar LIKE '%البنك المركزي%'""")
     ctx.q("""UPDATE corp_profile SET legal_name_en = %s, legal_name_ar = %s,
              registered_address_en = %s, registered_address_ar = %s, commercial_register_no = %s,
              tax_card_no = %s, licence_number = %s, phone = %s, email = %s, website = %s WHERE id = 1""",
@@ -38,3 +48,12 @@ def seed(ctx):
     readiness.snapshot(db)
     s = readiness.overview(db=db)['overall']
     print(f'    controls re-run: {st} · readiness {s["score"]} / 100')
+    # the central case list: every source record has its case
+    try:
+        from models.case import resync_all
+        counts = resync_all()
+        db.commit()
+        print('    case list re-synced:', {k: v for k, v in counts.items() if v})
+    except Exception as e:
+        db.rollback()
+        print('    case re-sync skipped:', str(e)[:120])
