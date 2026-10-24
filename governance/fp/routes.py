@@ -164,7 +164,7 @@ def fp_form_view(fid):
     return render_template('governance/fp/form_view.html', f=f, defn=defn, a=f['answers'], flags=flags, caps=caps,
                            issues=issues, events=S.events(fid), CRITERIA=S.CRITERIA, guide=guide, S=S, lang=_lang(),
                            signed=list_attachments('governance', 'fp_form', fid),
-                           has_docx=bool(F.docx_path(defn)))
+                           has_docx=bool(F.docx_path(defn)), today_iso=datetime.now().date().isoformat())
 
 
 @governance_bp.route('/fit-proper/forms/<int:fid>/assess', methods=['POST'])
@@ -191,12 +191,25 @@ def fp_form_assess(fid):
 @permission_required('governance', level='edit')
 def fp_form_status(fid):
     action = request.form.get('action')
+    reference = (request.form.get('regulator_reference') or '').strip() or None
+    decision_on = (request.form.get('decision_on') or '').strip() or None
+    if action in ('regulator_approved', 'regulator_rejected'):
+        f, _defn = _form_or_404(fid)
+        reference = reference or f.get('regulator_reference')
+        try:
+            decided = datetime.strptime(decision_on or '', '%Y-%m-%d').date()
+        except ValueError:
+            decided = None
+        if not reference or not decided or decided > datetime.now().date():
+            flash(_('Recording the regulator decision needs the regulator reference and the decision date (not in the future).'), 'danger')
+            return redirect(url_for('governance.fp_form_view', fid=fid))
     try:
         S.transition(fid, action, current_user.id, note=(request.form.get('note') or '').strip() or None,
-                     extra={'regulator_reference': (request.form.get('regulator_reference') or '').strip() or None,
-                            'decision_on': request.form.get('decision_on') or None})
+                     extra={'regulator_reference': reference, 'decision_on': decision_on})
         AuditLog.log(current_user.id, f'Fit & proper form: {action}', 'Governance', fid, None, request.remote_addr)
         flash(_('Status updated.'), 'success')
+    except S.FourEyesError:
+        flash(_('Four-eyes rule: you saved the assessment of this form, so another user must give the internal approval.'), 'danger')
     except ValueError as e:
         flash(_('Not possible: %(e)s', e=str(e)), 'danger')
     return redirect(url_for('governance.fp_form_view', fid=fid))

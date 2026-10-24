@@ -51,12 +51,29 @@
 
                 <hr>
 
+                {% if declaration.conflict_type or declaration.details %}
+                {% set coi_types = {'financial': _('Financial Interest'), 'employment': _('Outside Employment'), 'family': _('Family Relationship'), 'gifts': _('Gifts & Hospitality'), 'other': _('Other')} %}
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">{{ _('Disclosed Conflict (ad-hoc)') }}</h6>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">{{ _('Type of Conflict') }}</dt>
+                        <dd class="col-sm-8">{{ coi_types.get(declaration.conflict_type, declaration.conflict_type or '---') }}</dd>
+                        <dt class="col-sm-4">{{ _('Description of Conflict') }}</dt>
+                        <dd class="col-sm-8" style="white-space: pre-line">{{ declaration.details or '---' }}</dd>
+                        <dt class="col-sm-4">{{ _('Parties Involved') }}</dt>
+                        <dd class="col-sm-8" style="white-space: pre-line">{{ declaration.parties_involved or '---' }}</dd>
+                        <dt class="col-sm-4">{{ _('Proposed Mitigation') }}</dt>
+                        <dd class="col-sm-8 mb-0" style="white-space: pre-line">{{ declaration.mitigation_plan or '---' }}</dd>
+                    </dl>
+                </div>
+                {% endif %}
+
                 <h6>{{ _('Disclosures') }}</h6>
 
                 <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_financial_interests else '' }}">
                     <strong>{{ _('1. Financial Interests:') }}</strong>
                     <span class="badge bg-{{ 'danger' if declaration.has_financial_interests else 'success' }}">
-                        {{ 'Yes' if declaration.has_financial_interests else 'No' }}
+                        {{ _('Yes') if declaration.has_financial_interests else _('No') }}
                     </span>
                     {% if declaration.has_financial_interests %}
                     <p class="mt-2 text-dark">{{ declaration.financial_interests_details }}</p>
@@ -66,7 +83,7 @@
                 <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_family_in_competitor else '' }}">
                     <strong>{{ _('2. Family in Competitor:') }}</strong>
                     <span class="badge bg-{{ 'danger' if declaration.has_family_in_competitor else 'success' }}">
-                        {{ 'Yes' if declaration.has_family_in_competitor else 'No' }}
+                        {{ _('Yes') if declaration.has_family_in_competitor else _('No') }}
                     </span>
                     {% if declaration.has_family_in_competitor %}
                     <p class="mt-2 text-dark">{{ declaration.family_competitor_details }}</p>
@@ -76,7 +93,7 @@
                 <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_family_in_supplier else '' }}">
                     <strong>{{ _('3. Family in Supplier:') }}</strong>
                     <span class="badge bg-{{ 'danger' if declaration.has_family_in_supplier else 'success' }}">
-                        {{ 'Yes' if declaration.has_family_in_supplier else 'No' }}
+                        {{ _('Yes') if declaration.has_family_in_supplier else _('No') }}
                     </span>
                     {% if declaration.has_family_in_supplier %}
                     <p class="mt-2 text-dark">{{ declaration.family_supplier_details }}</p>
@@ -86,7 +103,7 @@
                 <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_outside_employment else '' }}">
                     <strong>{{ _('4. Outside Employment:') }}</strong>
                     <span class="badge bg-{{ 'danger' if declaration.has_outside_employment else 'success' }}">
-                        {{ 'Yes' if declaration.has_outside_employment else 'No' }}
+                        {{ _('Yes') if declaration.has_outside_employment else _('No') }}
                     </span>
                     {% if declaration.has_outside_employment %}
                     <p class="mt-2 text-dark">{{ declaration.outside_employment_details }}</p>
@@ -96,7 +113,7 @@
                 <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_received_gifts else '' }}">
                     <strong>{{ _('5. Gifts Received:') }}</strong>
                     <span class="badge bg-{{ 'danger' if declaration.has_received_gifts else 'success' }}">
-                        {{ 'Yes' if declaration.has_received_gifts else 'No' }}
+                        {{ _('Yes') if declaration.has_received_gifts else _('No') }}
                     </span>
                     {% if declaration.has_received_gifts %}
                     <p class="mt-2 text-dark">{{ declaration.gifts_details }}</p>
@@ -106,7 +123,7 @@
                 <div class="mb-3 p-2 {{ 'bg-light border' if declaration.has_other_conflicts else '' }}">
                     <strong>{{ _('6. Other Conflicts:') }}</strong>
                     <span class="badge bg-{{ 'danger' if declaration.has_other_conflicts else 'success' }}">
-                        {{ 'Yes' if declaration.has_other_conflicts else 'No' }}
+                        {{ _('Yes') if declaration.has_other_conflicts else _('No') }}
                     </span>
                     {% if declaration.has_other_conflicts %}
                     <p class="mt-2 text-dark">{{ declaration.other_conflicts_details }}</p>

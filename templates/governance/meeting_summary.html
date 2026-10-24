@@ -58,6 +58,8 @@
                                 <td>
                                     {% if record.attended %}
                                     <span class="text-success"><i class="bi bi-check-circle-fill"></i> {{ _('Attended') }}</span>
+                                    {% elif record.proxy_name %}
+                                    <span class="text-info"><i class="bi bi-person-check"></i> {{ _('Represented by proxy') }}</span>
                                     {% elif record.apology_received %}
                                     <span class="text-warning"><i class="bi bi-exclamation-circle"></i> {{ _('Apology') }}</span>
                                     {% else %}

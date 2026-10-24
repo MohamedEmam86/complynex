@@ -315,6 +315,11 @@ class CommitteeMembership:
         db.commit()
         return cursor.fetchone()['id']
 
+# meeting_date is a TEXT column; a legacy blank/garbage value must not break
+# every list that casts it, so only cast values that look like a date.
+SAFE_MEETING_DATE = "(CASE WHEN meeting_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN left(meeting_date, 10)::date END)"
+
+
 class BoardMeeting:
     def __init__(self, id=None, meeting_type=None, committee_id=None,
                  meeting_date=None, meeting_time=None, location=None,
@@ -348,8 +353,8 @@ class BoardMeeting:
     def get_upcoming():
         db = get_db()
         rows = db.execute('''
-            SELECT * FROM board_meetings 
-            WHERE meeting_date::date >= CURRENT_DATE 
+            SELECT * FROM board_meetings
+            WHERE ''' + SAFE_MEETING_DATE + ''' >= CURRENT_DATE
             ORDER BY meeting_date ASC
         ''').fetchall()
         return [BoardMeeting(**dict(row)) for row in rows]
@@ -357,10 +362,11 @@ class BoardMeeting:
     @staticmethod
     def get_past():
         db = get_db()
+        # Meetings without a usable date are listed here so they can be fixed.
         rows = db.execute('''
-            SELECT * FROM board_meetings 
-            WHERE meeting_date::date < CURRENT_DATE 
-            ORDER BY meeting_date DESC
+            SELECT * FROM board_meetings
+            WHERE ''' + SAFE_MEETING_DATE + ''' < CURRENT_DATE OR ''' + SAFE_MEETING_DATE + ''' IS NULL
+            ORDER BY meeting_date DESC NULLS FIRST
         ''').fetchall()
         return [BoardMeeting(**dict(row)) for row in rows]
 
@@ -428,10 +434,11 @@ class BoardMeeting:
     def get_attendance_summary(meeting_id):
         db = get_db()
         rows = db.execute('''
-            SELECT bm.member_name, ma.attended, ma.apology_received, ma.proxy_name
+            SELECT bm.member_name, ma.attended, ma.apology_received, ma.proxy_name, ma.attendance_status
             FROM meeting_attendance ma
             JOIN board_members bm ON ma.member_id = bm.id
             WHERE ma.meeting_id = %s
+            ORDER BY bm.member_name
         ''', (meeting_id,)).fetchall()
         return rows
 
@@ -446,18 +453,42 @@ class MeetingAttendance:
         self.proxy_name = proxy_name
 
     @staticmethod
-    def record_attendance(meeting_id, attendance_data):
+    def status_for(attended, apology_received, proxy_name):
+        if attended:
+            return 'PRESENT'
+        if proxy_name:
+            return 'REPRESENTED_BY_PROXY'
+        return 'ABSENT_WITH_APOLOGY' if apology_received else 'ABSENT'
+
+    @staticmethod
+    def get_for_meeting(meeting_id):
+        """{member_id: row} of what has been saved for this meeting."""
         db = get_db()
+        rows = db.execute('SELECT * FROM meeting_attendance WHERE meeting_id = %s', (meeting_id,)).fetchall()
+        return {r['member_id']: r for r in rows}
+
+    @staticmethod
+    def record_attendance(meeting_id, attendance_data, recorded_by=None):
+        """One row per (meeting, member): insert or overwrite (re-saving the
+        sheet, or rows pre-created when the meeting was scheduled)."""
+        db = get_db()
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         for member_id, data in attendance_data.items():
+            attended = 1 if data.get('attended') else 0
+            apology = 0 if attended else (1 if data.get('apology_received') else 0)
+            proxy = None if attended else data.get('proxy_name')
             db.execute('''
-                INSERT INTO meeting_attendance 
-                (meeting_id, member_id, attended, apology_received, proxy_name)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO meeting_attendance
+                (meeting_id, member_id, attended, apology_received, proxy_name,
+                 attendance_status, recorded_at, recorded_by)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (meeting_id, member_id) DO UPDATE SET
+                    attended = EXCLUDED.attended, apology_received = EXCLUDED.apology_received,
+                    proxy_name = EXCLUDED.proxy_name, attendance_status = EXCLUDED.attendance_status,
+                    recorded_at = EXCLUDED.recorded_at, recorded_by = EXCLUDED.recorded_by
             ''', (
-                meeting_id, member_id, 
-                1 if data.get('attended') else 0,
-                1 if data.get('apology_received') else 0,
-                data.get('proxy_name')
+                meeting_id, member_id, attended, apology, proxy,
+                MeetingAttendance.status_for(attended, apology, proxy), now, recorded_by
             ))
         db.commit()
 

@@ -99,6 +99,43 @@
         </div>
     </div>
 
+    <!-- Approval chain (document type workflow) -->
+    {% if approval and approval.stages %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-diagram-3 me-2 text-primary"></i>{{ _('Approval Stages') }}</h6>
+        </div>
+        <div class="card-body">
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>#</th><th>{{ _('Stage') }}</th><th>{{ _('Approver') }}</th><th>{{ _('Status') }}</th><th>{{ _('Comments') }}</th></tr></thead>
+                <tbody>
+                {% for s in approval.stages %}
+                <tr>
+                    <td>{{ s.stage_order }}</td>
+                    <td>{{ s.stage_name }}</td>
+                    <td>{% if s.first_name %}{{ s.first_name }} {{ s.last_name }}{% else %}<span class="text-muted">{{ s.approver_role or _('Unassigned') }}</span>{% endif %}</td>
+                    <td><span class="badge bg-{{ {'approved': 'success', 'rejected': 'danger', 'skipped': 'secondary'}.get(s.status, 'warning') }}">{{ s.status }}</span></td>
+                    <td class="small text-muted">{{ s.comments or '' }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% if can_decide_stage %}
+            <form method="POST" class="mt-3" action="{{ url_for('policies.decide_stage', id=policy.id, stage_order=approval.current.stage_order) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label class="form-label small fw-semibold">{{ _('Your decision for stage') }}: {{ approval.current.stage_name }}</label>
+                <textarea name="comments" class="form-control form-control-sm mb-2" rows="2" placeholder="{{ _('Comments (required to reject)') }}"></textarea>
+                <button type="submit" name="decision" value="approved" class="btn btn-sm btn-success">{{ _('Approve stage') }}</button>
+                <button type="submit" name="decision" value="rejected" class="btn btn-sm btn-outline-danger">{{ _('Reject') }}</button>
+            </form>
+            {% endif %}
+            {% if publish_blockers %}
+            <div class="alert alert-warning small mt-3 mb-0">{% for b in publish_blockers %}<div>{{ b }}</div>{% endfor %}</div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Review Workflow Timeline (if any reviews exist) -->
     {% if reviews %}
     <div class="card border-0 shadow-sm mb-4">
@@ -384,7 +421,7 @@
                         </form>
                         {% endif %}
 
-                        {% if policy.status in ['approved', 'draft'] %}
+                        {% if (policy.status or '')|lower == 'approved' and not publish_blockers %}
                         <form method="POST" action="{{ url_for('policies.publish_policy', id=policy.id) }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit"

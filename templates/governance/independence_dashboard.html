@@ -44,19 +44,19 @@
                                 </td>
                                 <td>{{ member.last_declaration_date or '-' }}</td>
                                 <td class="text-end pe-4">
-                                    {% if member.independence_status != 'Not Declared' %}
-                                    <a href="{{ url_for('governance.view_independence', id=member.id) }}"
+                                    {% if member.latest_declaration_id %}
+                                    <a href="{{ url_for('governance.view_independence', id=member.latest_declaration_id) }}"
                                         class="btn btn-sm btn-outline-info me-1" title="View/Print">
                                         <i class="fas fa-print"></i>
                                     </a>
-                                    <a href="{{ url_for('governance.edit_independence', id=member.id) }}"
+                                    <a href="{{ url_for('governance.edit_independence', id=member.latest_declaration_id) }}"
                                         class="btn btn-sm btn-outline-primary me-1" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     {% endif %}
                                     <a href="{{ url_for('governance.declare_independence', member_id=member.id) }}"
                                         class="btn btn-sm btn-primary">
-                                        {{ _('Declare') if member.independence_status == 'Not Declared' else _('New') }}
+                                        {{ _('Declare') if not member.latest_declaration_id else _('New') }}
                                     </a>
                                 </td>
                             </tr>

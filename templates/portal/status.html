@@ -267,17 +267,21 @@
                                             <td>{{ sub.estimated_value_egp }} {{ _('EGP') }}</td>
                                             <td>{{ (sub.event_date|string)[:10] if sub.event_date else _('N/A') }}</td>
                                             <td>
-                                                {% if sub.approval_status == 'approved' %}
+                                                {% if sub.status == 'approved' %}
                                                 <span class="badge bg-success">{{ _('Approved') }}</span>
-                                                {% elif sub.approval_status == 'pending_manager' %}
+                                                {% elif sub.status in ('manager_review', 'pending', 'pending_manager') %}
                                                 <span class="badge bg-warning text-dark">{{ _('Pending Manager')
                                                     }}</span>
-                                                {% elif sub.approval_status == 'pending_compliance' %}
+                                                {% elif sub.status in ('compliance_review', 'pending_compliance') %}
                                                 <span class="badge bg-info">{{ _('Pending Compliance') }}</span>
-                                                {% elif sub.approval_status == 'rejected' %}
+                                                {% elif sub.status == 'requires_clarification' %}
+                                                <span class="badge bg-warning text-dark">{{ _('Clarification requested') }}</span>
+                                                {% elif sub.status == 'rejected' %}
                                                 <span class="badge bg-danger">{{ _('Rejected') }}</span>
+                                                {% set reason = sub.compliance_comments or sub.manager_comments %}
+                                                {% if reason %}<div class="small text-muted mt-1">{{ _('Reason') }}: {{ reason }}</div>{% endif %}
                                                 {% else %}
-                                                <span class="badge bg-secondary">{{ sub.approval_status }}</span>
+                                                <span class="badge bg-secondary">{{ sub.status or _('N/A') }}</span>
                                                 {% endif %}
                                             </td>
                                         </tr>

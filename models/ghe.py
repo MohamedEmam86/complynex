@@ -190,12 +190,39 @@ class GHEDeclaration:
         return ('compliance_review', False, None, 'Value exceeds manager approval threshold')
     
     @staticmethod
+    def validation_errors(data):
+        """Server-side checks shared by every submission path."""
+        from flask_babel import gettext
+        errors = []
+        try:
+            value = float(data.get('estimated_value_egp') or '')
+            if value < 0:
+                errors.append(gettext('The estimated value cannot be negative.'))
+        except (TypeError, ValueError):
+            errors.append(gettext('Please enter a valid estimated value.'))
+        try:
+            event = datetime.strptime((data.get('event_date') or '').strip()[:10], '%Y-%m-%d').date()
+            if event > datetime.now().date():
+                errors.append(gettext('The event date cannot be in the future.'))
+        except ValueError:
+            errors.append(gettext('Please enter a valid event date.'))
+        if data.get('is_government_official') in [True, 'on', '1', 1]:
+            if not (data.get('government_official_details') or '').strip() or \
+                    not (data.get('government_official_position') or '').strip():
+                errors.append(gettext('For a government official, give the government entity and the official\'s position.'))
+        return errors
+
+    @staticmethod
     def create(data, employee_id, created_by=None):
         """
         Create new GHE declaration with automatic approval logic and cumulative tracking.
         """
         from models.user import User
-        
+
+        errors = GHEDeclaration.validation_errors(data)
+        if errors:
+            raise ValueError(' '.join(errors))
+
         db = get_db()
         
         # Get employee's manager
@@ -777,9 +804,10 @@ class GHEDeclarationHistory:
         db = get_db()
         db.execute('''
             INSERT INTO ghe_declaration_history (
-                declaration_id, action, performer_id, status_before, status_after, comments
-            ) VALUES (%s, %s, %s, %s, %s, %s)
-        ''', (declaration_id, action, performer_id, status_before, status_after, comments))
+                declaration_id, action, performer_id, status_before, status_after, comments, created_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ''', (declaration_id, action, performer_id, status_before, status_after, comments,
+              datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
         db.commit()
 
     @staticmethod

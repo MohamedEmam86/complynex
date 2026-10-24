@@ -55,8 +55,9 @@ class COICampaign:
         
         try:
             cursor.execute('''
-                INSERT INTO coi_campaigns (campaign_name, campaign_year, start_date, end_date, description, status, created_by, campaign_type)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+                INSERT INTO coi_campaigns (campaign_name, campaign_year, start_date, end_date, description, status, created_by, campaign_type,
+                                           is_active, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 1, %s) RETURNING id
             ''', (
                 data['campaign_name'],
                 data['campaign_year'],
@@ -65,13 +66,14 @@ class COICampaign:
                 data.get('description'),
                 'active',  # Create as active immediately
                 created_by,
-                campaign_type
+                campaign_type,
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             ))
             campaign_id = cursor.fetchone()[0]
             
             # Only add employees for annual campaigns
             if campaign_type == 'annual':
-                cursor.execute('SELECT id FROM users WHERE is_active = 1 AND role != "admin"')
+                cursor.execute("SELECT id FROM users WHERE is_active = 1 AND COALESCE(role, '') <> 'admin'")
                 employees = cursor.fetchall()
                 
                 for emp in employees:
@@ -562,6 +564,11 @@ class COIDeclaration:
         self.pin_code = pin_code
         self.created_at = created_at
         self.updated_at = updated_at
+        # Ad-hoc disclosure fields (portal form)
+        self.conflict_type = kwargs.get('conflict_type')
+        self.details = kwargs.get('details')
+        self.parties_involved = kwargs.get('parties_involved')
+        self.mitigation_plan = kwargs.get('mitigation_plan')
     
     @staticmethod
     def create(data, employee_id):
@@ -596,8 +603,10 @@ class COIDeclaration:
                     has_received_gifts, gifts_details,
                     has_other_conflicts, other_conflicts_details,
                     declaration_statement, digital_signature,
-                    status, pin_code
-                ) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+                    status, pin_code,
+                    has_conflict, conflict_type, details, parties_involved, mitigation_plan, created_at
+                ) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                          %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING id
             ''', (
                 data['campaign_id'],
                 employee_id,
@@ -616,7 +625,12 @@ class COIDeclaration:
                 "I agree to the declaration statement",
                 data['digital_signature'],
                 initial_status,
-                pin_code
+                pin_code,
+                1 if has_conflict or data.get('conflict_type') else 0,
+                data.get('conflict_type'),
+                data.get('details'),
+                data.get('parties_involved'),
+                data.get('mitigation_plan'),
             ))
             
             declaration_id = cursor.fetchone()[0]
@@ -683,7 +697,7 @@ class COIDeclaration:
             FROM coi_declarations d
             JOIN users u ON d.employee_id = u.id
             JOIN coi_campaigns c ON d.campaign_id = c.id
-            WHERE u.manager_id = %s AND d.status IN ('submitted', 'under_review', 'requires_clarification', 'mitigation_in_progress')
+            WHERE u.manager_id = %s AND d.status IN ('submitted', 'under_review', 'requires_clarification', 'mitigation_in_progress', 'escalated')
             ORDER BY d.created_at DESC
         '''
         rows = db.execute(sql, (manager_id,)).fetchall()

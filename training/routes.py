@@ -561,6 +561,9 @@ def download_certificate(cert_id):
         return redirect(url_for('training.my_certificates'))
 
     from fpdf import FPDF
+    from utils.arabic_pdf import shape, add_unicode_font, latin1_safe
+    from urllib.parse import quote
+    from werkzeug.utils import secure_filename
     import os
 
     # ComplyNex brand colors
@@ -585,11 +588,11 @@ def download_certificate(cert_id):
             # ComplyNex name
             self.set_y(10)
             self.set_x(55)
-            self.set_font('helvetica', 'B', 16)
+            self.set_font(FONT, 'B', 16)
             self.set_text_color(255, 255, 255)
             self.cell(0, 8, 'ComplyNex', 0, 1, 'L')
             self.set_x(55)
-            self.set_font('helvetica', '', 9)
+            self.set_font(FONT, '', 9)
             self.set_text_color(*COMPLYNEX_GOLD)
             self.cell(0, 6, 'AML COMPLIANCE PLATFORM', 0, 1, 'L')
             # Light body background
@@ -608,25 +611,28 @@ def download_certificate(cert_id):
             self.set_fill_color(*COMPLYNEX_NAVY)
             self.rect(0, 195, 297, 15, 'F')
             self.set_y(197)
-            self.set_font('helvetica', 'I', 7)
+            self.set_font(FONT, 'I', 7)
             self.set_text_color(180, 180, 180)
             self.cell(0, 5, 'Official Training Document Issued by ComplyNex', 0, 1, 'C')
             self.set_text_color(*COMPLYNEX_GOLD)
-            self.set_font('helvetica', 'B', 7)
-            self.cell(0, 5, f'Verification ID: {cert.certificate_number}', 0, 0, 'C')
+            self.set_font(FONT, 'B', 7)
+            self.cell(0, 5, T(f'Verification ID: {cert.certificate_number}'), 0, 0, 'C')
 
     pdf = CertificatePDF(orientation='L', unit='mm', format='A4')
+    # Unicode font so Arabic names / course titles render (core fonts are latin-1 only).
+    FONT = add_unicode_font(pdf) or 'helvetica'
+    T = shape if FONT != 'helvetica' else latin1_safe
     pdf.add_page()
 
     # Official document label
     pdf.set_y(50)
-    pdf.set_font('helvetica', 'B', 11)
+    pdf.set_font(FONT, 'B', 11)
     pdf.set_text_color(*COMPLYNEX_GRAY)
     pdf.cell(0, 8, '- OFFICIAL DOCUMENT -', 0, 1, 'C')
 
     # Main title
     pdf.ln(2)
-    pdf.set_font('helvetica', 'B', 34)
+    pdf.set_font(FONT, 'B', 34)
     pdf.set_text_color(*COMPLYNEX_NAVY)
     pdf.cell(0, 18, 'CERTIFICATE OF COMPLETION', 0, 1, 'C')
 
@@ -636,15 +642,15 @@ def download_certificate(cert_id):
     pdf.line(80, pdf.get_y(), 217, pdf.get_y())
     pdf.ln(6)
 
-    pdf.set_font('helvetica', '', 13)
+    pdf.set_font(FONT, '', 13)
     pdf.set_text_color(*COMPLYNEX_GRAY)
     pdf.cell(0, 8, 'This certificate is proudly presented to', 0, 1, 'C')
 
     # Employee name
     pdf.ln(4)
-    pdf.set_font('helvetica', 'B', 30)
+    pdf.set_font(FONT, 'B', 30)
     pdf.set_text_color(*COMPLYNEX_BLUE)
-    pdf.cell(0, 16, cert.employee_name.upper(), 0, 1, 'C')
+    pdf.cell(0, 16, T((cert.employee_name or '').upper()), 0, 1, 'C')
 
     # Name underline
     pdf.set_draw_color(*COMPLYNEX_GOLD)
@@ -652,39 +658,39 @@ def download_certificate(cert_id):
     pdf.line(80, pdf.get_y(), 217, pdf.get_y())
     pdf.ln(6)
 
-    pdf.set_font('helvetica', '', 13)
+    pdf.set_font(FONT, '', 13)
     pdf.set_text_color(*COMPLYNEX_GRAY)
     pdf.cell(0, 8, 'for successfully completing the compliance training course', 0, 1, 'C')
 
     # Course name
     pdf.ln(3)
-    pdf.set_font('helvetica', 'B', 20)
+    pdf.set_font(FONT, 'B', 20)
     pdf.set_text_color(*COMPLYNEX_NAVY)
-    pdf.multi_cell(0, 12, cert.course_name, 0, 'C')
+    pdf.multi_cell(0, 12, T(cert.course_name), 0, 'C')
 
     # Score badge
     pdf.set_y(148)
     pdf.set_x(220)
     pdf.set_fill_color(*COMPLYNEX_NAVY)
     pdf.set_text_color(255, 255, 255)
-    pdf.set_font('helvetica', 'B', 10)
+    pdf.set_font(FONT, 'B', 10)
     pdf.cell(50, 8, f'Score: {cert.score}%', 0, 0, 'C', fill=True)
 
     # Bottom details
     pdf.set_y(158)
     pdf.set_x(25)
-    pdf.set_font('helvetica', '', 10)
+    pdf.set_font(FONT, '', 10)
     pdf.set_text_color(*COMPLYNEX_GRAY)
     pdf.cell(35, 6, 'Course Code:', 0, 0, 'L')
-    pdf.set_font('helvetica', 'B', 10)
+    pdf.set_font(FONT, 'B', 10)
     pdf.set_text_color(*COMPLYNEX_NAVY)
-    pdf.cell(35, 6, cert.course_code, 0, 0, 'L')
+    pdf.cell(35, 6, T(cert.course_code), 0, 0, 'L')
 
     pdf.set_x(110)
-    pdf.set_font('helvetica', '', 10)
+    pdf.set_font(FONT, '', 10)
     pdf.set_text_color(*COMPLYNEX_GRAY)
     pdf.cell(25, 6, 'Issue Date:', 0, 0, 'L')
-    pdf.set_font('helvetica', 'B', 10)
+    pdf.set_font(FONT, 'B', 10)
     pdf.set_text_color(*COMPLYNEX_NAVY)
     pdf.cell(40, 6, (cert.issue_date.strftime('%B %d, %Y') if hasattr(cert.issue_date, 'strftime') else str(cert.issue_date).split(' ')[0]) if getattr(cert, 'issue_date', None) else __import__('datetime').datetime.now().strftime('%B %d, %Y'), 0, 0, 'L')
 
@@ -696,18 +702,20 @@ def download_certificate(cert_id):
     pdf.line(215, 163, 268, 163)
     pdf.set_y(164)
     pdf.set_x(215)
-    pdf.set_font('helvetica', '', 9)
+    pdf.set_font(FONT, '', 9)
     pdf.set_text_color(*COMPLYNEX_GRAY)
     pdf.cell(53, 5, 'Legal and Compliance Director', 0, 1, 'C')
     pdf.set_x(215)
-    pdf.set_font('helvetica', 'B', 9)
+    pdf.set_font(FONT, 'B', 9)
     pdf.set_text_color(*COMPLYNEX_NAVY)
     pdf.cell(53, 5, 'ComplyNex', 0, 1, 'C')
 
     from flask import make_response
     response = make_response(bytes(pdf.output()))
     filename = f"Certificate_{cert.course_code}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    ascii_name = secure_filename(filename) or f'Certificate_{cert.id}.pdf'
     AuditLog.log(current_user.id, 'Certificate Download', 'Training', cert.id, f'Downloaded certificate {cert.certificate_number} for {cert.course_code}', request.remote_addr)
     response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    # RFC 5987: ASCII fallback + UTF-8 name (an Arabic course code broke the latin-1 header)
+    response.headers['Content-Disposition'] = f'attachment; filename="{ascii_name}"; filename*=UTF-8\'\'{quote(filename)}'
     return response

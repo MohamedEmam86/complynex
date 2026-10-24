@@ -38,6 +38,51 @@ policies_bp = Blueprint('policies', __name__, url_prefix='/policies')
 UPLOAD_FOLDER = 'uploads/policies'
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
 
+def _review_date_error(effective_date, next_review_date):
+    """Next review date, when given, must not be before the effective date."""
+    def _d(v):
+        try:
+            return datetime.strptime((v or '').strip()[:10], '%Y-%m-%d').date()
+        except ValueError:
+            return None
+    eff, nxt = _d(effective_date), _d(next_review_date)
+    if (effective_date or '').strip() and not eff:
+        return gettext('Effective date is not a valid date.')
+    if (next_review_date or '').strip() and not nxt:
+        return gettext('Next review date is not a valid date.')
+    if eff and nxt and nxt < eff:
+        return gettext('Next review date cannot be before the effective date.')
+    return None
+
+
+def _approval_blockers(policy):
+    """Reasons the policy cannot be approved/published yet: every stage of its
+    approval chain (document workflow and assigned reviewers) must be approved."""
+    from services import document_service as _D
+    from database.db import get_db as _gdb
+    reasons = []
+    st = _D.approval_state(policy.id)
+    if st['rejected']:
+        reasons.append(gettext('An approval stage rejected this document.'))
+    elif st['stages'] and not st['complete']:
+        pending = [s['stage_name'] for s in st['stages'] if s['status'] == 'pending']
+        reasons.append(gettext('Approval stages still pending: %(stages)s', stages=', '.join(pending)))
+    rows = _gdb().execute("""SELECT status FROM policy_review_workflow WHERE policy_id = %s""",
+                          (policy.id,)).fetchall()
+    if any(r['status'] == 'pending' for r in rows):
+        reasons.append(gettext('Assigned reviewers have not all decided yet.'))
+    if any(r['status'] == 'rejected' for r in rows):
+        reasons.append(gettext('A reviewer rejected this policy.'))
+    return reasons
+
+
+def _can_decide_stage(user, stage):
+    if stage['approver_user_id']:
+        return stage['approver_user_id'] == user.id
+    # Unassigned stage: anyone holding the stage's role, or an administrator.
+    return user.role == 'admin' or (stage['approver_role'] and user.role == stage['approver_role'])
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -368,7 +413,7 @@ def create_policy():
         content = sanitize_html(request.form.get('content'))
         regulatory_reference = request.form.get('regulatory_reference')
         cbe_requirement = request.form.get('cbe_requirement')
-        status = request.form.get('status', 'draft')
+        status = 'draft'  # publishing only through the approval workflow
         
         # Handle boolean flags (Radio buttons return '1' or '0', Checkboxes return 'on' or None)
         is_public_val = request.form.get('is_public')
@@ -414,6 +459,10 @@ def create_policy():
             return _render_create_form(categories, departments)
         if not data.get('category_id'):
             flash(gettext('Category is required.'), 'danger')
+            return _render_create_form(categories, departments)
+        date_error = _review_date_error(effective_date, next_review_date)
+        if date_error:
+            flash(date_error, 'danger')
             return _render_create_form(categories, departments)
 
         try:
@@ -700,6 +749,8 @@ def view_policy(id):
         "SELECT id, first_name, last_name, role FROM users WHERE role IN ('admin','manager','compliance_officer') ORDER BY role, first_name"
     ).fetchall()
     approvers = [dict(a) for a in approvers]
+    from services import document_service as _D
+    approval = _D.approval_state(id)
 
     return render_template('policies/detail.html',
                          policy=policy,
@@ -708,7 +759,10 @@ def view_policy(id):
                          acknowledgment_rate=acknowledgment_rate,
                          attachments=attachments,
                          reviews=reviews,
-                         approvers=approvers)
+                         approvers=approvers,
+                         approval=approval,
+                         can_decide_stage=bool(approval['current']) and _can_decide_stage(current_user, approval['current']),
+                         publish_blockers=_approval_blockers(policy))
 
 @policies_bp.route('/<int:id>/document')
 @login_required
@@ -909,13 +963,16 @@ def edit_policy(id):
             'attachment_path': attachment_path,
             'regulatory_reference': request.form.get('regulatory_reference'),
             'cbe_requirement': request.form.get('cbe_requirement'),
-            'status': request.form.get('status', policy.status),
+            'status': policy.status,  # changes only through submit/approve/publish/archive
 
             'issuing_date': request.form.get('issuing_date') or policy.issuing_date,
             'approval_cycle': request.form.get('approval_cycle')
         }
         
-        # If status changed to published, we might want to do something, but the publish method also exists
+        date_error = _review_date_error(data['effective_date'], data['next_review_date'])
+        if date_error:
+            flash(date_error, 'danger')
+            return redirect(url_for('policies.edit_policy', id=id))
         
         # Track changes for audit log
         changes = []
@@ -1019,7 +1076,15 @@ def approve_policy(id):
     if not policy:
         flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
-        
+    blockers = _approval_blockers(policy)
+    if blockers:
+        for b in blockers:
+            flash(b, 'danger')
+        return redirect(url_for('policies.view_policy', id=id))
+    if policy.created_by == current_user.id and not current_user.is_admin():
+        flash(gettext('You cannot approve a policy you created. Another approver must approve it.'), 'danger')
+        return redirect(url_for('policies.view_policy', id=id))
+
     policy.approve(current_user.id)
     AuditLog.log(current_user.id, 'Approve Policy', 'Policies', id, f'Approved policy {policy.policy_name}', request.remote_addr)
     
@@ -1036,12 +1101,52 @@ def publish_policy(id):
     if not policy:
         flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
-        
+    if (policy.status or '').lower() != 'approved':
+        flash(gettext('Only an approved policy can be published. Submit it for approval and complete all approval stages first.'), 'danger')
+        return redirect(url_for('policies.view_policy', id=id))
+    blockers = _approval_blockers(policy)
+    if blockers:
+        for b in blockers:
+            flash(b, 'danger')
+        return redirect(url_for('policies.view_policy', id=id))
+
     policy.publish()
     AuditLog.log(current_user.id, 'Publish Policy', 'Policies', id, f'Published policy {policy.policy_name}', request.remote_addr)
     
     flash(gettext('Policy published. Employees will be notified.'), 'success')
     return redirect(url_for('policies.list_policies'))
+
+@policies_bp.route('/<int:id>/stage/<int:stage_order>/decide', methods=['POST'])
+@login_required
+@permission_required('policies')
+def decide_stage(id, stage_order):
+    """Approve or reject one stage of the document's approval chain."""
+    from services import document_service as _D
+    policy = Policy.get_by_id(id)
+    if not policy:
+        flash(gettext('Policy not found.'), 'danger')
+        return redirect(url_for('policies.list_policies'))
+    st = _D.approval_state(id)
+    stage = st['current']
+    decision = request.form.get('decision')
+    comments = (request.form.get('comments') or '').strip() or None
+    if not stage or stage['stage_order'] != stage_order:
+        flash(gettext('This stage is not awaiting a decision.'), 'warning')
+    elif not _can_decide_stage(current_user, stage):
+        flash(gettext('You are not the approver for this stage.'), 'danger')
+    elif decision not in ('approved', 'rejected'):
+        flash(gettext('Invalid decision.'), 'danger')
+    elif decision == 'rejected' and not comments:
+        flash(gettext('Please give the reason for rejecting.'), 'danger')
+    else:
+        ok, _msg = _D.decide(id, stage_order, decision, current_user.id, comments)
+        if ok:
+            AuditLog.log(current_user.id, 'Policy Stage Decision', 'Policies', id,
+                         f'{stage["stage_name"]}: {decision}', request.remote_addr)
+            flash(gettext('Decision recorded.'), 'success')
+        else:
+            flash(gettext('An earlier stage is still awaiting a decision.'), 'warning')
+    return redirect(url_for('policies.view_policy', id=id))
 
 @policies_bp.route('/<int:id>/archive', methods=['POST'])
 @login_required

@@ -136,7 +136,8 @@
        "en": "Other (specify in 1.4)",
        "ar": "أخرى (تُذكر في 1.4)"
       }
-     ]
+     ],
+     "prefill": "institution.activity"
     },
     {
      "id": "s1_q4",
@@ -375,6 +376,26 @@
        "v": "head_infosec",
        "en": "Head of Information Security",
        "ar": "رئيس إدارة أمن المعلومات"
+      },
+      {
+       "v": "head_credit",
+       "en": "Head of Credit / Lending",
+       "ar": "رئيس إدارة الائتمان / التمويل"
+      },
+      {
+       "v": "mlro",
+       "en": "MLRO / Head of AML",
+       "ar": "مسئول الإبلاغ عن غسل الأموال / رئيس إدارة مكافحة غسل الأموال"
+      },
+      {
+       "v": "head_collections",
+       "en": "Head of Collections",
+       "ar": "رئيس إدارة التحصيل"
+      },
+      {
+       "v": "branch_network_manager",
+       "en": "Branch network manager",
+       "ar": "مدير شبكة الفروع"
       },
       {
        "v": "committee_member",
