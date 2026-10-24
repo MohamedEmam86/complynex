@@ -113,7 +113,7 @@
                             {% elif policy.status == 'draft' %}
                             <span class="badge bg-secondary-soft text-secondary">{{ _('Draft') }}</span>
                             {% else %}
-                            <span class="badge bg-light text-dark">{{ policy.status|capitalize }}</span>
+                            <span class="badge bg-light text-dark">{{ code_label(policy.status, 'policy_status') }}</span>
                             {% endif %}
                         </td>
                         <td>

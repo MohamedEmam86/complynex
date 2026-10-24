@@ -118,8 +118,15 @@ class Policy:
                  approved_by=None, approval_date=None,
                  previous_version_id=None, change_summary=None,
                  is_mandatory=False, department_id=None, is_internal=True,
-                 created_by=None, created_at=None, updated_by=None, updated_at=None, **kwargs):
+                 created_by=None, created_at=None, updated_by=None, updated_at=None,
+                 version_group_id=None, superseded_by_id=None, superseded_at=None, published_at=None,
+                 published_by=None, **kwargs):
         self.id = id
+        self.version_group_id = version_group_id
+        self.superseded_by_id = superseded_by_id
+        self.superseded_at = superseded_at
+        self.published_at = published_at
+        self.published_by = published_by
         self.policy_number = policy_number
         self.policy_name = policy_name
         self.category_id = category_id

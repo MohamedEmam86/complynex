@@ -7,80 +7,46 @@
     <nav aria-label="{{ _('breadcrumb') }}" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url_for('policies.list_policies') }}">{{ _('Policies') }}</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('policies.view_policy', id=policy.id) }}">{{
-                    policy.policy_name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('policies.view_policy', id=policy.id) }}">{{ policy.policy_name }}</a></li>
             <li class="breadcrumb-item active">{{ _('Versions') }}</li>
         </ol>
     </nav>
 
-    <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="h3 mb-1 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>{{ _('Version History')
-                    }}</h1>
-                <p class="text-muted">{{ _('Track changes and manage previous iterations of this policy.') }}</p>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="{{ url_for('policies.view_policy', id=policy.id) }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-2"></i>{{ _('Back to Current') }}
-                </a>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 mb-1 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>{{ _('Version History') }}</h1>
+            <p class="text-muted mb-0">{{ _('Each version keeps its own approvals and acknowledgements. Archived versions are read-only.') }}</p>
         </div>
+        <a href="{{ url_for('policies.view_policy', id=policy.id) }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>{{ _('Back') }}</a>
     </div>
 
-    <div class="card border-0 shadow-sm overflow-hidden">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0 fw-bold">{{ _('Archived Versions') }}</h5>
-        </div>
+    <div class="card border-0 shadow-sm overflow-hidden mb-4">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-4">{{ _('Version') }}</th>
-                            <th>{{ _('Created By') }}</th>
-                            <th>{{ _('Date') }}</th>
-                            <th>{{ _('Change Summary') }}</th>
                             <th>{{ _('Status') }}</th>
+                            <th>{{ _('Change notes') }}</th>
+                            <th>{{ _('Created By') }}</th>
+                            <th>{{ _('Published') }}</th>
+                            <th>{{ _('Superseded') }}</th>
+                            <th class="text-center">{{ _('Acknowledgements') }}</th>
                             <th class="text-end pe-4">{{ _('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Current Version Row -->
-                        <tr class="table-primary border-primary border-opacity-10">
-                            <td class="ps-4">
-                                <span class="fw-bold">{{ policy.version_number }}</span>
-                                <span class="badge bg-primary ms-2">{{ _('Current') }}</span>
-                            </td>
-                            <td>{{ policy.owner_name or _('System') }}</td>
-                            <td>{{ policy.updated_at or policy.created_at }}</td>
-                            <td>{{ policy.change_summary or _('Initial Version') }}</td>
-                            <td><span class="badge bg-success-soft text-success">{{ policy.status|capitalize }}</span>
-                            </td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-outline-primary disabled" disabled>{{ _('Current')
-                                    }}</button>
-                            </td>
-                        </tr>
-                        <!-- Archived Versions -->
-                        {% for version in versions %}
-                        <tr>
-                            <td class="ps-4 fw-bold">{{ version.version_number }}</td>
-                            <td>{{ version.creator_name or _('System') }}</td>
-                            <td>{{ version.created_at }}</td>
-                            <td>{{ version.change_summary }}</td>
-                            <td><span class="badge bg-secondary-soft text-secondary">{{ _('Archived') }}</span></td>
-                            <td class="text-end pe-4">
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-primary"
-                                        data-compare-current="{{ policy.version_number }}" data-compare-older="{{ version.version_number }}">
-                                        <i class="bi bi-intersect"></i> {{ _('Compare') }}
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-download"></i>
-                                    </button>
-                                </div>
-                            </td>
+                        {% for v in family|reverse %}
+                        <tr class="{{ 'table-primary' if v.id == policy.id }}">
+                            <td class="ps-4 fw-bold">v{{ v.version }}{% if (v.status or '')|lower == 'published' %} <span class="badge bg-success ms-1">{{ _('In force') }}</span>{% endif %}</td>
+                            <td>{{ code_label(v.status, 'policy_status') }}</td>
+                            <td class="small">{{ v.change_summary or (_('Initial version') if not v.previous_version_id else '') }}</td>
+                            <td class="small">{{ v.creator_name or '-' }}<div class="text-muted">{{ (v.created_at or '')[:10] }}</div></td>
+                            <td class="small">{% if v.published_at %}{{ v.publisher_name or '-' }}<div class="text-muted">{{ v.published_at.strftime('%Y-%m-%d') }}</div>{% else %}-{% endif %}</td>
+                            <td class="small">{{ v.superseded_at.strftime('%Y-%m-%d') if v.superseded_at else '-' }}</td>
+                            <td class="text-center">{% if can_manage %}<a href="{{ url_for('policies.policy_acknowledgments', id=v.id) }}">{{ v.ack_count }}</a>{% else %}{{ v.ack_count }}{% endif %}</td>
+                            <td class="text-end pe-4"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('policies.view_policy', id=v.id) }}"><i class="bi bi-eye"></i> {{ _('View') }}</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -88,31 +54,21 @@
             </div>
         </div>
     </div>
+
+    {% if versions %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3"><h6 class="mb-0 fw-bold">{{ _('Earlier revision log') }}</h6></div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <thead class="table-light"><tr><th class="ps-4">{{ _('Version') }}</th><th>{{ _('Created By') }}</th><th>{{ _('Date') }}</th><th>{{ _('Change Summary') }}</th></tr></thead>
+                <tbody>
+                {% for version in versions %}
+                <tr><td class="ps-4">{{ version.version }}</td><td>{{ version.creator_name or '-' }}</td><td>{{ version.created_at }}</td><td>{{ version.change_summary }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
-
-<script nonce="{{ csp_nonce }}">
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('[data-compare-current]');
-        if (btn) compare(btn.dataset.compareCurrent, btn.dataset.compareOlder);
-    });
-
-    function compare(current, older) {
-        // Logic to redirect to compare route
-        flash('Comparing version ' + current + ' with ' + older, 'info');
-    }
-</script>
-
-<style>
-    .bg-success-soft {
-        background-color: rgba(25, 135, 84, 0.1);
-    }
-
-    .bg-secondary-soft {
-        background-color: rgba(108, 117, 125, 0.1);
-    }
-
-    .text-end {
-        text-align: end !important;
-    }
-</style>
 {% endblock %}
