@@ -31,10 +31,12 @@ Three pieces, all pure functions except the candidate search:
    what names cannot: an Egyptian national ID encodes birth date, governorate
    and gender; an exact ID match confirms, a different valid ID contradicts.
    Without an ID on the listed record the decision rests on the name and the
-   country / nationality, as agreed with Compliance (2026-10-21).
-   CONFIRMED_HIT is reserved for an identifier match, or a complete name match
-   (both directions, in order, at least three elements) with nothing
-   contradicting it. Everything else is at most a POTENTIAL match for review.
+   country / nationality, as agreed with Compliance (2026-10-21): country
+   agreement adds weight, a different or missing nationality never lowers the
+   name score. CONFIRMED_HIT is reserved for a hit where an IDENTIFIER agrees
+   (national ID, date / year of birth, passport) and nothing contradicts it.
+   Without an identifier match the engine's highest label is POTENTIAL match:
+   a human decides.
 
 3. ``search_internal(table, name)`` — candidate recall for the internal lists
    (asset-freeze orders, local terrorist lists, internal PEPs). Replaces the
@@ -440,23 +442,55 @@ def _countries(*vals):
     return out
 
 
-def identity_verdict(query_nid=None, query_dob=None, query_country=None,
-                     listed_nids=None, listed_dob=None, listed_countries=None, listed_gender=None):
-    """Compare secondary identifiers. Returns {'verdict', 'reasons', ...}.
+def country_score_adjust(score, submitted_country, candidate_country, bonus=8.0):
+    """Engine scoring step for nationality / country: agreement ADDS a bonus,
+    a different or missing country leaves the name score unchanged. Lists
+    record past and second nationalities inconsistently, and when a record
+    has no national ID the decision rests on the name and the country, so
+    agreement is a positive factor and disagreement is only shown to the
+    analyst — it never hides a name match."""
+    if not submitted_country or not candidate_country:
+        return score
+    qc, lc = _countries(submitted_country), _countries(candidate_country)
+    sub, cand = str(submitted_country).lower().strip(), str(candidate_country).lower().strip()
+    if (qc and lc and qc & lc) or (sub and cand and (sub in cand or cand in sub)):
+        return score + bonus
+    return score
 
-    verdict: id_match | id_conflict | dob_conflict | country_conflict |
-             corroborated | unknown
+
+def _passports(v):
+    return {re.sub(r'[^0-9A-Za-z]', '', x).upper() for x in _as_list(v)
+            if len(re.sub(r'[^0-9A-Za-z]', '', x)) >= 5}
+
+
+def identity_verdict(query_nid=None, query_dob=None, query_country=None,
+                     listed_nids=None, listed_dob=None, listed_countries=None, listed_gender=None,
+                     query_passport=None, listed_passports=None):
+    """Compare secondary identifiers. Returns {'verdict', 'reasons',
+    'identifier_match', 'dob', 'country'}.
+
+    verdict: id_match | id_conflict | gender_conflict | dob_conflict |
+             country_conflict | corroborated | unknown
+    identifier_match: True when an IDENTIFIER agrees (national ID, birth date
+             / year, passport). Country agreement is supporting evidence, not
+             an identifier.
+    dob / country: 'agree' | 'differ' | None (not comparable).
     """
     reasons, qd = [], decode_egyptian_nid(query_nid) if query_nid else {'valid': False}
+    qp, lp = _passports(query_passport), _passports(listed_passports)
+    if qp and lp and qp & lp:
+        return {'verdict': 'id_match', 'reasons': ['passport number matches the listed record'],
+                'identifier_match': True, 'dob': None, 'country': None}
     lids = [re.sub(r'\D', '', x) for x in _as_list(listed_nids)]
     lids = [x for x in lids if len(x) >= 6 and not set(x) <= {'0'}]
     qn = re.sub(r'\D', '', str(query_nid or ''))
     if qn and lids:
         if qn in lids:
-            return {'verdict': 'id_match', 'reasons': ['national ID matches the listed record']}
+            return {'verdict': 'id_match', 'reasons': ['national ID matches the listed record'],
+                    'identifier_match': True, 'dob': None, 'country': None}
         valid14 = [x for x in lids if len(x) == 14]
         if qd.get('valid') and valid14:
-            return {'verdict': 'id_conflict',
+            return {'verdict': 'id_conflict', 'identifier_match': False, 'dob': None, 'country': None,
                     'reasons': ['listed record carries a different national ID']}
     # gender: the 13th digit of an Egyptian national ID, on either side
     q_gender = qd.get('gender') if qd.get('valid') else None
@@ -470,7 +504,8 @@ def identity_verdict(query_nid=None, query_dob=None, query_country=None,
         g = str(listed_gender).strip().lower()
         l_gender = 'M' if g in ('m', 'male', 'ذكر') else ('F' if g in ('f', 'female', 'انثى', 'أنثى') else None)
     if q_gender and l_gender and q_gender != l_gender:
-        return {'verdict': 'gender_conflict', 'reasons': ['gender differs (from the national ID)']}
+        return {'verdict': 'gender_conflict', 'reasons': ['gender differs (from the national ID)'],
+                'identifier_match': False, 'dob': None, 'country': None}
     # date of birth: given, or decoded from the customer's national ID
     q_years = _years(query_dob)
     if not q_years and qd.get('valid'):
@@ -480,26 +515,39 @@ def identity_verdict(query_nid=None, query_dob=None, query_country=None,
         d = decode_egyptian_nid(x)
         if d.get('valid'):
             l_years.add(d['year'])
-    corroborated = False
+    corroborated = dob_ok = False
+    dob_state = country_state = None
     if q_years and l_years:
         if min(abs(a - b) for a in q_years for b in l_years) > 2:
-            return {'verdict': 'dob_conflict',
+            return {'verdict': 'dob_conflict', 'identifier_match': False, 'dob': 'differ', 'country': None,
                     'reasons': [f'birth year differs ({sorted(q_years)[0]} vs {sorted(l_years)[0]})']}
         reasons.append('birth year agrees')
-        corroborated = True
-    # country / nationality (the decisive check when the record has no ID)
+        corroborated = dob_ok = True
+        dob_state = 'agree'
+    # country / nationality (the decisive check when the record has no ID):
+    # agreement supports the match; a difference is reported for the analyst
+    # but never counts against the name (people hold or held other
+    # nationalities, lists record them inconsistently)
     qc = _countries(query_country, 'egypt' if qd.get('valid') else None)
     lc = _countries(listed_countries)
     if qc and lc:
         if qc & lc:
             reasons.append('nationality / country agrees')
             corroborated = True
+            country_state = 'agree'
         else:
-            return {'verdict': 'country_conflict',
-                    'reasons': [f"nationality differs ({', '.join(sorted(qc))} vs {', '.join(sorted(lc))})"]}
+            reasons.append(f"nationality differs ({', '.join(sorted(qc))} vs {', '.join(sorted(lc))})")
+            country_state = 'differ'
     if not lids and not l_years and not lc:
         reasons.append('listed record has no identifiers: decision rests on the name')
-    return {'verdict': 'corroborated' if corroborated else 'unknown', 'reasons': reasons}
+    if corroborated:
+        verdict = 'corroborated'
+    elif country_state == 'differ':
+        verdict = 'country_conflict'
+    else:
+        verdict = 'unknown'
+    return {'verdict': verdict, 'reasons': reasons, 'identifier_match': dob_ok,
+            'dob': dob_state, 'country': country_state}
 
 
 # --------------------------------------------------------------------------- decision
@@ -539,7 +587,7 @@ def _best_listed(m, query):
     return best
 
 
-def decide(m, query, national_id=None, dob=None, nationality=None):
+def decide(m, query, national_id=None, dob=None, nationality=None, passport=None):
     """Apply the analyst decision to one match dict (mutates and returns it)."""
     score = float(m.get('match_score') or 0.0)
     original = score
@@ -555,7 +603,9 @@ def decide(m, query, national_id=None, dob=None, nationality=None):
         m.get('national_id') or m.get('national_id_numbers'),
         m.get('date_of_birth') or m.get('year_of_birth'),
         [m.get('nationality'), m.get('countries'), m.get('country')],
-        m.get('gender'))
+        m.get('gender'),
+        query_passport=passport,
+        listed_passports=m.get('passport_number') or m.get('passport_numbers') or m.get('passport'))
     tier = None
     if idv['verdict'] == 'id_match':
         score, tier = 100.0, 'CONFIRMED'
@@ -565,8 +615,8 @@ def decide(m, query, national_id=None, dob=None, nationality=None):
         score = min(score - 15, POTENTIAL - 1)
     elif idv['verdict'] == 'gender_conflict':
         score = min(score - 20, LOW + 1)
-    elif idv['verdict'] == 'country_conflict':
-        score = min(score - 10, POTENTIAL - 1)
+    # a different nationality (country_conflict) lowers nothing: the name
+    # score stands and the analyst sees the difference among the reasons
     reasons += idv['reasons']
 
     if nm is not None and tier != 'CONFIRMED':
@@ -600,8 +650,14 @@ def decide(m, query, national_id=None, dob=None, nationality=None):
             score = min(score, CONFIRMED - 1)
             reasons.append('cross-script match without a corroborating identifier')
 
+    if tier is None and score >= CONFIRMED and not idv.get('identifier_match'):
+        # no national ID / date of birth / passport agrees: the engine never
+        # confirms on the name (and country) alone — at most a potential match
+        score = CONFIRMED - 1
+        reasons.append('no identifier match (national ID / date of birth / passport): '
+                       'at most a potential match')
     if tier is None:
-        if score >= CONFIRMED and idv['verdict'] in ('corroborated', 'unknown'):
+        if score >= CONFIRMED and idv['verdict'] in ('corroborated', 'unknown', 'country_conflict'):
             tier = 'CONFIRMED'
         elif score >= POTENTIAL:
             tier = 'POTENTIAL'
@@ -613,6 +669,8 @@ def decide(m, query, national_id=None, dob=None, nationality=None):
     m['decision'] = {
         'tier': tier, 'original_score': round(original, 2), 'final_score': m['match_score'],
         'identity': idv['verdict'], 'reasons': reasons, 'judged_against': listed,
+        'identifier_match': bool(idv.get('identifier_match')),
+        'dob': idv.get('dob'), 'country': idv.get('country'),
         'name': ({k: nm[k] for k in ('matched', 'missing_from_query', 'extra_in_query',
                                      'cov_listed', 'cov_query', 'order_ok', 'complete')}
                  if nm else None),
@@ -655,11 +713,11 @@ def dedupe(matches):
     return order
 
 
-def apply_decisions(matches, query, national_id=None, dob=None, nationality=None):
+def apply_decisions(matches, query, national_id=None, dob=None, nationality=None, passport=None):
     out = []
     for m in matches:
         try:
-            out.append(decide(m, query, national_id, dob, nationality))
+            out.append(decide(m, query, national_id, dob, nationality, passport))
         except Exception as e:                       # never drop a hit because of this layer
             logger.warning('[MATCH-INTEL] decision failed: %s', e)
             out.append(m)

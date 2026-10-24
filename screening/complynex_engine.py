@@ -2414,30 +2414,10 @@ class ComplyNexScreeningEngine:
         return candidates
     
     def _apply_country_scoring(self, score, submitted_country, candidate_country):
-        if not submitted_country or not candidate_country:
-            return score  # No country data — no change
-
-        submitted = submitted_country.lower().strip()
-        candidate = candidate_country.lower().strip()
-
-        # Normalise common variants
-        egypt_variants = ['egypt', 'eg', 'egyptian', 'مصر', 'مصري', 'مصرية']
-
-        submitted_egypt = any(v in submitted for v in egypt_variants)
-        candidate_egypt = any(v in candidate for v in egypt_variants)
-
-        if submitted_egypt and candidate_egypt:
-            return score + 8   # Same country — boost
-        elif submitted_egypt and not candidate_egypt:
-            return score - 15  # Wrong country — penalise
-        elif not submitted_egypt and candidate_egypt:
-            return score - 10  # Submitted non-Egyptian but matched Egyptian record
-        else:
-            # Both non-Egyptian — check if same country
-            if submitted in candidate or candidate in submitted:
-                return score + 8
-            else:
-                return score - 15
+        # A country / nationality match only ADDS to the score; a different or
+        # missing nationality never lowers it (see match_intel.country_score_adjust).
+        from screening.match_intel import country_score_adjust
+        return country_score_adjust(score, submitted_country, candidate_country)
 
     def _apply_dob_scoring(self, score, submitted_dob, candidate_dob):
         if not submitted_dob:
@@ -3146,7 +3126,9 @@ class ComplyNexScreeningEngine:
             # keep suppressing alerts.
             cursor.execute(
                 f"SELECT id FROM screening_whitelist "
-                f"WHERE normalized_name = {self.placeholder} AND status = 'Active'",
+                f"WHERE normalized_name = {self.placeholder} AND status = 'Active' "
+                # past its review date an entry no longer suppresses hits
+                f"AND COALESCE(review_date, '') >= to_char(CURRENT_DATE, 'YYYY-MM-DD')",
                 (normalized_name,))
             result = cursor.fetchone()
             cursor.close()
