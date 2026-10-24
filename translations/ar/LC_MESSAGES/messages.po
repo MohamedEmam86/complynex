@@ -32091,6 +32091,135 @@ msgstr "جديد"
 msgid "RESOLVED"
 msgstr "تم الحل"
 
+msgid "Select the customer the report is about."
+msgstr "اختر العميل محل الإخطار."
+
+msgid "The activity date cannot be after the discovery date."
+msgstr "لا يمكن أن يكون تاريخ النشاط بعد تاريخ الاكتشاف."
+
+msgid "Enter the activity date and the discovery date."
+msgstr "أدخل تاريخ النشاط وتاريخ الاكتشاف."
+
+msgid "The amount cannot be negative."
+msgstr "لا يمكن أن يكون المبلغ سالبًا."
+
+msgid "The amount must be a number."
+msgstr "يجب أن يكون المبلغ رقمًا."
+
+msgid "Describe the suspicious activity (at least 30 characters)."
+msgstr "صف النشاط المشتبه فيه (30 حرفًا على الأقل)."
+
+msgid "SAR not found."
+msgstr "الإخطار غير موجود."
+
+msgid "You do not have permission to change SARs."
+msgstr "ليست لديك صلاحية تعديل الإخطارات."
+
+msgid "This SAR is closed."
+msgstr "هذا الإخطار مغلق."
+
+msgid "Choose a compliance user."
+msgstr "اختر مستخدمًا من فريق الالتزام."
+
+msgid "Write the investigation note."
+msgstr "اكتب ملاحظة الفحص."
+
+msgid "Only the MLRO decides whether to report to the unit."
+msgstr "مسؤول الإبلاغ وحده يقرر الإخطار للوحدة."
+
+msgid "Four-eyes: the person who raised the SAR cannot decide it."
+msgstr "مبدأ العينين الأربع: لا يقرر في الإخطار من قام برفعه."
+
+msgid "Choose the decision and write the rationale (at least 20 characters)."
+msgstr "اختر القرار واكتب مبرره (20 حرفًا على الأقل)."
+
+msgid "Record the filing after the MLRO has decided to report."
+msgstr "سجّل الإخطار بعد قرار مسؤول الإبلاغ بالإخطار."
+
+msgid "Enter a filing date that is not in the future."
+msgstr "أدخل تاريخ إخطار ليس في المستقبل."
+
+msgid "Enter the unit's reference number."
+msgstr "أدخل الرقم المرجعي لدى الوحدة."
+
+msgid "Unknown action."
+msgstr "إجراء غير معروف."
+
+msgid "SAR updated."
+msgstr "تم تحديث الإخطار."
+
+msgid "Suspicious activity report"
+msgstr "إخطار بنشاط مشتبه فيه"
+
+msgid "Confidential — tipping-off rules apply."
+msgstr "سري — تسري قواعد حظر التنبيه."
+
+msgid "Back to SARs"
+msgstr "العودة للإخطارات"
+
+msgid "Red flags"
+msgstr "مؤشرات الاشتباه"
+
+msgid "Raised by"
+msgstr "رفعه"
+
+msgid "Investigation"
+msgstr "الفحص"
+
+msgid "Investigation notes"
+msgstr "ملاحظات الفحص"
+
+msgid "No notes yet."
+msgstr "لا توجد ملاحظات بعد."
+
+msgid "MLRO decision"
+msgstr "قرار مسؤول الإبلاغ"
+
+msgid "Filed with the unit"
+msgstr "تم الإخطار للوحدة"
+
+msgid "1. Assign"
+msgstr "1. الإسناد"
+
+msgid "2. Investigate"
+msgstr "2. الفحص"
+
+msgid "Note (added to the log with your name and time)"
+msgstr "ملاحظة (تُضاف للسجل باسمك ووقتها)"
+
+msgid "Findings so far"
+msgstr "النتائج حتى الآن"
+
+msgid "Investigation complete — send to the MLRO for decision"
+msgstr "اكتمل الفحص — إرسال لمسؤول الإبلاغ للقرار"
+
+msgid "3. MLRO decision"
+msgstr "3. قرار مسؤول الإبلاغ"
+
+msgid "Choose..."
+msgstr "اختر..."
+
+msgid "Rationale for the decision"
+msgstr "مبرر القرار"
+
+msgid "Record decision"
+msgstr "تسجيل القرار"
+
+msgid "The person who raised the SAR cannot decide it."
+msgstr "لا يقرر في الإخطار من قام برفعه."
+
+msgid "4. Record the filing"
+msgstr "4. تسجيل الإخطار"
+
+msgid "Filing date"
+msgstr "تاريخ الإخطار"
+
+msgid "Unit reference number"
+msgstr "الرقم المرجعي لدى الوحدة"
+
+msgid "Mark as filed"
+msgstr "تسجيل كمُخطَر"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

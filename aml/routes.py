@@ -348,38 +348,194 @@ def sar_list():
         LEFT JOIN customers c ON s.customer_id = c.id
         ORDER BY s.report_date DESC
     """).fetchall()
-    return render_template('aml/sar_list.html', sars=sars, user=current_user)
+    from flask_babel import get_locale
+    ar = str(get_locale()) == 'ar'
+    status_labels = {code: (lab_ar if ar else lab_en) for code, lab_en, lab_ar in SAR_STATUSES}
+    return render_template('aml/sar_list.html', sars=sars, user=current_user, status_labels=status_labels)
 
 @aml_bp.route('/sars/new', methods=['GET', 'POST'])
 @login_required
 @permission_required('aml', level='edit')
 def create_sar():
     db = get_db()
-    if request.method == 'POST':
-        sar_reference = f"SAR-{datetime.now().strftime('%Y%m')}-{os.urandom(2).hex().upper()}"
-        AuditLog.log(current_user.id, 'File SAR', 'AML', None,
-            f'SAR {sar_reference} filed for customer {request.form.get("customer_id")}', request.remote_addr)
-        customer_id = request.form.get('customer_id')
-        activity_date = request.form.get('activity_date')
-        discovery_date = request.form.get('discovery_date')
-        amount = request.form.get('amount')
-        description = request.form.get('description')
-        
-        db.execute("""
-            INSERT INTO suspicious_activities 
-            (sar_reference, activity_date, discovery_date, customer_id, amount_involved, activity_description, reported_by)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (sar_reference, activity_date, discovery_date, customer_id, amount, description, current_user.id))
-        
-        db.commit()
-        flash(gettext('SAR %(sar_reference)s filed successfully and queued for compliance review.', sar_reference=sar_reference))
-        return redirect(url_for('aml.sar_list'))
-    
     customers = db.execute("SELECT id, full_name, customer_reference FROM customers ORDER BY full_name").fetchall()
-    return render_template('aml/sar_form.html', 
-                          customers=customers, 
-                          user=current_user,
-                          now_date=datetime.now().strftime('%Y-%m-%d'))
+    if request.method == 'POST':
+        form = request.form
+        errors = _sar_input_errors(form, db)
+        if errors:
+            for e in errors:
+                flash(e, 'danger')
+            return render_template('aml/sar_form.html', customers=customers, user=current_user,
+                                   now_date=datetime.now().strftime('%Y-%m-%d'), form=form,
+                                   selected_customer=form.get('customer_id')), 400
+        sar_reference = f"SAR-{datetime.now().strftime('%Y%m')}-{os.urandom(2).hex().upper()}"
+        row = db.execute("""
+            INSERT INTO suspicious_activities
+            (sar_reference, activity_date, discovery_date, customer_id, amount_involved, currency, activity_description,
+             red_flags_identified, reported_by, report_date, investigation_status, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, 'EGP', %s, %s, %s, %s, 'NEW', %s, %s) RETURNING id
+        """, (sar_reference, form.get('activity_date'), form.get('discovery_date'), form.get('customer_id'),
+              form.get('amount') or 0, form.get('description').strip(), (form.get('red_flags') or '').strip() or None,
+              current_user.id, datetime.now().strftime('%Y-%m-%d'), datetime.now().isoformat(sep=' ', timespec='seconds'),
+              datetime.now().isoformat(sep=' ', timespec='seconds'))).fetchone()
+        db.commit()
+        AuditLog.log(current_user.id, 'File SAR', 'AML', row['id'],
+                     f'SAR {sar_reference} raised for customer {form.get("customer_id")}', request.remote_addr)
+        flash(gettext('SAR %(sar_reference)s filed successfully and queued for compliance review.', sar_reference=sar_reference))
+        return redirect(url_for('aml.sar_detail', sar_id=row['id']))
+
+    return render_template('aml/sar_form.html', customers=customers, user=current_user,
+                           now_date=datetime.now().strftime('%Y-%m-%d'), form={},
+                           selected_customer=request.args.get('customer_id'))
+
+
+def _sar_input_errors(form, db):
+    """Server-side checks for a new SAR: customer, sensible dates, amount, description."""
+    from datetime import date
+    errors = []
+    cid = form.get('customer_id')
+    if not cid or not str(cid).isdigit() or not db.execute("SELECT 1 FROM customers WHERE id = %s", (cid,)).fetchone():
+        errors.append(_('Select the customer the report is about.'))
+    try:
+        act = date.fromisoformat(form.get('activity_date') or '')
+        disc = date.fromisoformat(form.get('discovery_date') or '')
+        if act > disc:
+            errors.append(_('The activity date cannot be after the discovery date.'))
+        if disc > date.today():
+            errors.append(_('The discovery date cannot be in the future.'))
+    except ValueError:
+        errors.append(_('Enter the activity date and the discovery date.'))
+    try:
+        if float(form.get('amount') or 0) < 0:
+            errors.append(_('The amount cannot be negative.'))
+    except ValueError:
+        errors.append(_('The amount must be a number.'))
+    if len((form.get('description') or '').strip()) < 30:
+        errors.append(_('Describe the suspicious activity (at least 30 characters).'))
+    return errors
+
+
+SAR_STATUSES = [  # code, EN, AR
+    ('NEW', 'New', 'جديد'),
+    ('UNDER_INVESTIGATION', 'Under investigation', 'قيد الفحص'),
+    ('PENDING_DECISION', 'Waiting for the MLRO decision', 'بانتظار قرار مسؤول الإبلاغ'),
+    ('NO_STR', 'Closed — no report to the unit', 'مغلق — لا يُرفع إخطار'),
+    ('FILE_SAR', 'Decided — report to the unit', 'تقرر إخطار الوحدة'),
+    ('FILED', 'Filed with the unit', 'تم الإخطار للوحدة'),
+]
+
+
+def _is_mlro(user):
+    return getattr(user, 'role', None) in ('compliance_manager', 'admin')
+
+
+@aml_bp.route('/sars/<int:sar_id>', methods=['GET', 'POST'])
+@login_required
+@permission_required('aml')
+def sar_detail(sar_id):
+    """Work one SAR: assign, investigate, MLRO decision (file / no report, with
+    rationale, by someone other than the reporter), then record the filing."""
+    db = get_db()
+    sar = db.execute("""SELECT s.*, c.full_name AS customer_full_name, c.customer_reference
+                        FROM suspicious_activities s LEFT JOIN customers c ON c.id = s.customer_id
+                        WHERE s.id = %s""", (sar_id,)).fetchone()
+    if not sar:
+        flash(_('SAR not found.'), 'warning')
+        return redirect(url_for('aml.sar_list'))
+    sar = dict(sar)
+    if request.method == 'POST':
+        if not current_user.can_edit('aml'):
+            flash(_('You do not have permission to change SARs.'), 'danger')
+            return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+        action = request.form.get('action')
+        now = datetime.now().isoformat(sep=' ', timespec='seconds')
+        status = sar.get('investigation_status') or 'NEW'
+        if status in ('NO_STR', 'FILED'):
+            flash(_('This SAR is closed.'), 'warning')
+            return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+        if action == 'assign':
+            uid = request.form.get('assigned_to')
+            if not uid or not db.execute("SELECT 1 FROM users WHERE id = %s AND is_active = 1 AND role IN ('admin','compliance_manager','compliance_officer')", (uid,)).fetchone():
+                flash(_('Choose a compliance user.'), 'danger')
+                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+            db.execute("""UPDATE suspicious_activities SET assigned_to = %s, assignment_date = %s,
+                          investigation_status = CASE WHEN investigation_status IS NULL OR investigation_status = 'NEW'
+                                                      THEN 'UNDER_INVESTIGATION' ELSE investigation_status END, updated_at = %s
+                          WHERE id = %s""", (uid, now[:10], now, sar_id))
+            msg = f'assigned to user {uid}'
+        elif action == 'investigate':
+            notes = (request.form.get('notes') or '').strip()
+            if len(notes) < 10:
+                flash(_('Write the investigation note.'), 'danger')
+                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+            stamp = f"[{now} — {current_user.first_name or ''} {current_user.last_name or ''}] {notes}"
+            findings = (request.form.get('findings') or '').strip()
+            ready = request.form.get('ready') == 'on'
+            db.execute("""UPDATE suspicious_activities SET
+                          investigation_notes = CASE WHEN COALESCE(investigation_notes, '') = '' THEN %s
+                                                     ELSE investigation_notes || E'\n' || %s END,
+                          investigation_findings = COALESCE(NULLIF(%s, ''), investigation_findings),
+                          investigation_status = %s, updated_at = %s WHERE id = %s""",
+                       (stamp, stamp, findings, 'PENDING_DECISION' if ready else 'UNDER_INVESTIGATION', now, sar_id))
+            msg = 'investigation note' + (' — sent for decision' if ready else '')
+        elif action == 'decide':
+            decision = request.form.get('decision')
+            rationale = (request.form.get('rationale') or '').strip()
+            if not _is_mlro(current_user):
+                flash(_('Only the MLRO decides whether to report to the unit.'), 'danger')
+                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+            if sar.get('reported_by') == current_user.id:
+                flash(_('Four-eyes: the person who raised the SAR cannot decide it.'), 'danger')
+                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+            if decision not in ('FILE_SAR', 'NO_STR') or len(rationale) < 20:
+                flash(_('Choose the decision and write the rationale (at least 20 characters).'), 'danger')
+                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+            db.execute("""UPDATE suspicious_activities SET decision = %s, decision_by = %s, decision_date = %s,
+                          decision_rationale = %s, investigation_status = %s, updated_at = %s WHERE id = %s""",
+                       (decision, current_user.id, now[:10], rationale, decision, now, sar_id))
+            msg = f'decision {decision}'
+        elif action == 'file':
+            ref = (request.form.get('emlcu_reference') or '').strip()
+            fdate = request.form.get('filing_date') or ''
+            if status != 'FILE_SAR':
+                flash(_('Record the filing after the MLRO has decided to report.'), 'warning')
+                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+            try:
+                from datetime import date
+                if date.fromisoformat(fdate) > date.today():
+                    raise ValueError
+            except ValueError:
+                flash(_('Enter a filing date that is not in the future.'), 'danger')
+                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+            if not ref:
+                flash(_('Enter the unit\'s reference number.'), 'danger')
+                return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+            db.execute("""UPDATE suspicious_activities SET sar_filed = 1, sar_filing_date = %s, emlcu_reference = %s,
+                          investigation_status = 'FILED', updated_at = %s WHERE id = %s""", (fdate, ref, now, sar_id))
+            msg = f'filed, reference {ref}'
+        else:
+            flash(_('Unknown action.'), 'danger')
+            return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+        db.commit()
+        AuditLog.log(current_user.id, 'UPDATE', 'AML', sar_id, f'SAR {sar["sar_reference"]}: {msg}', request.remote_addr)
+        flash(_('SAR updated.'), 'success')
+        return redirect(url_for('aml.sar_detail', sar_id=sar_id))
+
+    staff = db.execute("""SELECT id, first_name, last_name FROM users WHERE is_active = 1
+                          AND role IN ('admin','compliance_manager','compliance_officer') ORDER BY first_name""").fetchall()
+    names = {}
+    for key in ('reported_by', 'assigned_to', 'decision_by'):
+        if sar.get(key):
+            u = db.execute("SELECT first_name, last_name FROM users WHERE id = %s", (sar[key],)).fetchone()
+            names[key] = f"{u['first_name'] or ''} {u['last_name'] or ''}".strip() if u else str(sar[key])
+    history = db.execute("""SELECT a.created_at AS at, a.details, u.first_name, u.last_name FROM audit_logs a
+                            LEFT JOIN users u ON u.id = a.user_id
+                            WHERE a.module = 'AML' AND a.item_id = %s AND a.details LIKE %s ORDER BY a.id DESC LIMIT 50""",
+                         (sar_id, f'%{sar["sar_reference"]}%')).fetchall()
+    return render_template('aml/sar_detail.html', sar=sar, staff=staff, names=names, history=history,
+                           statuses=SAR_STATUSES, is_mlro=_is_mlro(current_user),
+                           lang='ar' if (request.args.get('lang') or '') == 'ar' else None)
+
 
 @aml_bp.route('/screening', methods=['GET', 'POST'])
 @login_required

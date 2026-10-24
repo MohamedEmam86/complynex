@@ -187,7 +187,7 @@ def seed(ctx):
                 db.commit()
                 S.attach_signed(fid, aid, mlro, db)
                 continue
-            S.transition(fid, act, mlro, note=None,
+            S.transition(fid, act, ctx.uid('co') if act == 'approve' else mlro, note=None,
                          extra={'regulator_reference': f'FRA/MF/FP/{2026}/{100 + n:04d} (demo)'}, db=db)
         if name == 'Ghada El-Masry':
             S.save_assessment(fid, {'honesty': {'score': '3', 'justification': 'Old regulator warning (2016) fully disclosed and closed; no fine; references positive.'},
@@ -245,12 +245,12 @@ def seed(ctx):
             ans[f's9_q{i}'] = 'no'
         S.save_answers(fid, ans, mlro, db)
         for act in ('complete', 'start_review'):
-            S.transition(fid, act, mlro, db=db)
+            S.transition(fid, act, ctx.uid('co') if act == 'approve' else mlro, db=db)
         S.save_assessment(fid, {k: {'score': '5' if k in ('competence', 'independence') else '4', 'justification': j} for k, j in [
             ('honesty', 'Screening and references clear.'), ('competence', 'Audit partner experience; exactly the skill the committee charter requires.'),
             ('financial', 'Clean credit report.'), ('independence', 'No relationship with the company, its auditor or shareholders in the last 3 years.'),
             ('time', 'Consulting work leaves enough time; attended all meetings since appointment.')]}, None, mlro, db)
-        S.transition(fid, 'approve', mlro, db=db)
+        S.transition(fid, 'approve', ctx.uid('co'), db=db)  # four-eyes: not the assessor
     db.commit()
     print(f'    fit & proper: {db.execute("SELECT COUNT(*) n FROM fp_officials").fetchone()["n"]} officials, '
           f'{db.execute("SELECT COUNT(*) n FROM fp_forms").fetchone()["n"]} forms')

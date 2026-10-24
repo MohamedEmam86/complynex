@@ -117,8 +117,10 @@ def main():
                         uid, db)
             S.add_entry(pid, {'factor_code': 'DEMO_COMMUTE', 'activity_month': f'{yr}-12' if pid == p_prev else f'{yr}-01',
                               'helper': 'commuting', 'employees': '107', 'days_per_year': '220', 'one_way_km': '14'}, uid, db)
-        S.add_entry(p_cur, {'factor_code': 'DEMO_DIESEL', 'activity_month': f'{y}-01', 'site_id': s2, 'quantity': '50',
-                            'unit': 'kWh'}, uid, db)      # planted unit mismatch
+        S.add_entry(p_cur, {'factor_code': 'DEMO_DIESEL', 'activity_month': f'{y}-01', 'site_id': s2, 'quantity': '50'},
+                    uid, db)
+        # planted unit mismatch for the data-quality check (entry now rejects it, so set it directly)
+        db.execute("UPDATE carbon_activity_entries SET unit = 'kWh' WHERE id = (SELECT max(id) FROM carbon_activity_entries)")
         db.execute("""INSERT INTO generic_attachments (module, record_type, record_id, filename, file_path, uploaded_by, is_deleted)
                       SELECT 'carbon', 'carbon_entry', id, 'invoice-demo.pdf', 'demo/none', %s, 0
                       FROM carbon_activity_entries WHERE unit = 'kWh' AND scope = 'scope2'""", (uid,))

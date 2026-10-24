@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ sar.sar_reference }}{% endblock %}
+{% block content %}
+{% set ar = get_locale()|string == 'ar' %}
+{% set st = sar.investigation_status or 'NEW' %}
+{% set labels = {} %}{% for code, en, a in statuses %}{% set _x = labels.update({code: (a if ar else en)}) %}{% endfor %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+      <h1 class="h3 mb-0">{{ _('Suspicious activity report') }} <code>{{ sar.sar_reference }}</code></h1>
+      <div class="small text-muted">{{ _('Confidential — tipping-off rules apply.') }}</div>
+    </div>
+    <div><span class="badge {{ 'bg-danger' if st in ('FILE_SAR', 'FILED') else ('bg-secondary' if st == 'NO_STR' else 'bg-primary') }} fs-6">{{ labels.get(st, st) }}</span>
+      <a href="{{ url_for('aml.sar_list') }}" class="btn btn-sm btn-outline-secondary ms-2">{{ _('Back to SARs') }}</a></div>
+  </div>
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card mb-3"><div class="card-header fw-semibold">{{ _('Report') }}</div><div class="card-body">
+        <p><strong>{{ _('Customer') }}:</strong>
+          {% if sar.customer_id %}<a href="{{ url_for('aml.view_customer', id=sar.customer_id) }}">{{ sar.customer_full_name or sar.customer_name }}</a> ({{ sar.customer_reference or '-' }}){% else %}-{% endif %}</p>
+        <p><strong>{{ _('Activity Date') }}:</strong> {{ sar.activity_date or '-' }} · <strong>{{ _('Discovery Date') }}:</strong> {{ sar.discovery_date or '-' }}</p>
+        <p><strong>{{ _('Amount') }}:</strong> {{ "{:,.2f}".format(sar.amount_involved or 0) }} {{ sar.currency or 'EGP' }}</p>
+        <p class="mb-1"><strong>{{ _('Suspicion Description') }}:</strong></p>
+        <p style="white-space: pre-wrap;">{{ sar.activity_description or '-' }}</p>
+        {% if sar.red_flags_identified %}<p class="mb-1"><strong>{{ _('Red flags') }}:</strong></p><p style="white-space: pre-wrap;">{{ sar.red_flags_identified }}</p>{% endif %}
+        <p class="small text-muted mb-0">{{ _('Raised by') }} {{ names.get('reported_by', '-') }} · {{ sar.report_date or '-' }}</p>
+      </div></div>
+      <div class="card mb-3"><div class="card-header fw-semibold">{{ _('Investigation') }}</div><div class="card-body">
+        <p><strong>{{ _('Assigned to') }}:</strong> {{ names.get('assigned_to', _('Not assigned')) }}</p>
+        {% if sar.investigation_findings %}<p class="mb-1"><strong>{{ _('Findings') }}:</strong></p><p style="white-space: pre-wrap;">{{ sar.investigation_findings }}</p>{% endif %}
+        <p class="mb-1"><strong>{{ _('Investigation notes') }}:</strong></p>
+        <pre class="small bg-light p-2 border rounded" style="white-space: pre-wrap;">{{ sar.investigation_notes or _('No notes yet.') }}</pre>
+        {% if sar.decision %}<p><strong>{{ _('MLRO decision') }}:</strong> {{ labels.get(sar.decision, sar.decision) }} — {{ names.get('decision_by', '-') }}, {{ sar.decision_date }}</p>
+        <p style="white-space: pre-wrap;">{{ sar.decision_rationale }}</p>{% endif %}
+        {% if sar.sar_filed %}<p><strong>{{ _('Filed with the unit') }}:</strong> {{ sar.sar_filing_date }} · {{ _('Reference') }} {{ sar.emlcu_reference }}</p>{% endif %}
+      </div></div>
+    </div>
+    <div class="col-lg-6">
+      {% if current_user.can_edit('aml') and st not in ('NO_STR', 'FILED') %}
+      <div class="card mb-3"><div class="card-header fw-semibold">{{ _('1. Assign') }}</div><div class="card-body">
+        <form method="POST" class="d-flex gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="assign">
+          <select name="assigned_to" class="form-select form-select-sm" required>{% for u in staff %}<option value="{{ u.id }}" {{ 'selected' if u.id == sar.assigned_to }}>{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}</select>
+          <button class="btn btn-sm btn-outline-primary">{{ _('Assign') }}</button></form>
+      </div></div>
+      <div class="card mb-3"><div class="card-header fw-semibold">{{ _('2. Investigate') }}</div><div class="card-body">
+        <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="investigate">
+          <label class="form-label small">{{ _('Note (added to the log with your name and time)') }}</label>
+          <textarea name="notes" class="form-control form-control-sm mb-2" rows="3" required minlength="10"></textarea>
+          <label class="form-label small">{{ _('Findings so far') }}</label>
+          <textarea name="findings" class="form-control form-control-sm mb-2" rows="3">{{ sar.investigation_findings or '' }}</textarea>
+          <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="ready" id="ready"><label class="form-check-label small" for="ready">{{ _('Investigation complete — send to the MLRO for decision') }}</label></div>
+          <button class="btn btn-sm btn-primary">{{ _('Save') }}</button></form>
+      </div></div>
+      {% if is_mlro and st in ('UNDER_INVESTIGATION', 'PENDING_DECISION', 'NEW') %}
+      <div class="card mb-3 border-danger"><div class="card-header fw-semibold">{{ _('3. MLRO decision') }}</div><div class="card-body">
+        <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="decide">
+          <select name="decision" class="form-select form-select-sm mb-2" required><option value="">{{ _('Choose...') }}</option><option value="FILE_SAR">{{ labels['FILE_SAR'] }}</option><option value="NO_STR">{{ labels['NO_STR'] }}</option></select>
+          <textarea name="rationale" class="form-control form-control-sm mb-2" rows="3" required minlength="20" placeholder="{{ _('Rationale for the decision') }}"></textarea>
+          <button class="btn btn-sm btn-danger">{{ _('Record decision') }}</button></form>
+        <div class="small text-muted mt-2">{{ _('The person who raised the SAR cannot decide it.') }}</div>
+      </div></div>
+      {% endif %}
+      {% endif %}
+      {% if current_user.can_edit('aml') and st == 'FILE_SAR' %}
+      <div class="card mb-3 border-danger"><div class="card-header fw-semibold">{{ _('4. Record the filing') }}</div><div class="card-body">
+        <form method="POST" class="row g-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="file">
+          <div class="col-6"><label class="form-label small">{{ _('Filing date') }}</label><input type="date" name="filing_date" class="form-control form-control-sm" required></div>
+          <div class="col-6"><label class="form-label small">{{ _('Unit reference number') }}</label><input type="text" name="emlcu_reference" class="form-control form-control-sm" required></div>
+          <div class="col-12"><button class="btn btn-sm btn-danger">{{ _('Mark as filed') }}</button></div></form>
+      </div></div>
+      {% endif %}
+      <div class="card"><div class="card-header fw-semibold">{{ _('History') }}</div><div class="card-body small">
+        {% for h in history %}<div class="border-bottom py-1">{{ h.at.strftime('%Y-%m-%d %H:%M') if h.at and h.at.strftime else h.at }} — {{ h.first_name }} {{ h.last_name }}: {{ (h.details or '').split(' [deploy:')[0] }}</div>{% else %}<span class="text-muted">{{ _('No activity yet.') }}</span>{% endfor %}
+      </div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

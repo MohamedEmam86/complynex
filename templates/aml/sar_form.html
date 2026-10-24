@@ -18,7 +18,7 @@
                             <select class="form-select" name="customer_id" required>
                                 <option value="">{{ _('Select Customer...') }}</option>
                                 {% for customer in customers %}
-                                <option value="{{ customer.id }}">{{ customer.full_name }} ({{
+                                <option value="{{ customer.id }}" {{ 'selected' if selected_customer and selected_customer|string == customer.id|string }}>{{ customer.full_name }} ({{
                                     customer.customer_reference
                                     }})</option>
                                 {% endfor %}
@@ -28,7 +28,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">{{ _('Activity Date') }}</label>
-                                <input type="date" class="form-control" name="activity_date" required>
+                                <input type="date" class="form-control" name="activity_date" value="{{ form.get('activity_date', '') }}" max="{{ now_date }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">{{ _('Discovery Date') }}</label>
@@ -39,14 +39,14 @@
 
                         <div class="mb-3">
                             <label class="form-label">{{ _('Amount Involved (EGP Equivalent)') }}</label>
-                            <input type="number" step="0.01" class="form-control" name="amount" required>
+                            <input type="number" step="0.01" class="form-control" name="amount" min="0" value="{{ form.get('amount', '') }}" required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">{{ _('Suspicion Description') }}</label>
                             <textarea class="form-control" name="description" rows="5"
                                 placeholder="{{ _('Detailed description of suspicious patterns, red flags identified, and rationale for suspicion.') }}"
-                                required></textarea>
+                                minlength="30" required>{{ form.get('description', '') }}</textarea>
                         </div>
 
                         <div class="alert alert-warning">

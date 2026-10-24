@@ -39,12 +39,12 @@
                             <td>
                                 <span
                                     class="badge {% if sar.investigation_status == 'NEW' %}bg-primary{% elif sar.investigation_status == 'FILE_SAR' %}bg-danger{% else %}bg-secondary{% endif %}">
-                                    {{ sar.investigation_status }}
+                                    {{ status_labels.get(sar.investigation_status or 'NEW', sar.investigation_status) }}
                                 </span>
                             </td>
                             <td class="text-danger font-monospace">{{ sar.sar_deadline or 'N/A' }}</td>
                             <td>
-                                <a href="#" class="btn btn-sm btn-outline-secondary">{{ _('Investigate') }}</a>
+                                <a href="{{ url_for('aml.sar_detail', sar_id=sar.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('Investigate') }}</a>
                             </td>
                         </tr>
                         {% else %}

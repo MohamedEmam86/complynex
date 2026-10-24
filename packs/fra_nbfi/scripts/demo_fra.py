@@ -138,16 +138,18 @@ def remediate():
         from regcontrols import findings, readiness
         db = get_db()
         before = readiness.overview(db=db)['overall']['score']
-        verifier = db.execute("SELECT id FROM users ORDER BY id OFFSET 1 LIMIT 1").fetchone() or \
+        # four-eyes: one person completes the action and asks for verification, another verifies
+        doer = db.execute("SELECT id FROM users ORDER BY id OFFSET 1 LIMIT 1").fetchone() or \
             db.execute("SELECT id FROM users ORDER BY id LIMIT 1").fetchone()
+        verifier = db.execute("SELECT id FROM users WHERE id <> %s ORDER BY id LIMIT 1", (doer['id'],)).fetchone() or doer
         for code in FIXES:
             f = db.execute("SELECT id, status FROM rc_findings WHERE source_ref = %s", (f'DEMO-INSPECTION:{code}',)).fetchone()
             if not f or f['status'] == 'closed':
                 continue
             _fix(code, db)
             for a in db.execute("SELECT id FROM rc_corrective_actions WHERE finding_id = %s", (f['id'],)).fetchall():
-                findings.set_action_status(a['id'], 'done', verifier['id'], note='Done (demo)', db=db)
-            findings.request_verification(f['id'], verifier['id'], db=db)
+                findings.set_action_status(a['id'], 'done', doer['id'], note='Done (demo)', db=db)
+            findings.request_verification(f['id'], doer['id'], db=db)
             outcome, runs = findings.verify(f['id'], verifier['id'], db=db)
             print(f'{code}: corrective action done -> re-test {[r["status"] for r in runs]} -> {outcome}')
         _run_all(db)
