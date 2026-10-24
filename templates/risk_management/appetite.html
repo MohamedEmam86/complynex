@@ -13,7 +13,7 @@
                         {% for s in statements %}
                             <tr>
                                 <td>{{ (categories | selectattr('id', 'equalto', s.category_id) | first).category_name if s.category_id else _('Entity-wide') }}</td>
-                                <td><span class="badge bg-info">{{ s.appetite_level }}</span></td>
+                                <td><span class="badge bg-info">{{ s.appetite_level|label }}</span></td>
                                 <td>{{ s.max_acceptable_residual_score }}</td>
                                 <td class="small">{{ s.effective_from }} - {{ s.effective_to or _('ongoing') }}</td>
                             </tr>
@@ -45,7 +45,7 @@
                         <div class="mb-2">
                             <label class="form-label">{{ _('Appetite Level') }}</label>
                             <select name="appetite_level" class="form-select" required>
-                                {% for l in ['AVERSE', 'MINIMAL', 'CAUTIOUS', 'OPEN', 'HUNGRY'] %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+                                {% for l in ['AVERSE', 'MINIMAL', 'CAUTIOUS', 'OPEN', 'HUNGRY'] %}<option value="{{ l }}">{{ l|label }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="mb-2">

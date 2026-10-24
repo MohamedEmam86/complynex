@@ -28,7 +28,7 @@
                         <td>{{ m.match_name or '-' }}</td>
                         <td>{{ m.list_source or '-' }}</td>
                         <td>{{ m.match_score }}%</td>
-                        <td><span class="badge bg-{{ 'success' if m.status == 'Resolved' else 'danger' }}">{{ m.status }}</span></td>
+                        <td><span class="badge bg-{{ 'success' if m.status == 'Resolved' else 'danger' }}">{{ m.status|label }}</span></td>
                         <td>{{ m.resolution or '-' }}</td>
                         <td>{{ m.resolved_by_name or '-' }}</td>
                         <td class="text-end">

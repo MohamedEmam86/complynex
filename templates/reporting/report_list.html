@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Regulatory Report Templates - ComplyNex CMS{% endblock %}
+{% block title %}{{ _('Regulatory Report Templates') }} - {{ company_name }} CMS{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -48,8 +48,7 @@
                                 }}</span></td>
                         <td class="fw-bold">{{ report.report_name }}</td>
                         <td>{{ report.regulator_name }}</td>
-                        <td><span class="badge bg-secondary-soft text-secondary">{{ report.frequency | capitalize
-                                }}</span></td>
+                        <td><span class="badge bg-secondary-soft text-secondary">{{ report.frequency|label }}</span></td>
                         <td>{{ report.responsible_department or 'Compliance' }}</td>
                         <td class="text-end">
                             <a href="{{ url_for('reporting.manage_report', id=report.id) }}"

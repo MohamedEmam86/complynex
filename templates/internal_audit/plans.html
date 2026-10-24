@@ -16,7 +16,7 @@
                 {% for p in plans %}
                     <tr>
                         <td>{{ p.plan_year }}</td><td>{{ p.plan_name or '-' }}</td>
-                        <td><span class="badge {{ 'bg-success' if p.status == 'APPROVED' else 'bg-secondary' }}">{{ p.status }}</span></td>
+                        <td><span class="badge {{ 'bg-success' if p.status == 'APPROVED' else 'bg-secondary' }}">{{ p.status|label }}</span></td>
                         <td><a href="{{ url_for('internal_audit.projects') }}">{{ engagement_counts.get(p.id, 0) }}</a></td>
                         <td>{{ p.approved_date or '-' }}</td>
                         <td>

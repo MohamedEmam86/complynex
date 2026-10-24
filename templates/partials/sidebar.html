@@ -1219,7 +1219,7 @@
             {% if current_user.is_compliance_officer() or current_user.is_admin() %}
             <li class="cnx-nav__subitem">
               <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('whistleblowing.reports') }}">
-                <span class="cnx-nav__label">{{ _('CBE Reporting') }}</span>
+                <span class="cnx-nav__label">{{ _('Regulator Reporting') }}</span>
               </a>
             </li>
             {% endif %}
@@ -1585,7 +1585,7 @@
       <span class="cnx-user__avatar">{{ (current_user.full_name or '?')[0] }}</span>
       <span class="cnx-user__meta">
         <span class="cnx-user__name">{{ current_user.full_name }}</span>
-        <span class="cnx-user__role">{{ current_user.role }}</span>
+        <span class="cnx-user__role">{{ current_user.role|label }}</span>
       </span>
     </div>
   </div>

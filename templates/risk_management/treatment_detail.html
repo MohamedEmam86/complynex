@@ -11,17 +11,17 @@
                 <div class="card-body">
                     <p>{{ treatment.treatment_description }}</p>
                     <dl class="row mb-0">
-                        <dt class="col-sm-4">{{ _('Type') }}</dt><dd class="col-sm-8">{{ treatment.treatment_type or '-' }}</dd>
+                        <dt class="col-sm-4">{{ _('Type') }}</dt><dd class="col-sm-8">{{ treatment.treatment_type|label('-') }}</dd>
                         <dt class="col-sm-4">{{ _('Owner') }}</dt><dd class="col-sm-8">{{ (owner.first_name ~ ' ' ~ owner.last_name) if owner else '-' }}</dd>
                         <dt class="col-sm-4">{{ _('Target Date') }}</dt><dd class="col-sm-8">{{ treatment.target_date }}</dd>
-                        <dt class="col-sm-4">{{ _('Status') }}</dt><dd class="col-sm-8"><span class="badge bg-secondary">{{ treatment.status }}</span></dd>
+                        <dt class="col-sm-4">{{ _('Status') }}</dt><dd class="col-sm-8"><span class="badge bg-secondary">{{ treatment.status|label }}</span></dd>
                         <dt class="col-sm-4">{{ _('Estimated Cost') }}</dt><dd class="col-sm-8">{{ treatment.estimated_cost or '-' }}</dd>
                         {% if treatment.evidence_file %}
                         <dt class="col-sm-4">{{ _('Evidence') }}</dt><dd class="col-sm-8"><a href="{{ url_for('risk_management.treatment_evidence', treatment_id=treatment.id) }}" target="_blank">{{ _('View file') }}</a></dd>
                         {% endif %}
                         {% if verifier %}
                         <dt class="col-sm-4">{{ _('Verified By') }}</dt><dd class="col-sm-8">{{ verifier.first_name }} {{ verifier.last_name }}</dd>
-                        <dt class="col-sm-4">{{ _('Verified At') }}</dt><dd class="col-sm-8">{{ treatment.verified_at }}</dd>
+                        <dt class="col-sm-4">{{ _('Verified At') }}</dt><dd class="col-sm-8">{{ treatment.verified_at|fmt_dt }}</dd>
                         <dt class="col-sm-4">{{ _('Verification Notes') }}</dt><dd class="col-sm-8">{{ treatment.verification_notes or '-' }}</dd>
                         {% endif %}
                     </dl>
@@ -38,7 +38,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">{{ _('New Status') }}</label>
                                 <select name="status" class="form-select">
-                                    {% for s in ['PROPOSED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED'] %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+                                    {% for s in ['PROPOSED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED'] %}<option value="{{ s }}">{{ s|label }}</option>{% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-6">

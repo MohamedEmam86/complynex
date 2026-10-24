@@ -2,65 +2,117 @@
 
 {% block title %}{{ _('Permissions Matrix') }} - {{ company_name }} CMS{% endblock %}
 
+{% macro lvl_badge(lv) -%}
+{%- if lv == 'approve' -%}<span class="badge bg-success" title="{{ _('Approve') }}"><i class="bi bi-check2-all"></i> {{ _('Approve') }}</span>
+{%- elif lv == 'edit' -%}<span class="badge bg-primary" title="{{ _('Edit') }}"><i class="bi bi-pencil"></i> {{ _('Edit') }}</span>
+{%- elif lv == 'view' -%}<span class="badge bg-info text-dark" title="{{ _('View') }}"><i class="bi bi-eye"></i> {{ _('View') }}</span>
+{%- else -%}<span class="text-muted">—</span>{%- endif -%}
+{%- endmacro %}
+
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2"><i class="bi bi-shield-lock me-2"></i>{{ _('Roles & Permissions Matrix') }}</h1>
-    <a href="{{ url_for('admin.settings') }}" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> {{ _('Back to Settings') }}
-    </a>
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-3 border-bottom gap-2">
+    <h1 class="h2 mb-0"><i class="bi bi-shield-lock me-2"></i>{{ _('Roles & Permissions Matrix') }}</h1>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.settings_permissions_matrix', view=view, role=role_f, module=module_f, inactive='1' if show_inactive else '', format='csv') }}" class="btn btn-sm btn-outline-success">
+            <i class="bi bi-filetype-csv"></i> {{ _('Export CSV') }}</a>
+        <a href="{{ url_for('admin.list_users') }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-people"></i> {{ _('Users') }}</a>
+        <a href="{{ url_for('admin.settings') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> {{ _('Back to Settings') }}</a>
+    </div>
 </div>
 
-<p class="text-muted small">{{ _('Read-only overview of every user\'s per-module access. Edit an individual user\'s permissions from their user profile.') }}</p>
+<p class="text-muted small mb-2">{{ _('Read-only overview of what each role and each user can do in every module. Permissions are granted per user; change them from the user profile.') }}</p>
 
+<form method="get" class="row g-2 align-items-end mb-3">
+    <input type="hidden" name="view" value="{{ view }}">
+    <div class="col-6 col-md-3">
+        <label class="form-label small mb-0" for="pm_role">{{ _('Role') }}</label>
+        <select class="form-select form-select-sm" id="pm_role" name="role">
+            <option value="">{{ _('All') }}</option>
+            {% for r in all_roles %}<option value="{{ r }}" {{ 'selected' if role_f == r }}>{{ r|label }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-md-3">
+        <label class="form-label small mb-0" for="pm_module">{{ _('Module') }}</label>
+        <select class="form-select form-select-sm" id="pm_module" name="module">
+            <option value="">{{ _('All') }}</option>
+            {% for m in modules %}<option value="{{ m }}" {{ 'selected' if module_f == m }}>{{ m|module_label }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" name="inactive" value="1" id="pm_inactive" {{ 'checked' if show_inactive }}>
+            <label class="form-check-label small" for="pm_inactive">{{ _('Include inactive users') }}</label>
+        </div>
+    </div>
+    <div class="col-6 col-md-3"><button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> {{ _('Filter') }}</button></div>
+</form>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link {{ 'active' if view != 'users' }}" href="{{ url_for('admin.settings_permissions_matrix', view='roles', role=role_f, module=module_f, inactive='1' if show_inactive else '') }}">{{ _('By role') }}</a></li>
+    <li class="nav-item"><a class="nav-link {{ 'active' if view == 'users' }}" href="{{ url_for('admin.settings_permissions_matrix', view='users', role=role_f, module=module_f, inactive='1' if show_inactive else '') }}">{{ _('By user') }}</a></li>
+</ul>
+
+{% if view != 'users' %}
 <div class="table-responsive">
-    <table class="table table-sm table-hover align-middle">
+    <table class="table table-sm table-bordered align-middle small">
         <thead class="table-light">
             <tr>
-                <th style="position:sticky;left:0;background:inherit;">{{ _('User') }}</th>
-                <th>{{ _('Role') }}</th>
-                {% for m in modules %}
-                <th class="text-center small">{{ m }}</th>
+                <th>{{ _('Module') }}</th>
+                {% for r in roles %}<th class="text-center">{{ r|label }}<div class="fw-normal text-muted">{{ _('%(n)s users', n=role_users[r]|length) }}</div></th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in shown_modules %}
+            <tr>
+                <th class="fw-semibold">{{ m|module_label }}</th>
+                {% for r in roles %}{% set c = role_matrix[m][r] %}
+                <td class="text-center text-nowrap">
+                    {% if c.approve %}<span class="badge bg-success" title="{{ _('Approve') }}"><i class="bi bi-check2-all"></i> {{ c.approve }}</span>{% endif %}
+                    {% if c.edit %}<span class="badge bg-primary" title="{{ _('Edit') }}"><i class="bi bi-pencil"></i> {{ c.edit }}</span>{% endif %}
+                    {% if c.view %}<span class="badge bg-info text-dark" title="{{ _('View') }}"><i class="bi bi-eye"></i> {{ c.view }}</span>{% endif %}
+                    {% if not (c.approve or c.edit or c.view) %}<span class="text-muted">—</span>{% endif %}
+                </td>
                 {% endfor %}
+            </tr>
+            {% else %}
+            <tr><td class="text-center text-muted py-4">{{ _('No users found.') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="small text-muted">{{ _('Each cell shows how many users of the role can approve, edit or only view the module.') }}</p>
+{% else %}
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle small">
+        <thead class="table-light">
+            <tr>
+                <th>{{ _('User') }}</th>
+                <th>{{ _('Role') }}</th>
+                {% for m in shown_modules %}<th class="text-center">{{ m|module_label }}</th>{% endfor %}
                 <th class="text-end">{{ _('Edit') }}</th>
             </tr>
         </thead>
         <tbody>
             {% for u in users %}
             <tr>
-                <td style="position:sticky;left:0;background:inherit;">
-                    <div class="fw-bold">{{ u.first_name }} {{ u.last_name }}</div>
-                    <div class="text-muted small">{{ u.email }}</div>
-                </td>
-                <td><span class="badge bg-secondary">{{ u.role }}</span></td>
-                {% for m in modules %}
-                <td class="text-center">
-                    {% if u.is_admin() %}
-                    <i class="bi bi-check-circle-fill text-success" title="{{ _('Admin — full access') }}"></i>
-                    {% elif u.can_edit(m) %}
-                    <i class="bi bi-pencil-fill text-primary" title="{{ _('Edit') }}"></i>
-                    {% elif u.can_view(m) %}
-                    <i class="bi bi-eye-fill text-info" title="{{ _('View') }}"></i>
-                    {% else %}
-                    <i class="bi bi-dash text-muted"></i>
-                    {% endif %}
-                </td>
-                {% endfor %}
-                <td class="text-end">
-                    <a href="{{ url_for('admin.edit_user', id=u.id) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-pencil"></i>
-                    </a>
-                </td>
+                <td><div class="fw-bold">{{ u.first_name }} {{ u.last_name }}</div><div class="text-muted">{{ u.email }}</div>
+                    {% if not u.is_active %}<span class="badge bg-danger">{{ _('Inactive') }}</span>{% endif %}</td>
+                <td><span class="badge bg-secondary">{{ u.role|label }}</span></td>
+                {% for m in shown_modules %}<td class="text-center">{{ lvl_badge(levels[u.id][m]) }}</td>{% endfor %}
+                <td class="text-end"><a href="{{ url_for('admin.edit_user', id=u.id) }}" class="btn btn-sm btn-outline-primary" title="{{ _('Edit user') }}"><i class="bi bi-pencil"></i></a></td>
             </tr>
             {% else %}
-            <tr><td colspan="{{ modules | length + 3 }}" class="text-center py-4 text-muted">{{ _('No users found.') }}</td></tr>
+            <tr><td colspan="{{ shown_modules | length + 3 }}" class="text-center py-4 text-muted">{{ _('No users found.') }}</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+{% endif %}
+
 <div class="small text-muted mt-2">
-    <i class="bi bi-check-circle-fill text-success"></i> {{ _('Admin (full access)') }} &nbsp;
-    <i class="bi bi-pencil-fill text-primary"></i> {{ _('Edit') }} &nbsp;
-    <i class="bi bi-eye-fill text-info"></i> {{ _('View only') }} &nbsp;
-    <i class="bi bi-dash text-muted"></i> {{ _('No access') }}
+    {{ lvl_badge('approve') }} {{ _('Approve: administrators, the module\'s administrator level, or edit rights held by a compliance officer or manager.') }}<br>
+    {{ lvl_badge('edit') }} {{ _('Create and change records.') }}
+    {{ lvl_badge('view') }} {{ _('Read only.') }}
+    <span class="text-muted">—</span> {{ _('No access') }}
 </div>
 {% endblock %}

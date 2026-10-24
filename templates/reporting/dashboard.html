@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Reporting Calendar - ComplyNex CMS{% endblock %}
+{% block title %}{{ _('Reporting Calendar') }} - {{ company_name }} CMS{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -164,8 +164,7 @@
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <span class="badge bg-light text-primary border border-primary-subtle rounded-pill px-3">{{
                                 report.report_code }}</span>
-                            <span class="badge bg-secondary-soft text-secondary rounded-pill">{{ report.frequency |
-                                capitalize }}</span>
+                            <span class="badge bg-secondary-soft text-secondary rounded-pill">{{ report.frequency|label }}</span>
                         </div>
                         <h6 class="fw-bold mb-2 text-dark">{{ report.report_name }}</h6>
                         <div class="d-flex align-items-center mb-3">

@@ -25,19 +25,19 @@
                     <div class="col-md-4">
                         <label class="form-label">{{ _('Control Type') }}</label>
                         <select name="control_type" class="form-select" required>
-                            {% for t in ['PREVENTIVE', 'DETECTIVE', 'CORRECTIVE'] %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                            {% for t in ['PREVENTIVE', 'DETECTIVE', 'CORRECTIVE'] %}<option value="{{ t }}">{{ t|label }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">{{ _('Nature') }}</label>
                         <select name="control_nature" class="form-select">
-                            {% for n in ['MANUAL', 'AUTOMATED', 'IT_DEPENDENT'] %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+                            {% for n in ['MANUAL', 'AUTOMATED', 'IT_DEPENDENT'] %}<option value="{{ n }}">{{ n|label }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">{{ _('Testing Frequency') }}</label>
                         <select name="testing_frequency" class="form-select">
-                            {% for f in ['MONTHLY', 'QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL', 'AD_HOC'] %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
+                            {% for f in ['MONTHLY', 'QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL', 'AD_HOC'] %}<option value="{{ f }}">{{ f|label }}</option>{% endfor %}
                         </select>
                     </div>
                 </div>

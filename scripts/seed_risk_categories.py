@@ -43,7 +43,7 @@ app = create_app()
 RISK_CATEGORIES = [
     ("CRD", "Credit Risk", "Settlement exposure, merchant cash-advance and counterparty default risk."),
     ("OPR", "Operational Risk", "Process failure, people, systems and internal-control breakdowns."),
-    ("CMP", "Compliance & Regulatory Risk", "CBE directives, licensing conditions and regulatory reporting obligations."),
+    ("CMP", "Compliance & Regulatory Risk", "Regulator directives, licensing conditions and regulatory reporting obligations."),
     ("FCR", "Financial Crime / AML-CFT Risk", "Money laundering, terrorist financing and sanctions-evasion exposure."),
     ("TEC", "Technology & Cyber Risk", "IT infrastructure, cybersecurity, data integrity and system availability."),
     ("TPR", "Third-Party & Vendor Risk", "Payment scheme, processor, agent-network and outsourcing dependency risk."),

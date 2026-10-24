@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Compliance Operations Detail - ComplyNex CMS{% endblock %}
+{% block title %}{{ _('Compliance Operations Detail') }} - {{ company_name }} CMS{% endblock %}
 {% block content %}
 <div class="container-fluid px-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
@@ -20,12 +20,12 @@
             <tbody>
             {% for s in sanctions_freshness %}
             <tr>
-              <td>{{ s.source_name[:30] }}</td>
+              <td>{{ (s.source_name|label)[:30] }}</td>
               <td class="{% if not s.last_updated %}text-danger{% else %}text-success{% endif %}">
-                {{ s.last_updated[:10] if s.last_updated else 'Never' }}
+                {{ s.last_updated|fmt_date(_('Never')) }}
               </td>
               <td><span class="badge {% if s.is_active %}bg-success{% else %}bg-danger{% endif %}">
-                {% if s.is_active %}Active{% else %}Off{% endif %}
+                {% if s.is_active %}{{ _("Active") }}{% else %}{{ _("Off") }}{% endif %}
               </span></td>
             </tr>
             {% else %}
@@ -100,7 +100,7 @@
             <tr class="{% if d.due_date_str and d.due_date_str[:10] <= today_str %}table-danger{% endif %}">
               <td>{{ d.report_name[:40] if d.report_name else '-' }}</td>
               <td>{{ d.due_date_str[:10] if d.due_date_str else '-' }}</td>
-              <td><span class="badge bg-warning text-dark">{{ d.status }}</span></td>
+              <td><span class="badge bg-warning text-dark">{{ d.status|label }}</span></td>
             </tr>
             {% else %}
             <tr><td colspan="3" class="text-center text-success py-3"><i class="bi bi-check-circle"></i> {{ _("No deadlines in next 90 days") }}</td></tr>

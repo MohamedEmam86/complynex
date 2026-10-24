@@ -26,7 +26,7 @@
                             <h4 class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i> {{ _('Mandatory
                                 Training Required') }}</h4>
                             <p class="mb-0 opacity-75">{{ _('You have') }} {{ available_mandatory|length }} {{
-                                _('mandatory course(s) pending for CBE compliance.') }}</p>
+                                _('mandatory course(s) pending for regulatory compliance.') }}</p>
                         </div>
                         <div class="col-12 col-md-4 text-md-end mt-3 mt-md-0">
                             <button class="btn btn-light fw-bold" data-bs-toggle="collapse"
@@ -222,8 +222,7 @@
                         <div class="card-body">
                             <h6 class="fw-bold text-uppercase text-muted mb-3">{{ _('Regulatory Compliance') }}</h6>
                             <p class="small text-muted mb-3">
-                                {{ _('ComplyNex requires all employees to complete mandatory annual training to remain
-                                compliant with Central Bank of Egypt (CBE) regulations.') }}
+                                {{ _('All employees must complete the mandatory annual training required by the rules of %(reg)s.', reg=regulator_name) }}
                             </p>
                             <div class="d-grid">
                                 <a href="{{ url_for('policies.list_policies') }}"

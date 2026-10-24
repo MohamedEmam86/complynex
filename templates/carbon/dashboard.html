@@ -127,8 +127,8 @@
           <h6><i class="bi bi-flag me-1"></i>{{ _('Reduction target progress') }}</h6>
           {% if target_progress %}
           <div class="d-flex justify-content-between small text-muted mb-1">
-            <span>{{ target.baseline_year }} {{ _('baseline') }}: {{ target_progress.baseline_tco2e }} t</span>
-            <span>2030 {{ _('target') }}: {{ target_progress.target_tco2e }} t</span>
+            <span>{{ target.baseline_year }} {{ _('baseline') }}: {{ target_progress.baseline_tco2e|num(max_decimals=3) }} t</span>
+            <span>2030 {{ _('target') }}: {{ target_progress.target_tco2e|num(max_decimals=3) }} t</span>
           </div>
           <div class="progress" style="height:10px; border-radius:999px;">
             <div class="progress-bar" style="width:{{ [target_progress.pct_of_path_walked, 100]|min if target_progress.pct_of_path_walked else 0 }}%; background:var(--ecx-carbon-2);"></div>
@@ -145,7 +145,7 @@
           {% for e in recent_entries %}
           <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid #f1f4f5;">
             <div>{{ cx.scope_tag(e.scope) }} <span class="ms-1 small">{{ e.activity }}</span></div>
-            <span class="fw-semibold small text-nowrap ms-2">{{ e.tco2e }} t</span>
+            <span class="fw-semibold small text-nowrap ms-2">{{ e.tco2e|num(max_decimals=3) }} t</span>
           </div>
           {% else %}
           <p class="text-muted small mb-0">{{ _('No activity logged yet.') }}</p>

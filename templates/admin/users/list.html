@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}User Management{% endblock %}
+{% block title %}{{ _('User Management') }}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -16,6 +16,64 @@
     </div>
 </div>
 
+<form method="get" class="card shadow-sm mb-3" role="search">
+    <div class="card-body py-2">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small mb-0" for="f_q">{{ _('Search') }}</label>
+                <input type="search" class="form-control form-control-sm" id="f_q" name="q" value="{{ filters.q }}" placeholder="{{ _('Name, email or job title') }}">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small mb-0" for="f_role">{{ _('Role') }}</label>
+                <select class="form-select form-select-sm" id="f_role" name="role">
+                    <option value="">{{ _('All') }}</option>
+                    {% for r in roles %}<option value="{{ r }}" {{ 'selected' if filters.role == r }}>{{ r|label }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small mb-0" for="f_dept">{{ _('Department') }}</label>
+                <select class="form-select form-select-sm" id="f_dept" name="department">
+                    <option value="">{{ _('All') }}</option>
+                    {% for d in departments %}<option value="{{ d.id }}" {{ 'selected' if filters.department == d.id|string }}>{{ d.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-4 col-md-1">
+                <label class="form-label small mb-0" for="f_active">{{ _('Status') }}</label>
+                <select class="form-select form-select-sm" id="f_active" name="active">
+                    <option value="">{{ _('All') }}</option>
+                    <option value="1" {{ 'selected' if filters.active == '1' }}>{{ _('Active') }}</option>
+                    <option value="0" {{ 'selected' if filters.active == '0' }}>{{ _('Inactive') }}</option>
+                    <option value="expired" {{ 'selected' if filters.active == 'expired' }}>{{ _('Expired') }}</option>
+                </select>
+            </div>
+            <div class="col-4 col-md-1">
+                <label class="form-label small mb-0" for="f_mfa">{{ _('MFA') }}</label>
+                <select class="form-select form-select-sm" id="f_mfa" name="mfa">
+                    <option value="">{{ _('All') }}</option>
+                    <option value="1" {{ 'selected' if filters.mfa == '1' }}>{{ _('Enabled') }}</option>
+                    <option value="0" {{ 'selected' if filters.mfa == '0' }}>{{ _('Not enabled') }}</option>
+                </select>
+            </div>
+            <div class="col-4 col-md-2">
+                <label class="form-label small mb-0" for="f_ll">{{ _('Last login') }}</label>
+                <select class="form-select form-select-sm" id="f_ll" name="last_login">
+                    <option value="">{{ _('Any time') }}</option>
+                    <option value="7" {{ 'selected' if filters.last_login == '7' }}>{{ _('Last 7 days') }}</option>
+                    <option value="30" {{ 'selected' if filters.last_login == '30' }}>{{ _('Last 30 days') }}</option>
+                    <option value="90" {{ 'selected' if filters.last_login == '90' }}>{{ _('Last 90 days') }}</option>
+                    <option value="stale" {{ 'selected' if filters.last_login == 'stale' }}>{{ _('Not in 90 days (or never)') }}</option>
+                    <option value="never" {{ 'selected' if filters.last_login == 'never' }}>{{ _('Never logged in') }}</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> {{ _('Filter') }}</button>
+                <a href="{{ url_for('admin.list_users') }}" class="btn btn-sm btn-outline-secondary" title="{{ _('Clear filters') }}"><i class="bi bi-x-lg"></i></a>
+            </div>
+        </div>
+        <div class="small text-muted mt-1">{{ _('Showing %(n)s of %(total)s users', n=users|length, total=total) }}</div>
+    </div>
+</form>
+
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -27,6 +85,8 @@
                         <th>{{ _('Role') }}</th>
                         <th>{{ _('Department') }}</th>
                         <th>{{ _('Status') }}</th>
+                        <th>{{ _('MFA') }}</th>
+                        <th>{{ _('Last login') }}</th>
                         <th>{{ _('Actions') }}</th>
                     </tr>
                 </thead>
@@ -45,7 +105,7 @@
                             </div>
                         </td>
                         <td>{{ user.email }}</td>
-                        <td><span class="badge bg-secondary">{{ user.role }}</span></td>
+                        <td><span class="badge bg-secondary">{{ user.role|label }}</span></td>
                         <td>{{ user.display_department }}</td>
                         <td>
                             {% if user.is_active and user.is_expired %}
@@ -56,6 +116,8 @@
                             <span class="badge bg-danger">{{ _('Inactive') }}</span>
                             {% endif %}
                         </td>
+                        <td>{% if user.mfa_enabled %}<span class="badge bg-success-subtle text-success-emphasis">{{ _('Enabled') }}</span>{% else %}<span class="badge bg-light text-muted border">{{ _('Not enabled') }}</span>{% endif %}</td>
+                        <td class="small text-nowrap">{{ user.last_login|fmt_dt(default=_('Never')) }}</td>
                         <td>
                             <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn btn-sm btn-outline-primary btn-sm">
                                 <i class="bi bi-pencil"></i> {{ _('Edit') }}
@@ -69,6 +131,8 @@
                             {% endif %}
                         </td>
                     </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">{{ _('No users match these filters.') }}</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

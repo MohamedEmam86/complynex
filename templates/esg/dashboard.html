@@ -75,7 +75,7 @@
         <div class="n">{{ summary.overall_score if summary.overall_score is not none else '—' }}<span style="font-size:15px; color:var(--ecx-muted);">/5</span></div>
         <div class="l">{{ _('Overall ESG Score') }}</div>
         {% if summary.overall_rating %}
-        <span class="ecx-rating-pill mt-2" style="background:{{ summary.overall_rating[1] }};">{{ summary.overall_rating[0] }}</span>
+        <span class="ecx-rating-pill mt-2" style="background:{{ summary.overall_rating[1] }};">{{ summary.overall_rating[0]|label }}</span>
         {% endif %}
       </div>
     </div>

@@ -100,7 +100,7 @@
                                                     <i class="bi bi-chat-dots"></i> {{ _('Respond') }}
                                                 </a>
                                                 {% else %}
-                                                <span class="badge bg-secondary">{{ sub.status }}</span>
+                                                <span class="badge bg-secondary">{{ sub.status|label }}</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -141,7 +141,7 @@
                                                 {% elif sub.status == 'submitted' %}
                                                 <span class="badge bg-info">{{ _('Submitted') }}</span>
                                                 {% else %}
-                                                <span class="badge bg-secondary">{{ sub.status }}</span>
+                                                <span class="badge bg-secondary">{{ sub.status|label }}</span>
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -263,7 +263,7 @@
                                         {% for sub in ghe_submissions %}
                                         <tr>
                                             <td>{{ sub.ghe_type }}</td>
-                                            <td>{{ sub.direction }}</td>
+                                            <td>{{ sub.direction|label }}</td>
                                             <td>{{ sub.estimated_value_egp }} {{ _('EGP') }}</td>
                                             <td>{{ (sub.event_date|string)[:10] if sub.event_date else _('N/A') }}</td>
                                             <td>

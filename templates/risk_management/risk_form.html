@@ -42,7 +42,7 @@
                     <div class="col-md-4">
                         <label class="form-label">{{ _('Review Frequency') }}</label>
                         <select name="review_frequency" class="form-select">
-                            {% for f in ['MONTHLY', 'QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL'] %}<option value="{{ f }}" {{ 'selected' if f == 'QUARTERLY' }}>{{ f }}</option>{% endfor %}
+                            {% for f in ['MONTHLY', 'QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL'] %}<option value="{{ f }}" {{ 'selected' if f == 'QUARTERLY' }}>{{ f|label }}</option>{% endfor %}
                         </select>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
                         <label class="form-label">{{ _('Risk Response') }}</label>
                         <select name="risk_response" class="form-select">
                             <option value="">-</option>
-                            {% for r in ['ACCEPT', 'MITIGATE', 'TRANSFER', 'AVOID'] %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+                            {% for r in ['ACCEPT', 'MITIGATE', 'TRANSFER', 'AVOID'] %}<option value="{{ r }}">{{ r|label }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -95,7 +95,7 @@
                         <label class="form-label">{{ _('Control Effectiveness') }}</label>
                         <select name="control_effectiveness" class="form-select">
                             {% for e in ['NOT_ASSESSED', 'EFFECTIVE', 'PARTIALLY_EFFECTIVE', 'INEFFECTIVE'] %}
-                            <option value="{{ e }}" {{ 'selected' if risk.control_effectiveness == e }}>{{ e }}</option>
+                            <option value="{{ e }}" {{ 'selected' if risk.control_effectiveness == e }}>{{ e|label }}</option>
                             {% endfor %}
                         </select>
                     </div>

@@ -43,9 +43,9 @@
     </div>
     <div class="row small text-muted g-2 mb-3">
       {% if period.verifier_name %}<div class="col-auto"><strong>{{ _('Verifier:') }}</strong> {{ period.verifier_name }}</div>{% endif %}
-      {% if period.sent_to_verifier_at %}<div class="col-auto"><strong>{{ _('Sent:') }}</strong> {{ period.sent_to_verifier_at }}</div>{% endif %}
-      {% if period.certified_at %}<div class="col-auto"><strong>{{ _('Certified:') }}</strong> {{ period.certified_at }}</div>{% endif %}
-      {% if period.submitted_to_fra_at %}<div class="col-auto"><strong>{{ _('Submitted to FRA:') }}</strong> {{ period.submitted_to_fra_at }}</div>{% endif %}
+      {% if period.sent_to_verifier_at %}<div class="col-auto"><strong>{{ _('Sent:') }}</strong> {{ period.sent_to_verifier_at|fmt_dt }}</div>{% endif %}
+      {% if period.certified_at %}<div class="col-auto"><strong>{{ _('Certified:') }}</strong> {{ period.certified_at|fmt_dt }}</div>{% endif %}
+      {% if period.submitted_to_fra_at %}<div class="col-auto"><strong>{{ _('Submitted to FRA:') }}</strong> {{ period.submitted_to_fra_at|fmt_dt }}</div>{% endif %}
     </div>
 
     {% if current_user.can_edit('carbon') %}
@@ -160,7 +160,7 @@
         {% endif %}
         <div class="col-auto">
           <div class="small text-muted">{{ _('Status') }}</div>
-          <span class="badge fs-6 bg-{{ 'success' if obligation.status == 'FULFILLED' else ('danger' if obligation.status == 'OVERDUE' else 'warning') }}">{{ obligation.status }}</span>
+          <span class="badge fs-6 bg-{{ 'success' if obligation.status == 'FULFILLED' else ('danger' if obligation.status == 'OVERDUE' else 'warning') }}">{{ obligation.status|label }}</span>
         </div>
       </div>
 
@@ -218,7 +218,7 @@
         <div class="col-md-2">
           <label class="form-label small">{{ _('Standard') }}</label>
           <select class="form-select form-select-sm" name="standard"><option value=""></option>
-            {% for s in ['Verra (VCS)', 'Gold Standard', 'CDM', 'Global Carbon Council', 'Other'] %}<option>{{ s }}</option>{% endfor %}</select>
+            {% for s in ['Verra (VCS)', 'Gold Standard', 'CDM', 'Global Carbon Council', 'Other'] %}<option>{{ s|label }}</option>{% endfor %}</select>
         </div>
         <div class="col-md-1">
           <label class="form-label small">{{ _('Vintage') }}</label>

@@ -12,7 +12,7 @@
     <div class="mb-3 d-flex gap-2 flex-wrap">
         <a href="{{ url_for('internal_audit.projects') }}" class="btn btn-sm {{ 'btn-dark' if not current_status else 'btn-outline-secondary' }}">{{ _('All') }}</a>
         {% for s in ['PLANNED', 'FIELDWORK', 'REPORTING', 'MANAGEMENT_RESPONSE', 'FOLLOW_UP', 'CLOSED'] %}
-        <a href="{{ url_for('internal_audit.projects', status=s) }}" class="btn btn-sm {{ 'btn-dark' if current_status == s else 'btn-outline-secondary' }}">{{ s.replace('_', ' ') | title }}</a>
+        <a href="{{ url_for('internal_audit.projects', status=s) }}" class="btn btn-sm {{ 'btn-dark' if current_status == s else 'btn-outline-secondary' }}">{{ s|label }}</a>
         {% endfor %}
     </div>
 
@@ -29,11 +29,11 @@
                     {% set lead = users_by_id.get(p.lead_auditor_id) %}
                     <tr>
                         <td>{{ p.audit_number }}</td><td>{{ p.audit_name }}</td>
-                        <td><span class="badge bg-secondary">{{ p.audit_type }}</span></td>
+                        <td><span class="badge bg-secondary">{{ p.audit_type|label }}</span></td>
                         <td>{{ (lead.first_name ~ ' ' ~ lead.last_name) if lead else '-' }}</td>
                         <td class="small">{{ p.planned_start_date or '-' }} &rarr; {{ p.planned_end_date or '-' }}</td>
                         <td>
-                            <span class="badge {{ 'bg-success' if p.status == 'CLOSED' else ('bg-primary' if p.status == 'FIELDWORK' else ('bg-info text-dark' if p.status == 'REPORTING' else 'bg-secondary')) }}">{{ p.status.replace('_', ' ') }}</span>
+                            <span class="badge {{ 'bg-success' if p.status == 'CLOSED' else ('bg-primary' if p.status == 'FIELDWORK' else ('bg-info text-dark' if p.status == 'REPORTING' else 'bg-secondary')) }}">{{ p.status|label }}</span>
                         </td>
                         <td>{{ findings_count.get(p.id, 0) }}</td>
                         <td><a href="{{ url_for('internal_audit.project_detail', project_id=p.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('View') }}</a></td>

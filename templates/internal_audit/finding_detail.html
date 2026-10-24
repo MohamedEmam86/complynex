@@ -4,7 +4,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3>{{ finding.finding_number }} - {{ finding.finding_title }}</h3>
-        <span class="badge fs-6 {{ 'bg-danger' if finding.severity == 'CRITICAL' else ('bg-warning text-dark' if finding.severity == 'HIGH' else 'bg-secondary') }}">{{ finding.severity }}</span>
+        <span class="badge fs-6 {{ 'bg-danger' if finding.severity == 'CRITICAL' else ('bg-warning text-dark' if finding.severity == 'HIGH' else 'bg-secondary') }}">{{ finding.severity|label }}</span>
     </div>
     <p class="text-muted">{{ _('Engagement:') }}
         {% if project %}<a href="{{ url_for('internal_audit.project_detail', project_id=project.id) }}">{{ project.audit_number }}</a>
@@ -19,7 +19,7 @@
                     <dt class="col-sm-3">{{ _('Root Cause') }}</dt><dd class="col-sm-9">{{ finding.root_cause or '-' }}</dd>
                     <dt class="col-sm-3">{{ _('Recommendation') }}</dt><dd class="col-sm-9">{{ finding.recommendation or '-' }}</dd>
                     <dt class="col-sm-3">{{ _('Responsible Person') }}</dt><dd class="col-sm-9">{{ (responsible.first_name ~ ' ' ~ responsible.last_name) if responsible else '-' }}</dd>
-                    <dt class="col-sm-3">{{ _('Status') }}</dt><dd class="col-sm-9"><span class="badge bg-secondary">{{ finding.status.replace('_', ' ') }}</span></dd>
+                    <dt class="col-sm-3">{{ _('Status') }}</dt><dd class="col-sm-9"><span class="badge bg-secondary">{{ finding.status|label }}</span></dd>
                     <dt class="col-sm-3">{{ _('Target Date') }}</dt><dd class="col-sm-9">{{ finding.target_date or '-' }}</dd>
                     <dt class="col-sm-3">{{ _('Management Response') }}</dt><dd class="col-sm-9">{{ finding.management_response or '-' }}</dd>
                     <dt class="col-sm-3">{{ _('Agreed Action') }}</dt><dd class="col-sm-9">{{ finding.agreed_action or '-' }}</dd>
@@ -27,7 +27,7 @@
                     <dt class="col-sm-3">{{ _('Remediation evidence') }}</dt><dd class="col-sm-9">{{ finding.remediation_note }}{% if finding.remediated_at %} <small class="text-muted">({{ finding.remediated_at.strftime('%Y-%m-%d') }})</small>{% endif %}</dd>
                     {% endif %}
                     {% if verifier %}
-                    <dt class="col-sm-3">{{ _('Verified By') }}</dt><dd class="col-sm-9">{{ verifier.first_name }} {{ verifier.last_name }} ({{ finding.verified_at }})</dd>
+                    <dt class="col-sm-3">{{ _('Verified By') }}</dt><dd class="col-sm-9">{{ verifier.first_name }} {{ verifier.last_name }} ({{ finding.verified_at|fmt_dt }})</dd>
                     <dt class="col-sm-3">{{ _('Verification Notes') }}</dt><dd class="col-sm-9">{{ finding.verification_notes or '-' }}</dd>
                     {% endif %}
                 </dl>

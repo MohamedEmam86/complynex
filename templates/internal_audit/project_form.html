@@ -26,13 +26,13 @@
                     <label class="form-label">{{ _('Auditable Area') }}</label>
                     <select name="auditable_area_id" class="form-select">
                         <option value="">-</option>
-                        {% for a in areas %}<option value="{{ a.id }}" {% if preselected_area_id and a.id == preselected_area_id %}selected{% endif %}>{{ a.auditable_area }}</option>{% endfor %}
+                        {% for a in areas %}<option value="{{ a.id }}" {% if preselected_area_id and a.id == preselected_area_id %}selected{% endif %}>{{ a.auditable_area|label }}</option>{% endfor %}
                     </select>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">{{ _('Type') }}</label>
                     <select name="audit_type" class="form-select">
-                        {% for t in ['INTERNAL', 'EXTERNAL', 'REGULATORY', 'SPECIAL'] %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                        {% for t in ['INTERNAL', 'EXTERNAL', 'REGULATORY', 'SPECIAL'] %}<option value="{{ t }}">{{ t|label }}</option>{% endfor %}
                     </select>
                 </div>
             </div>

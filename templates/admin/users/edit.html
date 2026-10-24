@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Edit User - {{ user.get_full_name() }}{% endblock %}
+{% block title %}{{ _('Edit User') }} - {{ user.get_full_name() }}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -106,7 +106,7 @@
                         <select class="form-select" id="manager_id" name="manager_id">
                             <option value="">{{ _('None') }}</option>
                             {% for m in managers %}
-                            <option value="{{ m.id }}" {% if user.manager_id and user.manager_id|int==m.id|int %}selected{% endif %}>{{ m.first_name }} {{ m.last_name }} ({{ m.role }})</option>
+                            <option value="{{ m.id }}" {% if user.manager_id and user.manager_id|int==m.id|int %}selected{% endif %}>{{ m.first_name }} {{ m.last_name }} ({{ m.role|label }})</option>
                             {% endfor %}
                         </select>
                         <div class="form-text">{{ _('Used to route COI, GHE and COBEC declarations to this employee\'s manager for review.') }}</div>
@@ -131,7 +131,7 @@
                         <div class="col-md-4">
                             <div class="card bg-light border-0">
                                 <div class="card-body p-2">
-                                    <label class="form-label small fw-bold">{{ module[1] }}</label>
+                                    <label class="form-label small fw-bold">{{ _(module[1]) }}</label>
                                     <select class="form-select form-select-sm" name="perm_{{ module[0] }}">
                                         <option value="none" {{ 'selected' if perm_val=='none' }}>{{ _('None') }}</option>
                                         <option value="view" {{ 'selected' if perm_val=='view' }}>{{ _('View Only') }}</option>
@@ -161,7 +161,7 @@
                             <label class="form-label small fw-bold">{{ rc_loc(label_en, label_ar) }}</label>
                             <select class="form-select form-select-sm" name="modperm_{{ module }}">
                                 {% for lv, ll in [('none', _('None')), ('view', _('View Only')), ('edit', _('View &amp; Edit')), ('admin', _('Admin'))] if lv in levels %}
-                                <option value="{{ lv }}" {{ 'selected' if pv == lv }}>{{ ll }}</option>{% endfor %}
+                                <option value="{{ lv }}" {{ 'selected' if pv == lv }}>{{ ll|label }}</option>{% endfor %}
                             </select></div></div></div>
                         {% endfor %}
                     </div>
@@ -287,8 +287,8 @@
         <select class="form-select" id="authority_level" name="authority_level">
           {% for key, meta in authority_levels.items() %}
           <option value="{{ key }}" data-needs-unit="{{ 1 if meta.needs_unit else 0 }}"
-                  data-help="{{ meta.help }}"
-                  {% if (user.authority_level or 'group') == key %}selected{% endif %}>{{ meta.label }}</option>
+                  data-help="{{ _(meta.help) }}"
+                  {% if (user.authority_level or 'group') == key %}selected{% endif %}>{{ _(meta.label) }}</option>
           {% endfor %}
         </select>
         <div class="form-text" id="authorityHelp"></div>

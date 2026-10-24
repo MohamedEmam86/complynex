@@ -255,7 +255,7 @@
             <td>{{ m.match_name or '-' }}</td>
             <td>{{ m.list_source or '-' }}</td>
             <td>{{ m.match_score }}%</td>
-            <td><span class="badge {{ 'badge-resolved' if m.status == 'Resolved' else 'badge-pending' }}">{{ m.status }}</span></td>
+            <td><span class="badge {{ 'badge-resolved' if m.status == 'Resolved' else 'badge-pending' }}">{{ m.status|label }}</span></td>
             <td>{{ m.resolution or '-' }}{% if m.resolution_notes %} — {{ m.resolution_notes }}{% endif %}</td>
             <td>{{ m.resolved_by_name or '-' }}</td>
             <td><span class="ltr">{{ m.resolved_date or '-' }}</span></td>
@@ -278,7 +278,7 @@
             <td>{{ 'نعم / Yes' if session.consent_given else 'لا / No' }}</td>
         </tr>
         {% if session.consent_given %}
-        <tr><td>{{ _('تاريخ الموافقة / Consent Date') }}</td><td><span class="ltr">{{ session.consent_given_at or '-' }}</span></td></tr>
+        <tr><td>{{ _('تاريخ الموافقة / Consent Date') }}</td><td><span class="ltr">{{ session.consent_given_at|fmt_dt(default='-') }}</span></td></tr>
         <tr><td>{{ _('عنوان IP / Consent IP') }}</td><td><span class="ltr">{{ session.consent_ip or '-' }}</span></td></tr>
         <tr><td>{{ _('نص الموافقة / Consent Text') }}</td><td style="font-size:8.5pt;">{{ session.consent_text or '-' }}</td></tr>
         {% endif %}
@@ -290,7 +290,7 @@
     <tbody>
         <tr>
             <td style="width:30%;">{{ _('حالة الجلسة / Session Status') }}</td>
-            <td>{{ session.status }}</td>
+            <td>{{ session.status|label }}</td>
         </tr>
         <tr>
             <td>{{ _('القرار النهائي / Final Decision') }}</td>
@@ -300,8 +300,8 @@
                 {% else %}<span class="badge badge-pending">{{ _('قيد الانتظار / Pending') }}</span>{% endif %}
             </td>
         </tr>
-        <tr><td>{{ _('راجعه / Reviewed By') }}</td><td>{{ reviewed_by_name or '-' }} {% if session.reviewed_at %}— <span class="ltr">{{ session.reviewed_at }}</span>{% endif %}</td></tr>
-        <tr><td>{{ _('قرر بواسطة / Decided By') }}</td><td>{{ decision_by_name or '-' }} {% if session.decided_at %}— <span class="ltr">{{ session.decided_at }}</span>{% endif %}</td></tr>
+        <tr><td>{{ _('راجعه / Reviewed By') }}</td><td>{{ reviewed_by_name or '-' }} {% if session.reviewed_at %}— <span class="ltr">{{ session.reviewed_at|fmt_dt }}</span>{% endif %}</td></tr>
+        <tr><td>{{ _('قرر بواسطة / Decided By') }}</td><td>{{ decision_by_name or '-' }} {% if session.decided_at %}— <span class="ltr">{{ session.decided_at|fmt_dt }}</span>{% endif %}</td></tr>
         {% if session.decision_notes %}<tr><td>{{ _('ملاحظات القرار / Decision Notes') }}</td><td>{{ session.decision_notes }}</td></tr>{% endif %}
     </tbody>
 </table>

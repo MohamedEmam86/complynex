@@ -36,9 +36,9 @@
                             {% else %}-{% endif %}
                         </td>
                         <td>{{ s.risk_score if s.risk_score is not none else '-' }}</td>
-                        <td>{{ s.screening_result or '-' }}</td>
+                        <td>{{ s.screening_result|label('-') }}</td>
                         <td>{{ s.assigned_to_name or '-' }}</td>
-                        <td>{{ s.updated_at }}</td>
+                        <td>{{ s.updated_at|fmt_dt }}</td>
                         <td class="text-end">
                             <a href="{{ url_for('ekyc.review_detail', session_id=s.id) }}" class="btn btn-sm btn-primary">
                                 {{ _('Review') }}

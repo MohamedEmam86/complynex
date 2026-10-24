@@ -81,7 +81,7 @@
                         <td>{{ s.document_type }}</td>
                         <td>
                             <span class="badge bg-{{ 'success' if s.status == 'COMPLETED' else ('danger' if s.status == 'FAILED' else 'secondary') }}">
-                                {{ s.status }}
+                                {{ s.status|label }}
                             </span>
                         </td>
                         <td>
@@ -89,16 +89,16 @@
                                 {% if s.final_decision %}
                                 <span class="badge bg-{{ 'success' if s.final_decision == 'APPROVED' else 'danger' }}">{{ s.final_decision }}</span>
                                 {% elif s.decision %}
-                                <span class="badge bg-{{ 'success' if s.decision == 'PASS' else ('danger' if s.decision == 'FAIL' else 'warning') }}">{{ s.decision }}</span>
+                                <span class="badge bg-{{ 'success' if s.decision == 'PASS' else ('danger' if s.decision == 'FAIL' else 'warning') }}">{{ s.decision|label }}</span>
                                 {% else %}-{% endif %}
                             </span>
                             <span class="decision-auto d-none">
                                 {% if s.decision %}
-                                <span class="badge bg-{{ 'success' if s.decision == 'PASS' else ('danger' if s.decision == 'FAIL' else 'warning') }}">{{ s.decision }}</span>
+                                <span class="badge bg-{{ 'success' if s.decision == 'PASS' else ('danger' if s.decision == 'FAIL' else 'warning') }}">{{ s.decision|label }}</span>
                                 {% else %}-{% endif %}
                             </span>
                         </td>
-                        <td>{{ s.created_at }}</td>
+                        <td>{{ s.created_at|fmt_dt }}</td>
                         <td>{{ s.created_by_name or '-' }}</td>
                     </tr>
                     {% else %}

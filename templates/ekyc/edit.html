@@ -13,7 +13,7 @@
                     <label class="form-label">{{ _('Document Type') }}</label>
                     <select name="document_type" class="form-select">
                         {% for value, label in document_types %}
-                        <option value="{{ value }}" {% if value == session.document_type %}selected{% endif %}>{{ label }}</option>
+                        <option value="{{ value }}" {% if value == session.document_type %}selected{% endif %}>{{ _(label) }}</option>
                         {% endfor %}
                     </select>
                 </div>

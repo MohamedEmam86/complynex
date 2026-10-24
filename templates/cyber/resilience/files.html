@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 {% import 'cyber/resilience/_nav.html' as cn with context %}
-{% block title %}{{ label }} - ComplyNex CMS{% endblock %}
+{% block title %}{{ label|label }} - {{ company_name }} CMS{% endblock %}
 {% block content %}
 <div class="container-fluid">
-    <h3 class="mb-1">{{ label }}</h3>
+    <h3 class="mb-1">{{ label|label }}</h3>
     <p class="small"><a href="{{ url_for(back) }}">{{ _('Back') }}</a></p>
     {{ cn.nav(back) }}
-    <div class="row"><div class="col-lg-6"><div class="card mb-3"><table class="table table-sm mb-0 small">{% for k, v in rec.items() if v not in (none, '', [], {}) and k not in ('created_by', 'updated_by') %}<tr><th style="width: 40%">{{ k }}</th><td>{{ v }}</td></tr>{% endfor %}</table></div></div>
+    <div class="row"><div class="col-lg-6"><div class="card mb-3"><table class="table table-sm mb-0 small">{% for k, v in rec.items() if v not in (none, '', [], {}) and k not in ('id', 'created_by', 'updated_by') %}<tr><th style="width: 40%">{{ k|label }}</th><td>{% if k.startswith('is_') or v is sameas true or v is sameas false %}{{ (v in (1, true))|label }}{% elif k.endswith('_by') or k.endswith('user_id') %}{{ v|username }}{% elif k.endswith('_at') %}{{ v|fmt_dt }}{% elif k.endswith(('_on', '_date', '_until', '_from', '_expiry', '_end', '_test')) %}{{ v|fmt_date }}{% elif v is number and not k.endswith('_id') and k != 'id' %}{{ v|num }}{% else %}{{ v|label }}{% endif %}</td></tr>{% endfor %}</table></div></div>
         <div class="col-lg-6">{% include 'partials/attachment_widget.html' %}</div></div>
 </div>
 {% endblock %}

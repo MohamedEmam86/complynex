@@ -40,7 +40,7 @@
                     <span class="badge bg-secondary">{{ _('Disabled') }}</span>
                     {% endif %}
                 </td>
-                <td>{{ tpl.updated_at }}</td>
+                <td>{{ tpl.updated_at|fmt_dt }}</td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editTpl{{ tpl.id }}">
                         <i class="bi bi-pencil"></i> {{ _('Edit') }}

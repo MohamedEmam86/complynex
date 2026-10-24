@@ -35,8 +35,8 @@
                             {% else %}-{% endif %}
                         </td>
                         <td>{{ s.risk_score if s.risk_score is not none else '-' }}</td>
-                        <td>{{ s.screening_result or '-' }}</td>
-                        <td>{{ s.updated_at }}</td>
+                        <td>{{ s.screening_result|label('-') }}</td>
+                        <td>{{ s.updated_at|fmt_dt }}</td>
                         <td class="text-end">
                             <form method="POST" action="{{ url_for('ekyc.session_decision', session_id=s.id) }}" class="d-inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>

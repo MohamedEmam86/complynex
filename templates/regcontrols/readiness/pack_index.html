@@ -5,5 +5,5 @@
 <p>{{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }} · {{ _('Readiness score') }} {{ s.score if s.score is not none else '-' }} / 100 · {{ s.controls }} {{ _('controls') }}</p>
 <p>{{ _('Contents: this index, controls.csv (control list and latest result), run_history.csv (every automated run and manual test), evidence/<control>/ (approved evidence files).') }}</p>
 <table><thead><tr><th>{{ _('Control') }}</th><th>{{ _('Title') }}</th><th>{{ _('Criticality') }}</th><th>{{ _('Last result') }}</th><th>{{ _('Last run') }}</th></tr></thead><tbody>
-{% for c in controls %}<tr><td>{{ c.control_code }}</td><td>{{ rc_loc(c.title_en, c.title_ar) }}</td><td>{{ c.criticality }}</td><td>{{ c.last_status or '-' }}</td><td>{{ c.last_run_at.strftime('%Y-%m-%d') if c.last_run_at else '-' }}</td></tr>{% endfor %}</tbody></table>
+{% for c in controls %}<tr><td>{{ c.control_code }}</td><td>{{ rc_loc(c.title_en, c.title_ar) }}</td><td>{{ c.criticality }}</td><td>{{ c.last_status|label('-') }}</td><td>{{ c.last_run_at.strftime('%Y-%m-%d') if c.last_run_at else '-' }}</td></tr>{% endfor %}</tbody></table>
 </body></html>

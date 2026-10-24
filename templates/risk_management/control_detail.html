@@ -14,7 +14,7 @@
                 <div class="card-body">
                     <p>{{ control.control_description or _('No description.') }}</p>
                     <dl class="row mb-0">
-                        <dt class="col-sm-3">{{ _('Type') }}</dt><dd class="col-sm-9">{{ control.control_type }}</dd>
+                        <dt class="col-sm-3">{{ _('Type') }}</dt><dd class="col-sm-9">{{ control.control_type|label }}</dd>
                         <dt class="col-sm-3">{{ _('Nature') }}</dt><dd class="col-sm-9">{{ control.control_nature }}</dd>
                         <dt class="col-sm-3">{{ _('Testing Frequency') }}</dt><dd class="col-sm-9">{{ control.testing_frequency }}</dd>
                         <dt class="col-sm-3">{{ _('Last Test') }}</dt><dd class="col-sm-9">{{ control.last_test_result or '-' }} ({{ control.last_tested_date or '-' }})</dd>
@@ -28,7 +28,7 @@
                         <thead><tr><th>{{ _('Date') }}</th><th>{{ _('Result') }}</th><th>{{ _('Exceptions') }}</th></tr></thead>
                         <tbody>
                         {% for t in test_results %}
-                            <tr><td>{{ t.test_date }}</td><td><span class="badge {{ 'bg-success' if t.result == 'EFFECTIVE' else ('bg-warning text-dark' if t.result == 'PARTIALLY_EFFECTIVE' else 'bg-danger') }}">{{ t.result }}</span></td><td class="small">{{ t.exceptions_noted or '-' }}</td></tr>
+                            <tr><td>{{ t.test_date }}</td><td><span class="badge {{ 'bg-success' if t.result == 'EFFECTIVE' else ('bg-warning text-dark' if t.result == 'PARTIALLY_EFFECTIVE' else 'bg-danger') }}">{{ t.result|label }}</span></td><td class="small">{{ t.exceptions_noted or '-' }}</td></tr>
                         {% else %}
                             <tr><td colspan="3" class="text-center text-muted">{{ _('No tests recorded yet.') }}</td></tr>
                         {% endfor %}

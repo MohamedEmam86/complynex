@@ -9,7 +9,7 @@
     <form method="get" class="mb-2 d-flex gap-2 small"><input name="categories" value="{{ cats|join(',') }}" class="form-control form-control-sm w-auto"><button class="btn btn-sm btn-outline-secondary">{{ _('Filter') }}</button></form>
     <div class="card"><div class="table-responsive"><table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Risk') }}</th><th>{{ _('Category') }}</th><th>{{ _('Owner') }}</th><th class="text-end">{{ _('Inherent / residual') }}</th><th>{{ _('Last review') }}</th><th>{{ _('Next review') }}</th><th>{{ _('Status') }}</th><th>{{ _('Freshness') }}</th></tr></thead><tbody>
         {% for r in rows %}<tr class="{{ 'table-danger' if r.stale }}"><td>{% if current_user.can_view('risk_management') %}<a href="{{ url_for('risk_management.register_detail', risk_pk=r.id) }}">{{ r.risk_id }}</a>{% else %}{{ r.risk_id }}{% endif %} {{ r.risk_title }}</td><td>{{ r.category_code }}</td><td>{{ r.owner }}</td>
-            <td class="text-end">{{ r.inherent_risk_score }} / {{ r.residual_risk_score or '-' }}</td><td>{{ r.last_review_date or '-' }}</td><td>{{ r.next_review_date or '-' }}</td><td>{{ r.status }}</td><td>{{ r.stale or _('OK') }}</td></tr>
+            <td class="text-end">{{ r.inherent_risk_score }} / {{ r.residual_risk_score or '-' }}</td><td>{{ r.last_review_date or '-' }}</td><td>{{ r.next_review_date or '-' }}</td><td>{{ r.status|label }}</td><td>{{ r.stale or _('OK') }}</td></tr>
         {% else %}<tr><td colspan="8" class="text-muted text-center py-3">{{ _('No risk in these categories.') }}</td></tr>{% endfor %}</tbody></table></div></div>
 </div>
 {% endblock %}

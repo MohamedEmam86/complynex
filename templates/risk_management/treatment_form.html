@@ -15,7 +15,7 @@
                     <div class="col-md-4">
                         <label class="form-label">{{ _('Type') }}</label>
                         <select name="treatment_type" class="form-select">
-                            {% for t in ['ACCEPT', 'MITIGATE', 'TRANSFER', 'AVOID'] %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                            {% for t in ['ACCEPT', 'MITIGATE', 'TRANSFER', 'AVOID'] %}<option value="{{ t }}">{{ t|label }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">

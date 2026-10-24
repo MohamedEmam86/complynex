@@ -940,7 +940,7 @@ def get_pending_risk_suggestions():
         ('consumer_protection', 'consumer_complaints',
          "SELECT * FROM consumer_complaints WHERE days_remaining_to_deadline < 0 "
          "AND UPPER(status) NOT IN ('CLOSED','RESOLVED') ORDER BY id DESC LIMIT 50",
-         lambda r: f"Complaint past CBE deadline: CP-{r['id']}",
+         lambda r: f"Complaint past regulatory deadline: CP-{r['id']}",
          lambda r: (r.get('complaint_description') or '')[:500]),
 
         ('cyber', 'cyber_incidents',

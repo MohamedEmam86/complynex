@@ -18,10 +18,10 @@
     </div>
     <div class="row g-3"><div class="col-lg-7"><div class="card"><div class="card-header"><strong>{{ _('Controls tested on these registers') }}</strong></div>
         <table class="table table-sm mb-0 small"><tbody>{% for c in controls %}<tr><td><a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}">{{ c.control_code }}</a> · {{ rc_loc(c.title_en, c.title_ar) }}</td><td><code>{{ c.check_key }}</code></td>
-            <td>{% if c.last_status %}<span class="badge bg-{{ {'pass': 'success', 'fail': 'danger', 'warning': 'warning text-dark', 'error': 'dark'}.get(c.last_status, 'secondary') }}">{{ c.last_status }}</span>{% else %}-{% endif %}</td></tr>
+            <td>{% if c.last_status %}<span class="badge bg-{{ {'pass': 'success', 'fail': 'danger', 'warning': 'warning text-dark', 'error': 'dark'}.get(c.last_status, 'secondary') }}">{{ c.last_status|label }}</span>{% else %}-{% endif %}</td></tr>
         {% else %}<tr><td class="text-muted">{{ _('No control is bound to these checks yet (enable a content pack, or bind a control on Compliance Controls).') }}</td></tr>{% endfor %}</tbody></table></div></div>
         <div class="col-lg-5"><div class="card"><div class="card-header"><strong>{{ _('Latest maturity self-assessments') }}</strong></div><ul class="list-group list-group-flush small">
-            {% for m in maturity %}<li class="list-group-item"><a href="{{ url_for('cyber.res_maturity_detail', assessment_id=m.id) }}">{{ m.framework_code }} · {{ m.title }}</a> <span class="text-muted">{{ m.assessed_on }} · {{ m.status }} · {{ _('avg') }} {{ m.avg_current or '-' }}</span></li>
+            {% for m in maturity %}<li class="list-group-item"><a href="{{ url_for('cyber.res_maturity_detail', assessment_id=m.id) }}">{{ m.framework_code }} · {{ m.title }}</a> <span class="text-muted">{{ m.assessed_on }} · {{ m.status|label }} · {{ _('avg') }} {{ m.avg_current or '-' }}</span></li>
             {% else %}<li class="list-group-item text-muted">{{ _('None yet.') }}</li>{% endfor %}</ul></div></div></div>
 </div>
 {% endblock %}

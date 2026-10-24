@@ -15,7 +15,7 @@
                    'boundary_share': _('Boundary share'), 'gross_tco2e': _('Gross tCO2e (before the share)'), 'basis': _('Scope 2 basis'),
                    'instrument_type': _('Contractual instrument'), 'instrument_ref': _('Instrument ref.'), 'helper_inputs': _('Calculation helper inputs'), 'notes': _('Note')} %}
   <div class="row g-3"><div class="col-lg-6"><div class="card mb-3"><table class="table table-sm mb-0 small">
-    {% for k in labels if e[k] not in (none, '') %}<tr><th style="width: 40%">{{ labels[k] }}</th><td>{{ e[k] }}</td></tr>{% endfor %}
+    {% for k in labels if e[k] not in (none, '') %}<tr><th style="width: 40%">{{ labels[k] }}</th><td>{% if e[k] is number %}{{ e[k]|num(max_decimals=6) }}{% elif k == 'factor_code' or k == 'instrument_ref' or k == 'helper_inputs' or k == 'notes' %}{{ e[k] }}{% else %}{{ e[k]|label }}{% endif %}</td></tr>{% endfor %}
     {% if not e.activity_month %}<tr><th>{{ _('Activity month') }}</th><td>{{ _('Whole period') }}{% if e.scope in ('scope1', 'scope2') %} <span class="badge bg-warning text-dark">{{ _('no month') }}</span>{% endif %}</td></tr>{% endif %}</table></div></div>
     <div class="col-lg-6">{% include 'partials/attachment_widget.html' %}</div></div>
 {% endblock %}

@@ -42,14 +42,14 @@
               <label class="small text-muted">{{ _('Stakeholder Importance (1-5)') }}</label>
               <select name="importance_{{ t.id }}" class="form-select form-select-sm" {{ 'disabled' if not current_user.can_edit('esg') }}>
                 <option value="">—</option>
-                {% for v in range(1,6) %}<option value="{{ v }}" {{ 'selected' if s and s.stakeholder_importance == v }}>{{ v }}</option>{% endfor %}
+                {% for v in range(1,6) %}<option value="{{ v }}" {{ 'selected' if s and s.stakeholder_importance == v }}>{{ v|label }}</option>{% endfor %}
               </select>
             </div>
             <div class="col-6">
               <label class="small text-muted">{{ _('Business Impact (1-5)') }}</label>
               <select name="impact_{{ t.id }}" class="form-select form-select-sm" {{ 'disabled' if not current_user.can_edit('esg') }}>
                 <option value="">—</option>
-                {% for v in range(1,6) %}<option value="{{ v }}" {{ 'selected' if s and s.business_impact == v }}>{{ v }}</option>{% endfor %}
+                {% for v in range(1,6) %}<option value="{{ v }}" {{ 'selected' if s and s.business_impact == v }}>{{ v|label }}</option>{% endfor %}
               </select>
             </div>
           </div>

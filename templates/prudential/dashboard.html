@@ -23,7 +23,7 @@
     <div class="card"><div class="card-header"><strong>{{ _('Controls tested on these registers') }}</strong></div>
         <table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Control') }}</th><th>{{ _('Check') }}</th><th>{{ _('Last result') }}</th></tr></thead><tbody>
         {% for c in controls %}<tr><td><a href="{{ url_for('regcontrols.control_detail', control_id=c.id) }}">{{ c.control_code }}</a> · {{ rc_loc(c.title_en, c.title_ar) }}</td><td><code>{{ c.check_key }}</code></td>
-            <td>{% if c.last_status %}<span class="badge bg-{{ {'pass': 'success', 'fail': 'danger', 'warning': 'warning text-dark', 'error': 'dark'}.get(c.last_status, 'secondary') }}">{{ c.last_status }}</span>{% else %}-{% endif %}</td></tr>
+            <td>{% if c.last_status %}<span class="badge bg-{{ {'pass': 'success', 'fail': 'danger', 'warning': 'warning text-dark', 'error': 'dark'}.get(c.last_status, 'secondary') }}">{{ c.last_status|label }}</span>{% else %}-{% endif %}</td></tr>
         {% else %}<tr><td colspan="3" class="text-muted">{{ _('No control is bound to these checks yet (enable a content pack, or bind a control on Compliance Controls).') }}</td></tr>{% endfor %}</tbody></table></div>
 </div>
 {% endblock %}
