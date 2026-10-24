@@ -569,6 +569,11 @@ class COIDeclaration:
         self.details = kwargs.get('details')
         self.parties_involved = kwargs.get('parties_involved')
         self.mitigation_plan = kwargs.get('mitigation_plan')
+        # Who the declaration was escalated to (may lack the COI module permission;
+        # gets scoped access to this declaration only — see coi/routes.py).
+        self.escalated_to = kwargs.get('escalated_to')
+        self.escalated_by = kwargs.get('escalated_by')
+        self.escalated_at = kwargs.get('escalated_at')
     
     @staticmethod
     def create(data, employee_id):
@@ -784,15 +789,17 @@ class COIDeclaration:
         
         db.commit()
     
-    def escalate(self, reviewer_id, comments):
+    def escalate(self, reviewer_id, comments, escalated_to=None):
         """Escalate to management (considered a terminal state/closed case for compliance)"""
         db = get_db()
         old_status = self.status
         db.execute('''
             UPDATE coi_declarations 
-            SET status = 'escalated', reviewer_id = %s, review_date = CURRENT_TIMESTAMP, review_comments = %s
+            SET status = 'escalated', reviewer_id = %s, review_date = CURRENT_TIMESTAMP, review_comments = %s,
+                escalated_to = %s, escalated_by = %s, escalated_at = CURRENT_TIMESTAMP
             WHERE id = %s
-        ''', (reviewer_id, comments, self.id))
+        ''', (reviewer_id, comments, escalated_to, reviewer_id, self.id))
+        self.escalated_to = escalated_to
         
         # Also update the campaign_employee status to completed since it's "closed"
         db.execute('''

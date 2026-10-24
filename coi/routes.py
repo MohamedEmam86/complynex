@@ -309,26 +309,36 @@ def declare(campaign_id):
     
     return render_template('coi/declare.html', campaign=campaign)
 
+def is_escalation_target(declaration, user):
+    """The person a declaration was escalated to. They may not hold the COI
+    module permission; this grants access to THIS declaration only."""
+    return bool(declaration and user and getattr(declaration, 'escalated_to', None)
+                and declaration.escalated_to == user.id)
+
+
+def _coi_view_allowed(declaration):
+    if current_user.is_admin() or current_user.can_view('coi'):
+        is_owner = declaration.employee_id == current_user.id
+        if is_owner or current_user.is_manager() or current_user.is_compliance_officer():
+            return True
+    return is_escalation_target(declaration, current_user)
+
+
 @coi_bp.route('/declarations/<int:id>')
 @login_required
-@permission_required('coi', level='view')
 def view_declaration(id):
-    """View COI declaration"""
+    """View COI declaration (COI permission holders as before, or the person
+    the declaration was escalated to — for that declaration only)."""
     declaration = COIDeclaration.get_by_id(id)
     if not declaration:
         flash(gettext('Declaration not found.'), 'danger')
         return redirect(url_for('dashboard'))
-        
-    # Permission check: Own declaration, or Manager, or Compliance
-    is_owner = declaration.employee_id == current_user.id
-    is_manager = current_user.is_manager() # Should really check if manager OF employee, but broad role check for MVP
-    is_compliance = current_user.is_compliance_officer()
-    
-    if not (is_owner or is_manager or is_compliance):
+    if not _coi_view_allowed(declaration):
         flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
-        
-    return render_template('coi/detail.html', declaration=declaration)
+    return render_template('coi/detail.html', declaration=declaration,
+                           escalation_only=not (current_user.is_admin() or current_user.can_view('coi')),
+                           can_review=_review_mode(declaration) is not None)
 
 # ==================== MANAGER REVIEW ====================
 
@@ -369,25 +379,41 @@ def _escalation_manager(employee_id):
     return manager if manager and manager.is_active else None
 
 
+def _review_mode(declaration):
+    """'full' for COI reviewers (module edit permission + manager/compliance role),
+    'escalation' for the person this escalated declaration is waiting on, else None."""
+    if (current_user.is_admin() or current_user.can_edit('coi')) and \
+            (current_user.is_manager() or current_user.is_compliance_officer()):
+        return 'full'
+    if is_escalation_target(declaration, current_user) and declaration.status == 'escalated':
+        return 'escalation'
+    return None
+
+
 @coi_bp.route('/declarations/<int:id>/review', methods=['GET', 'POST'])
 @login_required
-@permission_required('coi', level='edit')
 def review_declaration(id):
     """Review COI declaration"""
     declaration = COIDeclaration.get_by_id(id)
     
     if not declaration:
         flash(gettext('Declaration not found'), 'danger')
-        return redirect(url_for('coi.pending_review'))
-        
-    # Basic permission check
-    if not (current_user.is_manager() or current_user.is_compliance_officer()):
-         flash(gettext('Access denied.'), 'danger')
-         return redirect(url_for('dashboard'))
+        return redirect(url_for('dashboard'))
+
+    mode = _review_mode(declaration)
+    if not mode:
+        flash(gettext('Access denied.'), 'danger')
+        return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
         action = request.form.get('action')  # approve, clarify, escalate
         comments = request.form.get('comments')
+        if mode == 'escalation' and action not in ('approve', 'clarify', 'escalate'):
+            flash(gettext('As the manager this declaration was escalated to, you can approve it, ask for clarification or escalate it further.'), 'warning')
+            return redirect(url_for('coi.review_declaration', id=id))
+        if mode == 'escalation':
+            AuditLog.log(current_user.id, 'COI Escalation Decision', 'COI', id,
+                         f'{action} by escalation target', request.remote_addr)
         
         if action == 'approve':
             declaration.approve(current_user.id, comments)
@@ -396,11 +422,16 @@ def review_declaration(id):
             declaration.request_clarification(current_user.id, comments)
             flash(gettext('Clarification requested.'), 'info')
         elif action == 'escalate':
-            manager = _escalation_manager(declaration.employee_id)
+            if mode == 'escalation':
+                # Escalating further: to the escalation target's own manager.
+                up = User.get_by_id(current_user.manager_id) if getattr(current_user, 'manager_id', None) else None
+                manager = up if up and up.is_active and up.id != current_user.id else None
+            else:
+                manager = _escalation_manager(declaration.employee_id)
             note = comments
             if manager:
                 note = f"{comments or ''}\n[Escalated to {manager.get_full_name()}]".strip()
-            declaration.escalate(current_user.id, note)
+            declaration.escalate(current_user.id, note, escalated_to=manager.id if manager else None)
             if manager:
                 from services.notification_service import notify
                 notify(manager.id, gettext('COI declaration escalated to you'),
@@ -415,6 +446,8 @@ def review_declaration(id):
             # Create a draft mitigation plan if needed, or redirect to creation form
             return redirect(url_for('coi.create_mitigation_plan', declaration_id=id))
 
+        if mode == 'escalation':
+            return redirect(url_for('coi.view_declaration', id=id))
         return redirect(url_for('coi.pending_review'))
     
     mitigation_plan = None
@@ -423,7 +456,8 @@ def review_declaration(id):
         
     history = declaration.get_history()
         
-    return render_template('coi/review.html', declaration=declaration, mitigation_plan=mitigation_plan, history=history)
+    return render_template('coi/review.html', declaration=declaration, mitigation_plan=mitigation_plan, history=history,
+                           escalation_only=(mode == 'escalation'))
 
 @coi_bp.route('/declarations/<int:declaration_id>/mitigation/create', methods=['GET', 'POST'])
 @login_required

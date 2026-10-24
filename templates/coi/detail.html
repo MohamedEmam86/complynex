@@ -9,7 +9,10 @@
         <button data-action="print" class="btn btn-outline-info me-2">
             <i class="bi bi-printer"></i> {{ _('Print Form') }}
         </button>
-        {% if current_user.is_manager() or current_user.is_compliance_officer() %}
+        {% if escalation_only %}
+        {% if can_review %}<a href="{{ url_for('coi.review_declaration', id=declaration.id) }}" class="btn btn-primary">{{ _('Review') }}</a>{% endif %}
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">{{ _('Back') }}</a>
+        {% elif current_user.is_manager() or current_user.is_compliance_officer() %}
         {% if declaration.status in ['under_review', 'escalated'] %}
         <a href="{{ url_for('coi.review_declaration', id=declaration.id) }}" class="btn btn-primary">{{ _('Review') }}</a>
         {% endif %}
@@ -29,7 +32,7 @@
                                  else 'warning' if declaration.status in ['under_review', 'escalated']
                                  else 'danger' if declaration.status == 'requires_clarification'
                                  else 'secondary' }}">
-                    {{ declaration.status|replace('_', ' ')|title }}
+                    {{ code_label(declaration.status, 'coi_status') }}
                 </span>
             </div>
             <div class="card-body">
@@ -160,7 +163,7 @@
                 <p><strong>{{ _('Comments:') }}</strong><br>{{ declaration.review_comments }}</p>
                 {% endif %}
                 {% else %}
-                <p><strong>{{ _('Current Status:') }}</strong> {{ declaration.status|replace('_', ' ')|title }}</p>
+                <p><strong>{{ _('Current Status:') }}</strong> {{ code_label(declaration.status, 'coi_status') }}</p>
                 {% if declaration.review_comments %}
                 <div class="alert alert-warning">
                     <strong>{{ _('Reviewer Comments:') }}</strong><br>
