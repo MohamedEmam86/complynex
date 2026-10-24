@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _("Complaint Details") }} - {{ complaint.complaint_pin }}{% endblock %}
+{% block title %}{{ _("Complaint Details") }} - CP-{{ complaint.id }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Page Heading -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">{{ _("Complaint Details") }}: {{ complaint.complaint_pin }}</h1>
+        <h1 class="h3 mb-0 text-gray-800">{{ _("Complaint Details") }}: CP-{{ complaint.id }}</h1>
         <a href="{{ url_for('consumer_protection.complaints_list') }}" class="btn btn-secondary btn-sm shadow-sm">
             <i class="fas fa-arrow-left fa-sm text-white-50 mr-2"></i>{{ _("Back to List") }}
         </a>
@@ -137,11 +137,17 @@
                                 </option>
                                 <option value="IN_PROGRESS" {% if complaint.status=='IN_PROGRESS' %}selected{% endif %}>
                                     {{ _("In Progress") }}</option>
+                                <option value="ESCALATED" {% if complaint.status=='ESCALATED' %}selected{% endif %}>{{ _("Escalated") }}</option>
                                 <option value="RESOLVED" {% if complaint.status=='RESOLVED' %}selected{% endif %}>{{
                                     _("Resolved") }}</option>
                                 <option value="CLOSED" {% if complaint.status=='CLOSED' %}selected{% endif %}>{{
                                     _("Closed") }}</option>
                             </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="resolutionInput">{{ _("Resolution (shown to the customer)") }}:</label>
+                            <textarea name="resolution_summary" id="resolutionInput" class="form-control" rows="3"
+                                placeholder="{{ _('Required when resolving or closing') }}">{{ complaint.resolution_summary or '' }}</textarea>
                         </div>
                         <div class="form-group mb-3">
                             <label for="attachmentInput">{{ _("Attach Evidence") }}:</label>

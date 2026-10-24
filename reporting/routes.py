@@ -49,10 +49,7 @@ def dashboard():
     regulators = Regulator.get_all()
     reports = RegulatoryReport.get_all()
     today = datetime.now().date()
-    overdue_count = len([
-        s for s in all_submissions
-        if s.status in ('pending', 'in_progress') and s.due_date and str(s.due_date) < today.isoformat()
-    ])
+    overdue_count = len([s for s in all_submissions if s.is_overdue])
 
     return render_template('reporting/dashboard.html',
                          upcoming=upcoming,
@@ -79,10 +76,21 @@ def view_submission(id):
             flash(gettext('You do not have permission to update this submission.'), 'danger')
             return redirect(url_for('reporting.view_submission', id=id))
 
-        # Handle file upload
+        status = (request.form.get('status') or '').strip()
+        notes = request.form.get('notes')
+        reference = (request.form.get('submission_reference') or '').strip() or None
         attachment = request.files.get('attachment')
-        attachment_path = submission.attachment_path
-        if attachment and attachment.filename != '':
+        has_new_file = bool(attachment and attachment.filename)
+        if status not in RegulatoryReportSubmission.STATUSES:
+            flash(gettext('Invalid status.'), 'danger')
+            return redirect(url_for('reporting.view_submission', id=id))
+        if status == 'submitted' and not (reference or has_new_file or submission.attachment_path):
+            flash(gettext('A submission reference or the submitted file is required to mark the report as submitted.'), 'danger')
+            return redirect(url_for('reporting.view_submission', id=id))
+
+        # Handle file upload
+        attachment_path = None
+        if has_new_file:
             save_dir = os.path.join(current_app.root_path, UPLOAD_FOLDER)
             os.makedirs(save_dir, exist_ok=True)
             filename = secure_filename(attachment.filename)
@@ -92,15 +100,12 @@ def view_submission(id):
             # Stored relative to the static/ folder so url_for('static', ...) resolves it directly
             attachment_path = os.path.join('uploads/reports', filename)
             submission.attachment_path = attachment_path
-            
-        status = request.form.get('status')
-        notes = request.form.get('notes')
-        reference = request.form.get('submission_reference')
-        
+
         submission.update_status(status, current_user.id, 
                                submission_date=datetime.now().date(),
                                reference=reference,
-                               notes=notes)
+                               notes=notes,
+                               attachment_path=attachment_path)
         AuditLog.log(current_user.id, 'Report Submission Update', 'Reporting', id, f'Updated status to {status} for {submission.report_name}', request.remote_addr)
         flash(gettext('Submission updated.'), 'success')
         return redirect(url_for('reporting.view_submission', id=id))
@@ -206,7 +211,20 @@ def create_submission():
     """Manually create a report submission"""
         
     report_id = request.form.get('report_id')
-    
+    period_start = (request.form.get('reporting_period_start') or '').strip()
+    period_end = (request.form.get('reporting_period_end') or '').strip()
+    try:
+        ps = date.fromisoformat(period_start) if period_start else None
+        pe = date.fromisoformat(period_end) if period_end else None
+        if request.form.get('due_date'):
+            date.fromisoformat(request.form.get('due_date').strip())
+    except ValueError:
+        flash(gettext('Dates must be valid (YYYY-MM-DD).'), 'danger')
+        return redirect(url_for('reporting.dashboard'))
+    if ps and pe and ps > pe:
+        flash(gettext('The reporting period start cannot be after its end.'), 'danger')
+        return redirect(url_for('reporting.dashboard'))
+
     # Handle on-the-fly report creation
     if report_id == 'new':
         new_report_name = request.form.get('new_report_name')

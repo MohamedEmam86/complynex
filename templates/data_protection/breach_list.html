@@ -45,6 +45,8 @@
                                 {% if breach.pdpc_notification_required %}
                                 {% if breach.pdpc_notified %}
                                 <span class="text-success small"><i class="bi bi-check-all"></i> {{ _('Yes') }}</span>
+                                {% elif breach.notification_overdue %}
+                                <span class="badge bg-danger">{{ _('Overdue (72h passed)') }}</span>
                                 {% else %}
                                 <div class="progress mb-1" style="height: 6px;" title="{{ _('72-Hour Deadline Countdown') }}">
                                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" role="progressbar" style="width: 85%"></div>

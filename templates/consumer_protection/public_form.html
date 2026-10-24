@@ -23,8 +23,7 @@
                     <div class="d-flex align-items-center">
                         <i class="fas fa-info-circle text-danger me-3 fs-4"></i>
                         <small class="text-muted">
-                            {{ _("Compliant with Central Bank of Egypt Banking Law No. 194 of 2020. All information is
-                            confidential.") }}
+                            {{ _("Your complaint is handled confidentially under the applicable consumer-protection rules.") }}
                         </small>
                     </div>
                 </div>
@@ -96,7 +95,7 @@
                     <div class="mb-3">
                         <label for="complaint_description" class="form-label">{{ _("Detailed Description") }} <span
                                 class="text-danger">*</span></label>
-                        <textarea class="form-control" id="complaint_description" name="description" rows="5" required
+                        <textarea class="form-control" id="complaint_description" name="description" rows="5" required minlength="20"
                             placeholder="{{ _('Please describe what happened, when it occurred, and any financial impact...') }}"></textarea>
                     </div>
 

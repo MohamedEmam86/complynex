@@ -31477,6 +31477,275 @@ msgstr "داخل النسخة التجريبية يستطيع دور مدير ا
 msgid "This is the demo. Open the invitation link you received to enter without a password, or sign in with a user created for you."
 msgstr "هذه هي النسخة التجريبية. افتح رابط الدعوة الذي وصلك للدخول بدون كلمة مرور، أو سجّل الدخول بمستخدم تم إنشاؤه لك."
 
+#, python-format
+msgid "Approve the emissions inventory (workflow) before marking the report %(s)s."
+msgstr "اعتمد حصر الانبعاثات (مسار العمل) قبل تعيين حالة التقرير إلى %(s)s."
+
+#, python-format
+msgid "Name the independent verifier before marking the report %(s)s."
+msgstr "حدد اسم جهة التحقق المستقلة قبل تعيين حالة التقرير إلى %(s)s."
+
+msgid "The offset obligation created by the submission was cancelled."
+msgstr "تم إلغاء التزام التعويض الذي نشأ عن تقديم التقرير."
+
+msgid "quantity cannot be negative"
+msgstr "لا يمكن أن تكون الكمية سالبة"
+
+msgid "the unit must match the unit of the chosen factor"
+msgstr "يجب أن تطابق الوحدة وحدة معامل الانبعاث المختار"
+
+msgid "Please enter a valid email address."
+msgstr "يرجى إدخال بريد إلكتروني صحيح."
+
+msgid "Please enter a valid phone number."
+msgstr "يرجى إدخال رقم هاتف صحيح."
+
+msgid "Please select a valid category."
+msgstr "يرجى اختيار تصنيف صحيح."
+
+msgid "Subject is required."
+msgstr "الموضوع مطلوب."
+
+msgid "Please describe the complaint in at least 20 characters."
+msgstr "يرجى وصف الشكوى في 20 حرفًا على الأقل."
+
+msgid "A resolution is required to resolve or close a complaint. The customer sees it when tracking the complaint."
+msgstr "يجب كتابة الحل لحل الشكوى أو إغلاقها، ويظهر للعميل عند متابعة الشكوى."
+
+msgid "the test date cannot be in the future"
+msgstr "لا يمكن أن يكون تاريخ الاختبار في المستقبل"
+
+msgid "RTO and RPO cannot be negative"
+msgstr "لا يمكن أن تكون قيم RTO وRPO سالبة"
+
+msgid "maturity levels must be whole numbers from 0 to 5"
+msgstr "مستويات النضج يجب أن تكون أرقامًا صحيحة من 0 إلى 5"
+
+msgid "Change the status or add a note."
+msgstr "غيّر الحالة أو أضف ملاحظة."
+
+msgid "A note is required to resolve or close an incident."
+msgstr "يجب إضافة ملاحظة لحل الحادث أو إغلاقه."
+
+msgid "Incident updated."
+msgstr "تم تحديث الحادث."
+
+msgid "Breach date and discovery date are required."
+msgstr "تاريخ الاختراق وتاريخ اكتشافه مطلوبان."
+
+msgid "The breach date cannot be after the discovery date."
+msgstr "لا يمكن أن يكون تاريخ الاختراق بعد تاريخ اكتشافه."
+
+msgid "The discovery date cannot be in the future."
+msgstr "لا يمكن أن يكون تاريخ الاكتشاف في المستقبل."
+
+msgid "Affected individuals cannot be negative."
+msgstr "لا يمكن أن يكون عدد الأفراد المتأثرين سالبًا."
+
+msgid "Affected individuals must be a whole number."
+msgstr "عدد الأفراد المتأثرين يجب أن يكون رقمًا صحيحًا."
+
+msgid "This request is closed and can no longer be changed."
+msgstr "هذا الطلب مغلق ولا يمكن تعديله."
+
+msgid "Select how the identity was verified."
+msgstr "اختر طريقة التحقق من الهوية."
+
+msgid "A rejection reason is required."
+msgstr "سبب الرفض مطلوب."
+
+msgid "Verify the data subject's identity before completing an access or erasure request."
+msgstr "تحقق من هوية صاحب البيانات قبل إتمام طلب الاطلاع أو المحو."
+
+msgid "Request completed."
+msgstr "تم إتمام الطلب."
+
+msgid "Request rejected."
+msgstr "تم رفض الطلب."
+
+msgid "The approver must be a different person from the DPIA author."
+msgstr "يجب أن يكون المعتمِد شخصًا غير مُعِدّ تقييم الأثر."
+
+msgid "Only a DPIA pending approval can be approved or rejected."
+msgstr "لا يمكن اعتماد أو رفض تقييم الأثر إلا إذا كان بانتظار الاعتماد."
+
+msgid "DPIA approved."
+msgstr "تم اعتماد تقييم الأثر."
+
+msgid "DPIA rejected."
+msgstr "تم رفض تقييم الأثر."
+
+msgid "Activity code is required."
+msgstr "رمز النشاط مطلوب."
+
+msgid "Select a valid legal basis."
+msgstr "اختر أساسًا قانونيًا صحيحًا."
+
+#, python-format
+msgid "Activity code %(code)s already exists in the ROPA."
+msgstr "رمز النشاط %(code)s موجود بالفعل في سجل أنشطة المعالجة."
+
+#, python-format
+msgid "Scores must be between 1 and 5 (check: %(items)s). Nothing was saved."
+msgstr "يجب أن تكون الدرجات بين 1 و5 (راجع: %(items)s). لم يتم حفظ أي شيء."
+
+msgid "Enter a valid plan year."
+msgstr "أدخل سنة خطة صحيحة."
+
+#, python-format
+msgid "An annual audit plan for %(year)s already exists."
+msgstr "توجد بالفعل خطة مراجعة سنوية لعام %(year)s."
+
+msgid "The planned end date cannot be before the start date."
+msgstr "لا يمكن أن يكون تاريخ الانتهاء المخطط قبل تاريخ البدء."
+
+msgid "The management response text is required."
+msgstr "نص رد الإدارة مطلوب."
+
+msgid "Describe the remediation and the evidence for it before marking it complete."
+msgstr "صف المعالجة والدليل عليها قبل تعيينها كمكتملة."
+
+msgid "A submission reference or the submitted file is required to mark the report as submitted."
+msgstr "يلزم رقم مرجعي للتقديم أو الملف المُقدَّم لتعيين التقرير كمُقدَّم."
+
+msgid "Dates must be valid (YYYY-MM-DD)."
+msgstr "يجب أن تكون التواريخ صحيحة (YYYY-MM-DD)."
+
+msgid "The reporting period start cannot be after its end."
+msgstr "لا يمكن أن تكون بداية فترة التقرير بعد نهايتها."
+
+msgid "For a KRI where higher is worse, target ≤ warning ≤ breach threshold."
+msgstr "للمؤشر الذي يكون فيه الارتفاع أسوأ: المستهدف ≤ حد التحذير ≤ حد التجاوز."
+
+msgid "For a KRI where lower is worse, target ≥ warning ≥ breach threshold."
+msgstr "للمؤشر الذي يكون فيه الانخفاض أسوأ: المستهدف ≥ حد التحذير ≥ حد التجاوز."
+
+msgid "Likelihood and impact must be whole numbers from 1 to 5."
+msgstr "الاحتمالية والأثر يجب أن يكونا أرقامًا صحيحة من 1 إلى 5."
+
+msgid "Enter both residual likelihood and residual impact, or neither."
+msgstr "أدخل الاحتمالية والأثر المتبقيين معًا أو اتركهما فارغين."
+
+msgid "The residual score cannot be higher than the inherent score."
+msgstr "لا يمكن أن تكون درجة الخطر المتبقي أعلى من درجة الخطر الكامن."
+
+msgid "A reason for the change is required."
+msgstr "سبب التغيير مطلوب."
+
+msgid "Thresholds must be numbers."
+msgstr "يجب أن تكون الحدود أرقامًا."
+
+msgid "Invalid direction."
+msgstr "اتجاه غير صالح."
+
+msgid "Enter a valid target date."
+msgstr "أدخل تاريخًا مستهدفًا صحيحًا."
+
+msgid "The target date cannot be in the past."
+msgstr "لا يمكن أن يكون التاريخ المستهدف في الماضي."
+
+msgid "Estimated cost must be a number."
+msgstr "التكلفة التقديرية يجب أن تكون رقمًا."
+
+msgid "Estimated cost cannot be negative."
+msgstr "لا يمكن أن تكون التكلفة التقديرية سالبة."
+
+msgid "Search reference or name"
+msgstr "ابحث بالمرجع أو الاسم"
+
+msgid "Your complaint is handled confidentially under the applicable consumer-protection rules."
+msgstr "يتم التعامل مع شكواك بسرية وفقًا لقواعد حماية المستهلك المعمول بها."
+
+msgid "Resolution (shown to the customer)"
+msgstr "الحل (يظهر للعميل)"
+
+msgid "Required when resolving or closing"
+msgstr "مطلوب عند الحل أو الإغلاق"
+
+msgid "Required when resolving or closing."
+msgstr "مطلوب عند الحل أو الإغلاق."
+
+msgid "Incident"
+msgstr "الحادث"
+
+msgid "Contained on"
+msgstr "تم الاحتواء في"
+
+msgid "Closed on"
+msgstr "تم الإغلاق في"
+
+msgid "Response log"
+msgstr "سجل الاستجابة"
+
+msgid "No updates yet."
+msgstr "لا توجد تحديثات بعد."
+
+msgid "Update incident"
+msgstr "تحديث الحادث"
+
+msgid "Actions taken, findings, next steps..."
+msgstr "الإجراءات المتخذة، النتائج، الخطوات التالية..."
+
+msgid "Overdue (72h passed)"
+msgstr "متأخر (مرت 72 ساعة)"
+
+msgid "By:"
+msgstr "بواسطة:"
+
+msgid "On:"
+msgstr "في:"
+
+msgid "Created by:"
+msgstr "أنشأه:"
+
+msgid "Remediation evidence"
+msgstr "دليل المعالجة"
+
+msgid "What was done and where is the evidence (attach files below)"
+msgstr "ما الذي تم وأين الدليل (أرفق الملفات بالأسفل)"
+
+msgid "Reason for escalation"
+msgstr "سبب التصعيد"
+
+msgid "Description must be at least 50 characters."
+msgstr "يجب ألا يقل الوصف عن 50 حرفًا."
+
+msgid "Invalid incident type."
+msgstr "نوع بلاغ غير صالح."
+
+msgid "Resolution summary and action taken are both required."
+msgstr "ملخص الحل والإجراء المتخذ مطلوبان."
+
+msgid "Please explain why the case is being escalated."
+msgstr "يرجى توضيح سبب تصعيد البلاغ."
+
+msgid "Escalated to HR/Legal"
+msgstr "تم التصعيد إلى الموارد البشرية/الشؤون القانونية"
+
+msgid "Case escalated to HR/Legal."
+msgstr "تم تصعيد البلاغ إلى الموارد البشرية/الشؤون القانونية."
+
+msgid "SLA must be at least 1 day."
+msgstr "يجب ألا تقل مدة مستوى الخدمة عن يوم واحد."
+
+msgid "Assigned to"
+msgstr "مُسندة إلى"
+
+msgid "OPEN"
+msgstr "مفتوح"
+
+msgid "CONTAINED"
+msgstr "تم الاحتواء"
+
+msgid "ESCALATED"
+msgstr "مُصعَّد"
+
+msgid "NEW"
+msgstr "جديد"
+
+msgid "RESOLVED"
+msgstr "تم الحل"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

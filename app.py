@@ -198,6 +198,12 @@ def create_app(config_name=None):
     
     # Initialize Mail
     from extensions import mail
+    from utils.demo import is_demo as _mail_is_demo
+    if _mail_is_demo():
+        # The demo instance never sends real email: Flask-Mail suppresses
+        # delivery and the notification layer treats email as disabled.
+        app.config['MAIL_SUPPRESS_SEND'] = True
+        app.config['EMAIL_MOCK_MODE'] = True
     mail.init_app(app)
     
     @login_manager.user_loader
@@ -591,7 +597,11 @@ Message:
                 msg['Subject'] = f'[{priority}] Support: {category} — {name}'
                 msg['Reply-To'] = email
                 msg.attach(MIMEText(body, 'plain'))
-                if mail_user and mail_pass:
+                from utils.demo import is_demo as _support_demo
+                if _support_demo():
+                    app.logger.info('demo instance: support request email not sent')
+                    flash(gettext('Support request received. Email delivery is pending configuration.'), 'warning')
+                elif mail_user and mail_pass:
                     with smtplib.SMTP(app.config.get('MAIL_SERVER', 'smtp.googlemail.com'),
                                       app.config.get('MAIL_PORT', 587)) as server:
                         server.starttls()

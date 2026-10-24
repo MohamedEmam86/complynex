@@ -28,6 +28,12 @@
                 <div class="card-body">
                     <h4 class="card-title">{{ case.title }}</h4>
                     <p class="card-text">{{ case.description }}</p>
+                    {% if case.resolution_summary %}
+                    <div class="alert alert-success small mb-0">
+                        <strong>{{ _('Resolution Summary') }}:</strong> {{ case.resolution_summary }}
+                        {% if case.resolution_action %}<br><strong>{{ _('Action Taken') }}:</strong> {{ case.resolution_action }}{% endif %}
+                    </div>
+                    {% endif %}
 
                     <div class="row mt-4">
                         <div class="col-md-6">
@@ -43,6 +49,8 @@
                         <div class="col-md-6">
                             <ul class="list-unstyled">
                                 <li class="mb-2"><strong>{{ _('Submitted') }}:</strong> {{ case.submitted_at }}</li>
+                                <li class="mb-2"><strong>{{ _('Assigned to') }}:</strong>
+                                    {{ assigned_to_name or _('Unassigned') }}</li>
                                 <li class="mb-2"><strong>{{ _('Reporter') }}:</strong>
                                     {% if case.is_anonymous %}
                                     <span class="text-muted"><i class="fas fa-user-secret me-1"></i>{{ _('Anonymous')
@@ -139,7 +147,8 @@
                             data-bs-target="#assignModal">
                             <i class="fas fa-user-plus me-2"></i>{{ _('Assign Investigator') }}
                         </button>
-                        <button class="btn btn-outline-danger btn-sm" data-onclick-fn="escalateCase">
+                        <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#escalateModal">
                             <i class="fas fa-gavel me-2"></i>{{ _('Escalate to HR/Legal') }}
                         </button>
                         <hr>
@@ -248,16 +257,18 @@
                 <h5 class="modal-title">{{ _('Resolve Case') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="resolveForm">
+            <form id="resolveForm" method="POST"
+                action="{{ url_for('whistleblowing.resolve_case_form', case_id=case.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">{{ _('Resolution Summary') }}</label>
+                        <label class="form-label">{{ _('Resolution Summary') }} <span class="text-danger">*</span></label>
                         <textarea name="resolution_summary" class="form-control" rows="3" required
                             placeholder="{{ _('Describe how the case was resolved...') }}"></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ _('Action Taken') }}</label>
-                        <input type="text" name="resolution_action" class="form-control"
+                        <label class="form-label">{{ _('Action Taken') }} <span class="text-danger">*</span></label>
+                        <input type="text" name="resolution_action" class="form-control" required
                             placeholder="{{ _('e.g., Disciplinary action, Policy update') }}">
                     </div>
                 </div>
@@ -270,65 +281,27 @@
     </div>
 </div>
 
-{% endblock %}
+<!-- Escalate Modal -->
+<div class="modal fade" id="escalateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('Escalate to HR/Legal') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('whistleblowing.escalate_case', case_id=case.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <label class="form-label">{{ _('Reason for escalation') }} <span class="text-danger">*</span></label>
+                    <textarea name="note" class="form-control" rows="3" required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-danger">{{ _('Escalate') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-{% block scripts %}
-<script nonce="{{ csp_nonce }}">
-    const CSRF_TOKEN = "{{ csrf_token() }}";
-    });
-
-    document.getElementById('resolveForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const data = {
-            case_id: {{ case.id }},
-            resolution_summary: formData.get('resolution_summary'),
-            resolution_action: formData.get('resolution_action')
-        };
-
-        fetch("{{ url_for('whistleblowing.resolve_case') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': CSRF_TOKEN
-            },
-            body: JSON.stringify(data)
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert(data.error || 'Failed to resolve case');
-                }
-            });
-    });
-
-    function escalateCase() {
-        if (confirm("{{ _('Are you sure you want to escalate this case to HR/Legal?') }}")) {
-            const data = {
-                case_id: {{ case.id }},
-                status: 'INVESTIGATING',
-                note: 'Case escalated to HR/Legal for further action.'
-            };
-
-            fetch("{{ url_for('whistleblowing.update_status') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': CSRF_TOKEN
-                },
-                body: JSON.stringify(data)
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert(data.error || 'Failed to escalate case');
-                    }
-                });
-        }
-    }
-</script>
 {% endblock %}

@@ -39,6 +39,32 @@ from models.risk import (
 risk_bp = Blueprint('risk_management', __name__, url_prefix='/risk-management')
 
 
+def _score_1_5(value):
+    """A likelihood / impact rating: whole number 1-5, else None."""
+    try:
+        n = int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+    return n if 1 <= n <= 5 else None
+
+
+def _optional_float(name):
+    """Form number where 0 is a real value; blank -> None; garbage -> ValueError."""
+    raw = (request.form.get(name) or '').strip()
+    return float(raw) if raw else None
+
+
+def validate_kri_thresholds(direction, target, warning, breach):
+    """Thresholds must escalate in the KRI's direction. Returns an error or None."""
+    upper = (direction or 'UPPER') == 'UPPER'
+    seq = [v for v in (target, warning, breach) if v is not None]
+    ordered = all((a <= b) if upper else (a >= b) for a, b in zip(seq, seq[1:]))
+    if not ordered:
+        return (_('For a KRI where higher is worse, target ≤ warning ≤ breach threshold.') if upper
+                else _('For a KRI where lower is worse, target ≥ warning ≥ breach threshold.'))
+    return None
+
+
 def _save_evidence(file, subfolder, entity_id):
     """Shared upload helper — non-static uploads/<module>/<entity>/<file>, not reachable
     via Flask's unauthenticated /static/ route."""
@@ -127,11 +153,19 @@ def register_list():
 @permission_required('risk_management', level='edit')
 def register_new():
     if request.method == 'POST':
+        likelihood = _score_1_5(request.form.get('likelihood'))
+        impact = _score_1_5(request.form.get('impact'))
+        if likelihood is None or impact is None:
+            flash(gettext('Likelihood and impact must be whole numbers from 1 to 5.'), 'danger')
+            return render_template(
+                'risk_management/risk_form.html', risk=None,
+                categories=RiskCategory.get_all(), departments=Department.get_all(), users=User.get_all(),
+            ), 400
         risk = Risk.create(
             risk_title=request.form.get('risk_title'),
             category_id=request.form.get('category_id', type=int),
-            likelihood=request.form.get('likelihood', type=int),
-            impact=request.form.get('impact', type=int),
+            likelihood=likelihood,
+            impact=impact,
             risk_owner_id=request.form.get('risk_owner_id', type=int),
             created_by=current_user.id,
             risk_description=request.form.get('risk_description'),
@@ -192,16 +226,35 @@ def register_edit(risk_pk):
         return redirect(url_for('risk_management.register_list'))
 
     if request.method == 'POST':
-        likelihood = request.form.get('likelihood', type=int)
-        impact = request.form.get('impact', type=int)
-        residual_likelihood = request.form.get('residual_likelihood', type=int)
-        residual_impact = request.form.get('residual_impact', type=int)
+        likelihood = _score_1_5(request.form.get('likelihood'))
+        impact = _score_1_5(request.form.get('impact'))
+        rl_raw = (request.form.get('residual_likelihood') or '').strip()
+        ri_raw = (request.form.get('residual_impact') or '').strip()
+        residual_likelihood = _score_1_5(rl_raw) if rl_raw else None
+        residual_impact = _score_1_5(ri_raw) if ri_raw else None
         control_effectiveness = request.form.get('control_effectiveness') or None
+        change_reason = (request.form.get('change_reason') or '').strip()
+        error = None
+        if likelihood is None or impact is None or (rl_raw and residual_likelihood is None) \
+                or (ri_raw and residual_impact is None):
+            error = gettext('Likelihood and impact must be whole numbers from 1 to 5.')
+        elif bool(residual_likelihood) != bool(residual_impact):
+            error = gettext('Enter both residual likelihood and residual impact, or neither.')
+        elif residual_likelihood and residual_likelihood * residual_impact > likelihood * impact:
+            error = gettext('The residual score cannot be higher than the inherent score.')
+        elif not change_reason:
+            error = gettext('A reason for the change is required.')
+        if error:
+            flash(error, 'danger')
+            return render_template(
+                'risk_management/risk_form.html', risk=risk,
+                categories=RiskCategory.get_all(), departments=Department.get_all(), users=User.get_all(),
+            ), 400
 
         Risk.update_scoring(
             risk_pk, likelihood, impact, residual_likelihood, residual_impact,
             control_effectiveness, changed_by=current_user.id,
-            change_reason=request.form.get('change_reason'),
+            change_reason=change_reason,
         )
         AuditLog.log(current_user.id, 'Update Risk Scoring', 'Risk Management', risk_pk,
                      f'Re-scored risk {risk.risk_id}', request.remote_addr)
@@ -506,16 +559,32 @@ def kris_dashboard():
 @permission_required('risk_management', level='edit')
 def kris_new():
     if request.method == 'POST':
+        direction = request.form.get('direction', 'UPPER')
+        try:
+            target = _optional_float('target_value')
+            warning = _optional_float('warning_threshold')
+            breach = _optional_float('breach_threshold')
+        except ValueError:
+            target = warning = breach = None
+            error = gettext('Thresholds must be numbers.')
+        else:
+            error = None if direction in ('UPPER', 'LOWER') else gettext('Invalid direction.')
+            error = error or validate_kri_thresholds(direction, target, warning, breach)
+        if error:
+            flash(error, 'danger')
+            return render_template(
+                'risk_management/kri_form.html', risks=Risk.get_all(), users=User.get_all(),
+            ), 400
         kri = KRI.create(
             kri_name=request.form.get('kri_name'),
-            direction=request.form.get('direction', 'UPPER'),
+            direction=direction,
             risk_id=request.form.get('risk_id', type=int) or None,
             kri_description=request.form.get('kri_description'),
             unit_of_measure=request.form.get('unit_of_measure'),
             measurement_frequency=request.form.get('measurement_frequency', 'MONTHLY'),
-            target_value=request.form.get('target_value', type=float) or None,
-            warning_threshold=request.form.get('warning_threshold', type=float) or None,
-            breach_threshold=request.form.get('breach_threshold', type=float) or None,
+            target_value=target,
+            warning_threshold=warning,
+            breach_threshold=breach,
             owner_id=request.form.get('owner_id', type=int) or None,
         )
         AuditLog.log(current_user.id, 'Create KRI', 'Risk Management', kri.id,
@@ -579,12 +648,30 @@ def treatment_new(risk_pk):
         flash(_('Risk not found.'), 'danger')
         return redirect(url_for("risk_management.register_list"))
     if request.method == 'POST':
+        from datetime import date
+        error = None
+        try:
+            target_date = date.fromisoformat((request.form.get('target_date') or '').strip())
+        except ValueError:
+            target_date = None
+            error = gettext('Enter a valid target date.')
+        if target_date and target_date < date.today():
+            error = gettext('The target date cannot be in the past.')
+        try:
+            cost = _optional_float('estimated_cost')
+        except ValueError:
+            cost, error = None, error or gettext('Estimated cost must be a number.')
+        if cost is not None and cost < 0:
+            error = error or gettext('Estimated cost cannot be negative.')
+        if error:
+            flash(error, 'danger')
+            return render_template('risk_management/treatment_form.html', risk=risk, users=User.get_all()), 400
         treatment = RiskTreatment.create(
             risk_id=risk_pk, treatment_description=request.form.get('treatment_description'),
             treatment_owner_id=request.form.get('treatment_owner_id', type=int),
-            target_date=request.form.get('target_date'),
+            target_date=target_date.isoformat(),
             treatment_type=request.form.get('treatment_type'),
-            estimated_cost=request.form.get('estimated_cost', type=float) or None,
+            estimated_cost=cost,
             created_by=current_user.id,
         )
         Notification.create(

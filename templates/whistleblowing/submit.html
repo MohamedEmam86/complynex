@@ -485,8 +485,6 @@
                             const caseNumDisplay = document.getElementById('caseNumberDisplay');
                             if (caseNumDisplay) caseNumDisplay.textContent = data.case_number || 'N/A';
                             // Also update modal title area
-                            console.log('Case number received:', data.case_number);
-                            console.log('Anonymous code:', data.anonymous_code);
 
                             if (anonCodeEl && trackingCodeEl) {
                                 if (data.anonymous_code) {

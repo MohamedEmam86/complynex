@@ -86,9 +86,10 @@ class Case:
     STATUS_MAP = {
         'TM_ALERT': {'NEW': 'OPEN', 'ASSIGNED': 'IN_PROGRESS', 'INVESTIGATING': 'IN_PROGRESS',
                      'ESCALATED': 'IN_PROGRESS', 'SAR_CREATED': 'CLOSED', 'CLOSED': 'CLOSED', 'FALSE_POSITIVE': 'CLOSED'},
-        'WHISTLEBLOWING': {'SUBMITTED': 'OPEN', 'UNDER_REVIEW': 'IN_PROGRESS', 'INVESTIGATING': 'IN_PROGRESS', 'RESOLVED': 'RESOLVED'},
+        'WHISTLEBLOWING': {'SUBMITTED': 'OPEN', 'UNDER_REVIEW': 'IN_PROGRESS', 'INVESTIGATING': 'IN_PROGRESS', 'ESCALATED': 'IN_PROGRESS', 'RESOLVED': 'RESOLVED'},
         'CONSUMER_COMPLAINT': {'NEW': 'OPEN', 'IN_PROGRESS': 'IN_PROGRESS', 'RESOLVED': 'RESOLVED', 'CLOSED': 'CLOSED'},
-        'CYBER_INCIDENT': {'NEW': 'OPEN', 'IN_PROGRESS': 'IN_PROGRESS', 'RESOLVED': 'RESOLVED', 'CLOSED': 'CLOSED'},
+        'CYBER_INCIDENT': {'NEW': 'OPEN', 'OPEN': 'OPEN', 'IN_PROGRESS': 'IN_PROGRESS', 'CONTAINED': 'IN_PROGRESS',
+                           'RESOLVED': 'RESOLVED', 'CLOSED': 'CLOSED'},
         'REG_CONTROL': {'open': 'OPEN', 'acknowledged': 'IN_PROGRESS', 'resolved': 'RESOLVED'},
         'UNUSUAL_TXN': {'candidate': 'OPEN', 'under_study': 'IN_PROGRESS', 'str_filed': 'CLOSED', 'no_str': 'CLOSED',
                         'dismissed': 'CLOSED'},
@@ -188,7 +189,8 @@ class Case:
 
         return _upsert(
             db, 'CONSUMER_COMPLAINT', 'consumer_complaints', complaint_id,
-            reference=complaint.get('complaint_pin'),
+            # Staff-facing reference; the PIN is the customer's secret and never shown to staff.
+            reference=f"CP-{complaint_id}",
             title=complaint.get('complaint_subject'),
             status=status,
             priority=complaint.get('priority'),

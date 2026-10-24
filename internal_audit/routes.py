@@ -174,8 +174,17 @@ def plans():
 @permission_required('internal_audit', level='edit')
 def plans_new():
     if request.method == 'POST':
+        plan_year = request.form.get('plan_year', type=int)
+        error = None
+        if not plan_year or not 2000 <= plan_year <= 2100:
+            error = gettext('Enter a valid plan year.')
+        elif any(p.plan_year == plan_year for p in AnnualAuditPlan.get_all()):
+            error = gettext('An annual audit plan for %(year)s already exists.', year=plan_year)
+        if error:
+            flash(error, 'danger')
+            return redirect(url_for('internal_audit.plans_new'))
         plan = AnnualAuditPlan.create(
-            plan_year=request.form.get('plan_year', type=int),
+            plan_year=plan_year,
             plan_name=request.form.get('plan_name'),
         )
         AuditLog.log(current_user.id, 'Create Annual Audit Plan', 'Internal Audit', plan.id,
@@ -222,6 +231,15 @@ def projects():
 @permission_required('internal_audit', level='edit')
 def projects_new():
     if request.method == 'POST':
+        start = request.form.get('planned_start_date') or None
+        end = request.form.get('planned_end_date') or None
+        if start and end and end < start:  # ISO dates compare correctly as text
+            flash(gettext('The planned end date cannot be before the start date.'), 'danger')
+            return render_template(
+                'internal_audit/project_form.html', plans=AnnualAuditPlan.get_all(),
+                areas=AuditUniverse.get_all(), users=User.get_all(),
+                preselected_area_id=request.form.get('auditable_area_id', type=int),
+            ), 400
         project = AuditProject.create(
             audit_name=request.form.get('audit_name'),
             lead_auditor_id=request.form.get('lead_auditor_id', type=int),
@@ -462,9 +480,13 @@ def finding_detail(finding_id):
 @login_required
 @permission_required('internal_audit', level='edit')
 def finding_management_response(finding_id):
+    response = (request.form.get('management_response') or '').strip()
+    if not response:
+        flash(gettext('The management response text is required.'), 'danger')
+        return redirect(url_for('internal_audit.finding_detail', finding_id=finding_id))
     AuditFinding.record_management_response(
-        finding_id, management_response=request.form.get('management_response'),
-        agreed_action=request.form.get('agreed_action'),
+        finding_id, management_response=response,
+        agreed_action=(request.form.get('agreed_action') or '').strip() or None,
     )
     AuditLog.log(current_user.id, 'Record Management Response', 'Internal Audit', finding_id,
                  'Management response recorded', request.remote_addr)
@@ -476,7 +498,11 @@ def finding_management_response(finding_id):
 @login_required
 @permission_required('internal_audit', level='edit')
 def finding_remediate(finding_id):
-    AuditFinding.mark_remediated(finding_id)
+    note = (request.form.get('remediation_note') or '').strip()
+    if not note:
+        flash(gettext('Describe the remediation and the evidence for it before marking it complete.'), 'danger')
+        return redirect(url_for('internal_audit.finding_detail', finding_id=finding_id))
+    AuditFinding.mark_remediated(finding_id, remediation_note=note)
     AuditLog.log(current_user.id, 'Mark Finding Remediated', 'Internal Audit', finding_id,
                  'Marked remediated, pending independent verification', request.remote_addr)
     flash(gettext('Finding marked as remediated — pending independent verification.'), 'success')

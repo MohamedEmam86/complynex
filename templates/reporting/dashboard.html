@@ -127,6 +127,9 @@
                                     {% elif sub.status == 'late' %}
                                     <span class="badge bg-danger">{{ _('Late Submission') }}</span>
                                     {% endif %}
+                                    {% if sub.is_overdue and sub.status != 'late' %}
+                                    <span class="badge bg-danger">{{ _('Overdue') }}</span>
+                                    {% endif %}
                                 </td>
                                 <td class="text-end pe-4">
                                     <a href="{{ url_for('reporting.view_submission', id=sub.id) }}"

@@ -313,6 +313,8 @@ def add_entry(period_id, data, user_id, db=None):
     code = data.get('factor_code')
     month = _date((data.get('activity_month') or '') + ('-01' if len(data.get('activity_month') or '') == 7 else ''))
     p = period(period_id, db)
+    if month and p and not (date(p['start_date'].year, p['start_date'].month, 1) <= month <= p['end_date']):
+        raise CarbonError(N_('choose a month inside the reporting period'))
     on = month or (p['end_date'] if p else date.today())
     f = factor_for(code, on, db) if code else None
     if not f:
@@ -328,7 +330,11 @@ def add_entry(period_id, data, user_id, db=None):
         qty = A.travel_quantity(hin['trips'], hin['distance_km'], hin['travellers'] or 1, bool(data.get('round_trip')))
     if qty is None:
         raise CarbonError(N_('quantity is required'))
-    unit = (data.get('unit') or f['unit'])
+    if qty < 0:
+        raise CarbonError(N_('quantity cannot be negative'))
+    unit = (data.get('unit') or '').strip() or f['unit']
+    if not A.units_match(unit, f['unit']):
+        raise CarbonError(N_('the unit must match the unit of the chosen factor'))
     site_id = data.get('site_id') or None
     share = _share_for_site(site_id, db, config(db).get('consolidation_approach') or 'operational_control')
     res = A.compute_activity(qty, f, share, unit)

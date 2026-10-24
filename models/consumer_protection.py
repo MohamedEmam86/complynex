@@ -136,14 +136,23 @@ class ConsumerComplaint:
         return dict(row) if row else None
 
     @staticmethod
-    def get_all(status=None, limit=100):
-        """Get all complaints"""
+    def get_all(status=None, limit=100, q=None):
+        """Get all complaints; q searches the reference (CP-12 / 12) or customer name."""
         db = get_db()
-        query = "SELECT * FROM consumer_complaints"
+        query = "SELECT * FROM consumer_complaints WHERE 1=1"
         params = []
         if status:
-            query += " WHERE status = %s"
+            query += " AND status = %s"
             params.append(status)
+        if q:
+            ref = q.upper()
+            ref = ref[3:] if ref.startswith('CP-') else ref
+            if ref.strip().isdigit():
+                query += " AND (id = %s OR customer_name ILIKE %s)"
+                params.extend([int(ref.strip()), f'%{q}%'])
+            else:
+                query += " AND customer_name ILIKE %s"
+                params.append(f'%{q}%')
         query += " ORDER BY created_at DESC LIMIT %s"
         params.append(limit)
         
@@ -151,14 +160,21 @@ class ConsumerComplaint:
         return [dict(row) for row in rows]
     
     @staticmethod
-    def update_status(id, status, user_id=None):
-        """Update complaint status"""
+    def update_status(id, status, user_id=None, resolution_summary=None):
+        """Update complaint status (and the resolution shown to the customer, if given)."""
         db = get_db()
         db.execute(
-            "UPDATE consumer_complaints SET status = %s, updated_at = NOW() WHERE id = %s",
-            (status, id)
+            "UPDATE consumer_complaints SET status = %s, "
+            "resolution_summary = COALESCE(%s, resolution_summary), updated_at = NOW() WHERE id = %s",
+            (status, resolution_summary, id)
         )
         db.commit()
+        try:
+            from models.case import Case
+            Case.sync_from_source('CONSUMER_COMPLAINT', id)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception('Failed to sync case registry for consumer_complaints %s', id)
 
     @staticmethod
     def get_stats():

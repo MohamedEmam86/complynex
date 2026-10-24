@@ -38,6 +38,7 @@ from database.db import get_db
 from models import ConsumerComplaint, ComplaintDocument, ComplaintActivityLog, ComplaintCategory
 from werkzeug.utils import secure_filename
 import os
+import re
 import secrets
 from datetime import datetime, timedelta
 # import qrcode
@@ -54,6 +55,34 @@ ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# ESCALATED is set by scripts/escalate_complaints.py when the statutory deadline passes.
+COMPLAINT_STATUSES = ('NEW', 'IN_PROGRESS', 'ESCALATED', 'RESOLVED', 'CLOSED')
+MIN_COMPLAINT_DESCRIPTION = 20
+_EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+_PHONE_RE = re.compile(r'^\+?[0-9 ()\-]{7,20}$')
+
+
+def validate_public_complaint(data, category_codes):
+    """Server-side validation of the public form. Returns a list of error messages."""
+    errors = []
+    if not (data.get('customer_name') or '').strip():
+        errors.append(_('Full name is required.'))
+    email = (data.get('customer_email') or '').strip()
+    if email and not _EMAIL_RE.match(email):
+        errors.append(_('Please enter a valid email address.'))
+    phone = (data.get('customer_phone') or '').strip()
+    digits = sum(ch.isdigit() for ch in phone)
+    if not _PHONE_RE.match(phone) or not 7 <= digits <= 15:
+        errors.append(_('Please enter a valid phone number.'))
+    if data.get('complaint_category') not in category_codes:
+        errors.append(_('Please select a valid category.'))
+    if not (data.get('complaint_subject') or '').strip():
+        errors.append(_('Subject is required.'))
+    if len((data.get('complaint_description') or '').strip()) < MIN_COMPLAINT_DESCRIPTION:
+        errors.append(_('Please describe the complaint in at least 20 characters.'))
+    return errors
 
 
 # ==============================================================================
@@ -85,6 +114,15 @@ def submit_complaint():
             'customer_type': 'INDIVIDUAL', # Default
             'complaint_channel': 'PUBLIC_FORM'
         }
+        for k in ('customer_name', 'customer_email', 'customer_phone', 'customer_id_number',
+                  'complaint_category', 'complaint_subject', 'complaint_description'):
+            data[k] = (data[k] or '').strip() or None
+        errors = validate_public_complaint(
+            data, {c['category_code'] for c in ComplaintCategory.get_all()})
+        if errors:
+            for e in errors:
+                flash(e, 'danger')
+            return redirect(url_for('consumer_protection.public_form'))
         
         # Handle file uploads
         files = request.files.getlist('attachments')
@@ -188,8 +226,11 @@ def dashboard():
 def complaints_list():
     """List all complaints with filtering"""
     status = request.args.get('status')
-    complaints = ConsumerComplaint.get_all(status=status)
-    return render_template('consumer_protection/list.html', complaints=complaints)
+    if status not in COMPLAINT_STATUSES:
+        status = None
+    q = (request.args.get('q') or '').strip()
+    complaints = ConsumerComplaint.get_all(status=status, q=q or None)
+    return render_template('consumer_protection/list.html', complaints=complaints, q=q)
 
 @consumer_bp.route('/complaint/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -209,10 +250,18 @@ def view_complaint(id):
             action = request.form.get('action')
             
             if action == 'update_status':
-                new_status = request.form['status']
+                new_status = (request.form.get('status') or '').strip().upper()
                 old_status = complaint['status']
-                
-                ConsumerComplaint.update_status(id, new_status, current_user.id)
+                resolution = (request.form.get('resolution_summary') or '').strip()
+                if new_status not in COMPLAINT_STATUSES:
+                    flash(_('Invalid status.'), 'danger')
+                    return redirect(url_for('consumer_protection.view_complaint', id=id))
+                if new_status in ('RESOLVED', 'CLOSED') and not (resolution or complaint.get('resolution_summary')):
+                    flash(_('A resolution is required to resolve or close a complaint. The customer sees it when tracking the complaint.'), 'danger')
+                    return redirect(url_for('consumer_protection.view_complaint', id=id))
+
+                ConsumerComplaint.update_status(id, new_status, current_user.id,
+                                                resolution_summary=resolution or None)
                 
                 # Handle file uploads
                 if 'attachments' in request.files:

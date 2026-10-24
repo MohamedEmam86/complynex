@@ -439,6 +439,8 @@ class AuditFinding:
         self.linked_risk_id = linked_risk_id
         self.linked_control_id = linked_control_id
         self.created_at = created_at
+        self.remediation_note = kwargs.get('remediation_note')
+        self.remediated_at = kwargs.get('remediated_at')
 
     @staticmethod
     def get_by_id(finding_id):
@@ -519,9 +521,11 @@ class AuditFinding:
         db.commit()
 
     @staticmethod
-    def mark_remediated(finding_id):
+    def mark_remediated(finding_id, remediation_note=None):
         db = get_db()
-        db.execute("UPDATE audit_findings SET status = 'REMEDIATED_PENDING_VERIFICATION' WHERE id = %s", (finding_id,))
+        db.execute("UPDATE audit_findings SET status = 'REMEDIATED_PENDING_VERIFICATION', "
+                   "remediation_note = %s, remediated_at = CURRENT_TIMESTAMP WHERE id = %s",
+                   (remediation_note, finding_id))
         db.commit()
 
     @staticmethod
