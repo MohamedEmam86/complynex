@@ -127,6 +127,8 @@ class Case:
         'CYBER_INCIDENT': {'NEW': 'OPEN', 'OPEN': 'OPEN', 'IN_PROGRESS': 'IN_PROGRESS', 'CONTAINED': 'IN_PROGRESS',
                            'RESOLVED': 'RESOLVED', 'CLOSED': 'CLOSED'},
         'REG_CONTROL': {'open': 'OPEN', 'acknowledged': 'IN_PROGRESS', 'resolved': 'RESOLVED'},
+        'SAR': {'NEW': 'OPEN', 'UNDER_INVESTIGATION': 'IN_PROGRESS', 'PENDING_DECISION': 'IN_PROGRESS',
+                'FILE_SAR': 'IN_PROGRESS', 'FILED': 'CLOSED', 'NO_STR': 'CLOSED', 'CLOSED': 'CLOSED'},
         'UNUSUAL_TXN': {'candidate': 'OPEN', 'under_study': 'IN_PROGRESS', 'str_filed': 'CLOSED', 'no_str': 'CLOSED',
                         'dismissed': 'CLOSED'},
     }
@@ -142,6 +144,9 @@ class Case:
         # Only failed controls that were opened as a case (rc_alerts.case_id set).
         'REG_CONTROL': ('rc_alerts', 'SELECT id FROM rc_alerts WHERE case_id IS NOT NULL'),
         'UNUSUAL_TXN': ('aml_unusual_transactions', 'SELECT id FROM aml_unusual_transactions'),
+        # STR cases that did not come from the old unusual-transactions register
+        # (those are already tracked through UNUSUAL_TXN).
+        'SAR': ('suspicious_activities', 'SELECT id FROM suspicious_activities WHERE unusual_txn_id IS NULL'),
     }
 
     @staticmethod
@@ -290,6 +295,35 @@ class Case:
             due_date=due_date,
             resolved_at=None if status not in ('RESOLVED', 'CLOSED') else
             (_parse_dt(incident.get('closed_date')) or _parse_dt(incident.get('recovery_date')) or datetime.now()),
+        )
+
+    @staticmethod
+    def _sync_sar(db, sar_id):
+        """An STR case of the unified register (aml/str_register)."""
+        row = db.execute("SELECT * FROM suspicious_activities WHERE id = %s", (sar_id,)).fetchone()
+        if not row:
+            return None
+        c = dict(row)
+        if c.get('unusual_txn_id'):
+            return None
+        status = Case.map_status('SAR', c.get('investigation_status'))
+        opened_at = _parse_dt(c.get('discovery_date')) or _parse_dt(c.get('report_date')) \
+            or _parse_dt(c.get('created_at')) or datetime.now()
+        due_date = _parse_dt(c.get('sar_deadline')) or opened_at + timedelta(days=_get_sla_days(db, 'SAR'))
+        party_id = PartyLink.find_party_id_for_source('customers', c['customer_id'], 'CUSTOMER') \
+            if c.get('customer_id') else None
+        return _upsert(
+            db, 'SAR', 'suspicious_activities', sar_id,
+            reference=c.get('sar_reference'),
+            title=f"STR — {c.get('customer_name') or ''}".strip(' —'),
+            status=status,
+            priority='HIGH',
+            party_id=party_id,
+            assigned_to=c.get('assigned_to'),
+            opened_at=opened_at,
+            due_date=due_date,
+            resolved_at=None if status not in ('RESOLVED', 'CLOSED') else
+            (_parse_dt(c.get('sar_filing_date')) or _parse_dt(c.get('decision_date')) or datetime.now()),
         )
 
     @staticmethod

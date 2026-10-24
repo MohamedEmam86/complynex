@@ -102,11 +102,8 @@ def events(db, alert_id):
 
 def on_alert_status_change(db, alert_id, old_status, new_status, actor_id):
     """Called after every alert status change — the hook for case tracking."""
-    try:
-        from models.case import Case
-        Case.sync_from_source('TM_ALERT', alert_id)
-    except Exception:
-        db.rollback()
+    from models.case import sync_case
+    sync_case('TM_ALERT', alert_id)
 
 
 def _set_status(db, alert, new_status, action, actor_id, note, assigned_to=None, require_note=False):

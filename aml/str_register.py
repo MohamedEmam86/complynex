@@ -244,6 +244,9 @@ def on_status_change(db, sar_id, old_status, new_status, actor_id):
     case = get_case(db, sar_id)
     if case.get('unusual_txn_id'):
         _mirror_to_unusual(db, case)
+    else:
+        from models.case import sync_case
+        sync_case('SAR', sar_id)
 
 
 UNUSUAL_STATUS = {'NEW': 'candidate', 'UNDER_INVESTIGATION': 'under_study', 'PENDING_DECISION': 'under_study',
