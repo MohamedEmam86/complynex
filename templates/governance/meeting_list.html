@@ -4,9 +4,14 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">{{ _('Board & Committee Meetings') }}</h1>
+        <div class="d-flex gap-2">
+        <a href="{{ url_for('governance.action_tracker') }}" class="btn btn-outline-warning">
+            <i class="fas fa-tasks"></i> {{ _('Action tracker') }}
+        </a>
         <a href="{{ url_for('governance.schedule_meeting') }}" class="btn btn-primary">
             <i class="fas fa-calendar-plus"></i> {{ _('Schedule Meeting') }}
         </a>
+        </div>
     </div>
 
     <!-- Upcoming Meetings -->
@@ -31,10 +36,10 @@
                         {% for meeting in upcoming %}
                         <tr>
                             <td>{{ meeting.meeting_date }} {{ meeting.meeting_time or '' }}</td>
-                            <td>{{ meeting.meeting_type }}</td>
+                            <td>{{ code_label(meeting.meeting_type, 'meeting_type') }}</td>
                             <td>{{ meeting.meeting_reference or '-' }}</td>
                             <td>{{ meeting.location or '-' }}</td>
-                            <td><span class="badge bg-warning text-dark">{{ meeting.status }}</span></td>
+                            <td><span class="badge bg-warning text-dark">{{ code_label(meeting.status, 'meeting_status') }}</span></td>
                             <td>
                                 <a href="{{ url_for('governance.record_attendance', id=meeting.id) }}"
                                     class="btn btn-sm btn-outline-info" title="{{ _('Attendance') }}">
@@ -44,9 +49,10 @@
                                     class="btn btn-sm btn-outline-primary" title="{{ _('Send Invites') }}">
                                     <i class="fas fa-paper-plane"></i>
                                 </a>
-                                <button class="btn btn-sm btn-outline-secondary" title="{{ _('Agenda') }}">
+                                <a href="{{ url_for('governance.meeting_summary', id=meeting.id) }}"
+                                    class="btn btn-sm btn-outline-secondary" title="{{ _('Meeting page') }}">
                                     <i class="fas fa-file-alt"></i>
-                                </button>
+                                </a>
                                 <a href="{{ url_for('governance.edit_meeting', id=meeting.id) }}"
                                     class="btn btn-sm btn-outline-info" title="{{ _('Edit Meeting') }}">
                                     <i class="fas fa-edit"></i>
@@ -92,20 +98,23 @@
                         {% for meeting in past %}
                         <tr>
                             <td>{{ meeting.meeting_date }}</td>
-                            <td>{{ meeting.meeting_type }}</td>
+                            <td>{{ code_label(meeting.meeting_type, 'meeting_type') }}</td>
                             <td>{{ meeting.meeting_reference or '-' }}</td>
-                            <td><span class="badge bg-success">{{ meeting.status }}</span></td>
+                            <td><span class="badge bg-success">{{ code_label(meeting.status, 'meeting_status') }}</span></td>
                             <td>
                                 <a href="{{ url_for('governance.meeting_summary', id=meeting.id) }}"
                                     class="btn btn-sm btn-outline-primary" title="{{ _('View Summary') }}">
                                     <i class="fas fa-clipboard-list"></i>
                                 </a>
-                                <button class="btn btn-sm btn-outline-secondary" title="{{ _('Minutes') }}">
-                                    <i class="fas fa-file-pdf"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" title="{{ _('Decisions') }}">
+                                <a href="{{ url_for('governance.meeting_summary', id=meeting.id) }}#minutes" class="btn btn-sm btn-outline-secondary" title="{{ _('Minutes') }}">
+                                    <i class="fas fa-file-alt"></i>
+                                </a>
+                                <a href="{{ url_for('governance.meeting_summary', id=meeting.id) }}#resolutions" class="btn btn-sm btn-outline-info" title="{{ _('Resolutions') }}">
+                                    <i class="fas fa-gavel"></i>
+                                </a>
+                                <a href="{{ url_for('governance.meeting_summary', id=meeting.id) }}#actions" class="btn btn-sm btn-outline-warning" title="{{ _('Action items') }}">
                                     <i class="fas fa-tasks"></i>
-                                </button>
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}

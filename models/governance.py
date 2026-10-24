@@ -442,6 +442,16 @@ class BoardMeeting:
         ''', (meeting_id,)).fetchall()
         return rows
 
+    @staticmethod
+    def get_attendance_summary_rows(meeting_id):
+        """(member_id, member_name) of every member on the meeting's attendee list."""
+        db = get_db()
+        return db.execute('''
+            SELECT ma.member_id, bm.member_name FROM meeting_attendance ma
+            JOIN board_members bm ON ma.member_id = bm.id
+            WHERE ma.meeting_id = %s ORDER BY bm.member_name
+        ''', (meeting_id,)).fetchall()
+
 class MeetingAttendance:
     def __init__(self, id=None, meeting_id=None, member_id=None,
                  attended=False, apology_received=False, proxy_name=None, **kwargs):

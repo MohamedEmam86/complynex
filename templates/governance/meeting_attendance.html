@@ -6,7 +6,7 @@
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">{{ _('Record Attendance') }}: {{ meeting.meeting_reference or
                 meeting.meeting_date }}</h6>
-            <span class="badge bg-info text-dark">{{ meeting.meeting_type }}</span>
+            <span class="badge bg-info text-dark">{{ code_label(meeting.meeting_type, 'meeting_type') }}</span>
         </div>
         <div class="px-3 pt-3 small text-muted">
             {{ _('Members who did not attend: tick Apology Received if they apologised, or enter the proxy who represented them.') }}
@@ -54,11 +54,32 @@
                         </tbody>
                     </table>
                 </div>
+                {% if externals %}
+                <h6 class="mt-4">{{ _('External participants (not system users)') }}</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead><tr><th>{{ _('Name') }}</th><th>{{ _('Role') }}</th><th>{{ _('Attendance') }}</th><th>{{ _('Notes') }}</th></tr></thead>
+                        <tbody>
+                        {% for x in externals %}
+                        <tr>
+                            <td>{{ x.full_name }}{% if x.organisation %}<div class="small text-muted">{{ x.organisation }}</div>{% endif %}</td>
+                            <td>{{ x.role }}</td>
+                            <td><select name="ext_status_{{ x.id }}" class="form-select form-select-sm">
+                                {% for st in ['INVITED', 'PRESENT', 'ABSENT', 'ABSENT_WITH_APOLOGY'] %}
+                                <option value="{{ st }}" {{ 'selected' if x.attendance_status == st }}>{{ code_label(st, 'attendance') }}</option>
+                                {% endfor %}</select></td>
+                            <td><input type="text" name="ext_notes_{{ x.id }}" class="form-control form-control-sm" value="{{ x.attendance_notes or '' }}"></td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
                 <div class="mt-4">
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-save"></i> {{ _('Save Attendance') }}
                     </button>
-                    <a href="{{ url_for('governance.list_meetings') }}" class="btn btn-secondary">
+                    <a href="{{ url_for('governance.meeting_summary', id=meeting.id) }}" class="btn btn-secondary">
                         {{ _('Back') }}
                     </a>
                 </div>

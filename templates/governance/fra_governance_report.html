@@ -58,7 +58,7 @@
     <thead class="table-light"><tr><th>{{ _('Committee') }}</th><th>{{ _('Type') }}</th><th>{{ _('Meeting Frequency') }}</th></tr></thead>
     <tbody>
       {% for c in committees %}
-      <tr><td>{{ c.committee_name }}</td><td>{{ c.committee_type }}</td><td>{{ c.meeting_frequency or '-' }}</td></tr>
+      <tr><td>{{ c.committee_name }}</td><td>{{ code_label(c.committee_type, 'committee_type') }}</td><td>{{ c.meeting_frequency or '-' }}</td></tr>
       {% else %}
       <tr><td colspan="3" class="text-center text-muted">{{ _('No committees recorded.') }}</td></tr>
       {% endfor %}

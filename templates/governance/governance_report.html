@@ -80,7 +80,7 @@
                         {% for committee in committees %}
                         <tr>
                             <td>{{ committee.committee_name }}</td>
-                            <td>{{ committee.committee_type }}</td>
+                            <td>{{ code_label(committee.committee_type, 'committee_type') }}</td>
                             <td>
                                 {% set chairman = members | selectattr('id', 'equalto', committee.chairman_id) | first
                                 %}
@@ -126,7 +126,7 @@
                         {% for item in summary_data %}
                         <tr>
                             <td>{{ item.meeting.meeting_date }}</td>
-                            <td>{{ item.meeting.meeting_type }}</td>
+                            <td>{{ code_label(item.meeting.meeting_type, 'meeting_type') }}</td>
                             <td>{{ item.meeting.meeting_reference or '-' }}</td>
                             <td>
                                 {% set present = item.attendance | selectattr('attended') | list | length %}

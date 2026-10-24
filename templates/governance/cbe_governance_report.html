@@ -74,7 +74,7 @@
                 {% for comm in committees %}
                 <tr>
                     <td>{{ comm.committee_name }}</td>
-                    <td>{{ comm.committee_type }}</td>
+                    <td>{{ code_label(comm.committee_type, 'committee_type') }}</td>
                     <td>{{ comm.meeting_frequency }}</td>
                 </tr>
                 {% endfor %}
@@ -88,8 +88,8 @@
         <ul>
             {% for meeting in meetings %}
             <li>
-                <strong>{{ meeting.meeting_date }}</strong>: {{ meeting.meeting_type }}
-                ({{ meeting.status }})
+                <strong>{{ meeting.meeting_date }}</strong>: {{ code_label(meeting.meeting_type, 'meeting_type') }}
+                ({{ code_label(meeting.status, 'meeting_status') }})
             </li>
             {% else %}
             <li>{{ _('No meetings scheduled for this period.') }}</li>

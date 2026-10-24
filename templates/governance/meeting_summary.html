@@ -1,91 +1,316 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ _('Meeting Summary') }} - {{ meeting.meeting_date }}{% endblock %}
+{% block title %}{{ _('Meeting') }} - {{ meeting.meeting_reference or meeting.meeting_date }}{% endblock %}
 
 {% block content %}
+{% set can_edit = current_user.can_edit('governance') %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">{{ _('Meeting Summary') }}</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <button data-action="print" class="btn btn-sm btn-outline-primary me-2">
-            <i class="bi bi-printer"></i> {{ _('Print Summary') }}
-        </button>
-        <a href="{{ url_for('governance.list_meetings') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> {{ _('Back to Meetings') }}
-        </a>
+    <div>
+        <h1 class="h2 mb-0">{{ meeting.meeting_reference or _('Meeting') }}</h1>
+        <div class="text-muted small">{{ code_label(meeting.meeting_type, 'meeting_type') }}{% if committee %} · {{ committee.committee_name }}{% endif %} · {{ meeting.meeting_date or '-' }} {{ meeting.meeting_time or '' }}</div>
+    </div>
+    <div class="btn-toolbar gap-2 mb-2 mb-md-0">
+        <a href="{{ url_for('governance.minutes_print', id=meeting.id, lang='en') }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-printer"></i> {{ _('Print minutes (English)') }}</a>
+        <a href="{{ url_for('governance.minutes_print', id=meeting.id, lang='ar') }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-printer"></i> {{ _('Print minutes (Arabic)') }}</a>
+        {% if can_edit %}
+        <a href="{{ url_for('governance.record_attendance', id=meeting.id) }}" class="btn btn-sm btn-outline-info"><i class="bi bi-person-check"></i> {{ _('Record attendance') }}</a>
+        <a href="{{ url_for('governance.edit_meeting', id=meeting.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> {{ _('Edit meeting / attendees') }}</a>
+        {% endif %}
+        <a href="{{ url_for('governance.action_tracker') }}" class="btn btn-sm btn-outline-warning"><i class="bi bi-list-check"></i> {{ _('Action tracker') }}</a>
+        <a href="{{ url_for('governance.list_meetings') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> {{ _('Back to Meetings') }}</a>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-lg-4">
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
-                <h5 class="card-title text-primary mb-4">{{ _('Meeting Details') }}</h5>
-                <p><strong>{{ _('Reference:') }}</strong> {{ meeting.meeting_reference or _('N/A') }}</p>
-                <p><strong>{{ _('Type:') }}</strong> {{ meeting.meeting_type }}</p>
-                <p><strong>{{ _('Date:') }}</strong> {{ meeting.meeting_date }}</p>
-                <p><strong>{{ _('Time:') }}</strong> {{ meeting.meeting_time }}</p>
-                <p><strong>{{ _('Location:') }}</strong> {{ meeting.location }}</p>
-                <p><strong>{{ _('Status:') }}</strong> <span
-                        class="badge {{ 'bg-success' if meeting.status == 'COMPLETED' else 'bg-primary' }}">{{
-                        meeting.status }}</span></p>
+                <h5 class="card-title text-primary mb-3">{{ _('Meeting Details') }}</h5>
+                <p class="mb-2"><strong>{{ _('Reference:') }}</strong> {{ meeting.meeting_reference or _('N/A') }}</p>
+                <p class="mb-2"><strong>{{ _('Type:') }}</strong> {{ code_label(meeting.meeting_type, 'meeting_type') }}</p>
+                <p class="mb-2"><strong>{{ _('Date:') }}</strong> {{ meeting.meeting_date or '-' }} {{ meeting.meeting_time or '' }}</p>
+                <p class="mb-2"><strong>{{ _('Location:') }}</strong> {{ meeting.location or '-' }}</p>
+                <p class="mb-2"><strong>{{ _('Status:') }}</strong> <span class="badge {{ 'bg-success' if meeting.status == 'COMPLETED' else 'bg-primary' }}">{{ code_label(meeting.status, 'meeting_status') }}</span></p>
+                <p class="mb-2"><strong>{{ _('Minutes:') }}</strong>
+                    {% if approved_minutes %}<span class="badge bg-success">{{ _('Approved') }} v{{ approved_minutes.version_no }}</span>
+                    {% elif current_minutes %}<span class="badge bg-warning text-dark">{{ code_label(current_minutes.status, 'minutes_status') }} v{{ current_minutes.version_no }}</span>
+                    {% else %}<span class="text-muted">{{ _('Not drafted yet') }}</span>{% endif %}</p>
                 <hr>
                 <h6>{{ _('Agenda') }}</h6>
-                <div class="text-muted small">
-                    {{ (meeting.agenda | e | replace('\n', '<br>') | safe) if meeting.agenda else _('No agenda provided') }}
+                <div class="text-muted small" style="white-space: pre-line" dir="auto">{{ meeting.agenda if meeting.agenda else _('No agenda provided') }}</div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3"><h6 class="m-0 text-primary">{{ _('History') }}</h6></div>
+            <div class="card-body small" style="max-height: 420px; overflow:auto">
+                {% for e in events %}
+                <div class="border-bottom pb-2 mb-2">
+                    <div><strong>{{ code_label(e.event, 'meeting_event') }}</strong>
+                        {% if e.from_status or e.to_status %}<span class="text-muted">({{ code_label(e.from_status) or '—' }} → {{ code_label(e.to_status) or '—' }})</span>{% endif %}</div>
+                    {% if e.note %}<div class="text-muted">{{ e.note }}</div>{% endif %}
+                    <div class="text-muted">{{ e.user_name or '-' }} · {{ e.created_at.strftime('%Y-%m-%d %H:%M') if e.created_at else '' }}</div>
                 </div>
+                {% else %}
+                <div class="text-muted">{{ _('No workflow activity yet.') }}</div>
+                {% endfor %}
             </div>
         </div>
     </div>
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white py-3">
-                <h6 class="m-0 font-weight-bold text-primary">{{ _('Attendance Report') }}</h6>
-            </div>
+
+    <div class="col-lg-8">
+        <!-- Attendees -->
+        <div class="card border-0 shadow-sm mb-4" id="attendees">
+            <div class="card-header bg-white py-3"><h6 class="m-0 text-primary">{{ _('Attendance Report') }}</h6></div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>{{ _('Participant') }}</th>
-                                <th>{{ _('Status') }}</th>
-                                <th>{{ _('Notes/Proxy') }}</th>
-                            </tr>
-                        </thead>
+                        <thead class="table-light"><tr><th>{{ _('Participant') }}</th><th>{{ _('Status') }}</th><th>{{ _('Notes/Proxy') }}</th></tr></thead>
                         <tbody>
                             {% for record in attendance %}
                             <tr>
                                 <td><strong>{{ record.member_name }}</strong></td>
                                 <td>
-                                    {% if record.attended %}
-                                    <span class="text-success"><i class="bi bi-check-circle-fill"></i> {{ _('Attended') }}</span>
-                                    {% elif record.proxy_name %}
-                                    <span class="text-info"><i class="bi bi-person-check"></i> {{ _('Represented by proxy') }}</span>
-                                    {% elif record.apology_received %}
-                                    <span class="text-warning"><i class="bi bi-exclamation-circle"></i> {{ _('Apology') }}</span>
-                                    {% else %}
-                                    <span class="text-danger"><i class="bi bi-x-circle"></i> {{ _('Absent') }}</span>
-                                    {% endif %}
+                                    {% if record.attended %}<span class="text-success"><i class="bi bi-check-circle-fill"></i> {{ _('Attended') }}</span>
+                                    {% elif record.proxy_name %}<span class="text-info"><i class="bi bi-person-check"></i> {{ _('Represented by proxy') }}</span>
+                                    {% elif record.apology_received %}<span class="text-warning"><i class="bi bi-exclamation-circle"></i> {{ _('Apology') }}</span>
+                                    {% elif not record.attendance_status %}<span class="text-muted">{{ _('Invited') }}</span>
+                                    {% else %}<span class="text-danger"><i class="bi bi-x-circle"></i> {{ _('Absent') }}</span>{% endif %}
                                 </td>
-                                <td class="text-muted small">
-                                    {{ record.proxy_name if record.proxy_name else '' }}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="3" class="text-center py-4 text-muted border-0">{{ _('Attendance has not been recorded for this meeting.') }}</td>
+                                <td class="text-muted small">{{ record.proxy_name or '' }}</td>
                             </tr>
                             {% endfor %}
+                            {% for x in externals %}
+                            <tr>
+                                <td><strong>{{ x.full_name }}</strong> <span class="badge bg-light text-dark border">{{ _('External') }}</span>
+                                    <div class="small text-muted">{{ x.role }}{% if x.organisation %} · {{ x.organisation }}{% endif %}{% if x.email %} · {{ x.email }}{% endif %}</div></td>
+                                <td>{{ code_label(x.attendance_status, 'attendance') }}</td>
+                                <td class="text-muted small">{{ x.attendance_notes or '' }}
+                                    {% if can_edit and x.attendance_status == 'INVITED' %}
+                                    <form method="post" action="{{ url_for('governance.external_remove', id=meeting.id, eid=x.id) }}" class="d-inline" data-confirm="{{ _('Remove this participant?') }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="btn btn-sm btn-link text-danger p-0">{{ _('Remove') }}</button>
+                                    </form>{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                            {% if not attendance and not externals %}
+                            <tr><td colspan="3" class="text-center py-4 text-muted border-0">{{ _('Attendance has not been recorded for this meeting.') }}</td></tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
-
                 {% set count_attended = attendance | selectattr('attended') | list | length %}
                 {% if attendance %}
-                <div class="mt-4 p-3 bg-light rounded d-flex justify-content-between align-items-center">
+                <div class="mt-2 p-3 bg-light rounded d-flex flex-wrap gap-3 justify-content-between align-items-center">
                     <span><strong>{{ _('Total Participants:') }}</strong> {{ attendance | length }}</span>
                     <span><strong>{{ _('Present:') }}</strong> {{ count_attended }}</span>
-                    <span><strong>{{ _('Attendance Rate:') }}</strong> {{ (count_attended / (attendance | length) * 100) | round(1)
-                        }}%</span>
+                    <span><strong>{{ _('Attendance Rate:') }}</strong> {{ (count_attended / (attendance | length) * 100) | round(1) }}%</span>
+                </div>
+                {% endif %}
+                {% if can_edit %}
+                <form method="post" action="{{ url_for('governance.external_add', id=meeting.id) }}" class="row g-2 mt-3 border-top pt-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="col-12 small fw-semibold">{{ _('Invite an external committee member (not a system user)') }}</div>
+                    <div class="col-md-3"><input name="full_name" class="form-control form-control-sm" placeholder="{{ _('Full name') }}" required></div>
+                    <div class="col-md-3"><input name="email" type="email" class="form-control form-control-sm" placeholder="{{ _('Email') }}"></div>
+                    <div class="col-md-2"><input name="role" class="form-control form-control-sm" placeholder="{{ _('Role') }}" required></div>
+                    <div class="col-md-2"><input name="organisation" class="form-control form-control-sm" placeholder="{{ _('Organisation') }}"></div>
+                    <div class="col-md-2"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Add') }}</button></div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Minutes -->
+        <div class="card border-0 shadow-sm mb-4" id="minutes">
+            <div class="card-header bg-white py-3 d-flex justify-content-between"><h6 class="m-0 text-primary">{{ _('Minutes') }}</h6>
+                <span class="small text-muted">{{ _('Draft → circulated → approved by the chair or the secretary') }}</span></div>
+            <div class="card-body">
+                {% if approved_minutes %}
+                <div class="alert alert-success small">{{ _('Version %(n)s approved by %(name)s as %(capacity)s on %(date)s.', n=approved_minutes.version_no, name=approved_minutes.approved_by|username, capacity=(_('chair') if approved_minutes.approver_capacity == 'chair' else _('secretary')), date=approved_minutes.approved_at.strftime('%Y-%m-%d') if approved_minutes.approved_at else '') }}</div>
+                {% endif %}
+                {% set cm = current_minutes %}
+                {% if cm %}
+                <div class="mb-2"><span class="badge {{ 'bg-warning text-dark' if cm.status == 'circulated' else 'bg-secondary' }}">{{ code_label(cm.status, 'minutes_status') }} v{{ cm.version_no }}</span>
+                    <span class="small text-muted">{{ _('Drafted by %(name)s', name=cm.created_by|username) }}{% if cm.circulated_at %} · {{ _('circulated by %(name)s on %(date)s', name=cm.circulated_by|username, date=cm.circulated_at.strftime('%Y-%m-%d')) }}{% endif %}</span></div>
+                {% endif %}
+                {% if can_edit %}
+                {% if not cm or cm.status == 'draft' or approved_minutes or cm.status == 'circulated' %}
+                <form method="post" action="{{ url_for('governance.minutes_save', id=meeting.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <textarea name="body" class="form-control mb-2" rows="10" dir="auto" placeholder="{{ _('Minutes of the meeting: discussion of each agenda item, conclusions…') }}">{{ (cm.body if cm else (approved_minutes.body if approved_minutes else '')) }}</textarea>
+                    {% if cm and cm.status == 'draft' %}
+                    <input name="change_note" class="form-control form-control-sm mb-2" value="{{ cm.change_note or '' }}" placeholder="{{ _('Change note (required for a revision)') }}">
+                    <button class="btn btn-sm btn-primary">{{ _('Save draft') }} v{{ cm.version_no }}</button>
+                    {% else %}
+                    <input name="change_note" class="form-control form-control-sm mb-2" placeholder="{{ _('Change note (required for a revision)') }}">
+                    <button class="btn btn-sm btn-primary">{{ _('Start a new version') if (cm or approved_minutes) else _('Save first draft') }}</button>
+                    {% endif %}
+                </form>
+                {% endif %}
+                {% if cm and cm.status == 'draft' %}
+                <form method="post" action="{{ url_for('governance.minutes_transition', id=meeting.id, vid=cm.id, action='circulate') }}" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-sm btn-outline-warning">{{ _('Circulate for approval') }}</button>
+                </form>
+                {% elif cm and cm.status == 'circulated' %}
+                <div class="row g-2 mt-2">
+                    <form method="post" action="{{ url_for('governance.minutes_transition', id=meeting.id, vid=cm.id, action='approve') }}" class="col-md-6 d-flex gap-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <select name="capacity" class="form-select form-select-sm" required>
+                            <option value="">{{ _('Approve as…') }}</option>
+                            <option value="chair">{{ _('Chair') }}</option>
+                            <option value="secretary">{{ _('Secretary') }}</option>
+                        </select>
+                        <button class="btn btn-sm btn-success text-nowrap">{{ _('Approve minutes') }}</button>
+                    </form>
+                    <form method="post" action="{{ url_for('governance.minutes_transition', id=meeting.id, vid=cm.id, action='return') }}" class="col-md-6 d-flex gap-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input name="note" class="form-control form-control-sm" placeholder="{{ _('Reason for changes') }}" required>
+                        <button class="btn btn-sm btn-outline-danger text-nowrap">{{ _('Return for changes') }}</button>
+                    </form>
+                </div>
+                {% endif %}
+                {% elif cm or approved_minutes %}
+                <div class="border rounded p-3 small" style="white-space: pre-wrap" dir="auto">{{ (approved_minutes or cm).body }}</div>
+                {% endif %}
+                {% if minutes %}
+                <h6 class="mt-4 small fw-bold">{{ _('Versions') }}</h6>
+                <table class="table table-sm small">
+                    <thead><tr><th>{{ _('Version') }}</th><th>{{ _('Status') }}</th><th>{{ _('Change note') }}</th><th>{{ _('Drafted by') }}</th><th>{{ _('Approved by') }}</th><th></th></tr></thead>
+                    <tbody>{% for v in minutes %}
+                    <tr><td>v{{ v.version_no }}</td><td>{{ code_label(v.status, 'minutes_status') }}</td><td>{{ v.change_note or '' }}</td>
+                        <td>{{ v.created_by|username }}<div class="text-muted">{{ v.created_at.strftime('%Y-%m-%d') if v.created_at else '' }}</div></td>
+                        <td>{% if v.approved_by %}{{ v.approved_by|username }} ({{ _('chair') if v.approver_capacity == 'chair' else _('secretary') }})<div class="text-muted">{{ v.approved_at.strftime('%Y-%m-%d') if v.approved_at else '' }}</div>{% endif %}</td>
+                        <td class="text-nowrap"><a href="{{ url_for('governance.minutes_print', id=meeting.id, v=v.id, lang='en') }}" target="_blank">EN</a> · <a href="{{ url_for('governance.minutes_print', id=meeting.id, v=v.id, lang='ar') }}" target="_blank">ع</a></td></tr>
+                    {% endfor %}</tbody>
+                </table>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Resolutions -->
+        <div class="card border-0 shadow-sm mb-4" id="resolutions">
+            <div class="card-header bg-white py-3"><h6 class="m-0 text-primary">{{ _('Resolutions') }}</h6></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead class="table-light"><tr><th>{{ _('No.') }}</th><th>{{ _('Resolution') }}</th><th class="text-center">{{ _('For') }}</th><th class="text-center">{{ _('Against') }}</th><th class="text-center">{{ _('Abstain') }}</th><th>{{ _('Result') }}</th></tr></thead>
+                    <tbody>
+                    {% for r in resolutions %}
+                    <tr>
+                        <td class="text-nowrap">{{ r.decision_number or r.decision_reference or '-' }}</td>
+                        <td>{% if r.decision_title %}<strong>{{ r.decision_title }}</strong><br>{% endif %}{{ r.decision_text or r.decision_description }}
+                            {% if r.dissent_notes or r.dissenting_reasons %}<div class="small text-danger mt-1"><i class="bi bi-chat-left-text"></i> {{ _('Dissent:') }} {{ r.dissent_notes or r.dissenting_reasons }}</div>{% endif %}
+                            {% if can_edit and not approved_minutes %}
+                            <details class="small mt-1"><summary class="text-primary">{{ _('Correct this resolution') }}</summary>
+                            <form method="post" action="{{ url_for('governance.resolution_edit', id=meeting.id, rid=r.id) }}" class="row g-1 mt-1">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="col-12"><textarea name="decision_text" class="form-control form-control-sm" rows="2" required>{{ r.decision_text or r.decision_description }}</textarea></div>
+                                <div class="col-4"><input name="votes_for" type="number" min="0" class="form-control form-control-sm" value="{{ r.votes_for or 0 }}" title="{{ _('For') }}"></div>
+                                <div class="col-4"><input name="votes_against" type="number" min="0" class="form-control form-control-sm" value="{{ r.votes_against or 0 }}" title="{{ _('Against') }}"></div>
+                                <div class="col-4"><input name="votes_abstain" type="number" min="0" class="form-control form-control-sm" value="{{ r.votes_abstain or 0 }}" title="{{ _('Abstain') }}"></div>
+                                <div class="col-12"><input name="dissent_notes" class="form-control form-control-sm" value="{{ r.dissent_notes or r.dissenting_reasons or '' }}" placeholder="{{ _('Dissenting members and their reasons') }}"></div>
+                                <div class="col-8"><input name="reason" class="form-control form-control-sm" placeholder="{{ _('Reason for the correction') }}" required></div>
+                                <div class="col-4"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Save') }}</button></div>
+                            </form></details>{% endif %}
+                        </td>
+                        <td class="text-center">{{ r.votes_for if r.votes_for is not none else '-' }}</td>
+                        <td class="text-center">{{ r.votes_against if r.votes_against is not none else '-' }}</td>
+                        <td class="text-center">{{ r.votes_abstain if r.votes_abstain is not none else '-' }}</td>
+                        <td>{% set res = r.vote_result or ('passed' if (r.votes_for or 0) > (r.votes_against or 0) else '') %}
+                            {% if res %}<span class="badge {{ 'bg-success' if res == 'passed' else ('bg-danger' if res == 'rejected' else 'bg-secondary') }}">{{ code_label(res, 'resolution') }}</span>{% endif %}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-muted text-center">{{ _('No resolutions recorded.') }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                {% if can_edit and not approved_minutes %}
+                <form method="post" action="{{ url_for('governance.resolution_add', id=meeting.id) }}" class="row g-2 border-top pt-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="col-12 small fw-semibold">{{ _('Record a resolution') }}</div>
+                    <div class="col-md-3"><input name="decision_number" class="form-control form-control-sm" placeholder="{{ _('Number (automatic if blank)') }}"></div>
+                    <div class="col-md-9"><input name="decision_title" class="form-control form-control-sm" placeholder="{{ _('Title') }}"></div>
+                    <div class="col-12"><textarea name="decision_text" class="form-control form-control-sm" rows="2" dir="auto" placeholder="{{ _('Resolution text') }}" required></textarea></div>
+                    <div class="col-4 col-md-2"><label class="small">{{ _('For') }}</label><input name="votes_for" type="number" min="0" class="form-control form-control-sm" value="0"></div>
+                    <div class="col-4 col-md-2"><label class="small">{{ _('Against') }}</label><input name="votes_against" type="number" min="0" class="form-control form-control-sm" value="0"></div>
+                    <div class="col-4 col-md-2"><label class="small">{{ _('Abstain') }}</label><input name="votes_abstain" type="number" min="0" class="form-control form-control-sm" value="0"></div>
+                    <div class="col-md-3"><label class="small">{{ _('Result') }}</label><select name="vote_result" class="form-select form-select-sm">
+                        <option value="">{{ _('Automatic (simple majority)') }}</option>
+                        {% for code, label in code_choices('resolution') %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select></div>
+                    <div class="col-md-3 d-flex align-items-end"><button class="btn btn-sm btn-primary w-100">{{ _('Record resolution') }}</button></div>
+                    <div class="col-12"><input name="dissent_notes" class="form-control form-control-sm" placeholder="{{ _('Dissenting members and their reasons (required when anyone voted against)') }}"></div>
+                </form>
+                {% elif approved_minutes %}
+                <div class="small text-muted">{{ _('The minutes are approved; resolutions are locked.') }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Action items -->
+        {% macro action_rows(rows, show_meeting=False) %}
+        {% set can_edit = current_user.can_edit('governance') %}
+        {% for a in rows %}
+        <tr class="{{ 'table-danger' if a.overdue }}">
+            <td>{% if show_meeting %}<a href="{{ url_for('governance.meeting_summary', id=a.meeting_id) }}#actions">{{ a.meeting_reference or a.meeting_date }}</a> · {% endif %}#{{ a.action_number or a.id }}</td>
+            <td>{{ a.action_description }}{% if a.carried_reference or a.carried_date %}<div class="small text-muted"><i class="bi bi-arrow-right-circle"></i> {{ _('Carried to %(ref)s', ref=a.carried_reference or a.carried_date) }}</div>{% endif %}
+                {% if a.completion_notes %}<div class="small text-muted">{{ a.completion_notes }}</div>{% endif %}</td>
+            <td>{{ a.owner_display }}</td>
+            <td class="text-nowrap">{{ a.due_date or '-' }}{% if a.overdue %} <span class="badge bg-danger">{{ _('Overdue') }}</span>{% endif %}</td>
+            <td>{{ code_label(a.status or 'PENDING', 'action_status') }}</td>
+            <td>{% if can_edit and (a.status or 'PENDING')|upper not in ('COMPLETED', 'CANCELLED') %}
+                <details class="small"><summary class="text-primary">{{ _('Update') }}</summary>
+                <form method="post" action="{{ url_for('governance.action_update', aid=a.id) }}" class="mt-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next" value="{{ url_for('governance.meeting_summary', id=meeting.id) }}#actions">
+                    <select name="status" class="form-select form-select-sm mb-1">{% for st in ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'DELAYED', 'CANCELLED'] %}<option value="{{ st }}" {{ 'selected' if (a.status or 'PENDING')|upper == st }}>{{ code_label(st, 'action_status') }}</option>{% endfor %}</select>
+                    <input name="note" class="form-control form-control-sm mb-1" placeholder="{{ _('Note (required to complete, delay or cancel)') }}">
+                    <button class="btn btn-sm btn-outline-primary w-100">{{ _('Save') }}</button>
+                </form>
+                {% if later_meetings %}
+                <form method="post" action="{{ url_for('governance.action_carry', aid=a.id) }}" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next" value="{{ url_for('governance.meeting_summary', id=meeting.id) }}#actions">
+                    <select name="target_meeting_id" class="form-select form-select-sm mb-1" required><option value="">{{ _('Carry to meeting…') }}</option>
+                        {% for lm in later_meetings if lm.id != a.meeting_id %}<option value="{{ lm.id }}">{{ lm.meeting_reference or lm.meeting_date }} ({{ lm.meeting_date }})</option>{% endfor %}</select>
+                    <button class="btn btn-sm btn-outline-secondary w-100">{{ _('Carry to agenda') }}</button>
+                </form>{% endif %}
+                </details>{% endif %}</td>
+        </tr>
+        {% endfor %}
+        {% endmacro %}
+        <div class="card border-0 shadow-sm mb-4" id="actions">
+            <div class="card-header bg-white py-3"><h6 class="m-0 text-primary">{{ _('Action items') }}</h6></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead class="table-light"><tr><th>#</th><th>{{ _('Action') }}</th><th>{{ _('Owner') }}</th><th>{{ _('Due date') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+                    <tbody>{{ action_rows(actions) }}
+                    {% if not actions %}<tr><td colspan="6" class="text-muted text-center">{{ _('No action items.') }}</td></tr>{% endif %}</tbody>
+                </table>
+                </div>
+                {% if can_edit %}
+                <form method="post" action="{{ url_for('governance.action_add', id=meeting.id) }}" class="row g-2 border-top pt-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="col-12 small fw-semibold">{{ _('Add an action item') }}</div>
+                    <div class="col-12"><input name="action_description" class="form-control form-control-sm" dir="auto" placeholder="{{ _('Action') }}" required></div>
+                    <div class="col-md-3"><select name="owner_user_id" class="form-select form-select-sm"><option value="">{{ _('Owner (user)…') }}</option>{% for u in users %}<option value="{{ u.id }}">{{ u.name or u.email }}</option>{% endfor %}</select></div>
+                    <div class="col-md-3"><input name="responsible_person" class="form-control form-control-sm" placeholder="{{ _('…or external owner name') }}"></div>
+                    <div class="col-md-2"><input name="due_date" type="date" class="form-control form-control-sm" required></div>
+                    <div class="col-md-2"><select name="priority" class="form-select form-select-sm">{% for p in ['HIGH', 'MEDIUM', 'LOW'] %}<option value="{{ p }}" {{ 'selected' if p == 'MEDIUM' }}>{{ code_label(p, 'priority') }}</option>{% endfor %}</select></div>
+                    <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div>
+                    {% if resolutions %}<div class="col-md-6"><select name="resolution_id" class="form-select form-select-sm"><option value="">{{ _('Linked resolution (optional)') }}</option>{% for r in resolutions %}<option value="{{ r.id }}">{{ r.decision_number or r.id }}</option>{% endfor %}</select></div>{% endif %}
+                </form>
+                {% endif %}
+                {% if outstanding %}
+                <h6 class="mt-4 small fw-bold">{{ _('Open actions from earlier meetings') }}</h6>
+                <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead class="table-light"><tr><th>{{ _('Meeting') }}</th><th>{{ _('Action') }}</th><th>{{ _('Owner') }}</th><th>{{ _('Due date') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+                    <tbody>{{ action_rows(outstanding, True) }}</tbody>
+                </table>
                 </div>
                 {% endif %}
             </div>

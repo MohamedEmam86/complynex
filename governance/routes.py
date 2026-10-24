@@ -516,16 +516,29 @@ def edit_meeting(id):
             'meeting_reference': request.form.get('meeting_reference'),
             'status': request.form.get('status')
         }
+        if 'agenda' in request.form:
+            data['agenda'] = request.form.get('agenda')
         errors = _meeting_errors(data)
         if errors:
             _flash_errors(errors)
             return redirect(url_for('governance.edit_meeting', id=id))
         meeting.update(data)
+        if request.form.get('attendees_submitted'):
+            from governance.meetings import sync_member_attendees
+            db = get_db()
+            kept = sync_member_attendees(db, id, request.form.getlist('attendees'))
+            db.commit()
+            if kept:
+                flash(_('Attendance is already recorded for %(names)s, so they stay on the attendee list.',
+                        names=', '.join(kept)), 'warning')
         flash(_('Meeting updated successfully.'), 'success')
-        return redirect(url_for('governance.list_meetings'))
+        return redirect(url_for('governance.meeting_summary', id=id))
     
     committees = BoardCommittee.get_all()
-    return render_template('governance/meeting_form.html', meeting=meeting, committees=committees)
+    members = BoardMember.get_all()
+    selected = set(MeetingAttendance.get_for_meeting(id).keys())
+    return render_template('governance/meeting_form.html', meeting=meeting, committees=committees,
+                           members=members, selected_attendees=selected)
 
 @governance_bp.route('/meeting/delete/<int:id>', methods=['POST'])
 @login_required
@@ -560,8 +573,12 @@ def record_attendance(id):
                     'proxy_name': (request.form.get(f'proxy_{member_id}') or '').strip() or None
                 }
         MeetingAttendance.record_attendance(id, attendance_data, recorded_by=current_user.id)
+        from governance.meetings import save_external_attendance
+        db = get_db()
+        save_external_attendance(db, id, request.form)
+        db.commit()
         flash(_('Attendance recorded.'), 'success')
-        return redirect(url_for('governance.list_meetings'))
+        return redirect(url_for('governance.meeting_summary', id=id))
     
     # Logic to get relevant members (Board or Committee)
     # Rows always carry the BOARD MEMBER id (committee rows are memberships,
@@ -572,8 +589,16 @@ def record_attendance(id):
     else:
         members = [{'id': m.id, 'member_name': m.member_name} for m in BoardMember.get_all()]
     existing = MeetingAttendance.get_for_meeting(id)
+    # Members invited when scheduling (or added later) who are not on the
+    # committee/board list any more still need their attendance recorded.
+    listed = {m['id'] for m in members}
+    for r in BoardMeeting.get_attendance_summary_rows(id):
+        if r['member_id'] not in listed:
+            members.append({'id': r['member_id'], 'member_name': r['member_name']})
+    externals = get_db().execute("SELECT * FROM meeting_external_attendees WHERE meeting_id = %s ORDER BY id",
+                                 (id,)).fetchall()
     return render_template('governance/meeting_attendance.html', meeting=meeting, members=members,
-                           existing=existing)
+                           existing=existing, externals=externals)
 
 @governance_bp.route('/meeting/invite/<int:id>')
 @login_required
@@ -598,8 +623,11 @@ def meeting_summary(id):
     if not meeting:
         flash(_('Meeting not found.'), 'danger')
         return redirect(url_for('governance.list_meetings'))
-    attendance = BoardMeeting.get_attendance_summary(id)
-    return render_template('governance/meeting_summary.html', meeting=meeting, attendance=attendance,
+    from governance.meetings import meeting_context, _active_users
+    ctx = meeting_context(id)
+    ctx.pop('meeting', None)
+    return render_template('governance/meeting_summary.html', meeting=meeting, users=_active_users(get_db()),
+                            members=BoardMember.get_all(), **ctx,
                             attach_module='governance', attach_record_type='board_meeting', attach_record_id=id,
                             attach_items=list_attachments('governance', 'board_meeting', id),
                             attach_can_edit=current_user.can_edit('governance'))
@@ -1225,3 +1253,6 @@ def committee_external_member(id):
 
 
 from governance.fp import routes as _fp_routes  # noqa: E402,F401  (fit & proper routes on this blueprint)
+from governance import meetings as _meeting_routes  # noqa: E402,F401  (minutes, resolutions, actions)
+from governance import labels as _labels  # noqa: E402
+_labels.register(governance_bp)

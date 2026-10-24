@@ -26,7 +26,7 @@
                         {% for committee in committees %}
                         <tr>
                             <td>{{ committee.committee_name }}</td>
-                            <td><span class="badge bg-info text-dark">{{ committee.committee_type }}</span></td>
+                            <td><span class="badge bg-info text-dark">{{ code_label(committee.committee_type, 'committee_type') }}</span></td>
                             <td>{{ committee.meeting_frequency }}</td>
                             <td>
                                 {% if committee.is_active %}

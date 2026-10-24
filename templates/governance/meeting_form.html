@@ -6,8 +6,7 @@
         <div class="col-lg-8">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">{{ _('Edit Meeting') if meeting else _('Schedule New
-                        Meeting') }}</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">{{ _('Edit Meeting') if meeting else _('Schedule New Meeting') }}</h6>
                 </div>
                 <div class="card-body">
                     <form method="POST">
@@ -16,23 +15,9 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">{{ _('Meeting Type') }}</label>
                                 <select name="meeting_type" class="form-select" required>
-                                    <option value="BOARD" {{ 'selected' if meeting and meeting.meeting_type=='BOARD'
-                                        else '' }}>{{ _('BOARD') }}</option>
-                                    <option value="AUDIT_COMMITTEE" {{ 'selected' if meeting and
-                                        meeting.meeting_type=='AUDIT_COMMITTEE' else '' }}>{{ _('AUDIT COMMITTEE') }}</option>
-                                    <option value="RISK_COMMITTEE" {{ 'selected' if meeting and
-                                        meeting.meeting_type=='RISK_COMMITTEE' else '' }}>{{ _('RISK COMMITTEE') }}</option>
-                                    <option value="COMPLIANCE_COMMITTEE" {{ 'selected' if meeting and
-                                        meeting.meeting_type=='COMPLIANCE_COMMITTEE' else '' }}>{{ _('COMPLIANCE COMMITTEE') }}
-                                    </option>
-                                    <option value="NOMREM_COMMITTEE" {{ 'selected' if meeting and
-                                        meeting.meeting_type=='NOMREM_COMMITTEE' else '' }}>{{ _('NOMREM COMMITTEE') }}</option>
-                                    <option value="REGULAR" {{ 'selected' if meeting and meeting.meeting_type=='REGULAR'
-                                        else '' }}>{{ _('REGULAR') }}</option>
-                                    <option value="EXTRAORDINARY" {{ 'selected' if meeting and
-                                        meeting.meeting_type=='EXTRAORDINARY' else '' }}>{{ _('EXTRAORDINARY') }}</option>
-                                    <option value="EMERGENCY" {{ 'selected' if meeting and
-                                        meeting.meeting_type=='EMERGENCY' else '' }}>{{ _('EMERGENCY') }}</option>
+                                    {% for code, label in code_choices('meeting_type') if code not in ('COMMITTEE', 'AGM') or (meeting and meeting.meeting_type == code) %}
+                                    <option value="{{ code }}" {{ 'selected' if meeting and meeting.meeting_type == code else '' }}>{{ label }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -71,14 +56,9 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">{{ _('Status') }}</label>
                                 <select name="status" class="form-select">
-                                    <option value="SCHEDULED" {{ 'selected' if meeting and meeting.status=='SCHEDULED'
-                                        else '' }}>{{ _('SCHEDULED') }}</option>
-                                    <option value="IN_PROGRESS" {{ 'selected' if meeting and
-                                        meeting.status=='IN_PROGRESS' else '' }}>{{ _('IN_PROGRESS') }}</option>
-                                    <option value="COMPLETED" {{ 'selected' if meeting and meeting.status=='COMPLETED'
-                                        else '' }}>{{ _('COMPLETED') }}</option>
-                                    <option value="CANCELED" {{ 'selected' if meeting and meeting.status=='CANCELED'
-                                        else '' }}>{{ _('CANCELED') }}</option>
+                                    {% for code in ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'POSTPONED', 'CANCELED'] %}
+                                    <option value="{{ code }}" {{ 'selected' if meeting and meeting.status == code else '' }}>{{ code_label(code, 'meeting_status') }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                         </div>
@@ -98,12 +78,14 @@
 
                         <div class="mb-3">
                             <label class="form-label d-block">{{ _('Select Attendees') }}</label>
+                            {% if meeting %}<input type="hidden" name="attendees_submitted" value="1">
+                            <div class="form-text mb-2">{{ _('Add or remove invited members. Members whose attendance is already recorded stay on the list. External participants who are not system users are added on the meeting page.') }}</div>{% endif %}
                             <div class="row row-cols-1 row-cols-md-2 g-2 overflow-auto" style="max-height: 200px;">
                                 {% for member in members %}
                                 <div class="col">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="attendees"
-                                            value="{{ member.id }}" id="attendee_{{ member.id }}">
+                                            value="{{ member.id }}" id="attendee_{{ member.id }}" {{ 'checked' if selected_attendees and member.id in selected_attendees else '' }}>
                                         <label class="form-check-label" for="attendee_{{ member.id }}">
                                             {{ member.member_name }}
                                         </label>
