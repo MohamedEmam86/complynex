@@ -45,6 +45,8 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from utils.decorators import permission_required
 from utils.file_serving import serve_uploaded_file
+from models.consumer_protection import ComplaintInternalNote
+from consumer_protection import handling as H
 
 # Create Blueprint
 consumer_bp = Blueprint('consumer_protection', __name__, 
@@ -230,7 +232,93 @@ def complaints_list():
         status = None
     q = (request.args.get('q') or '').strip()
     complaints = ConsumerComplaint.get_all(status=status, q=q or None)
-    return render_template('consumer_protection/list.html', complaints=complaints, q=q)
+    ar = str(get_locale()) == 'ar'
+    cats = {c['category_code']: (c['category_name_ar'] if ar else c['category_name_en']) or c['category_code']
+            for c in ComplaintCategory.get_all()}
+    return render_template('consumer_protection/list.html', complaints=complaints, q=q, cats=cats)
+
+def _complaint_staff():
+    """Active users who can work complaints (owner / assignee candidates)."""
+    rows = get_db().execute(
+        """SELECT id, NULLIF(TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')), '') AS name, email
+           FROM users WHERE is_active = 1
+             AND (role = 'admin' OR perm_consumer_protection IN ('view', 'use', 'edit', 'admin'))
+           ORDER BY first_name, last_name""").fetchall()
+    return [{'id': r['id'], 'name': r['name'] or r['email']} for r in rows]
+
+
+_RES_ERRORS = {
+    'root_cause': lambda: _('Select a root cause category.'),
+    'redress_type': lambda: _('Select a redress type.'),
+    'amount': lambda: _('The redress amount must be a positive number.'),
+    'amount_required': lambda: _('Enter the redress amount for a refund, fee waiver or compensation.'),
+    'date': lambda: _('Invalid redress date.'),
+    'date_future': lambda: _('The redress date cannot be in the future.'),
+    'date_required': lambda: _('Enter the date the redress was provided.'),
+}
+
+
+def _staff_action(id, complaint):
+    """Owner / internal note / root cause & redress. Returns a redirect, or None if not handled."""
+    action = request.form.get('action')
+    if action not in ('assign', 'add_note', 'resolution_details'):
+        return None
+    back = redirect(url_for('consumer_protection.view_complaint', id=id))
+    if not current_user.can_edit('consumer_protection'):
+        flash(_('You do not have permission to change complaints.'), 'danger')
+        return back
+    if action == 'assign':
+        uid = request.form.get('assigned_to', type=int)
+        staff = {u['id']: u['name'] for u in _complaint_staff()}
+        if uid not in staff:
+            flash(_('Select a staff member who handles complaints.'), 'danger')
+            return back
+        if uid == complaint.get('assigned_to_user_id'):
+            flash(_('The complaint is already assigned to this person.'), 'info')
+            return back
+        reason = (request.form.get('reason') or '').strip()
+        if complaint.get('assigned_to_user_id') and not reason:
+            flash(_('A reason is required when reassigning a complaint.'), 'danger')
+            return back
+        ConsumerComplaint.assign(id, uid, current_user.id, reason)
+        ComplaintActivityLog.create({'complaint_id': id, 'activity_type': 'ASSIGNMENT',
+                                     'activity_description': f"Assigned to {staff[uid]}" + (f" — {reason}" if reason else ''),
+                                     'performed_by': current_user.id})
+        try:
+            from services.notification_service import notify
+            if uid != current_user.id:
+                notify(uid, f'Complaint CP-{id} assigned to you', complaint.get('complaint_subject') or '',
+                       link=url_for('consumer_protection.view_complaint', id=id), category='warning')
+        except Exception:
+            current_app.logger.exception('complaint assignment notification failed')
+        flash(_('Owner updated.'), 'success')
+    elif action == 'add_note':
+        note = (request.form.get('note') or '').strip()
+        if not note:
+            flash(_('The note is empty.'), 'warning')
+            return back
+        ComplaintInternalNote.add(id, note[:4000], current_user.id)
+        ComplaintActivityLog.create({'complaint_id': id, 'activity_type': 'INTERNAL_NOTE',
+                                     'activity_description': 'Internal note added', 'performed_by': current_user.id})
+        flash(_('Internal note added.'), 'success')
+    else:
+        err, clean = H.validate_resolution_details(
+            request.form.get('root_cause_category'), request.form.get('redress_type'),
+            request.form.get('redress_amount'), request.form.get('redress_date'))
+        if err:
+            flash(_RES_ERRORS[err](), 'danger')
+            return back
+        ConsumerComplaint.set_resolution_details(id, **clean)
+        desc = f"Root cause: {clean['root_cause_category']}; redress: {clean['redress_type']}"
+        if clean['redress_amount']:
+            desc += f" {clean['redress_amount']:.2f}"
+        if clean['redress_date']:
+            desc += f" on {clean['redress_date']}"
+        ComplaintActivityLog.create({'complaint_id': id, 'activity_type': 'RESOLUTION_DETAILS',
+                                     'activity_description': desc, 'performed_by': current_user.id})
+        flash(_('Root cause and redress recorded.'), 'success')
+    return back
+
 
 @consumer_bp.route('/complaint/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -246,6 +334,9 @@ def view_complaint(id):
     documents = ComplaintDocument.get_by_complaint_id(id)
     
     if request.method == 'POST':
+        handled = _staff_action(id, complaint)
+        if handled is not None:
+            return handled
         try:
             action = request.form.get('action')
             
@@ -258,6 +349,9 @@ def view_complaint(id):
                     return redirect(url_for('consumer_protection.view_complaint', id=id))
                 if new_status in ('RESOLVED', 'CLOSED') and not (resolution or complaint.get('resolution_summary')):
                     flash(_('A resolution is required to resolve or close a complaint. The customer sees it when tracking the complaint.'), 'danger')
+                    return redirect(url_for('consumer_protection.view_complaint', id=id))
+                if new_status in ('RESOLVED', 'CLOSED') and not complaint.get('root_cause_category'):
+                    flash(_('Record the root cause and redress before resolving or closing the complaint.'), 'danger')
                     return redirect(url_for('consumer_protection.view_complaint', id=id))
 
                 ConsumerComplaint.update_status(id, new_status, current_user.id,
@@ -302,7 +396,119 @@ def view_complaint(id):
             current_app.logger.error(f"Error updating complaint: {e}")
             flash(_('Error updating complaint'), 'danger')
             
-    return render_template('consumer_protection/view.html', complaint=complaint, logs=logs, documents=documents)
+    category = get_db().execute("SELECT category_name_en, category_name_ar FROM complaint_categories "
+                                "WHERE category_code = %s", (complaint.get('complaint_category'),)).fetchone()
+    return render_template('consumer_protection/view.html', complaint=complaint, logs=logs, documents=documents,
+                           notes=ComplaintInternalNote.list(id), staff=_complaint_staff(),
+                           category=dict(category) if category else None,
+                           root_causes=H.ROOT_CAUSES, redress_types=H.REDRESS_TYPES,
+                           can_edit=current_user.can_edit('consumer_protection'))
+
+
+@consumer_bp.route('/complaint/<int:id>/letter')
+@login_required
+@permission_required('consumer_protection')
+def response_letter(id):
+    """Printable customer response letter (Arabic or English) generated from the recorded resolution."""
+    from flask_babel import force_locale
+    complaint = ConsumerComplaint.get_by_id(id)
+    if not complaint:
+        return render_template('errors/404.html'), 404
+    lang = request.args.get('lang') if request.args.get('lang') in ('ar', 'en') else 'ar'
+    cat = get_db().execute("SELECT category_name_en, category_name_ar FROM complaint_categories "
+                           "WHERE category_code = %s", (complaint.get('complaint_category'),)).fetchone()
+    category = (cat['category_name_ar'] if lang == 'ar' else cat['category_name_en']) if cat else complaint.get('complaint_category')
+    with force_locale(lang):
+        return render_template('consumer_protection/letter.html', c=complaint, lang=lang, category=category,
+                               is_final=complaint.get('status') in H.DONE and bool(complaint.get('resolution_summary')),
+                               today=datetime.now().strftime('%Y-%m-%d'))
+
+
+@consumer_bp.route('/reports/periodic')
+@login_required
+@permission_required('consumer_protection')
+def periodic_report():
+    """Periodic complaints report for submission to the regulator: received in the period, by
+    category / status / channel, average resolution days, overdue, full list. CSV / Excel export."""
+    period = request.args.get('period') or 'month'
+    start, end = H.period_bounds(period, request.args.get('start'), request.args.get('end'))
+    db = get_db()
+    report = H.summarize(H.fetch(db, start, end))
+    cats = {r['category_code']: (r['category_name_ar'] if str(get_locale()) == 'ar' else r['category_name_en'])
+            for r in db.execute("SELECT category_code, category_name_en, category_name_ar FROM complaint_categories").fetchall()}
+    fmt = request.args.get('format')
+    if fmt in ('csv', 'xlsx'):
+        return _export_periodic(report, cats, start, end, fmt)
+    return render_template('consumer_protection/periodic_report.html', r=report, cats=cats, period=period,
+                           start=start, end=end)
+
+
+def _export_periodic(report, cats, start, end, fmt):
+    from cases.labels import label
+    from flask import Response
+    head = [_('Reference'), _('Received'), _('Category'), _('Channel'), _('Status'), _('Owner'),
+            _('Statutory Deadline'), _('Resolution days'), _('Overdue'), _('Root cause'), _('Redress'),
+            _('Redress amount'), _('Redress date')]
+    lines = []
+    for c in report['rows']:
+        lines.append([f"CP-{c['id']}", (c.get('created_at') or '')[:10], cats.get(c.get('complaint_category'), c.get('complaint_category')),
+                      label(c.get('complaint_channel')), label(c.get('status')), c.get('owner_name') or '',
+                      c.get('statutory_deadline_date') or '', c.get('resolution_days') if c.get('resolution_days') is not None else '',
+                      _('Yes') if c.get('overdue') else _('No'), label(c.get('root_cause_category')) if c.get('root_cause_category') else '',
+                      label(c.get('redress_type')) if c.get('redress_type') else '',
+                      float(c['redress_amount']) if c.get('redress_amount') is not None else '',
+                      str(c.get('redress_date') or '')])
+    summary = [[_('Period'), f"{start} — {end}"], [_('Complaints received'), report['total']],
+               [_('Resolved / closed'), report['resolved']], [_('Open'), report['open']],
+               [_('Average resolution days'), report['avg_resolution_days'] if report['avg_resolution_days'] is not None else '-'],
+               [_('Open past deadline'), report['overdue_open']], [_('Resolved after deadline'), report['resolved_late']]]
+    breakdowns = [(_('By category'), {cats.get(k, k): v for k, v in report['by_category'].items()}),
+                  (_('By status'), {label(k): v for k, v in report['by_status'].items()}),
+                  (_('By channel'), {label(k): v for k, v in report['by_channel'].items()})]
+    fname = f"complaints_report_{start}_{end}"
+    if fmt == 'csv':
+        import csv, io as _io
+        out = _io.StringIO()
+        w = csv.writer(out)
+        for row in summary:
+            w.writerow(row)
+        for title, data in breakdowns:
+            w.writerow([])
+            w.writerow([title])
+            for k, v in data.items():
+                w.writerow([k, v])
+        w.writerow([])
+        w.writerow(head)
+        w.writerows(lines)
+        return Response(out.getvalue().encode('utf-8-sig'), mimetype='text/csv; charset=utf-8',
+                        headers={'Content-Disposition': f'attachment; filename={fname}.csv'})
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Summary'
+    for row in summary:
+        ws.append([str(x) if not isinstance(x, (int, float)) else x for x in row])
+    for title, data in breakdowns:
+        ws.append([])
+        ws.append([str(title)])
+        ws.cell(row=ws.max_row, column=1).font = Font(bold=True)
+        for k, v in data.items():
+            ws.append([str(k), v])
+    ws2 = wb.create_sheet('Complaints')
+    ws2.append([str(h) for h in head])
+    for cell in ws2[1]:
+        cell.font = Font(bold=True)
+    for ln in lines:
+        ws2.append([x if isinstance(x, (int, float)) else str(x) for x in ln])
+    if str(get_locale()) == 'ar':
+        ws.sheet_view.rightToLeft = True
+        ws2.sheet_view.rightToLeft = True
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name=f'{fname}.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
 @consumer_bp.route('/document/<int:doc_id>/download')

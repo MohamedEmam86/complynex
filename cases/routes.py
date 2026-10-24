@@ -39,7 +39,9 @@ _SOURCE_VIEW_ENDPOINT = {
     'tm_alerts': ('aml.view_alert', 'alert_id'),
     'whistleblowing_cases': ('whistleblowing.view_case', 'case_id'),
     'consumer_complaints': ('consumer_protection.view_complaint', 'id'),
-    # cyber_incidents has no per-incident detail route yet — falls back to the module dashboard.
+    'cyber_incidents': ('cyber.incident_detail', 'incident_id'),
+    'data_subject_requests': ('dp.dsr_detail', 'id'),
+    'data_breaches': ('dp.breach_detail', 'id'),
 }
 
 

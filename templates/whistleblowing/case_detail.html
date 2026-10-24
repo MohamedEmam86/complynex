@@ -22,7 +22,7 @@
                     <h5 class="mb-0">{{ _('Case Details') }}</h5>
                     <span
                         class="badge bg-{{ 'primary' if case.status == 'SUBMITTED' else 'info' if case.status == 'UNDER_REVIEW' else 'success' if case.status == 'RESOLVED' else 'secondary' }}">
-                        {{ _(case.status) }}
+                        {{ case.status|code_label }}
                     </span>
                 </div>
                 <div class="card-body">
@@ -38,10 +38,10 @@
                     <div class="row mt-4">
                         <div class="col-md-6">
                             <ul class="list-unstyled">
-                                <li class="mb-2"><strong>{{ _('Type') }}:</strong> {{ case.incident_type }}</li>
+                                <li class="mb-2"><strong>{{ _('Type') }}:</strong> {{ case.incident_type|code_label }}</li>
                                 <li class="mb-2"><strong>{{ _('Severity') }}:</strong> <span
                                         class="badge bg-{{ 'danger' if case.severity == 'CRITICAL' else 'warning' if case.severity == 'HIGH' else 'info' }}">{{
-                                        _(case.severity) }}</span></li>
+                                        case.severity|code_label }}</span></li>
                                 <li class="mb-2"><strong>{{ _('Location') }}:</strong> {{ case.incident_location or
                                     _('N/A') }}</li>
                             </ul>
@@ -65,6 +65,41 @@
                 </div>
             </div>
 
+            <!-- Messages with the reporter -->
+            <div class="card border-0 shadow-sm mb-4" id="messages">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ _('Messages with the reporter') }}
+                        {% if unread_messages %}<span class="badge bg-danger ms-2">{{ unread_messages }} {{ _('new') }}</span>{% endif %}</h5>
+                    <small class="text-muted">{{ _('The reporter sees your replies as "Compliance team" only.') }}</small>
+                </div>
+                <div class="card-body">
+                    {% if not has_tracking_code %}
+                    <div class="alert alert-light border small">{{ _('This is a named report without a tracking code; the reporter cannot read messages here. Contact them through the usual channel.') }}</div>
+                    {% endif %}
+                    {% for m in messages %}
+                    <div class="mb-3 d-flex {{ 'justify-content-end' if m.sender == 'STAFF' else '' }}">
+                        <div class="p-2 rounded {{ 'bg-primary-subtle' if m.sender == 'STAFF' else 'bg-light border' }}{{ ' border-danger' if m.sender == 'REPORTER' and not m.read_by_staff_at else '' }}" style="max-width: 85%;">
+                            <div class="small fw-bold">
+                                {% if m.sender == 'STAFF' %}{{ _('Compliance team') }} <span class="fw-normal text-muted">({{ m.staff_name or '-' }})</span>{% else %}{{ _('Reporter') }}{% endif %}
+                                <span class="text-muted fw-normal ms-2">{{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}</span>
+                            </div>
+                            <div style="white-space: pre-wrap;">{{ m.body }}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small">{{ _('No messages yet.') }}</p>
+                    {% endfor %}
+                    {% if has_tracking_code and current_user.has_permission('whistleblowing', 'edit') and case.status not in ('RESOLVED', 'DISMISSED') %}
+                    <form method="POST" action="{{ url_for('whistleblowing.staff_message', case_id=case.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <textarea name="message" class="form-control mb-2" rows="3" maxlength="5000" required
+                            placeholder="{{ _('Message to the reporter (do not reveal names of staff or other people involved)') }}"></textarea>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-paper-plane me-1"></i>{{ _('Send to reporter') }}</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Investigation Notes / Internal Comments -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3">
@@ -76,12 +111,11 @@
                         <div class="update-item mb-3 pb-3 border-bottom">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div>
-                                    <span class="badge bg-light text-dark fw-bold me-2">{{ _(update.update_type)
-                                        }}</span>
+                                    <span class="badge bg-light text-dark fw-bold me-2">{{ update.update_type|code_label }}</span>
                                     {% if update.new_value %}
                                     <span
                                         class="badge bg-{{ 'primary' if update.new_value == 'SUBMITTED' else 'info' if update.new_value == 'UNDER_REVIEW' or update.new_value == 'INVESTIGATING' else 'success' if update.new_value == 'RESOLVED' else 'secondary' }}">
-                                        {{ _(update.new_value) }}
+                                        {{ update.new_value|code_label }}
                                     </span>
                                     {% endif %}
                                 </div>

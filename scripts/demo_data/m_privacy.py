@@ -367,4 +367,12 @@ def seed(ctx):
                 review_date=(created + timedelta(days=390)).date().isoformat() if appr else None,
                 status=st, created_at=_ts(created), created_by=U('dpo'))
 
+    ctx.commit()
+    # Unified case registry: DSRs and breaches are case sources (needs 20261110_cases_dp_case_sources.sql;
+    # sync_case() never raises, so an older schema just skips this).
+    from models.case import sync_case
+    for rid in dsr_ids:
+        sync_case('DSR', rid)
+    for bid in bids:
+        sync_case('DATA_BREACH', bid)
     print(f'    ropa {len(ROPA)}, consents {n_cons}, dsr {len(dsr_ids)}, breaches {len(bids)}, dpias {len(dpias)}')

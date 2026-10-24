@@ -372,8 +372,66 @@ def track_case():
         flash(_('Invalid or expired tracking code.'), 'error')
         return redirect(url_for('whistleblowing.track_case'))
     
-    # Return case details (limited info for anonymous)
-    return render_template('whistleblowing/case_status.html', case=case, is_anonymous=True)
+    return _render_public_case(dict(case), anonymous_code)
+
+
+def _render_public_case(case, anonymous_code):
+    """Reporter's view of an anonymous case: status, updates marked visible to the
+    submitter, and the message thread — staff shown only as "Compliance team"."""
+    from whistleblowing import messaging as M
+    updates = get_db().execute("""SELECT update_type, update_text, new_value, created_at
+                                   FROM whistleblowing_updates
+                                   WHERE case_id = %s AND is_visible_to_submitter = 1
+                                   ORDER BY created_at DESC""", (case['id'],)).fetchall()
+    public_case = {k: case.get(k) for k in ('case_number', 'status', 'submitted_at', 'severity', 'title',
+                                            'description', 'incident_location', 'incident_date')}
+    return render_template('whistleblowing/case_status.html', case=public_case, is_anonymous=True,
+                           updates=[dict(u) for u in updates], messages=M.public_thread(case['id']),
+                           anonymous_code=anonymous_code, can_reply=case.get('status') not in ('RESOLVED', 'DISMISSED'),
+                           max_message=M.MAX_MESSAGE)
+
+
+@whistleblowing_bp.route('/track/reply', methods=['POST'])
+@limiter.limit('10 per minute')
+def track_reply():
+    """Anonymous reporter replies to the compliance team (tracking code is the only credential)."""
+    from whistleblowing import messaging as M
+    anonymous_code = (request.form.get('anonymous_code') or '').strip().upper()
+    case = WhistleblowingCase.get_by_anonymous_code(anonymous_code) if anonymous_code else None
+    if not case:
+        flash(_('Invalid or expired tracking code.'), 'error')
+        return redirect(url_for('whistleblowing.track_case'))
+    case = dict(case)
+    body = M.clean_body(request.form.get('message'))
+    if case.get('status') in ('RESOLVED', 'DISMISSED'):
+        flash(_('This case is closed. Please submit a new report if you have new information.'), 'warning')
+    elif not body:
+        flash(_('Please write a message.'), 'warning')
+    else:
+        if M.post_reporter_message(case, body):
+            flash(_('Your message has been sent to the compliance team.'), 'success')
+    return _render_public_case(case, anonymous_code)
+
+
+@whistleblowing_bp.route('/case/<int:case_id>/message', methods=['POST'])
+@login_required
+@permission_required('whistleblowing', level='edit')
+def staff_message(case_id):
+    """Compliance team message to the reporter (shown to them as "Compliance team")."""
+    from whistleblowing import messaging as M
+    case = WhistleblowingCase.get_by_id(case_id)
+    if not case:
+        flash(_('Case not found.'), 'error')
+        return redirect(url_for('whistleblowing.dashboard'))
+    body = M.clean_body(request.form.get('message'))
+    if not body:
+        flash(_('Please write a message.'), 'warning')
+    elif M.post_staff_message(case_id, body, current_user.id):
+        WhistleblowingCase.add_update(case_id=case_id, update_type='MESSAGE',
+                                      update_text='Message sent to the reporter', created_by=current_user.id,
+                                      visible_to_submitter=False)
+        flash(_('Message sent to the reporter.'), 'success')
+    return redirect(url_for('whistleblowing.view_case', case_id=case_id) + '#messages')
 
 
 # ============================================
@@ -469,12 +527,20 @@ def view_case(case_id):
             assigned_to_name = (f"{row['first_name'] or ''} {row['last_name'] or ''}".strip()
                                 or row['email'])
 
+    from whistleblowing import messaging as M
+    messages = M.thread(case_id)
+    unread = sum(1 for m in messages if m['sender'] == 'REPORTER' and not m.get('read_by_staff_at'))
+    if unread and current_user.has_permission('whistleblowing', 'edit'):
+        M.mark_read(case_id, current_user.id)
+
     return render_template('whistleblowing/case_detail.html', 
                            case=case, 
                            attachments=attachments,
                            updates=case.get('updates', []),
                            users=users,
-                           assigned_to_name=assigned_to_name)
+                           assigned_to_name=assigned_to_name,
+                           messages=messages, unread_messages=unread,
+                           has_tracking_code=bool(case.get('anonymous_code')))
 
 
 @whistleblowing_bp.route('/case/<int:case_id>/resolve', methods=['POST'])
@@ -762,9 +828,41 @@ def reports():
     
     query += " ORDER BY submitted_at DESC"
     
-    cases = db.execute(query, params).fetchall()
-    
-    return render_template('whistleblowing/reports.html', stats=stats, cases=cases)
+    cases = [dict(c) for c in db.execute(query, params).fetchall()]
+    cats = {c['category_code']: (c['category_name_ar'] if str(get_locale()) == 'ar' else c['category_name_en'])
+            for c in WhistleblowingCategory.get_all_categories()}
+    return render_template('whistleblowing/reports.html', stats=stats, cases=cases,
+                           trends=_trend_data(cases, cats), start_date=start_date or '', end_date=end_date or '')
+
+
+def _trend_data(cases, cat_names=None):
+    """Counts for the trend charts: by month (submitted), by type and by status."""
+    from cases.labels import label
+    cat_names = cat_names or {}
+    by_month, by_type, by_status = {}, {}, {}
+    for c in cases:
+        month = str(c.get('submitted_at') or '')[:7]
+        if len(month) == 7:
+            by_month[month] = by_month.get(month, 0) + 1
+        t = c.get('incident_type') or 'OTHER'
+        by_type[t] = by_type.get(t, 0) + 1
+        st = c.get('status') or 'SUBMITTED'
+        by_status[st] = by_status.get(st, 0) + 1
+    months = sorted(by_month)
+    if months:  # fill gaps so the line is continuous
+        y, m = int(months[0][:4]), int(months[0][5:])
+        full = []
+        while f'{y:04d}-{m:02d}' <= months[-1]:
+            full.append(f'{y:04d}-{m:02d}')
+            y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+        months = full
+    types = sorted(by_type, key=lambda k: -by_type[k])
+    statuses = [s for s in CASE_STATUSES if s in by_status] + [s for s in by_status if s not in CASE_STATUSES]
+    return {
+        'month': {'labels': months, 'data': [by_month.get(mo, 0) for mo in months]},
+        'type': {'labels': [cat_names.get(t) or label(t) for t in types], 'data': [by_type[t] for t in types]},
+        'status': {'labels': [label(s) for s in statuses], 'data': [by_status[s] for s in statuses]},
+    }
 
 
 # ============================================

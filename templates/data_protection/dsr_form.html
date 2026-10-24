@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Register DSR{% endblock %}
+{% block title %}{{ _('Register Data Subject Request (DSR)') }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-9">
             <div class="card shadow-sm border-info">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">{{ _('Register Data Subject Request (DSR)') }}</h5>
@@ -13,26 +13,54 @@
                 <div class="card-body">
                     <form method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <div class="mb-3">
-                            <label class="form-label">{{ _('Data Subject Name') }}</label>
-                            <input type="text" class="form-control" name="subject_name" required
-                                placeholder="{{ _('Full name of the requesting individual') }}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('Data Subject Name') }} *</label>
+                                <input type="text" class="form-control" name="subject_name" required value="{{ form.get('subject_name', '') }}"
+                                    placeholder="{{ _('Full name of the requesting individual') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('Request Type (PDPL Rights)') }} *</label>
+                                <select class="form-select" name="request_type" required>
+                                    {% for t in R.DSR_TYPES %}<option value="{{ t }}" {{ 'selected' if form.get('request_type') == t else '' }}>{{ t|code_label }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('Requester email') }}</label>
+                                <input type="email" class="form-control" name="email" value="{{ form.get('email', '') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ _('Requester phone') }}</label>
+                                <input type="tel" class="form-control" name="phone" value="{{ form.get('phone', '') }}">
+                                <div class="form-text">{{ _('At least one contact detail is required to respond to the requester.') }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('Channel received') }} *</label>
+                                <select class="form-select" name="channel" required>
+                                    <option value="">--</option>
+                                    {% for c in R.DSR_CHANNELS %}<option value="{{ c }}" {{ 'selected' if form.get('channel') == c else '' }}>{{ c|code_label }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('Date received') }} *</label>
+                                <input type="date" class="form-control" name="received_date" max="{{ today }}" required value="{{ form.get('received_date') or today }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ _('Identity verification method') }}</label>
+                                <select class="form-select" name="verification_method">
+                                    <option value="">{{ _('To be decided') }}</option>
+                                    {% for m in R.VERIFY_METHODS %}<option value="{{ m }}" {{ 'selected' if form.get('verification_method') == m else '' }}>{{ m|code_label }}</option>{% endfor %}
+                                </select>
+                                <div class="form-text">{{ _('Identity is confirmed as verified on the request page.') }}</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ _('Request details') }}</label>
+                                <textarea class="form-control" name="description" rows="3">{{ form.get('description', '') }}</textarea>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">{{ _('Request Type (PDPL Rights)') }}</label>
-                            <select class="form-select" name="request_type" required>
-                                <option value="ACCESS">{{ _('Right of Access') }}</option>
-                                <option value="RECTIFICATION">{{ _('Right to Rectification') }}</option>
-                                <option value="ERASURE">{{ _('Right to Erasure (To be Forgotten)') }}</option>
-                                <option value="RESTRICTION">{{ _('Right to Restriction of Processing') }}</option>
-                                <option value="PORTABILITY">{{ _('Right to Data Portability') }}</option>
-                                <option value="OBJECTION">{{ _('Right to Object') }}</option>
-                            </select>
-                        </div>
-
-                        <div class="alert alert-secondary py-2">
-                            <small><i class="bi bi-clock"></i> {{ _('Regulatory Deadline: 30 days from registration.') }}</small>
+                        <div class="alert alert-secondary py-2 mt-3">
+                            <small><i class="bi bi-clock"></i> {{ _('Response deadline: 30 days from the date received.') }}</small>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">

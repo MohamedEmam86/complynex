@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Periodic complaints report") }}{% endblock %}
+{% macro breakdown(title, data, names=None) %}
+<div class="col-md-4 mb-3">
+  <div class="card shadow-sm h-100">
+    <div class="card-header bg-white fw-bold">{{ title }}</div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        {% for k, v in data.items() %}
+        <tr><td>{{ names.get(k, k) if names else k|code_label }}</td><td class="text-end">{{ v }}</td>
+            <td class="text-end text-muted small">{{ ((v / r.total * 100) if r.total else 0)|round(1) }}%</td></tr>
+        {% else %}
+        <tr><td class="text-muted text-center py-3">{{ _("No data") }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</div>
+{% endmacro %}
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h1 class="h3 mb-0">{{ _("Periodic complaints report") }}</h1>
+    <a href="{{ url_for('consumer_protection.complaints_list') }}" class="btn btn-sm btn-outline-secondary">{{ _("Back to List") }}</a>
+  </div>
+
+  <form method="get" class="card card-body shadow-sm mb-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small">{{ _("Reporting period") }}</label>
+        <select name="period" class="form-select form-select-sm">
+          {% for code, lbl in [('month', _('This month')), ('last_month', _('Last month')), ('quarter', _('This quarter')),
+                               ('last_quarter', _('Last quarter')), ('year', _('This year')), ('custom', _('Custom dates'))] %}
+          <option value="{{ code }}" {{ 'selected' if period == code else '' }}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><label class="form-label small">{{ _("From") }}</label><input type="date" name="start" class="form-control form-control-sm" value="{{ start }}"></div>
+      <div class="col-md-2"><label class="form-label small">{{ _("To") }}</label><input type="date" name="end" class="form-control form-control-sm" value="{{ end }}"></div>
+      <div class="col-md-2 d-grid"><button class="btn btn-sm btn-primary">{{ _("Show") }}</button></div>
+      <div class="col-md-3 text-end">
+        <a class="btn btn-sm btn-outline-success" href="{{ url_for('consumer_protection.periodic_report', period='custom', start=start, end=end, format='xlsx') }}"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('consumer_protection.periodic_report', period='custom', start=start, end=end, format='csv') }}"><i class="bi bi-filetype-csv"></i> CSV</a>
+      </div>
+    </div>
+    <div class="small text-muted mt-2">{{ _("Complaints received from %(start)s to %(end)s.", start=start, end=end) }} {{ _("Choose 'Custom dates' to use the From / To fields.") }}</div>
+  </form>
+
+  <div class="row mb-3 text-center">
+    {% for lbl, val, cls in [(_('Complaints received'), r.total, 'primary'), (_('Resolved / closed'), r.resolved, 'success'),
+                             (_('Open'), r.open, 'info'), (_('Average resolution days'), r.avg_resolution_days if r.avg_resolution_days is not none else '-', 'secondary'),
+                             (_('Open past deadline'), r.overdue_open, 'danger'), (_('Resolved after deadline'), r.resolved_late, 'warning')] %}
+    <div class="col-6 col-md-2 mb-2"><div class="card shadow-sm border-{{ cls }}"><div class="card-body py-2">
+      <div class="h4 mb-0 text-{{ cls }}">{{ val }}</div><div class="small text-muted">{{ lbl }}</div></div></div></div>
+    {% endfor %}
+  </div>
+
+  <div class="row">
+    {{ breakdown(_('By category'), r.by_category, cats) }}
+    {{ breakdown(_('By status'), r.by_status) }}
+    {{ breakdown(_('By channel'), r.by_channel) }}
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-white fw-bold">{{ _("Complaints in the period") }}</div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0 align-middle">
+        <thead class="table-light"><tr>
+          <th>{{ _("Reference") }}</th><th>{{ _("Received") }}</th><th>{{ _("Category") }}</th><th>{{ _("Channel") }}</th>
+          <th>{{ _("Status") }}</th><th>{{ _("Owner") }}</th><th>{{ _("Statutory Deadline") }}</th><th>{{ _("Resolution days") }}</th>
+          <th>{{ _("Root cause") }}</th><th>{{ _("Redress") }}</th></tr></thead>
+        <tbody>
+          {% for c in r.rows %}
+          <tr class="{{ 'table-danger' if c.overdue else '' }}">
+            <td><a href="{{ url_for('consumer_protection.view_complaint', id=c.id) }}">CP-{{ c.id }}</a></td>
+            <td>{{ (c.created_at or '')[:10] }}</td>
+            <td>{{ cats.get(c.complaint_category, c.complaint_category) }}</td>
+            <td>{{ c.complaint_channel|code_label }}</td>
+            <td>{{ c.status|code_label }}</td>
+            <td>{{ c.owner_name or '-' }}</td>
+            <td>{{ c.statutory_deadline_date or '-' }}{% if c.overdue %} <i class="bi bi-exclamation-triangle-fill text-danger"></i>{% endif %}</td>
+            <td>{{ c.resolution_days if c.resolution_days is not none else '-' }}</td>
+            <td>{{ c.root_cause_category|code_label }}</td>
+            <td>{{ c.redress_type|code_label }}{% if c.redress_amount %} ({{ '%.2f'|format(c.redress_amount|float) }}){% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" class="text-center text-muted py-4">{{ _("No complaints were received in this period.") }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -109,6 +109,8 @@ def assign(case_id, to_user_id, by_user_id, action='assign', reason=None,
                    (to_user_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'), case_id))
     db.commit()
+    from models.case import sync_case
+    sync_case('WHISTLEBLOWING', case_id)
 
     if to_user_id and action != 'close':
         notify(to_user_id,

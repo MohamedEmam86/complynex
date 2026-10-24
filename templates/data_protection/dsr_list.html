@@ -33,11 +33,11 @@
                         <tr>
                             <td><code>{{ dsr.request_reference }}</code></td>
                             <td>{{ dsr.data_subject_name }}</td>
-                            <td><span class="badge bg-light text-dark border">{{ dsr.request_type }}</span></td>
+                            <td><span class="badge bg-light text-dark border">{{ dsr.request_type|code_label }}</span></td>
                             <td>
                                 <span
                                     class="badge {% if dsr.status == 'NEW' %}bg-primary{% elif dsr.status == 'OVERDUE' %}bg-danger{% else %}bg-info{% endif %}">
-                                    {{ dsr.status }}
+                                    {{ dsr.status|code_label }}
                                 </span>
                             </td>
                             <td>

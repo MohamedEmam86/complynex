@@ -40,6 +40,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def _sync_registry(case_id):
+    """Push the case's current status / owner to the unified case registry (never raises)."""
+    from models.case import sync_case
+    sync_case('WHISTLEBLOWING', case_id)
+
+
 class WhistleblowingCase:
     """
     Whistleblowing case model with anonymity protection.
@@ -340,7 +347,7 @@ class WhistleblowingCase:
             created_by=updated_by,
             visible_to_submitter=True
         )
-        
+        _sync_registry(case_id)
         return True
     
     @staticmethod
@@ -371,7 +378,7 @@ class WhistleblowingCase:
             created_by=assigned_by,
             visible_to_submitter=False  # Don't reveal investigator to anonymous submitter
         )
-        
+        _sync_registry(case_id)
         return True
     
     @staticmethod
@@ -396,7 +403,7 @@ class WhistleblowingCase:
             created_by=resolved_by,
             visible_to_submitter=True
         )
-        
+        _sync_registry(case_id)
         return True
     
     @staticmethod

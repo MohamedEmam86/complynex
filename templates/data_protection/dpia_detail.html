@@ -22,7 +22,7 @@
                     <h5 class="mb-0">Project: {{ dpia.system_name }}</h5>
                     <span
                         class="badge {% if dpia.status == 'APPROVED' %}bg-success{% elif dpia.status == 'REJECTED' %}bg-danger{% else %}bg-primary{% endif %}">
-                        {{ dpia.status }}
+                        {{ dpia.status|code_label }}
                     </span>
                 </div>
                 <div class="card-body">

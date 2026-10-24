@@ -82,14 +82,14 @@
                                 <tr>
                                     <td><code>{{ breach.breach_number }}</code></td>
                                     <td>{{ breach.discovery_date }}</td>
-                                    <td>{{ breach.breach_type }}</td>
+                                    <td>{{ breach.breach_type|code_label }}</td>
                                     <td>
                                         <span
                                             class="badge {% if breach.severity == 'CRITICAL' %}bg-dark{% elif breach.severity == 'HIGH' %}bg-danger{% else %}bg-warning{% endif %}">
                                             {{ breach.severity or 'PENDING' }}
                                         </span>
                                     </td>
-                                    <td><span class="badge bg-primary">{{ breach.status }}</span></td>
+                                    <td><span class="badge bg-primary">{{ breach.status|code_label }}</span></td>
                                 </tr>
                                 {% else %}
                                 <tr>

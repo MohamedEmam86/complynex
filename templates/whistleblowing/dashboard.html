@@ -57,7 +57,7 @@
                 <select name="status" class="form-select form-select-sm w-auto" aria-label="{{ _('Status') }}">
                     <option value="">{{ _('All statuses') }}</option>
                     {% for st in statuses %}
-                    <option value="{{ st }}" {{ 'selected' if filters.status == st }}>{{ _(st) }}</option>
+                    <option value="{{ st }}" {{ 'selected' if filters.status == st }}>{{ st|code_label }}</option>
                     {% endfor %}
                 </select>
                 <select name="incident_type" class="form-select form-select-sm w-auto" aria-label="{{ _('Type') }}">
@@ -88,7 +88,7 @@
                     {% for case in cases %}
                     <tr>
                         <td><span class="fw-bold">{{ case.case_number }}</span></td>
-                        <td>{{ case.incident_type }}</td>
+                        <td>{{ case.incident_type|code_label }}</td>
                         <td>{{ case.submitted_at }}</td>
                         <td>
                             {% if case.is_anonymous %}
@@ -102,13 +102,13 @@
                         <td>
                             <span
                                 class="badge bg-{{ 'danger' if case.severity == 'CRITICAL' else 'warning' if case.severity == 'HIGH' else 'info' }}">
-                                {{ _(case.severity) }}
+                                {{ case.severity|code_label }}
                             </span>
                         </td>
                         <td>
                             <span
                                 class="badge rounded-pill bg-{{ 'primary' if case.status == 'SUBMITTED' else 'info' if case.status == 'UNDER_REVIEW' else 'success' if case.status == 'RESOLVED' else 'secondary' }}">
-                                {{ _(case.status) }}
+                                {{ case.status|code_label }}
                             </span>
                         </td>
                         <td>
