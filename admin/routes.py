@@ -108,37 +108,57 @@ def admin_index():
 @login_required
 @admin_required
 def list_users():
-    """List all users (administrators only — user management can grant any role)."""
-
-    # We need a get_all method in User model or just raw SQL
+    """List users (administrators only — user management can grant any role),
+    with search and filters: name/email, role, department, active, MFA and
+    last login."""
     from database.db import get_db
     db = get_db()
+    f = {k: (request.args.get(k) or '').strip() for k in ('q', 'role', 'department', 'active', 'mfa', 'last_login')}
+    where, params = [], []
+    if f['q']:
+        like = '%' + f['q'].replace('%', '').replace('_', '') + '%'
+        where.append("(u.first_name ILIKE %s OR u.last_name ILIKE %s OR u.email ILIKE %s"
+                     " OR (COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) ILIKE %s OR u.job_title ILIKE %s)")
+        params += [like] * 5
+    if f['role'] in ALLOWED_ROLES:
+        where.append('u.role = %s'); params.append(f['role'])
+    if f['department'].isdigit():
+        where.append('(u.department_id = %s OR EXISTS (SELECT 1 FROM user_departments ud2 '
+                     'WHERE ud2.user_id = u.id AND ud2.department_id = %s))')
+        params += [int(f['department'])] * 2
+    if f['active'] == '1':
+        where.append('u.is_active = 1 AND (u.expires_at IS NULL OR u.expires_at > NOW())')
+    elif f['active'] == '0':
+        where.append('u.is_active <> 1')
+    elif f['active'] == 'expired':
+        where.append('u.is_active = 1 AND u.expires_at IS NOT NULL AND u.expires_at <= NOW()')
+    if f['mfa'] == '1':
+        where.append('u.mfa_enabled IS TRUE')
+    elif f['mfa'] == '0':
+        where.append('u.mfa_enabled IS NOT TRUE')
+    if f['last_login'] == 'never':
+        where.append('u.last_login IS NULL')
+    elif f['last_login'] in ('7', '30', '90'):
+        where.append("u.last_login >= NOW() - (%s || ' days')::interval"); params.append(f['last_login'])
+    elif f['last_login'] == 'stale':
+        where.append("(u.last_login IS NULL OR u.last_login < NOW() - interval '90 days')")
     users = db.execute('''
-        SELECT u.*, d.name as primary_dept_name 
+        SELECT u.*, d.name AS primary_dept_name,
+               (SELECT string_agg(d2.name, ', ' ORDER BY d2.name) FROM user_departments ud
+                  JOIN departments d2 ON d2.id = ud.department_id WHERE ud.user_id = u.id) AS extra_depts
         FROM users u
         LEFT JOIN departments d ON u.department_id = d.id
+        ''' + ('WHERE ' + ' AND '.join(where) if where else '') + '''
         ORDER BY u.first_name, u.last_name
-    ''').fetchall()
-    
-    # Enrich user data with display department logic
+    ''', tuple(params)).fetchall()
+    total = db.execute('SELECT count(*) AS n FROM users').fetchone()['n']
+
     enriched_users = []
     for user_row in users:
         user_dict = dict(user_row)
-        
-        # Determine display department: New Primary > Legacy Text > Additional > '-'
-        display_dept = user_dict.get('primary_dept_name') or user_dict.get('department')
-        
-        if not display_dept:
-            # Check for additional departments
-            rows = db.execute('''
-                SELECT d.name FROM departments d
-                JOIN user_departments ud ON d.id = ud.department_id
-                WHERE ud.user_id = %s
-            ''', (user_dict['id'],)).fetchall()
-            if rows:
-                display_dept = ", ".join([r['name'] for r in rows])
-        
-        user_dict['display_department'] = display_dept or '-'
+        # Display department: primary > legacy text > additional departments > '-'
+        user_dict['display_department'] = (user_dict.get('primary_dept_name') or user_dict.get('department')
+                                           or user_dict.get('extra_depts') or '-')
         _exp = user_dict.get('expires_at')
         try:
             from datetime import timezone as _tz
@@ -146,8 +166,10 @@ def list_users():
         except TypeError:
             user_dict['is_expired'] = False
         enriched_users.append(user_dict)
-    
-    return render_template('admin/users/list.html', users=enriched_users)
+
+    departments = db.execute('SELECT id, name FROM departments ORDER BY name').fetchall()
+    return render_template('admin/users/list.html', users=enriched_users, filters=f, total=total,
+                           roles=sorted(ALLOWED_ROLES), departments=departments)
 
 def _authority_context(user_id=None):
     """Everything the can-see / cannot-see picker needs.
@@ -888,20 +910,72 @@ def edit_email_template(template_id):
     return redirect(url_for('admin.settings_email_templates'))
 
 
+APPROVER_ROLES = ('compliance_officer', 'compliance_manager')
+PERM_LEVELS = ('none', 'view', 'edit', 'approve')
+
+
+def effective_level(user, module):
+    """What a user can do in a module, for the permissions matrix:
+    'approve' — site administrator, the module's 'admin' level, or edit rights
+    held by a compliance officer/manager (the roles the approval and four-eyes
+    steps accept); 'edit'; 'view'; or 'none'."""
+    if user.is_admin() or user.can_admin_module(module):
+        return 'approve'
+    if user.can_edit(module):
+        return 'approve' if user.role in APPROVER_ROLES else 'edit'
+    if user.can_view(module):
+        return 'view'
+    return 'none'
+
+
 @admin_bp.route('/settings/permissions-matrix')
 @login_required
-@permission_required('config')
+@admin_required
 def settings_permissions_matrix():
-    """Read-only grid of every user's per-module permission level."""
-    if not current_user.is_admin():
-        flash(gettext('Access denied. Admin only.'), 'danger')
-        return redirect(url_for('dashboard'))
+    """Roles x modules x view/edit/approve, plus the per-user grid; CSV export."""
+    from utils.labels import MODULES, label as _label, module_label
+    view = request.args.get('view', 'roles')
+    role_f = request.args.get('role', '')
+    module_f = request.args.get('module', '')
+    show_inactive = request.args.get('inactive') == '1'
+    modules = [m for m, _l in MODULES]
+    shown_modules = [m for m in modules if not module_f or m == module_f]
+    users = [u for u in User.get_all() if (show_inactive or u.is_active)]
+    if role_f:
+        users = [u for u in users if u.role == role_f]
+    levels = {u.id: {m: effective_level(u, m) for m in shown_modules} for u in users}
+    roles = [r for r in ['admin', 'compliance_manager', 'compliance_officer', 'manager', 'analyst', 'viewer', 'employee']
+             if any(u.role == r for u in users)]
+    roles += sorted({u.role for u in users if u.role and u.role not in roles})
+    role_users = {r: [u for u in users if u.role == r] for r in roles}
+    # role_matrix[module][role] = {'view': n, 'edit': n, 'approve': n, 'total': n}
+    role_matrix = {m: {r: {lv: sum(1 for u in role_users[r] if levels[u.id][m] == lv) for lv in PERM_LEVELS}
+                       for r in roles} for m in shown_modules}
 
-    modules = ['governance', 'risk_management', 'internal_audit', 'aml', 'screening',
-               'policies', 'reports', 'pdpl', 'training', 'cyber', 'whistleblowing',
-               'consumer_protection', 'merchant_kyc', 'config', 'esg', 'carbon']
-    users = User.get_all() if hasattr(User, 'get_all') else []
-    return render_template('admin/settings/permissions_matrix.html', users=users, modules=modules)
+    if request.args.get('format') == 'csv':
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        lv_name = {lv: gettext({'none': 'No access', 'view': 'View', 'edit': 'Edit', 'approve': 'Approve'}[lv]) for lv in PERM_LEVELS}
+        if view == 'users':
+            w.writerow([gettext('User'), gettext('Email'), gettext('Role'), gettext('Active')] + [module_label(m) for m in shown_modules])
+            for u in users:
+                w.writerow([u.get_full_name(), u.email, _label(u.role), gettext('Yes') if u.is_active else gettext('No')]
+                           + [lv_name[levels[u.id][m]] for m in shown_modules])
+        else:
+            w.writerow([gettext('Module'), gettext('Role'), gettext('Users'), lv_name['view'], lv_name['edit'], lv_name['approve'], lv_name['none']])
+            for m in shown_modules:
+                for r in roles:
+                    c = role_matrix[m][r]
+                    w.writerow([module_label(m), _label(r), len(role_users[r]), c['view'], c['edit'], c['approve'], c['none']])
+        AuditLog.log(current_user.id, 'Export Permissions Matrix', 'Settings', None, f'view={view}')
+        from flask import Response
+        return Response('\ufeff' + buf.getvalue(), mimetype='text/csv; charset=utf-8',
+                        headers={'Content-Disposition': f'attachment; filename=permissions_matrix_{view}.csv'})
+
+    return render_template('admin/settings/permissions_matrix.html', users=users, modules=modules,
+                           shown_modules=shown_modules, levels=levels, roles=roles, role_users=role_users,
+                           role_matrix=role_matrix, view=view, role_f=role_f, module_f=module_f,
+                           show_inactive=show_inactive, all_roles=sorted(ALLOWED_ROLES))
 
 
 @admin_bp.route('/settings/localization', methods=['GET', 'POST'])

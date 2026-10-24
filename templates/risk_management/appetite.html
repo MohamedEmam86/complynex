@@ -45,7 +45,7 @@
                         <div class="mb-2">
                             <label class="form-label">{{ _('Appetite Level') }}</label>
                             <select name="appetite_level" class="form-select" required>
-                                {% for l in ['AVERSE', 'MINIMAL', 'CAUTIOUS', 'OPEN', 'HUNGRY'] %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+                                {% for l in ['AVERSE', 'MINIMAL', 'CAUTIOUS', 'OPEN', 'HUNGRY'] %}<option value="{{ l }}">{{ l|label }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="mb-2">

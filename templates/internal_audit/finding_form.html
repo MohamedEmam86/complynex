@@ -19,7 +19,7 @@
                 <div class="col-md-4">
                     <label class="form-label">{{ _('Severity') }}</label>{{ guide_panel('audit.finding_rating') }}
                     <select name="severity" class="form-select" required>
-                        {% for s in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+                        {% for s in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] %}<option value="{{ s }}">{{ s|label }}</option>{% endfor %}
                     </select>
                 </div>
                 <div class="col-md-4">

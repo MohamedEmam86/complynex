@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Pending Approvals - ComplyNex CMS{% endblock %}
+{% block title %}{{ _('Pending Approvals') }} - {{ company_name }} CMS{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -43,7 +43,7 @@
                                     <div class="fw-bold">{{ decl.employee_name }}</div>
                                     <small class="text-muted">{{ decl.department }}</small>
                                 </td>
-                                <td><span class="badge bg-light text-dark border">{{ decl.type|capitalize }}</span></td>
+                                <td><span class="badge bg-light text-dark border">{{ decl.type|label }}</span></td>
                                 <td>{{ decl.estimated_value }} {{ decl.currency }}</td>
                                 <td>{{ (decl.description or '') | truncate(50) }}</td>
                                 <td class="text-end pe-4">
@@ -88,7 +88,7 @@
                         <tbody>
                             {% for decl in coi_pending %}
                             <tr>
-                                <td class="ps-4">{{ decl.created_at or decl.declaration_date or "—" }}</td>
+                                <td class="ps-4">{{ (decl.created_at or decl.declaration_date)|fmt_dt }}</td>
                                 <td>
                                     <div class="fw-bold">{{ decl.employee_name }}</div>
                                     <small class="text-muted">{{ decl.department }}</small>

@@ -60,7 +60,7 @@
           <div class="l">{{ pillar_summary.completeness_pct }}% {{ _('answered') }}</div>
         </div>
         {% if pillar_summary.rating %}
-        <div class="text-center"><span class="ecx-rating-pill" style="background:{{ pillar_summary.rating[1] }};">{{ pillar_summary.rating[0] }}</span></div>
+        <div class="text-center"><span class="ecx-rating-pill" style="background:{{ pillar_summary.rating[1] }};">{{ pillar_summary.rating[0]|label }}</span></div>
         {% endif %}
         {% endif %}
         <div class="ecx-methodology-box ecx-esg mt-3">

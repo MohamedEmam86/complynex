@@ -44,7 +44,7 @@
                     {% for sev, color in [('CRITICAL', 'danger'), ('HIGH', 'warning'), ('MEDIUM', 'info'), ('LOW', 'secondary')] %}
                     {% set count = severity_breakdown.get(sev, 0) %}
                     <div class="d-flex justify-content-between small mb-1">
-                        <span>{{ sev | title }}</span><span>{{ count }}</span>
+                        <span>{{ sev|label }}</span><span>{{ count }}</span>
                     </div>
                     <div class="progress mb-2" style="height: 6px;">
                         <div class="progress-bar bg-{{ color }}" style="width: {{ (100 * count / open_findings|length) if open_findings|length else 0 }}%"></div>

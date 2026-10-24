@@ -48,7 +48,7 @@
                         <thead><tr><th>{{ _('Date') }}</th><th>{{ _('Inherent') }}</th><th>{{ _('Residual') }}</th><th>{{ _('Control Eff.') }}</th><th>{{ _('Reason') }}</th></tr></thead>
                         <tbody>
                         {% for h in history %}
-                            <tr><td>{{ h.recorded_at }}</td><td>{{ h.inherent_risk_score }}</td><td>{{ h.residual_risk_score or '-' }}</td><td>{{ h.control_effectiveness or '-' }}</td><td>{{ h.change_reason or '-' }}</td></tr>
+                            <tr><td>{{ h.recorded_at|fmt_dt }}</td><td>{{ h.inherent_risk_score }}</td><td>{{ h.residual_risk_score or '-' }}</td><td>{{ h.control_effectiveness or '-' }}</td><td>{{ h.change_reason or '-' }}</td></tr>
                         {% else %}
                             <tr><td colspan="5" class="text-center text-muted">{{ _('No history yet.') }}</td></tr>
                         {% endfor %}
@@ -83,11 +83,11 @@
                 <div class="card-body">
                     <p class="mb-1 d-flex justify-content-between align-items-center">
                         <span>{{ _('Inherent') }}: <strong>{{ risk.likelihood }} x {{ risk.impact }} = {{ risk.inherent_risk_score }}</strong></span>
-                        {% if inherent_band %}<span class="badge" style="background-color: {{ inherent_band.color_hex }};">{{ inherent_band.band_name }}</span>{% endif %}
+                        {% if inherent_band %}<span class="badge" style="background-color: {{ inherent_band.color_hex }};">{{ inherent_band.band_name|label }}</span>{% endif %}
                     </p>
                     <p class="mb-1 d-flex justify-content-between align-items-center">
                         <span>{{ _('Residual') }}: <strong>{{ (risk.residual_likelihood or '-') ~ ' x ' ~ (risk.residual_impact or '-') ~ ' = ' ~ (risk.residual_risk_score or '-') }}</strong></span>
-                        {% if residual_band %}<span class="badge" style="background-color: {{ residual_band.color_hex }};">{{ residual_band.band_name }}</span>{% endif %}
+                        {% if residual_band %}<span class="badge" style="background-color: {{ residual_band.color_hex }};">{{ residual_band.band_name|label }}</span>{% endif %}
                     </p>
                     {% if risk.control_effectiveness %}
                     <p class="mb-1">{{ _('Control Effectiveness') }}: <span class="badge bg-secondary">{{ risk.control_effectiveness }}</span></p>

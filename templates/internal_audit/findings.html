@@ -15,7 +15,7 @@
             <select name="status" class="form-select form-select-sm" data-auto-submit>
                 <option value="">{{ _('All') }}</option>
                 {% for s in ['OPEN', 'MANAGEMENT_RESPONSE_RECEIVED', 'REMEDIATION_IN_PROGRESS', 'REMEDIATED_PENDING_VERIFICATION', 'VERIFIED_CLOSED'] %}
-                <option value="{{ s }}" {{ 'selected' if current_status == s }}>{{ s.replace('_', ' ') | title }}</option>
+                <option value="{{ s }}" {{ 'selected' if current_status == s }}>{{ s|label }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -24,7 +24,7 @@
             <select name="severity" class="form-select form-select-sm" data-auto-submit>
                 <option value="">{{ _('All') }}</option>
                 {% for s in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] %}
-                <option value="{{ s }}" {{ 'selected' if current_severity == s }}>{{ s | title }}</option>
+                <option value="{{ s }}" {{ 'selected' if current_severity == s }}>{{ s|label }}</option>
                 {% endfor %}
             </select>
         </div>

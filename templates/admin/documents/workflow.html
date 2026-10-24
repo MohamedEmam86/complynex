@@ -107,7 +107,7 @@
           </div>
           <div class="mb-2 s-f" data-for="role"><label class="form-label small">{{ _('Role') }}</label>
             <select name="approver_role" id="s_role" class="form-select form-select-sm">
-              {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}</select></div>
+              {% for r in roles %}<option value="{{ r }}">{{ r|label }}</option>{% endfor %}</select></div>
           <div class="mb-2 s-f d-none" data-for="user"><label class="form-label small">{{ _('Person') }}</label>
             <select name="approver_user_id" id="s_user" class="form-select form-select-sm">
               {% for u in users %}<option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }} ({{ u.role|label }})</option>{% endfor %}</select></div>

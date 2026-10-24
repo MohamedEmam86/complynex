@@ -27,7 +27,7 @@
                     <dt class="col-sm-3">{{ _('Remediation evidence') }}</dt><dd class="col-sm-9">{{ finding.remediation_note }}{% if finding.remediated_at %} <small class="text-muted">({{ finding.remediated_at.strftime('%Y-%m-%d') }})</small>{% endif %}</dd>
                     {% endif %}
                     {% if verifier %}
-                    <dt class="col-sm-3">{{ _('Verified By') }}</dt><dd class="col-sm-9">{{ verifier.first_name }} {{ verifier.last_name }} ({{ finding.verified_at }})</dd>
+                    <dt class="col-sm-3">{{ _('Verified By') }}</dt><dd class="col-sm-9">{{ verifier.first_name }} {{ verifier.last_name }} ({{ finding.verified_at|fmt_dt }})</dd>
                     <dt class="col-sm-3">{{ _('Verification Notes') }}</dt><dd class="col-sm-9">{{ finding.verification_notes or '-' }}</dd>
                     {% endif %}
                 </dl>

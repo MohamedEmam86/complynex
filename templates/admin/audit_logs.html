@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Audit Logs - ComplyNex CMS{% endblock %}
+{% block title %}{{ _('Audit Logs') }} - {{ company_name }} CMS{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -26,8 +26,7 @@
                 <select name="module" class="form-select form-select-sm">
                     <option value="">{{ _('All Modules') }}</option>
                     {% for mod in modules %}
-                    <option value="{{ mod }}" {% if filters.get('module')==mod %}selected{% endif %}>{{ mod | capitalize
-                        }}</option>
+                    <option value="{{ mod }}" {% if filters.get('module')==mod %}selected{% endif %}>{{ mod|label }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -36,7 +35,7 @@
                 <select name="action" class="form-select form-select-sm">
                     <option value="">{{ _('All Actions') }}</option>
                     {% for act in actions %}
-                    <option value="{{ act }}" {% if filters.get('action')==act %}selected{% endif %}>{{ act }}</option>
+                    <option value="{{ act }}" {% if filters.get('action')==act %}selected{% endif %}>{{ act|label }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -94,8 +93,7 @@
                     <div class="fw-bold small">{{ log.user_name or 'System/Anonymous' }}</div>
                     <div class="text-muted smaller">{{ log.user_email or '---' }}</div>
                     {% if log.user_role %}
-                    <span class="badge bg-light text-dark border-0 smaller fw-normal p-0">{{ log.user_role | capitalize
-                        }}</span>
+                    <span class="badge bg-light text-dark border-0 smaller fw-normal p-0">{{ log.user_role|label }}</span>
                     {% endif %}
                 </td>
                 <td>

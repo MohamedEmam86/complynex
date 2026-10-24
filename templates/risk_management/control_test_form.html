@@ -15,7 +15,7 @@
                     <div class="col-md-6">
                         <label class="form-label">{{ _('Result') }}</label>
                         <select name="result" class="form-select" required>
-                            {% for r in ['EFFECTIVE', 'PARTIALLY_EFFECTIVE', 'INEFFECTIVE'] %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+                            {% for r in ['EFFECTIVE', 'PARTIALLY_EFFECTIVE', 'INEFFECTIVE'] %}<option value="{{ r }}">{{ r|label }}</option>{% endfor %}
                         </select>
                     </div>
                 </div>

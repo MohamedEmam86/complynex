@@ -30,8 +30,8 @@
       <td>{{ cx.scope_tag(e.scope) }}{% if e.scope == 'scope2' %} <span class="text-muted">{{ cx.term(e.basis, _('market') if e.basis == 'market' else _('location')) }}</span>{% endif %}{% if e.ghg_category_no %} <span class="text-muted">· {{ _('Cat.') }} {{ e.ghg_category_no }}</span>{% endif %}</td>
       <td>{{ e.activity }}</td><td>{{ e.site_name or '-' }}</td>
       <td class="text-end">{{ '{:,.2f}'.format(e.quantity|float) }} {{ e.unit }}{% if unit_bad %} <span class="badge bg-danger" title="{{ _('The unit differs from the factor unit') }}">{{ e.factor_unit }}?</span>{% endif %}</td>
-      <td class="text-end">{{ e.factor_kgco2e_used if e.factor_kgco2e_used is not none else '-' }} <span class="text-muted">{{ e.factor_source_used or '' }} {{ e.factor_vintage_used or '' }}</span></td>
-      <td class="text-end">{{ e.boundary_share if e.boundary_share is not none else '-' }}</td><td class="text-end">{{ cx.t(e.tco2e) }}</td>
+      <td class="text-end">{{ e.factor_kgco2e_used|num(max_decimals=6, default='-') }} <span class="text-muted">{{ e.factor_source_used or '' }} {{ e.factor_vintage_used or '' }}</span></td>
+      <td class="text-end">{{ e.boundary_share|num(max_decimals=4, default='-') }}</td><td class="text-end">{{ cx.t(e.tco2e) }}</td>
       <td><a href="{{ url_for('carbon.activity_files', entry_id=e.id) }}">{% if e.evidence %}<i class="bi bi-paperclip"></i> {{ _('Yes') }}{% else %}<span class="text-danger">{{ _('Attach') }}</span>{% endif %}</a></td>
       <td>{% if cb_can_edit and not locked %}<form method="post" data-confirm="{{ _('Delete this entry?') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="entry_id" value="{{ e.id }}"><button class="btn btn-sm btn-link text-danger p-0">{{ _('Delete') }}</button></form>{% endif %}</td></tr>
     {% else %}<tr><td colspan="10">{{ cx.empty('bi-inbox', _('No activity data for this period.'), _('Head office — January — grid electricity — 18,400 kWh — bill attached')) }}</td></tr>{% endfor %}</tbody>

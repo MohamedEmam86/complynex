@@ -2,18 +2,15 @@
 {% if request.path != '/' and request.path != '/dashboard' and current_user.is_authenticated %}
 <div class="container-fluid pt-3 pb-1 border-bottom bg-light">
     <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-0 px-2 font-monospace small">
+        <ol class="breadcrumb mb-0 px-2 small">
             <li class="breadcrumb-item"><a href="/" class="text-decoration-none"><i class="bi bi-house-door-fill"></i> {{ _('Home') }}</a></li>
-            {% set path_parts = request.path.strip('/').split('/') %}
-            {% set ns = namespace(current_path='') %}
-            {% for part in path_parts %}
-                {% if part %}
-                    {% set ns.current_path = ns.current_path + '/' + part %}
-                    {% if loop.last %}
-                        <li class="breadcrumb-item active text-capitalize" aria-current="page">{{ part | replace('_', ' ') | replace('-', ' ') }}</li>
-                    {% else %}
-                        <li class="breadcrumb-item"><a href="{{ ns.current_path }}" class="text-decoration-none text-capitalize">{{ part | replace('_', ' ') | replace('-', ' ') }}</a></li>
-                    {% endif %}
+            {% for title, url in breadcrumb_trail() %}
+                {% if loop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+                {% elif url %}
+                    <li class="breadcrumb-item"><a href="{{ url }}" class="text-decoration-none">{{ title }}</a></li>
+                {% else %}
+                    <li class="breadcrumb-item">{{ title }}</li>
                 {% endif %}
             {% endfor %}
         </ol>

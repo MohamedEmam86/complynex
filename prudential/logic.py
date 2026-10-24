@@ -28,6 +28,18 @@ import unicodedata
 from datetime import date
 from decimal import Decimal
 
+
+def _t(msg, **kw):
+    """Translated issue text when a request is active (pages), plain English otherwise (tests, jobs)."""
+    try:
+        from flask import has_request_context
+        if has_request_context():
+            from flask_babel import gettext
+            return gettext(msg, **kw)
+    except Exception:
+        pass
+    return msg % kw if kw else msg
+
 CAPITAL_TYPES = ('authorised', 'issued', 'paid_up', 'registered')
 
 
@@ -54,19 +66,19 @@ def capital_issues(levels, minimum=None):
     out = []
     paid = (levels.get('paid_up') or {}).get('amount')
     if paid is None:
-        out.append(('no_paid_up', 'no paid-up capital recorded'))
+        out.append(('no_paid_up', _t('no paid-up capital recorded')))
         return out
     if minimum is not None and paid < _d(minimum):
-        out.append(('below_minimum', f'paid-up capital {paid:,.0f} below the minimum {_d(minimum):,.0f}'))
+        out.append(('below_minimum', _t('paid-up capital %(paid)s below the minimum %(minimum)s', paid=f'{paid:,.0f}', minimum=f'{_d(minimum):,.0f}')))
     reg = (levels.get('registered') or {}).get('amount')
     if reg is not None and reg < paid:
-        out.append(('not_registered', f'paid-up {paid:,.0f} not yet registered (registered {reg:,.0f})'))
+        out.append(('not_registered', _t('paid-up %(paid)s not yet registered (registered %(reg)s)', paid=f'{paid:,.0f}', reg=f'{reg:,.0f}')))
     issued = (levels.get('issued') or {}).get('amount')
     if issued is not None and paid > issued:
-        out.append(('paid_above_issued', 'paid-up capital exceeds issued capital'))
+        out.append(('paid_above_issued', _t('paid-up capital exceeds issued capital')))
     auth = (levels.get('authorised') or {}).get('amount')
     if auth is not None and issued is not None and issued > auth:
-        out.append(('issued_above_authorised', 'issued capital exceeds authorised capital'))
+        out.append(('issued_above_authorised', _t('issued capital exceeds authorised capital')))
     return out
 
 
@@ -193,20 +205,20 @@ def key_function_issues(ftype, holder, today=None):
     out = []
     if not holder or holder.get('vacated_on'):
         if ftype.get('is_required', True):
-            out.append(('vacant', 'function is vacant'))
+            out.append(('vacant', _t('function is vacant')))
         return out
     if holder.get('fit_proper_status') == 'failed':
-        out.append(('fit_proper_failed', 'fit & proper assessment failed'))
+        out.append(('fit_proper_failed', _t('fit & proper assessment failed')))
     elif holder.get('fit_proper_status') == 'pending':
-        out.append(('fit_proper_pending', 'fit & proper assessment not completed'))
+        out.append(('fit_proper_pending', _t('fit & proper assessment not completed')))
     if ftype.get('notify_regulator', True) and not holder.get('regulator_notified_on'):
-        out.append(('not_notified', 'filled but not notified to the regulator'))
+        out.append(('not_notified', _t('filled but not notified to the regulator')))
     if ftype.get('needs_no_objection'):
         st = holder.get('no_objection_status')
         if st == 'refused':
-            out.append(('no_objection_refused', 'regulator refused the appointment'))
+            out.append(('no_objection_refused', _t('regulator refused the appointment')))
         elif st != 'granted':
-            out.append(('no_objection_pending', 'regulator no-objection not granted'))
+            out.append(('no_objection_pending', _t('regulator no-objection not granted')))
     return out
 
 
@@ -220,11 +232,11 @@ def branch_issues(b, today=None, max_vacancy_days=None):
         since = b.get('manager_vacant_since')
         days = (today - since).days if since else None
         if max_vacancy_days is not None and days is not None and days <= int(max_vacancy_days):
-            out.append(('vacancy_within_limit', f'manager post vacant for {days} day(s)'))
+            out.append(('vacancy_within_limit', _t('manager post vacant for %(days)s day(s)', days=days)))
         else:
-            out.append(('no_manager', f'no branch manager' + (f' for {days} day(s)' if days is not None else '')))
+            out.append(('no_manager', (_t('no branch manager for %(days)s day(s)', days=days) if days is not None else _t('no branch manager'))))
     elif b.get('manager_no_objection') not in ('granted', 'not_required'):
-        out.append(('no_objection_missing', 'branch manager without regulator no-objection'))
+        out.append(('no_objection_missing', _t('branch manager without regulator no-objection')))
     return out
 
 
@@ -290,9 +302,9 @@ def facility_status_issues(f):
     if f.get('status') == 'closed':
         return out
     if (f.get('status') == 'default' or f.get('covenant_breach')) and not f.get('board_escalated_on'):
-        out.append('default / covenant breach not escalated to the board')
+        out.append(_t('default / covenant breach not escalated to the board'))
     if f.get('status') == 'rescheduled' and not (f.get('rescheduling_approval_ref') or '').strip():
-        out.append('rescheduled without an approval reference')
+        out.append(_t('rescheduled without an approval reference'))
     return out
 
 
@@ -303,13 +315,13 @@ def facility_status_issues(f):
 def rp_item_issues(item, party, has_documents):
     out = []
     if item['item_type'] == 'capital_contribution' and not has_documents:
-        out.append('capital contribution without supporting document')
+        out.append(_t('capital contribution without supporting document'))
     payer = (item.get('payer_name') or '').strip()
     if payer and not same_party(payer, party['name']) and not (item.get('explanation') or '').strip():
-        out.append(f'paid by "{payer}", not by the related party')
+        out.append(_t('paid by "%(payer)s", not by the related party', payer=payer))
     if party.get('relation') == 'exiting_shareholder' and item['item_type'] in ('dues', 'current_account') \
             and item.get('classification') != 'liability':
-        out.append('dues to an exiting shareholder not classified as a liability')
+        out.append(_t('dues to an exiting shareholder not classified as a liability'))
     return out
 
 

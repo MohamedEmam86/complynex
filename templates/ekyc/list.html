@@ -98,7 +98,7 @@
                                 {% else %}-{% endif %}
                             </span>
                         </td>
-                        <td>{{ s.created_at }}</td>
+                        <td>{{ s.created_at|fmt_dt }}</td>
                         <td>{{ s.created_by_name or '-' }}</td>
                     </tr>
                     {% else %}

@@ -12,7 +12,7 @@
             {% else %}<tr><td colspan="4" class="text-danger">{{ _('No site registered.') }}</td></tr>{% endfor %}</tbody></table></div>
         {% if cy_can_edit %}<form method="post" class="card"><div class="card-header"><strong>{{ _('Add a site') }}</strong></div><div class="card-body row g-1 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="site">
             <div class="col-8"><input name="name" class="form-control form-control-sm" placeholder="{{ _('Name') }}" required></div>
-            <div class="col-4"><select name="site_type" class="form-select form-select-sm">{% for v, l in [('dr', _('DR site')), ('backup', _('Backup site')), ('cloud', _('Cloud')), ('primary', _('Primary'))] %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+            <div class="col-4"><select name="site_type" class="form-select form-select-sm">{% for v, l in [('dr', _('DR site')), ('backup', _('Backup site')), ('cloud', _('Cloud')), ('primary', _('Primary'))] %}<option value="{{ v }}">{{ l|label }}</option>{% endfor %}</select></div>
             <div class="col-6"><input name="location" class="form-control form-control-sm" placeholder="{{ _('Location') }}"></div>
             <div class="col-6"><input name="provider" class="form-control form-control-sm" placeholder="{{ _('Provider') }}"></div>
             <div class="col-6"><input name="rto_hours" class="form-control form-control-sm" placeholder="{{ _('RTO (hours)') }}"></div>

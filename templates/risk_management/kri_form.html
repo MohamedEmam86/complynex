@@ -32,7 +32,7 @@
                     <div class="col-md-3">
                         <label class="form-label">{{ _('Frequency') }}</label>
                         <select name="measurement_frequency" class="form-select">
-                            {% for f in ['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY'] %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
+                            {% for f in ['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY'] %}<option value="{{ f }}">{{ f|label }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="col-md-3">

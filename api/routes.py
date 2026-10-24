@@ -464,7 +464,7 @@ OPENAPI_SPEC = {
         "version": "1.0.0",
         "description": (
             "Versioned REST API for AML screening, KYC verification, and "
-            "transaction monitoring. Regulated by the Central Bank of Egypt."
+            "transaction monitoring."
         ),
         "contact": {"email": "compliance@complynex.online"},
     },

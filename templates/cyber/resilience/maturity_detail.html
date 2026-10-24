@@ -12,8 +12,8 @@
     <form method="post" class="card"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="table-responsive"><table class="table table-sm mb-0 small align-middle"><thead><tr><th>{{ _('Requirement') }}</th><th style="width: 110px">{{ _('Current (0-5)') }}</th><th style="width: 110px">{{ _('Target (0-5)') }}</th><th>{{ _('Evidence / note') }}</th></tr></thead><tbody>
         {% for s in scores %}<tr class="{{ 'table-warning' if s.current_level is not none and s.target_level is not none and s.current_level < s.target_level }}"><td><strong>{{ s.ref_code }}</strong> {{ rc_loc(s.title_en, s.title_ar) }}</td>
-            <td><select name="c_{{ s.requirement_id }}" class="form-select form-select-sm" {{ 'disabled' if locked }}><option value="">-</option>{% for n in range(6) %}<option {{ 'selected' if s.current_level == n }}>{{ n }}</option>{% endfor %}</select></td>
-            <td><select name="t_{{ s.requirement_id }}" class="form-select form-select-sm" {{ 'disabled' if locked }}><option value="">-</option>{% for n in range(6) %}<option {{ 'selected' if s.target_level == n }}>{{ n }}</option>{% endfor %}</select></td>
+            <td><select name="c_{{ s.requirement_id }}" class="form-select form-select-sm" {{ 'disabled' if locked }}><option value="">-</option>{% for n in range(6) %}<option {{ 'selected' if s.current_level == n }}>{{ n|label }}</option>{% endfor %}</select></td>
+            <td><select name="t_{{ s.requirement_id }}" class="form-select form-select-sm" {{ 'disabled' if locked }}><option value="">-</option>{% for n in range(6) %}<option {{ 'selected' if s.target_level == n }}>{{ n|label }}</option>{% endfor %}</select></td>
             <td><input name="n_{{ s.requirement_id }}" class="form-control form-control-sm" value="{{ s.note or '' }}" {{ 'disabled' if locked }}></td></tr>{% endfor %}</tbody></table></div>
         {% if not locked %}<div class="card-footer d-flex gap-2"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button><button class="btn btn-sm btn-success" name="finalise" value="1">{{ _('Save and finalise') }}</button></div>{% endif %}
     </form>

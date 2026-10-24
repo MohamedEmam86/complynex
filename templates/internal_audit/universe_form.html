@@ -18,7 +18,7 @@
                 <div class="col-md-4">
                     <label class="form-label">{{ _('Risk Level') }}</label>
                     <select name="risk_level" class="form-select">
-                        {% for l in ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+                        {% for l in ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] %}<option value="{{ l }}">{{ l|label }}</option>{% endfor %}
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -31,7 +31,7 @@
                 <div class="col-md-4">
                     <label class="form-label">{{ _('Audit Frequency') }}</label>
                     <select name="audit_frequency" class="form-select">
-                        {% for f in ['QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL', 'BIENNIAL'] %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
+                        {% for f in ['QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL', 'BIENNIAL'] %}<option value="{{ f }}">{{ f|label }}</option>{% endfor %}
                     </select>
                 </div>
             </div>

@@ -115,6 +115,10 @@ LABELS = {
     # ── misc ──
     'yes': _l('Yes'), 'no': _l('No'), 'true': _l('Yes'), 'false': _l('No'),
     'manual': _l('Manual'), 'automatic': _l('Automatic'), 'auto': _l('Automatic'),
+    'ghe': _l('GHE'), 'coi': _l('COI'), 'cobec': _l('COBEC'),
+    'it_dependent': _l('IT-dependent'), 'automated': _l('Automated'), 'preventive': _l('Preventive'),
+    'detective': _l('Detective'), 'corrective': _l('Corrective'), 'directive': _l('Directive'),
+    'granted': _l('Granted'), 'refused': _l('Refused'), 'shareholder': _l('Shareholder'),
     'default': _l('Default'), 'action_plan': _l('Action Plan'), 'other': _l('Other'),
     'internal': _l('Internal'), 'external': _l('External'), 'regulatory': _l('Regulatory'),
     'operational': _l('Operational'), 'strategic': _l('Strategic'), 'financial': _l('Financial'),
@@ -197,7 +201,7 @@ def label(value, default='—'):
         return str(MODULE_LABELS[k[5:]])
     if k in MODULE_LABELS:
         return str(MODULE_LABELS[k])
-    if _CODE_RE.match(s) and (('_' in s) or s.isupper() or s.islower()) and not s.isdigit():
+    if _CODE_RE.match(s) and (('_' in s) or s.isupper() or s.islower()) and not any(ch.isdigit() for ch in s):
         if len(s) <= 4 and s.isupper():   # acronyms (PEP, ESG, KYC) stay as they are
             return s
         return _translated(humanise(s))
@@ -222,9 +226,10 @@ def _to_number(value):
         return None
 
 
-def num(value, decimals=None, default='—'):
-    """Thousands separators; whole numbers without decimals, others with up to
-    `decimals` (default 2) places, trailing zeros trimmed."""
+def num(value, decimals=None, default='—', max_decimals=2):
+    """Thousands separators. With `decimals`, exactly that many places;
+    otherwise whole numbers without decimals and others with up to
+    `max_decimals` places (default 2), trailing zeros trimmed."""
     n = _to_number(value)
     if n is None:
         return value if value not in (None, '') else default
@@ -232,7 +237,7 @@ def num(value, decimals=None, default='—'):
         d = Decimal(str(n))
         if d == d.to_integral_value():
             return f'{int(d):,}'
-        out = f'{float(d):,.2f}'
+        out = f'{float(d):,.{int(max_decimals)}f}'
         return out.rstrip('0').rstrip('.') if '.' in out else out
     return f'{float(n):,.{int(decimals)}f}'
 
@@ -313,3 +318,7 @@ def fmt_date(value, default='—'):
 def register_filters(app):
     app.jinja_env.filters.update(label=label, num=num, money=money, pct=pct,
                                  fmt_dt=fmt_dt, fmt_date=fmt_date, module_label=module_label)
+    from utils.breadcrumbs import breadcrumb_trail
+    app.jinja_env.globals.update(breadcrumb_trail=breadcrumb_trail)
+    from utils.regulator import register as _register_regulator
+    _register_regulator(app)   # regulator_name / regulator_short for regulator-neutral wording

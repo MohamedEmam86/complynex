@@ -12,7 +12,7 @@
     <div class="mb-3 d-flex gap-2 flex-wrap">
         <a href="{{ url_for('internal_audit.projects') }}" class="btn btn-sm {{ 'btn-dark' if not current_status else 'btn-outline-secondary' }}">{{ _('All') }}</a>
         {% for s in ['PLANNED', 'FIELDWORK', 'REPORTING', 'MANAGEMENT_RESPONSE', 'FOLLOW_UP', 'CLOSED'] %}
-        <a href="{{ url_for('internal_audit.projects', status=s) }}" class="btn btn-sm {{ 'btn-dark' if current_status == s else 'btn-outline-secondary' }}">{{ s.replace('_', ' ') | title }}</a>
+        <a href="{{ url_for('internal_audit.projects', status=s) }}" class="btn btn-sm {{ 'btn-dark' if current_status == s else 'btn-outline-secondary' }}">{{ s|label }}</a>
         {% endfor %}
     </div>
 

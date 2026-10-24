@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% import 'cyber/resilience/_nav.html' as cn with context %}
 
-{% block title %}Cybersecurity Response Dashboard{% endblock %}
+{% block title %}{{ _('Cybersecurity Response Dashboard') }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -41,7 +41,7 @@
         <div class="col-md-4">
             <div class="card bg-dark text-white shadow-sm h-100">
                 <div class="card-body">
-                    <h6 class="card-title text-uppercase mb-2" style="font-size: 0.7rem;">{{ _('CBE Notifications Due') }}</h6>
+                    <h6 class="card-title text-uppercase mb-2" style="font-size: 0.7rem;">{{ _('Regulator Notifications Due') }}</h6>
                     <h2 class="mb-0">{{ high_critical }}</h2>
                 </div>
             </div>
@@ -69,7 +69,7 @@
                             <th>{{ _('Incident Type') }}</th>
                             <th>{{ _('Severity') }}</th>
                             <th>{{ _('Discovery') }}</th>
-                            <th>{{ _('CBE Notif') }}</th>
+                            <th>{{ _('Regulator notification') }}</th>
                             <th>{{ _('Status') }}</th>
                             <th>{{ _('Actions') }}</th>
                         </tr>

@@ -32550,6 +32550,766 @@ msgstr "ضمن نطاق قابلية المخاطر"
 msgid "Written Off"
 msgstr "مُعدم"
 
+msgid "deadline not found"
+msgstr "الموعد غير موجود"
+
+msgid "invalid status"
+msgstr "حالة غير صالحة"
+
+msgid "period not found"
+msgstr "الفترة غير موجودة"
+
+msgid "study not found"
+msgstr "الدراسة غير موجودة"
+
+msgid "Configuration, access control and oversight."
+msgstr "الإعدادات والتحكم في الوصول والرقابة."
+
+msgid "Active users"
+msgstr "المستخدمون النشطون"
+
+msgid "With MFA"
+msgstr "مع المصادقة متعددة العوامل"
+
+msgid "Org units"
+msgstr "الوحدات التنظيمية"
+
+msgid "Document types"
+msgstr "أنواع المستندات"
+
+msgid "active user(s) have no second factor."
+msgstr "مستخدم نشط بدون عامل تحقق ثانٍ."
+
+msgid "Privileged roles should be enrolled before go-live."
+msgstr "يجب تسجيل أصحاب الصلاحيات المميزة قبل بدء التشغيل الفعلي."
+
+msgid "Each type carries its own approval chain, applied automatically when a document of that type is created."
+msgstr "لكل نوع سلسلة اعتماد خاصة به تُطبق تلقائيًا عند إنشاء مستند من هذا النوع."
+
+msgid "New Type"
+msgstr "نوع جديد"
+
+msgid "Review (months)"
+msgstr "المراجعة (بالأشهر)"
+
+msgid "Approval"
+msgstr "الاعتماد"
+
+msgid "Enable/disable"
+msgstr "تفعيل/تعطيل"
+
+msgid "Delete this document type permanently?"
+msgstr "حذف نوع المستند هذا نهائيًا؟"
+
+msgid "New Document Type"
+msgstr "نوع مستند جديد"
+
+msgid "Numbering prefix"
+msgstr "بادئة الترقيم"
+
+msgid "Icon"
+msgstr "الأيقونة"
+
+msgid "Review every (months)"
+msgstr "المراجعة كل (أشهر)"
+
+msgid "Sort order"
+msgstr "ترتيب العرض"
+
+msgid "Documents of this type must go through an approval workflow"
+msgstr "يجب أن تمر مستندات هذا النوع بمسار اعتماد"
+
+msgid "Edit Document Type"
+msgstr "تعديل نوع المستند"
+
+msgid "Applied automatically when a document of this type is created."
+msgstr "يُطبق تلقائيًا عند إنشاء مستند من هذا النوع."
+
+msgid "Back to Types"
+msgstr "العودة إلى الأنواع"
+
+msgid "The chain is snapshotted onto each document when it is created. Editing it here changes future documents only — documents already in approval keep the chain they started with, so their history stays accurate."
+msgstr "تُحفظ نسخة من السلسلة في كل مستند عند إنشائه. التعديل هنا يغيّر المستندات المستقبلية فقط، أما المستندات قيد الاعتماد فتحتفظ بالسلسلة التي بدأت بها حتى يبقى سجلها دقيقًا."
+
+msgid "Stages"
+msgstr "المراحل"
+
+msgid "Author submits, then:"
+msgstr "يقدّم المُعدّ، ثم:"
+
+msgid "SLA"
+msgstr "مدة الخدمة المتفق عليها"
+
+msgid "Head of the document's own unit"
+msgstr "رئيس الوحدة المالكة للمستند"
+
+msgid "resolved when the document is created"
+msgstr "يُحدد عند إنشاء المستند"
+
+msgid "Head of the parent unit"
+msgstr "رئيس الوحدة الأعلى"
+
+msgid "Named user"
+msgstr "مستخدم محدد"
+
+msgid "Remove this stage? Disabling is usually safer — a used stage appears in the history of every document that passed through it."
+msgstr "حذف هذه المرحلة؟ التعطيل أكثر أمانًا عادة، فالمرحلة المستخدمة تظهر في سجل كل مستند مرّ بها."
+
+msgid "No stages yet — documents of this type will be approved on creation."
+msgstr "لا توجد مراحل بعد، وستُعتمد مستندات هذا النوع عند إنشائها."
+
+msgid "Add a stage"
+msgstr "إضافة مرحلة"
+
+msgid "Stage name"
+msgstr "اسم المرحلة"
+
+msgid "e.g. Compliance Manager"
+msgstr "مثال: مدير الامتثال"
+
+msgid "Who approves"
+msgstr "جهة الاعتماد"
+
+msgid "Anyone with a role"
+msgstr "أي شخص له دور محدد"
+
+msgid "A named person"
+msgstr "شخص محدد"
+
+msgid "Unit-head modes let one workflow serve every company without editing."
+msgstr "تتيح أوضاع رئيس الوحدة استخدام مسار واحد لكل الشركات دون تعديل."
+
+msgid "Person"
+msgstr "الشخص"
+
+msgid "SLA (days)"
+msgstr "المدة المتفق عليها (أيام)"
+
+msgid "Mandatory stage"
+msgstr "مرحلة إلزامية"
+
+msgid "Add stage"
+msgstr "إضافة مرحلة"
+
+msgid "Cancel edit"
+msgstr "إلغاء التعديل"
+
+msgid "Edit stage"
+msgstr "تعديل المرحلة"
+
+msgid "Save changes"
+msgstr "حفظ التغييرات"
+
+msgid "Document Visibility"
+msgstr "صلاحية رؤية المستندات"
+
+msgid "This is separate from module permissions."
+msgstr "هذا منفصل عن صلاحيات الوحدات."
+
+msgid "Module permissions decide whether this user can open Policies at all. These rules decide which documents they see inside it. Both have to allow it."
+msgstr "تحدد صلاحيات الوحدات ما إذا كان المستخدم يستطيع فتح السياسات أصلًا، وتحدد هذه القواعد المستندات التي يراها داخلها. ويجب أن يسمح الاثنان معًا."
+
+msgid "Effective access"
+msgstr "الوصول الفعلي"
+
+msgid "Entire organisation"
+msgstr "المؤسسة بالكامل"
+
+msgid "This user sees every unit. For an administrator that is expected; for anyone else, consider narrowing it."
+msgstr "يرى هذا المستخدم جميع الوحدات. هذا متوقع لمدير النظام، أما لغيره فيُستحسن تضييق النطاق."
+
+msgid "No units"
+msgstr "لا توجد وحدات"
+
+msgid "With no rules the default is deny — this user sees no scoped records at all."
+msgstr "عند عدم وجود قواعد يكون الافتراضي هو المنع، فلا يرى هذا المستخدم أي سجلات مقيدة بنطاق."
+
+msgid "units visible"
+msgstr "وحدة مرئية"
+
+msgid "Add a rule"
+msgstr "إضافة قاعدة"
+
+msgid "Rule type"
+msgstr "نوع القاعدة"
+
+msgid "A unit and everything below it"
+msgstr "وحدة وكل ما يتبعها"
+
+msgid "One unit only"
+msgstr "وحدة واحدة فقط"
+
+msgid "Every unit with a given code (e.g. all Compliance departments)"
+msgstr "كل وحدة تحمل رمزًا محددًا (مثل جميع إدارات الامتثال)"
+
+msgid "Every unit of a given type"
+msgstr "كل وحدة من نوع محدد"
+
+msgid "Unit code"
+msgstr "رمز الوحدة"
+
+msgid "Unit type"
+msgstr "نوع الوحدة"
+
+msgid "Limited to (optional)"
+msgstr "مقصور على (اختياري)"
+
+msgid "— anywhere in the tree —"
+msgstr "— أي موضع في الهيكل —"
+
+msgid "Exclusion — remove this from what they can see"
+msgstr "استثناء — استبعاد هذا مما يمكنه رؤيته"
+
+msgid "Add rule"
+msgstr "إضافة قاعدة"
+
+msgid "Current rules"
+msgstr "القواعد الحالية"
+
+msgid "Except"
+msgstr "باستثناء"
+
+msgid "Remove this rule?"
+msgstr "حذف هذه القاعدة؟"
+
+msgid "No rules — this user sees no scoped records."
+msgstr "لا توجد قواعد، فلا يرى هذا المستخدم أي سجلات مقيدة بنطاق."
+
+msgid "Organisational Hierarchy"
+msgstr "الهيكل التنظيمي"
+
+msgid "Group, companies, business units and departments. Document applicability and user visibility are both driven from this tree."
+msgstr "المجموعة والشركات ووحدات الأعمال والإدارات. يعتمد نطاق تطبيق المستندات وصلاحية رؤية المستخدمين على هذا الهيكل."
+
+msgid "New Unit"
+msgstr "وحدة جديدة"
+
+msgid "Legal entity"
+msgstr "كيان قانوني"
+
+msgid "Deactivate this unit? Its history is kept."
+msgstr "تعطيل هذه الوحدة؟ سيُحتفظ بسجلها."
+
+msgid "Reactivate this unit?"
+msgstr "إعادة تفعيل هذه الوحدة؟"
+
+msgid "— none (root) —"
+msgstr "— لا شيء (المستوى الأعلى) —"
+
+msgid "Separate legal entity"
+msgstr "كيان قانوني مستقل"
+
+msgid "Edit Unit"
+msgstr "تعديل الوحدة"
+
+msgid "Require, lift or reset a second factor for any user. Resetting clears the enrolment entirely so the person starts again — use it when a phone is lost or an account is suspect."
+msgstr "اشتراط عامل التحقق الثاني أو رفعه أو إعادة ضبطه لأي مستخدم. إعادة الضبط تمسح التسجيل بالكامل ليبدأ الشخص من جديد، وتُستخدم عند فقدان الهاتف أو الاشتباه في الحساب."
+
+msgid "MFA enabled"
+msgstr "المصادقة متعددة العوامل مفعلة"
+
+msgid "Not enrolled"
+msgstr "غير مسجل"
+
+msgid "Explicitly required"
+msgstr "مطلوب صراحة"
+
+msgid "since"
+msgstr "منذ"
+
+msgid "reset"
+msgstr "إعادة ضبط"
+
+msgid "Role default"
+msgstr "افتراضي الدور"
+
+msgid "required"
+msgstr "مطلوب"
+
+msgid "MFA activity"
+msgstr "نشاط المصادقة متعددة العوامل"
+
+msgid "by"
+msgstr "بواسطة"
+
+msgid "No MFA actions recorded yet."
+msgstr "لم تُسجل أي إجراءات للمصادقة متعددة العوامل بعد."
+
+msgid "Manage MFA"
+msgstr "إدارة المصادقة متعددة العوامل"
+
+msgid "e.g. Phone lost — user requested a reset by phone on 3 Aug."
+msgstr "مثال: فقد الهاتف — طلب المستخدم إعادة الضبط هاتفيًا في 3 أغسطس."
+
+msgid "Required when turning off an active second factor. Recorded against your name."
+msgstr "مطلوب عند إيقاف عامل تحقق ثانٍ مفعل، ويُسجل باسمك."
+
+msgid "Reset this user's MFA? Their current authenticator and backup codes stop working immediately."
+msgstr "إعادة ضبط المصادقة متعددة العوامل لهذا المستخدم؟ سيتوقف تطبيق المصادقة الحالي والرموز الاحتياطية فورًا."
+
+msgid "Reset enrolment"
+msgstr "إعادة ضبط التسجيل"
+
+msgid "Lost phone, or suspected compromise"
+msgstr "فقدان الهاتف أو الاشتباه في الاختراق"
+
+msgid "Require MFA for this user"
+msgstr "اشتراط المصادقة متعددة العوامل لهذا المستخدم"
+
+msgid "Do not require MFA"
+msgstr "عدم اشتراط المصادقة متعددة العوامل"
+
+msgid "Follow the default rule for their role"
+msgstr "اتباع القاعدة الافتراضية لدوره"
+
+msgid "Turn off this user's active second factor?"
+msgstr "إيقاف عامل التحقق الثاني المفعل لهذا المستخدم؟"
+
+msgid "Turn off their active MFA"
+msgstr "إيقاف المصادقة متعددة العوامل المفعلة"
+
+msgid "Expires On"
+msgstr "تاريخ الانتهاء"
+
+msgid "Leave blank for a key that never expires."
+msgstr "اتركه فارغًا لمفتاح لا تنتهي صلاحيته."
+
+msgid "Read-only overview of what each role and each user can do in every module. Permissions are granted per user; change them from the user profile."
+msgstr "عرض للاطلاع فقط لما يستطيع كل دور وكل مستخدم القيام به في كل وحدة. تُمنح الصلاحيات لكل مستخدم على حدة، ويمكن تغييرها من ملف المستخدم."
+
+msgid "Include inactive users"
+msgstr "تضمين المستخدمين غير النشطين"
+
+msgid "By role"
+msgstr "حسب الدور"
+
+msgid "By user"
+msgstr "حسب المستخدم"
+
+#, python-format
+msgid "%(n)s users"
+msgstr "%(n)s مستخدم"
+
+msgid "Each cell shows how many users of the role can approve, edit or only view the module."
+msgstr "تبين كل خانة عدد مستخدمي الدور الذين يمكنهم الاعتماد أو التعديل أو الاطلاع فقط على الوحدة."
+
+msgid "Edit user"
+msgstr "تعديل المستخدم"
+
+msgid "Approve: administrators, the module's administrator level, or edit rights held by a compliance officer or manager."
+msgstr "الاعتماد: مديرو النظام، أو مستوى إدارة الوحدة، أو صلاحية التعديل لدى مسؤول الامتثال أو مدير الامتثال."
+
+msgid "Create and change records."
+msgstr "إنشاء السجلات وتعديلها."
+
+msgid "Read only."
+msgstr "اطلاع فقط."
+
+msgid "Training Requirements"
+msgstr "متطلبات التدريب"
+
+msgid "Organisational Authority"
+msgstr "الصلاحية التنظيمية"
+
+msgid "Module permissions decide which screens this user can open. This decides which parts of the organisation they see inside them. Both must allow it."
+msgstr "تحدد صلاحيات الوحدات الشاشات التي يستطيع المستخدم فتحها، ويحدد هذا الإعداد أجزاء المؤسسة التي يراها داخلها. ويجب أن يسمح الاثنان معًا."
+
+msgid "Authority Level"
+msgstr "مستوى الصلاحية"
+
+msgid "Which unit"
+msgstr "أي وحدة"
+
+msgid "— select —"
+msgstr "— اختر —"
+
+msgid "Posted to (their own unit)"
+msgstr "معيّن في (وحدته)"
+
+msgid "— none —"
+msgstr "— لا شيء —"
+
+msgid "Resolves “head of unit” approval stages."
+msgstr "يُستخدم لتحديد مراحل اعتماد «رئيس الوحدة»."
+
+msgid "Exactly what this user can and cannot see"
+msgstr "ما يستطيع هذا المستخدم رؤيته وما لا يستطيع بالتحديد"
+
+msgid "Move units between the boxes, then save. Left is what they see; everything on the right is hidden from them."
+msgstr "انقل الوحدات بين القائمتين ثم احفظ. ما في اليسار يراه المستخدم، وكل ما في اليمين مخفي عنه."
+
+msgid "CAN SEE"
+msgstr "يمكنه الرؤية"
+
+msgid "Hide selected"
+msgstr "إخفاء المحدد"
+
+msgid "Hide everything"
+msgstr "إخفاء الكل"
+
+msgid "Show selected"
+msgstr "إظهار المحدد"
+
+msgid "Show everything"
+msgstr "إظهار الكل"
+
+msgid "CANNOT SEE"
+msgstr "لا يمكنه الرؤية"
+
+msgid "Double-click a unit to move it. Ctrl/Cmd-click for several. Choosing a level above refills both boxes; adjusting them by hand saves exactly what you see."
+msgstr "انقر نقرًا مزدوجًا على الوحدة لنقلها، واستخدم Ctrl/Cmd مع النقر لتحديد أكثر من وحدة. اختيار مستوى أعلاه يعيد ملء القائمتين، والتعديل اليدوي يحفظ ما تراه بالضبط."
+
+msgid "Edit User"
+msgstr "تعديل المستخدم"
+
+msgid "enrolled"
+msgstr "مسجل"
+
+msgid "Requirement follows their role."
+msgstr "الاشتراط يتبع دوره."
+
+msgid "MFA is required for this user."
+msgstr "المصادقة متعددة العوامل مطلوبة لهذا المستخدم."
+
+msgid "MFA is not required for this user."
+msgstr "المصادقة متعددة العوامل غير مطلوبة لهذا المستخدم."
+
+msgid "Name, email or job title"
+msgstr "الاسم أو البريد الإلكتروني أو المسمى الوظيفي"
+
+msgid "MFA"
+msgstr "المصادقة متعددة العوامل"
+
+msgid "Not enabled"
+msgstr "غير مفعلة"
+
+msgid "Last login"
+msgstr "آخر تسجيل دخول"
+
+msgid "Any time"
+msgstr "أي وقت"
+
+msgid "Last 7 days"
+msgstr "آخر 7 أيام"
+
+msgid "Last 90 days"
+msgstr "آخر 90 يومًا"
+
+msgid "Not in 90 days (or never)"
+msgstr "لم يسجل الدخول منذ 90 يومًا (أو أبدًا)"
+
+msgid "Never logged in"
+msgstr "لم يسجل الدخول أبدًا"
+
+#, python-format
+msgid "Showing %(n)s of %(total)s users"
+msgstr "عرض %(n)s من أصل %(total)s مستخدم"
+
+msgid "Document visibility"
+msgstr "صلاحية رؤية المستندات"
+
+msgid "No users match these filters."
+msgstr "لا يوجد مستخدمون مطابقون لهذه المرشحات."
+
+msgid "Cybersecurity Response Dashboard"
+msgstr "لوحة الاستجابة للأمن السيبراني"
+
+msgid "Regulator Notifications Due"
+msgstr "الإخطارات المستحقة للجهة الرقابية"
+
+msgid "Regulator notification"
+msgstr "إخطار الجهة الرقابية"
+
+msgid "Report Cyber Incident"
+msgstr "الإبلاغ عن حادث سيبراني"
+
+#, python-format
+msgid "High and critical incidents are escalated immediately and must be notified to %(reg)s within the deadline its rules set."
+msgstr "تُصعَّد الحوادث المرتفعة والحرجة فورًا، ويجب إخطار %(reg)s بها خلال المهلة التي تحددها قواعدها."
+
+#, python-format
+msgid "Expectations of %(reg)s and the AML/CFT Law 80/2002"
+msgstr "متطلبات %(reg)s وقانون مكافحة غسل الأموال وتمويل الإرهاب رقم 80 لسنة 2002"
+
+msgid "Regulator Reporting"
+msgstr "التقارير الرقابية"
+
+msgid "ComplyNex Employee Portal"
+msgstr "بوابة الموظفين في ComplyNex"
+
+msgid "Gifts, Hospitality & Entertainment declaration for regulatory compliance."
+msgstr "إقرار الهدايا والضيافة والترفيه للالتزام الرقابي."
+
+msgid "Mandatory for anti-bribery and regulatory compliance."
+msgstr "إلزامي لمكافحة الرشوة والالتزام الرقابي."
+
+msgid "mandatory course(s) pending for regulatory compliance."
+msgstr "دورة إلزامية معلقة للالتزام الرقابي."
+
+#, python-format
+msgid "All employees must complete the mandatory annual training required by the rules of %(reg)s."
+msgstr "يجب على جميع الموظفين إتمام التدريب السنوي الإلزامي الذي تفرضه قواعد %(reg)s."
+
+msgid "Reporting Calendar"
+msgstr "تقويم التقارير"
+
+msgid "Report Submission"
+msgstr "تقديم التقرير"
+
+msgid "e.g. FRA"
+msgstr "مثال: FRA"
+
+msgid "Extended Reports"
+msgstr "التقارير الموسعة"
+
+msgid "AML Assurance"
+msgstr "ضمان مكافحة غسل الأموال"
+
+msgid "KYC"
+msgstr "اعرف عميلك"
+
+msgid "SAR"
+msgstr "تقرير الاشتباه"
+
+msgid "FRA"
+msgstr "الهيئة العامة للرقابة المالية"
+
+msgid "FRA NBFI"
+msgstr "الهيئة العامة للرقابة المالية - المؤسسات المالية غير المصرفية"
+
+msgid "Business Continuity"
+msgstr "استمرارية الأعمال"
+
+msgid "IT Risks"
+msgstr "مخاطر تقنية المعلومات"
+
+msgid "TM Network"
+msgstr "شبكة مراقبة المعاملات"
+
+msgid "Data Subject Requests"
+msgstr "طلبات أصحاب البيانات"
+
+msgid "DPIAs"
+msgstr "تقييمات أثر حماية البيانات"
+
+msgid "Quality Assurance"
+msgstr "ضمان الجودة"
+
+msgid "Cyber Security"
+msgstr "الأمن السيبراني"
+
+msgid "Cyber Resilience"
+msgstr "المرونة السيبرانية"
+
+msgid "the regulator"
+msgstr "الجهة الرقابية"
+
+msgid "no paid-up capital recorded"
+msgstr "لم يُسجل رأس مال مدفوع"
+
+#, python-format
+msgid "paid-up capital %(paid)s below the minimum %(minimum)s"
+msgstr "رأس المال المدفوع %(paid)s أقل من الحد الأدنى %(minimum)s"
+
+#, python-format
+msgid "paid-up %(paid)s not yet registered (registered %(reg)s)"
+msgstr "المدفوع %(paid)s لم يُسجل بعد (المسجل %(reg)s)"
+
+msgid "paid-up capital exceeds issued capital"
+msgstr "رأس المال المدفوع يتجاوز رأس المال المصدر"
+
+msgid "issued capital exceeds authorised capital"
+msgstr "رأس المال المصدر يتجاوز رأس المال المرخص به"
+
+msgid "function is vacant"
+msgstr "الوظيفة شاغرة"
+
+msgid "fit & proper assessment failed"
+msgstr "لم يجتز تقييم الكفاءة والملاءمة"
+
+msgid "fit & proper assessment not completed"
+msgstr "تقييم الكفاءة والملاءمة لم يكتمل"
+
+msgid "filled but not notified to the regulator"
+msgstr "مشغولة دون إخطار الجهة الرقابية"
+
+msgid "regulator refused the appointment"
+msgstr "رفضت الجهة الرقابية التعيين"
+
+msgid "regulator no-objection not granted"
+msgstr "لم تصدر عدم ممانعة الجهة الرقابية"
+
+#, python-format
+msgid "manager post vacant for %(days)s day(s)"
+msgstr "منصب المدير شاغر منذ %(days)s يوم"
+
+#, python-format
+msgid "no branch manager for %(days)s day(s)"
+msgstr "لا يوجد مدير للفرع منذ %(days)s يوم"
+
+msgid "no branch manager"
+msgstr "لا يوجد مدير للفرع"
+
+msgid "branch manager without regulator no-objection"
+msgstr "مدير فرع دون عدم ممانعة الجهة الرقابية"
+
+msgid "default / covenant breach not escalated to the board"
+msgstr "التعثر أو الإخلال بالتعهدات لم يُصعَّد إلى مجلس الإدارة"
+
+msgid "rescheduled without an approval reference"
+msgstr "أعيدت جدولته دون مرجع اعتماد"
+
+msgid "capital contribution without supporting document"
+msgstr "مساهمة في رأس المال دون مستند مؤيد"
+
+#, python-format
+msgid "paid by \"%(payer)s\", not by the related party"
+msgstr "دُفع بواسطة \"%(payer)s\" وليس بواسطة الطرف ذي العلاقة"
+
+msgid "dues to an exiting shareholder not classified as a liability"
+msgstr "مستحقات مساهم متخارج غير مصنفة كالتزام"
+
+msgid "Leading"
+msgstr "رائد"
+
+msgid "Basic"
+msgstr "أساسي"
+
+msgid "Internal Review"
+msgstr "مراجعة داخلية"
+
+msgid "Sent to Verifier"
+msgstr "أُرسل إلى جهة التحقق"
+
+msgid "Driving License"
+msgstr "رخصة القيادة"
+
+msgid "Backup"
+msgstr "النسخ الاحتياطي"
+
+msgid "Accounts, roles and module permissions"
+msgstr "الحسابات والأدوار وصلاحيات الوحدات"
+
+msgid "Group, companies, business units, departments"
+msgstr "المجموعة والشركات ووحدات الأعمال والإدارات"
+
+msgid "Legacy department list"
+msgstr "قائمة الإدارات القديمة"
+
+msgid "Require, lift or reset second factors"
+msgstr "اشتراط عوامل التحقق الثانية أو رفعها أو إعادة ضبطها"
+
+msgid "Types and their approval workflows"
+msgstr "الأنواع ومسارات اعتمادها"
+
+msgid "General configuration"
+msgstr "الإعدادات العامة"
+
+msgid "Programmatic access for integrations"
+msgstr "وصول برمجي للتكاملات"
+
+msgid "Health of connected services"
+msgstr "حالة الخدمات المتصلة"
+
+msgid "Backup status"
+msgstr "حالة النسخ الاحتياطي"
+
+msgid "Items awaiting a decision"
+msgstr "بنود بانتظار قرار"
+
+msgid "Who did what, and when"
+msgstr "من فعل ماذا ومتى"
+
+msgid "Regulatory reporting calendar"
+msgstr "تقويم التقارير الرقابية"
+
+msgid "Export Permissions Matrix"
+msgstr "تصدير مصفوفة الصلاحيات"
+
+msgid "Follow up"
+msgstr "متابعة"
+
+msgid "Follow Up"
+msgstr "متابعة"
+
+msgid "Management Response Received"
+msgstr "تم استلام رد الإدارة"
+
+msgid "Remediated Pending Verification"
+msgstr "تمت المعالجة بانتظار التحقق"
+
+msgid "Remediation In Progress"
+msgstr "المعالجة قيد التنفيذ"
+
+msgid "Verified Closed"
+msgstr "مغلق بعد التحقق"
+
+msgid "Fieldwork"
+msgstr "العمل الميداني"
+
+msgid "GHE"
+msgstr "الهدايا والضيافة"
+
+msgid "COI"
+msgstr "تعارض المصالح"
+
+msgid "IT-dependent"
+msgstr "معتمد على تقنية المعلومات"
+
+msgid "Preventive"
+msgstr "وقائي"
+
+msgid "Detective"
+msgstr "كشفي"
+
+msgid "Corrective"
+msgstr "تصحيحي"
+
+msgid "Directive"
+msgstr "توجيهي"
+
+msgid "Group level"
+msgstr "مستوى المجموعة"
+
+msgid "Sees every company and every department in the group."
+msgstr "يرى كل شركة وكل إدارة في المجموعة."
+
+msgid "Company level"
+msgstr "مستوى الشركة"
+
+msgid "Sees one company and everything inside it. Other companies are invisible."
+msgstr "يرى شركة واحدة وكل ما بداخلها، ولا تظهر له الشركات الأخرى."
+
+msgid "Department level"
+msgstr "مستوى الإدارة"
+
+msgid "Sees one department only."
+msgstr "يرى إدارة واحدة فقط."
+
+msgid "Function across the group"
+msgstr "الوظيفة على مستوى المجموعة"
+
+msgid "Sees their own function in every company — e.g. all Compliance departments."
+msgstr "يرى وظيفته في كل شركة، مثل جميع إدارات الامتثال."
+
+msgid "Chosen unit by unit"
+msgstr "وحدات مختارة واحدة تلو الأخرى"
+
+msgid "Exactly the units listed under “Can see”. Nothing else."
+msgstr "الوحدات المدرجة تحت «يمكنه الرؤية» فقط، ولا شيء غيرها."
+
+msgid "Custom"
+msgstr "مخصص"
+
+msgid "Built by hand on the visibility screen. Saving the user will not overwrite it."
+msgstr "أُعد يدويًا في شاشة صلاحية الرؤية، وحفظ المستخدم لن يستبدله."
+
+msgid "Sees no scoped records at all."
+msgstr "لا يرى أي سجلات مقيدة بنطاق."
+
+msgid "Related party"
+msgstr "طرف ذو علاقة"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

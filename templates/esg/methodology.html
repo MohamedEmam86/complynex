@@ -16,7 +16,7 @@
         <h6><i class="bi bi-1-circle me-1"></i>{{ _('Indicator scoring (1-5 maturity scale)') }}</h6>
         <table class="ecx-table-clean">
           {% for v, label in maturity_labels.items() %}
-          <tr><td class="fw-semibold">{{ v }}</td><td>{{ label }}</td></tr>
+          <tr><td class="fw-semibold">{{ v }}</td><td>{{ _(label) }}</td></tr>
           {% endfor %}
         </table>
       </div>
@@ -40,7 +40,7 @@
           <li>{{ _('GRI Universal & Topic Standards') }}</li>
           <li>{{ _('IFRS S1 / S2 (Sustainability & Climate Disclosures)') }}</li>
           <li>{{ _('TCFD recommendations') }}</li>
-          <li>{{ _('CBE regulatory & AML/CFT expectations, Law 80/2002') }}</li>
+          <li>{{ _('Expectations of %(reg)s and the AML/CFT Law 80/2002', reg=regulator_name) }}</li>
           <li>{{ _('Egypt\'s National Financial Inclusion Strategy') }}</li>
         </ul>
       </div>

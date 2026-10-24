@@ -11,7 +11,7 @@
                     <div class="col-md-4">
                         <label class="form-label">{{ _('Source Module') }}</label>
                         <select name="source_module" class="form-select" required>
-                            {% for m in allowed_modules %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+                            {% for m in allowed_modules %}<option value="{{ m }}">{{ m|label }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">

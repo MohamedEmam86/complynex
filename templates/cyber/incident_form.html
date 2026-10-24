@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Report Cyber Incident{% endblock %}
+{% block title %}{{ _('Report Cyber Incident') }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -13,8 +13,7 @@
                 </div>
                 <div class="card-body">
                     <div class="alert alert-warning py-2 mb-4">
-                        <small><i class="bi bi-info-circle"></i> {{ _('High/Critical incidents trigger immediate escalation to
-                            the CBE SOC per Circular Dec 2023.') }}</small>
+                        <small><i class="bi bi-info-circle"></i> {{ _('High and critical incidents are escalated immediately and must be notified to %(reg)s within the deadline its rules set.', reg=regulator_short) }}</small>
                     </div>
 
                     <form method="POST">

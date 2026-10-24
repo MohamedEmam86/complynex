@@ -49,8 +49,8 @@
                     <p><strong>{{ _('Entered by the customer') }}:</strong>
                         {{ session.declared_name_ar or '-' }} — <span dir="ltr">{{ session.declared_national_id or '-' }}</span></p>
                     {% endif %}
-                    <p><strong>{{ _('Created') }}:</strong> {{ session.created_at }}</p>
-                    <p><strong>{{ _('Expires') }}:</strong> {{ session.expires_at }}</p>
+                    <p><strong>{{ _('Created') }}:</strong> {{ session.created_at|fmt_dt }}</p>
+                    <p><strong>{{ _('Expires') }}:</strong> {{ session.expires_at|fmt_dt }}</p>
                     {% if session.status in ('CREATED',) %}
                     <hr>
                     <label class="form-label">{{ _('Verification Link (share with customer)') }}</label>
@@ -128,7 +128,7 @@
                 {% if session.final_decision %}
                 <div class="card-footer small text-muted">
                     {{ _('Final Decision') }}: <strong>{{ session.final_decision }}</strong>
-                    {% if session.decided_at %} — {{ session.decided_at }}{% endif %}
+                    {% if session.decided_at %} — {{ session.decided_at|fmt_dt }}{% endif %}
                     {% if session.decision_notes %} — {{ session.decision_notes }}{% endif %}
                 </div>
                 {% endif %}
@@ -215,10 +215,10 @@
                         {% for doc in documents %}
                         <li class="mb-1">
                             {% if doc.purged_at %}
-                            <span class="text-muted">{{ doc.doc_role|label }} — {{ _('purged') }} ({{ doc.purged_at }})</span>
+                            <span class="text-muted">{{ doc.doc_role|label }} — {{ _('purged') }} ({{ doc.purged_at|fmt_dt }})</span>
                             {% else %}
                             <a href="{{ url_for('ekyc.view_document', doc_id=doc.id) }}" target="_blank">
-                                {{ doc.doc_role|label }} — {{ doc.captured_at }}
+                                {{ doc.doc_role|label }} — {{ doc.captured_at|fmt_dt }}
                             </a>
                             {% endif %}
                         </li>
@@ -236,7 +236,7 @@
                     <ul class="list-unstyled mb-0">
                         {% for entry in audit_trail %}
                         <li class="mb-2 pb-2 border-bottom">
-                            <small class="text-muted">{{ entry.created_at }}</small><br>
+                            <small class="text-muted">{{ entry.created_at|fmt_dt }}</small><br>
                             <strong>{{ entry.action }}</strong>
                             {% if entry.user_name %} &mdash; {{ entry.user_name }}{% endif %}
                             {% if entry.details %}<br><span class="text-muted">{{ entry.details }}</span>{% endif %}

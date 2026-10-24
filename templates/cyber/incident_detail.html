@@ -23,7 +23,7 @@
                         <dt class="col-sm-4">{{ _('Incident Type') }}</dt><dd class="col-sm-8">{{ inc.incident_type|label('—') }}</dd>
                         <dt class="col-sm-4">{{ _('Severity') }}</dt><dd class="col-sm-8">{{ inc.severity|label('—') }}</dd>
                         <dt class="col-sm-4">{{ _('Discovery') }}</dt><dd class="col-sm-8">{{ inc.discovery_date or '—' }}</dd>
-                        <dt class="col-sm-4">{{ _('CBE Notif') }}</dt>
+                        <dt class="col-sm-4">{{ _('Regulator notification') }}</dt>
                         <dd class="col-sm-8">{% if inc.cbe_notification_required %}<span class="badge bg-dark">{{ _('REQUIRED') }}</span>{% else %}{{ _('N/A') }}{% endif %}</dd>
                         {% if inc.containment_date %}<dt class="col-sm-4">{{ _('Contained on') }}</dt><dd class="col-sm-8">{{ inc.containment_date }}</dd>{% endif %}
                         {% if inc.closed_date %}<dt class="col-sm-4">{{ _('Closed on') }}</dt><dd class="col-sm-8">{{ inc.closed_date }}</dd>{% endif %}

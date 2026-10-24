@@ -98,8 +98,8 @@
     <tbody>
       <tr><th style="width:35%">{{ _('Report status') }}</th><td>{{ period.fra_status|label }}</td></tr>
       <tr><th>{{ _('Accredited verification body') }}</th><td>{{ period.verifier_name or _('— to be engaged (must be FRA-accredited) —') }}</td></tr>
-      <tr><th>{{ _('Certification date') }}</th><td>{{ period.certified_at or '—' }}</td></tr>
-      <tr><th>{{ _('Submitted to FRA') }}</th><td>{{ period.submitted_to_fra_at or '—' }}</td></tr>
+      <tr><th>{{ _('Certification date') }}</th><td>{{ period.certified_at|fmt_dt(default='—') }}</td></tr>
+      <tr><th>{{ _('Submitted to FRA') }}</th><td>{{ period.submitted_to_fra_at|fmt_dt(default='—') }}</td></tr>
     </tbody>
   </table>
 
