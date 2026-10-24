@@ -25,6 +25,61 @@ from werkzeug.security import generate_password_hash
 
 users_bp = Blueprint('users', __name__, url_prefix='/users')
 
+# Endpoints a user holding an administrator-issued password may still reach.
+_PW_CHANGE_ALLOWED = {'static', 'users.password_change_required', 'users.change_password',
+                      'auth.logout', 'auth.logout_everywhere', 'auth.login', 'auth.portal_login'}
+
+
+@users_bp.before_app_request
+def _force_password_change():
+    """A temporary (administrator-issued) password must be replaced before anything else."""
+    if not getattr(current_user, 'is_authenticated', False) or not getattr(current_user, 'must_change_password', False):
+        return None
+    ep = request.endpoint or ''
+    if ep in _PW_CHANGE_ALLOWED or ep.endswith('.static'):
+        return None
+    return redirect(url_for('users.password_change_required'))
+
+
+def _store_new_password(user_id, new_password):
+    from database.db import get_db
+    db = get_db()
+    db.execute('UPDATE users SET password_hash = %s, auth_version = COALESCE(auth_version, 0) + 1, '
+               'must_change_password = FALSE WHERE id = %s', (User.hash_password(new_password), user_id))
+    db.commit()
+    # keep THIS browser signed in under the new auth_version; all others are signed out
+    from flask_login import login_user
+    login_user(User.get_by_id(user_id), remember=bool(request.cookies.get('remember_token')))
+
+
+@users_bp.route('/password/change-required', methods=['GET', 'POST'])
+@login_required
+def password_change_required():
+    """First login with a temporary password: choose a personal one."""
+    if not getattr(current_user, 'must_change_password', False):
+        return redirect(url_for('dashboard'))
+    if request.method == 'POST':
+        new_password = request.form.get('new_password') or ''
+        if not current_user.check_password(request.form.get('current_password') or ''):
+            flash(gettext('Current password is incorrect.'), 'danger')
+        elif new_password != request.form.get('confirm_password'):
+            flash(gettext('New passwords do not match.'), 'danger')
+        elif current_user.check_password(new_password):
+            flash(_('Choose a password different from the temporary one.'), 'danger')
+        else:
+            ok, msg = User.validate_password_strength(new_password)
+            if not ok:
+                flash(_(msg), 'danger')
+            else:
+                uid = current_user.id
+                _store_new_password(uid, new_password)
+                from models.audit import AuditLog
+                AuditLog.log(uid, 'Password Changed', 'Auth', None, 'Temporary password replaced at first login',
+                             request.remote_addr)
+                flash(_('Password updated. Welcome.'), 'success')
+                return redirect(url_for('dashboard'))
+    return render_template('users/password_change_required.html')
+
 @users_bp.route('/')
 @login_required
 def list_users():
@@ -84,15 +139,7 @@ def change_password():
         flash(_(msg), 'danger')
         return redirect(url_for('users.profile'))
 
-    password_hash = User.hash_password(new_password)
-    from database.db import get_db
-    db = get_db()
-    db.execute('UPDATE users SET password_hash = %s, auth_version = COALESCE(auth_version, 0) + 1 WHERE id = %s',
-               (password_hash, current_user.id))
-    db.commit()
-    # keep THIS browser signed in under the new auth_version; all others are signed out
-    from flask_login import login_user
-    login_user(User.get_by_id(current_user.id), remember=bool(request.cookies.get('remember_token')))
+    _store_new_password(current_user.id, new_password)
 
     flash(_('Password updated successfully. Other devices have been signed out.'), 'success')
     return redirect(url_for('users.profile'))
@@ -225,7 +272,8 @@ def reset_password(user_id):
     from database.db import get_db
     db = get_db()
     db.execute('UPDATE users SET password_hash = %s, auth_version = COALESCE(auth_version, 0) + 1, '
-               'failed_login_count = 0, locked_until = NULL WHERE id = %s', (password_hash, user_id))
+               'failed_login_count = 0, locked_until = NULL, must_change_password = TRUE WHERE id = %s',
+               (password_hash, user_id))
     db.commit()
 
     flash(_('Password reset successfully.'), 'success')

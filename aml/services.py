@@ -18,62 +18,24 @@
 from datetime import datetime
 from database.db import get_db
 
-def calculate_customer_risk(customer_id):
-    """
-    Calculate customer risk score based on seeded risk factors.
-    Returns (risk_score, risk_classification)
-    """
+def calculate_customer_risk(customer_id, user_id=None):
+    """Re-rate one customer: the scoring model on the stored profile, then the
+    HIGH floor (PEP, screening link, high-risk country) and EDD — see aml/edd.py.
+    Returns (risk_score, risk_classification)."""
+    from utils.aml_risk import calculate_risk_score
+    from .edd import reassess
     db = get_db()
-    
-    # 1. Get base risk factors
-    cursor = db.execute("SELECT id, risk_weight, is_edd_trigger FROM cdd_risk_factors WHERE is_active = 1")
-    factors = cursor.fetchall()
-    
-    total_score = 0
-    requires_edd = False
-    
-    # 2. Check customer attributes
-    cursor = db.execute("SELECT is_pep, nationality FROM customers WHERE id = %s", (customer_id,))
-    customer = cursor.fetchone()
-    
-    if not customer:
+    row = db.execute("SELECT * FROM customers WHERE id = %s", (customer_id,)).fetchone()
+    if not row:
         return 0, 'LOW'
-        
-    is_pep, nationality = customer
-    
-    # Check if nationality is high risk
-    is_hrc = False
-    if nationality:
-        hrc_check = db.execute("SELECT id FROM high_risk_countries WHERE country_name = %s AND is_active = 1", (nationality,)).fetchone()
-        if hrc_check:
-            is_hrc = True
-
-    if is_pep:
-        total_score += 50
-        requires_edd = True
-    if is_hrc:
-        total_score += 30
-        requires_edd = True
-        
-    # Classification logic
-    classification = 'LOW'
-    if total_score >= 80 or requires_edd:
-        classification = 'HIGH'
-    elif total_score >= 40:
-        classification = 'MEDIUM'
-        
-    # Update customer record
-    db.execute("""
-        UPDATE customers 
-        SET risk_score = %s, 
-            risk_classification = %s, 
-            requires_edd = %s,
-            risk_classification_date = CURRENT_DATE
-        WHERE id = %s
-    """, (total_score, classification, 1 if requires_edd else 0, customer_id))
+    c = dict(row)
+    model = calculate_risk_score({'country': c.get('country') or '', 'customer_type': c.get('customer_type'),
+                                  'business_activity': c.get('business_activity'), 'occupation': c.get('occupation'),
+                                  'annual_income_range': c.get('annual_income_range')})
+    db.execute("UPDATE customers SET risk_score = %s WHERE id = %s", (model['score'], customer_id))
     db.commit()
-    
-    return total_score, classification
+    res = reassess(customer_id, user_id, model_class=model['classification'])
+    return model['score'], (res or {}).get('classification', model['classification'])
 
 def analyze_transaction_pattern(customer_id):
     """

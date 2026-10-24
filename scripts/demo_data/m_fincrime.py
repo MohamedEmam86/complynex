@@ -220,6 +220,13 @@ class Seeder:
     def commit(self):
         self.c.commit()
 
+    def has_table(self, name):
+        try:
+            self.c.cols(name)
+            return True
+        except KeyError:
+            return False
+
     # ------------------------------------------------------------ customers
     def customers(self):
         c, r = self.c, self.r
@@ -381,8 +388,12 @@ class Seeder:
                                    'SENT': 'Awaiting Documents', 'PENDING': 'Pending Screening'}[kst],
                 kyb_link_sent_via=r.choice(['email', 'whatsapp']) if kst != 'PENDING' else None,
                 pos_wallet_limit=r.choice([250000, 500000, 750000]))
+            if 'incorporation_date' in c.cols('merchants'):
+                vals.update(incorporation_date=str(date(2005, 1, 1) + timedelta(days=r.randrange(6000))),
+                            incorporation_country='Egypt')
             mid = c.ins('merchants', **vals)
-            self.merch.append(dict(id=mid, name=en, ar=ar, status=kst, created=cr, ubo=vals['ubo_name']))
+            self.merch.append(dict(id=mid, name=en, ar=ar, status=kst, created=cr, ubo=vals['ubo_name'],
+                                   ubo_id=vals['ubo_id_number'], ubo_dob=vals['ubo_dob']))
         self.commit()
         from parties.linker import upsert_party_for_merchant
         for m in self.merch:
@@ -1125,17 +1136,29 @@ class Seeder:
                     is_pep = cu['key'] == 'nilestar' and j == 0
                     if is_pep:
                         bo = 'Samir Lotfy Habib'
-                    c.ins('kyc_beneficial_owners', subject='aml_customer', subject_id=cu['id'], full_name=bo,
-                          nationality='Egypt', ownership_pct=pct, control_type='ownership', is_pep=is_pep,
-                          created_by=co, created_at=cu['onb'])
+                    bo_nid = self.nid()
+                    kbo = dict(subject='aml_customer', subject_id=cu['id'], full_name=bo,
+                               nationality='Egypt', ownership_pct=pct, control_type='ownership', is_pep=is_pep,
+                               created_by=co, created_at=cu['onb'])
+                    if 'id_number' in c.cols('kyc_beneficial_owners'):
+                        kbo.update(id_type='NATIONAL_ID', id_number=bo_nid)
+                    c.ins('kyc_beneficial_owners', **kbo)
                     c.ins('beneficial_owners', customer_id=cu['id'], owner_type='INDIVIDUAL', full_name=bo,
-                          nationality='Egypt', id_type='NATIONAL_ID', id_number=self.nid(), ownership_percentage=pct,
+                          nationality='Egypt', id_type='NATIONAL_ID', id_number=bo_nid, ownership_percentage=pct,
                           ownership_type='Direct shareholding', is_pep=1 if is_pep else 0,
                           pep_category='Domestic PEP' if is_pep else None,
                           pep_position='Chairman of a state-owned company (demo)' if is_pep else None,
                           verified=1, verified_by=co, verification_date=str(cu['onb'].date()),
                           verification_notes='Verified against the commercial register extract and IDs.',
                           created_at=self.ts(cu['onb']), created_by=co)
+                if self.has_table('kyb_signatories'):
+                    c.ins('kyb_signatories', subject='aml_customer', subject_id=cu['id'], full_name=bo,
+                          position='Managing Director', signing_authority='sole', nationality='Egypt',
+                          id_type='NATIONAL_ID', id_number=self.nid(), created_by=co, created_at=cu['onb'])
+                if 'tax_card_number' in c.cols('customers'):
+                    c.q("UPDATE customers SET tax_card_number = %s, legal_form = %s WHERE id = %s",
+                        (f'DEMO-{r.randrange(100, 999)}-{r.randrange(100, 999)}-{r.randrange(100, 999)}',
+                         r.choice(['LLC', 'JOINT_STOCK']), cu['id']))
                 if cu['id'] not in incomplete:
                     c.ins('kyc_bo_declarations', subject='aml_customer', subject_id=cu['id'], declaration_type='other',
                           bo_name=bo, signed_on=cu['onb'].date(), recorded_by=co, recorded_at=cu['onb'])
@@ -1233,9 +1256,17 @@ class Seeder:
                     continue
                 c.ins('kyc_profile_values', subject='merchant', subject_id=m['id'], field_key=fk, value=v,
                       updated_by=c.uid('aml'), updated_at=m['created'])
-            c.ins('kyc_beneficial_owners', subject='merchant', subject_id=m['id'], full_name=m['ubo'],
-                  nationality='Egypt', ownership_pct=100, control_type='ownership', is_pep=False,
-                  created_by=c.uid('aml'), created_at=m['created'])
+            bo = dict(subject='merchant', subject_id=m['id'], full_name=m['ubo'],
+                      nationality='Egypt', ownership_pct=100, control_type='ownership', is_pep=False,
+                      created_by=c.uid('aml'), created_at=m['created'])
+            if 'id_number' in c.cols('kyc_beneficial_owners'):
+                bo.update(id_type='NATIONAL_ID', id_number=m['ubo_id'], date_of_birth=m['ubo_dob'])
+            c.ins('kyc_beneficial_owners', **bo)
+            if self.has_table('kyb_signatories'):
+                c.ins('kyb_signatories', subject='merchant', subject_id=m['id'], full_name=m['ubo'],
+                      position='Owner / Manager', signing_authority='sole', nationality='Egypt',
+                      id_type='NATIONAL_ID', id_number=m['ubo_id'], date_of_birth=m['ubo_dob'],
+                      created_by=c.uid('aml'), created_at=m['created'])
             if m['status'] in ('APPROVED', 'SUBMITTED', 'REJECTED'):
                 c.ins('kyc_bo_declarations', subject='merchant', subject_id=m['id'], declaration_type='self',
                       bo_name=None, signed_on=m['created'].date() + timedelta(days=2), recorded_by=c.uid('aml'),
@@ -1250,6 +1281,14 @@ class Seeder:
                               VALUES ('merchant', %s, 'approved', %s, %s)""",
                            (m['id'], c.uid('co'), m['created'] + timedelta(days=5)))
         db.commit()
+        # regulatory floor and EDD records exactly as the application applies them
+        try:
+            from aml.edd import reassess
+            for cu in self.cust:
+                reassess(cu['id'], co, db=db)
+        except Exception as e:
+            db.rollback()
+            print('    risk floor / EDD reassessment skipped:', e)
         print('      customer risk bands:', counts)
 
     # ------------------------------------------------------------ ongoing + delta

@@ -680,6 +680,9 @@ def rate_subject(subject, subject_id, user_id, trigger='manual', db=None):
         values.update({k: v for k, v in s.risk_values(r, db).items() if v is not None})
     score, band, breakdown = logic.rate(values, risk_factors(db), risk_bands(db))
     bands = {b['band']: b for b in risk_bands(db)}
+    force_high = s.extra.get('force_high')
+    if force_high and 'high' in bands and force_high(r, db):
+        band = 'high'          # regulatory floor (PEP, screening link, high-risk country)
     key = bands.get(band, {}).get('refresh_param_key')
     months = param(key) if key else None
     nr = logic.next_review(date.today(), months)

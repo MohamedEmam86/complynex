@@ -21,16 +21,16 @@
                         <i class="bi bi-person-circle fs-1 text-primary"></i>
                     </div>
                     <h4 class="card-title">{{ customer.full_name or customer.company_name }}</h4>
-                    <p class="text-muted small">Ref: {{ customer.customer_reference }}</p>
+                    <p class="text-muted small">{{ _('Ref') }}: {{ customer.customer_reference }} · {{ customer.customer_type|kyc_label('entity_type') }}</p>
 
                     <div class="d-flex justify-content-center gap-2 mb-3">
                         <span
                             class="badge {% if customer.risk_classification == 'HIGH' %}bg-danger{% elif customer.risk_classification == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %} fs-6">
-                            Risk: {{ customer.risk_classification }}
+                            {{ _('Risk') }}: {{ customer.risk_classification|kyc_label('risk') }}
                         </span>
                         <span
                             class="badge {% if customer.status == 'ACTIVE' %}bg-success{% elif customer.status == 'BLOCKED' %}bg-dark{% else %}bg-info{% endif %} fs-6">
-                            Status: {{ customer.status }}
+                            {{ _('Status') }}: {{ customer.status|kyc_label('customer_status') }}
                         </span>
                     </div>
 
@@ -50,6 +50,61 @@
                 </div>
             </div>
 
+            <!-- EDD / activation -->
+            <div class="card shadow-sm border-0 mb-4 border-start border-3 {% if edd_display == 'approved' %}border-success{% elif edd_display == 'not_required' %}border-secondary{% else %}border-warning{% endif %}">
+                <div class="card-header bg-light d-flex align-items-center justify-content-between">
+                    <span class="fw-bold"><i class="bi bi-shield-lock me-1"></i> {{ _('Enhanced Due Diligence') }}</span>
+                    <span class="badge {% if edd_display == 'approved' %}bg-success{% elif edd_display == 'not_required' %}bg-secondary{% elif edd_display == 'awaiting_approval' %}bg-info text-dark{% else %}bg-warning text-dark{% endif %}">{{ edd_display|kyc_label('edd') }}</span>
+                </div>
+                <div class="card-body py-2 small">
+                    {% if edd_reasons %}
+                    <div class="text-danger mb-1">{{ _('Forced HIGH risk') }}:
+                        {% for code, detail in edd_reasons %}{% if not loop.first %}; {% endif %}{% if code == 'pep' %}{{ _('PEP') }}{% elif code == 'screening' %}{{ _('screening link') }}{% elif code == 'country' %}{{ _('high-risk country') }} ({{ detail }}){% elif code == 'owner_pep' %}{{ _('PEP owner/signatory') }} ({{ detail }}){% elif code == 'owner_screening' %}{{ _('owner/signatory screening link') }} ({{ detail }}){% else %}{{ _('owner/signatory high-risk country') }} ({{ detail }}){% endif %}{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if edd_case %}
+                    <div>{{ _('Record') }}: <code>{{ edd_case.case_reference }}</code> — {{ edd_status|kyc_label('edd_status') }}</div>
+                    {% if edd_case.next_review_date %}<div>{{ _('Next review date') }}: {{ edd_case.next_review_date }}</div>{% endif %}
+                    {% endif %}
+                    {% if edd_case or edd_display != 'not_required' %}
+                    <a href="{{ url_for('aml.customer_edd', id=customer.id) }}" class="btn btn-sm btn-outline-primary w-100 mt-2"><i class="bi bi-folder2-open"></i> {{ _('Open the EDD record') }}</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if customer.status != 'ACTIVE' %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light fw-bold"><i class="bi bi-person-check me-1"></i> {{ _('Approval and activation') }}</div>
+                <div class="card-body py-2 small">
+                    {% if activation_blockers %}
+                    <div class="text-danger mb-1">{{ _('Cannot be activated yet:') }}</div>
+                    <ul class="mb-2">{% for b in activation_blockers %}<li>{{ b|kyc_msg }}</li>{% endfor %}</ul>
+                    {% elif current_user.can_edit('aml') %}
+                    <form method="POST" action="{{ url_for('aml.activate_customer', id=customer.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="text" class="form-control form-control-sm mb-2" name="note" placeholder="{{ _('Approval note (optional)') }}">
+                        <button class="btn btn-sm btn-success w-100"><i class="bi bi-check2-circle"></i> {{ _('Approve and activate') }}</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if customer.customer_type in ('CORPORATE', 'ENTITY') %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-building-check me-1"></i> {{ _('Corporate KYB') }}</span>
+                    <a href="{{ url_for('aml.customer_kyb', id=customer.id) }}" class="btn btn-sm btn-outline-primary">{{ _('Open') }}</a>
+                </div>
+                <ul class="list-group list-group-flush small">
+                    {% for u in kyb_ubos %}
+                    <li class="list-group-item d-flex justify-content-between"><span>{{ u.full_name }}{% if u.ownership_pct is not none %} ({{ u.ownership_pct }}%){% endif %}</span><span class="badge {% if u.screening_state in ('clear','cleared') %}bg-success{% elif u.screening_state == 'pep' %}bg-info text-dark{% elif u.screening_state in ('open','not_screened') %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ u.screening_state|kyc_label('screening') }}</span></li>
+                    {% else %}<li class="list-group-item text-muted">{{ _('No beneficial owner recorded yet.') }}</li>{% endfor %}
+                    <li class="list-group-item text-muted">{{ _('Authorised signatories') }}: {{ kyb_sigs|length }}</li>
+                </ul>
+            </div>
+            {% endif %}
+
             <!-- Screening Status Card -->
             <div class="card shadow-sm border-0 mb-4 border-start border-danger border-3">
                 <div class="card-header bg-light d-flex align-items-center justify-content-between">
@@ -60,7 +115,7 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-danger" id="runScreeningBtn">
                             <i class="bi bi-search"></i>
-                            {% if customer.last_screening_date %}Re-Screen{% else %}Run Screening{% endif %}
+                            {% if customer.last_screening_date %}{{ _('Re-Screen') }}{% else %}{{ _('Run Screening') }}{% endif %}
                         </button>
                     </form>
                 </div>
@@ -70,7 +125,7 @@
                         {% set ss = customer.screening_status or 'Not Screened' %}
                         <span
                             class="badge {% if ss == 'Clear' %}bg-success{% elif ss == 'Pending Review' %}bg-warning text-dark{% elif ss == 'Blocked' %}bg-danger{% else %}bg-secondary{% endif %}">
-                            {{ ss }}
+                            {{ ss|kyc_label('screening_status') }}
                         </span>
                     </div>
                     <div class="d-flex justify-content-between mb-1">

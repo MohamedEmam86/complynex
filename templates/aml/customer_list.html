@@ -8,6 +8,9 @@
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">{{ _('Customer Directory (CDD/KYC)') }}</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('aml.high_risk_countries') }}" class="btn btn-sm btn-outline-danger me-2">
+                <i class="bi bi-globe2"></i> {{ _('High-risk countries') }}
+            </a>
             <a href="{{ url_for('aml.export_customers') }}" class="btn btn-sm btn-outline-secondary me-2">
                 <i class="bi bi-download"></i> {{ _('Export CSV') }}
             </a>
@@ -45,11 +48,19 @@
                         <option value="">{{ _('All Statuses') }}</option>
                         <option value="ACTIVE">{{ _('Active') }}</option>
                         <option value="PENDING">{{ _('Pending') }}</option>
+                        <option value="UNDER_REVIEW">{{ _('Under review') }}</option>
                         <option value="SUSPENDED">{{ _('Suspended') }}</option>
                         <option value="CLOSED">{{ _('Closed') }}</option>
                     </select>
                 </div>
-                <div class="col-md-2 text-end">
+                <div class="col-md-2">
+                    <select class="form-select form-select-sm" id="eddFilter">
+                        <option value="">{{ _('EDD: all') }}</option>
+                        <option value="pending" {% if edd_filter == 'pending' %}selected{% endif %}>{{ _('EDD pending') }}</option>
+                        <option value="approved" {% if edd_filter == 'approved' %}selected{% endif %}>{{ _('EDD approved') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-12 text-end">
                     <span class="badge bg-primary" id="customerCount">{{ customers|length }}</span>
                     <small class="text-muted">{{ _('records') }}</small>
                 </div>
@@ -69,34 +80,41 @@
                             <th>{{ _('ID/Reg Details') }}</th>
                             <th>{{ _('Risk Level') }}</th>
                             <th>{{ _('Status') }}</th>
+                            <th>{{ _('EDD') }}</th>
                             <th>{{ _('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for customer in customers %}
                         <tr data-type="{{ customer.customer_type }}" data-risk="{{ customer.risk_classification }}"
-                            data-status="{{ customer.status }}">
+                            data-status="{{ customer.status }}"
+                            data-edd="{{ 'pending' if customer.edd_pending else ('approved' if customer.edd_display == 'approved' else '') }}">
                             <td><code>{{ customer.customer_reference }}</code></td>
                             <td>
                                 <div class="fw-bold">{{ customer.full_name or customer.company_name }}</div>
-                                <small class="text-muted">{{ customer.customer_type }}</small>
+                                <small class="text-muted">{{ customer.customer_type|kyc_label('entity_type') }}</small>
                             </td>
                             <td>{{ customer.nationality or 'N/A' }}</td>
                             <td>
-                                <small class="d-block">{{ customer.id_type or 'N/A' }}</small>
+                                <small class="d-block">{{ customer.id_type|kyc_label('id_type') if customer.id_type else 'N/A' }}</small>
                                 <code>{{ customer.id_number or 'N/A' }}</code>
                             </td>
                             <td>
                                 <span
                                     class="badge {% if customer.risk_classification == 'HIGH' %}bg-danger{% elif customer.risk_classification == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                                    {{ customer.risk_classification }}
+                                    {{ customer.risk_classification|kyc_label('risk') }}
                                 </span>
                             </td>
                             <td>
                                 <span
                                     class="badge {% if customer.status == 'ACTIVE' %}bg-success{% elif customer.status == 'BLOCKED' %}bg-dark{% else %}bg-info{% endif %}">
-                                    {{ customer.status }}
+                                    {{ customer.status|kyc_label('customer_status') }}
                                 </span>
+                            </td>
+                            <td>
+                                {% if customer.edd_display != 'not_required' %}
+                                <a href="{{ url_for('aml.customer_edd', id=customer.id) }}" class="badge text-decoration-none {% if customer.edd_display == 'approved' %}bg-success{% elif customer.edd_display == 'awaiting_approval' %}bg-info text-dark{% else %}bg-warning text-dark{% endif %}">{{ customer.edd_display|kyc_label('edd') }}</a>
+                                {% else %}<span class="text-muted small">—</span>{% endif %}
                             </td>
                             <td>
                                 <div class="btn-group">
@@ -113,7 +131,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">{{ _('No customers found in directory') }}</td>
+                            <td colspan="8" class="text-center py-4 text-muted">{{ _('No customers found in directory') }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -127,7 +145,7 @@
     ['customerSearch'].forEach(function(id) {
         document.getElementById(id).addEventListener('input', filterCustomers);
     });
-    ['typeFilter', 'riskFilter', 'statusFilter'].forEach(function(id) {
+    ['typeFilter', 'riskFilter', 'statusFilter', 'eddFilter'].forEach(function(id) {
         document.getElementById(id).addEventListener('change', filterCustomers);
     });
 
@@ -136,6 +154,7 @@
         const typeFilter = document.getElementById('typeFilter').value;
         const riskFilter = document.getElementById('riskFilter').value;
         const statusFilter = document.getElementById('statusFilter').value;
+        const eddFilter = document.getElementById('eddFilter').value;
 
         const rows = document.querySelectorAll('#customerTable tbody tr[data-type]');
         let count = 0;
@@ -150,8 +169,9 @@
             const matchType = !typeFilter || type === typeFilter;
             const matchRisk = !riskFilter || risk === riskFilter;
             const matchStatus = !statusFilter || status === statusFilter;
+            const matchEdd = !eddFilter || row.getAttribute('data-edd') === eddFilter;
 
-            if (matchSearch && matchType && matchRisk && matchStatus) {
+            if (matchSearch && matchType && matchRisk && matchStatus && matchEdd) {
                 row.style.display = '';
                 count++;
             } else {
@@ -161,5 +181,6 @@
 
         document.getElementById('customerCount').textContent = count;
     }
+    if (document.getElementById('eddFilter').value) { filterCustomers(); }
 </script>
 {% endblock %}

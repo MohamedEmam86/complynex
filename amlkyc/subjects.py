@@ -83,12 +83,21 @@ def _customer_values(r, db):
             'is_pep': r.get('is_pep'), 'alert_count': n}
 
 
+def _customer_forced_high(r, db):
+    try:
+        from aml.edd import forced_reasons
+        return bool(forced_reasons(r, db))
+    except Exception:
+        db.rollback()
+        return False
+
+
 register_subject(Subject(
     code='aml_customer', label_en='AML customers', label_ar='عملاء مكافحة غسل الأموال', table='customers',
     kind=lambda r: 'entity' if (r.get('customer_type') or '').upper() in ('CORPORATE', 'ENTITY') else 'individual',
     name=lambda r: r.get('full_name') or r.get('company_name') or r.get('customer_reference') or f"#{r['id']}",
     active=lambda r: (r.get('status') or 'ACTIVE').upper() not in CLOSED_CUSTOMER_STATUSES,
-    endpoint='aml.view_customer', risk_values=_customer_values))
+    endpoint='aml.view_customer', risk_values=_customer_values, extra={'force_high': _customer_forced_high}))
 
 register_subject(Subject(
     code='merchant', label_en='Merchants', label_ar='التجار', table='merchants',

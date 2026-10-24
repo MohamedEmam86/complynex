@@ -74,7 +74,17 @@ def customer_list():
         FROM customers
         ORDER BY COALESCE(onboarding_date, created_at) DESC NULLS LAST, id DESC
     """).fetchall()
-    return render_template('aml/customer_list.html', customers=customers, user=current_user)
+    from . import edd as _edd, edd_logic as _L
+    cases = _edd.list_summary(db)
+    rows = []
+    for c in customers:
+        c = dict(c)
+        case = cases.get(c['id'])
+        c['edd_display'] = _L.display_status(c.get('requires_edd'), case)
+        c['edd_pending'] = _L.is_pending(c.get('requires_edd'), case)
+        rows.append(c)
+    return render_template('aml/customer_list.html', customers=rows, user=current_user,
+                           edd_filter=request.args.get('edd', ''))
 
 from models.aml import Customer
 from models.audit import AuditLog
@@ -109,6 +119,10 @@ def create_customer():
             'income': request.form.get('income'),
             'created_by': current_user.id,
         }
+        if data['customer_type'] == 'CORPORATE':
+            # a legal entity stays pending until its KYB file (owners, signatories,
+            # screening) is complete and someone approves it
+            data['status'] = 'PENDING'
         if data['customer_type'] not in ('INDIVIDUAL', 'CORPORATE'):
             flash(_('Select a valid customer type.'), 'danger')
             return _customer_form_again()
@@ -140,6 +154,7 @@ def create_customer():
                 current_app.logger.exception('Failed to sync party registry for customer %s', customer_id)
 
             # AUTOMATED SCREENING INTEGRATION
+            _last_hist_id = None
             try:
                 from screening.customer_screening_service import screen_and_save
 
@@ -189,8 +204,16 @@ def create_customer():
                     )
             except Exception as e:
                 flash(f'Customer created but automated screening failed: {str(e)}', 'warning')
-            
-            return redirect(url_for('aml.customer_list'))
+
+            # risk floor again now that screening has run (a hit forces HIGH + EDD)
+            from . import edd as _edd
+            res = _edd.reassess(customer_id, current_user.id)
+            if res and res['requires_edd']:
+                flash(_('High-risk customer: an EDD record was opened. The customer cannot be activated until the EDD is completed and approved by the MLRO or a senior manager.'), 'warning')
+            if data['customer_type'] == 'CORPORATE':
+                flash(_('Complete the corporate KYB file (beneficial owners and authorised signatories) before approving this customer.'), 'info')
+                return redirect(url_for('aml.customer_kyb', id=customer_id))
+            return redirect(url_for('aml.view_customer', id=customer_id))
         else:
             flash(gettext('Error creating customer.'), 'danger')
         
@@ -262,9 +285,20 @@ def view_customer(id):
     except Exception as e:
         risk_radar_json = _json.dumps({'labels':['Geographic','Tx Volume','Cash Ratio','PEP/Sanctions','Account Age','Alert History'],'scores':[20,20,20,20,20,20]})
 
+    from . import edd as _edd, edd_logic as _L
+    edd_case = _edd.latest_case(id)
+    kyb_ubos, kyb_sigs = [], []
+    if (customer['customer_type'] or '').upper() in ('CORPORATE', 'ENTITY'):
+        from kyb import service as _kyb
+        kyb_ubos, kyb_sigs, _states = _kyb.with_states('aml_customer', id)
     return render_template(
         'aml/customer_view.html', customer=Customer.form_values(customer), recent_alerts=recent_alerts, user=current_user,
         risk_radar_json=risk_radar_json,
+        edd_case=edd_case, edd_status=_L.edd_status(edd_case),
+        edd_display=_L.display_status(customer['requires_edd'], edd_case),
+        edd_reasons=_edd.forced_reasons(dict(customer)),
+        activation_blockers=_edd.activation_blockers(dict(customer)) if (customer['status'] or '') != 'ACTIVE' else [],
+        kyb_ubos=kyb_ubos, kyb_sigs=kyb_sigs,
         attach_module='aml', attach_record_type='customer', attach_record_id=id,
         attach_items=list_attachments('aml', 'customer', id),
         attach_can_edit=current_user.can_edit('aml'),
@@ -317,6 +351,11 @@ def edit_customer(id):
             return render_template('aml/customer_form.html', customer=Customer.form_values(customer),
                                    user=current_user)
 
+        # Activation goes through the gate (EDD approved, KYB complete), never a plain status change.
+        want_activate = data.get('status') == 'ACTIVE' and (customer['status'] or '') != 'ACTIVE'
+        if want_activate:
+            data['status'] = None
+
         # --- ComplyNex AI Enhancement ---
         nid_data = parse_egyptian_nid(request.form.get('id_number'))
         if nid_data:
@@ -326,10 +365,22 @@ def edit_customer(id):
         # ------------------------------
         
         if Customer.update(id, data):
-            # Re-calculate risk after edit
-            calculate_customer_risk(id)
+            # Re-calculate risk after edit (scoring model + HIGH floor + EDD)
+            calculate_customer_risk(id, current_user.id)
             db.commit()
             flash(gettext('Customer information updated successfully.'))
+            if want_activate:
+                from . import edd as _edd
+                try:
+                    _edd.activate(id, current_user)
+                    AuditLog.log(current_user.id, 'Customer Activated', 'AML', id,
+                                 f'Customer {customer["customer_reference"]} status {customer["status"]} -> ACTIVE',
+                                 request.remote_addr)
+                    flash(_('Customer approved and activated.'), 'success')
+                except _edd.EddError as e:
+                    from utils.kyc_labels import tr
+                    msgs = e.args[0] if isinstance(e.args[0], list) else [e.args[0]]
+                    flash(_('The status was not changed to Active:') + ' ' + '; '.join(tr(m) for m in msgs), 'danger')
             return redirect(url_for('aml.view_customer', id=id))
         else:
             flash(gettext('Error updating customer.'), 'danger')
@@ -837,6 +888,8 @@ def run_customer_screening(id):
         db.execute("UPDATE customers SET risk_classification = 'HIGH', status = 'SUSPENDED' WHERE id = %s", (id,))
 
     db.commit()
+    from . import edd as _edd
+    _edd.reassess(id, current_user.id)
 
     if total_high_risk > 0:
         # Link straight to the record just created rather than telling the

@@ -33281,6 +33281,745 @@ msgstr "لم ترسل أي بلاغ بعد."
 msgid "Suspicious activity (to the MLRO)"
 msgstr "نشاط مشبوه (إلى مسؤول الإبلاغ)"
 
+#, python-format
+msgid "%(field)s cannot be in the future."
+msgstr "لا يمكن أن يكون %(field)s تاريخًا مستقبليًا."
+
+#, python-format
+msgid "%(field)s is not a valid date."
+msgstr "%(field)s ليس تاريخًا صحيحًا."
+
+msgid "A beneficial owner or signatory has a screening link:"
+msgstr "يرتبط أحد المستفيدين الحقيقيين أو المفوضين بالتوقيع بنتيجة فحص:"
+
+msgid "A beneficial owner or signatory is a PEP:"
+msgstr "أحد المستفيدين الحقيقيين أو المفوضين بالتوقيع شخص سياسي ممثل للمخاطر:"
+
+msgid "A beneficial owner or signatory is linked to a high-risk country:"
+msgstr "يرتبط أحد المستفيدين الحقيقيين أو المفوضين بالتوقيع بدولة مرتفعة المخاطر:"
+
+msgid "A customer whose nationality, residence or registration country — or a beneficial owner’s nationality — matches an active country here is rated HIGH risk and needs approved EDD. The default list follows the FATF public statements; review it against the latest publication."
+msgstr "يُصنَّف العميل مرتفع المخاطر ويلزمه اعتماد العناية الواجبة المعززة إذا تطابقت جنسيته أو دولة إقامته أو تسجيله — أو جنسية أحد المستفيدين الحقيقيين — مع دولة نشطة في هذه القائمة. القائمة الافتراضية مبنية على البيانات العامة لمجموعة العمل المالي (فاتف)؛ يُرجى مراجعتها وفق أحدث إصدار."
+
+msgid "Add a beneficial owner"
+msgstr "إضافة مستفيد حقيقي"
+
+msgid "Add an authorised signatory"
+msgstr "إضافة مفوض بالتوقيع"
+
+msgid "An EDD record is already in progress for this customer."
+msgstr "يوجد سجل عناية واجبة معززة قيد الإعداد لهذا العميل بالفعل."
+
+msgid "Approval"
+msgstr "الاعتماد"
+
+msgid "Approval and activation"
+msgstr "الاعتماد والتفعيل"
+
+msgid "Approval and rejection are recorded with the Approve / Reject actions on the merchant page."
+msgstr "يُسجَّل الاعتماد والرفض من خلال إجراءي «اعتماد» و«رفض» في صفحة التاجر."
+
+msgid "Approval is blocked until these are resolved:"
+msgstr "الاعتماد متوقف إلى حين معالجة ما يلي:"
+
+msgid "Approval note (optional)"
+msgstr "ملاحظة الاعتماد (اختيارية)"
+
+msgid "Approve EDD"
+msgstr "اعتماد العناية الواجبة المعززة"
+
+msgid "Approve Merchant KYC"
+msgstr "اعتماد ملف التاجر"
+
+msgid "Approve and activate"
+msgstr "اعتماد وتفعيل"
+
+msgid "Attach the documents below; a description alone is accepted only when the document cannot be kept."
+msgstr "أرفق المستندات أدناه؛ ولا يُقبل الوصف وحده إلا إذا تعذّر الاحتفاظ بالمستند."
+
+msgid "Attached"
+msgstr "المرفقات"
+
+msgid "Authorised signatories"
+msgstr "المفوضون بالتوقيع"
+
+msgid "Authority Level"
+msgstr "مستوى الصلاحية"
+
+msgid "Awaiting approval"
+msgstr "بانتظار الاعتماد"
+
+msgid "Back to the record"
+msgstr "العودة إلى السجل"
+
+msgid "Back to users"
+msgstr "العودة إلى المستخدمين"
+
+msgid "Beneficial owners and signatories"
+msgstr "المستفيدون الحقيقيون والمفوضون بالتوقيع"
+
+msgid "Beneficial owners, authorised signatories and the entity identification are kept in the KYB file, where each person is screened on save."
+msgstr "تُحفظ بيانات المستفيدين الحقيقيين والمفوضين بالتوقيع وبيانات تعريف الكيان في ملف «اعرف عميلك من الشركات»، ويُفحص كل شخص عند الحفظ."
+
+msgid "Branch of a foreign company"
+msgstr "فرع شركة أجنبية"
+
+msgid "CAN SEE"
+msgstr "يمكنه رؤية"
+
+msgid "CANNOT SEE"
+msgstr "لا يمكنه رؤية"
+
+msgid "Call for action (black list)"
+msgstr "دعوة لاتخاذ إجراءات (القائمة السوداء)"
+
+msgid "Cannot be activated yet:"
+msgstr "لا يمكن التفعيل بعد:"
+
+msgid "Checklist"
+msgstr "قائمة التحقق"
+
+msgid "Choose a legal form from the list."
+msgstr "اختر الشكل القانوني من القائمة."
+
+msgid "Choose a monitoring frequency from the list."
+msgstr "اختر دورية المتابعة من القائمة."
+
+msgid "Choose a password different from the temporary one."
+msgstr "اختر كلمة مرور مختلفة عن كلمة المرور المؤقتة."
+
+msgid "Choose an ID type from the list."
+msgstr "اختر نوع الهوية من القائمة."
+
+msgid "Choose sole or joint signing authority."
+msgstr "اختر صلاحية توقيع منفرد أو مشترك."
+
+msgid "Cleared (false positive)"
+msgstr "أُغلق (تطابق كاذب)"
+
+msgid "Commercial register number"
+msgstr "رقم السجل التجاري"
+
+msgid "Complete the KYB file (entity details, all beneficial owners and authorised signatories) before submitting for approval."
+msgstr "استكمل ملف «اعرف عميلك من الشركات» (بيانات الكيان وجميع المستفيدين الحقيقيين والمفوضين بالتوقيع) قبل تقديمه للاعتماد."
+
+msgid "Complete the corporate KYB file (beneficial owners and authorised signatories) before approving this customer."
+msgstr "استكمل ملف «اعرف عميلك من الشركات» (المستفيدون الحقيقيون والمفوضون بالتوقيع) قبل اعتماد هذا العميل."
+
+msgid "Confirm approval"
+msgstr "تأكيد الاعتماد"
+
+msgid "Connected to a high-risk country:"
+msgstr "مرتبط بدولة مرتفعة المخاطر:"
+
+msgid "Control by other means"
+msgstr "السيطرة بوسائل أخرى"
+
+msgid "Corporate KYB"
+msgstr "اعرف عميلك من الشركات"
+
+msgid "Corporate KYB applies to corporate customers only."
+msgstr "ينطبق ملف «اعرف عميلك من الشركات» على العملاء من الأشخاص الاعتبارية فقط."
+
+msgid "Country (Arabic)"
+msgstr "الدولة (بالعربية)"
+
+msgid "Country (English)"
+msgstr "الدولة (بالإنجليزية)"
+
+msgid "Country not found."
+msgstr "الدولة غير موجودة."
+
+msgid "Country of incorporation"
+msgstr "دولة التأسيس"
+
+msgid "Customer approved and activated."
+msgstr "تم اعتماد العميل وتفعيله."
+
+msgid "Deactivate"
+msgstr "إلغاء التفعيل"
+
+msgid "Document visibility"
+msgstr "صلاحية رؤية المستندات"
+
+msgid "Double-click a unit to move it. Ctrl/Cmd-click for several. Choosing a level above refills both boxes; adjusting them by hand saves exactly what you see."
+msgstr "انقر نقرًا مزدوجًا على الوحدة لنقلها، واستخدم Ctrl/Cmd مع النقر لاختيار أكثر من وحدة. اختيار مستوى من الأعلى يعيد ملء القائمتين، والتعديل اليدوي يحفظ ما تراه تمامًا."
+
+msgid "Download or copy these passwords now and hand each one to its user through a secure channel. They are not stored and cannot be displayed again. Each user must set a new password at the first login."
+msgstr "قم بتنزيل كلمات المرور هذه أو نسخها الآن وسلّم كل كلمة لصاحبها عبر قناة آمنة. فهي غير محفوظة ولا يمكن عرضها مرة أخرى، ويجب على كل مستخدم تعيين كلمة مرور جديدة عند أول دخول."
+
+msgid "EDD"
+msgstr "العناية المعززة"
+
+msgid "EDD approved"
+msgstr "العناية المعززة معتمدة"
+
+msgid "EDD awaiting approval"
+msgstr "العناية المعززة بانتظار الاعتماد"
+
+msgid "EDD in preparation"
+msgstr "العناية المعززة قيد الإعداد"
+
+msgid "EDD not started"
+msgstr "العناية المعززة لم تبدأ"
+
+msgid "EDD pending"
+msgstr "العناية المعززة غير مكتملة"
+
+msgid "EDD record"
+msgstr "سجل العناية الواجبة المعززة"
+
+msgid "EDD returned"
+msgstr "العناية المعززة مُعادة للاستكمال"
+
+msgid "EDD: all"
+msgstr "العناية المعززة: الكل"
+
+msgid "Edit beneficial owner"
+msgstr "تعديل المستفيد الحقيقي"
+
+msgid "Edit signatory"
+msgstr "تعديل المفوض بالتوقيع"
+
+msgid "Enhanced Due Diligence"
+msgstr "العناية الواجبة المعززة"
+
+msgid "Enhanced monitoring frequency"
+msgstr "دورية المتابعة المعززة"
+
+msgid "Enter a valid next review date."
+msgstr "أدخل تاريخ مراجعة قادمًا صحيحًا."
+
+msgid "Enter the country code, name and category."
+msgstr "أدخل رمز الدولة واسمها وفئتها."
+
+msgid "Entity details saved."
+msgstr "تم حفظ بيانات الكيان."
+
+msgid "Entity identification"
+msgstr "بيانات تعريف الكيان"
+
+msgid "Every beneficial owner needs a name."
+msgstr "يجب إدخال اسم لكل مستفيد حقيقي."
+
+msgid "Evidence held for the source of funds"
+msgstr "المستندات المؤيدة لمصدر الأموال"
+
+msgid "Exactly what this user can and cannot see"
+msgstr "ما يمكن لهذا المستخدم رؤيته وما لا يمكنه رؤيته بدقة"
+
+msgid "Forced HIGH risk"
+msgstr "تصنيف مرتفع المخاطر إلزاميًا"
+
+msgid "Four-eyes: you prepared this EDD, so another person (MLRO or senior manager) must approve it."
+msgstr "مبدأ الرقابة المزدوجة: أنت من أعدّ هذه العناية المعززة، لذا يجب أن يعتمدها شخص آخر (مسؤول الإبلاغ أو أحد كبار المديرين)."
+
+msgid "Four-eyes: you prepared this EDD; another person must approve it."
+msgstr "مبدأ الرقابة المزدوجة: أنت من أعدّ هذه العناية المعززة؛ ويجب أن يعتمدها شخص آخر."
+
+msgid "General partnership"
+msgstr "شركة تضامن"
+
+msgid "Give the reason for removing the country from the active list."
+msgstr "اذكر سبب حذف الدولة من القائمة النشطة."
+
+msgid "Give the reason for returning the EDD (at least 10 characters)."
+msgstr "اذكر سبب إعادة العناية المعززة (10 أحرف على الأقل)."
+
+msgid "Government entity"
+msgstr "جهة حكومية"
+
+msgid "Hide everything"
+msgstr "إخفاء الكل"
+
+msgid "Hide selected"
+msgstr "إخفاء المحدد"
+
+msgid "High risk because:"
+msgstr "مرتفع المخاطر للأسباب التالية:"
+
+msgid "High-risk countries"
+msgstr "الدول مرتفعة المخاطر"
+
+msgid "High-risk country list updated."
+msgstr "تم تحديث قائمة الدول مرتفعة المخاطر."
+
+msgid "High-risk customer: an EDD record was opened. The customer cannot be activated until the EDD is completed and approved by the MLRO or a senior manager."
+msgstr "عميل مرتفع المخاطر: تم فتح سجل عناية واجبة معززة، ولا يمكن تفعيل العميل حتى تُستكمل العناية المعززة ويعتمدها مسؤول الإبلاغ أو أحد كبار المديرين."
+
+msgid "ID type"
+msgstr "نوع الهوية"
+
+msgid "In preparation"
+msgstr "قيد الإعداد"
+
+msgid "Incorporation date"
+msgstr "تاريخ التأسيس"
+
+msgid "Increased monitoring (grey list)"
+msgstr "متابعة مشددة (القائمة الرمادية)"
+
+msgid "Initial password (optional)"
+msgstr "كلمة المرور الأولية (اختيارية)"
+
+msgid "Internal decision"
+msgstr "قرار داخلي"
+
+#, python-format
+msgid "Invalid control type for %(name)s."
+msgstr "نوع السيطرة غير صحيح للمستفيد %(name)s."
+
+msgid "Joint signatory"
+msgstr "توقيع مشترك"
+
+msgid "Joint stock company"
+msgstr "شركة مساهمة"
+
+msgid "KYB file"
+msgstr "ملف اعرف عميلك من الشركات"
+
+#, python-format
+msgid "KYB file incomplete: %(fields)s"
+msgstr "ملف «اعرف عميلك من الشركات» غير مكتمل: %(fields)s"
+
+msgid "KYB link sent"
+msgstr "أُرسل رابط استكمال البيانات"
+
+msgid "Last change"
+msgstr "آخر تعديل"
+
+msgid "Leave Password empty: each user then gets a random one-time password, shown once after the upload with a CSV download. Every imported user must change the password at the first login."
+msgstr "اترك عمود كلمة المرور فارغًا ليحصل كل مستخدم على كلمة مرور عشوائية مؤقتة تُعرض مرة واحدة بعد الرفع مع ملف CSV للتنزيل. ويجب على كل مستخدم مستورد تغيير كلمة المرور عند أول دخول."
+
+msgid "Leave empty to issue a random one-time password, shown once after saving. The user must change it at the first login."
+msgstr "اتركه فارغًا لإصدار كلمة مرور عشوائية مؤقتة تُعرض مرة واحدة بعد الحفظ، ويجب على المستخدم تغييرها عند أول دخول."
+
+msgid "Legal form"
+msgstr "الشكل القانوني"
+
+msgid "Licence number (optional)"
+msgstr "رقم الترخيص (اختياري)"
+
+msgid "Licensing regulator (optional)"
+msgstr "الجهة الرقابية المانحة للترخيص (اختياري)"
+
+msgid "Limited liability company"
+msgstr "شركة ذات مسؤولية محدودة"
+
+msgid "Limited partnership"
+msgstr "شركة توصية بسيطة"
+
+msgid "Link sent"
+msgstr "أُرسل الرابط"
+
+msgid "Merchant (public link)"
+msgstr "التاجر (عبر الرابط العام)"
+
+msgid "Module permissions decide which screens this user can open. This decides which parts of the organisation they see inside them. Both must allow it."
+msgstr "تحدد صلاحيات الوحدات الشاشات التي يمكن للمستخدم فتحها، ويحدد هذا الإعداد أجزاء المنظمة التي يراها داخلها؛ ويجب أن يسمح كلاهما."
+
+msgid "Move units between the boxes, then save. Left is what they see; everything on the right is hidden from them."
+msgstr "انقل الوحدات بين القائمتين ثم احفظ؛ ما في اليسار يراه المستخدم، وكل ما في اليمين مخفي عنه."
+
+msgid "NGO / foundation"
+msgstr "جمعية / مؤسسة أهلية"
+
+msgid "National ID / passport number"
+msgstr "رقم الهوية الوطنية / جواز السفر"
+
+msgid "Next review date"
+msgstr "تاريخ المراجعة القادمة"
+
+msgid "No EDD record exists for this customer."
+msgstr "لا يوجد سجل عناية واجبة معززة لهذا العميل."
+
+msgid "No authorised signatory recorded yet."
+msgstr "لم يُسجَّل أي مفوض بالتوقيع بعد."
+
+msgid "No authorised signatory recorded."
+msgstr "لم يُسجَّل أي مفوض بالتوقيع."
+
+msgid "No beneficial owner recorded yet."
+msgstr "لم يُسجَّل أي مستفيد حقيقي بعد."
+
+#, python-format
+msgid "No owner holds 25%% or more and no controlling person is named."
+msgstr "لا يملك أي مساهم نسبة 25%% أو أكثر، ولم يُحدَّد شخص مسيطر."
+
+msgid "No status changes recorded yet."
+msgstr "لم تُسجَّل أي تغييرات على الحالة بعد."
+
+msgid "Not screened"
+msgstr "لم يُفحص"
+
+msgid "One-person company"
+msgstr "شركة الشخص الواحد"
+
+msgid "One-time passwords"
+msgstr "كلمات المرور المؤقتة"
+
+msgid "Only a pending merchant can be submitted for approval."
+msgstr "لا يمكن تقديم التاجر للاعتماد إلا إذا كان في حالة الانتظار."
+
+msgid "Only an EDD record in preparation can be submitted."
+msgstr "لا يمكن تقديم سجل العناية المعززة إلا إذا كان قيد الإعداد."
+
+msgid "Only the MLRO or a senior manager can decide on EDD."
+msgstr "لا يملك قرار العناية المعززة إلا مسؤول الإبلاغ أو أحد كبار المديرين."
+
+msgid "Open an EDD record"
+msgstr "فتح سجل عناية واجبة معززة"
+
+msgid "Open the EDD record"
+msgstr "فتح سجل العناية المعززة"
+
+msgid "Open the KYB file"
+msgstr "فتح ملف اعرف عميلك من الشركات"
+
+msgid "Organisational Authority"
+msgstr "النطاق التنظيمي"
+
+msgid "Other spellings"
+msgstr "صيغ كتابة أخرى"
+
+msgid "Other spellings, separated by |"
+msgstr "صيغ كتابة أخرى، مفصولة بالرمز |"
+
+#, python-format
+msgid "Ownership of %(name)s is not a number."
+msgstr "نسبة ملكية %(name)s ليست رقمًا."
+
+#, python-format
+msgid "Ownership of %(name)s must be between 0 and 100."
+msgstr "يجب أن تكون نسبة ملكية %(name)s بين 0 و100."
+
+msgid "PEP owner/signatory"
+msgstr "مستفيد/مفوض سياسي ممثل للمخاطر"
+
+msgid "Password updated. Welcome."
+msgstr "تم تحديث كلمة المرور. مرحبًا بك."
+
+msgid "Posted to (their own unit)"
+msgstr "الوحدة التي يعمل بها"
+
+msgid "Potential match - open"
+msgstr "تطابق محتمل - مفتوح"
+
+msgid "Principal beneficial owner. More owners and the authorised signatories are added in the KYB file after saving."
+msgstr "المستفيد الحقيقي الرئيسي. يُضاف باقي المستفيدين والمفوضين بالتوقيع في ملف «اعرف عميلك من الشركات» بعد الحفظ."
+
+msgid "Rationale for approving, or what must be completed"
+msgstr "مبررات الاعتماد، أو ما يجب استكماله"
+
+msgid "Re-assess all customers against the list"
+msgstr "إعادة تقييم جميع العملاء وفق القائمة"
+
+msgid "Re-screen everyone"
+msgstr "إعادة فحص الجميع"
+
+msgid "Reason / note"
+msgstr "السبب / الملاحظة"
+
+msgid "Remove this beneficial owner?"
+msgstr "حذف هذا المستفيد الحقيقي؟"
+
+msgid "Remove this signatory?"
+msgstr "حذف هذا المفوض بالتوقيع؟"
+
+msgid "Removed."
+msgstr "تم الحذف."
+
+msgid "Residence permit"
+msgstr "تصريح إقامة"
+
+msgid "Resolve the KYB blockers first"
+msgstr "عالج موانع ملف اعرف عميلك من الشركات أولًا"
+
+msgid "Resolves “head of unit” approval stages."
+msgstr "يُستخدم لتحديد مراحل اعتماد «رئيس الوحدة»."
+
+msgid "Return to the preparer"
+msgstr "إعادة إلى المُعِدّ"
+
+msgid "Returned"
+msgstr "مُعاد"
+
+msgid "Returned by the approver:"
+msgstr "أعاده المعتمِد للسبب التالي:"
+
+msgid "Save and continue"
+msgstr "حفظ ومتابعة"
+
+msgid "Save and screen"
+msgstr "حفظ وفحص"
+
+msgid "Save entity details"
+msgstr "حفظ بيانات الكيان"
+
+msgid "Saved"
+msgstr "تم الحفظ"
+
+msgid "Saved. The person was screened; the result is shown in the list."
+msgstr "تم الحفظ وفُحص الشخص؛ وتظهر النتيجة في القائمة."
+
+msgid "Screen unscreened people"
+msgstr "فحص الأشخاص غير المفحوصين"
+
+msgid "Screening failed"
+msgstr "تعذّر الفحص"
+
+msgid "Screening links the customer to a sanctions / PEP list entry that is not cleared."
+msgstr "يرتبط العميل بنتيجة فحص على قوائم العقوبات أو الأشخاص السياسيين ممثلي المخاطر لم تُغلق بعد."
+
+msgid "Semi-annual"
+msgstr "نصف سنوي"
+
+msgid "Senior managing official"
+msgstr "مسؤول إداري رفيع"
+
+msgid "Set by the administrator in the file"
+msgstr "حددها المسؤول في الملف"
+
+msgid "Set your password"
+msgstr "تعيين كلمة المرور"
+
+msgid "Show everything"
+msgstr "إظهار الكل"
+
+msgid "Show selected"
+msgstr "إظهار المحدد"
+
+msgid "Shown once."
+msgstr "تُعرض مرة واحدة فقط."
+
+msgid "Sign out"
+msgstr "تسجيل الخروج"
+
+msgid "Signing authority"
+msgstr "صلاحية التوقيع"
+
+msgid "Sole proprietorship"
+msgstr "منشأة فردية"
+
+msgid "Sole signatory"
+msgstr "توقيع منفرد"
+
+msgid "Source / decision reference"
+msgstr "المصدر / مرجع القرار"
+
+msgid "Source of funds"
+msgstr "مصدر الأموال"
+
+msgid "Source of wealth"
+msgstr "مصدر الثروة"
+
+msgid "Start a new EDD review"
+msgstr "بدء مراجعة عناية معززة جديدة"
+
+msgid "Status changed"
+msgstr "تغيّرت الحالة"
+
+msgid "Status history"
+msgstr "سجل الحالات"
+
+msgid "Submit for MLRO / senior management approval"
+msgstr "تقديم لاعتماد مسؤول الإبلاغ / الإدارة العليا"
+
+msgid "Submitted by the merchant"
+msgstr "قدّمه التاجر"
+
+msgid "Submitted for approval"
+msgstr "مقدَّم للاعتماد"
+
+msgid "Submitted for approval. Another person must approve or reject it."
+msgstr "تم التقديم للاعتماد، ويجب أن يعتمده أو يرفضه شخص آخر."
+
+msgid "Tax card number"
+msgstr "رقم البطاقة الضريبية"
+
+msgid "Temporary password"
+msgstr "كلمة المرور المؤقتة"
+
+msgid "The EDD record changed; reload the page."
+msgstr "تغيّر سجل العناية المعززة؛ أعد تحميل الصفحة."
+
+msgid "The KYB file is complete and every owner and signatory is screened without an open hit."
+msgstr "ملف «اعرف عميلك من الشركات» مكتمل، وتم فحص جميع المستفيدين والمفوضين دون نتائج مفتوحة."
+
+msgid "The customer is a politically exposed person."
+msgstr "العميل شخص سياسي ممثل للمخاطر."
+
+msgid "The customer is already active."
+msgstr "العميل نشط بالفعل."
+
+msgid "The list is empty."
+msgstr "القائمة فارغة."
+
+msgid "The next review date must be in the future."
+msgstr "يجب أن يكون تاريخ المراجعة القادمة في المستقبل."
+
+msgid "The status was not changed to Active:"
+msgstr "لم تتغير الحالة إلى نشط:"
+
+msgid "This EDD record can no longer be changed."
+msgstr "لم يعد من الممكن تعديل سجل العناية المعززة هذا."
+
+msgid "This EDD record is not waiting for approval."
+msgstr "سجل العناية المعززة هذا ليس بانتظار الاعتماد."
+
+msgid "This country is already on the list; reactivate it instead."
+msgstr "الدولة موجودة في القائمة بالفعل؛ أعد تفعيلها بدلًا من إضافتها."
+
+msgid "Total ownership"
+msgstr "إجمالي الملكية"
+
+#, python-format
+msgid "Total ownership is %(total)s%%; it cannot exceed 100%%."
+msgstr "إجمالي الملكية %(total)s%%، ولا يجوز أن يتجاوز 100%%."
+
+msgid "Unknown register."
+msgstr "سجل غير معروف."
+
+msgid "Waiting for the MLRO or a senior manager to approve."
+msgstr "بانتظار اعتماد مسؤول الإبلاغ أو أحد كبار المديرين."
+
+msgid "Which unit"
+msgstr "الوحدة"
+
+msgid "Write the approval rationale (at least 10 characters)."
+msgstr "اكتب مبررات الاعتماد (10 أحرف على الأقل)."
+
+msgid "You do not have permission to change the high-risk country list."
+msgstr "ليست لديك صلاحية تعديل قائمة الدول مرتفعة المخاطر."
+
+msgid "You do not have permission to change this KYB file."
+msgstr "ليست لديك صلاحية تعديل ملف اعرف عميلك من الشركات هذا."
+
+msgid "You do not have permission to prepare EDD."
+msgstr "ليست لديك صلاحية إعداد العناية الواجبة المعززة."
+
+msgid "Your account was given a temporary password by an administrator. Choose your own password to continue."
+msgstr "أصدر المسؤول كلمة مرور مؤقتة لحسابك. اختر كلمة مرورك الخاصة للمتابعة."
+
+msgid "choose again"
+msgstr "اختر مجددًا"
+
+msgid "e.g. 6 months of bank statements, sale contract"
+msgstr "مثل: كشوف حساب بنكية لستة أشهر، عقد بيع"
+
+msgid "high-risk country"
+msgstr "دولة مرتفعة المخاطر"
+
+msgid "owner/signatory high-risk country"
+msgstr "مستفيد/مفوض مرتبط بدولة مرتفعة المخاطر"
+
+msgid "owner/signatory screening link"
+msgstr "نتيجة فحص لمستفيد/مفوض"
+
+msgid "queue"
+msgstr "قائمة المراجعة"
+
+msgid "report"
+msgstr "التقرير"
+
+msgid "screening link"
+msgstr "نتيجة فحص"
+
+msgid "— none —"
+msgstr "— لا يوجد —"
+
+msgid "— select —"
+msgstr "— اختر —"
+
+msgid "Source of funds with evidence"
+msgstr "مصدر الأموال مع المستندات المؤيدة"
+
+msgid "high risk: EDD must be completed and approved first"
+msgstr "مرتفع المخاطر: يجب استكمال العناية الواجبة المعززة واعتمادها أولًا"
+
+msgid "Four-eyes: you submitted this merchant for approval; another person must decide."
+msgstr "مبدأ الرقابة المزدوجة: أنت من قدّم هذا التاجر للاعتماد؛ ويجب أن يتخذ القرار شخص آخر."
+
+msgid "Four-eyes: you created this merchant; another person must decide."
+msgstr "مبدأ الرقابة المزدوجة: أنت من أنشأ سجل هذا التاجر؛ ويجب أن يتخذ القرار شخص آخر."
+
+msgid "This merchant has already been decided."
+msgstr "تم اتخاذ القرار بشأن هذا التاجر بالفعل."
+
+msgid "Only a merchant submitted for approval can be approved."
+msgstr "لا يمكن اعتماد التاجر إلا بعد تقديمه للاعتماد."
+
+msgid "Give the rejection reason (at least 10 characters)."
+msgstr "اذكر سبب الرفض (10 أحرف على الأقل)."
+
+#, python-format
+msgid "Beneficial owner %(name)s has not been screened."
+msgstr "لم يُفحص المستفيد الحقيقي %(name)s."
+
+#, python-format
+msgid "Screening hit on beneficial owner %(name)s is still open."
+msgstr "نتيجة فحص المستفيد الحقيقي %(name)s ما زالت مفتوحة."
+
+#, python-format
+msgid "Beneficial owner %(name)s is a confirmed sanctions match."
+msgstr "المستفيد الحقيقي %(name)s مطابق مؤكد على قوائم العقوبات."
+
+#, python-format
+msgid "Screening of beneficial owner %(name)s failed; screen again."
+msgstr "تعذّر فحص المستفيد الحقيقي %(name)s؛ أعد الفحص."
+
+#, python-format
+msgid "Signatory %(name)s has not been screened."
+msgstr "لم يُفحص المفوض بالتوقيع %(name)s."
+
+#, python-format
+msgid "Screening hit on signatory %(name)s is still open."
+msgstr "نتيجة فحص المفوض بالتوقيع %(name)s ما زالت مفتوحة."
+
+#, python-format
+msgid "Signatory %(name)s is a confirmed sanctions match."
+msgstr "المفوض بالتوقيع %(name)s مطابق مؤكد على قوائم العقوبات."
+
+#, python-format
+msgid "Screening of signatory %(name)s failed; screen again."
+msgstr "تعذّر فحص المفوض بالتوقيع %(name)s؛ أعد الفحص."
+
+msgid "EDD record opened."
+msgstr "تم فتح سجل العناية الواجبة المعززة."
+
+msgid "EDD saved."
+msgstr "تم حفظ العناية المعززة."
+
+msgid "EDD submitted for approval."
+msgstr "تم تقديم العناية المعززة للاعتماد."
+
+msgid "EDD approved."
+msgstr "تم اعتماد العناية المعززة."
+
+msgid "EDD returned to the preparer."
+msgstr "أُعيدت العناية المعززة إلى المُعِدّ."
+
+#, python-format
+msgid "Complete the checklist first: %(items)s"
+msgstr "استكمل قائمة التحقق أولًا: %(items)s"
+
+#, python-format
+msgid "%(n)s person(s) screened."
+msgstr "تم فحص %(n)s شخص."
+
+#, python-format
+msgid "%(n)s customers re-assessed."
+msgstr "تمت إعادة تقييم %(n)s عميل."
+
+msgid "Re-Run Screening"
+msgstr "إعادة الفحص"
+
+msgid "Run Sanctions Screening"
+msgstr "إجراء فحص العقوبات"
+
+msgid "Re-Screen"
+msgstr "إعادة الفحص"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 
