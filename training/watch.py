@@ -61,17 +61,18 @@ def credit_seconds(last_heartbeat, now=None, playing=True):
     return int(min(gap, HEARTBEAT_MAX_CREDIT))
 
 
-def video_length(course_seconds, reported=None, duration_minutes=None):
-    """Video length used for the threshold: the course's recorded length; else
-    the length the player reports (stored on the course the first time); else
-    the course's estimated duration."""
-    for v in (course_seconds, reported):
-        try:
-            v = int(float(v))
-        except (TypeError, ValueError):
-            continue
+def video_length(course_seconds, duration_minutes=None):
+    """Video length used for the threshold. Only lengths known to the SERVER
+    count: the course's recorded length (entered by the training administrator
+    or read from the uploaded file); else the course's declared duration, so
+    the credited watch time must reach the declared minutes. A length reported
+    by the browser is never used - it could be forged to complete in seconds."""
+    try:
+        v = int(float(course_seconds))
         if v > 0:
             return v
+    except (TypeError, ValueError):
+        pass
     try:
         m = int(duration_minutes)
         return m * 60 if m > 0 else None

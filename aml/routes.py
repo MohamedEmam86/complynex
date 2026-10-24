@@ -297,6 +297,7 @@ def view_customer(id):
         edd_case=edd_case, edd_status=_L.edd_status(edd_case),
         edd_display=_L.display_status(customer['requires_edd'], edd_case),
         edd_reasons=_edd.forced_reasons(dict(customer)),
+        risk_score_view=_L.effective_score(customer['risk_score'], customer['risk_classification']),
         activation_blockers=_edd.activation_blockers(dict(customer)) if (customer['status'] or '') != 'ACTIVE' else [],
         kyb_ubos=kyb_ubos, kyb_sigs=kyb_sigs,
         attach_module='aml', attach_record_type='customer', attach_record_id=id,
@@ -715,7 +716,18 @@ def employee_report_view(report_id):
         return redirect(url_for('aml.employee_report_view', report_id=report_id))
     ar = _ar()
     customers = db.execute("SELECT id, full_name, customer_reference FROM customers ORDER BY full_name").fetchall()
+    # Preselect the reported customer: the linked record, else the customer whose
+    # reference / name matches what the employee reported.
+    reported_customer_id = r.get('customer_id')
+    if not reported_customer_id and (r.get('subject_type') or 'customer') == 'customer':
+        ref = (r.get('subject_ref') or '').strip().lower()
+        name = ' '.join((r.get('subject_name') or '').split()).lower()
+        by_ref = [c['id'] for c in customers if ref and (c['customer_reference'] or '').strip().lower() == ref]
+        by_name = [c['id'] for c in customers if name and ' '.join((c['full_name'] or '').split()).lower() == name]
+        match = by_ref or by_name
+        reported_customer_id = match[0] if len(match) == 1 else None
     return render_template('aml/employee_report_view.html', r=r, events=empr.report_events(db, report_id),
+                           reported_customer_id=reported_customer_id,
                            status_labels=empr.labels(empr.STATUSES, ar), subject_labels=empr.labels(empr.SUBJECT_TYPES, ar),
                            action_labels=empr.labels(empr.ACTIONS, ar), customers=customers,
                            attachments=list_attachments('aml', empr.ATTACH_TYPE, report_id))

@@ -157,7 +157,7 @@ def view_course(id):
                       if e.course_id == id), None)
     
     from training import watch as W
-    length = W.video_length(course.video_duration_seconds, None, course.duration_minutes)
+    length = W.video_length(course.video_duration_seconds, course.duration_minutes)
     attempts_left = None
     if enrollment:
         attempts_left = W.attempts_remaining(course.max_quiz_attempts, len(enrollment.quiz_attempts()),
@@ -403,6 +403,17 @@ def save_course(id):
             if not document_path and not request.form.get('document_path'): course_data['document_path'] = existing.document_path
             if not presentation_path: course_data['presentation_path'] = existing.presentation_path
 
+    # Video length must be known to the server: entered by the administrator, or
+    # read from the uploaded MP4; else the declared duration is used.
+    if not course_data['video_duration_seconds'] and course_data.get('video_file_path'):
+        from training.media import mp4_duration_seconds
+        course_data['video_duration_seconds'] = mp4_duration_seconds(course_data['video_file_path'])
+    has_video = bool(course_data.get('video_file_path') or (course_data.get('video_url') or '').strip())
+    if has_video and not course_data['video_duration_seconds'] and not _pos_int(course_data.get('duration_minutes')):
+        flash(gettext('Enter the video length (seconds) or the course duration (minutes): the video cannot be '
+                      'marked as watched without a length known to the server.'), 'danger')
+        return redirect(url_for('training.edit_course', id=id) if id else url_for('training.edit_course'))
+
     course = TrainingCourse(**course_data)
     course.save()
     flash(gettext('Course saved successfully.'), 'success')
@@ -632,7 +643,7 @@ def heartbeat(id):
         return jsonify({'success': False, 'message': 'Enrollment not found'}), 404
     data = request.get_json(silent=True) or {}
     playing = data.get('playing', True) is not False
-    result = enrollment.heartbeat(course, playing=playing, reported_duration=data.get('duration'))
+    result = enrollment.heartbeat(course, playing=playing)  # any length sent by the browser is ignored
     return jsonify(dict(success=True, **result))
 
 @training_bp.route('/certificate/<int:cert_id>/download')

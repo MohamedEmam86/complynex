@@ -150,8 +150,15 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2">
                         <span>{{ _('Risk Score:') }}</span>
-                        <span class="fw-bold">{{ customer.risk_score }}/100</span>
+                        <span class="fw-bold">{{ risk_score_view[0] }}/100 · {{ customer.risk_classification|kyc_label('risk') }}</span>
                     </div>
+                    {% if risk_score_view[2] is not none %}
+                    <div class="small text-muted mb-2">
+                        {{ _('Model score %(model)s/100, raised to the minimum score of this rating (%(floor)s).', model=risk_score_view[1], floor=risk_score_view[2]) }}
+                        {% if edd_reasons %}{{ _('Reason: regulatory HIGH floor (see Enhanced Due Diligence above).') }}
+                        {% elif customer.risk_override_reason %}{{ _('Reason: documented manual rating') }} — {{ customer.risk_override_reason }}{% endif %}
+                    </div>
+                    {% endif %}
                     <div class="d-flex justify-content-between mb-2">
                         <span>{{ _('Last Assessment:') }}</span>
                         <span class="small">{{ customer.risk_classification_date or 'N/A' }}</span>

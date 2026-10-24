@@ -295,7 +295,7 @@ class TrainingEnrollment:
             db.commit()
             return False, None
 
-    def heartbeat(self, course, playing=True, reported_duration=None, now=None):
+    def heartbeat(self, course, playing=True, now=None):
         """Credit watch time from a player heartbeat (server clock only) and mark
         the video watched once the course's threshold is reached. Returns a dict
         for the player. The client cannot declare completion."""
@@ -306,12 +306,16 @@ class TrainingEnrollment:
                             WHERE id = %s FOR UPDATE""", (self.id,)).fetchone()
         watched = (row['watched_seconds'] or 0) if row else 0
         completed = bool(row['video_completed']) if row else False
-        length = W.video_length(course.video_duration_seconds, reported_duration, course.duration_minutes)
-        if not course.video_duration_seconds and length and reported_duration:
-            # First time the real length is known: store it on the course (only grows,
-            # so a forged short length can be corrected by a genuine player).
-            db.execute("""UPDATE training_courses SET video_duration_seconds = GREATEST(COALESCE(video_duration_seconds, 0), %s)
-                          WHERE id = %s""", (length, course.id))
+        if not course.video_duration_seconds and course.video_file_path:
+            # Older course without a recorded length: read it from the uploaded file
+            # on the server (never from the browser) and keep it on the course.
+            from training.media import mp4_duration_seconds
+            secs = mp4_duration_seconds(course.video_file_path)
+            if secs:
+                db.execute("UPDATE training_courses SET video_duration_seconds = %s WHERE id = %s AND video_duration_seconds IS NULL",
+                           (secs, course.id))
+                course.video_duration_seconds = secs
+        length = W.video_length(course.video_duration_seconds, course.duration_minutes)
         if not completed:
             watched += W.credit_seconds(row['last_heartbeat_at'] if row else None, now, playing)
             if length:

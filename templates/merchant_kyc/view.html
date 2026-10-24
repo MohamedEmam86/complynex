@@ -58,6 +58,10 @@
                 <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-send-check"></i> {{ _('Submit for approval') }}</button>
             </form>
             {% endif %}
+            {% if can_resubmit %}
+            <button type="button" class="btn btn-sm btn-primary me-1" data-bs-toggle="modal" data-bs-target="#resubmitModal">
+                <i class="bi bi-arrow-repeat"></i> {{ _('Resubmit for approval') }}</button>
+            {% endif %}
             {% if can_decide %}
             {% if decision_block %}
             <span class="badge bg-light text-dark border me-1 text-wrap" style="max-width:260px">{{ decision_block|kyc_msg }}</span>
@@ -363,7 +367,14 @@
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Sanctions Checked') }}</td>
-                            <td>{{ '✅ Yes' if merchant.sanctions_checked else '❌ No' }}</td>
+                            <td>
+                                {% if sanctions.complete %}<span class="badge bg-success">{{ _('Yes') }}</span>{% else %}<span class="badge bg-danger">{{ _('No') }}</span>{% endif %}
+                                <div class="small text-muted">
+                                    {{ _('Merchant') }}: {{ _('Yes') if sanctions.entity else _('No') }} ·
+                                    {{ _('Owners and signatories screened: %(n)s of %(total)s', n=sanctions.people_screened, total=sanctions.people_total) }}
+                                    {% if sanctions.people_open %} · <span class="text-danger">{{ _('%(n)s with an open or confirmed match', n=sanctions.people_open) }}</span>{% endif %}
+                                </div>
+                            </td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('PEP Checked') }}</td>
@@ -468,6 +479,32 @@
         </div>
     </div>
 </div>
+
+{% if can_resubmit %}
+<!-- Resubmit Modal (after a rejection; the rejection stays in the status history) -->
+<div class="modal fade" id="resubmitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('merchant_kyc.submit_merchant', id=merchant.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ _('Resubmit for approval') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted">{{ _('Edit the merchant file first to correct the points raised in the rejection. Another person must approve or reject the resubmission.') }}</p>
+                    <label class="form-label fw-bold">{{ _('What was corrected') }}</label>
+                    <textarea name="note" class="form-control" rows="3" required minlength="10"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ _('Resubmit for approval') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Reject Modal -->
 <div class="modal fade" id="rejectModal" tabindex="-1">

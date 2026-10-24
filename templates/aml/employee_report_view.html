@@ -41,7 +41,7 @@
         <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="convert">
           <label class="form-label small">{{ _('Customer in the system (optional)') }}</label>
           <select name="customer_id" class="form-select form-select-sm mb-2"><option value="">—</option>
-            {% for c in customers %}<option value="{{ c.id }}" {{ 'selected' if c.id == r.customer_id }}>{{ c.full_name }} ({{ c.customer_reference }})</option>{% endfor %}</select>
+            {% for c in customers %}<option value="{{ c.id }}" {{ 'selected' if c.id == reported_customer_id }}>{{ c.full_name }} ({{ c.customer_reference }})</option>{% endfor %}</select>
           <label class="form-label small">{{ _('Amount involved (if known)') }}</label>
           <input type="number" step="0.01" min="0" name="amount" class="form-control form-control-sm mb-2">
           <button class="btn btn-sm btn-danger">{{ _('Open STR case') }}</button>

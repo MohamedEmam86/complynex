@@ -56,6 +56,9 @@ SUBJECTS = {
                    'incorporation_country': 'registration_country', 'licence_number': 'licence_number',
                    'licence_regulator': 'licence_regulator'},
         'main_owner_columns': {},
+        # the customer form records a company's CR number as its identity document
+        'prefill': lambda r: ({'cr_number': r.get('id_number')}
+                              if (r.get('id_type') or '').upper() == 'COMMERCIAL_REG' else {}),
     },
 }
 
@@ -87,6 +90,9 @@ def entity(subject, subject_id, db=None):
         return None
     cfg = _cfg(subject)
     out = {k: r.get(col) for k, col in cfg['fields'].items()}
+    for k, v in (cfg.get('prefill') or (lambda _r: {}))(r).items():
+        if not out.get(k) and v:
+            out[k] = v          # shown pre-filled; stored on the KYB columns when saved
     out['id'] = r['id']
     out['name'] = cfg['name'](r)
     return out
@@ -248,9 +254,30 @@ def sync_main_owner(subject, subject_id, db=None):
     db.commit()
 
 
-def screen_person(kind, row, user_id, db=None):
+def _release_engine_connection():
+    """Give this thread's screening-engine connection back to the pool (the
+    engine keeps one connection per thread; KYB screening runs in the request
+    thread, sequentially, and must not leave it checked out)."""
+    try:
+        from screening import routes as _sr
+        eng = getattr(_sr, '_engine_instance', None)
+        if eng is not None:
+            eng.close()
+    except Exception:
+        log.debug('screening engine connection release failed', exc_info=True)
+
+
+def screen_person(kind, row, user_id, db=None, release=True):
     """Screen one person through the public screening service and link the result."""
     db = db or get_db()
+    try:
+        return _screen_person(kind, row, user_id, db)
+    finally:
+        if release:
+            _release_engine_connection()
+
+
+def _screen_person(kind, row, user_id, db):
     try:
         from screening.customer_screening_service import screen_and_save
         res = screen_and_save(
@@ -277,12 +304,15 @@ def screen_all(subject, subject_id, user_id, only_needed=True, db=None):
     """Screen every owner and signatory that has not been screened on its current data."""
     db = db or get_db()
     n = 0
-    for kind in ('ubo', 'signatory'):
-        for p in people(kind, subject, subject_id, db):
-            if only_needed and p.get('screening_history_id') and p.get('screened_key') == logic.screen_key(p):
-                continue
-            screen_person(kind, p, user_id, db)
-            n += 1
+    try:
+        for kind in ('ubo', 'signatory'):        # one after the other, in this thread
+            for p in people(kind, subject, subject_id, db):
+                if only_needed and p.get('screening_history_id') and p.get('screened_key') == logic.screen_key(p):
+                    continue
+                screen_person(kind, p, user_id, db, release=False)
+                n += 1
+    finally:
+        _release_engine_connection()
     return n
 
 

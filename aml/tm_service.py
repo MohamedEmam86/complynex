@@ -326,12 +326,25 @@ def evaluate_transaction(transaction_id, db=None):
         if triggered:
             # Check if alert already exists for same rule + customer in last 24h
             existing = db.execute("""
-                SELECT id FROM tm_alerts
+                SELECT id, triggered_transactions FROM tm_alerts
                 WHERE rule_id=%s AND customer_id=%s 
                 AND alert_date >= %s AND status NOT IN ('CLOSED','FALSE_POSITIVE')
             """, (rule['id'], tx['customer_id'],
                   (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S'))).fetchone()
-            if not existing:
+            if existing:
+                # The open alert covers the whole pattern: link this transaction to it
+                # too, so the alert (and an STR raised from it) carries every
+                # transaction and their total, not only the first one.
+                try:
+                    linked = json.loads(existing['triggered_transactions'] or '[]')
+                except (ValueError, TypeError):
+                    linked = []
+                if tx['id'] not in linked and str(tx['id']) not in [str(x) for x in linked]:
+                    linked.append(tx['id'])
+                    db.execute("UPDATE tm_alerts SET triggered_transactions = %s WHERE id = %s",
+                               (json.dumps(linked), existing['id']))
+                    db.commit()
+            else:
                 ref = create_alert(db, rule, tx['customer_id'], tx['id'],
                                   description, [tx['id']])
                 alerts_raised.append({'rule': code, 'alert_ref': ref, 'severity': rule['severity']})

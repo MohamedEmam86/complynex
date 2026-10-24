@@ -49,6 +49,20 @@ def seed(ctx):
         "SELECT id, course_code, course_name, passing_score, duration_minutes, content_type FROM training_courses")}
     pol = {r['policy_name']: r['id'] for r in ctx.q("SELECT id, policy_name FROM policies")}
 
+    # Video lengths known to the server (read from each uploaded MP4), replacing any
+    # length a player heartbeat stored in older versions; the watch check needs them.
+    import os
+    from training.media import mp4_duration_seconds
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    for r in ctx.q("SELECT id, video_file_path FROM training_courses"):
+        secs = None
+        if r['video_file_path']:
+            for base in (os.getcwd(), root):
+                secs = mp4_duration_seconds(os.path.join(base, r['video_file_path']))
+                if secs:
+                    break
+        ctx.q("UPDATE training_courses SET video_duration_seconds=%s WHERE id=%s", (secs, r['id']))
+
     def policy(prefix):
         return next((v for k, v in pol.items() if k.startswith(prefix)), None)
 

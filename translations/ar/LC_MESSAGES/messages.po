@@ -36910,6 +36910,88 @@ msgstr "تم إنشاء بلاغ اشتباه"
 msgid "SME loan"
 msgstr "تمويل المشروعات الصغيرة والمتوسطة"
 
+msgid "Enter the video length (seconds) or the course duration (minutes): the video cannot be marked as watched without a length known to the server."
+msgstr "أدخل مدة الفيديو (بالثواني) أو مدة الدورة (بالدقائق): لا يمكن اعتبار الفيديو مُشاهَدًا دون مدة معروفة لدى الخادم."
+
+msgid "Read automatically from an uploaded MP4 file. For a video link, enter the real length; if left blank, the course duration in minutes is used."
+msgstr "تُقرأ تلقائيًا من ملف MP4 المرفوع. عند استخدام رابط فيديو أدخل المدة الفعلية؛ وإذا تُركت فارغة تُستخدم مدة الدورة بالدقائق."
+
+msgid "Whitelist entries cannot be deleted. Ask the MLRO to revoke the entry with a reason; the history is kept."
+msgstr "لا يمكن حذف قيود القائمة البيضاء. اطلب من مسؤول الإبلاغ عن غسل الأموال إلغاء القيد مع ذكر السبب؛ ويُحتفَظ بالسجل."
+
+msgid "Only the MLRO (approval authority) can revoke a whitelist entry."
+msgstr "لا يملك إلغاء قيد في القائمة البيضاء إلا مسؤول الإبلاغ عن غسل الأموال (سلطة الاعتماد)."
+
+msgid "This entry is already revoked."
+msgstr "هذا القيد ملغى بالفعل."
+
+msgid "A specific reason (at least 10 characters) is required to revoke a whitelist entry."
+msgstr "يلزم ذكر سبب محدد (10 أحرف على الأقل) لإلغاء قيد في القائمة البيضاء."
+
+msgid "Describe what was corrected since the rejection (at least 10 characters)."
+msgstr "صِف ما تم تصحيحه منذ الرفض (10 أحرف على الأقل)."
+
+msgid "Resubmitted after rejection"
+msgstr "أُعيد تقديمه بعد الرفض"
+
+msgid "Resubmit for approval"
+msgstr "إعادة التقديم للاعتماد"
+
+msgid "Edit the merchant file first to correct the points raised in the rejection. Another person must approve or reject the resubmission."
+msgstr "عدّل ملف التاجر أولًا لتصحيح الملاحظات الواردة في الرفض. ويجب أن يعتمد شخص آخر إعادة التقديم أو يرفضها."
+
+msgid "What was corrected"
+msgstr "ما الذي تم تصحيحه"
+
+#, python-format
+msgid "Owners and signatories screened: %(n)s of %(total)s"
+msgstr "الملاك والمفوضون بالتوقيع الذين تم فحصهم: %(n)s من %(total)s"
+
+#, python-format
+msgid "%(n)s with an open or confirmed match"
+msgstr "%(n)s لديهم تطابق مفتوح أو مؤكد"
+
+#, python-format
+msgid "Waiting for the review of: %(names)s"
+msgstr "في انتظار مراجعة: %(names)s"
+
+msgid "Maker-checker: you drafted this version, so another person must review and approve it."
+msgstr "مبدأ الفصل بين المُعِدّ والمُراجِع: أنت من أعددت هذا الإصدار، لذا يجب أن يراجعه ويعتمده شخص آخر."
+
+msgid "The author of this version cannot be assigned as its reviewer."
+msgstr "لا يجوز تعيين مُعِدّ هذا الإصدار مراجعًا له."
+
+msgid "Select a reviewer."
+msgstr "اختر مراجعًا."
+
+msgid "You have no pending review assigned on this policy."
+msgstr "لا توجد لديك مراجعة معلّقة مُسندة إليك على هذه السياسة."
+
+msgid "Select a stage."
+msgstr "اختر مرحلة."
+
+msgid "Awaiting decision"
+msgstr "في انتظار القرار"
+
+msgid "Required when rejecting."
+msgstr "مطلوب عند الرفض."
+
+msgid "No other consents recorded for this data subject."
+msgstr "لا توجد موافقات أخرى مسجلة لصاحب البيانات هذا."
+
+#, python-format
+msgid "Model score %(model)s/100, raised to the minimum score of this rating (%(floor)s)."
+msgstr "درجة النموذج %(model)s/100، رُفعت إلى الحد الأدنى لدرجة هذا التصنيف (%(floor)s)."
+
+msgid "Reason: regulatory HIGH floor (see Enhanced Due Diligence above)."
+msgstr "السبب: الحد الأدنى الرقابي للمخاطر المرتفعة (انظر العناية الواجبة المعززة أعلاه)."
+
+msgid "Reason: documented manual rating"
+msgstr "السبب: تصنيف يدوي موثق"
+
+msgid "Record the attendance of the meeting before approving its minutes."
+msgstr "سجّل حضور الاجتماع قبل اعتماد محضره."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 
