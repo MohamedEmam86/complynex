@@ -108,7 +108,8 @@ def seed(ctx):
             registered_address_en='12 Example Street, Fifth Settlement, New Cairo, Egypt (demo address)',
             registered_address_ar='12 شارع المثال، التجمع الخامس، القاهرة الجديدة (عنوان وهمي)',
             address_aliases=['Nile Micro', 'NMF'], commercial_register_no='DEMO-CR-104233',
-            tax_card_no='DEMO-552-118-907', licence_number='FRA-MF-DEMO-0417', regulator_id=ctx.data['fra_id'],
+            tax_card_no='DEMO-552-118-907', licence_number='FRA-MF-DEMO-0417', licence_type='microfinance',
+            regulator_id=ctx.data['fra_id'],
             phone='+20 2 0000 0000', email=f'info@{DOMAIN}', website=f'https://www.{DOMAIN}',
             updated_by=ctx.users['admin'])
     for k, v in {'company_name': COMPANY_EN, 'regulator_name': 'Financial Regulatory Authority (FRA)',
