@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Enhanced Due Diligence') }} - {{ customer.company_name or customer.full_name }}{% endblock %}
+{% block content %}
+{% set c = case or {} %}
+{% set ro = not can_prepare or not case %}
+<div class="container-fluid py-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('aml.customer_list') }}">{{ _('Customers') }}</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('aml.view_customer', id=customer.id) }}">{{ customer.company_name or customer.full_name }}</a></li>
+      <li class="breadcrumb-item active">{{ _('Enhanced Due Diligence') }}</li>
+    </ol>
+  </nav>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h1 class="h3 mb-0"><i class="bi bi-shield-lock"></i> {{ _('Enhanced Due Diligence') }}</h1>
+    <div>
+      <span class="badge {% if display == 'approved' %}bg-success{% elif display in ('awaiting_approval',) %}bg-info text-dark{% elif display == 'not_required' %}bg-secondary{% else %}bg-warning text-dark{% endif %} fs-6">{{ display|kyc_label('edd') }}</span>
+      <span class="badge {% if customer.risk_classification == 'HIGH' %}bg-danger{% elif customer.risk_classification == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %} fs-6">{{ _('Risk') }}: {{ customer.risk_classification|kyc_label('risk') }}</span>
+    </div>
+  </div>
+
+  {% if reasons %}
+  <div class="alert alert-danger py-2">
+    <strong>{{ _('High risk because:') }}</strong>
+    <ul class="mb-0">
+      {% for code, detail in reasons %}
+      <li>{% if code == 'pep' %}{{ _('The customer is a politically exposed person.') }}
+          {% elif code == 'screening' %}{{ _('Screening links the customer to a sanctions / PEP list entry that is not cleared.') }}
+          {% elif code == 'country' %}{{ _('Connected to a high-risk country:') }} {{ detail }}
+          {% elif code == 'owner_pep' %}{{ _('A beneficial owner or signatory is a PEP:') }} {{ detail }}
+          {% elif code == 'owner_screening' %}{{ _('A beneficial owner or signatory has a screening link:') }} {{ detail }}
+          {% elif code == 'owner_country' %}{{ _('A beneficial owner or signatory is linked to a high-risk country:') }} {{ detail }}
+          {% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if not case %}
+  <div class="card shadow-sm"><div class="card-body">
+    <p class="mb-2">{{ _('No EDD record exists for this customer.') }}</p>
+    {% if current_user.can_edit('aml') %}
+    <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="start">
+      <button class="btn btn-primary btn-sm">{{ _('Open an EDD record') }}</button></form>
+    {% endif %}
+  </div></div>
+  {% else %}
+  <div class="row">
+    <div class="col-lg-8">
+      {% if status == 'RETURNED' and c.returned_reason %}
+      <div class="alert alert-warning py-2"><strong>{{ _('Returned by the approver:') }}</strong> {{ c.returned_reason }}</div>
+      {% endif %}
+      <form method="POST" class="card shadow-sm mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="case_id" value="{{ c.id }}">
+        <div class="card-header bg-light fw-bold">{{ _('EDD record') }} <code>{{ c.case_reference }}</code>
+          <span class="badge bg-light text-dark border ms-2">{{ status|kyc_label('edd_status') }}</span></div>
+        <div class="card-body row g-3">
+          <div class="col-12">
+            <label class="form-label fw-bold">{{ _('Source of wealth') }}</label>
+            <textarea class="form-control" name="source_of_wealth" rows="2" {% if ro %}disabled{% endif %}>{{ c.source_of_wealth or '' }}</textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">{{ _('Source of funds') }}</label>
+            <textarea class="form-control" name="source_of_funds" rows="2" {% if ro %}disabled{% endif %}>{{ c.source_of_funds or '' }}</textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">{{ _('Evidence held for the source of funds') }}</label>
+            <textarea class="form-control" name="sof_evidence" rows="2" placeholder="{{ _('e.g. 6 months of bank statements, sale contract') }}" {% if ro %}disabled{% endif %}>{{ c.sof_evidence or '' }}</textarea>
+            <div class="form-text">{{ _('Attach the documents below; a description alone is accepted only when the document cannot be kept.') }} ({{ _('Attached') }}: {{ evidence_count }})</div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold">{{ _('Purpose and intended nature of the relationship') }}</label>
+            <textarea class="form-control" name="purpose_nature" rows="2" {% if ro %}disabled{% endif %}>{{ c.purpose_nature or '' }}</textarea>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ _('Enhanced monitoring frequency') }}</label>
+            <select class="form-select" name="enhanced_monitoring_frequency" {% if ro %}disabled{% endif %}>
+              <option value="">{{ _('Select...') }}</option>
+              {% for f in frequencies %}<option value="{{ f }}" {% if c.enhanced_monitoring_frequency == f %}selected{% endif %}>{{ f|kyc_label('monitoring') }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ _('Next review date') }}</label>
+            <input type="date" class="form-control" name="next_review_date" value="{{ c.next_review_date or '' }}" {% if ro %}disabled{% endif %}>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold">{{ _('Notes') }}</label>
+            <textarea class="form-control" name="investigation_notes" rows="2" {% if ro %}disabled{% endif %}>{{ c.investigation_notes or '' }}</textarea>
+          </div>
+        </div>
+        {% if not ro %}
+        <div class="card-footer text-end">
+          <button name="action" value="save" class="btn btn-outline-primary btn-sm">{{ _('Save draft') }}</button>
+          <button name="action" value="submit" class="btn btn-primary btn-sm">{{ _('Submit for MLRO / senior management approval') }}</button>
+        </div>
+        {% endif %}
+      </form>
+
+      {% if status == 'SUBMITTED' %}
+      <div class="card shadow-sm mb-3 border-info">
+        <div class="card-header bg-info-subtle fw-bold">{{ _('Approval') }}</div>
+        <div class="card-body">
+          <p class="small mb-2">{{ _('Prepared by') }}: <strong>{{ preparer or '—' }}</strong></p>
+          {% if can_decide %}
+          <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="case_id" value="{{ c.id }}">
+            <textarea class="form-control mb-2" name="notes" rows="2" required minlength="10" placeholder="{{ _('Rationale for approving, or what must be completed') }}"></textarea>
+            <button name="action" value="approve" class="btn btn-success btn-sm">{{ _('Approve EDD') }}</button>
+            <button name="action" value="return" class="btn btn-outline-warning btn-sm">{{ _('Return to the preparer') }}</button>
+          </form>
+          {% elif is_preparer %}
+          <div class="text-muted small">{{ _('Four-eyes: you prepared this EDD, so another person (MLRO or senior manager) must approve it.') }}</div>
+          {% else %}
+          <div class="text-muted small">{{ _('Waiting for the MLRO or a senior manager to approve.') }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% elif status == 'APPROVED' %}
+      <div class="alert alert-success">
+        {{ _('Approved by') }} <strong>{{ approver or '—' }}</strong> {{ _('on') }} {{ c.approval_date }}{% if c.approval_notes %} — {{ c.approval_notes }}{% endif %}
+        {% if current_user.can_edit('aml') %}
+        <form method="POST" class="mt-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="start">
+          <button class="btn btn-sm btn-outline-primary">{{ _('Start a new EDD review') }}</button></form>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% include 'partials/attachment_widget.html' %}
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light fw-bold">{{ _('Checklist') }}</div>
+        <ul class="list-group list-group-flush">
+          {% for key, label_en, done in checklist %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span>{{ _(label_en) }}</span>
+            {% if done %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-circle text-muted"></i>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light fw-bold">{{ _('History') }}</div>
+        <ul class="list-group list-group-flush small">
+          {% for h in history %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between"><strong>{{ h.action|kyc_label('edd_action') }}</strong><span class="text-muted">{{ h.created_at.strftime('%Y-%m-%d %H:%M') if h.created_at else '' }}</span></div>
+            <div>{{ h.user_name or _('System') }}{% if h.to_status and h.from_status != h.to_status %} · {{ h.to_status|kyc_label('edd_status') }}{% endif %}</div>
+            {% if h.reason %}<div class="text-muted">{{ h.reason }}</div>{% endif %}
+          </li>
+          {% else %}<li class="list-group-item text-muted">{{ _('No history yet.') }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

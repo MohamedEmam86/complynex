@@ -109,6 +109,13 @@
 
                         <hr class="my-3">
                         <h6 class="text-primary mb-3"><i class="bi bi-people"></i> {{ _('Beneficial Ownership (UBO)') }}</h6>
+                        {% if merchant %}
+                        <div class="alert alert-light border small">
+                            {{ _('Beneficial owners, authorised signatories and the entity identification are kept in the KYB file, where each person is screened on save.') }}
+                            <a href="{{ url_for('merchant_kyc.merchant_kyb', id=merchant.id) }}" class="btn btn-sm btn-outline-primary ms-2">{{ _('Open the KYB file') }}</a>
+                        </div>
+                        {% else %}
+                        <p class="small text-muted">{{ _('Principal beneficial owner. More owners and the authorised signatories are added in the KYB file after saving.') }}</p>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('UBO Full Name') }}</label>
@@ -146,6 +153,7 @@
                                     value="{{ (merchant.ownership_percentage or '') if merchant else '' }}">
                             </div>
                         </div>
+                        {% endif %}
 
                         <hr class="my-3">
                         <h6 class="text-primary mb-3"><i class="bi bi-bank"></i> {{ _('Banking Details') }}</h6>
@@ -173,20 +181,17 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold">{{ _('KYC Status') }}</label>
+                                {% if merchant.kyc_status in ('APPROVED', 'REJECTED') %}
+                                <input type="hidden" name="kyc_status" value="{{ merchant.kyc_status }}">
+                                <div class="form-control-plaintext fw-bold">{{ merchant.kyc_status|kyc_label('kyc_status') }}</div>
+                                {% else %}
                                 <select class="form-select border-danger" name="kyc_status">
-                                    <option value="PENDING" {% if merchant.kyc_status=='PENDING' %}selected{% endif %}>
-                                        {{ _('Pending') }}</option>
-                                    <option value="SENT" {% if merchant.kyc_status=='SENT' %}selected{% endif %}>{{ _('Sent') }}
-                                    </option>
-                                    <option value="SUBMITTED" {% if merchant.kyc_status=='SUBMITTED' %}selected{% endif
-                                        %}>{{ _('Submitted') }}</option>
-                                    <option value="UNDER_REVIEW" {% if merchant.kyc_status=='UNDER_REVIEW' %}selected{%
-                                        endif %}>{{ _('Under Review') }}</option>
-                                    <option value="APPROVED" {% if merchant.kyc_status=='APPROVED' %}selected{% endif
-                                        %}>{{ _('Approved') }}</option>
-                                    <option value="REJECTED" {% if merchant.kyc_status=='REJECTED' %}selected{% endif
-                                        %}>{{ _('Rejected') }}</option>
+                                    {% for st in ('PENDING', 'SENT', 'SUBMITTED', 'UNDER_REVIEW') %}
+                                    <option value="{{ st }}" {% if merchant.kyc_status == st %}selected{% endif %}>{{ st|kyc_label('kyc_status') }}</option>
+                                    {% endfor %}
                                 </select>
+                                <div class="form-text">{{ _('Approval and rejection are recorded with the Approve / Reject actions on the merchant page.') }}</div>
+                                {% endif %}
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold">{{ _('Risk Level') }}</label>

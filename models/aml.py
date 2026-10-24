@@ -179,7 +179,17 @@ class Customer:
             cursor = db.execute(query, params)
             row = cursor.fetchone()
             db.commit()
-            return row[0] if row else None
+            new_id = row[0] if row else None
+            if new_id:
+                # HIGH floor (PEP / screening / high-risk country) and EDD hold on
+                # activation apply to every onboarding path (form, API, eKYC).
+                try:
+                    from aml.edd import reassess
+                    reassess(new_id, data.get('created_by'), model_class=risk_class, on_create=True)
+                except Exception as e:
+                    db.rollback()
+                    print(f"Risk floor / EDD check failed for customer {new_id}: {e}")
+            return new_id
         except Exception as e:
             print(f"Database error in create: {e}")
             return None

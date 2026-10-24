@@ -49,15 +49,25 @@
                 class="btn btn-sm btn-outline-primary me-2">
                 <i class="bi bi-pencil"></i> {{ _('Edit') }}
             </a>
-            {% if merchant.kyc_status in ('SUBMITTED', 'UNDER_REVIEW') %}
-            <form method="POST" action="{{ url_for('merchant_kyc.approve_merchant', id=merchant.id) }}"
-                class="d-inline me-1">
+            <a href="{{ url_for('merchant_kyc.merchant_kyb', id=merchant.id) }}" class="btn btn-sm btn-outline-dark me-2">
+                <i class="bi bi-building-check"></i> {{ _('KYB file') }}
+            </a>
+            {% if can_submit %}
+            <form method="POST" action="{{ url_for('merchant_kyc.submit_merchant', id=merchant.id) }}" class="d-inline me-1">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-circle"></i> {{ _('Approve') }}</button>
+                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-send-check"></i> {{ _('Submit for approval') }}</button>
             </form>
-            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+            {% endif %}
+            {% if can_decide %}
+            {% if decision_block %}
+            <span class="badge bg-light text-dark border me-1 text-wrap" style="max-width:260px">{{ decision_block|kyc_msg }}</span>
+            {% else %}
+            <button class="btn btn-sm btn-success me-1" data-bs-toggle="modal" data-bs-target="#approveModal" {% if kyb_blockers %}disabled title="{{ _('Resolve the KYB blockers first') }}"{% endif %}>
+                <i class="bi bi-check-circle"></i> {{ _('Approve') }}</button>
+            <button class="btn btn-sm btn-danger me-1" data-bs-toggle="modal" data-bs-target="#rejectModal">
                 <i class="bi bi-x-circle"></i> {{ _('Reject') }}
             </button>
+            {% endif %}
             {% endif %}
             {% if merchant.kyc_status not in ('APPROVED',) %}
             <form method="POST" action="{{ url_for('merchant_kyc.send_kyc_link', id=merchant.id) }}" class="d-inline">
@@ -74,11 +84,21 @@
     <!-- Status Banner -->
     <div
         class="alert {% if merchant.kyc_status == 'APPROVED' %}alert-success{% elif merchant.kyc_status == 'REJECTED' %}alert-danger{% elif merchant.kyc_status == 'SUBMITTED' %}alert-info{% else %}alert-warning{% endif %} py-2 mb-3">
-        <strong>{{ _('KYC Status:') }}</strong> {{ merchant.kyc_status }}
+        <strong>{{ _('KYC Status:') }}</strong> {{ merchant.kyc_status|kyc_label('kyc_status') }}
+        {% if names.submitted_by %}<span class="ms-3 small">{{ _('Submitted by') }}: {{ names.submitted_by }}</span>{% endif %}
+        {% if names.kyc_reviewed_by and merchant.kyc_status in ('APPROVED', 'REJECTED') %}<span class="ms-3 small">{{ _('Decided by') }}: {{ names.kyc_reviewed_by }} ({{ merchant.kyc_reviewed_at }})</span>{% endif %}
         {% if merchant.kyc_rejection_reason %}
         <br><small><strong>{{ _('Rejection Reason:') }}</strong> {{ merchant.kyc_rejection_reason }}</small>
         {% endif %}
     </div>
+
+    {% if kyb_blockers and merchant.kyc_status not in ('APPROVED', 'REJECTED') %}
+    <div class="alert alert-warning py-2 no-print">
+        <div class="fw-bold"><i class="bi bi-exclamation-triangle"></i> {{ _('Approval is blocked until these are resolved:') }}</div>
+        <ul class="mb-1">{% for b in kyb_blockers %}<li>{{ b|kyc_msg }}</li>{% endfor %}</ul>
+        <a href="{{ url_for('merchant_kyc.merchant_kyb', id=merchant.id) }}" class="btn btn-sm btn-outline-dark">{{ _('Open the KYB file') }}</a>
+    </div>
+    {% endif %}
 
     <!-- KYC Onboarding Form Link (Always Visible) -->
     {% if merchant.kyc_token %}
@@ -146,7 +166,7 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-sm btn-danger" id="runScreeningBtn">
                         <i class="bi bi-search"></i>
-                        {% if merchant.last_screening_date %}Re-Run Screening{% else %}Run Sanctions Screening{% endif
+                        {% if merchant.last_screening_date %}{{ _('Re-Run Screening') }}{% else %}{{ _('Run Sanctions Screening') }}{% endif
                         %}
                     </button>
                 </form>
@@ -159,7 +179,7 @@
                     {% set ss = merchant.screening_status or 'Not Screened' %}
                     <span
                         class="badge fs-6 {% if ss == 'Clear' %}bg-success{% elif ss == 'Pending Review' %}bg-warning text-dark{% elif ss == 'Blocked' %}bg-danger{% elif ss == 'PEP' %}bg-info{% elif ss == 'Whitelisted' %}bg-primary{% else %}bg-secondary{% endif %}">
-                        {{ ss }}
+                        {{ ss|kyc_label('screening_status') }}
                     </span>
                 </div>
                 <div class="col-md-3">
@@ -167,7 +187,7 @@
                     {% set rr = merchant.risk_rating or 'Not Assessed' %}
                     <span
                         class="badge fs-6 {% if rr == 'High' %}bg-danger{% elif rr == 'Medium' %}bg-warning text-dark{% elif rr == 'Low' %}bg-success{% else %}bg-secondary{% endif %}">
-                        {{ rr }}
+                        {{ rr|kyc_label('risk') if merchant.risk_rating else _('Not assessed') }}
                     </span>
                 </div>
                 <div class="col-md-3">
@@ -217,7 +237,7 @@
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Business Type') }}</td>
-                            <td>{{ merchant.business_type or 'N/A' }}</td>
+                            <td>{{ merchant.business_type|kyc_label('legal_form') if merchant.business_type else 'N/A' }}</td>
                         </tr>
                         <tr>
                             <td class="text-muted">{{ _('Industry') }}</td>
@@ -288,35 +308,26 @@
         <!-- Beneficial Ownership -->
         <div class="col-md-6 mb-4">
             <div class="card h-100">
-                <div class="card-header bg-warning text-dark">
-                    <h6 class="mb-0"><i class="bi bi-people"></i> {{ _('Beneficial Ownership (UBO)') }}</h6>
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-people"></i> {{ _('Beneficial owners and signatories') }}</h6>
+                    <a href="{{ url_for('merchant_kyc.merchant_kyb', id=merchant.id) }}" class="btn btn-sm btn-light no-print">{{ _('KYB file') }}</a>
                 </div>
-                <div class="card-body">
-                    <table class="table table-sm table-borderless mb-0">
-                        <tr>
-                            <td class="text-muted" style="width:40%">{{ _('UBO Name') }}</td>
-                            <td>{{ merchant.ubo_name or 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">{{ _('Nationality') }}</td>
-                            <td>{{ merchant.ubo_nationality or 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">{{ _('ID Type') }}</td>
-                            <td>{{ merchant.ubo_id_type or 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">{{ _('ID Number') }}</td>
-                            <td>{{ merchant.ubo_id_number or 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">{{ _('Date of Birth') }}</td>
-                            <td>{{ merchant.ubo_dob or 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">{{ _('Ownership %%') }}</td>
-                            <td>{{ merchant.ownership_percentage or 'N/A' }}%</td>
-                        </tr>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>{{ _('Name') }}</th><th>{{ _('Role') }}</th><th>{{ _('Screening') }}</th></tr></thead>
+                        <tbody>
+                        {% for u in ubos %}
+                        <tr><td>{{ u.full_name }}<div class="small text-muted">{{ u.id_type|kyc_label('id_type') }} {{ u.id_number or '' }}</div></td>
+                            <td class="small">{{ u.control_type|kyc_label('control_type') }}{% if u.ownership_pct is not none %} · {{ u.ownership_pct }}%{% endif %}</td>
+                            <td><span class="badge {% if u.screening_state in ('clear','cleared') %}bg-success{% elif u.screening_state == 'pep' %}bg-info text-dark{% elif u.screening_state in ('open','not_screened') %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ u.screening_state|kyc_label('screening') }}</span></td></tr>
+                        {% endfor %}
+                        {% for g in signatories %}
+                        <tr><td>{{ g.full_name }}<div class="small text-muted">{{ g.position or '' }}</div></td>
+                            <td class="small">{{ g.signing_authority|kyc_label('signing_authority') }}</td>
+                            <td><span class="badge {% if g.screening_state in ('clear','cleared') %}bg-success{% elif g.screening_state == 'pep' %}bg-info text-dark{% elif g.screening_state in ('open','not_screened') %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ g.screening_state|kyc_label('screening') }}</span></td></tr>
+                        {% endfor %}
+                        {% if not ubos and not signatories %}<tr><td colspan="3" class="text-muted text-center py-3">{{ _('No beneficial owner recorded yet.') }}</td></tr>{% endif %}
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -347,7 +358,7 @@
                             <td>
                                 <span
                                     class="badge {% if merchant.risk_level == 'HIGH' or merchant.risk_level == 'CRITICAL' %}bg-danger{% elif merchant.risk_level == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                                    {{ merchant.risk_level }}
+                                    {{ merchant.risk_level|kyc_label('risk') }}
                                 </span>
                             </td>
                         </tr>
@@ -366,6 +377,27 @@
                     {% endif %}
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Status history -->
+    <div class="card mb-4">
+        <div class="card-header bg-light fw-bold"><i class="bi bi-clock-history"></i> {{ _('Status history') }}</div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <thead class="table-light"><tr><th>{{ _('When') }}</th><th>{{ _('Action') }}</th><th>{{ _('Status') }}</th><th>{{ _('By') }}</th><th>{{ _('Reason / note') }}</th></tr></thead>
+                <tbody>
+                {% for h in history %}
+                <tr><td class="small">{{ h.created_at.strftime('%Y-%m-%d %H:%M') if h.created_at else '' }}</td>
+                    <td>{{ h.action|kyc_label('merchant_action') }}</td>
+                    <td class="small">{% if h.from_status %}{{ h.from_status|kyc_label('kyc_status') }} → {% endif %}{{ h.to_status|kyc_label('kyc_status') }}</td>
+                    <td>{{ h.user_name or (_('Merchant (public link)') if h.actor_label else '—') }}</td>
+                    <td class="small">{{ h.reason or '' }}</td></tr>
+                {% else %}
+                <tr><td colspan="5" class="text-muted text-center py-3">{{ _('No status changes recorded yet.') }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -415,6 +447,29 @@
     {% endif %}
 </div>
 
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('merchant_kyc.approve_merchant', id=merchant.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">{{ _('Approve Merchant KYC') }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-bold">{{ _('Approval note (optional)') }}</label>
+                    <textarea name="note" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="submit" class="btn btn-success">{{ _('Confirm approval') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Reject Modal -->
 <div class="modal fade" id="rejectModal" tabindex="-1">
     <div class="modal-dialog">
@@ -427,7 +482,7 @@
                 </div>
                 <div class="modal-body">
                     <label class="form-label fw-bold">{{ _('Rejection Reason') }}</label>
-                    <textarea name="rejection_reason" class="form-control" rows="3" required
+                    <textarea name="rejection_reason" class="form-control" rows="3" required minlength="10"
                         placeholder="{{ _('Provide a reason for rejection...') }}"></textarea>
                 </div>
                 <div class="modal-footer">

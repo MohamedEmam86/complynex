@@ -123,16 +123,16 @@
                                 <div>{{ m.contact_person or '-' }}</div>
                                 <small class="text-muted">{{ m.contact_email or '' }}</small>
                             </td>
-                            <td>{{ m.business_type or '-' }}</td>
+                            <td>{{ m.business_type|kyc_label('legal_form') if m.business_type else '-' }}</td>
                             <td>
                                 {% if m.kyc_status == 'APPROVED' %}
                                 <span class="badge bg-success">{{ _('Approved') }}</span>
                                 {% elif m.kyc_status == 'SUBMITTED' %}
-                                <span class="badge bg-info">{{ _('Submitted') }}</span>
+                                <span class="badge bg-info">{{ 'SUBMITTED'|kyc_label('kyc_status') }}</span>
                                 {% elif m.kyc_status == 'REJECTED' %}
                                 <span class="badge bg-danger">{{ _('Rejected') }}</span>
                                 {% elif m.kyc_status == 'SENT' %}
-                                <span class="badge bg-warning text-dark">{{ _('Sent') }}</span>
+                                <span class="badge bg-warning text-dark">{{ 'SENT'|kyc_label('kyc_status') }}</span>
                                 {% elif m.kyc_status == 'UNDER_REVIEW' %}
                                 <span class="badge bg-secondary">{{ _('Under Review') }}</span>
                                 {% else %}
@@ -142,7 +142,7 @@
                             <td>
                                 <span
                                     class="badge {% if m.risk_level == 'HIGH' or m.risk_level == 'CRITICAL' %}bg-danger{% elif m.risk_level == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                                    {{ m.risk_level }}
+                                    {{ m.risk_level|kyc_label('risk') }}
                                 </span>
                             </td>
                             <td>

@@ -24,6 +24,9 @@ from datetime import datetime
 from extensions import csrf, limiter
 from werkzeug.utils import secure_filename
 from . import merchant_kyc_bp
+from . import workflow as wf
+from models.audit import AuditLog
+from utils.kyc_labels import tr
 import uuid
 import csv
 import io
@@ -41,38 +44,6 @@ def _val(v):
 
 def _allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def _publish_ubo_updated_event(merchant_id, form):
-    """
-    Publish 'merchant.ubo.updated' so the event bus's auto-screen routing
-    rule can screen the UBO asynchronously, without callers here waiting on
-    a screening-engine call. Guards against the same 'none'/'null'/'' saved-
-    as-literal-text bug run_screening() already guards against below.
-    """
-    ubo_name = _val(form.get('ubo_name'))
-    if not ubo_name or str(ubo_name).strip().lower() in ('none', 'null'):
-        return
-    try:
-        from events.publisher import publish_event
-        publish_event(
-            event_type='merchant.ubo.updated',
-            source_module='Merchant KYC',
-            source_table='merchants',
-            source_record_id=merchant_id,
-            entity_type='MERCHANT',
-            entity_id=merchant_id,
-            payload={
-                'name': ubo_name,
-                'entity_type': 'INDIVIDUAL',
-                'dob': _val(form.get('ubo_dob')),
-                'nationality': _val(form.get('ubo_nationality')),
-                'results_screening_type': 'MERCHANT_KYC',
-                'hit_event_type': 'merchant.screening.hit',
-            },
-        )
-    except Exception:
-        current_app.logger.exception('Failed to publish merchant.ubo.updated event for merchant %s', merchant_id)
 
 
 def _sync_party_registry(merchant_id):
@@ -182,11 +153,27 @@ def create_merchant():
         if files:
             _save_documents(merchant_id, files, doc_types, uploaded_by=current_user.email)
 
+        wf.record(db, merchant_id, None, 'PENDING', 'created', current_user.id)
+        db.commit()
+        if (request.form.get('ubo_name') or '').strip():
+            # the principal owner entered on the form becomes the first of the
+            # merchant's beneficial owners, screened on save
+            from kyb import service as kyb
+            try:
+                kyb.save_person('ubo', 'merchant', merchant_id, {
+                    'full_name': request.form.get('ubo_name'), 'nationality': request.form.get('ubo_nationality'),
+                    'id_type': request.form.get('ubo_id_type'), 'id_number': request.form.get('ubo_id_number'),
+                    'date_of_birth': request.form.get('ubo_dob'),
+                    'ownership_pct': request.form.get('ownership_percentage'), 'control_type': 'ownership'},
+                    current_user.id)
+            except kyb.KybError as e:
+                for m in e.messages:
+                    flash(tr(m), 'warning')
         _sync_party_registry(merchant_id)
-        _publish_ubo_updated_event(merchant_id, request.form)
 
         flash(gettext('Merchant KYC record created successfully.'), 'success')
-        return redirect(url_for('merchant_kyc.merchant_list'))
+        flash(tr('Complete the KYB file (entity details, all beneficial owners and authorised signatories) before submitting for approval.'), 'info')
+        return redirect(url_for('merchant_kyc.merchant_kyb', id=merchant_id))
     
     return render_template('merchant_kyc/form.html')
 
@@ -203,7 +190,23 @@ def view_merchant(id):
         flash(gettext('Merchant not found.'), 'danger')
         return redirect(url_for('merchant_kyc.merchant_list'))
     documents = _get_documents(id)
-    return render_template('merchant_kyc/view.html', merchant=merchant, documents=documents)
+    from kyb import service as kyb
+    ubos, sigs, _states = kyb.with_states('merchant', id)
+    m = dict(merchant)
+    decision_block = wf.four_eyes_error(current_user.id, m.get('created_by'), m.get('submitted_by'))
+    names = {k: _user_name(db, m.get(k)) for k in ('created_by', 'submitted_by', 'kyc_reviewed_by')}
+    return render_template('merchant_kyc/view.html', merchant=merchant, documents=documents,
+                           ubos=ubos, signatories=sigs, kyb_blockers=kyb.blockers('merchant', id),
+                           history=wf.history(db, id), names=names, decision_block=decision_block,
+                           can_submit=(m.get('kyc_status') or 'PENDING') in wf.SUBMITTABLE,
+                           can_decide=(m.get('kyc_status') or '') in wf.DECIDABLE)
+
+
+def _user_name(db, uid):
+    if not uid:
+        return None
+    r = db.execute('SELECT first_name, last_name, email FROM users WHERE id = %s', (uid,)).fetchone()
+    return ((f"{r['first_name'] or ''} {r['last_name'] or ''}".strip()) or r['email']) if r else None
 
 
 @merchant_kyc_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
@@ -219,16 +222,21 @@ def edit_merchant(id):
         return redirect(url_for('merchant_kyc.merchant_list'))
     
     if request.method == 'POST':
+        old_status = merchant['kyc_status'] or 'PENDING'
+        new_status = wf.edit_status(old_status, request.form.get('kyc_status'))
+        if (request.form.get('kyc_status') or '').upper() in wf.FINAL and new_status != request.form.get('kyc_status'):
+            flash(tr('Approval and rejection are recorded with the Approve / Reject actions on the merchant page.'), 'warning')
+        submitting = new_status in wf.DECIDABLE and old_status not in wf.DECIDABLE
         db.execute('''
             UPDATE merchants SET
                 merchant_name = %s, trade_name = %s, cr_number = %s, tax_id = %s,
                 business_type = %s, industry = %s, website = %s,
                 contact_person = %s, contact_email = %s, contact_phone = %s,
                 address = %s, city = %s, country = %s,
-                ubo_name = %s, ubo_nationality = %s, ubo_id_type = %s, ubo_id_number = %s,
-                ubo_dob = %s, ownership_percentage = %s,
                 bank_name = %s, bank_account_number = %s, iban = %s,
                 kyc_status = %s, risk_level = %s, risk_notes = %s,
+                submitted_by = CASE WHEN %s THEN %s ELSE submitted_by END,
+                submitted_at = CASE WHEN %s THEN to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS') ELSE submitted_at END,
                 updated_at = CURRENT_TIMESTAMP, updated_by = %s
             WHERE id = %s
         ''', (
@@ -245,21 +253,19 @@ def edit_merchant(id):
             _val(request.form.get('address')),
             _val(request.form.get('city')),
             _val(request.form.get('country')),
-            _val(request.form.get('ubo_name')),
-            _val(request.form.get('ubo_nationality')),
-            _val(request.form.get('ubo_id_type')),
-            _val(request.form.get('ubo_id_number')),
-            _val(request.form.get('ubo_dob')),
-            _val(request.form.get('ownership_percentage')),
             _val(request.form.get('bank_name')),
             _val(request.form.get('bank_account_number')),
             _val(request.form.get('iban')),
-            _val(request.form.get('kyc_status')),
+            new_status,
             _val(request.form.get('risk_level')),
             _val(request.form.get('risk_notes')),
+            submitting, current_user.id, submitting,
             current_user.id,
             id
         ))
+        if new_status != old_status:
+            wf.record(db, id, old_status, new_status, 'submitted' if submitting else 'status_changed',
+                      current_user.id)
         db.commit()
 
         # Handle file uploads
@@ -269,7 +275,6 @@ def edit_merchant(id):
             _save_documents(id, files, doc_types, uploaded_by=current_user.email)
 
         _sync_party_registry(id)
-        _publish_ubo_updated_event(id, request.form)
 
         flash(gettext('Merchant KYC updated successfully.'), 'success')
         return redirect(url_for('merchant_kyc.view_merchant', id=id))
@@ -302,6 +307,8 @@ def send_kyc_link(id):
         updated_at = CURRENT_TIMESTAMP, updated_by = %s
         WHERE id = %s
     ''', (new_status, token, current_user.id, id))
+    if new_status != merchant['kyc_status']:
+        wf.record(db, id, merchant['kyc_status'], new_status, 'link_sent', current_user.id)
     db.commit()
     
     # Build the public link
@@ -343,19 +350,62 @@ def send_kyc_link(id):
         wa_message=wa_message)
 
 
+@merchant_kyc_bp.route('/<int:id>/submit', methods=['POST'])
+@login_required
+@permission_required('aml', level='edit')
+@permission_required('merchant_kyc', level='edit')
+def submit_merchant(id):
+    """Send a merchant whose KYB file is ready for a four-eyes decision."""
+    db = get_db()
+    merchant = db.execute('SELECT * FROM merchants WHERE id = %s', (id,)).fetchone()
+    if not merchant:
+        flash(gettext('Merchant not found.'), 'danger')
+        return redirect(url_for('merchant_kyc.merchant_list'))
+    old = merchant['kyc_status'] or 'PENDING'
+    if old not in wf.SUBMITTABLE:
+        flash(tr('Only a pending merchant can be submitted for approval.'), 'warning')
+        return redirect(url_for('merchant_kyc.view_merchant', id=id))
+    db.execute("""UPDATE merchants SET kyc_status = 'SUBMITTED', submitted_by = %s,
+                  submitted_at = to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS'),
+                  kyc_submitted_at = COALESCE(kyc_submitted_at, to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')),
+                  updated_at = CURRENT_TIMESTAMP, updated_by = %s WHERE id = %s""", (current_user.id, current_user.id, id))
+    wf.record(db, id, old, 'SUBMITTED', 'submitted', current_user.id, (request.form.get('note') or '').strip() or None)
+    db.commit()
+    AuditLog.log(current_user.id, 'Merchant Submitted', 'Merchant KYC', id,
+                 f'Merchant {merchant["merchant_name"]} submitted for approval', request.remote_addr)
+    flash(tr('Submitted for approval. Another person must approve or reject it.'), 'success')
+    return redirect(url_for('merchant_kyc.view_merchant', id=id))
+
+
 @merchant_kyc_bp.route('/<int:id>/approve', methods=['POST'])
 @login_required
 @permission_required('aml', level='edit')
 @permission_required('merchant_kyc', level='edit')
 def approve_merchant(id):
-    """Approve merchant KYC."""
+    """Approve merchant KYC: four-eyes, complete KYB file, no open screening hit."""
     db = get_db()
+    row = db.execute('SELECT * FROM merchants WHERE id = %s', (id,)).fetchone()
+    if not row:
+        flash(gettext('Merchant not found.'), 'danger')
+        return redirect(url_for('merchant_kyc.merchant_list'))
+    merchant = dict(row)
+    err = wf.decision_error(merchant, current_user.id, 'approve')
+    from kyb import service as kyb
+    blockers = [] if err else kyb.blockers('merchant', id)
+    if err or blockers:
+        for m in ([err] if err else blockers):
+            flash(tr(m), 'danger')
+        return redirect(url_for('merchant_kyc.view_merchant', id=id))
+    note = (request.form.get('note') or '').strip() or None
     db.execute('''
         UPDATE merchants SET kyc_status = 'APPROVED', kyc_reviewed_by = %s, kyc_reviewed_at = CURRENT_TIMESTAMP,
-        updated_at = CURRENT_TIMESTAMP, updated_by = %s
+        onboarding_status = 'Active', updated_at = CURRENT_TIMESTAMP, updated_by = %s
         WHERE id = %s
     ''', (current_user.id, current_user.id, id))
+    wf.record(db, id, merchant['kyc_status'], 'APPROVED', 'approved', current_user.id, note)
     db.commit()
+    AuditLog.log(current_user.id, 'Merchant Approved', 'Merchant KYC', id,
+                 f'Merchant {merchant["merchant_name"]} approved', request.remote_addr)
     flash(gettext('Merchant KYC approved.'), 'success')
     return redirect(url_for('merchant_kyc.view_merchant', id=id))
 
@@ -365,17 +415,69 @@ def approve_merchant(id):
 @permission_required('aml', level='edit')
 @permission_required('merchant_kyc', level='edit')
 def reject_merchant(id):
-    """Reject merchant KYC."""
+    """Reject merchant KYC: a written reason is required; four-eyes applies."""
     db = get_db()
-    reason = request.form.get('rejection_reason', '')
+    row = db.execute('SELECT * FROM merchants WHERE id = %s', (id,)).fetchone()
+    if not row:
+        flash(gettext('Merchant not found.'), 'danger')
+        return redirect(url_for('merchant_kyc.merchant_list'))
+    merchant = dict(row)
+    reason = (request.form.get('rejection_reason') or '').strip()
+    err = wf.decision_error(merchant, current_user.id, 'reject', reason)
+    if err:
+        flash(tr(err), 'danger')
+        return redirect(url_for('merchant_kyc.view_merchant', id=id))
     db.execute('''
         UPDATE merchants SET kyc_status = 'REJECTED', kyc_reviewed_by = %s, kyc_reviewed_at = CURRENT_TIMESTAMP,
-        kyc_rejection_reason = %s, updated_at = CURRENT_TIMESTAMP, updated_by = %s
+        kyc_rejection_reason = %s, onboarding_status = 'Rejected', updated_at = CURRENT_TIMESTAMP, updated_by = %s
         WHERE id = %s
     ''', (current_user.id, reason, current_user.id, id))
+    wf.record(db, id, merchant['kyc_status'], 'REJECTED', 'rejected', current_user.id, reason)
     db.commit()
+    AuditLog.log(current_user.id, 'Merchant Rejected', 'Merchant KYC', id,
+                 f'Merchant {merchant["merchant_name"]} rejected: {reason}', request.remote_addr)
     flash(gettext('Merchant KYC rejected.'), 'warning')
     return redirect(url_for('merchant_kyc.view_merchant', id=id))
+
+
+@merchant_kyc_bp.route('/<int:id>/kyb', methods=['GET', 'POST'])
+@login_required
+@permission_required('aml')
+@permission_required('merchant_kyc', level='view')
+def merchant_kyb(id):
+    """Corporate KYB file: entity details, beneficial owners, signatories."""
+    from kyb import views
+    m = get_db().execute('SELECT merchant_name, kyc_status FROM merchants WHERE id = %s', (id,)).fetchone()
+    if not m:
+        flash(gettext('Merchant not found.'), 'danger')
+        return redirect(url_for('merchant_kyc.merchant_list'))
+    can_edit = (current_user.can_edit('aml') and current_user.can_edit('merchant_kyc')
+                and (m['kyc_status'] or '') not in wf.FINAL)
+    return views.handle('merchant', id, self_endpoint='merchant_kyc.merchant_kyb',
+                        back_url=url_for('merchant_kyc.view_merchant', id=id), can_edit=can_edit,
+                        title_prefix=m['merchant_name'] or tr('Merchant'),
+                        after_change=lambda mid: _sync_party_registry(mid))
+
+
+def _public_ubo_to_register(merchant_id, form):
+    """The merchant's self-declared owner joins the beneficial-owner list
+    (unscreened: an officer screens it before approval)."""
+    name = (form.get('ubo_name') or '').strip()
+    if not name or name.lower() in ('none', 'null'):
+        return
+    db = get_db()
+    if db.execute("SELECT 1 FROM kyc_beneficial_owners WHERE subject = 'merchant' AND subject_id = %s "
+                  "AND lower(trim(full_name)) = lower(%s)", (merchant_id, name)).fetchone():
+        return
+    from kyb import service as kyb
+    try:
+        kyb.save_person('ubo', 'merchant', merchant_id, {
+            'full_name': name, 'nationality': form.get('ubo_nationality'), 'id_type': form.get('ubo_id_type'),
+            'id_number': form.get('ubo_id_number'), 'date_of_birth': form.get('ubo_dob'),
+            'ownership_pct': form.get('ownership_percentage'), 'control_type': 'ownership'},
+            None, screen=False)
+    except kyb.KybError:
+        current_app.logger.info('Public KYB owner for merchant %s not added to the register (invalid data)', merchant_id)
 
 
 # ======== PUBLIC ROUTE (No Login Required) ========
@@ -443,6 +545,11 @@ def public_kyc_form(token):
         ))
         db.commit()
         
+        wf.record(db, merchant['id'], merchant['kyc_status'], 'SUBMITTED', 'public_submitted',
+                  actor_label='merchant (public link)')
+        db.commit()
+        _public_ubo_to_register(merchant['id'], request.form)
+
         # Handle file uploads from public form
         files = request.files.getlist('documents')
         doc_types = request.form.getlist('doc_types')

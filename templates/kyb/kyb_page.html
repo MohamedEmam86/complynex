@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Corporate KYB') }} - {{ ent.name }}{% endblock %}
+
+{% macro st_badge(st) -%}
+<span class="badge {% if st in ('clear', 'cleared') %}bg-success{% elif st == 'pep' %}bg-info text-dark{% elif st in ('open', 'not_screened') %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ st|kyc_label('screening') }}</span>
+{%- endmacro %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ back_url }}">{{ title_prefix }}</a></li>
+      <li class="breadcrumb-item active">{{ _('Corporate KYB') }}</li>
+    </ol>
+  </nav>
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 mb-0"><i class="bi bi-building-check"></i> {{ _('Corporate KYB') }} — {{ ent.name }}</h1>
+    <div class="d-flex gap-2">
+      <a href="{{ back_url }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> {{ _('Back to the record') }}</a>
+      {% if can_edit %}
+      <form method="POST" action="{{ here }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="screen_all">
+        <button class="btn btn-sm btn-danger"><i class="bi bi-search"></i> {{ _('Screen unscreened people') }}</button>
+      </form>
+      <form method="POST" action="{{ here }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="screen_all">
+        <input type="hidden" name="force" value="1">
+        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-arrow-repeat"></i> {{ _('Re-screen everyone') }}</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if blockers %}
+  <div class="alert alert-warning">
+    <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle"></i> {{ _('Approval is blocked until these are resolved:') }}</div>
+    <ul class="mb-0">{% for b in blockers %}<li>{{ b|kyc_msg }}</li>{% endfor %}</ul>
+  </div>
+  {% else %}
+  <div class="alert alert-success py-2"><i class="bi bi-check-circle"></i> {{ _('The KYB file is complete and every owner and signatory is screened without an open hit.') }}</div>
+  {% endif %}
+
+  <!-- Entity -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-bold"><i class="bi bi-building"></i> {{ _('Entity identification') }}</div>
+    <div class="card-body">
+      <form method="POST" action="{{ here }}" class="row g-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="save_entity">
+        <div class="col-md-4">
+          <label class="form-label">{{ _('Commercial register number') }} *</label>
+          <input class="form-control" name="cr_number" value="{{ ent.cr_number or '' }}" {% if not can_edit %}disabled{% endif %}>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">{{ _('Tax card number') }} *</label>
+          <input class="form-control" name="tax_card_number" value="{{ ent.tax_card_number or '' }}" {% if not can_edit %}disabled{% endif %}>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">{{ _('Legal form') }} *</label>
+          <select class="form-select" name="legal_form" {% if not can_edit %}disabled{% endif %}>
+            <option value="">{{ _('Select...') }}</option>
+            {% for f in legal_forms %}<option value="{{ f }}" {% if ent.legal_form == f %}selected{% endif %}>{{ f|kyc_label('legal_form') }}</option>{% endfor %}
+            {% if ent.legal_form and ent.legal_form not in legal_forms %}<option value="" selected>{{ ent.legal_form }} ({{ _('choose again') }})</option>{% endif %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ _('Incorporation date') }} *</label>
+          <input type="date" class="form-control" name="incorporation_date" value="{{ (ent.incorporation_date or '')[:10] }}" {% if not can_edit %}disabled{% endif %}>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ _('Country of incorporation') }} *</label>
+          <input class="form-control" name="incorporation_country" value="{{ ent.incorporation_country or '' }}" {% if not can_edit %}disabled{% endif %}>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ _('Licence number (optional)') }}</label>
+          <input class="form-control" name="licence_number" value="{{ ent.licence_number or '' }}" {% if not can_edit %}disabled{% endif %}>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ _('Licensing regulator (optional)') }}</label>
+          <input class="form-control" name="licence_regulator" value="{{ ent.licence_regulator or '' }}" {% if not can_edit %}disabled{% endif %}>
+        </div>
+        {% if can_edit %}<div class="col-12 text-end"><button class="btn btn-primary btn-sm">{{ _('Save entity details') }}</button></div>{% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- UBOs -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light d-flex justify-content-between">
+      <span class="fw-bold"><i class="bi bi-people"></i> {{ _('Beneficial owners') }}</span>
+      <span class="small">{{ _('Total ownership') }}: <strong>{{ total_pct }}</strong>%</span>
+    </div>
+    <div class="card-body">
+      {% for e in ubo_errors %}<div class="alert alert-danger py-1 small mb-2">{{ e|kyc_msg }}</div>{% endfor %}
+      {% for w in ubo_warnings %}<div class="alert alert-warning py-1 small mb-2">{{ w|kyc_msg }}</div>{% endfor %}
+      <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light"><tr>
+          <th>{{ _('Name') }}</th><th>{{ _('ID') }}</th><th>{{ _('Nationality') }}</th><th>{{ _('Date of birth') }}</th>
+          <th>{{ _('Ownership') }}</th><th>{{ _('Control type') }}</th><th>{{ _('PEP') }}</th><th>{{ _('Screening') }}</th><th></th>
+        </tr></thead>
+        <tbody>
+        {% for u in ubos %}
+          <tr>
+            <td class="fw-bold">{{ u.full_name }}</td>
+            <td><small>{{ u.id_type|kyc_label('id_type') }}</small> <code>{{ u.id_number or '—' }}</code></td>
+            <td>{{ u.nationality or '—' }}</td>
+            <td>{{ u.date_of_birth or '—' }}</td>
+            <td>{{ (u.ownership_pct|string + '%') if u.ownership_pct is not none else '—' }}</td>
+            <td>{{ u.control_type|kyc_label('control_type') }}</td>
+            <td>{% if u.is_pep %}<span class="badge bg-info text-dark">{{ _('PEP') }}</span>{% else %}—{% endif %}</td>
+            <td>{{ st_badge(u.screening_state) }}
+              {% if u.screening_history_id %}<a class="small ms-1" href="{{ url_for('screening.screening_history_detail', id=u.screening_history_id) }}">{{ _('report') }}</a>{% endif %}
+              {% if u.screening_state == 'open' %}<a class="small ms-1" href="{{ url_for('screening.screening_queue') }}">{{ _('queue') }}</a>{% endif %}
+            </td>
+            <td class="text-nowrap">
+              {% if can_edit %}
+              <a class="btn btn-sm btn-outline-secondary" href="{{ here }}?edit_ubo={{ u.id }}#ubo-form" title="{{ _('Edit') }}"><i class="bi bi-pencil"></i></a>
+              <form method="POST" action="{{ here }}" class="d-inline" data-confirm="{{ _('Remove this beneficial owner?') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="delete_ubo"><input type="hidden" name="person_id" value="{{ u.id }}">
+                <button class="btn btn-sm btn-outline-danger" title="{{ _('Remove') }}"><i class="bi bi-trash"></i></button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="9" class="text-muted text-center py-3">{{ _('No beneficial owner recorded yet.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% if can_edit %}
+      {% set u = edit_ubo or {} %}
+      <form method="POST" action="{{ here }}" class="row g-2 border-top pt-3" id="ubo-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="save_ubo">
+        {% if edit_ubo %}<input type="hidden" name="person_id" value="{{ edit_ubo.id }}">{% endif %}
+        <div class="col-12 fw-bold small">{{ _('Edit beneficial owner') if edit_ubo else _('Add a beneficial owner') }}</div>
+        <div class="col-md-4"><input class="form-control form-control-sm" name="full_name" required placeholder="{{ _('Full name') }}" value="{{ u.full_name or '' }}"></div>
+        <div class="col-md-2"><select class="form-select form-select-sm" name="id_type"><option value="">{{ _('ID type') }}</option>{% for t in id_types %}<option value="{{ t }}" {% if u.id_type == t %}selected{% endif %}>{{ t|kyc_label('id_type') }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><input class="form-control form-control-sm" name="id_number" placeholder="{{ _('National ID / passport number') }}" value="{{ u.id_number or '' }}"></div>
+        <div class="col-md-3"><input class="form-control form-control-sm" name="nationality" placeholder="{{ _('Nationality') }}" value="{{ u.nationality or '' }}"></div>
+        <div class="col-md-3"><label class="small text-muted">{{ _('Date of birth') }}</label><input type="date" class="form-control form-control-sm" name="date_of_birth" value="{{ u.date_of_birth or '' }}"></div>
+        <div class="col-md-2"><label class="small text-muted">{{ _('Ownership') ~ ' (%)' }}</label><input type="number" step="0.01" min="0" max="100" class="form-control form-control-sm" name="ownership_pct" value="{{ u.ownership_pct if u.ownership_pct is not none else '' }}"></div>
+        <div class="col-md-3"><label class="small text-muted">{{ _('Control type') }}</label><select class="form-select form-select-sm" name="control_type">{% for t in control_types %}<option value="{{ t }}" {% if u.control_type == t %}selected{% endif %}>{{ t|kyc_label('control_type') }}</option>{% endfor %}</select></div>
+        <div class="col-md-2 d-flex align-items-end"><div class="form-check"><input class="form-check-input" type="checkbox" name="is_pep" id="ubo_pep" {% if u.is_pep %}checked{% endif %}><label class="form-check-label small" for="ubo_pep">{{ _('PEP') }}</label></div></div>
+        <div class="col-md-2 d-flex align-items-end gap-1"><button class="btn btn-sm btn-primary w-100">{{ _('Save and screen') }}</button>{% if edit_ubo %}<a class="btn btn-sm btn-outline-secondary" href="{{ here }}">{{ _('Cancel') }}</a>{% endif %}</div>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Signatories -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-bold"><i class="bi bi-pen"></i> {{ _('Authorised signatories') }}</div>
+    <div class="card-body">
+      <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light"><tr>
+          <th>{{ _('Name') }}</th><th>{{ _('Position') }}</th><th>{{ _('Signing authority') }}</th><th>{{ _('ID') }}</th>
+          <th>{{ _('Nationality') }}</th><th>{{ _('Screening') }}</th><th></th>
+        </tr></thead>
+        <tbody>
+        {% for s in signatories %}
+          <tr>
+            <td class="fw-bold">{{ s.full_name }}</td>
+            <td>{{ s.position or '—' }}</td>
+            <td>{{ s.signing_authority|kyc_label('signing_authority') }}</td>
+            <td><small>{{ s.id_type|kyc_label('id_type') }}</small> <code>{{ s.id_number or '—' }}</code></td>
+            <td>{{ s.nationality or '—' }}</td>
+            <td>{{ st_badge(s.screening_state) }}
+              {% if s.screening_history_id %}<a class="small ms-1" href="{{ url_for('screening.screening_history_detail', id=s.screening_history_id) }}">{{ _('report') }}</a>{% endif %}</td>
+            <td class="text-nowrap">
+              {% if can_edit %}
+              <a class="btn btn-sm btn-outline-secondary" href="{{ here }}?edit_signatory={{ s.id }}#sig-form" title="{{ _('Edit') }}"><i class="bi bi-pencil"></i></a>
+              <form method="POST" action="{{ here }}" class="d-inline" data-confirm="{{ _('Remove this signatory?') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="delete_signatory"><input type="hidden" name="person_id" value="{{ s.id }}">
+                <button class="btn btn-sm btn-outline-danger" title="{{ _('Remove') }}"><i class="bi bi-trash"></i></button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-muted text-center py-3">{{ _('No authorised signatory recorded yet.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% if can_edit %}
+      {% set s = edit_sig or {} %}
+      <form method="POST" action="{{ here }}" class="row g-2 border-top pt-3" id="sig-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="save_signatory">
+        {% if edit_sig %}<input type="hidden" name="person_id" value="{{ edit_sig.id }}">{% endif %}
+        <div class="col-12 fw-bold small">{{ _('Edit signatory') if edit_sig else _('Add an authorised signatory') }}</div>
+        <div class="col-md-4"><input class="form-control form-control-sm" name="full_name" required placeholder="{{ _('Full name') }}" value="{{ s.full_name or '' }}"></div>
+        <div class="col-md-3"><input class="form-control form-control-sm" name="position" placeholder="{{ _('Position') }}" value="{{ s.position or '' }}"></div>
+        <div class="col-md-2"><select class="form-select form-select-sm" name="signing_authority">{% for t in signing_authorities %}<option value="{{ t }}" {% if s.signing_authority == t %}selected{% endif %}>{{ t|kyc_label('signing_authority') }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><input class="form-control form-control-sm" name="nationality" placeholder="{{ _('Nationality') }}" value="{{ s.nationality or '' }}"></div>
+        <div class="col-md-2"><select class="form-select form-select-sm" name="id_type"><option value="">{{ _('ID type') }}</option>{% for t in id_types %}<option value="{{ t }}" {% if s.id_type == t %}selected{% endif %}>{{ t|kyc_label('id_type') }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><input class="form-control form-control-sm" name="id_number" placeholder="{{ _('National ID / passport number') }}" value="{{ s.id_number or '' }}"></div>
+        <div class="col-md-3"><label class="small text-muted">{{ _('Date of birth') }}</label><input type="date" class="form-control form-control-sm" name="date_of_birth" value="{{ s.date_of_birth or '' }}"></div>
+        <div class="col-md-2 d-flex align-items-end gap-1"><button class="btn btn-sm btn-primary w-100">{{ _('Save and screen') }}</button>{% if edit_sig %}<a class="btn btn-sm btn-outline-secondary" href="{{ here }}">{{ _('Cancel') }}</a>{% endif %}</div>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
