@@ -846,6 +846,27 @@ class ComplyNexScreeningEngine:
     """
     Advanced AML Screening Engine with Arabic Intelligence
     """
+
+    # The engine is one shared object per process, used by many request
+    # threads. A psycopg2 connection must never be used by two threads at once
+    # (it produced SSL / connection errors, e.g. in _is_whitelisted during KYB
+    # screening), so each thread holds its own pooled connection. A connection
+    # found closed is dropped and a fresh one is checked out.
+    @property
+    def db_conn(self):
+        tl = self.__dict__.get('_tl_conn')
+        conn = getattr(tl, 'conn', None) if tl is not None else None
+        if conn is not None and getattr(conn, 'closed', 0):
+            tl.conn = conn = None
+        return conn
+
+    @db_conn.setter
+    def db_conn(self, value):
+        import threading
+        tl = self.__dict__.get('_tl_conn')
+        if tl is None:
+            tl = self.__dict__.setdefault('_tl_conn', threading.local())
+        tl.conn = value
     
     # Algorithm weights (Optimized 2024-02-11)
     FUZZY_RATIO_WEIGHT = 0.40      # 40% (Core)

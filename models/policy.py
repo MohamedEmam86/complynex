@@ -602,8 +602,8 @@ class Policy:
         """Assign a reviewer to a new stage."""
         db = get_db()
         db.execute('''
-            INSERT INTO policy_review_workflow (policy_id, reviewer_id, stage_name, status)
-            VALUES (%s, %s, %s, 'pending')
+            INSERT INTO policy_review_workflow (policy_id, reviewer_id, stage_name, status, created_at)
+            VALUES (%s, %s, %s, 'pending', to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS'))
         ''', (self.id, reviewer_id, stage_name))
         db.commit()
         # Update policy status to 'pending_approval' if it's currently 'draft'
@@ -616,7 +616,7 @@ class Policy:
         db = get_db()
         db.execute('''
             UPDATE policy_review_workflow 
-            SET status = %s, comments = %s, review_date = CURRENT_TIMESTAMP
+            SET status = %s, comments = %s, review_date = to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
             WHERE policy_id = %s AND reviewer_id = %s AND status = 'pending'
         ''', (status, comments, self.id, reviewer_id))
         db.commit()
@@ -654,10 +654,13 @@ class PolicyReviewWorkflow:
     def get_pending_for_user(user_id):
         db = get_db()
         rows = db.execute('''
-            SELECT w.*, p.policy_name, p.policy_number
+            SELECT w.*, p.policy_name, p.policy_number, p.version,
+                   dt.name_en AS type_en, dt.name_ar AS type_ar
             FROM policy_review_workflow w
             JOIN policies p ON w.policy_id = p.id
+            LEFT JOIN document_types dt ON dt.id = p.document_type_id
             WHERE w.reviewer_id = %s AND w.status = 'pending'
+            ORDER BY w.id DESC
         ''', (user_id,)).fetchall()
         return rows
 

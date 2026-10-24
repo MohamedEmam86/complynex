@@ -36,8 +36,11 @@ MINUTES_FLOW = {
 APPROVER_CAPACITIES = ('chair', 'secretary')
 
 
-def minutes_transition_error(action, status, *, actor_id=None, drafted_by=None, capacity=None, note=None):
-    """Why `action` may not be applied to a minutes version in `status`, or None."""
+def minutes_transition_error(action, status, *, actor_id=None, drafted_by=None, capacity=None, note=None,
+                             present_count=None):
+    """Why `action` may not be applied to a minutes version in `status`, or None.
+    present_count: participants recorded as present (members, proxies, external
+    attendees); minutes cannot be approved while nobody is recorded present."""
     if action not in MINUTES_FLOW:
         return 'unknown action'
     allowed, _to = MINUTES_FLOW[action]
@@ -48,6 +51,8 @@ def minutes_transition_error(action, status, *, actor_id=None, drafted_by=None, 
             return 'state whether you approve as chair or as secretary'
         if drafted_by is not None and actor_id == drafted_by:
             return 'the person who drafted the minutes cannot approve them'
+        if present_count is not None and present_count <= 0:
+            return 'record the attendance of the meeting before approving its minutes'
     if action == 'return' and not (note or '').strip():
         return 'give the reason for returning the minutes'
     return None

@@ -55,11 +55,16 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">{{ _('Status') }}</label>
+                                {% if meeting %}
                                 <select name="status" class="form-select">
                                     {% for code in ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'POSTPONED', 'CANCELED'] %}
                                     <option value="{{ code }}" {{ 'selected' if meeting and meeting.status == code else '' }}>{{ code_label(code, 'meeting_status') }}</option>
                                     {% endfor %}
                                 </select>
+                                {% else %}
+                                {# A new meeting is always scheduled first; it is completed after attendance and minutes are recorded. #}
+                                <input type="text" class="form-control" value="{{ code_label('SCHEDULED', 'meeting_status') }}" readonly>
+                                {% endif %}
                             </div>
                         </div>
 

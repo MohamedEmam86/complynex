@@ -71,9 +71,9 @@
                 <ul class="list-group list-group-flush small">
                     {% for o in others %}
                     <li class="list-group-item"><a href="{{ url_for('dp.consent_detail', id=o.id) }}">{{ (o.purpose_name_ar if get_locale()|string == 'ar' and o.purpose_name_ar else o.purpose_name_en) or '-' }}</a>
-                        · {{ o.consent_date }} {% if o.withdrawn %}<span class="badge bg-danger">{{ _('Withdrawn') }}</span>{% endif %}</li>
+                        · {{ o.consent_date|fmt_date }} {% if o.withdrawn %}<span class="badge bg-danger">{{ _('Withdrawn') }}</span>{% endif %}</li>
                     {% else %}
-                    <li class="list-group-item text-muted">{{ _('None') }}</li>
+                    <li class="list-group-item text-muted">{{ _('No other consents recorded for this data subject.') }}</li>
                     {% endfor %}
                 </ul>
             </div>

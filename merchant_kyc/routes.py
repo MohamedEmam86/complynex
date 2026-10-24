@@ -190,7 +190,7 @@ def view_merchant(id):
         flash(gettext('Merchant not found.'), 'danger')
         return redirect(url_for('merchant_kyc.merchant_list'))
     documents = _get_documents(id)
-    from kyb import service as kyb
+    from kyb import service as kyb, logic as kyb_logic
     ubos, sigs, _states = kyb.with_states('merchant', id)
     m = dict(merchant)
     decision_block = wf.four_eyes_error(current_user.id, m.get('created_by'), m.get('submitted_by'))
@@ -199,6 +199,8 @@ def view_merchant(id):
                            ubos=ubos, signatories=sigs, kyb_blockers=kyb.blockers('merchant', id),
                            history=wf.history(db, id), names=names, decision_block=decision_block,
                            can_submit=(m.get('kyc_status') or 'PENDING') in wf.SUBMITTABLE,
+                           can_resubmit=(m.get('kyc_status') or '') in wf.RESUBMITTABLE,
+                           sanctions=kyb_logic.sanctions_summary(m.get('sanctions_checked'), list(ubos) + list(sigs)),
                            can_decide=(m.get('kyc_status') or '') in wf.DECIDABLE)
 
 
@@ -361,18 +363,29 @@ def submit_merchant(id):
     if not merchant:
         flash(gettext('Merchant not found.'), 'danger')
         return redirect(url_for('merchant_kyc.merchant_list'))
-    old = merchant['kyc_status'] or 'PENDING'
-    if old not in wf.SUBMITTABLE:
-        flash(tr('Only a pending merchant can be submitted for approval.'), 'warning')
+    old = (merchant['kyc_status'] or 'PENDING').upper()
+    note = (request.form.get('note') or '').strip()
+    err = wf.submit_error(old, note)
+    if err:
+        flash(tr(err), 'warning')
         return redirect(url_for('merchant_kyc.view_merchant', id=id))
+    resubmit = old in wf.RESUBMITTABLE
+    # A resubmission clears the current decision fields; the rejection (who, when,
+    # why) stays in merchant_status_history. The submitter cannot decide (four-eyes).
     db.execute("""UPDATE merchants SET kyc_status = 'SUBMITTED', submitted_by = %s,
                   submitted_at = to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS'),
                   kyc_submitted_at = COALESCE(kyc_submitted_at, to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')),
-                  updated_at = CURRENT_TIMESTAMP, updated_by = %s WHERE id = %s""", (current_user.id, current_user.id, id))
-    wf.record(db, id, old, 'SUBMITTED', 'submitted', current_user.id, (request.form.get('note') or '').strip() or None)
+                  kyc_reviewed_by = CASE WHEN %s THEN NULL ELSE kyc_reviewed_by END,
+                  kyc_reviewed_at = CASE WHEN %s THEN NULL ELSE kyc_reviewed_at END,
+                  kyc_rejection_reason = CASE WHEN %s THEN NULL ELSE kyc_rejection_reason END,
+                  onboarding_status = CASE WHEN %s THEN 'Under Review' ELSE onboarding_status END,
+                  updated_at = CURRENT_TIMESTAMP, updated_by = %s WHERE id = %s""",
+               (current_user.id, resubmit, resubmit, resubmit, resubmit, current_user.id, id))
+    wf.record(db, id, old, 'SUBMITTED', 'resubmitted' if resubmit else 'submitted', current_user.id, note or None)
     db.commit()
-    AuditLog.log(current_user.id, 'Merchant Submitted', 'Merchant KYC', id,
-                 f'Merchant {merchant["merchant_name"]} submitted for approval', request.remote_addr)
+    AuditLog.log(current_user.id, 'Merchant Resubmitted' if resubmit else 'Merchant Submitted', 'Merchant KYC', id,
+                 f'Merchant {merchant["merchant_name"]} {"resubmitted after rejection" if resubmit else "submitted"} '
+                 f'for approval' + (f': {note}' if note else ''), request.remote_addr)
     flash(tr('Submitted for approval. Another person must approve or reject it.'), 'success')
     return redirect(url_for('merchant_kyc.view_merchant', id=id))
 
@@ -452,7 +465,7 @@ def merchant_kyb(id):
         flash(gettext('Merchant not found.'), 'danger')
         return redirect(url_for('merchant_kyc.merchant_list'))
     can_edit = (current_user.can_edit('aml') and current_user.can_edit('merchant_kyc')
-                and (m['kyc_status'] or '') not in wf.FINAL)
+                and (m['kyc_status'] or '') != 'APPROVED')  # a rejected file can be corrected and resubmitted
     return views.handle('merchant', id, self_endpoint='merchant_kyc.merchant_kyb',
                         back_url=url_for('merchant_kyc.view_merchant', id=id), can_edit=can_edit,
                         title_prefix=m['merchant_name'] or tr('Merchant'),

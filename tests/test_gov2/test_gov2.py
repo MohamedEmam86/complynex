@@ -98,8 +98,10 @@ def test_completion_threshold_default_90():
     assert W.completion_reached(90, 100)
     assert W.completion_reached(80, 100, 80)
     assert not W.completion_reached(1000, None)
-    assert W.video_length(None, 120.4) == 120
-    assert W.video_length(None, None, 5) == 300
+    assert W.video_length(120.4) == 120
+    assert W.video_length(None, 5) == 300
+    assert W.video_length(None, None) is None
+    assert W.video_length(600, 1) == 600
 
 
 def test_quiz_attempts_and_language():

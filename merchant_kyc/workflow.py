@@ -22,7 +22,22 @@ FINAL = ('APPROVED', 'REJECTED')
 EDITABLE = ('PENDING', 'SENT', 'SUBMITTED', 'UNDER_REVIEW')   # statuses an edit may set
 DECIDABLE = ('SUBMITTED', 'UNDER_REVIEW')                     # waiting for a decision
 SUBMITTABLE = ('PENDING', 'SENT')
+RESUBMITTABLE = ('REJECTED',)                                 # corrected after a rejection
 MIN_REASON = 10
+
+
+def submit_error(status, note=None):
+    """Why a submission for approval is refused (untranslated), or None. A
+    rejected merchant may be resubmitted once corrected; the resubmission must
+    say what was corrected (the rejection stays in the status history)."""
+    st = (status or 'PENDING').upper()
+    if st in RESUBMITTABLE:
+        if len((note or '').strip()) < MIN_REASON:
+            return 'Describe what was corrected since the rejection (at least 10 characters).'
+        return None
+    if st not in SUBMITTABLE:
+        return 'Only a pending merchant can be submitted for approval.'
+    return None
 
 
 def four_eyes_error(approver_id, created_by=None, submitted_by=None):

@@ -64,7 +64,7 @@ LABELS = {
                 'RESIDENCE_PERMIT': N_('Residence permit')},
     'monitoring': {'Monthly': N_('Monthly'), 'Quarterly': N_('Quarterly'), 'Semi-annual': N_('Semi-annual')},
     'merchant_action': {'created': N_('Created'), 'link_sent': N_('KYB link sent'),
-                        'submitted': N_('Submitted for approval'), 'public_submitted': N_('Submitted by the merchant'),
+                        'submitted': N_('Submitted for approval'), 'resubmitted': N_('Resubmitted after rejection'), 'public_submitted': N_('Submitted by the merchant'),
                         'approved': N_('Approved'), 'rejected': N_('Rejected'), 'status_changed': N_('Status changed')},
     'hr_category': {'CALL_FOR_ACTION': N_('Call for action (black list)'),
                     'INCREASED_MONITORING': N_('Increased monitoring (grey list)'), 'INTERNAL': N_('Internal decision')},

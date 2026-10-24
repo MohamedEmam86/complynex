@@ -138,27 +138,19 @@
                                 {% endif %}
                                 {% if can_edit_wl %}
                                 <div class="btn-group btn-group-sm">
-                                    {% if entry.status == 'Active' %}
+                                    {% if entry.status == 'Active' and can_approve %}
                                     <button type="button" class="btn btn-sm btn-outline-warning js-wl-revoke"
                                             data-id="{{ entry.id }}" data-name="{{ entry.name }}"
                                             title="{{ _('Revoke') }}">
                                         <i class="bi bi-slash-circle"></i>
                                     </button>
-                                    {% else %}
+                                    {% elif entry.status != 'Active' %}
                                     <button type="button" class="btn btn-sm btn-outline-success js-wl-reinstate"
                                             data-id="{{ entry.id }}" data-name="{{ entry.name }}"
                                             title="{{ _('Reinstate') }}">
                                         <i class="bi bi-arrow-counterclockwise"></i>
                                     </button>
                                     {% endif %}
-                                    <form method="POST" data-confirm="{{ _('Permanently remove this entry? The audit history is kept.') }}">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="wid" value="{{ entry.id }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ _('Delete') }}">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
                                 </div>
                                 {% else %}
                                 <span class="text-muted small">{{ _('View only') }}</span>

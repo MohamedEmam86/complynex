@@ -1075,9 +1075,10 @@ def manage_whitelist():
                                 link=url_for('screening.approvals'), exclude=current_user.id)
             flash(gettext('"%(name)s" submitted for MLRO approval. It does not suppress alerts until approved.', name=name), 'success')
         elif action == 'delete':
-            wid = request.form.get('wid')
-            execute_db(f"DELETE FROM screening_whitelist WHERE id = {param}", (wid,))
-            flash(gettext('Whitelist entry removed.'), 'info')
+            # Whitelist entries are never hard-deleted: an approved entry is part of
+            # the screening record. It is revoked (MLRO, with a reason) instead.
+            flash(gettext('Whitelist entries cannot be deleted. Ask the MLRO to revoke the entry with a reason; '
+                          'the history is kept.'), 'error')
             
         return redirect(url_for('screening.manage_whitelist'))
         
@@ -3887,15 +3888,22 @@ def revoke_whitelist(id):
     written. The engine reads status='Active', so this takes effect on the very
     next screening run.
     """
+    if not CL.can_approve(current_user):
+        # The entry was approved by the MLRO; only the approval authority revokes it.
+        flash(gettext('Only the MLRO (approval authority) can revoke a whitelist entry.'), 'danger')
+        return redirect(url_for('screening.manage_whitelist'))
     row = query_db("SELECT id, name, status FROM screening_whitelist WHERE id = %s",
                    (id,), one=True)
     if not row:
         flash(gettext('Whitelist entry not found.'), 'danger')
         return redirect(url_for('screening.manage_whitelist'))
+    if row['status'] == 'Revoked':
+        flash(gettext('This entry is already revoked.'), 'info')
+        return redirect(url_for('screening.manage_whitelist'))
 
     reason = (request.form.get('reason') or '').strip()
-    if not reason:
-        flash(gettext('A reason is required to revoke a whitelist entry.'), 'danger')
+    if len(reason) < 10:
+        flash(gettext('A specific reason (at least 10 characters) is required to revoke a whitelist entry.'), 'danger')
         return redirect(url_for('screening.manage_whitelist'))
 
     execute_db("UPDATE screening_whitelist SET status = 'Revoked', notes = %s WHERE id = %s",
@@ -3905,6 +3913,7 @@ def revoke_whitelist(id):
                       reason, performed_by)
                   VALUES (%s, %s, 'revoked', %s, 'Revoked', %s, %s)""",
                (id, row['name'], row['status'], reason, current_user.id))
+    _audit('Whitelist entry revoked', id, f"{row['name']!r}: {reason}")
     flash(gettext('Whitelist entry "%(name)s" revoked. It will be screened normally from now on.', name=row["name"]),
           'warning')
     return redirect(url_for('screening.manage_whitelist'))

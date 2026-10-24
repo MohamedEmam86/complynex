@@ -96,7 +96,7 @@
                         </td>
                         <td>{{ policy.responsible_function }}</td>
                         <td><span class="badge bg-light text-dark border">{{ policy.version_number }}</span></td>
-                        <td>{{ policy.effective_date }}</td>
+                        <td>{{ policy.effective_date|fmt_date }}</td>
                         <td>
                             {% if policy.is_public %}
                             <span class="badge bg-info-soft text-info"><i class="bi bi-globe"></i> {{ _('Public') }}</span>

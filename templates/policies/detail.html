@@ -179,10 +179,11 @@
                         {% endif %}
                     </div>
                     <div class="flex-grow-1">
-                        <div class="fw-bold">{{ review.stage_name }}</div>
+                        <div class="fw-bold">{{ review.stage_name|label }}</div>
                         <div class="small text-muted">
-                            {{ review.reviewer_name or 'Unknown' }} &middot;
-                            {% if review.review_date %}{{ review.review_date }}{% else %}Pending{% endif %}
+                            {{ _('Reviewer') }}: {{ review.reviewer_name or '—' }} &middot;
+                            {{ _('Assigned On') }}: {{ review.created_at|fmt_dt }} &middot;
+                            {% if review.review_date %}{{ _('Decided') }}: {{ review.review_date|fmt_dt }}{% else %}{{ _('Awaiting decision') }}{% endif %}
                         </div>
                         {% if review.comments %}
                         <div class="small mt-1 text-muted fst-italic">"{{ review.comments }}"</div>
@@ -195,6 +196,10 @@
                         <span class="badge bg-danger-subtle text-danger">{{ _('Rejected') }}</span>
                         {% else %}
                         <span class="badge bg-warning-subtle text-warning">{{ _('Pending') }}</span>
+                        {% if review.reviewer_id == current_user.id and not author_block %}
+                        <a href="{{ url_for('policies.review_policy', id=policy.id) }}" class="btn btn-sm btn-primary ms-1">
+                            <i class="bi bi-pencil-square"></i> {{ _('Review') }}</a>
+                        {% endif %}
                         {% endif %}
                     </div>
                 </div>
@@ -418,7 +423,7 @@
                                 <label class="form-label small fw-semibold text-muted">{{ _('Assign Approver') }}</label>
                                 <select name="reviewer_id" class="form-select form-select-sm rounded-pill">
                                     {% for u in approvers %}
-                                    <option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }} ({{ u.role }})</option>
+                                    <option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }} ({{ u.role|label }})</option>
                                     {% endfor %}
                                 </select>
                             </div>

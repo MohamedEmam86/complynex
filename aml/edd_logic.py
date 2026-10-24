@@ -228,3 +228,24 @@ def activation_blockers(customer, requires_edd, case, kyb_blockers=()):
         out.append('high risk: EDD must be completed and approved first')
     out.extend(kyb_blockers or ())
     return out
+
+
+# ----------------------------------------------------------------------------- displayed score
+
+# Lowest model score of each rating (utils/aml_risk.calculate_risk_score bands).
+SCORE_FLOOR = {'HIGH': 70, 'CRITICAL': 70, 'MEDIUM': 30}
+
+
+def effective_score(model_score, classification):
+    """Score shown next to the rating. When the rating was raised above the
+    model score (regulatory HIGH floor or a documented manual rating), the
+    score is raised to the lowest score of that rating so the two never
+    contradict. Returns (effective_score, model_score, floor or None)."""
+    try:
+        s = int(float(model_score or 0))
+    except (TypeError, ValueError):
+        s = 0
+    floor = SCORE_FLOOR.get((classification or '').upper())
+    if floor is not None and s < floor:
+        return floor, s, floor
+    return s, s, None

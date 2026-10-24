@@ -34,6 +34,7 @@ import io
 from flask import Response
 from utils.html_sanitizer import sanitize_html
 
+from policies import review_rules as _RR
 policies_bp = Blueprint('policies', __name__, url_prefix='/policies')
 UPLOAD_FOLDER = 'uploads/policies'
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
@@ -67,10 +68,12 @@ def _approval_blockers(policy):
     elif st['stages'] and not st['complete']:
         pending = [s['stage_name'] for s in st['stages'] if s['status'] == 'pending']
         reasons.append(gettext('Approval stages still pending: %(stages)s', stages=', '.join(pending)))
-    rows = _gdb().execute("""SELECT status FROM policy_review_workflow WHERE policy_id = %s""",
-                          (policy.id,)).fetchall()
-    if any(r['status'] == 'pending' for r in rows):
-        reasons.append(gettext('Assigned reviewers have not all decided yet.'))
+    rows = _gdb().execute("""SELECT w.status, TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS name
+                               FROM policy_review_workflow w LEFT JOIN users u ON u.id = w.reviewer_id
+                              WHERE w.policy_id = %s""", (policy.id,)).fetchall()
+    waiting = [r['name'] or '—' for r in rows if r['status'] == 'pending']
+    if waiting:
+        reasons.append(gettext('Waiting for the review of: %(names)s', names=', '.join(waiting)))
     if any(r['status'] == 'rejected' for r in rows):
         reasons.append(gettext('A reviewer rejected this policy.'))
     return reasons
@@ -95,7 +98,9 @@ def _is_locked(policy):
     return _V.is_locked(policy.status)
 
 
-def _can_decide_stage(user, stage):
+def _can_decide_stage(user, stage, author_id=None):
+    if _RR.author_error(user.id, author_id):
+        return False   # maker-checker: the drafter of the version never decides its stages
     if stage['approver_user_id']:
         return stage['approver_user_id'] == user.id
     # Unassigned stage: anyone holding the stage's role, or an administrator.
@@ -628,8 +633,11 @@ def submit_for_approval(id):
     # Get reviewer from form or fall back to compliance officers / admins
     reviewer_id = request.form.get('reviewer_id')
     if reviewer_id:
-        reviewer_id = int(reviewer_id)
-        reviewer_user = User.get_by_id(reviewer_id)
+        try:
+            reviewer_id = int(reviewer_id)
+        except ValueError:
+            reviewer_id = None
+        reviewer_user = User.get_by_id(reviewer_id) if reviewer_id else None
     else:
         officers = User.get_all_compliance_officers()
         if not officers:
@@ -647,16 +655,18 @@ def submit_for_approval(id):
             reviewer_id = officers[0].id
         reviewer_user = User.get_by_id(reviewer_id)
     
+    err = _RR.reviewer_assignment_error(reviewer_id if reviewer_user else None, policy.created_by)
+    if err:
+        flash(gettext(err), 'danger')
+        return redirect(url_for('policies.view_policy', id=id))
+
     # Update status to pending_approval
     policy.update({'status': 'pending_approval'}, current_user.id)
     
     # Create workflow entry (Compliance Review)
-    db = get_db()
-    db.execute('''
-        INSERT INTO policy_review_workflow (policy_id, reviewer_id, stage_name, status)
-        VALUES (%s, %s, 'Compliance Review', 'pending')
-    ''', (policy.id, reviewer_id)) 
-    db.commit()
+    policy.add_review_stage(reviewer_id, 'Compliance Review')
+    AuditLog.log(current_user.id, 'Policy Submitted for Review', 'Policies', id,
+                 f'Submitted {policy.policy_name} for review by {reviewer_user.get_full_name()}', request.remote_addr)
     
     reviewer_name = reviewer_user.get_full_name() if reviewer_user else f'User #{reviewer_id}'
     flash(gettext('Policy submitted for approval. Assigned to: %(reviewer_name)s', reviewer_name=reviewer_name), 'success')
@@ -808,7 +818,8 @@ def view_policy(id):
     approvers = _db.execute(
         "SELECT id, first_name, last_name, role FROM users WHERE role IN ('admin','manager','compliance_officer') ORDER BY role, first_name"
     ).fetchall()
-    approvers = [dict(a) for a in approvers]
+    approvers = [dict(a) for a in approvers if a['id'] != policy.created_by]
+    my_pending_review = any(r.get('reviewer_id') == current_user.id and r.get('status') == 'pending' for r in reviews)
     from services import document_service as _D
     approval = _D.approval_state(id)
     from policies import versioning as _V
@@ -826,9 +837,11 @@ def view_policy(id):
                          acknowledgment_rate=acknowledgment_rate,
                          attachments=attachments,
                          reviews=reviews,
+                         my_pending_review=my_pending_review,
+                         author_block=bool(_RR.author_error(current_user.id, policy.created_by)),
                          approvers=approvers,
                          approval=approval,
-                         can_decide_stage=bool(approval['current']) and _can_decide_stage(current_user, approval['current'])
+                         can_decide_stage=bool(approval['current']) and _can_decide_stage(current_user, approval['current'], policy.created_by)
                          and not _is_locked(policy),
                          publish_blockers=_approval_blockers(policy),
                          family=_family, open_draft=_open_draft, superseded_by=_superseded_by,
@@ -1229,6 +1242,8 @@ def decide_stage(id, stage_order):
         flash(gettext('This stage is not awaiting a decision.'), 'warning')
     elif not _can_decide_stage(current_user, stage):
         flash(gettext('You are not the approver for this stage.'), 'danger')
+    elif _RR.author_error(current_user.id, policy.created_by):
+        flash(gettext(_RR.author_error(current_user.id, policy.created_by)), 'danger')
     elif decision not in ('approved', 'rejected'):
         flash(gettext('Invalid decision.'), 'danger')
     elif decision == 'rejected' and not comments:
@@ -1273,18 +1288,31 @@ def review_policy(id):
         flash(gettext('Policy not found.'), 'danger')
         return redirect(url_for('policies.list_policies'))
     
+    reviews = [dict(r) for r in policy.get_reviews()]
+    has_pending = any(r['reviewer_id'] == current_user.id and r['status'] == 'pending' for r in reviews)
     if request.method == 'POST':
-        status = request.form.get('status')
-        comments = request.form.get('comments')
-        
+        status = (request.form.get('status') or '').strip().lower()
+        comments = (request.form.get('comments') or '').strip()
+        err = _RR.review_error(current_user.id, policy.created_by, status, comments, has_pending)
+        if not err and _is_locked(policy):
+            err = 'This version is archived and read-only.'
+        if err:
+            flash(gettext(err), 'danger')
+            return redirect(url_for('policies.review_policy', id=id))
+
         policy.submit_review(current_user.id, status, comments)
         AuditLog.log(current_user.id, 'Policy Review Decision', 'Policies', id, f'Submitted {status} for policy {policy.policy_name}', request.remote_addr)
         
-        flash(gettext('Review submitted: %(status)s', status=status), 'success')
-        return redirect(url_for('policies.my_reviews'))
-        
-    reviews = policy.get_reviews()
-    return render_template('policies/review_policy.html', policy=policy, reviews=reviews)
+        flash(gettext('Review submitted: %(status)s', status=gettext('Approved') if status == 'approved' else gettext('Rejected')), 'success')
+        return redirect(url_for('policies.view_policy', id=id))
+
+    block = None
+    if not has_pending:
+        block = _RR.review_error(current_user.id, policy.created_by, 'approved', 'x', False)
+    else:
+        block = _RR.author_error(current_user.id, policy.created_by)
+    return render_template('policies/review_policy.html', policy=policy, reviews=reviews,
+                           review_block=gettext(block) if block else None)
 
 @policies_bp.route('/workflow/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -1298,15 +1326,24 @@ def workflow_management(id):
         return redirect(url_for('policies.list_policies'))
         
     if request.method == 'POST':
-        reviewer_id = request.form.get('reviewer_id')
-        stage_name = request.form.get('stage_name')
-        
+        try:
+            reviewer_id = int(request.form.get('reviewer_id') or 0) or None
+        except ValueError:
+            reviewer_id = None
+        stage_name = (request.form.get('stage_name') or '').strip()
+        err = _RR.reviewer_assignment_error(reviewer_id if reviewer_id and User.get_by_id(reviewer_id) else None,
+                                            policy.created_by)
+        if err or not stage_name:
+            flash(gettext(err or 'Select a stage.'), 'danger')
+            return redirect(url_for('policies.workflow_management', id=id))
         policy.add_review_stage(reviewer_id, stage_name)
+        AuditLog.log(current_user.id, 'Policy Review Stage Added', 'Policies', id,
+                     f'{stage_name} assigned to user {reviewer_id}', request.remote_addr)
         flash(gettext('Review stage added successfully.'), 'success')
         return redirect(url_for('policies.workflow_management', id=id))
         
     reviews = policy.get_reviews()
-    users = User.get_all()
+    users = [u for u in User.get_all() if u.id != policy.created_by]
     return render_template('policies/workflow_management.html', policy=policy, reviews=reviews, users=users)
 
 @policies_bp.route('/my-reviews')

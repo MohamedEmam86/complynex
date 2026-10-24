@@ -102,7 +102,7 @@
                             <label for="video_duration_seconds" class="form-label">{{ _('Video length (seconds)') }}</label>
                             <input type="number" class="form-control" id="video_duration_seconds" name="video_duration_seconds" min="1"
                                 value="{{ course.video_duration_seconds if course and course.video_duration_seconds else '' }}">
-                            <div class="form-text">{{ _('Leave blank to take it from the video player the first time the video is played.') }}</div>
+                            <div class="form-text">{{ _('Read automatically from an uploaded MP4 file. For a video link, enter the real length; if left blank, the course duration in minutes is used.') }}</div>
                         </div>
 
                         <!-- Video Section -->

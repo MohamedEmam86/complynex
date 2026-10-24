@@ -61,6 +61,9 @@
                 <h5 class="mb-0 fw-bold">{{ _('Submit Your Decision') }}</h5>
             </div>
             <div class="card-body">
+                {% if review_block %}
+                <div class="alert alert-warning small mb-0">{{ review_block }}</div>
+                {% else %}
                 <form action="{{ url_for('policies.review_policy', id=policy.id) }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
@@ -74,12 +77,14 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold">{{ _('Comments') }}</label>
                         <textarea class="form-control" name="comments" rows="5"
-                            placeholder="{{ _('Provide feedback or justification...') }}" required></textarea>
+                            placeholder="{{ _('Provide feedback or justification...') }}"></textarea>
+                        <div class="form-text">{{ _('Required when rejecting.') }}</div>
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">{{ _('SUBMIT REVIEW') }}</button>
                     </div>
                 </form>
+                {% endif %}
             </div>
         </div>
 
@@ -92,7 +97,7 @@
                     {% for review in reviews %}
                     <div class="list-group-item">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <h6 class="mb-0 fw-bold">{{ review.stage_name }}</h6>
+                            <h6 class="mb-0 fw-bold">{{ review.stage_name|label }}</h6>
                             {% if review.status == 'approved' %}
                             <span class="badge bg-success">{{ _('Approved') }}</span>
                             {% elif review.status == 'rejected' %}
@@ -103,7 +108,7 @@
                         </div>
                         <small class="text-muted d-block">{{ review.reviewer_name }}</small>
                         {% if review.review_date %}
-                        <small class="text-muted">{{ review.review_date }}</small>
+                        <small class="text-muted">{{ review.review_date|fmt_dt }}</small>
                         {% endif %}
                         {% if review.comments %}
                         <div class="mt-2 p-2 bg-light small rounded italic-text">

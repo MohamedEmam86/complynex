@@ -185,8 +185,15 @@ def minutes_transition(id, vid, action):
     v = dict(v)
     note = (request.form.get('note') or '').strip() or None
     capacity = request.form.get('capacity')
+    present = None
+    if action == 'approve':
+        present = db.execute("""SELECT
+                (SELECT COUNT(*) FROM meeting_attendance WHERE meeting_id = %s
+                    AND (attended = 1 OR COALESCE(proxy_name, '') <> ''))
+              + (SELECT COUNT(*) FROM meeting_external_attendees WHERE meeting_id = %s
+                    AND attendance_status = 'PRESENT') AS n""", (id, id)).fetchone()['n']
     err = L.minutes_transition_error(action, v['status'], actor_id=current_user.id, drafted_by=v['created_by'],
-                                     capacity=capacity, note=note)
+                                     capacity=capacity, note=note, present_count=present)
     if err:
         _flash_rule_errors([err])
         return redirect(url_for('governance.meeting_summary', id=id) + '#minutes')

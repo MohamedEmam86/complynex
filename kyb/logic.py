@@ -194,3 +194,15 @@ def main_owner(ubos):
         if p > best_p:
             best, best_p = u, p
     return best
+
+
+def sanctions_summary(entity_checked, people):
+    """Sanctions check of a corporate file: the entity itself and every
+    beneficial owner / signatory (each with 'screening_state'). Checked only
+    when the entity and all persons (at least one declared) have a current
+    screening."""
+    total = len(people or [])
+    screened = sum(1 for p in people or [] if p.get('screening_state') not in (NOT_SCREENED, ERROR, None))
+    open_ = sum(1 for p in people or [] if p.get('screening_state') in (OPEN, CONFIRMED))
+    return {'entity': bool(entity_checked), 'people_total': total, 'people_screened': screened,
+            'people_open': open_, 'complete': bool(entity_checked) and total > 0 and screened == total}
