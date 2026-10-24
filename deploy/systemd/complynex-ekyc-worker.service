@@ -14,6 +14,9 @@ Environment="NUMEXPR_NUM_THREADS=3"
 # Threads for OpenCV/torch inside the worker (ekyc/worker.py). 3 of the 6
 # cores: one session ~4x faster than with 1, web and search keep the rest.
 Environment="EKYC_THREADS=3"
+# models load on the first session and are released after 15 idle minutes
+Environment="EKYC_WARMUP=0"
+Environment="EKYC_IDLE_EXIT_SECONDS=900"
 ExecStart=/var/www/complynex/venv/bin/python -m ekyc.worker
 Restart=always
 NoNewPrivileges=true

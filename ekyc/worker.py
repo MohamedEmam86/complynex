@@ -79,8 +79,25 @@ def warm_up():
         logger.exception("eKYC model warm-up failed; models will load on the first job")
 
 
+_models_loaded = [False]
+
+
+def _set_threads():
+    """Thread counts for OpenCV/torch, set when the models are first needed
+    (importing torch at start-up alone costs ~300 MB of an idle worker)."""
+    import os
+    import cv2
+    import torch
+    threads = max(1, int(os.environ.get('EKYC_THREADS') or 3))
+    cv2.setNumThreads(threads)
+    torch.set_num_threads(threads)
+
+
 def process_session(session_id):
     """RQ job entrypoint: run the full verification pipeline for one session."""
+    if not _models_loaded[0]:
+        _set_threads()
+    _models_loaded[0] = True
     app = _get_app()
     with app.app_context():
         _process_session_impl(session_id)
@@ -127,12 +144,13 @@ if __name__ == '__main__':
     # hard pin to 1 thread, which made one session take over two minutes
     # (about 20s of OCR per frame). Memory does not grow with threads; the
     # unit's OMP/OPENBLAS/MKL env vars carry the same value.
+    # Memory: models load on the first job (EKYC_WARMUP=0) and the process
+    # exits after EKYC_IDLE_EXIT_SECONDS without a job once they are loaded;
+    # systemd (Restart=always) starts a fresh, light process that waits for the
+    # next job. The first session after a quiet period waits ~40 s longer for
+    # its result (the customer already sees the "done" page immediately).
     import os
-    import cv2
-    import torch
-    threads = max(1, int(os.environ.get('EKYC_THREADS') or 3))
-    cv2.setNumThreads(threads)
-    torch.set_num_threads(threads)
+    import sys
 
     from rq.worker import SimpleWorker
     from ekyc.queue import _redis_connection
@@ -141,7 +159,19 @@ if __name__ == '__main__':
     _get_app()  # loads .env (app.py) so queue_name() sees this instance's EKYC_QUEUE
     from ekyc.queue import queue_name
     if os.environ.get('EKYC_WARMUP', '1') == '1':
+        _set_threads()
         warm_up()
+        _models_loaded[0] = True
+    idle = int(os.environ.get('EKYC_IDLE_EXIT_SECONDS') or 0) or None
     worker = SimpleWorker([queue_name()], connection=_redis_connection())
-    logger.info(f"eKYC worker listening on queue '{queue_name()}' with {threads} threads")
-    worker.work(with_scheduler=False)
+    logger.info(f"eKYC worker listening on queue '{queue_name()}'"
+                + (f", releasing models after {idle}s idle" if idle else ''))
+    while True:
+        worker.work(with_scheduler=False, max_idle_time=idle)
+        if not idle:
+            break
+        if _models_loaded[0]:
+            logger.info(f"eKYC worker idle for {idle}s; exiting to release model memory")
+            sys.exit(0)
+        # nothing loaded yet: keep waiting with a fresh worker registration
+        worker = SimpleWorker([queue_name()], connection=_redis_connection())

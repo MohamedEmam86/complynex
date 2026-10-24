@@ -762,6 +762,10 @@ Message:
     def _inject_demo_flag():
         return {'is_demo_instance': _demo}
 
+    if _demo:
+        from utils.demo import register_activity_marker
+        register_activity_marker(app)
+
     @app.after_request
     def set_security_headers(response):
         nonce = getattr(_g, 'csp_nonce', '')

@@ -1,19 +1,19 @@
 [Unit]
-Description=ComplyNex DEMO instance (fictional company; own folder and database)
+Description=ComplyNex DEMO instance (fictional company; own folder and database; started on demand, sleeps when idle)
 After=network.target postgresql.service redis-server.service elasticsearch.service complynex.service
+Requires=complynex-demo.socket
+Wants=complynex-demo-ekyc-worker.service
 
 [Service]
 User=complynex
 Group=complynex
 WorkingDirectory=/var/www/complynex-demo
 Environment="PATH=/var/www/complynex/venv/bin"
-ExecStart=/var/www/complynex/venv/bin/gunicorn -c /var/www/complynex-demo/gunicorn.conf.py --bind 127.0.0.1:8001 --workers 2 "app:create_app()"
-Restart=always
+# no --bind: gunicorn takes the listening socket from complynex-demo.socket
+ExecStart=/var/www/complynex/venv/bin/gunicorn -c /var/www/complynex-demo/gunicorn.conf.py --workers 2 "app:create_app()"
+Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
 MemoryHigh=1200M
 MemoryMax=1600M
-
-[Install]
-WantedBy=multi-user.target

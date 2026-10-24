@@ -1,6 +1,8 @@
 [Unit]
 Description=ComplyNex DEMO eKYC worker (own queue ekyc_demo, demo folder and database)
 After=network.target postgresql.service redis-server.service complynex-demo.service
+# runs only while the demo is awake
+PartOf=complynex-demo.service
 
 [Service]
 User=complynex
@@ -16,6 +18,7 @@ Environment="NUMEXPR_NUM_THREADS=2"
 Environment="EKYC_THREADS=2"
 # Models load on the first demo session, not at start-up (saves ~1 GB while idle).
 Environment="EKYC_WARMUP=0"
+Environment="EKYC_IDLE_EXIT_SECONDS=900"
 Environment="EKYC_QUEUE=ekyc_demo"
 ExecStart=/var/www/complynex/venv/bin/python -m ekyc.worker
 Restart=always
@@ -27,4 +30,4 @@ MemoryHigh=1500M
 MemoryMax=1800M
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=complynex-demo.service

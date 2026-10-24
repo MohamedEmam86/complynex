@@ -1,0 +1,7 @@
+[Unit]
+Description=ComplyNex DEMO: stop the demo after a quiet period (it restarts on the next request)
+
+[Service]
+Type=oneshot
+Environment="DEMO_IDLE_MINUTES=30"
+ExecStart=/bin/bash /var/www/complynex/scripts/demo_idle_sleep.sh
