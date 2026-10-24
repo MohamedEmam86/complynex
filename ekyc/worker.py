@@ -162,6 +162,11 @@ if __name__ == '__main__':
         _set_threads()
         warm_up()
         _models_loaded[0] = True
+    # rq imports jobs as module ekyc.worker, a different module object from
+    # this __main__ — read the "models loaded" flag from that one
+    import ekyc.worker as _jobs
+    if _models_loaded[0]:
+        _jobs._models_loaded[0] = True
     idle = int(os.environ.get('EKYC_IDLE_EXIT_SECONDS') or 0) or None
     worker = SimpleWorker([queue_name()], connection=_redis_connection())
     logger.info(f"eKYC worker listening on queue '{queue_name()}'"
@@ -170,7 +175,7 @@ if __name__ == '__main__':
         worker.work(with_scheduler=False, max_idle_time=idle)
         if not idle:
             break
-        if _models_loaded[0]:
+        if _jobs._models_loaded[0]:
             logger.info(f"eKYC worker idle for {idle}s; exiting to release model memory")
             sys.exit(0)
         # nothing loaded yet: keep waiting with a fresh worker registration
