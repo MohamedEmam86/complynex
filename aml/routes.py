@@ -70,9 +70,9 @@ def customer_list():
     customers = db.execute("""
         SELECT id, customer_reference, customer_type, full_name, company_name, 
                nationality, id_type, id_number,
-               risk_classification, status, onboarding_date 
-        FROM customers 
-        ORDER BY onboarding_date DESC
+               risk_classification, status, onboarding_date
+        FROM customers
+        ORDER BY COALESCE(onboarding_date, created_at) DESC NULLS LAST, id DESC
     """).fetchall()
     return render_template('aml/customer_list.html', customers=customers, user=current_user)
 
@@ -106,8 +106,24 @@ def create_customer():
             'is_pep': True if request.form.get('is_pep') == 'on' else False,
             'country': request.form.get('country'),
             'purpose': request.form.get('purpose'),
-            'income': request.form.get('income')
+            'income': request.form.get('income'),
+            'created_by': current_user.id,
         }
+        if data['customer_type'] not in ('INDIVIDUAL', 'CORPORATE'):
+            flash(_('Select a valid customer type.'), 'danger')
+            return _customer_form_again()
+        if data['customer_type'] == 'CORPORATE':
+            # The form has one name field; a corporate customer is stored under company_name.
+            data['company_name'] = data['company_name'] or data['full_name']
+            data['full_name'] = None
+        if not (data['full_name'] or data['company_name'] or '').strip():
+            flash(_('Name is required.'), 'danger')
+            return _customer_form_again()
+        dup = Customer.find_duplicate_id(data['id_type'], data['id_number'])
+        if dup:
+            flash(_('A customer with this ID number already exists: %(ref)s (%(name)s).',
+                    ref=dup['customer_reference'], name=dup['name'] or ''), 'danger')
+            return _customer_form_again()
         
         # Map 'source_of_funds' to 'income' if income is missing%s 
         # Form has 'source_of_funds'. Model uses 'income' for risk.
@@ -180,6 +196,14 @@ def create_customer():
         
     return render_template('aml/customer_form.html', user=current_user)
 
+
+def _customer_form_again():
+    """Re-show the onboarding form with what the user typed."""
+    prefill = request.form.to_dict()
+    prefill['annual_income_range'] = prefill.get('income')
+    prefill['purpose_of_relationship'] = prefill.get('purpose')
+    return render_template('aml/customer_form.html', user=current_user, prefill=prefill)
+
 @aml_bp.route('/customers/<int:id>')
 @login_required
 @permission_required('aml')
@@ -239,7 +263,7 @@ def view_customer(id):
         risk_radar_json = _json.dumps({'labels':['Geographic','Tx Volume','Cash Ratio','PEP/Sanctions','Account Age','Alert History'],'scores':[20,20,20,20,20,20]})
 
     return render_template(
-        'aml/customer_view.html', customer=customer, recent_alerts=recent_alerts, user=current_user,
+        'aml/customer_view.html', customer=Customer.form_values(customer), recent_alerts=recent_alerts, user=current_user,
         risk_radar_json=risk_radar_json,
         attach_module='aml', attach_record_type='customer', attach_record_id=id,
         attach_items=list_attachments('aml', 'customer', id),
@@ -282,6 +306,17 @@ def edit_customer(id):
             'updated_by': current_user.id
         }
 
+        if customer['customer_type'] == 'CORPORATE':
+            # The form's single name field holds the company name.
+            data['company_name'] = data['full_name']
+            data['full_name'] = None
+        dup = Customer.find_duplicate_id(data['id_type'], data['id_number'], exclude_id=id)
+        if dup:
+            flash(_('A customer with this ID number already exists: %(ref)s (%(name)s).',
+                    ref=dup['customer_reference'], name=dup['name'] or ''), 'danger')
+            return render_template('aml/customer_form.html', customer=Customer.form_values(customer),
+                                   user=current_user)
+
         # --- ComplyNex AI Enhancement ---
         nid_data = parse_egyptian_nid(request.form.get('id_number'))
         if nid_data:
@@ -300,7 +335,7 @@ def edit_customer(id):
             flash(gettext('Error updating customer.'), 'danger')
             db.rollback()
         
-    return render_template('aml/customer_form.html', customer=customer, user=current_user)
+    return render_template('aml/customer_form.html', customer=Customer.form_values(customer), user=current_user)
 
 @aml_bp.route('/sars')
 @login_required
@@ -422,7 +457,7 @@ def export_customers():
     writer.writerow(headers)
     
     for customer in customers:
-        c = dict(customer)
+        c = Customer._process_row(customer)
         writer.writerow([
             c.get('id'), c.get('full_name') or c.get('company_name'), 
             c.get('date_of_birth'), c.get('nationality'), c.get('id_number'),
@@ -430,9 +465,10 @@ def export_customers():
             c.get('phone'), c.get('email'), c.get('address_line1')
         ])
         
+    # UTF-8 BOM: without it Excel opens the file as ANSI and garbles Arabic names.
     return Response(
-        output.getvalue(),
-        mimetype="text/csv",
+        '\ufeff' + output.getvalue(),
+        mimetype="text/csv; charset=utf-8",
         headers={"Content-disposition": "attachment; filename=aml_customers.csv"}
     )
 
@@ -757,7 +793,10 @@ def view_alert(alert_id):
 
     if request.method == 'POST':
         action = request.form.get('action')
-        notes = request.form.get('notes', '')
+        notes = (request.form.get('notes') or '').strip()
+        if action in ('close', 'false_positive') and not notes:
+            flash(_('Notes are required to close an alert or mark it as a false positive.'), 'danger')
+            return redirect(url_for('aml.view_alert', alert_id=alert_id))
         status_map = {
             'assign': 'ASSIGNED', 'investigate': 'INVESTIGATING',
             'escalate': 'ESCALATED', 'false_positive': 'FALSE_POSITIVE',
@@ -825,54 +864,9 @@ def view_alert(alert_id):
                     flash(_('Alert escalated, but notifying the team failed.'),
                           'warning')
 
-            # Closing as a false positive also records the customer on the
-            # screening whitelist, so the same name is not re-flagged.
-            # NOTE: this suppresses future SANCTIONS-SCREENING hits on this
-            # name too, not just this transaction-monitoring rule. The alert
-            # reference is written into the reason so the decision can always
-            # be traced back to the case that justified it, and the entry can
-            # be revoked from Screening > Whitelist.
-            if action == 'false_positive':
-                row = db.execute(
-                    """SELECT a.alert_reference,
-                              COALESCE(c.full_name, c.company_name) AS cname,
-                              c.id AS cid
-                         FROM tm_alerts a
-                         LEFT JOIN customers c ON a.customer_id = c.id
-                        WHERE a.id = %s""", (alert_id,)).fetchone()
-                cname = (row['cname'] if row else None) or ''
-                if cname.strip():
-                    try:
-                        db.execute("""
-                            INSERT INTO screening_whitelist
-                                (name, normalized_name, reason, added_by,
-                                 entity_type, status)
-                            VALUES (%s, %s, %s, %s, 'Individual', 'Active')
-                            ON CONFLICT (normalized_name)
-                                WHERE normalized_name IS NOT NULL
-                            DO UPDATE SET reason = EXCLUDED.reason
-                        """, (
-                            cname.strip(),
-                            cname.upper().strip(),
-                            'AML alert %s closed as false positive: %s' % (
-                                (row['alert_reference'] if row else alert_id),
-                                (notes or 'no notes')),
-                            current_user.id,
-                        ))
-                        db.commit()
-                        flash(_('Customer added to the screening whitelist.'),
-                              'info')
-                    except Exception as exc:
-                        db.rollback()
-                        current_app.logger.error(
-                            'Whitelisting from AML alert %s failed: %s',
-                            alert_id, exc)
-                        flash(_('Alert closed, but the customer could not be '
-                                'added to the whitelist. Please add manually.'),
-                              'warning')
-                else:
-                    flash(_('Alert closed. No linked customer name, so nothing '
-                            'was added to the whitelist.'), 'warning')
+            # A TM false positive closes this alert only. It deliberately does
+            # NOT touch the sanctions-screening whitelist: suppressing future
+            # sanctions hits is a screening decision, taken in Screening.
 
             flash(gettext('Alert updated to %(new_status)s', new_status=new_status), 'success')
         return redirect(url_for('aml.view_alert', alert_id=alert_id))
@@ -1848,12 +1842,62 @@ def rule_approve(rule_id):
 @permission_required('aml', level='edit')
 def rule_disable(rule_id):
     db = get_db()
+    rule = db.execute("SELECT id, rule_code, status FROM tm_rules WHERE id = %s", (rule_id,)).fetchone()
+    if not rule:
+        flash(gettext('Rule not found.'), 'danger')
+        return redirect(url_for('aml.rules_list'))
+    reason = (request.form.get('reason') or '').strip()
+    if not reason:
+        flash(gettext('A reason is required to disable a rule.'), 'danger')
+        return redirect(url_for('aml.rules_list'))
+    if rule['status'] != 'ACTIVE':
+        flash(gettext('Only an active rule can be disabled.'), 'warning')
+        return redirect(url_for('aml.rules_list'))
     db.execute(
         "UPDATE tm_rules SET status='DISABLED', is_active=0, updated_at=NOW(), updated_by=%s WHERE id=%s",
         (current_user.id, rule_id)
     )
     db.commit()
+    AuditLog.log(current_user.id, 'Disable TM Rule', 'AML', rule_id,
+                 'Rule %s disabled. Reason: %s' % (rule['rule_code'], reason), request.remote_addr)
     flash(gettext('Rule disabled.'), 'warning')
+    return redirect(url_for('aml.rules_list'))
+
+
+@aml_bp.route('/rules/<int:rule_id>/enable', methods=['POST'])
+@login_required
+@permission_required('aml', level='edit')
+def rule_enable(rule_id):
+    """Re-activate a disabled rule. Same permission
+    level as disable; the reason goes to the audit log."""
+    db = get_db()
+    rule = db.execute("SELECT id, rule_code, status FROM tm_rules WHERE id = %s",
+                      (rule_id,)).fetchone()
+    if not rule:
+        flash(gettext('Rule not found.'), 'danger')
+        return redirect(url_for('aml.rules_list'))
+    reason = (request.form.get('reason') or '').strip()
+    if not reason:
+        flash(gettext('A reason is required to enable a rule.'), 'danger')
+        return redirect(url_for('aml.rules_list'))
+    if rule['status'] != 'DISABLED':
+        flash(gettext('Only a disabled rule can be enabled.'), 'warning')
+        return redirect(url_for('aml.rules_list'))
+    other = db.execute(
+        "SELECT id, version FROM tm_rules WHERE rule_code = %s AND status = 'ACTIVE' AND id <> %s",
+        (rule['rule_code'], rule_id)).fetchone()
+    if other:
+        flash(gettext('Another version of this rule (v%(version)s) is already active. Disable it first.',
+                      version=other['version']), 'warning')
+        return redirect(url_for('aml.rules_list'))
+    db.execute(
+        "UPDATE tm_rules SET status='ACTIVE', is_active=1, updated_at=NOW(), updated_by=%s WHERE id=%s",
+        (current_user.id, rule_id)
+    )
+    db.commit()
+    AuditLog.log(current_user.id, 'Enable TM Rule', 'AML', rule_id,
+                 'Rule %s enabled. Reason: %s' % (rule['rule_code'], reason), request.remote_addr)
+    flash(gettext('Rule enabled.'), 'success')
     return redirect(url_for('aml.rules_list'))
 
 

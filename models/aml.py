@@ -43,6 +43,36 @@ class Customer:
         return data
 
     @staticmethod
+    def find_duplicate_id(id_type, id_number, exclude_id=None):
+        """Another customer holding the same ID number for the same ID type,
+        or None. Matches the plain number or its search hash."""
+        id_number = (id_number or '').strip()
+        if not id_number:
+            return None
+        db = get_db()
+        return db.execute(
+            """SELECT id, customer_reference, COALESCE(full_name, company_name) AS name
+                 FROM customers
+                WHERE COALESCE(id_type, '') = COALESCE(%s, '')
+                  AND (id_number = %s OR national_id_hash = %s)
+                  AND id <> %s
+                ORDER BY id LIMIT 1""",
+            (id_type or None, id_number, EncryptionService.hash_value(id_number), exclude_id or 0)
+        ).fetchone()
+
+    @staticmethod
+    def form_values(row):
+        """The customer as the form and the profile page read it: PII
+        decrypted and the form's field names mapped to their columns."""
+        data = Customer._process_row(row)
+        data['address'] = data.get('address_line1')
+        data['industry'] = data.get('business_activity') or data.get('occupation')
+        data['source_of_funds'] = data.get('source_of_income')
+        if data.get('customer_type') == 'CORPORATE':
+            data['full_name'] = data.get('company_name') or data.get('full_name')
+        return data
+
+    @staticmethod
     def get_all():
         db = get_db()
         cursor = db.execute("SELECT * FROM customers ORDER BY created_at DESC")
@@ -79,35 +109,47 @@ class Customer:
             
             query = """
                 INSERT INTO customers (
-                    customer_reference, customer_type, full_name, company_name, 
+                    customer_reference, customer_type, full_name, company_name,
+                    full_name_arabic,
                     email, phone, email_encrypted, phone_encrypted,
                     id_number, national_id_hash, is_encrypted,
-                    address_line1, city, country, 
-                    purpose_of_relationship, source_of_income,
+                    address_line1, city, country,
+                    purpose_of_relationship, source_of_income, annual_income_range,
+                    occupation,
                     risk_classification, risk_score, risk_classification_reason,
                     created_by, updated_by,
                     date_of_birth, nationality, id_type, id_expiry_date,
                     registration_number, business_activity, is_pep,
-                    customer_number
+                    customer_number, status, onboarding_date, created_at
                 ) VALUES (
-                    %(ref)s, %(type)s, %(name)s, %(company)s, 
+                    %(ref)s, %(type)s, %(name)s, %(company)s,
+                    %(name_ar)s,
                     %(email_plain)s, %(phone_plain)s, %(email_enc)s, %(phone_enc)s,
                     %(id_plain)s, %(id_hash)s, %(enc_flag)s,
-                    %(addr)s, %(city)s, %(country)s, 
-                    %(purpose)s, %(income)s,
+                    %(addr)s, %(city)s, %(country)s,
+                    %(purpose)s, %(source)s, %(income)s,
+                    %(occupation)s,
                     %(risk_class)s, %(risk_score)s, %(risk_reasons)s,
                     %(created_by)s, %(updated_by)s,
                     %(dob)s, %(nat)s, %(id_type)s, %(id_exp)s,
                     %(reg_num)s, %(activity)s, %(pep)s,
-                    %(ref)s
+                    %(ref)s, %(status)s, %(now)s, %(now)s
                 )
                 RETURNING id
             """
+            from datetime import datetime
+            is_corporate = data.get('customer_type') == 'CORPORATE'
             params = {
                 'ref': ref,
                 'type': data.get('customer_type'),
-                'name': data.get('full_name') if data.get('customer_type') == 'INDIVIDUAL' else None,
-                'company': data.get('company_name') if data.get('customer_type') == 'CORPORATE' else None,
+                # A corporate customer is named by company_name (the form's
+                # single name field is used when no separate company name is sent).
+                'name': None if is_corporate else data.get('full_name'),
+                'company': (data.get('company_name') or data.get('full_name')) if is_corporate else None,
+                'name_ar': data.get('full_name_arabic') or None,
+                'occupation': data.get('occupation') or None,
+                'status': data.get('status') or 'ACTIVE',
+                'now': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'email_plain': '',
                 'phone_plain': '',
                 'email_enc': email_enc,
@@ -115,16 +157,16 @@ class Customer:
                 'id_plain': data.get('id_number'),
                 'id_hash': id_hash,
                 'enc_flag': 1,
-                'addr': data.get('address', 'N/A'),
-                'city': 'Cairo',
-                'country': data.get('country', 'EGYPT'),
-                'purpose': data.get('purpose'),
-                'income': data.get('income'),
+                'addr': data.get('address') or 'N/A',
+                'city': data.get('city') or 'Cairo',
+                'country': data.get('country') or 'EGYPT',
+                'purpose': data.get('purpose') or data.get('purpose_of_relationship'),
+                'income': data.get('income') or data.get('annual_income_range'),
                 'risk_class': risk_class,
                 'risk_score': risk_score,
                 'risk_reasons': risk_reasons,
-                'created_by': 1,
-                'updated_by': 1,
+                'created_by': data.get('created_by') or 1,
+                'updated_by': data.get('created_by') or 1,
                 'dob': data.get('date_of_birth'),
                 'nat': data.get('nationality'),
                 'id_type': data.get('id_type'),
@@ -195,6 +237,8 @@ class Customer:
                 'purpose_of_relationship': 'purpose_of_relationship',
                 'income': 'annual_income_range',
                 'annual_income_range': 'annual_income_range',
+                'occupation': 'occupation',
+                'is_pep': 'is_pep',
                 'date_of_birth': 'date_of_birth',
                 'nationality': 'nationality',
                 'id_type': 'id_type',

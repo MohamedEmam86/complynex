@@ -3,6 +3,8 @@
 {% block title %}{{ _('New Customer Onboarding') }}{% endblock %}
 
 {% block content %}
+{# c: the record being edited, or what was typed when the form is shown again after an error #}
+{% set c = customer or prefill or {} %}
 <div class="container mt-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -31,31 +33,31 @@
                                 <label class="form-label fw-bold">{{ _('Customer Type') }}</label>
                                 <select class="form-select" name="customer_type" required {% if customer %}disabled{%
                                     endif %}>
-                                    <option value="INDIVIDUAL" {% if customer and customer.customer_type=='INDIVIDUAL'
+                                    <option value="INDIVIDUAL" {% if c.customer_type=='INDIVIDUAL'
                                         %}selected{% endif %}>{{ _('Individual') }}</option>
-                                    <option value="CORPORATE" {% if customer and customer.customer_type=='CORPORATE'
+                                    <option value="CORPORATE" {% if c.customer_type=='CORPORATE'
                                         %}selected{% endif %}>{{ _('Corporate') }}</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('Full Name / Entity Name (English)') }}</label>
                                 <input type="text" name="full_name" class="form-control"
-                                    value="{{ customer.full_name if customer else '' }}" required>
+                                    value="{{ c.full_name or '' }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('Full Name / Entity Name (Arabic)') }}</label>
                                 <input type="text" name="full_name_arabic" class="form-control"
-                                    value="{{ customer.full_name_arabic if customer else '' }}">
+                                    value="{{ c.full_name_arabic or '' }}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('Nationality / Country of Incorporation') }}</label>
                                 <input type="text" name="nationality" class="form-control"
-                                    value="{{ customer.nationality if customer else '' }}" required>
+                                    value="{{ c.nationality or '' }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('Date of Birth / Incorporation Date') }}</label>
                                 <input type="date" name="date_of_birth" class="form-control"
-                                    value="{{ customer.date_of_birth if customer else '' }}" required>
+                                    value="{{ c.date_of_birth or '' }}" required>
                             </div>
 
                             <hr class="my-3">
@@ -64,23 +66,23 @@
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold">{{ _('ID Type / Registration Type') }}</label>
                                 <select class="form-select" name="id_type">
-                                    <option value="NATIONAL_ID" {% if customer and customer.id_type=='NATIONAL_ID'
+                                    <option value="NATIONAL_ID" {% if c.id_type=='NATIONAL_ID'
                                         %}selected{% endif %}>{{ _('National ID') }}</option>
-                                    <option value="PASSPORT" {% if customer and customer.id_type=='PASSPORT'
+                                    <option value="PASSPORT" {% if c.id_type=='PASSPORT'
                                         %}selected{% endif %}>{{ _('Passport') }}</option>
-                                    <option value="COMMERCIAL_REG" {% if customer and customer.id_type=='COMMERCIAL_REG'
+                                    <option value="COMMERCIAL_REG" {% if c.id_type=='COMMERCIAL_REG'
                                         %}selected{% endif %}>{{ _('Commercial Register') }}</option>
                                 </select>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold">{{ _('Number') }}</label>
                                 <input type="text" name="id_number" class="form-control"
-                                    value="{{ customer.id_number if customer else '' }}" required>
+                                    value="{{ c.id_number or '' }}" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold">{{ _('Expiry Date') }}</label>
                                 <input type="date" name="id_expiry_date" class="form-control"
-                                    value="{{ customer.id_expiry_date if customer else '' }}">
+                                    value="{{ c.id_expiry_date or '' }}">
                             </div>
 
                             <hr class="my-3">
@@ -89,73 +91,71 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('Email') }}</label>
                                 <input type="email" name="email" class="form-control"
-                                    value="{{ customer.email if customer else '' }}">
+                                    value="{{ c.email or '' }}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('Phone') }}</label>
                                 <input type="text" name="phone" class="form-control"
-                                    value="{{ customer.phone if customer else '' }}">
+                                    value="{{ c.phone or '' }}">
                             </div>
                             <div class="col-12 mb-3">
                                 <label class="form-label fw-bold">{{ _('Address') }}</label>
                                 <textarea name="address" class="form-control"
-                                    rows="2">{{ customer.address if customer else '' }}</textarea>
+                                    rows="2">{{ c.address or '' }}</textarea>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('Country of Residence / HQ') }}</label>
                                 <select class="form-select" name="country">
-                                    <option value="EGYPT" {% if not customer or customer.country=='EGYPT' %}selected{%
+                                    <option value="EGYPT" {% if not c.country or c.country=='EGYPT' %}selected{%
                                         endif %}>{{ _('Egypt') }}</option>
-                                    <option value="SAUDI ARABIA" {% if customer and customer.country=='SAUDI ARABIA'
+                                    <option value="SAUDI ARABIA" {% if c.country=='SAUDI ARABIA'
                                         %}selected{% endif %}>{{ _('Saudi Arabia') }}</option>
-                                    <option value="UAE" {% if customer and customer.country=='UAE' %}selected{% endif
+                                    <option value="UAE" {% if c.country=='UAE' %}selected{% endif
                                         %}>{{ _('UAE') }}</option>
-                                    <option value="USA" {% if customer and customer.country=='USA' %}selected{% endif
+                                    <option value="USA" {% if c.country=='USA' %}selected{% endif
                                         %}>{{ _('USA') }}</option>
-                                    <option value="IRAN" {% if customer and customer.country=='IRAN' %}selected{% endif
+                                    <option value="IRAN" {% if c.country=='IRAN' %}selected{% endif
                                         %}>{{ _('Iran (High Risk)') }}</option>
-                                    <option value="RUSSIA" {% if customer and customer.country=='RUSSIA' %}selected{%
+                                    <option value="RUSSIA" {% if c.country=='RUSSIA' %}selected{%
                                         endif %}>{{ _('Russia (High Risk)') }}</option>
-                                    <option value="OTHER" {% if customer and customer.country=='OTHER' %}selected{%
+                                    <option value="OTHER" {% if c.country=='OTHER' %}selected{%
                                         endif %}>{{ _('Other') }}</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('Industry / Occupation') }}</label>
                                 <input type="text" name="industry" class="form-control"
-                                    value="{{ customer.industry if customer else '' }}">
+                                    value="{{ c.industry or '' }}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('Source of Funds') }}</label>
                                 <input type="text" name="source_of_funds" class="form-control"
-                                    value="{{ customer.source_of_funds if customer else '' }}">
+                                    value="{{ c.source_of_funds or '' }}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">{{ _('Annual Income / Turnover') }}</label>
                                 <select class="form-select" name="income">
-                                    <option value="<50K" {% if customer and customer.annual_income_range=='<50K'
+                                    <option value="<50K" {% if c.annual_income_range=='<50K'
                                         %}selected{% endif %}>{{ _('&lt; 50k EGP') }}</option>
-                                    <option value="50K-100K" {% if customer and customer.annual_income_range=='50K-100K'
+                                    <option value="50K-100K" {% if c.annual_income_range=='50K-100K'
                                         %}selected{% endif %}>{{ _('50k - 100k EGP') }}</option>
-                                    <option value="100K-500K" {% if customer and
-                                        customer.annual_income_range=='100K-500K' %}selected{% endif %}>{{ _('100k - 500k EGP') }}
+                                    <option value="100K-500K" {% if c.annual_income_range=='100K-500K' %}selected{% endif %}>{{ _('100k - 500k EGP') }}
                                     </option>
-                                    <option value=">500K" {% if customer and customer.annual_income_range=='>500K'
+                                    <option value=">500K" {% if c.annual_income_range=='>500K'
                                         %}selected{% endif %}>{{ _('&gt; 500k EGP') }}</option>
-                                    <option value="UNDECLARED" {% if customer and
-                                        customer.annual_income_range=='UNDECLARED' %}selected{% endif %}>{{ _('Undeclared') }}
+                                    <option value="UNDECLARED" {% if c.annual_income_range=='UNDECLARED' %}selected{% endif %}>{{ _('Undeclared') }}
                                     </option>
                                 </select>
                             </div>
                             <div class="col-12 mb-3">
                                 <label class="form-label fw-bold">{{ _('Purpose of Relationship') }}</label>
                                 <input type="text" name="purpose" class="form-control"
-                                    value="{{ customer.purpose_of_relationship if customer else '' }}" required>
+                                    value="{{ c.purpose_of_relationship or '' }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <div class="form-check form-switch mt-4">
                                     <input class="form-check-input" type="checkbox" id="is_pep" name="is_pep" {% if
-                                        customer and customer.is_pep %}checked{% endif %}>
+                                        c.is_pep %}checked{% endif %}>
                                     <label class="form-check-label fw-bold" for="is_pep">{{ _('Politically Exposed Person
                                         (PEP)') }}</label>
                                 </div>
@@ -164,6 +164,9 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold text-danger">{{ _('Status') }}</label>
                                 <select class="form-select border-danger" name="status">
+                                    {% if customer.status and customer.status not in ['ACTIVE', 'PENDING', 'SUSPENDED', 'CLOSED', 'BLOCKED'] %}
+                                    <option value="{{ customer.status }}" selected>{{ customer.status }}</option>
+                                    {% endif %}
                                     <option value="ACTIVE" {% if customer.status=='ACTIVE' %}selected{% endif %}>{{ _('Active') }}
                                     </option>
                                     <option value="PENDING" {% if customer.status=='PENDING' %}selected{% endif %}>

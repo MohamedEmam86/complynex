@@ -1,8 +1,10 @@
-<!-- Footer — one definition, included by base.html for every page.
+{# Footer — one definition, included by base.html for every page.
      The previous markup fought itself: the column carried
      "text-center text-md-start" while the <p> inside forced
      "w-100 text-center", so alignment depended on which rule won at a given
-     breakpoint. That is why it looked different from page to page. -->
+     breakpoint. That is why it looked different from page to page.
+   (A Jinja comment, not an HTML one: it never reaches the browser, so it
+   cannot leak into the page as text.) #}
 <footer class="site-footer">
     <div class="container-fluid">
         <div class="row align-items-center gy-2">

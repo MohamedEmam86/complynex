@@ -56,16 +56,24 @@
           <div class="col-md-4">
             <label class="form-label fw-bold">{{ _('Category') }}</label>
             <select name="rule_category" class="form-select">
-              {% for cat in ['Cash','Transfer','Pattern','High-Risk Country','PEP','General'] %}
-              <option {{ 'selected' if rule and rule.rule_category == cat else '' }}>{{ _(cat) }}</option>
+              {% set categories = ['Cash','Transfer','Pattern','High-Risk Country','PEP','General'] %}
+              {% if rule and rule.rule_category and rule.rule_category not in categories %}
+              {% set categories = [rule.rule_category] + categories %}
+              {% endif %}
+              {% for cat in categories %}
+              <option value="{{ cat }}" {{ 'selected' if rule and rule.rule_category == cat else '' }}>{{ _(cat) }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="col-md-4">
             <label class="form-label fw-bold">{{ _('Rule Type') }}</label>
             <select name="rule_type" class="form-select" id="ruleType">
-              {% for t in ['THRESHOLD','PATTERN','VELOCITY','COUNTRY','PEP'] %}
-              <option {{ 'selected' if rule and rule.rule_type == t else '' }}>{{ t }}</option>
+              {% set rule_types = ['THRESHOLD','PATTERN','VELOCITY','COUNTRY','PEP'] %}
+              {% if rule and rule.rule_type and rule.rule_type not in rule_types %}
+              {% set rule_types = [rule.rule_type] + rule_types %}
+              {% endif %}
+              {% for t in rule_types %}
+              <option value="{{ t }}" {{ 'selected' if rule and rule.rule_type == t else '' }}>{{ t }}</option>
               {% endfor %}
             </select>
             <div class="form-text" id="typeHint"></div>

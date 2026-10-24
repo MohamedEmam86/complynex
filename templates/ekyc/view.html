@@ -107,7 +107,10 @@
                     {% endif %}
                     {% if session.status == 'ONBOARDED' %}
                     <span class="badge bg-success align-self-center">
-                        {{ _('Onboarded as Customer') }} #{{ session.onboarded_customer_id }}
+                        {{ _('Onboarded as Customer') }}
+                        {% if session.onboarded_customer_id %}
+                        <a href="{{ url_for('aml.view_customer', id=session.onboarded_customer_id) }}" class="link-light">#{{ session.onboarded_customer_id }}</a>
+                        {% endif %}
                     </span>
                     {% endif %}
                 </div>

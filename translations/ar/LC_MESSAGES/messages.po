@@ -31506,6 +31506,91 @@ msgstr "أنت من طلب التحقق من هذه الملاحظة؛ يجب أ
 msgid "you marked a corrective action done; another person must verify the finding"
 msgstr "أنت من أنهى أحد الإجراءات التصحيحية؛ يجب أن يتحقق من الملاحظة شخص آخر"
 
+msgid "Entity type must be Individual or Company / Entity."
+msgstr "نوع الكيان يجب أن يكون فردًا أو شركة / كيانًا."
+
+#, python-format
+msgid "Match threshold must be a whole number between %(min)d and %(max)d."
+msgstr "حد المطابقة يجب أن يكون رقمًا صحيحًا بين %(min)d و %(max)d."
+
+msgid "Date of birth must be a valid date (YYYY-MM-DD)."
+msgstr "تاريخ الميلاد يجب أن يكون تاريخًا صحيحًا (YYYY-MM-DD)."
+
+msgid "Date of birth cannot be in the future."
+msgstr "تاريخ الميلاد لا يمكن أن يكون في المستقبل."
+
+msgid "National ID must contain digits only."
+msgstr "الرقم القومي يجب أن يحتوي على أرقام فقط."
+
+msgid "An Egyptian national ID must be exactly 14 digits."
+msgstr "الرقم القومي المصري يجب أن يتكون من 14 رقمًا بالضبط."
+
+msgid "Select a valid decision (true match or false positive)."
+msgstr "اختر قرارًا صحيحًا (تطابق حقيقي أو إيجابي كاذب)."
+
+msgid "Reviewer rationale is required to record a decision."
+msgstr "مبررات المراجع مطلوبة لتسجيل القرار."
+
+msgid "This result has already been decided and cannot be decided again."
+msgstr "تم البت في هذه النتيجة بالفعل ولا يمكن البت فيها مرة أخرى."
+
+msgid "This item has already been resolved and cannot be decided again."
+msgstr "تمت تسوية هذا البند بالفعل ولا يمكن البت فيه مرة أخرى."
+
+msgid "Select a valid resolution."
+msgstr "اختر قرارًا صحيحًا."
+
+msgid "Resolution notes are required."
+msgstr "ملاحظات القرار مطلوبة."
+
+msgid "Notes are required to close an alert or mark it as a false positive."
+msgstr "الملاحظات مطلوبة لإغلاق التنبيه أو تصنيفه كإيجابي كاذب."
+
+msgid "A reason is required to disable a rule."
+msgstr "يلزم ذكر سبب لتعطيل القاعدة."
+
+msgid "Only an active rule can be disabled."
+msgstr "يمكن تعطيل القاعدة النشطة فقط."
+
+msgid "A reason is required to enable a rule."
+msgstr "يلزم ذكر سبب لتفعيل القاعدة."
+
+msgid "Only a disabled rule can be enabled."
+msgstr "يمكن تفعيل القاعدة المعطلة فقط."
+
+#, python-format
+msgid "Another version of this rule (v%(version)s) is already active. Disable it first."
+msgstr "يوجد إصدار آخر من هذه القاعدة (v%(version)s) نشط بالفعل. قم بتعطيله أولًا."
+
+msgid "Rule enabled."
+msgstr "تم تفعيل القاعدة."
+
+msgid "Reason for disabling"
+msgstr "سبب التعطيل"
+
+msgid "Reason for enabling"
+msgstr "سبب التفعيل"
+
+msgid "Enable this rule?"
+msgstr "تفعيل هذه القاعدة؟"
+
+msgid "Select a valid customer type."
+msgstr "اختر نوع عميل صحيحًا."
+
+#, python-format
+msgid "A customer with this ID number already exists: %(ref)s (%(name)s)."
+msgstr "يوجد عميل مسجل بنفس رقم الهوية بالفعل: %(ref)s (%(name)s)."
+
+msgid "Select a valid document type."
+msgstr "اختر نوع مستند صحيحًا."
+
+#, python-format
+msgid "Date of birth %(dob)s does not match the one in the national ID (%(nid_dob)s)."
+msgstr "تاريخ الميلاد %(dob)s لا يطابق التاريخ الوارد في الرقم القومي (%(nid_dob)s)."
+
+msgid "Your session expired. Please reload the page and try again."
+msgstr "انتهت صلاحية الجلسة. يرجى إعادة تحميل الصفحة والمحاولة مرة أخرى."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 
