@@ -59,7 +59,7 @@
     <div class="flex-grow-1 min-w-0">
       <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
         <span class="badge tier-badge tier-{{ v.tier }}">{{ _(v.tier_label) }}</span>
-        {% if v.entity_type %}<span class="badge bg-light text-dark border">{{ v.entity_type }}</span>{% endif %}
+        {% if v.entity_type %}<span class="badge bg-light text-dark border">{{ v.entity_type|scr_label('entity') }}</span>{% endif %}
         {% if v.risk_level %}<span class="badge bg-light text-dark border">{{ _('Risk') }}: {{ v.risk_level }}</span>{% endif %}
       </div>
       <h5 class="mb-0 fw-bold ar">{{ v.display_name }}</h5>
@@ -186,7 +186,7 @@
         <div class="sr-sub">{{ _('Screened subject') }}</div>
         <dl class="sr-kv mb-0">
           <dt>{{ _('Name') }}</dt><dd class="ar fw-semibold">{{ result.screened_name }}</dd>
-          <dt>{{ _('Entity type') }}</dt><dd>{{ inputs.entity_type or 'INDIVIDUAL' }}</dd>
+          <dt>{{ _('Entity type') }}</dt><dd>{{ (inputs.entity_type or 'INDIVIDUAL')|scr_label('entity') }}</dd>
           <dt>{{ _('Date of birth') }}</dt><dd>{{ inputs.dob or '—' }}</dd>
           <dt>{{ _('Nationality') }}</dt><dd>{{ inputs.nationality or '—' }}</dd>
           <dt>{{ _('National ID') }}</dt><dd>{% if inputs.national_id %}{{ inputs.national_id[:7] }}•••••{{ inputs.national_id[-2:] }}{% else %}—{% endif %}</dd>
@@ -318,6 +318,9 @@
   </div>
   {% endif %}
 
+  {# ---------------- FOUR-EYES + DECISION HISTORY ---------------- #}
+  <div class="mt-4">{% include 'screening/_hit_decisions.html' %}</div>
+
   {# ---------------- RESOLUTION ---------------- #}
   {% if not result.status or result.status == 'PENDING' %}
   <div class="sr-card mt-4 no-print">
@@ -335,6 +338,7 @@
               <option value="TRUE_HIT">{{ _('Confirm true match (block / escalate)') }}</option>
               <option value="FALSE_POSITIVE">{{ _('Confirm false positive (clear)') }}</option>
             </select>
+            <div class="form-text">{{ _('Sanctions-list hits and strong matches take effect only after MLRO approval.') }}</div>
           </div>
           <div class="col-md-8">
             <label class="form-label fw-semibold">{{ _('Reviewer Rationale') }}</label>

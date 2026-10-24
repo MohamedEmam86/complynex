@@ -104,9 +104,9 @@
                             class="{% if r.screening_result == 'WHITE_LISTED' or r.screening_result == 'CLEAR' %}row-false-positive{% elif r.screening_result == 'CONFIRMED_HIT' %}row-true-match{% endif %}">
                             <td>{{ r.id }}</td>
                             <td><strong>{{ r.entity_name }}</strong></td>
-                            <td><span class="badge bg-light text-dark">{{ r.entity_type }}</span></td>
+                            <td><span class="badge bg-light text-dark">{{ r.entity_type|scr_label('entity') }}</span></td>
                             <td><small>{{ r.screening_date }}</small></td>
-                            <td><span class="badge bg-secondary">{{ r.source_module or 'Manual' }}</span></td>
+                            <td><span class="badge bg-secondary">{{ (r.source_module or 'Manual')|scr_label('module') }}</span></td>
                             <td>{{ r.total_matches_found }}</td>
                             <td>
                                 {% if r.high_risk_matches %}
@@ -128,7 +128,7 @@
                             <td>
                                 <span
                                     class="badge {% if r.screening_result == 'CLEAR' %}bg-success{% elif r.screening_result == 'POTENTIAL_MATCH' %}bg-warning text-dark{% elif r.screening_result == 'CONFIRMED_HIT' %}bg-danger{% elif r.screening_result == 'WHITE_LISTED' %}bg-info{% else %}bg-secondary{% endif %}">
-                                    {{ r.screening_result }}
+                                    {{ r.screening_result|scr_label }}
                                 </span>
                             </td>
                             <td>
@@ -147,7 +147,7 @@
                             <td>
                                 <span
                                     class="badge {% if r.status == 'Completed' %}bg-success{% elif r.status == 'Pending Review' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                                    {{ r.status }}
+                                    {{ r.status|scr_label }}
                                 </span>
                                 {# Adjudication outcome + who made the call #}
                                 {% if r.decision %}

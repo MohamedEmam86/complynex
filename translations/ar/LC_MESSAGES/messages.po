@@ -32220,6 +32220,644 @@ msgstr "الرقم المرجعي لدى الوحدة"
 msgid "Mark as filed"
 msgstr "تسجيل كمُخطَر"
 
+msgid "A name and a specific reason (at least 10 characters) are required."
+msgstr "الاسم وسبب محدد (10 أحرف على الأقل) مطلوبان."
+
+#, python-format
+msgid "\"%(name)s\" is already on the whitelist. Open its case to review or renew it."
+msgstr "\"%(name)s\" موجود بالفعل في القائمة البيضاء. افتح ملفه لمراجعته أو تجديده."
+
+msgid "Whitelist entry awaiting your approval"
+msgstr "قيد في القائمة البيضاء بانتظار موافقتك"
+
+#, python-format
+msgid "%(name)s was proposed for the whitelist and does not suppress alerts until you approve it."
+msgstr "اقتُرح إدراج %(name)s في القائمة البيضاء، ولن يحجب أي تنبيه حتى توافق عليه."
+
+#, python-format
+msgid "\"%(name)s\" submitted for MLRO approval. It does not suppress alerts until approved."
+msgstr "أُرسل \"%(name)s\" لموافقة مسؤول الإبلاغ عن غسل الأموال، ولن يحجب أي تنبيه قبل الموافقة."
+
+msgid "Whitelist entries awaiting your approval"
+msgstr "قيود في القائمة البيضاء بانتظار موافقتك"
+
+#, python-format
+msgid "%(n)s whitelist entries were uploaded and wait for your approval."
+msgstr "رُفع %(n)s قيدًا إلى القائمة البيضاء وهي بانتظار موافقتك."
+
+msgid "Sanctions clearance awaiting your approval"
+msgstr "استبعاد تطابق عقوبات بانتظار موافقتك"
+
+#, python-format
+msgid "%(user)s proposes to clear %(name)s (score %(score)s). It does not take effect until you approve it."
+msgstr "يقترح %(user)s استبعاد التطابق لـ %(name)s (الدرجة %(score)s)، ولا يسري ذلك حتى توافق عليه."
+
+msgid "Confirmed sanctions match recorded"
+msgstr "تسجيل تطابق مؤكد مع قوائم العقوبات"
+
+#, python-format
+msgid "%(user)s confirmed %(name)s as a true match: %(notes)s"
+msgstr "أكّد %(user)s أن %(name)s تطابق حقيقي: %(notes)s"
+
+msgid "Clearance submitted. It takes effect only after MLRO approval (four-eyes)."
+msgstr "أُرسل قرار الاستبعاد، ولا يسري إلا بعد موافقة مسؤول الإبلاغ (مبدأ العيون الأربع)."
+
+msgid "A clearance of this hit is waiting for MLRO approval."
+msgstr "قرار استبعاد هذا التطابق بانتظار موافقة مسؤول الإبلاغ."
+
+msgid "Marked as False Positive. The whitelist entry takes effect after MLRO approval."
+msgstr "سُجّل كتطابق خاطئ. يسري قيد القائمة البيضاء بعد موافقة مسؤول الإبلاغ."
+
+#, python-format
+msgid "%(n)s clearance(s) need MLRO approval and were sent to the approval queue."
+msgstr "%(n)s من قرارات الاستبعاد تتطلب موافقة مسؤول الإبلاغ وأُرسلت إلى قائمة الموافقات."
+
+#, python-format
+msgid "Reinstatement of \"%(name)s\" submitted for MLRO approval. It does not suppress alerts until approved."
+msgstr "أُرسل طلب إعادة تفعيل \"%(name)s\" لموافقة مسؤول الإبلاغ، ولن يحجب أي تنبيه قبل الموافقة."
+
+msgid "Only the MLRO (approval authority) can accept a new match into the cleared set. Escalate it instead."
+msgstr "لا يقبل تطابقًا جديدًا ضمن المجموعة المستبعدة إلا مسؤول الإبلاغ (صاحب صلاحية الموافقة). صعّده بدلًا من ذلك."
+
+msgid "Submitted for MLRO approval. The entry does not suppress alerts until approved."
+msgstr "أُرسل لموافقة مسؤول الإبلاغ. لن يحجب القيد أي تنبيه قبل الموافقة."
+
+msgid "Only the MLRO (approval authority) can approve or reject a clearance."
+msgstr "لا يوافق على قرار الاستبعاد أو يرفضه إلا مسؤول الإبلاغ (صاحب صلاحية الموافقة)."
+
+msgid "A comment is required to approve or reject."
+msgstr "التعليق مطلوب للموافقة أو الرفض."
+
+msgid "This request has already been decided."
+msgstr "تم البت في هذا الطلب بالفعل."
+
+#, python-format
+msgid "Your clearance of %(name)s was approved by %(user)s."
+msgstr "وافق %(user)s على قرارك باستبعاد التطابق لـ %(name)s."
+
+msgid "Clearance approved. It now takes effect."
+msgstr "تمت الموافقة على الاستبعاد وأصبح ساريًا."
+
+#, python-format
+msgid "Your clearance of %(name)s was rejected by %(user)s: %(comment)s"
+msgstr "رفض %(user)s قرارك باستبعاد التطابق لـ %(name)s: %(comment)s"
+
+msgid "Clearance rejected. The hit is open again for review."
+msgstr "رُفض الاستبعاد، وأُعيد فتح التطابق للمراجعة."
+
+msgid "Clearance decision"
+msgstr "قرار بشأن الاستبعاد"
+
+msgid "Only the MLRO (approval authority) can approve, reject or renew whitelist entries."
+msgstr "لا يوافق على قيود القائمة البيضاء أو يرفضها أو يجددها إلا مسؤول الإبلاغ (صاحب صلاحية الموافقة)."
+
+msgid "A reason is required."
+msgstr "السبب مطلوب."
+
+msgid "This entry is not waiting for approval."
+msgstr "هذا القيد ليس بانتظار الموافقة."
+
+#, python-format
+msgid "\"%(name)s\" approved. It now suppresses alerts until %(date)s."
+msgstr "تمت الموافقة على \"%(name)s\"، وأصبح يحجب التنبيهات حتى %(date)s."
+
+#, python-format
+msgid "\"%(name)s\" rejected. It does not suppress alerts."
+msgstr "رُفض \"%(name)s\"، ولا يحجب أي تنبيه."
+
+msgid "Only an active entry can be renewed."
+msgstr "لا يُجدَّد إلا القيد الساري."
+
+#, python-format
+msgid "\"%(name)s\" renewed until %(date)s."
+msgstr "جُدّد \"%(name)s\" حتى %(date)s."
+
+msgid "Whitelist decision"
+msgstr "قرار بشأن القائمة البيضاء"
+
+#, python-format
+msgid "%(name)s: %(decision)s by %(user)s."
+msgstr "%(name)s: %(decision)s بواسطة %(user)s."
+
+msgid "approved"
+msgstr "تمت الموافقة"
+
+msgid "rejected"
+msgstr "مرفوض"
+
+msgid "Pending MLRO approval"
+msgstr "بانتظار موافقة مسؤول الإبلاغ"
+
+msgid "Review due"
+msgstr "حان موعد المراجعة"
+
+msgid "Requires review"
+msgstr "يتطلب مراجعة"
+
+msgid "Under investigation"
+msgstr "قيد الفحص"
+
+msgid "Accepted"
+msgstr "مقبول"
+
+msgid "Reported"
+msgstr "تم الإبلاغ"
+
+msgid "False positive (bulk)"
+msgstr "تطابق خاطئ (إجراء جماعي)"
+
+msgid "True match — blocked"
+msgstr "تطابق حقيقي — محظور"
+
+msgid "True match — blocked (bulk)"
+msgstr "تطابق حقيقي — محظور (إجراء جماعي)"
+
+msgid "PEP — flagged"
+msgstr "شخص معرّض سياسيًا — مُعلَّم"
+
+msgid "False positive (clear)"
+msgstr "تطابق خاطئ (استبعاد)"
+
+msgid "True match (block)"
+msgstr "تطابق حقيقي (حظر)"
+
+msgid "PEP (enhanced due diligence)"
+msgstr "شخص معرّض سياسيًا (عناية واجبة معززة)"
+
+msgid "Decision submitted for MLRO approval"
+msgstr "قرار مُرسل لموافقة مسؤول الإبلاغ"
+
+msgid "Approved by MLRO"
+msgstr "وافق عليه مسؤول الإبلاغ"
+
+msgid "Rejected by MLRO"
+msgstr "رفضه مسؤول الإبلاغ"
+
+msgid "Decided"
+msgstr "تم البت"
+
+msgid "Requested"
+msgstr "مطلوب"
+
+msgid "Renewed"
+msgstr "مُجدَّد"
+
+msgid "Reinstated"
+msgstr "أُعيد تفعيله"
+
+msgid "Reinstatement requested"
+msgstr "طُلبت إعادة التفعيل"
+
+msgid "Confirmed false positive"
+msgstr "تأكيد تطابق خاطئ"
+
+msgid "Confirmed true match"
+msgstr "تأكيد تطابق حقيقي"
+
+msgid "Held for investigation"
+msgstr "مُعلّق للفحص"
+
+msgid "Reopened for review"
+msgstr "أُعيد فتحه للمراجعة"
+
+msgid "Company"
+msgstr "شركة"
+
+msgid "Vessel"
+msgstr "سفينة"
+
+msgid "Aircraft"
+msgstr "طائرة"
+
+msgid "Unknown list"
+msgstr "قائمة غير معروفة"
+
+msgid "Screening adjudication"
+msgstr "البت في نتيجة الفحص"
+
+msgid "Bulk"
+msgstr "جماعي"
+
+msgid "MLRO approvals"
+msgstr "موافقات مسؤول الإبلاغ"
+
+msgid "MLRO Approvals"
+msgstr "موافقات مسؤول الإبلاغ"
+
+msgid "Four-eyes rule: clearing a hit from a sanctions list, or a hit scoring at or above the threshold, takes effect only after a second person with approval authority approves it. The approver must be someone other than the officer who made the decision."
+msgstr "مبدأ العيون الأربع: استبعاد تطابق مع قائمة عقوبات، أو تطابق بلغت درجته الحد المقرر أو تجاوزته، لا يسري إلا بعد موافقة شخص ثانٍ يملك صلاحية الموافقة، على أن يكون غير الموظف الذي اتخذ القرار."
+
+msgid "Change in screening settings"
+msgstr "تعديله من إعدادات الفحص"
+
+msgid "You can follow these requests but only the MLRO (approval authority) can decide them."
+msgstr "يمكنك متابعة هذه الطلبات، لكن البت فيها لمسؤول الإبلاغ (صاحب صلاحية الموافقة) وحده."
+
+msgid "Waiting for approval"
+msgstr "بانتظار الموافقة"
+
+msgid "Hit clearances"
+msgstr "قرارات استبعاد التطابقات"
+
+msgid "Screened name"
+msgstr "الاسم المفحوص"
+
+msgid "Proposed decision"
+msgstr "القرار المقترح"
+
+msgid "Sanctions list"
+msgstr "قائمة عقوبات"
+
+msgid "Comment (required)"
+msgstr "التعليق (مطلوب)"
+
+msgid "Your decision — another person must approve it."
+msgstr "هذا قرارك — يجب أن يوافق عليه شخص آخر."
+
+msgid "Nothing waiting."
+msgstr "لا يوجد ما ينتظر."
+
+msgid "Whitelist entries waiting for approval"
+msgstr "قيود القائمة البيضاء بانتظار الموافقة"
+
+msgid "Review date"
+msgstr "تاريخ المراجعة"
+
+msgid "Your request — another person must approve it."
+msgstr "هذا طلبك — يجب أن يوافق عليه شخص آخر."
+
+msgid "Waiting for MLRO approval"
+msgstr "بانتظار موافقة مسؤول الإبلاغ"
+
+msgid "The clearance does not take effect until the MLRO approves it."
+msgstr "لا يسري الاستبعاد حتى يوافق عليه مسؤول الإبلاغ."
+
+msgid "Decision history"
+msgstr "سجل القرارات"
+
+msgid "No decision recorded yet."
+msgstr "لم يُسجَّل أي قرار بعد."
+
+msgid "Sanctions-list hits and strong matches take effect only after MLRO approval."
+msgstr "استبعاد تطابقات قوائم العقوبات والتطابقات القوية لا يسري إلا بعد موافقة مسؤول الإبلاغ."
+
+msgid "Filtered:"
+msgstr "التصفية:"
+
+msgid "Back to Ongoing Screening"
+msgstr "العودة إلى الفحص المستمر"
+
+msgid "Show all"
+msgstr "عرض الكل"
+
+msgid "entries are past their review date."
+msgstr "قيود تجاوزت تاريخ مراجعتها."
+
+msgid "They no longer suppress screening hits until the MLRO renews them."
+msgstr "لم تعد تحجب تطابقات الفحص حتى يجددها مسؤول الإبلاغ."
+
+msgid "entries need review before they suppress anything."
+msgstr "قيود تحتاج إلى مراجعة قبل أن تحجب أي شيء."
+
+msgid "These names match an active sanctions, PEP or internal watchlist record. They are held in quarantine: they stay on the list and stay visible, but they do not suppress screening alerts until someone reinstates them with a recorded justification."
+msgstr "تطابق هذه الأسماء قيدًا ساريًا في قوائم العقوبات أو الأشخاص المعرّضين سياسيًا أو قوائم المراقبة الداخلية. وهي معزولة: تبقى في القائمة وظاهرة، لكنها لا تحجب تنبيهات الفحص حتى يُعاد تفعيلها بمبرر مسجَّل."
+
+msgid "This name matches an active watchlist entry. It does not suppress alerts until reviewed."
+msgstr "يطابق هذا الاسم قيدًا ساريًا في قوائم المراقبة، ولا يحجب التنبيهات حتى تتم مراجعته."
+
+msgid "Not set"
+msgstr "غير محدد"
+
+msgid "Legacy (before approval was required)"
+msgstr "قيد سابق (قبل اشتراط الموافقة)"
+
+msgid "Open case"
+msgstr "فتح الملف"
+
+msgid "Approve / reject"
+msgstr "موافقة / رفض"
+
+msgid "Renew"
+msgstr "تجديد"
+
+msgid "Reinstate"
+msgstr "إعادة تفعيل"
+
+msgid "Permanently remove this entry? The audit history is kept."
+msgstr "حذف هذا القيد نهائيًا؟ يُحتفظ بسجل التدقيق."
+
+msgid "Default 12 months, at most 24. After this date the entry stops suppressing hits until renewed."
+msgstr "الافتراضي 12 شهرًا وبحد أقصى 24 شهرًا. بعد هذا التاريخ يتوقف القيد عن حجب التطابقات حتى يُجدَّد."
+
+msgid "The entry takes effect only after MLRO approval (four-eyes)."
+msgstr "لا يسري القيد إلا بعد موافقة مسؤول الإبلاغ (مبدأ العيون الأربع)."
+
+msgid "Reinstating this entry stops screening alerts being raised for this name. If the name matches a sanctions or PEP list, record exactly why the match is not this person."
+msgstr "إعادة تفعيل هذا القيد توقف إطلاق تنبيهات الفحص لهذا الاسم. إذا كان الاسم يطابق قائمة عقوبات أو أشخاص معرّضين سياسيًا فسجّل بدقة سبب أن التطابق لا يخص هذا الشخص."
+
+msgid "e.g. Verified different date of birth and national ID; not the listed individual."
+msgstr "مثال: تم التحقق من اختلاف تاريخ الميلاد والرقم القومي؛ ليس الشخص المدرج."
+
+msgid "Recorded permanently against your name in the whitelist audit trail."
+msgstr "يُسجَّل بشكل دائم باسمك في سجل تدقيق القائمة البيضاء."
+
+msgid "Revoke whitelist entry"
+msgstr "إلغاء قيد القائمة البيضاء"
+
+msgid "Reinstate whitelist entry"
+msgstr "إعادة تفعيل قيد القائمة البيضاء"
+
+msgid "Whitelist Case"
+msgstr "ملف القائمة البيضاء"
+
+msgid "Re-screened"
+msgstr "يُعاد فحصه"
+
+msgid "next"
+msgstr "التالي"
+
+msgid "Not on a screening cycle"
+msgstr "ليس ضمن دورة فحص"
+
+msgid "Review due."
+msgstr "حان موعد المراجعة."
+
+msgid "The review date has passed: this entry no longer suppresses hits until the MLRO renews it."
+msgstr "انقضى تاريخ المراجعة: لم يعد هذا القيد يحجب التطابقات حتى يجدده مسؤول الإبلاغ."
+
+msgid "Waiting for MLRO approval."
+msgstr "بانتظار موافقة مسؤول الإبلاغ."
+
+msgid "It suppresses nothing until approved."
+msgstr "لا يحجب شيئًا حتى تتم الموافقة."
+
+msgid "Rejected by the MLRO."
+msgstr "رفضه مسؤول الإبلاغ."
+
+msgid "Confirmed true match."
+msgstr "تطابق حقيقي مؤكد."
+
+msgid "This name no longer suppresses anything and will raise an alert on the next screening. An STR should be raised if not already done."
+msgstr "لم يعد هذا الاسم يحجب أي شيء، وسيُطلق تنبيهًا في الفحص التالي. ينبغي رفع إخطار باشتباه إن لم يكن قد رُفع."
+
+msgid "Awaiting review."
+msgstr "بانتظار المراجعة."
+
+msgid "While in this state the entry suppresses nothing — screening runs normally for this name."
+msgstr "في هذه الحالة لا يحجب القيد شيئًا — يجري الفحص لهذا الاسم بصورة عادية."
+
+msgid "Cleared matches"
+msgstr "التطابقات المستبعدة"
+
+msgid "These are the listings reviewed and accepted as not being this person. Anything appearing outside this set in a later screening is raised as a finding below."
+msgstr "هذه القيود رُوجعت وقُبل أنها لا تخص هذا الشخص. أي قيد يظهر خارج هذه المجموعة في فحص لاحق يُسجَّل كملاحظة أدناه."
+
+msgid "Listing"
+msgstr "القيد"
+
+msgid "Suppressed"
+msgstr "محجوب"
+
+msgid "No longer"
+msgstr "لم يعد"
+
+msgid "No match set recorded — this entry pre-dates match-set clearance and needs re-adjudication."
+msgstr "لا توجد مجموعة تطابقات مسجلة — هذا القيد سابق لنظام استبعاد المجموعات ويحتاج إلى إعادة بت."
+
+msgid "Ongoing screening findings"
+msgstr "ملاحظات الفحص المستمر"
+
+msgid "New match appeared"
+msgstr "ظهر تطابق جديد"
+
+msgid "Listing amended"
+msgstr "عُدّل القيد"
+
+msgid "De-listed"
+msgstr "رُفع من القائمة"
+
+msgid "Found by the"
+msgstr "رُصد في"
+
+msgid "run of"
+msgstr "تشغيل"
+
+msgid "on"
+msgstr "في"
+
+msgid "review in the findings queue"
+msgstr "راجعه في قائمة الملاحظات"
+
+msgid "Nothing found since this name was cleared."
+msgstr "لم يُرصد شيء منذ استبعاد هذا الاسم."
+
+msgid "Added by"
+msgstr "أضافه"
+
+msgid "Added at"
+msgstr "تاريخ الإضافة"
+
+msgid "Reason given"
+msgstr "السبب المذكور"
+
+msgid "Original match"
+msgstr "التطابق الأصلي"
+
+msgid "Original score"
+msgstr "الدرجة الأصلية"
+
+msgid "List source"
+msgstr "مصدر القائمة"
+
+msgid "MLRO comment"
+msgstr "تعليق مسؤول الإبلاغ"
+
+msgid "MLRO approval"
+msgstr "موافقة مسؤول الإبلاغ"
+
+msgid "Requested reason"
+msgstr "سبب الطلب"
+
+msgid "Proposed review date"
+msgstr "تاريخ المراجعة المقترح"
+
+msgid "New review date"
+msgstr "تاريخ المراجعة الجديد"
+
+msgid "Record a decision"
+msgstr "تسجيل قرار"
+
+msgid "Justification"
+msgstr "المبرر"
+
+msgid "e.g. Date of birth and national ID both differ from the listed individual; documents on file."
+msgstr "مثال: تاريخ الميلاد والرقم القومي يختلفان عن الشخص المدرج؛ المستندات محفوظة في الملف."
+
+msgid "Kept permanently against your name. A decision without a reason is refused."
+msgstr "يُحفظ بشكل دائم باسمك. يُرفض أي قرار بلا سبب."
+
+msgid "Re-screening frequency"
+msgstr "دورية إعادة الفحص"
+
+msgid "Still a false positive — keep whitelisted"
+msgstr "ما زال تطابقًا خاطئًا — يبقى في القائمة البيضاء"
+
+msgid "Continues to be monitored"
+msgstr "تستمر مراقبته"
+
+msgid "Record this as a CONFIRMED sanctions match? It will stop suppressing alerts immediately and must be reported."
+msgstr "تسجيل هذا كتطابق مؤكد مع العقوبات؟ سيتوقف عن حجب التنبيهات فورًا ويجب الإبلاغ عنه."
+
+msgid "Confirmed true match — stop suppressing"
+msgstr "تطابق حقيقي مؤكد — إيقاف الحجب"
+
+msgid "Escalates; an STR should follow"
+msgstr "يُصعَّد؛ ويتبعه إخطار باشتباه"
+
+msgid "Hold for investigation"
+msgstr "تعليق للفحص"
+
+msgid "Reopen for review"
+msgstr "إعادة فتح للمراجعة"
+
+msgid "Full history"
+msgstr "السجل الكامل"
+
+msgid "by"
+msgstr "بواسطة"
+
+msgid "No recorded actions yet."
+msgstr "لا توجد إجراءات مسجلة بعد."
+
+msgid "Required columns: name, reason. Optional: entity_type, national_id, commercial_registry, date_of_birth, nationality, review_date (YYYY-MM-DD, default 12 months, at most 24)."
+msgstr "الأعمدة المطلوبة: name، reason. الاختيارية: entity_type، national_id، commercial_registry، date_of_birth، nationality، review_date (بصيغة YYYY-MM-DD، الافتراضي 12 شهرًا وبحد أقصى 24)."
+
+msgid "Every entry takes effect only after MLRO approval."
+msgstr "لا يسري أي قيد إلا بعد موافقة مسؤول الإبلاغ."
+
+msgid "Subjects confirmed as genuine matches — who matched what, on which list, who decided, and what was done. This is the register a regulator asks to see."
+msgstr "الأشخاص المؤكد تطابقهم — من طابق ماذا، وعلى أي قائمة، ومن قرر، وما الإجراء المتخذ. هذا هو السجل الذي تطلبه الجهة الرقابية."
+
+msgid "Subjects"
+msgstr "الأشخاص"
+
+msgid "With STR reference"
+msgstr "برقم مرجعي لإخطار"
+
+msgid "confirmed match(es) with no STR reference recorded."
+msgstr "تطابقات مؤكدة دون رقم مرجعي مسجل لإخطار."
+
+msgid "A confirmed match against a sanctions or PEP list normally requires a report to EMLCU. Record the reference here once filed."
+msgstr "يستلزم التطابق المؤكد مع قوائم العقوبات أو الأشخاص المعرّضين سياسيًا عادةً إخطار وحدة مكافحة غسل الأموال وتمويل الإرهاب. سجّل الرقم المرجعي هنا بعد الإخطار."
+
+msgid "Search name"
+msgstr "البحث بالاسم"
+
+msgid "Min score"
+msgstr "الحد الأدنى للدرجة"
+
+msgid "Minimum score for sanctions hits"
+msgstr "الحد الأدنى لدرجة تطابقات العقوبات"
+
+msgid "Sanctions min"
+msgstr "حد العقوبات"
+
+msgid "Minimum score for PEP hits"
+msgstr "الحد الأدنى لدرجة تطابقات الأشخاص المعرّضين سياسيًا"
+
+msgid "PEP min"
+msgstr "حد المعرّضين سياسيًا"
+
+msgid "The two right-hand fields apply different floors per list type — for example sanctions above 90 percent but PEPs above 80 percent."
+msgstr "يطبّق الحقلان الأيمنان حدودًا دنيا مختلفة حسب نوع القائمة — مثل العقوبات فوق 90 بالمئة والأشخاص المعرّضين سياسيًا فوق 80 بالمئة."
+
+msgid "Matched listing"
+msgstr "القيد المطابق"
+
+msgid "No confirmed matches."
+msgstr "لا توجد تطابقات مؤكدة."
+
+msgid "Update confirmed match"
+msgstr "تحديث التطابق المؤكد"
+
+msgid "Action taken"
+msgstr "الإجراء المتخذ"
+
+msgid "— none yet —"
+msgstr "— لا شيء بعد —"
+
+msgid "STR / goAML reference"
+msgstr "مرجع الإخطار / goAML"
+
+msgid "Reference returned by goAML or EMLCU"
+msgstr "المرجع الصادر من goAML أو الوحدة"
+
+msgid "Lists refresh automatically. Red rows need attention."
+msgstr "تُحدَّث القوائم تلقائيًا. الصفوف الحمراء تحتاج إلى متابعة."
+
+msgid "invalid review date"
+msgstr "تاريخ مراجعة غير صالح"
+
+msgid "the review date must be in the future"
+msgstr "يجب أن يكون تاريخ المراجعة في المستقبل"
+
+msgid "the review date can be at most 24 months away"
+msgstr "لا يجوز أن يتجاوز تاريخ المراجعة 24 شهرًا"
+
+msgid "you made this decision; another person must approve it"
+msgstr "أنت من اتخذ هذا القرار؛ يجب أن يوافق عليه شخص آخر"
+
+msgid "no approver"
+msgstr "لا يوجد معتمد"
+
+msgid "Review due — no longer suppressing"
+msgstr "حان موعد المراجعة — لم يعد يحجب"
+
+msgid "Needs review — quarantined, not suppressing"
+msgstr "يحتاج إلى مراجعة — معزول ولا يحجب"
+
+msgid "Legacy entries — cleared before match sets were recorded"
+msgstr "قيود سابقة — استُبعدت قبل تسجيل مجموعات التطابق"
+
+msgid "Monitored — cleared against a match set"
+msgstr "مراقَب — مستبعد مقابل مجموعة تطابقات"
+
+msgid "Due for re-screening now"
+msgstr "مستحق لإعادة الفحص الآن"
+
+msgid "Nationality differs (does not lower the name score)"
+msgstr "الجنسية مختلفة (لا تخفض درجة تطابق الاسم)"
+
+msgid "no identifier match (national ID / date of birth / passport): at most a potential match"
+msgstr "لا يتطابق أي معرّف (الرقم القومي / تاريخ الميلاد / جواز السفر): الحد الأقصى تطابق محتمل"
+
+msgid "passport number matches the listed record"
+msgstr "رقم جواز السفر يطابق القيد المدرج"
+
+msgid "Yearly"
+msgstr "سنوي"
+
+msgid "Only the MLRO (approval authority) can change the four-eyes threshold."
+msgstr "لا يغيّر حد مبدأ العيون الأربع إلا مسؤول الإبلاغ (صاحب صلاحية الموافقة)."
+
+msgid "The four-eyes threshold must be a score between 50 and 100."
+msgstr "يجب أن يكون حد مبدأ العيون الأربع درجة بين 50 و100."
+
+msgid "Four-eyes on sanctions clearance"
+msgstr "مبدأ العيون الأربع في استبعاد تطابقات العقوبات"
+
+msgid "MLRO approval threshold (score)"
+msgstr "حد اشتراط موافقة مسؤول الإبلاغ (الدرجة)"
+
+msgid "Clearing a hit with a score at or above this value, or any hit from a sanctions list, needs MLRO approval by someone other than the officer who decided. Only the MLRO can change this value."
+msgstr "استبعاد تطابق بلغت درجته هذه القيمة أو تجاوزتها، أو أي تطابق مع قائمة عقوبات، يتطلب موافقة مسؤول الإبلاغ على أن يكون غير الموظف الذي اتخذ القرار. لا يغيّر هذه القيمة إلا مسؤول الإبلاغ."
+
+msgid "Total matches"
+msgstr "إجمالي التطابقات"
+
+msgid "Auto-cleared"
+msgstr "مستبعد تلقائيًا"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

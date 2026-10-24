@@ -76,7 +76,7 @@
           <td><span class="badge {{ 'bg-danger' if h.tier == 'CONFIRMED' else 'bg-warning text-dark' }}">{{ h.tier }}</span></td>
           <td dir="auto">{{ h.subject_name }}<div class="text-muted">{{ h.subject_table }} #{{ h.subject_id }}</div></td>
           <td dir="auto">{{ h.listed_name }}</td>
-          <td>{{ h.list_source }}<div class="text-muted">{{ h.category or '' }}</div></td>
+          <td>{{ h.list_source|scr_label('source') }}<div class="text-muted">{{ h.category or '' }}</div></td>
           <td class="text-end">{{ h.score }}</td>
           <td class="text-muted">{{ (h.decision.get('reasons') or [])[:3] | join(' · ') }}</td>
           <td>

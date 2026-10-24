@@ -48,6 +48,17 @@
   </div>
 </div>
 {% endif %}
+<div class="d-flex flex-wrap gap-1 mb-2 px-1">
+  {% for k, lbl in [('', _('All')), ('pending', _('Pending MLRO approval')), ('active', _('Active')), ('expired', _('Review due')), ('rejected', _('Rejected')), ('revoked', _('Revoked'))] %}
+  <a href="{{ url_for('screening.manage_whitelist', filter=k) if k else url_for('screening.manage_whitelist') }}"
+     class="btn btn-sm {{ 'btn-dark' if active_filter == k else 'btn-outline-secondary' }}">{{ lbl }}</a>
+  {% endfor %}
+</div>
+{% if review_due %}
+<div class="alert alert-danger small"><i class="bi bi-calendar-x me-1"></i>
+  <strong>{{ review_due }} {{ _('entries are past their review date.') }}</strong>
+  {{ _('They no longer suppress screening hits until the MLRO renews them.') }}</div>
+{% endif %}
 {% if needs_review %}
 <div class="alert alert-warning d-flex align-items-start" role="alert">
   <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
@@ -73,22 +84,23 @@
                             <th>{{ _('Added By') }}</th>
                             <th>{{ _('Added At') }}</th>
                             <th>{{ _('Review Date') }}</th>
+                            <th>{{ _('Approved By') }}</th>
                             <th class="text-end">{{ _('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if whitelist %}
                         {% for entry in whitelist %}
-                        <tr class="{% if entry.status == 'Revoked' %}table-danger opacity-75{% elif entry.status == 'Requires Review' %}table-warning{% endif %}">
+                        <tr class="{% if entry.status in ['Revoked', 'Rejected'] %}table-danger opacity-75{% elif entry.status == 'Requires Review' or entry.effective_status == 'Expired' %}table-warning{% elif entry.status == 'Pending Approval' %}table-info{% endif %}">
                             <td><strong>{{ entry.name }}</strong></td>
-                            <td><span class="badge bg-light text-dark">{{ entry.entity_type or 'Individual' }}</span>
+                            <td><span class="badge bg-light text-dark">{{ (entry.entity_type or 'Individual')|scr_label('entity') }}</span>
                             </td>
                             <td><code class="small">{{ entry.normalized_name }}</code></td>
                             <td><small>{{ entry.reason or '-' }}</small></td>
                             <td>
                                 <span
-                                    class="badge {% if entry.status == 'Active' %}bg-success{% elif entry.status == 'Revoked' %}bg-danger{% elif entry.status == 'Requires Review' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                                    {{ entry.status or 'Active' }}
+                                    class="badge {% if entry.effective_status == 'Active' %}bg-success{% elif entry.effective_status in ['Revoked', 'Rejected'] %}bg-danger{% elif entry.effective_status in ['Requires Review', 'Expired', 'Pending Approval'] %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ entry.effective_status|scr_label }}
                                 </span>
                                 {% if entry.status == 'Requires Review' %}
                                 <i class="bi bi-exclamation-triangle-fill text-warning ms-1"
@@ -101,7 +113,7 @@
                                 <span class="badge bg-info">{{ "%.0f"|format(entry.original_match_score) }}%</span>
                                 {% else %}-{% endif %}
                             </td>
-                            <td><small>{{ entry.original_list_source or '-' }}</small></td>
+                            <td><small>{{ (entry.original_list_source or '-')|scr_label('source') }}</small></td>
                             <td>
                                 {% if entry.added_by_name %}
                                   <strong>{{ entry.added_by_name }}</strong>
@@ -109,13 +121,21 @@
                                 {% else %}<span class="text-muted">{{ _('System') }}</span>{% endif %}
                             </td>
                             <td><small class="text-muted">{{ entry.added_at }}</small></td>
-                            <td><small>{{ entry.review_date or 'Not set' }}</small></td>
+                            <td><small class="{{ 'text-danger fw-bold' if entry.effective_status == 'Expired' }}">{{ entry.review_date or _('Not set') }}</small>
+                                {% if entry.effective_status == 'Expired' %}<div><span class="badge bg-danger">{{ _('Review due') }}</span></div>{% endif %}</td>
+                            <td><small>{% if entry.approved_by %}{{ entry.screened_by_name or entry.screened_by_email }}{% elif entry.approval_basis == 'legacy' %}<span class="text-muted">{{ _('Legacy (before approval was required)') }}</span>{% else %}—{% endif %}</small>
+                                {% if entry.requested_by_name %}<div class="text-muted" style="font-size:11px">{{ _('Requested by') }}: {{ entry.requested_by_name }}</div>{% endif %}</td>
                             <td class="text-end">
                                 <a href="{{ url_for('screening.whitelist_case', id=entry.id) }}"
                                    class="btn btn-sm btn-outline-dark me-1" title="{{ _('Open case') }}">
                                    <i class="bi bi-folder2-open"></i>
                                    {% if entry.open_findings %}<span class="badge bg-danger">{{ entry.open_findings }}</span>{% endif %}
                                 </a>
+                                {% if can_approve and entry.status == 'Pending Approval' and (entry.requested_by or entry.added_by) != current_user.id %}
+                                <a href="{{ url_for('screening.whitelist_case', id=entry.id) }}" class="btn btn-sm btn-success me-1">{{ _('Approve / reject') }}</a>
+                                {% elif can_approve and entry.status == 'Active' %}
+                                <a href="{{ url_for('screening.whitelist_case', id=entry.id) }}#renew" class="btn btn-sm btn-outline-primary me-1">{{ _('Renew') }}</a>
+                                {% endif %}
                                 {% if can_edit_wl %}
                                 <div class="btn-group btn-group-sm">
                                     {% if entry.status == 'Active' %}
@@ -148,7 +168,7 @@
                         {% endfor %}
                         {% else %}
                         <tr>
-                            <td colspan="12" class="text-center py-5 text-muted">
+                            <td colspan="13" class="text-center py-5 text-muted">
                                 <i class="bi bi-shield-check fs-1 opacity-25"></i><br>
                                 {{ _('No whitelist entries yet.') }}
                             </td>
@@ -180,9 +200,15 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ _('Reason / Justification') }} <span class="text-danger">*</span></label>
-                        <textarea name="reason" class="form-control" rows="3"
+                        <textarea name="reason" class="form-control" rows="3" minlength="10"
                             placeholder="{{ _('Explain why this is a known false positive...') }}" required></textarea>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('Review date') }} <span class="text-danger">*</span></label>
+                        <input type="date" name="review_date" class="form-control" value="{{ default_review }}" max="{{ max_review }}" required>
+                        <div class="form-text">{{ _('Default 12 months, at most 24. After this date the entry stops suppressing hits until renewed.') }}</div>
+                    </div>
+                    <div class="alert alert-warning small mb-0">{{ _('The entry takes effect only after MLRO approval (four-eyes).') }}</div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>

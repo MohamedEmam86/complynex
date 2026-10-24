@@ -53,6 +53,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 screening_bp = Blueprint('screening', __name__, template_folder='templates')
 
 
+@screening_bp.app_template_filter('scr_label')
+def _scr_label_filter(value, kind='status'):
+    from screening.labels import label
+    return label(value, kind)
+
+
 def _is_safe_external_url(url):
     """Reject URLs that could be used for SSRF against internal infrastructure —
     only plain http(s) URLs that resolve to a public IP address are allowed.
@@ -880,7 +886,10 @@ def view_result(id):
                            other_matches=other_matches,
                            s_views=s_views, p_views=p_views, o_views=o_views, verdict=verdict,
                            inputs=inputs, am=rv.adverse_view(am_summary, adverse_hits),
-                           coverage=rv.coverage())
+                           coverage=rv.coverage(),
+                           decisions=CL.decision_history('result', id),
+                           pending=CL.pending_request('result', id),
+                           can_approve=CL.can_approve(current_user))
 
 @screening_bp.route('/history')
 @login_required
@@ -931,6 +940,24 @@ def config():
                 if not (_low < _pot < _conf):
                     flash(f'Invalid thresholds: they must satisfy low ({_low:g}) < potential ({_pot:g}) < confirmed ({_conf:g}). Nothing was saved.', 'error')
                     return redirect(url_for('screening.config'))
+            # The four-eyes threshold decides which clearances need the MLRO:
+            # only someone with approval authority may change it, within
+            # 50-100, and the change is audited.
+            if 'clearance_approval_threshold' in request.form:
+                raw = request.form.get('clearance_approval_threshold')
+                try:
+                    thr = float(raw)
+                except (TypeError, ValueError):
+                    thr = None
+                if not CL.can_approve(current_user):
+                    flash(gettext('Only the MLRO (approval authority) can change the four-eyes threshold.'), 'error')
+                    return redirect(url_for('screening.config'))
+                if thr is None or not (50 <= thr <= 100):
+                    flash(gettext('The four-eyes threshold must be a score between 50 and 100.'), 'error')
+                    return redirect(url_for('screening.config'))
+                if thr != CL.approval_threshold():
+                    _audit('Four-eyes threshold changed', None,
+                           f"clearance_approval_threshold {CL.approval_threshold():g} -> {thr:g}")
             for key in request.form:
                 val = request.form.get(key)
                 execute_db(f"UPDATE screening_config SET config_value = {param}, updated_at = CURRENT_TIMESTAMP WHERE config_key = {param}", (val, key))
@@ -940,7 +967,9 @@ def config():
             flash(f'Update failed: {str(e)}', 'error')
             
     settings = query_db("SELECT * FROM screening_config ORDER BY category, config_key")
-    return render_template('screening/config_edit.html', settings=settings)
+    return render_template('screening/config_edit.html', settings=settings,
+                           clearance_threshold=CL.approval_threshold(),
+                           can_approve=CL.can_approve(current_user))
 
 @screening_bp.route('/sources', methods=['GET', 'POST'])
 @login_required
@@ -1009,33 +1038,42 @@ def manage_whitelist():
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'add':
-            name = request.form.get('name')
-            reason = request.form.get('reason')
-            # Use engine's normalization for consistency
-            from .complynex_engine import normalize_arabic_text, ComplyNexScreeningEngine
-            is_ar = ComplyNexScreeningEngine._is_arabic(None, name)
-            # Rough normalization for the whitelist key
-            norm_name = normalize_arabic_text(name) if is_ar else name.upper().strip()
-
-            # ON CONFLICT added 2026-07-24: idx_screening_whitelist_norm is a
-            # UNIQUE index on normalized_name. This was a plain INSERT with no
-            # conflict handling, so adding a second customer whose name
-            # normalizes to one already on the list (a repeat submission, a
-            # name variant, or simply approving the same customer twice while
-            # bulk-clearing a backlog) crashed with an unhandled
-            # UniqueViolation -> 500 page, silently blocking every add after
-            # the first duplicate. This is the root cause reported as
-            # "can't add all approved customers to the whitelist."
-            execute_db(f"""
+            name = (request.form.get('name') or '').strip()
+            reason = (request.form.get('reason') or '').strip()
+            review, err = CL.parse_review_date(request.form.get('review_date'))
+            if not name or len(reason) < 10:
+                flash(gettext('A name and a specific reason (at least 10 characters) are required.'), 'error')
+                return redirect(url_for('screening.manage_whitelist'))
+            if err:
+                flash(gettext(err), 'error')
+                return redirect(url_for('screening.manage_whitelist'))
+            norm_name = _norm_wl_name(name)
+            # Every entry waits for MLRO approval before it suppresses
+            # anything (four-eyes). A name already on the list is not
+            # overwritten silently.
+            row = query_db("""
                 INSERT INTO screening_whitelist
-                    (name, normalized_name, reason, added_by, added_at, status, approved_by, approval_date)
-                VALUES ({param}, {param}, {param}, {param}, {param}, 'Active', {param}, {param})
-                ON CONFLICT (normalized_name) WHERE normalized_name IS NOT NULL
-                DO UPDATE SET reason = EXCLUDED.reason, added_at = EXCLUDED.added_at
-            """,
-                       (name, norm_name, reason, current_user.id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        current_user.id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            flash(gettext('Name "%(name)s" added to whitelist.', name=name), 'success')
+                    (name, normalized_name, reason, added_by, added_at, status, review_date,
+                     requested_by, requested_at, request_reason, entity_type)
+                VALUES (%s, %s, %s, %s, %s, 'Pending Approval', %s, %s, NOW(), %s, %s)
+                ON CONFLICT (normalized_name) WHERE normalized_name IS NOT NULL DO NOTHING
+                RETURNING id""",
+                (name, norm_name, reason, current_user.id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                 review.isoformat(), current_user.id, reason,
+                 (request.form.get('entity_type') or 'Individual').strip()), one=True)
+            get_db().commit()
+            if not row:
+                flash(gettext('"%(name)s" is already on the whitelist. Open its case to review or renew it.', name=name), 'warning')
+                return redirect(url_for('screening.manage_whitelist'))
+            execute_db("""INSERT INTO screening_whitelist_audit
+                            (whitelist_id, entry_name, action, previous_status, new_status, reason, performed_by)
+                          VALUES (%s,%s,'requested',NULL,'Pending Approval',%s,%s)""",
+                       (row['id'], name, f"{reason} (review date {review.isoformat()})", current_user.id))
+            _audit('Whitelist entry requested', row['id'], f"{name!r}: {reason} (review {review.isoformat()})")
+            CL.notify_approvers(gettext('Whitelist entry awaiting your approval'),
+                                gettext('%(name)s was proposed for the whitelist and does not suppress alerts until you approve it.', name=name),
+                                link=url_for('screening.approvals'), exclude=current_user.id)
+            flash(gettext('"%(name)s" submitted for MLRO approval. It does not suppress alerts until approved.', name=name), 'success')
         elif action == 'delete':
             wid = request.form.get('wid')
             execute_db(f"DELETE FROM screening_whitelist WHERE id = {param}", (wid,))
@@ -1061,6 +1099,14 @@ def manage_whitelist():
                  "AND next_screening_at <= NOW()")
     elif filt == 'revoked':
         where = "WHERE status = 'Revoked'"
+    elif filt == 'pending':
+        where = "WHERE status = 'Pending Approval'"
+    elif filt == 'rejected':
+        where = "WHERE status = 'Rejected'"
+    elif filt == 'active':
+        where = "WHERE status = 'Active' AND COALESCE(review_date, '') >= to_char(CURRENT_DATE, 'YYYY-MM-DD')"
+    elif filt == 'expired':
+        where = "WHERE status = 'Active' AND COALESCE(review_date, '') < to_char(CURRENT_DATE, 'YYYY-MM-DD')"
 
     # added_by / approved_by are user ids. Rendering the raw number tells nobody
     # anything — the whole point of an audit trail is that a person is named.
@@ -1070,29 +1116,43 @@ def manage_whitelist():
                a.email  AS added_by_email,
                TRIM(COALESCE(s.first_name,'') || ' ' || COALESCE(s.last_name,'')) AS screened_by_name,
                s.email  AS screened_by_email,
+               TRIM(COALESCE(rq.first_name,'') || ' ' || COALESCE(rq.last_name,'')) AS requested_by_name,
                (SELECT count(*) FROM screening_whitelist_audit x WHERE x.whitelist_id = w.id) AS history_count,
                (SELECT count(*) FROM ongoing_screening_findings f
                  WHERE f.whitelist_id = w.id AND f.status = 'open')                AS open_findings
         FROM screening_whitelist w
         LEFT JOIN users a ON a.id = w.added_by
         LEFT JOIN users s ON s.id = w.approved_by
-        {where.replace('WHERE ', 'WHERE ').replace('status', 'w.status').replace('scope', 'w.scope').replace('next_screening_at', 'w.next_screening_at')}
-        ORDER BY CASE w.status WHEN 'Requires Review' THEN 0 WHEN 'Revoked' THEN 1 ELSE 2 END,
+        LEFT JOIN users rq ON rq.id = COALESCE(w.requested_by, w.added_by)
+        {where.replace('WHERE ', 'WHERE ').replace('status', 'w.status').replace('scope', 'w.scope').replace('next_screening_at', 'w.next_screening_at').replace('review_date', 'w.review_date')}
+        ORDER BY CASE w.status WHEN 'Pending Approval' THEN 0 WHEN 'Requires Review' THEN 1 WHEN 'Revoked' THEN 2 ELSE 3 END,
                  w.added_at DESC""", params)
+    whitelist = [dict(w) for w in whitelist]
+    for w in whitelist:
+        w['effective_status'] = CL.effective_wl_status(w['status'], w['review_date'])
     needs_review = sum(1 for w in whitelist if (w['status'] or '') == 'Requires Review')
+    review_due = sum(1 for w in whitelist if w['effective_status'] == CL.WL_EXPIRED)
     # The page is reachable by compliance officers who may only hold 'view' on
     # screening. Showing them buttons that the route will reject is how "the
     # revoke doesn't work" reports get created.
     return render_template('screening/whitelist.html',
                            whitelist=whitelist,
                            needs_review=needs_review,
+                           review_due=review_due,
                            active_filter=filt,
+                           can_approve=CL.can_approve(current_user),
+                           default_review=CL.default_review_date().isoformat(),
+                           max_review=CL.add_months(datetime.now().date(), CL.REVIEW_MONTHS_MAX).isoformat(),
                            filter_labels={
                                'review':    'Needs review — quarantined, not suppressing',
                                'legacy':    'Legacy entries — cleared before match sets were recorded',
                                'monitored': 'Monitored — cleared against a match set',
                                'due':       'Due for re-screening now',
                                'revoked':   'Revoked',
+                               'pending':   'Pending MLRO approval',
+                               'active':    'Active',
+                               'rejected':  'Rejected',
+                               'expired':   'Review due — no longer suppressing',
                            },
                            can_edit_wl=current_user.can_edit('screening'))
 
@@ -1149,28 +1209,47 @@ def bulk_upload_whitelist():
             try:
                 is_ar = ComplyNexScreeningEngine._is_arabic(None, name)
                 norm_name = normalize_arabic_text(name) if is_ar else name.upper().strip()
-                execute_db(f"""
+                review, rerr = CL.parse_review_date(row.get('review_date'))
+                if rerr:
+                    errors.append({'row': idx, 'name': name, 'error': rerr})
+                    continue
+                # every entry waits for MLRO approval (four-eyes)
+                ins = query_db(f"""
                     INSERT INTO screening_whitelist
                         (name, normalized_name, reason, added_by, added_at, status,
-                         approved_by, approval_date, entity_type, national_id,
+                         review_date, requested_by, requested_at, request_reason,
+                         entity_type, national_id,
                          commercial_registry, date_of_birth, nationality)
-                    VALUES ({param}, {param}, {param}, {param}, {param}, 'Active',
-                            {param}, {param}, {param}, {param}, {param}, {param}, {param})
-                    ON CONFLICT (normalized_name) WHERE normalized_name IS NOT NULL
-                    DO UPDATE SET reason = EXCLUDED.reason, added_at = EXCLUDED.added_at
+                    VALUES ({param}, {param}, {param}, {param}, {param}, 'Pending Approval',
+                            {param}, {param}, NOW(), {param}, {param}, {param}, {param}, {param}, {param})
+                    ON CONFLICT (normalized_name) WHERE normalized_name IS NOT NULL DO NOTHING
+                    RETURNING id
                 """, (
                     name, norm_name, reason, current_user.id, now_str,
-                    current_user.id, now_str,
+                    review.isoformat(), current_user.id, reason,
                     (row.get('entity_type') or 'Individual').strip(),
                     (row.get('national_id') or '').strip() or None,
                     (row.get('commercial_registry') or '').strip() or None,
                     (row.get('date_of_birth') or '').strip() or None,
                     (row.get('nationality') or '').strip() or None,
-                ))
+                ), one=True)
+                get_db().commit()
+                if not ins:
+                    errors.append({'row': idx, 'name': name, 'error': 'already on the whitelist'})
+                    continue
+                execute_db("""INSERT INTO screening_whitelist_audit
+                                (whitelist_id, entry_name, action, previous_status, new_status, reason, performed_by)
+                              VALUES (%s,%s,'requested',NULL,'Pending Approval',%s,%s)""",
+                           (ins['id'], name, f"Bulk upload: {reason}", current_user.id))
                 successful += 1
             except Exception as e:
                 errors.append({'row': idx, 'name': name, 'error': str(e)})
 
+        if successful:
+            _audit('Whitelist bulk upload', None, f"{successful} entries submitted for MLRO approval")
+            CL.notify_approvers(gettext('Whitelist entries awaiting your approval'),
+                                gettext('%(n)s whitelist entries were uploaded and wait for your approval.', n=successful),
+                                link=url_for('screening.approvals'), exclude=current_user.id)
         if errors:
             flash(f'Import completed: {successful}/{total} added. {len(errors)} row(s) failed — see details below.', 'warning')
         else:
@@ -1244,6 +1323,167 @@ def _parse_whitelist_excel(file):
 # Allowed decisions. Anything else is rejected with an error instead of being
 # stored as-is (an empty or unknown value used to be accepted silently).
 RESULT_RESOLUTIONS = ('TRUE_HIT', 'FALSE_POSITIVE')
+
+# ---------------------------------------------------------------------------
+# Four-eyes on clearance (screening/clearance.py holds the rules)
+# ---------------------------------------------------------------------------
+from screening import clearance as CL
+
+
+def _audit(action, item_id, details):
+    try:
+        from models.audit import AuditLog
+        AuditLog.log(current_user.id, action, 'Screening', item_id, details, request.remote_addr)
+    except Exception as e:
+        logger.error(f"audit log failed: {e}")
+
+
+def _norm_wl_name(name):
+    from .complynex_engine import normalize_arabic_text, ComplyNexScreeningEngine
+    is_ar = ComplyNexScreeningEngine._is_arabic(None, name)
+    return normalize_arabic_text(name) if is_ar else (name or '').upper().strip()
+
+
+def _wl_from_clearance(name, norm_name, reason, decider_id, entity_type=None, match_name=None,
+                       match_score=None, list_source=None, approved_by=None, approval_comment=None):
+    """Whitelist entry created by clearing a hit.
+
+    When the clearance itself went through four-eyes (approved_by set) the
+    entry is approved by that MLRO and takes effect; otherwise it waits for
+    MLRO approval like any other whitelist entry."""
+    now_s = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    review = CL.default_review_date().isoformat()
+    if approved_by:
+        execute_db("""
+            INSERT INTO screening_whitelist
+                (name, normalized_name, reason, added_by, added_at, entity_type,
+                 original_match_name, original_match_score, original_list_source, status,
+                 review_date, requested_by, requested_at, request_reason,
+                 approved_by, approval_date, approval_basis, approval_comment)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'Active',%s,%s,NOW(),%s,%s,%s,'four_eyes_clearance',%s)
+            ON CONFLICT (normalized_name) WHERE normalized_name IS NOT NULL
+            DO UPDATE SET reason = EXCLUDED.reason, status = 'Active', review_date = EXCLUDED.review_date,
+                          approved_by = EXCLUDED.approved_by, approval_date = EXCLUDED.approval_date,
+                          approval_basis = EXCLUDED.approval_basis, approval_comment = EXCLUDED.approval_comment
+        """, (name, norm_name, reason, decider_id, now_s, entity_type or 'Individual', match_name,
+              match_score, list_source, review, decider_id, reason, approved_by, now_s, approval_comment))
+    else:
+        execute_db("""
+            INSERT INTO screening_whitelist
+                (name, normalized_name, reason, added_by, added_at, entity_type,
+                 original_match_name, original_match_score, original_list_source, status,
+                 review_date, requested_by, requested_at, request_reason)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'Pending Approval',%s,%s,NOW(),%s)
+            ON CONFLICT (normalized_name) WHERE normalized_name IS NOT NULL
+            DO UPDATE SET reason = EXCLUDED.reason,
+                          status = CASE WHEN screening_whitelist.status = 'Active'
+                                         AND COALESCE(screening_whitelist.review_date, '') >= to_char(CURRENT_DATE, 'YYYY-MM-DD')
+                                        THEN 'Active' ELSE 'Pending Approval' END,
+                          requested_by = EXCLUDED.requested_by, requested_at = NOW(),
+                          request_reason = EXCLUDED.request_reason
+        """, (name, norm_name, reason, decider_id, now_s, entity_type or 'Individual', match_name,
+              match_score, list_source, review, decider_id, reason))
+    row = query_db("SELECT id, status FROM screening_whitelist WHERE normalized_name = %s", (norm_name,), one=True)
+    if row:
+        execute_db("""INSERT INTO screening_whitelist_audit
+                        (whitelist_id, entry_name, action, previous_status, new_status, reason, performed_by)
+                      VALUES (%s,%s,%s,NULL,%s,%s,%s)""",
+                   (row['id'], name, 'approved' if approved_by else 'requested', row['status'], reason,
+                    approved_by or decider_id))
+        if row['status'] == CL.WL_PENDING:
+            CL.notify_approvers(gettext('Whitelist entry awaiting your approval'),
+                                gettext('%(name)s was proposed for the whitelist and does not suppress alerts until you approve it.', name=name),
+                                link=url_for('screening.approvals'), exclude=decider_id)
+    return row
+
+
+def _apply_queue_clearance(item, notes, decider_id, bulk=False, approved_by=None, approval_comment=None):
+    """The effect of clearing a queue hit as a false positive."""
+    resolution = 'False Positive (Bulk)' if bulk else 'False Positive'
+    execute_db("""
+        UPDATE screening_queue
+        SET status = 'Resolved', resolution = %s, resolution_notes = %s,
+            resolved_by = %s, resolved_date = CURRENT_TIMESTAMP
+        WHERE id = %s
+    """, (resolution, notes, decider_id, item['id']))
+    try:
+        _wl_from_clearance(item['entity_name'], (item['entity_name'] or '').upper().strip(),
+                           (f"Whitelisted via Bulk Action: {notes}" if bulk else f"Whitelisted from queue review: {notes}"),
+                           decider_id, item['entity_type'], item['match_name'], item['match_score'],
+                           item['list_source'], approved_by=approved_by, approval_comment=approval_comment)
+    except Exception as e:
+        logger.error(f"Whitelist insert on clearance failed: {e}")
+    if bulk and item['source_module']:
+        _update_source_screening_status(item, 'Whitelisted')
+    if item['screening_history_id']:
+        execute_db("""
+            UPDATE screening_history
+            SET status = 'Completed', resolution_date = CURRENT_TIMESTAMP, resolved_by = %s
+            WHERE id = %s
+        """, (decider_id, item['screening_history_id']))
+    _close_linked_alerts(item['entity_name'], 'false_positive', notes, decider_id)
+
+
+def _apply_result_clearance(result_id, notes, decider_id, approved_by=None, approval_comment=None):
+    """The effect of clearing a screening result as a false positive."""
+    execute_db("""
+        UPDATE screening_results
+        SET status = 'FALSE_POSITIVE', resolution_notes = %s, resolved_by = %s, resolved_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+    """, (notes, decider_id, result_id))
+    res = query_db("SELECT screened_name FROM screening_results WHERE id = %s", (result_id,), one=True)
+    if res:
+        try:
+            _wl_from_clearance(res['screened_name'], _norm_wl_name(res['screened_name']),
+                               f"Whitelisted via screening resolution: {notes}", decider_id,
+                               approved_by=approved_by, approval_comment=approval_comment)
+        except Exception as e:
+            logger.error(f"Whitelist insert failed: {e}")
+    try:
+        execute_db("""
+            UPDATE screening_history
+               SET status = 'FALSE_POSITIVE', resolved_by = %s, resolution_date = CURRENT_TIMESTAMP, notes = %s
+             WHERE screening_result_id = %s
+        """, (decider_id, notes, result_id))
+    except Exception as e:
+        logger.error(f"Could not mirror adjudication onto history: {e}")
+
+
+def _result_is_sanctions(result_row):
+    try:
+        ms = result_row['matches']
+        ms = json.loads(ms) if isinstance(ms, str) else (ms or [])
+        from screening.match_classifier import split_matches
+        return bool(split_matches([m for m in ms if isinstance(m, dict)])[0])
+    except Exception:
+        return True
+
+
+def _request_clearance(target_type, target_id, entity_name, match_name, score, list_source,
+                       sanctions, decision, notes, previous_status):
+    """Hold a clearance for MLRO approval instead of applying it."""
+    rid = CL.create_request(target_type, target_id, entity_name, match_name, score, list_source,
+                            sanctions, decision, notes, previous_status, current_user.id)
+    if target_type == 'queue':
+        execute_db("UPDATE screening_queue SET status = %s WHERE id = %s", (CL.QUEUE_PENDING_APPROVAL, target_id))
+    else:
+        execute_db("UPDATE screening_results SET status = %s WHERE id = %s", (CL.RESULT_PENDING_APPROVAL, target_id))
+    CL.log_decision(target_type, target_id, 'proposed', decision, notes, current_user.id, rid)
+    _audit('Clearance submitted for MLRO approval', target_id,
+           f"{target_type} #{target_id} {entity_name!r} vs {match_name!r} score {score} "
+           f"({'sanctions list' if sanctions else 'score threshold'}): {notes}")
+    CL.notify_approvers(gettext('Sanctions clearance awaiting your approval'),
+                        gettext('%(user)s proposes to clear %(name)s (score %(score)s). It does not take effect until you approve it.',
+                                user=current_user.get_full_name(), name=entity_name, score=round(float(score or 0), 1)),
+                        link=url_for('screening.approvals'), exclude=current_user.id)
+    return rid
+
+
+def _notify_confirmed_match(entity_name, target_link, notes):
+    CL.notify_approvers(gettext('Confirmed sanctions match recorded'),
+                        gettext('%(user)s confirmed %(name)s as a true match: %(notes)s',
+                                user=current_user.get_full_name(), name=entity_name, notes=notes),
+                        link=target_link, exclude=current_user.id, category='danger')
 QUEUE_RESOLUTIONS = ('false_positive', 'true_match', 'pep', 'escalate')
 QUEUE_BULK_RESOLUTIONS = ('false_positive', 'true_match')
 
@@ -1275,58 +1515,53 @@ def resolve_hit():
     if current['status'] and current['status'] != 'PENDING':
         flash(gettext('This result has already been decided and cannot be decided again.'), 'error')
         return redirect(url_for('screening.view_result', id=result_id))
+    if status == 'FALSE_POSITIVE':
+        row = query_db("SELECT id, screened_name, highest_match_score, matches FROM screening_results WHERE id = %s",
+                       (result_id,), one=True)
+        sanctions = _result_is_sanctions(row)
+        if CL.needs_approval(row['highest_match_score'], sanctions, CL.approval_threshold()):
+            _request_clearance('result', result_id, row['screened_name'], None, row['highest_match_score'],
+                               None, sanctions, 'FALSE_POSITIVE', notes, current['status'] or 'PENDING')
+            flash(gettext('Clearance submitted. It takes effect only after MLRO approval (four-eyes).'), 'warning')
+            return redirect(url_for('screening.view_result', id=result_id))
+        _apply_result_clearance(result_id, notes, current_user.id)
+        CL.log_decision('result', result_id, 'decided', 'FALSE_POSITIVE', notes, current_user.id)
+        _audit('Screening result cleared', result_id, f"Result #{result_id} cleared as false positive: {notes}")
+        flash(gettext('Result resolved successfully.'), 'success')
+        return redirect(url_for('screening.view_result', id=result_id))
+
     execute_db(f"""
         UPDATE screening_results 
         SET status = {param}, resolution_notes = {param}, resolved_by = {param}, resolved_at = CURRENT_TIMESTAMP
         WHERE id = {param}
     """, (status, notes, current_user.id, result_id))
-    
-    if status == 'TRUE_HIT':
-        # Confirming a true match here must have the same effect as confirming
-        # it from the review queue: the entity is added to the internal
-        # blacklist so it is blocked on any future screening. Previously this
-        # path only changed a status, so the two routes disagreed.
-        res = query_db(
-            f"SELECT screened_name, screening_type, highest_match_score "
-            f"FROM screening_results WHERE id = {param}", (result_id,), one=True)
-        if res:
-            try:
-                execute_db(f"""
-                    INSERT INTO internal_blacklist
-                        (full_name, entity_type, reason, risk_level, category,
-                         source, added_by, added_date, is_active, confirmation_type)
-                    VALUES ({param}, 'Individual', {param}, 'HIGH', 'Sanctions Match',
-                            'Screening Adjudication', {param}, CURRENT_TIMESTAMP, 1,
-                            'TEAM_CONFIRMED')
-                """, (
-                    res['screened_name'],
-                    f"True match confirmed on screening result #{result_id} "
-                    f"(score: {res['highest_match_score']}): {notes}",
-                    current_user.id,
-                ))
-            except Exception as e:
-                logger.error(f"Blacklist insert on adjudication failed: {e}")
 
-    if status == 'FALSE_POSITIVE':
-        # Always add to whitelist on false positive resolution
-        res = query_db(f"SELECT screened_name FROM screening_results WHERE id = {param}", (result_id,), one=True)
-        if res:
-            name = res['screened_name']
-            from .complynex_engine import normalize_arabic_text, ComplyNexScreeningEngine
-            import datetime
-            is_ar = ComplyNexScreeningEngine._is_arabic(None, name)
-            norm_name = normalize_arabic_text(name) if is_ar else name.upper().strip()
-            try:
-                execute_db(
-                    f"INSERT INTO screening_whitelist (name, normalized_name, reason, added_by, added_at, status) VALUES ({param}, {param}, {param}, {param}, {param}, 'Active') ON CONFLICT (normalized_name) WHERE normalized_name IS NOT NULL DO UPDATE SET reason = EXCLUDED.reason, added_at = EXCLUDED.added_at",
-                    (name, norm_name, f"Whitelisted via screening resolution: {notes}", current_user.id, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                )
-            except Exception as e:
-                logger.error(f"Whitelist insert failed: {e}")
-    
+    # Confirming a true match here must have the same effect as confirming
+    # it from the review queue: the entity is added to the internal
+    # blacklist so it is blocked on any future screening.
+    res = query_db(
+        f"SELECT screened_name, screening_type, highest_match_score "
+        f"FROM screening_results WHERE id = {param}", (result_id,), one=True)
+    if res:
+        try:
+            execute_db(f"""
+                INSERT INTO internal_blacklist
+                    (full_name, entity_type, reason, risk_level, category,
+                     source, added_by, added_date, is_active, confirmation_type)
+                VALUES ({param}, 'Individual', {param}, 'HIGH', 'Sanctions Match',
+                        'Screening Adjudication', {param}, CURRENT_TIMESTAMP, 1,
+                        'TEAM_CONFIRMED')
+            """, (
+                res['screened_name'],
+                f"True match confirmed on screening result #{result_id} "
+                f"(score: {res['highest_match_score']}): {notes}",
+                current_user.id,
+            ))
+        except Exception as e:
+            logger.error(f"Blacklist insert on adjudication failed: {e}")
+
     # Mirror the decision onto the history row so Screening History and any
-    # report built from it show the verdict and the reviewer, not just the
-    # result page.
+    # report built from it show the verdict and the reviewer.
     try:
         execute_db(f"""
             UPDATE screening_history
@@ -1338,6 +1573,10 @@ def resolve_hit():
         """, (status, current_user.id, notes, result_id))
     except Exception as e:
         logger.error(f"Could not mirror adjudication onto history: {e}")
+
+    CL.log_decision('result', result_id, 'confirmed_match', 'TRUE_HIT', notes, current_user.id)
+    _audit('Screening result confirmed as true match', result_id, f"Result #{result_id}: {notes}")
+    _notify_confirmed_match(res['screened_name'] if res else '', url_for('screening.view_result', id=result_id), notes)
 
     flash(gettext('Result resolved successfully.'), 'success')
     return redirect(url_for('screening.view_result', id=result_id))
@@ -2866,6 +3105,9 @@ def queue_review(id):
         if item['status'] == 'Resolved':
             flash(gettext('This item has already been resolved and cannot be decided again.'), 'error')
             return redirect(url_for('screening.queue_review', id=id))
+        if item['status'] == CL.QUEUE_PENDING_APPROVAL:
+            flash(gettext('A clearance of this hit is waiting for MLRO approval.'), 'warning')
+            return redirect(url_for('screening.queue_review', id=id))
         if action not in QUEUE_RESOLUTIONS:
             flash(gettext('Select a valid resolution.'), 'error')
             return redirect(url_for('screening.queue_review', id=id))
@@ -2874,38 +3116,17 @@ def queue_review(id):
             return redirect(url_for('screening.queue_review', id=id))
 
         if action == 'false_positive':
-            # Mark resolved + optionally whitelist
-            execute_db("""
-                UPDATE screening_queue
-                SET status = 'Resolved', resolution = 'False Positive', resolution_notes = %s,
-                    resolved_by = %s, resolved_date = CURRENT_TIMESTAMP
-                WHERE id = %s
-            """, (notes, current_user.id, id))
-
-            # Auto-add to whitelist. ON CONFLICT matches
-            # idx_screening_whitelist_norm (unique on normalized_name) — a
-            # name screened more than once (any entity with 2+ pending hits
-            # against the same name, or simply screened again later) would
-            # otherwise crash here with a duplicate-key error on the second
-            # false-positive, since this was an unconditional INSERT.
-            execute_db("""
-                INSERT INTO screening_whitelist
-                    (name, normalized_name, reason, added_by, entity_type,
-                     original_match_name, original_match_score, original_list_source, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'Active')
-                ON CONFLICT (normalized_name) WHERE normalized_name IS NOT NULL
-                DO UPDATE SET reason = EXCLUDED.reason
-            """, (
-                item['entity_name'],
-                item['entity_name'].upper().strip(),
-                f"Whitelisted from queue review: {notes}",
-                current_user.id,
-                item['entity_type'] or 'Individual',
-                item['match_name'],
-                item['match_score'],
-                item['list_source']
-            ))
-            flash(gettext('Marked as False Positive and added to whitelist.'), 'success')
+            sanctions = CL.is_sanctions_hit(item['list_source'], match_details)
+            if CL.needs_approval(item['match_score'], sanctions, CL.approval_threshold()):
+                _request_clearance('queue', id, item['entity_name'], item['match_name'], item['match_score'],
+                                   item['list_source'], sanctions, 'false_positive', notes, item['status'])
+                flash(gettext('Clearance submitted. It takes effect only after MLRO approval (four-eyes).'), 'warning')
+                return redirect(url_for('screening.queue_review', id=id))
+            _apply_queue_clearance(item, notes, current_user.id)
+            CL.log_decision('queue', id, 'decided', 'false_positive', notes, current_user.id)
+            _audit('Screening hit cleared', id, f"Queue #{id} {item['entity_name']!r} cleared: {notes}")
+            flash(gettext('Marked as False Positive. The whitelist entry takes effect after MLRO approval.'), 'success')
+            return redirect(url_for('screening.screening_queue'))
 
         elif action == 'true_match':
             execute_db("""
@@ -2933,6 +3154,9 @@ def queue_review(id):
             # Update source record screening status if linked
             _update_source_screening_status(item, 'Blocked')
 
+            CL.log_decision('queue', id, 'confirmed_match', 'true_match', notes, current_user.id)
+            _audit('Screening hit confirmed as true match', id, f"Queue #{id} {item['entity_name']!r}: {notes}")
+            _notify_confirmed_match(item['entity_name'], url_for('screening.queue_review', id=id), notes)
             flash(gettext('Confirmed as True Match. Entity blocked and added to internal blacklist.'), 'danger')
 
         elif action == 'pep':
@@ -2953,6 +3177,8 @@ def queue_review(id):
             # Update source record
             _update_source_screening_status(item, 'PEP')
 
+            CL.log_decision('queue', id, 'decided', 'pep', notes, current_user.id)
+            _audit('Screening hit flagged as PEP', id, f"Queue #{id} {item['entity_name']!r}: {notes}")
             flash(gettext('Entity flagged as PEP. Enhanced Due Diligence required.'), 'warning')
 
         elif action == 'escalate':
@@ -2963,6 +3189,7 @@ def queue_review(id):
                     assigned_to = %s, resolution_notes = %s
                 WHERE id = %s
             """, (notes, escalate_to, notes, id))
+            CL.log_decision('queue', id, 'escalated', 'escalate', notes, current_user.id)
             flash(gettext('Case escalated to senior compliance officer.'), 'info')
             return redirect(url_for('screening.screening_queue'))
 
@@ -2988,7 +3215,9 @@ def queue_review(id):
     officers = query_db("SELECT id, email, (first_name || ' ' || last_name) as full_name FROM users WHERE is_active = 1 ORDER BY first_name")
 
     return render_template('screening/queue_review.html',
-        item=item, history=history, officers=officers, match_details=match_details)
+        item=item, history=history, officers=officers, match_details=match_details,
+        decisions=CL.decision_history('queue', id), pending=CL.pending_request('queue', id),
+        can_approve=CL.can_approve(current_user))
 
 
 def _close_linked_alerts(entity_name, resolution, notes, user_id):
@@ -3105,50 +3334,33 @@ def queue_bulk_resolve():
         return redirect(url_for('screening.screening_queue'))
 
     processed_count = 0
-    
+    pending_count = 0
+    confirmed = []
+    threshold = CL.approval_threshold()
+
     for id in selected_ids:
         # Get item details
         item = query_db("SELECT * FROM screening_queue WHERE id = %s", (id,), one=True)
         if not item or item['status'] == 'Resolved':
             continue
 
+        if item['status'] == CL.QUEUE_PENDING_APPROVAL:
+            continue
         if action == 'false_positive':
-            # 1. Update queue item
-            execute_db("""
-                UPDATE screening_queue
-                SET status = 'Resolved', resolution = 'False Positive (Bulk)', resolution_notes = %s,
-                    resolved_by = %s, resolved_date = CURRENT_TIMESTAMP
-                WHERE id = %s
-            """, (notes, current_user.id, id))
-            
-            # 2. Add to whitelist (auto). ON CONFLICT matches
-            # idx_screening_whitelist_norm (unique on normalized_name) —
-            # bulk-resolving 2+ selected items that share the same entity
-            # name (the normal case: one entity often has several fuzzy
-            # matches) previously crashed the whole request on the second
-            # item's insert with a duplicate-key error, silently leaving
-            # every item after it unresolved.
-            execute_db("""
-                INSERT INTO screening_whitelist
-                    (name, normalized_name, reason, added_by, entity_type,
-                     original_match_name, original_match_score, original_list_source, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'Active')
-                ON CONFLICT (normalized_name) WHERE normalized_name IS NOT NULL
-                DO UPDATE SET reason = EXCLUDED.reason
-            """, (
-                item['entity_name'],
-                item['entity_name'].upper().strip(),
-                f"Whitelisted via Bulk Action: {notes}",
-                current_user.id,
-                item['entity_type'] or 'Individual',
-                item['match_name'],
-                item['match_score'],
-                item['list_source']
-            ))
-
-            # 3. Update source status
-            if item['source_module']:
-                _update_source_screening_status(item, 'Whitelisted')
+            try:
+                md = json.loads(item['match_details']) if item['match_details'] else {}
+            except (TypeError, ValueError):
+                md = {}
+            sanctions = CL.is_sanctions_hit(item['list_source'], md)
+            if CL.needs_approval(item['match_score'], sanctions, threshold):
+                _request_clearance('queue', id, item['entity_name'], item['match_name'], item['match_score'],
+                                   item['list_source'], sanctions, 'false_positive', notes, item['status'])
+                pending_count += 1
+                continue
+            _apply_queue_clearance(item, notes, current_user.id, bulk=True)
+            CL.log_decision('queue', id, 'decided', 'false_positive', f"(bulk) {notes}", current_user.id)
+            processed_count += 1
+            continue
 
         elif action == 'true_match':
             # 1. Update queue item
@@ -3177,6 +3389,8 @@ def queue_bulk_resolve():
             # 3. Update source status
             if item['source_module']:
                 _update_source_screening_status(item, 'Blocked')
+            CL.log_decision('queue', id, 'confirmed_match', 'true_match', f"(bulk) {notes}", current_user.id)
+            confirmed.append(item['entity_name'])
 
         # 4. Update History
         if item['screening_history_id']:
@@ -3189,7 +3403,13 @@ def queue_bulk_resolve():
         _close_linked_alerts(item['entity_name'], action, notes, current_user.id)
         processed_count += 1
 
+    if confirmed:
+        _notify_confirmed_match(', '.join(dict.fromkeys(confirmed)), url_for('screening.screening_queue'), notes)
+    _audit('Bulk screening resolution', None,
+           f"{action}: {processed_count} resolved, {pending_count} sent for MLRO approval: {notes}")
     flash(gettext('Successfully resolved %(processed_count)s items.', processed_count=processed_count), 'success')
+    if pending_count:
+        flash(gettext('%(n)s clearance(s) need MLRO approval and were sent to the approval queue.', n=pending_count), 'warning')
     return redirect(url_for('screening.screening_queue'))
 def _save_screening_result(name, entity_type, dob, nationality, source_module, source_record_id, result, user_id, screening_type='API', inputs=None, return_ids=False):
     """
@@ -3712,15 +3932,9 @@ def reinstate_whitelist(id):
               'Please record a specific justification (at least 15 characters).', 'danger')
         return redirect(url_for('screening.manage_whitelist'))
 
-    execute_db("UPDATE screening_whitelist SET status = 'Active', notes = %s WHERE id = %s",
-               (reason, id))
-    execute_db("""INSERT INTO screening_whitelist_audit
-                     (whitelist_id, entry_name, action, previous_status, new_status,
-                      reason, performed_by)
-                  VALUES (%s, %s, 'reinstated', %s, 'Active', %s, %s)""",
-               (id, row['name'], row['status'], reason, current_user.id))
-    flash(f'"{row["name"]}" reinstated on the whitelist. Screening alerts for this '
-          f'name will now be suppressed.', 'warning')
+    _wl_request_activation(id, row['name'], row['status'], reason, 'reinstate_requested')
+    flash(gettext('Reinstatement of "%(name)s" submitted for MLRO approval. It does not suppress alerts until approved.', name=row['name']),
+          'warning')
     return redirect(url_for('screening.manage_whitelist'))
 
 
@@ -4097,6 +4311,11 @@ def ongoing_finding_action(finding_id):
     f = dict(f)
     reason = (request.form.get('reason') or '').strip()
 
+    if action == 'accept' and not CL.can_approve(current_user):
+        # folding a new >=85 listing into the cleared set clears a hit:
+        # only someone with MLRO approval authority may do it
+        flash(gettext('Only the MLRO (approval authority) can accept a new match into the cleared set. Escalate it instead.'), 'danger')
+        return redirect(url_for('screening.ongoing_screening_dashboard'))
     if action == 'accept':
         if not reason:
             flash(gettext('A reason is required to accept a new match as a false positive.'), 'danger')
@@ -4176,9 +4395,17 @@ def whitelist_case(id):
         flash(gettext('Whitelist entry not found.'), 'danger')
         return redirect(url_for('screening.manage_whitelist'))
 
+    e = dict(entry)
+    e['effective_status'] = CL.effective_wl_status(e.get('status'), e.get('review_date'))
+    appr = query_db("SELECT first_name, last_name FROM users WHERE id = %s", (e.get('approved_by'),), one=True) \
+        if e.get('approved_by') else None
+    e['approved_by_name'] = (f"{appr['first_name']} {appr['last_name']}" if appr
+                             else ('legacy' if e.get('approval_basis') == 'legacy' else None))
     return render_template(
         'screening/whitelist_case.html',
-        e=dict(entry),
+        e=e, can_approve=CL.can_approve(current_user),
+        max_review=CL.add_months(datetime.now().date(), CL.REVIEW_MONTHS_MAX).isoformat(),
+        default_review=CL.default_review_date().isoformat(),
         cleared=OS.cleared_matches(id),
         # every action ever taken on this entry, newest first
         history=query_db("""SELECT a.*, u.first_name, u.last_name, u.email
@@ -4230,6 +4457,11 @@ def whitelist_decide(id):
 
     new_status, label = WL_DECISIONS[decision]
     freq = request.form.get('screening_frequency')
+    if new_status == CL.WL_ACTIVE and entry['status'] != CL.WL_ACTIVE:
+        # putting an entry back into effect suppresses alerts: four-eyes
+        _wl_request_activation(id, entry['name'], entry['status'], reason, decision)
+        flash(gettext('Submitted for MLRO approval. The entry does not suppress alerts until approved.'), 'warning')
+        return redirect(url_for('screening.whitelist_case', id=id))
 
     execute_db("UPDATE screening_whitelist SET status=%s, notes=%s WHERE id=%s",
                (new_status, reason, id))
@@ -4531,3 +4763,202 @@ def quality_run():
                          cwd=base, stdout=lf, stderr=subprocess.STDOUT, start_new_session=True)
     flash(_('Evaluation started. It takes about 10 minutes; refresh this page to see the result.'), 'info')
     return redirect(url_for('screening.quality'))
+
+
+# =============================================================================
+# Four-eyes: MLRO approval queue for clearances and whitelist entries
+# =============================================================================
+
+def _wl_request_activation(wid, name, previous_status, reason, action):
+    execute_db("""UPDATE screening_whitelist
+                     SET status = 'Pending Approval', requested_by = %s, requested_at = NOW(),
+                         request_reason = %s, notes = %s
+                   WHERE id = %s""", (current_user.id, reason, reason, wid))
+    execute_db("""INSERT INTO screening_whitelist_audit
+                    (whitelist_id, entry_name, action, previous_status, new_status, reason, performed_by)
+                  VALUES (%s,%s,%s,%s,'Pending Approval',%s,%s)""",
+               (wid, name, action, previous_status, reason, current_user.id))
+    _audit('Whitelist activation requested', wid, f"{name!r}: {reason}")
+    CL.notify_approvers(gettext('Whitelist entry awaiting your approval'),
+                        gettext('%(name)s was proposed for the whitelist and does not suppress alerts until you approve it.', name=name),
+                        link=url_for('screening.approvals'), exclude=current_user.id)
+
+
+@screening_bp.route('/approvals')
+@login_required
+@permission_required('screening', level='view')
+def approvals():
+    """What waits for the MLRO: hit clearances and whitelist entries."""
+    show = request.args.get('show', 'pending')
+    where = "WHERE r.status = 'pending'" if show != 'decided' else "WHERE r.status <> 'pending'"
+    reqs = query_db(f"""
+        SELECT r.*,
+               TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS requested_by_name,
+               TRIM(COALESCE(d.first_name,'') || ' ' || COALESCE(d.last_name,'')) AS decided_by_name
+          FROM screening_clearance_requests r
+          LEFT JOIN users u ON u.id = r.requested_by
+          LEFT JOIN users d ON d.id = r.decided_by
+          {where}
+         ORDER BY r.requested_at DESC LIMIT 200""")
+    wl = query_db("""
+        SELECT w.*, TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS requested_by_name
+          FROM screening_whitelist w
+          LEFT JOIN users u ON u.id = COALESCE(w.requested_by, w.added_by)
+         WHERE w.status = 'Pending Approval'
+         ORDER BY w.requested_at NULLS LAST, w.id""")
+    return render_template('screening/approvals.html', reqs=reqs, wl=wl, show=show,
+                           can_approve=CL.can_approve(current_user),
+                           threshold=CL.approval_threshold())
+
+
+@screening_bp.route('/approvals/<int:rid>/decide', methods=['POST'])
+@login_required
+@permission_required('screening', level='view')
+def approval_decide(rid):
+    if not CL.can_approve(current_user):
+        flash(gettext('Only the MLRO (approval authority) can approve or reject a clearance.'), 'danger')
+        return redirect(url_for('screening.approvals'))
+    act = request.form.get('action')
+    comment = (request.form.get('comment') or '').strip()
+    if act not in ('approve', 'reject'):
+        flash(gettext('Unknown decision.'), 'danger')
+        return redirect(url_for('screening.approvals'))
+    if len(comment) < 5:
+        flash(gettext('A comment is required to approve or reject.'), 'danger')
+        return redirect(url_for('screening.approvals'))
+    req = query_db("SELECT * FROM screening_clearance_requests WHERE id = %s", (rid,), one=True)
+    if not req or req['status'] != 'pending':
+        flash(gettext('This request has already been decided.'), 'warning')
+        return redirect(url_for('screening.approvals'))
+    err = CL.maker_checker_error(current_user.id, req['requested_by'])
+    if err:
+        flash(gettext(err), 'danger')
+        return redirect(url_for('screening.approvals'))
+    new_status = 'approved' if act == 'approve' else 'rejected'
+    got = query_db("""UPDATE screening_clearance_requests
+                         SET status = %s, decided_by = %s, decided_at = NOW(), decision_comment = %s
+                       WHERE id = %s AND status = 'pending' RETURNING id""",
+                   (new_status, current_user.id, comment, rid), one=True)
+    get_db().commit()
+    if not got:
+        flash(gettext('This request has already been decided.'), 'warning')
+        return redirect(url_for('screening.approvals'))
+    tt, tid, maker = req['target_type'], req['target_id'], req['requested_by']
+    if act == 'approve':
+        notes = f"{req['reason']} | MLRO approval: {comment}"
+        if tt == 'queue':
+            item = query_db("SELECT * FROM screening_queue WHERE id = %s", (tid,), one=True)
+            if item:
+                _apply_queue_clearance(item, notes, maker, approved_by=current_user.id, approval_comment=comment)
+            link = url_for('screening.queue_review', id=tid)
+        else:
+            _apply_result_clearance(tid, notes, maker, approved_by=current_user.id, approval_comment=comment)
+            link = url_for('screening.view_result', id=tid)
+        CL.log_decision(tt, tid, 'approved', req['proposed_decision'], comment, current_user.id, rid)
+        _audit('Clearance approved (four-eyes)', tid, f"{tt} #{tid} {req['entity_name']!r}: {comment}")
+        msg = gettext('Your clearance of %(name)s was approved by %(user)s.', name=req['entity_name'], user=current_user.get_full_name())
+        flash(gettext('Clearance approved. It now takes effect.'), 'success')
+    else:
+        prev = req['previous_status']
+        if tt == 'queue':
+            prev = prev if prev in ('Pending', 'In Review') else 'In Review'
+            execute_db("UPDATE screening_queue SET status = %s WHERE id = %s AND status = %s",
+                       (prev, tid, CL.QUEUE_PENDING_APPROVAL))
+            link = url_for('screening.queue_review', id=tid)
+        else:
+            execute_db("UPDATE screening_results SET status = 'PENDING' WHERE id = %s AND status = %s",
+                       (tid, CL.RESULT_PENDING_APPROVAL))
+            link = url_for('screening.view_result', id=tid)
+        CL.log_decision(tt, tid, 'rejected', req['proposed_decision'], comment, current_user.id, rid)
+        _audit('Clearance rejected (four-eyes)', tid, f"{tt} #{tid} {req['entity_name']!r}: {comment}")
+        msg = gettext('Your clearance of %(name)s was rejected by %(user)s: %(comment)s',
+                      name=req['entity_name'], user=current_user.get_full_name(), comment=comment)
+        flash(gettext('Clearance rejected. The hit is open again for review.'), 'warning')
+    try:
+        from services.notification_service import notify
+        notify([maker], gettext('Clearance decision'), msg, link=link,
+               category='success' if act == 'approve' else 'warning')
+    except Exception as e:
+        logger.error(f"notify maker failed: {e}")
+    return redirect(request.form.get('next') or url_for('screening.approvals'))
+
+
+@screening_bp.route('/whitelist/<int:id>/approval', methods=['POST'])
+@login_required
+@permission_required('screening', level='view')
+def whitelist_approval(id):
+    """Approve, reject or renew a whitelist entry (MLRO only, with a reason)."""
+    back = request.form.get('next') or url_for('screening.manage_whitelist')
+    if not CL.can_approve(current_user):
+        flash(gettext('Only the MLRO (approval authority) can approve, reject or renew whitelist entries.'), 'danger')
+        return redirect(back)
+    act = request.form.get('action')
+    comment = (request.form.get('comment') or '').strip()
+    if act not in ('approve', 'reject', 'renew'):
+        flash(gettext('Unknown decision.'), 'danger')
+        return redirect(back)
+    if len(comment) < 5:
+        flash(gettext('A reason is required.'), 'danger')
+        return redirect(back)
+    e = query_db("SELECT * FROM screening_whitelist WHERE id = %s", (id,), one=True)
+    if not e:
+        flash(gettext('Whitelist entry not found.'), 'danger')
+        return redirect(back)
+    maker = e['requested_by'] or e['added_by']
+    if act in ('approve', 'reject'):
+        if e['status'] != CL.WL_PENDING:
+            flash(gettext('This entry is not waiting for approval.'), 'warning')
+            return redirect(back)
+        err = CL.maker_checker_error(current_user.id, maker)
+        if err:
+            flash(gettext(err), 'danger')
+            return redirect(back)
+    if act == 'approve':
+        review, rerr = CL.parse_review_date(e['review_date'])
+        if rerr:          # the proposed date has passed while waiting: default +12 months
+            review = CL.default_review_date()
+        execute_db("""UPDATE screening_whitelist
+                         SET status = 'Active', approved_by = %s, approval_date = %s, approval_basis = 'mlro',
+                             approval_comment = %s, review_date = %s
+                       WHERE id = %s AND status = 'Pending Approval'""",
+                   (current_user.id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), comment, review.isoformat(), id))
+        new_status, audit_action = 'Active', 'approved'
+        flash(gettext('"%(name)s" approved. It now suppresses alerts until %(date)s.', name=e['name'], date=review.isoformat()), 'success')
+    elif act == 'reject':
+        execute_db("""UPDATE screening_whitelist
+                         SET status = 'Rejected', rejected_by = %s, rejected_at = NOW(), approval_comment = %s
+                       WHERE id = %s AND status = 'Pending Approval'""", (current_user.id, comment, id))
+        new_status, audit_action = 'Rejected', 'rejected'
+        flash(gettext('"%(name)s" rejected. It does not suppress alerts.', name=e['name']), 'warning')
+    else:
+        if e['status'] != CL.WL_ACTIVE:
+            flash(gettext('Only an active entry can be renewed.'), 'warning')
+            return redirect(back)
+        review, rerr = CL.parse_review_date(request.form.get('review_date'))
+        if rerr:
+            flash(gettext(rerr), 'danger')
+            return redirect(back)
+        execute_db("""UPDATE screening_whitelist
+                         SET review_date = %s, approved_by = %s, approval_date = %s, approval_basis = 'mlro',
+                             approval_comment = %s
+                       WHERE id = %s""",
+                   (review.isoformat(), current_user.id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), comment, id))
+        new_status, audit_action = 'Active', 'renewed'
+        comment = f"{comment} (new review date {review.isoformat()})"
+        flash(gettext('"%(name)s" renewed until %(date)s.', name=e['name'], date=review.isoformat()), 'success')
+    execute_db("""INSERT INTO screening_whitelist_audit
+                    (whitelist_id, entry_name, action, previous_status, new_status, reason, performed_by)
+                  VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+               (id, e['name'], audit_action, e['status'], new_status, comment, current_user.id))
+    _audit(f'Whitelist entry {audit_action}', id, f"{e['name']!r}: {comment}")
+    if act != 'renew' and maker:
+        try:
+            from services.notification_service import notify
+            notify([maker], gettext('Whitelist decision'),
+                   gettext('%(name)s: %(decision)s by %(user)s.', name=e['name'],
+                           decision=gettext('approved') if act == 'approve' else gettext('rejected'),
+                           user=current_user.get_full_name()),
+                   link=url_for('screening.whitelist_case', id=id))
+        except Exception as ex:
+            logger.error(f"notify maker failed: {ex}")
+    return redirect(back)

@@ -13,13 +13,13 @@
   <div>
     <h1 class="h3 mb-1">{{ e.name }}</h1>
     <div class="text-muted small">
-      <code>{{ e.normalized_name }}</code> · {{ e.entity_type or _('Individual') }}
+      <code>{{ e.normalized_name }}</code> · {{ (e.entity_type or 'Individual')|scr_label('entity') }}
       · {{ _('Case') }} #{{ e.id }}
     </div>
   </div>
   <div class="text-end">
-    <span class="badge fs-6 bg-{{ 'success' if e.status=='Active' else ('danger' if e.status in ['Confirmed Match','Revoked'] else 'warning text-dark') }}">
-      {{ e.status or 'Active' }}</span>
+    <span class="badge fs-6 bg-{{ 'success' if e.effective_status=='Active' else ('danger' if e.effective_status in ['Confirmed Match','Revoked','Rejected'] else 'warning text-dark') }}">
+      {{ e.effective_status|scr_label }}</span>
     <div class="small text-muted mt-1">
       {% if e.screening_frequency and e.screening_frequency != 'manual' %}
         {{ _('Re-screened') }} {{ _(e.screening_frequency) }}
@@ -29,6 +29,16 @@
   </div>
 </div>
 
+{% if e.effective_status == 'Expired' %}
+<div class="alert alert-danger"><i class="bi bi-calendar-x me-2"></i>
+  <strong>{{ _('Review due.') }}</strong> {{ _('The review date has passed: this entry no longer suppresses hits until the MLRO renews it.') }}</div>
+{% elif e.status == 'Pending Approval' %}
+<div class="alert alert-info"><i class="bi bi-hourglass-split me-2"></i>
+  <strong>{{ _('Waiting for MLRO approval.') }}</strong> {{ _('It suppresses nothing until approved.') }}</div>
+{% elif e.status == 'Rejected' %}
+<div class="alert alert-secondary"><i class="bi bi-x-circle me-2"></i>
+  <strong>{{ _('Rejected by the MLRO.') }}</strong> {{ e.approval_comment or '' }}</div>
+{% endif %}
 {% if e.status == 'Confirmed Match' %}
 <div class="alert alert-danger"><i class="bi bi-exclamation-octagon-fill me-2"></i>
   <strong>{{ _('Confirmed true match.') }}</strong>
@@ -101,7 +111,7 @@
             {% if f.status != 'open' %}
               · {{ _('Reviewed by') }} {{ who(f.first_name, f.last_name, none) }}
               {% if f.reviewed_at %}{{ _('on') }} {{ f.reviewed_at.strftime('%d %b %Y') }}{% endif %}
-              <span class="badge bg-{{ 'danger' if f.status=='escalated' else 'success' }}">{{ f.status }}</span>
+              <span class="badge bg-{{ 'danger' if f.status=='escalated' else 'success' }}">{{ f.status|scr_label }}</span>
             {% else %}
               · <a href="{{ url_for('screening.ongoing_screening_dashboard') }}">{{ _('review in the findings queue') }}</a>
             {% endif %}
@@ -128,13 +138,55 @@
           <dt class="col-5">{{ _('Original match') }}</dt><dd class="col-7">{{ e.original_match_name or '—' }}</dd>
           <dt class="col-5">{{ _('Original score') }}</dt>
           <dd class="col-7">{% if e.original_match_score %}{{ '%.0f'|format(e.original_match_score) }}%{% else %}—{% endif %}</dd>
-          <dt class="col-5">{{ _('List source') }}</dt><dd class="col-7">{{ e.original_list_source or '—' }}</dd>
+          <dt class="col-5">{{ _('List source') }}</dt><dd class="col-7">{{ (e.original_list_source or '—')|scr_label('source') }}</dd>
+          <dt class="col-5">{{ _('Review date') }}</dt><dd class="col-7">{{ e.review_date or '—' }}</dd>
+          <dt class="col-5">{{ _('Approved by') }}</dt>
+          <dd class="col-7">{% if e.approved_by_name == 'legacy' %}{{ _('Legacy (before approval was required)') }}{% else %}{{ e.approved_by_name or '—' }}{% endif %}
+            {% if e.approval_date %}<span class="text-muted"> · {{ e.approval_date }}</span>{% endif %}</dd>
+          {% if e.approval_comment %}<dt class="col-5">{{ _('MLRO comment') }}</dt><dd class="col-7">{{ e.approval_comment }}</dd>{% endif %}
           <dt class="col-5">{{ _('Last screened') }}</dt>
           <dd class="col-7">{{ e.last_screened_at.strftime('%d %b %Y %H:%M') if e.last_screened_at else _('Never') }}</dd>
         </dl>
       </div>
     </div>
 
+    {% if can_approve and e.status == 'Pending Approval' %}
+    <div class="card mb-3 border-success">
+      <div class="card-header bg-success bg-opacity-10"><strong>{{ _('MLRO approval') }}</strong></div>
+      <div class="card-body">
+        {% if (e.requested_by or e.added_by) == current_user.id %}
+        <div class="text-muted small">{{ _('Your request — another person must approve it.') }}</div>
+        {% else %}
+        <p class="small mb-2">{{ _('Requested reason') }}: <span class="fst-italic">{{ e.request_reason or e.reason }}</span><br>
+          {{ _('Proposed review date') }}: {{ e.review_date or '—' }}</p>
+        <form method="POST" action="{{ url_for('screening.whitelist_approval', id=e.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ url_for('screening.whitelist_case', id=e.id) }}">
+          <textarea name="comment" class="form-control form-control-sm mb-2" rows="2" required minlength="5" placeholder="{{ _('Comment (required)') }}"></textarea>
+          <div class="d-flex gap-2">
+            <button name="action" value="approve" class="btn btn-sm btn-success flex-fill">{{ _('Approve') }}</button>
+            <button name="action" value="reject" class="btn btn-sm btn-outline-danger flex-fill">{{ _('Reject') }}</button>
+          </div>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% if can_approve and e.status == 'Active' %}
+    <div class="card mb-3 border-primary" id="renew">
+      <div class="card-header bg-primary bg-opacity-10"><strong>{{ _('Renew') }}</strong></div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('screening.whitelist_approval', id=e.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ url_for('screening.whitelist_case', id=e.id) }}">
+          <label class="form-label small">{{ _('New review date') }}</label>
+          <input type="date" name="review_date" class="form-control form-control-sm mb-2" value="{{ default_review }}" max="{{ max_review }}" required>
+          <textarea name="comment" class="form-control form-control-sm mb-2" rows="2" required minlength="5" placeholder="{{ _('Reason (required)') }}"></textarea>
+          <button name="action" value="renew" class="btn btn-sm btn-primary w-100">{{ _('Renew') }}</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
     {% if can_edit %}
     <div class="card mb-3 border-primary">
       <div class="card-header bg-primary bg-opacity-10"><strong>{{ _('Record a decision') }}</strong></div>
@@ -186,7 +238,7 @@
         {% for h in history %}
         <div class="list-group-item small py-2">
           <div class="d-flex justify-content-between">
-            <strong>{{ h.action|replace('_',' ')|title }}</strong>
+            <strong>{{ h.action|scr_label('action') }}</strong>
             <span class="text-muted">{{ h.performed_at.strftime('%d %b %Y %H:%M') }}</span>
           </div>
           <div class="text-muted">
@@ -194,9 +246,9 @@
           </div>
           {% if h.previous_status or h.new_status %}
           <div class="mt-1">
-            <span class="badge bg-light text-dark">{{ h.previous_status or '—' }}</span>
+            <span class="badge bg-light text-dark">{{ h.previous_status|scr_label if h.previous_status else '—' }}</span>
             <i class="bi bi-arrow-right"></i>
-            <span class="badge bg-secondary">{{ h.new_status or '—' }}</span>
+            <span class="badge bg-secondary">{{ h.new_status|scr_label if h.new_status else '—' }}</span>
           </div>
           {% endif %}
           {% if h.reason %}<div class="mt-1 fst-italic">"{{ h.reason }}"</div>{% endif %}

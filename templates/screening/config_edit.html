@@ -17,6 +17,23 @@
 
     <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="card shadow mb-4 border-warning">
+            <div class="card-header bg-warning bg-opacity-25 py-3">
+                <h6 class="m-0 font-weight-bold">{{ _('Four-eyes on sanctions clearance') }}</h6>
+            </div>
+            <div class="card-body row g-3 align-items-center">
+                <div class="col-md-3">
+                    <label for="clearance_approval_threshold" class="fw-bold">{{ _('MLRO approval threshold (score)') }}</label>
+                    <input type="number" name="clearance_approval_threshold" id="clearance_approval_threshold"
+                           value="{{ '%g'|format(clearance_threshold) }}" step="1" min="50" max="100" class="form-control"
+                           {% if not can_approve %}disabled{% endif %}>
+                </div>
+                <div class="col-md-9 small text-muted">
+                    {{ _('Clearing a hit with a score at or above this value, or any hit from a sanctions list, needs MLRO approval by someone other than the officer who decided. Only the MLRO can change this value.') }}
+                    <a href="{{ url_for('screening.approvals') }}">{{ _('MLRO approvals') }}</a>
+                </div>
+            </div>
+        </div>
         <div class="row">
             <!-- Algorithm Weights -->
             <div class="col-md-8">

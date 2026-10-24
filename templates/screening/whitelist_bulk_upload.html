@@ -50,7 +50,7 @@
                                 <input type="file" name="file" class="form-control" accept=".csv,.xlsx" required>
                             </div>
                             <div class="form-text mt-2">
-                                {{ _('Required columns: name, reason. Optional: entity_type, national_id, commercial_registry, date_of_birth, nationality.') }}
+                                {{ _('Required columns: name, reason. Optional: entity_type, national_id, commercial_registry, date_of_birth, nationality, review_date (YYYY-MM-DD, default 12 months, at most 24).') }} {{ _('Every entry takes effect only after MLRO approval.') }}
                             </div>
                         </div>
 

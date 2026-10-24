@@ -23,7 +23,7 @@
                 </div>
                 <div class="col-md-2">
                     <small class="text-muted">{{ _('Type') }}</small>
-                    <div><span class="badge bg-light text-dark">{{ record.entity_type }}</span></div>
+                    <div><span class="badge bg-light text-dark">{{ record.entity_type|scr_label('entity') }}</span></div>
                 </div>
                 <div class="col-md-2">
                     <small class="text-muted">{{ _('Date') }}</small>
@@ -34,7 +34,7 @@
                     <div>
                         <span
                             class="badge {% if record.screening_result == 'CLEAR' %}bg-success{% elif record.screening_result == 'POTENTIAL_MATCH' %}bg-warning text-dark{% elif record.screening_result == 'CONFIRMED_HIT' %}bg-danger{% elif record.screening_result == 'WHITE_LISTED' %}bg-info{% else %}bg-secondary{% endif %} fs-6">
-                            {{ record.screening_result }}
+                            {{ record.screening_result|scr_label }}
                         </span>
                     </div>
                 </div>
@@ -54,7 +54,7 @@
                     <div>
                         <span
                             class="badge {% if record.status == 'Completed' %}bg-success{% elif record.status == 'Pending Review' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                            {{ record.status }}
+                            {{ record.status|scr_label }}
                         </span>
                     </div>
                 </div>
@@ -62,7 +62,7 @@
             <div class="row mt-3">
                 <div class="col-md-3">
                     <small class="text-muted">{{ _('Source') }}</small>
-                    <div><span class="badge bg-secondary">{{ record.source_module or 'Manual' }}</span></div>
+                    <div><span class="badge bg-secondary">{{ (record.source_module or 'Manual')|scr_label('module') }}</span></div>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted">{{ _('Initiated By') }}</small>
@@ -117,7 +117,7 @@
                             <td>{{ loop.index }}</td>
                             <td><strong>{{ m.full_name or m.get('match_name', '-') }}</strong></td>
                             <td>{{ m.watchlist_name_ar or m.get('full_name_arabic', '-') }}</td>
-                            <td><span class="badge bg-light text-dark">{{ m.entity_type or '-' }}</span></td>
+                            <td><span class="badge bg-light text-dark">{{ (m.entity_type or '-')|scr_label('entity') }}</span></td>
                             <td>
                                 <span class="badge bg-info text-dark">{{ m.source or m.dataset or '-' }}</span>
                                 {% if m.list_type %}
