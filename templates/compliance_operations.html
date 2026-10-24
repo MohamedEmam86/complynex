@@ -100,7 +100,7 @@
             <tr class="{% if d.due_date_str and d.due_date_str[:10] <= today_str %}table-danger{% endif %}">
               <td>{{ d.report_name[:40] if d.report_name else '-' }}</td>
               <td>{{ d.due_date_str[:10] if d.due_date_str else '-' }}</td>
-              <td><span class="badge bg-warning text-dark">{{ d.status }}</span></td>
+              <td><span class="badge bg-warning text-dark">{{ d.status|label }}</span></td>
             </tr>
             {% else %}
             <tr><td colspan="3" class="text-center text-success py-3"><i class="bi bi-check-circle"></i> {{ _("No deadlines in next 90 days") }}</td></tr>

@@ -4,7 +4,7 @@
 {% block title %}{{ a.title }} - ComplyNex CMS{% endblock %}
 {% block content %}
 <div class="container-fluid">
-    <h3 class="mb-1">{{ a.title }} <span class="badge bg-secondary fs-6">{{ a.status }}</span></h3>
+    <h3 class="mb-1">{{ a.title }} <span class="badge bg-secondary fs-6">{{ a.status|label }}</span></h3>
     <p class="small text-muted">{{ a.framework_code }} · {{ a.framework_name }} · {{ _('average') }} {{ summary.avg_current or '-' }} / {{ _('target') }} {{ summary.avg_target or '-' }} · {{ summary.gaps|length }} {{ _('below target') }} · {{ summary.unrated }} {{ _('not rated') }}</p>
     {{ cn.nav('cyber.res_maturity') }}
     {% set locked = a.status == 'final' or not cy_can_edit %}

@@ -16,7 +16,7 @@
                     <strong>{{ k.kri_name }}</strong>
                     {% set latest = histories[k.id][0] if histories[k.id] else none %}
                     {% if latest %}
-                    <span class="badge {{ 'bg-danger' if latest.status == 'RED' else ('bg-warning text-dark' if latest.status == 'AMBER' else 'bg-success') }}">{{ latest.status }}</span>
+                    <span class="badge {{ 'bg-danger' if latest.status == 'RED' else ('bg-warning text-dark' if latest.status == 'AMBER' else 'bg-success') }}">{{ latest.status|label }}</span>
                     {% endif %}
                 </div>
                 <div class="card-body">
@@ -29,7 +29,7 @@
                     <p class="mb-1 small">{{ _('Target') }}: {{ '-' if k.target_value is none else k.target_value }} | {{ _('Warning') }}: {{ '-' if k.warning_threshold is none else k.warning_threshold }} | {{ _('Breach') }}: {{ '-' if k.breach_threshold is none else k.breach_threshold }}</p>
                     <ul class="list-unstyled small mb-2">
                         {% for m in histories[k.id][:5] %}
-                        <li>{{ m.measurement_date }}: {{ m.actual_value }} <span class="badge {{ 'bg-danger' if m.status == 'RED' else ('bg-warning text-dark' if m.status == 'AMBER' else 'bg-success') }}">{{ m.status }}</span></li>
+                        <li>{{ m.measurement_date }}: {{ m.actual_value }} <span class="badge {{ 'bg-danger' if m.status == 'RED' else ('bg-warning text-dark' if m.status == 'AMBER' else 'bg-success') }}">{{ m.status|label }}</span></li>
                         {% endfor %}
                     </ul>
                     {% if current_user.can_edit('risk_management') %}

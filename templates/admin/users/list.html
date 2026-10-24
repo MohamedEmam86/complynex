@@ -45,7 +45,7 @@
                             </div>
                         </td>
                         <td>{{ user.email }}</td>
-                        <td><span class="badge bg-secondary">{{ user.role }}</span></td>
+                        <td><span class="badge bg-secondary">{{ user.role|label }}</span></td>
                         <td>{{ user.display_department }}</td>
                         <td>
                             {% if user.is_active and user.is_expired %}

@@ -1575,7 +1575,7 @@
       <span class="cnx-user__avatar">{{ (current_user.full_name or '?')[0] }}</span>
       <span class="cnx-user__meta">
         <span class="cnx-user__name">{{ current_user.full_name }}</span>
-        <span class="cnx-user__role">{{ current_user.role }}</span>
+        <span class="cnx-user__role">{{ current_user.role|label }}</span>
       </span>
     </div>
   </div>

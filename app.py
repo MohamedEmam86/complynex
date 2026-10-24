@@ -130,7 +130,7 @@ def create_app(config_name=None):
     def _username(user_id):
         """{{ some_user_id | username }} -> "First Last" (or the e-mail), for
         tables that store a user id where people expect a name."""
-        if user_id in (None, ''):
+        if user_id in (None, '') or not user_id:   # also jinja Undefined (missing key)
             return '-'
         try:
             from database.db import query_db
@@ -140,6 +140,9 @@ def create_app(config_name=None):
         except (TypeError, ValueError):
             return str(user_id)
     app.jinja_env.filters['username'] = _username
+    # Readable labels for stored codes + number/date formatting ({{ x|label }}, |num, |money, |pct, |fmt_dt, |fmt_date)
+    from utils.labels import register_filters as _register_label_filters
+    _register_label_filters(app)
     app.jinja_env.add_extension('jinja2.ext.do')
     
     # Initialize Flask-Login

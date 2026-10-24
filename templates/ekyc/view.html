@@ -30,7 +30,7 @@
             <div class="card mb-3">
                 <div class="card-header">{{ _('Session') }}</div>
                 <div class="card-body">
-                    <p><strong>{{ _('Status') }}:</strong> <span class="badge bg-secondary">{{ session.status }}</span></p>
+                    <p><strong>{{ _('Status') }}:</strong> <span class="badge bg-secondary">{{ session.status|label }}</span></p>
                     <p><strong>{{ _('Document Type') }}:</strong> {{ session.document_type }}</p>
                     {% if current_user.can_edit('ekyc') %}
                     <form method="POST" action="{{ url_for('ekyc.update_customer_reference', session_id=session.id) }}" class="mb-2">
@@ -141,7 +141,7 @@
                 <div class="card-body">
                     <p><strong>{{ _('Decision') }}:</strong>
                         <span class="badge bg-{{ 'success' if result.decision == 'PASS' else ('danger' if result.decision == 'FAIL' else 'warning') }}">
-                            {{ result.decision or '-' }}
+                            {{ result.decision|label('-') }}
                         </span>
                     </p>
                     <p><strong>{{ _('Risk Score') }}:</strong> {{ result.risk_score if result.risk_score is not none else '-' }} / 100</p>
@@ -159,7 +159,7 @@
                     {% if result.back_card_detected is not none %}
                     <p><strong>{{ _('Back-Side Extracted Fields') }}:</strong>
                         {{ _('Occupation') }}: {{ result.extracted_occupation or '-' }} /
-                        {{ _('Marital Status') }}: {{ result.extracted_marital_status or '-' }} /
+                        {{ _('Marital Status') }}: {{ result.extracted_marital_status|label('-') }} /
                         {{ _('Expiry') }}: {{ result.id_expiry_raw or '-' }}
                         <span class="badge bg-{{ 'success' if result.back_card_detected else 'secondary' }}">
                             {{ _('Back card detected') if result.back_card_detected else _('Back card not detected') }}</span>
@@ -191,7 +191,7 @@
                             {{ 'PASS' if result.document_pad_pass else 'FAIL' }}</span>
                         {% endif %}
                     </p>
-                    <p><strong>{{ _('Screening Result') }}:</strong> {{ result.screening_result or '-' }}</p>
+                    <p><strong>{{ _('Screening Result') }}:</strong> {{ result.screening_result|label('-') }}</p>
                     {% if result.decision_reasons %}
                     <p class="mb-1"><strong>{{ _('Decision Reasons') }}:</strong></p>
                     <ul>
@@ -215,10 +215,10 @@
                         {% for doc in documents %}
                         <li class="mb-1">
                             {% if doc.purged_at %}
-                            <span class="text-muted">{{ doc.doc_role }} — {{ _('purged') }} ({{ doc.purged_at }})</span>
+                            <span class="text-muted">{{ doc.doc_role|label }} — {{ _('purged') }} ({{ doc.purged_at }})</span>
                             {% else %}
                             <a href="{{ url_for('ekyc.view_document', doc_id=doc.id) }}" target="_blank">
-                                {{ doc.doc_role }} — {{ doc.captured_at }}
+                                {{ doc.doc_role|label }} — {{ doc.captured_at }}
                             </a>
                             {% endif %}
                         </li>

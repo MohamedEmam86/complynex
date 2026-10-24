@@ -31,7 +31,7 @@
                         </td>
                         <td>{{ departments_by_id.get(a.department_id).name if departments_by_id.get(a.department_id) else '-' }}</td>
                         <td>
-                            <span class="badge {{ 'bg-danger' if a.risk_level == 'CRITICAL' else ('bg-warning text-dark' if a.risk_level == 'HIGH' else ('bg-info text-dark' if a.risk_level == 'MEDIUM' else 'bg-secondary')) }}">{{ a.risk_level }}</span>
+                            <span class="badge {{ 'bg-danger' if a.risk_level == 'CRITICAL' else ('bg-warning text-dark' if a.risk_level == 'HIGH' else ('bg-info text-dark' if a.risk_level == 'MEDIUM' else 'bg-secondary')) }}">{{ a.risk_level|label }}</span>
                         </td>
                         <td>{{ derived_scores.get(a.id) or _('No linked risks') }}</td>
                         <td>

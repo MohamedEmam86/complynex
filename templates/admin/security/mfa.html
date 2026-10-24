@@ -41,7 +41,7 @@
                 <strong>{{ (u.first_name ~ ' ' ~ u.last_name)|trim or u.email }}</strong>
                 <div class="text-muted" style="font-size:11px">{{ u.email }}</div>
               </td>
-              <td><span class="badge bg-light text-dark">{{ u.role }}</span></td>
+              <td><span class="badge bg-light text-dark">{{ u.role|label }}</span></td>
               <td>
                 {% if u.mfa_enabled %}
                   <span class="badge bg-success"><i class="bi bi-shield-check"></i> {{ _('Enabled') }}</span>

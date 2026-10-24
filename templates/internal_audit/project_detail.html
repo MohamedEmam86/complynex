@@ -43,7 +43,7 @@
             <ul class="list-group mb-3">
                 {% for m in team %}
                 {% set u = users_by_id.get(m.user_id) %}
-                <li class="list-group-item">{{ (u.first_name ~ ' ' ~ u.last_name) if u else ('User #' ~ m.user_id) }} - <span class="badge bg-info">{{ m.role_on_engagement }}</span> {{ (m.allocated_hours ~ ' hrs') if m.allocated_hours else '' }}</li>
+                <li class="list-group-item">{{ (u.first_name ~ ' ' ~ u.last_name) if u else ('User #' ~ m.user_id) }} - <span class="badge bg-info">{{ m.role_on_engagement|label }}</span> {{ (m.allocated_hours ~ ' hrs') if m.allocated_hours else '' }}</li>
                 {% else %}
                 <li class="list-group-item text-muted">{{ _('No team members added yet.') }}</li>
                 {% endfor %}
@@ -78,7 +78,7 @@
                         <td>{{ control.control_code if control else '-' }}</td>
                         <td>
                             {% if p.test_result %}
-                            <span class="badge {{ 'bg-success' if p.test_result == 'EFFECTIVE' else ('bg-warning text-dark' if p.test_result == 'PARTIALLY_EFFECTIVE' else ('bg-danger' if p.test_result == 'INEFFECTIVE' else 'bg-secondary')) }}">{{ p.test_result }}</span>
+                            <span class="badge {{ 'bg-success' if p.test_result == 'EFFECTIVE' else ('bg-warning text-dark' if p.test_result == 'PARTIALLY_EFFECTIVE' else ('bg-danger' if p.test_result == 'INEFFECTIVE' else 'bg-secondary')) }}">{{ p.test_result|label }}</span>
                             {% else %}
                             <span class="text-muted small">{{ _('Not tested') }}</span>
                             {% endif %}
@@ -122,8 +122,8 @@
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <a href="{{ url_for('internal_audit.finding_detail', finding_id=f.id) }}">{{ f.finding_number }} - {{ f.finding_title }}</a>
                     <div class="d-flex gap-2">
-                        <span class="badge bg-secondary">{{ f.status.replace('_', ' ') }}</span>
-                        <span class="badge {{ 'bg-danger' if f.severity == 'CRITICAL' else ('bg-warning text-dark' if f.severity == 'HIGH' else ('bg-info text-dark' if f.severity == 'MEDIUM' else 'bg-secondary')) }}">{{ f.severity }}</span>
+                        <span class="badge bg-secondary">{{ f.status|label }}</span>
+                        <span class="badge {{ 'bg-danger' if f.severity == 'CRITICAL' else ('bg-warning text-dark' if f.severity == 'HIGH' else ('bg-info text-dark' if f.severity == 'MEDIUM' else 'bg-secondary')) }}">{{ f.severity|label }}</span>
                     </div>
                 </li>
                 {% else %}

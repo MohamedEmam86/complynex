@@ -146,7 +146,7 @@
                                 <td>
                                     <div class="fw-bold">{{ decl.employee_name or decl.employee_id }}</div>
                                 </td>
-                                <td><span class="badge bg-info text-dark">{{ decl.status }}</span></td>
+                                <td><span class="badge bg-info text-dark">{{ decl.status|label }}</span></td>
                                 <td class="text-end pe-4">
                                     <!-- Add link to review -->
                                     <button class="btn btn-sm btn-primary" disabled>{{ _('Review') }}</button>

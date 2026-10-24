@@ -32,10 +32,10 @@
                         <dt class="col-sm-3">{{ _('Category') }}</dt><dd class="col-sm-9">{{ category.category_name if category else '-' }}</dd>
                         <dt class="col-sm-3">{{ _('Department') }}</dt><dd class="col-sm-9">{{ department.name if department else '-' }}</dd>
                         <dt class="col-sm-3">{{ _('Owner') }}</dt><dd class="col-sm-9">{{ owner.first_name ~ ' ' ~ owner.last_name if owner else '-' }}</dd>
-                        <dt class="col-sm-3">{{ _('Status') }}</dt><dd class="col-sm-9"><span class="badge bg-secondary">{{ risk.status }}</span></dd>
+                        <dt class="col-sm-3">{{ _('Status') }}</dt><dd class="col-sm-9"><span class="badge bg-secondary">{{ risk.status|label }}</span></dd>
                         <dt class="col-sm-3">{{ _('Risk Response') }}</dt><dd class="col-sm-9">{{ risk.risk_response or '-' }}</dd>
                         <dt class="col-sm-3">{{ _('Existing Controls') }}</dt><dd class="col-sm-9">{{ risk.existing_controls or '-' }}</dd>
-                        <dt class="col-sm-3">{{ _('Review Frequency') }}</dt><dd class="col-sm-9">{{ risk.review_frequency or '-' }}</dd>
+                        <dt class="col-sm-3">{{ _('Review Frequency') }}</dt><dd class="col-sm-9">{{ risk.review_frequency|label('-') }}</dd>
                         <dt class="col-sm-3">{{ _('Next Review') }}</dt><dd class="col-sm-9">{{ risk.next_review_date or '-' }}</dd>
                     </dl>
                 </div>
@@ -106,7 +106,7 @@
                     {% for t in treatments %}
                     <li class="list-group-item">
                         <a href="{{ url_for('risk_management.treatment_detail', treatment_id=t.id) }}">{{ t.treatment_description[:60] }}</a>
-                        <span class="badge bg-secondary float-end">{{ t.status }}</span>
+                        <span class="badge bg-secondary float-end">{{ t.status|label }}</span>
                     </li>
                     {% else %}
                     <li class="list-group-item text-muted">{{ _('No treatments proposed yet.') }}</li>
@@ -118,7 +118,7 @@
                 <div class="card-header"><strong>{{ _('Source Links') }}</strong></div>
                 <ul class="list-group list-group-flush">
                     {% for l in links %}
-                    <li class="list-group-item small">{{ l.source_module }} / {{ l.source_table }}#{{ l.source_record_id }} <span class="badge bg-info">{{ l.link_type }}</span></li>
+                    <li class="list-group-item small">{{ l.source_module }} / {{ l.source_table }}#{{ l.source_record_id }} <span class="badge bg-info">{{ l.link_type|label }}</span></li>
                     {% else %}
                     <li class="list-group-item text-muted">{{ _('No linked source records.') }}</li>
                     {% endfor %}
@@ -133,7 +133,7 @@
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <a href="{{ url_for('risk_management.kris_dashboard') }}">{{ k.kri_name }}</a>
                         {% if kri_status %}
-                        <span class="badge {{ 'bg-danger' if kri_status == 'RED' else ('bg-warning text-dark' if kri_status == 'AMBER' else 'bg-success') }}">{{ kri_status }}</span>
+                        <span class="badge {{ 'bg-danger' if kri_status == 'RED' else ('bg-warning text-dark' if kri_status == 'AMBER' else 'bg-success') }}">{{ kri_status|label }}</span>
                         {% else %}
                         <span class="text-muted small">{{ _('No measurements') }}</span>
                         {% endif %}

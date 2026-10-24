@@ -36,7 +36,7 @@
                             {% else %}-{% endif %}
                         </td>
                         <td>{{ s.risk_score if s.risk_score is not none else '-' }}</td>
-                        <td>{{ s.screening_result or '-' }}</td>
+                        <td>{{ s.screening_result|label('-') }}</td>
                         <td>{{ s.assigned_to_name or '-' }}</td>
                         <td>{{ s.updated_at }}</td>
                         <td class="text-end">

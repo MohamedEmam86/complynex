@@ -32220,6 +32220,336 @@ msgstr "الرقم المرجعي لدى الوحدة"
 msgid "Mark as filed"
 msgstr "تسجيل كمُخطَر"
 
+msgid "Accepted"
+msgstr "مقبول"
+
+msgid "Action Plan"
+msgstr "خطة عمل"
+
+msgid "Ad hoc"
+msgstr "عند الحاجة"
+
+msgid "Aircraft"
+msgstr "طائرة"
+
+msgid "Amber"
+msgstr "كهرماني"
+
+msgid "Analyst"
+msgstr "محلل"
+
+msgid "Automatic"
+msgstr "تلقائي"
+
+msgid "Avoid"
+msgstr "تجنب"
+
+msgid "Board Minutes"
+msgstr "محاضر مجلس الإدارة"
+
+msgid "Business Loans"
+msgstr "قروض الأعمال"
+
+msgid "Business Travel"
+msgstr "سفر العمل"
+
+msgid "Capital Contribution"
+msgstr "مساهمة في رأس المال"
+
+msgid "Capital Increase"
+msgstr "زيادة رأس المال"
+
+msgid "Catastrophic"
+msgstr "كارثي"
+
+msgid "Company"
+msgstr "شركة"
+
+msgid "Compliance Copilot (AI)"
+msgstr "مساعد الامتثال (الذكاء الاصطناعي)"
+
+msgid "Connected"
+msgstr "متصل"
+
+msgid "Continuous"
+msgstr "مستمر"
+
+msgid "Cyber"
+msgstr "سيبراني"
+
+msgid "Cyber Incidents Hub"
+msgstr "مركز الحوادث السيبرانية"
+
+msgid "Declined"
+msgstr "مرفوض"
+
+msgid "Decreasing"
+msgstr "متناقص"
+
+msgid "Default"
+msgstr "افتراضي"
+
+msgid "Deferred"
+msgstr "مؤجل"
+
+msgid "Disbursed"
+msgstr "تم الصرف"
+
+msgid "Employee Commuting"
+msgstr "تنقل الموظفين"
+
+msgid "Equity Share"
+msgstr "حصة الملكية"
+
+msgid "Executed"
+msgstr "منفذ"
+
+msgid "Exiting Shareholder"
+msgstr "مساهم متخارج"
+
+msgid "External"
+msgstr "خارجي"
+
+msgid "Extreme"
+msgstr "بالغ الشدة"
+
+msgid "Financial"
+msgstr "مالي"
+
+msgid "Financial Control"
+msgstr "السيطرة المالية"
+
+msgid "Fuel- and Energy-related Activities"
+msgstr "الأنشطة المتعلقة بالوقود والطاقة"
+
+msgid "Fugitive Emissions"
+msgstr "الانبعاثات المتسربة"
+
+msgid "Fulfilled"
+msgstr "مستوفى"
+
+msgid "Green"
+msgstr "أخضر"
+
+msgid "IT Administrator"
+msgstr "مسؤول تقنية المعلومات"
+
+msgid "Identified"
+msgstr "محدد"
+
+msgid "Increasing"
+msgstr "متزايد"
+
+msgid "Ineffective"
+msgstr "غير فعال"
+
+msgid "Informational"
+msgstr "للعلم"
+
+msgid "Insignificant"
+msgstr "ضئيل"
+
+msgid "Integrys Academy (learners)"
+msgstr "أكاديمية إنتغريس (المتعلمون)"
+
+msgid "Legal Entity"
+msgstr "شخص اعتباري"
+
+msgid "Major"
+msgstr "كبير"
+
+msgid "Malware"
+msgstr "برمجيات خبيثة"
+
+msgid "Match"
+msgstr "تطابق"
+
+msgid "Minor"
+msgstr "طفيف"
+
+msgid "Mitigate"
+msgstr "تخفيف"
+
+msgid "Mitigated"
+msgstr "تم التخفيف"
+
+msgid "Mobile Combustion"
+msgstr "الاحتراق المتنقل"
+
+msgid "Moderate"
+msgstr "متوسط"
+
+msgid "Negligible"
+msgstr "ضئيل جدًا"
+
+msgid "No Match"
+msgstr "لا يوجد تطابق"
+
+msgid "Non-compliant"
+msgstr "غير ملتزم"
+
+msgid "Normal"
+msgstr "عادي"
+
+msgid "Not Connected"
+msgstr "غير متصل"
+
+msgid "Not Implemented"
+msgstr "غير مطبق"
+
+msgid "Not Met"
+msgstr "غير مستوفى"
+
+msgid "Not Tested"
+msgstr "لم يُختبر"
+
+msgid "On Hold"
+msgstr "معلق"
+
+msgid "One-off"
+msgstr "لمرة واحدة"
+
+msgid "Ongoing"
+msgstr "جارٍ"
+
+msgid "Operational"
+msgstr "تشغيلي"
+
+msgid "Operational Control"
+msgstr "السيطرة التشغيلية"
+
+msgid "Outage"
+msgstr "انقطاع الخدمة"
+
+msgid "Outside Appetite"
+msgstr "خارج نطاق قابلية المخاطر"
+
+msgid "Partially Compliant"
+msgstr "ملتزم جزئيًا"
+
+msgid "Partially Effective"
+msgstr "فعال جزئيًا"
+
+msgid "Partially Implemented"
+msgstr "مطبق جزئيًا"
+
+msgid "Partially Met"
+msgstr "مستوفى جزئيًا"
+
+msgid "Performing"
+msgstr "منتظم"
+
+msgid "Phishing"
+msgstr "تصيد احتيالي"
+
+msgid "Purchased Electricity"
+msgstr "الكهرباء المشتراة"
+
+msgid "Purchased Goods and Services"
+msgstr "السلع والخدمات المشتراة"
+
+msgid "Recovered"
+msgstr "تم التعافي"
+
+msgid "Red"
+msgstr "أحمر"
+
+msgid "Reduce"
+msgstr "تقليل"
+
+msgid "Regulatory"
+msgstr "رقابي"
+
+msgid "Reported"
+msgstr "تم الإبلاغ"
+
+msgid "Reputational"
+msgstr "سمعة"
+
+msgid "Rescheduled"
+msgstr "معاد جدولته"
+
+msgid "Returned"
+msgstr "مُعاد"
+
+msgid "Risk Officer"
+msgstr "مسؤول المخاطر"
+
+msgid "Semi-annual"
+msgstr "نصف سنوي"
+
+msgid "Severe"
+msgstr "شديد"
+
+msgid "Significant"
+msgstr "جوهري"
+
+msgid "Stable"
+msgstr "مستقر"
+
+msgid "Stationary Combustion"
+msgstr "الاحتراق الثابت"
+
+msgid "Strategic"
+msgstr "استراتيجي"
+
+msgid "Success"
+msgstr "نجاح"
+
+msgid "Superseded"
+msgstr "مستبدل بإصدار أحدث"
+
+msgid "Supplier"
+msgstr "مورد"
+
+msgid "System Configuration"
+msgstr "إعدادات النظام"
+
+msgid "Technology"
+msgstr "التقنية"
+
+msgid "Third Party"
+msgstr "طرف ثالث"
+
+msgid "True Positive"
+msgstr "إيجابي صحيح"
+
+msgid "Up"
+msgstr "صاعد"
+
+msgid "Upstream Transport"
+msgstr "النقل في المراحل السابقة"
+
+msgid "Urgent"
+msgstr "عاجل"
+
+msgid "Verified"
+msgstr "تم التحقق"
+
+msgid "Very High"
+msgstr "مرتفع جدًا"
+
+msgid "Very Low"
+msgstr "منخفض جدًا"
+
+msgid "Vessel"
+msgstr "سفينة"
+
+msgid "Waived"
+msgstr "معفى"
+
+msgid "Waste Generated in Operations"
+msgstr "النفايات الناتجة عن العمليات"
+
+msgid "Withdrawn"
+msgstr "مسحوب"
+
+msgid "Within Appetite"
+msgstr "ضمن نطاق قابلية المخاطر"
+
+msgid "Written Off"
+msgstr "مُعدم"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

@@ -20,8 +20,8 @@
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
-                        <dt class="col-sm-4">{{ _('Incident Type') }}</dt><dd class="col-sm-8">{{ inc.incident_type or '—' }}</dd>
-                        <dt class="col-sm-4">{{ _('Severity') }}</dt><dd class="col-sm-8">{{ inc.severity or '—' }}</dd>
+                        <dt class="col-sm-4">{{ _('Incident Type') }}</dt><dd class="col-sm-8">{{ inc.incident_type|label('—') }}</dd>
+                        <dt class="col-sm-4">{{ _('Severity') }}</dt><dd class="col-sm-8">{{ inc.severity|label('—') }}</dd>
                         <dt class="col-sm-4">{{ _('Discovery') }}</dt><dd class="col-sm-8">{{ inc.discovery_date or '—' }}</dd>
                         <dt class="col-sm-4">{{ _('CBE Notif') }}</dt>
                         <dd class="col-sm-8">{% if inc.cbe_notification_required %}<span class="badge bg-dark">{{ _('REQUIRED') }}</span>{% else %}{{ _('N/A') }}{% endif %}</dd>

@@ -94,7 +94,7 @@
                                     {% if stat.status == 'published' %}
                                     <span class="badge bg-success">{{ _('Published') }}</span>
                                     {% else %}
-                                    <span class="badge bg-secondary">{{ stat.status | title }}</span>
+                                    <span class="badge bg-secondary">{{ stat.status|label }}</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ stat.ack_count }}</td>

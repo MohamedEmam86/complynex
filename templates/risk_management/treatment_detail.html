@@ -11,10 +11,10 @@
                 <div class="card-body">
                     <p>{{ treatment.treatment_description }}</p>
                     <dl class="row mb-0">
-                        <dt class="col-sm-4">{{ _('Type') }}</dt><dd class="col-sm-8">{{ treatment.treatment_type or '-' }}</dd>
+                        <dt class="col-sm-4">{{ _('Type') }}</dt><dd class="col-sm-8">{{ treatment.treatment_type|label('-') }}</dd>
                         <dt class="col-sm-4">{{ _('Owner') }}</dt><dd class="col-sm-8">{{ (owner.first_name ~ ' ' ~ owner.last_name) if owner else '-' }}</dd>
                         <dt class="col-sm-4">{{ _('Target Date') }}</dt><dd class="col-sm-8">{{ treatment.target_date }}</dd>
-                        <dt class="col-sm-4">{{ _('Status') }}</dt><dd class="col-sm-8"><span class="badge bg-secondary">{{ treatment.status }}</span></dd>
+                        <dt class="col-sm-4">{{ _('Status') }}</dt><dd class="col-sm-8"><span class="badge bg-secondary">{{ treatment.status|label }}</span></dd>
                         <dt class="col-sm-4">{{ _('Estimated Cost') }}</dt><dd class="col-sm-8">{{ treatment.estimated_cost or '-' }}</dd>
                         {% if treatment.evidence_file %}
                         <dt class="col-sm-4">{{ _('Evidence') }}</dt><dd class="col-sm-8"><a href="{{ url_for('risk_management.treatment_evidence', treatment_id=treatment.id) }}" target="_blank">{{ _('View file') }}</a></dd>

@@ -128,7 +128,7 @@
             {% if item.due_date %}<div class="due {{ 'overdue' if item.due_date|string < today_str }}">{{ _('Overdue: ') if item.due_date|string < today_str }}{{ item.due_date }}</div>{% endif %}
           </div>
           {% if item.severity %}
-          <span class="sev-tag {{ 'crit' if item.severity|upper in ['CRITICAL'] else ('high' if item.severity|upper in ['HIGH'] else 'other') }}">{{ item.severity }}</span>
+          <span class="sev-tag {{ 'crit' if item.severity|upper in ['CRITICAL'] else ('high' if item.severity|upper in ['HIGH'] else 'other') }}">{{ item.severity|label }}</span>
           {% endif %}
         </div>
         {% else %}

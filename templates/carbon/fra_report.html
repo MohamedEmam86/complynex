@@ -96,7 +96,7 @@
   <h2>{{ _('5. Verification') }}</h2>
   <table class="table table-bordered">
     <tbody>
-      <tr><th style="width:35%">{{ _('Report status') }}</th><td>{{ period.fra_status }}</td></tr>
+      <tr><th style="width:35%">{{ _('Report status') }}</th><td>{{ period.fra_status|label }}</td></tr>
       <tr><th>{{ _('Accredited verification body') }}</th><td>{{ period.verifier_name or _('— to be engaged (must be FRA-accredited) —') }}</td></tr>
       <tr><th>{{ _('Certification date') }}</th><td>{{ period.certified_at or '—' }}</td></tr>
       <tr><th>{{ _('Submitted to FRA') }}</th><td>{{ period.submitted_to_fra_at or '—' }}</td></tr>

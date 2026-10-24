@@ -36,7 +36,7 @@
     </div>
     <div class="card" id="sites"><div class="card-header"><strong>{{ _('Sites') }}</strong> <span class="small text-muted">{{ _('(step 2: every office, branch or data centre whose energy you report)') }}</span></div>
       <table class="table table-sm mb-0 small"><thead><tr><th>{{ _('Site') }}</th><th>{{ _('Entity') }}</th><th>{{ _('Type') }}</th><th>{{ _('City') }}</th><th class="text-end">m²</th><th class="text-end">{{ _('Staff') }}</th><th>{{ _('Active') }}</th></tr></thead><tbody>
-      {% for s in sites %}<tr class="{{ 'text-muted' if not s.is_active }}"><td>{{ s.name }}</td><td>{{ s.entity_name or '-' }}</td><td>{{ s.site_type }}</td><td>{{ s.city or '-' }}</td><td class="text-end">{{ s.floor_area_m2 or '-' }}</td><td class="text-end">{{ s.headcount or '-' }}</td><td>{{ _('Yes') if s.is_active else _('No') }}</td></tr>
+      {% for s in sites %}<tr class="{{ 'text-muted' if not s.is_active }}"><td>{{ s.name }}</td><td>{{ s.entity_name or '-' }}</td><td>{{ s.site_type|label }}</td><td>{{ s.city or '-' }}</td><td class="text-end">{{ s.floor_area_m2 or '-' }}</td><td class="text-end">{{ s.headcount or '-' }}</td><td>{{ _('Yes') if s.is_active else _('No') }}</td></tr>
       {% else %}<tr><td colspan="7">{{ cx.empty('bi-building', _('No sites yet.'), _('Head office — Cairo — office — 1,200 m² — 85 staff')) }}</td></tr>{% endfor %}</tbody></table>
       {% if cb_can_edit %}<form method="post" class="card-body border-top row g-1 small"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="form" value="site"><input type="hidden" name="_form" value="1">
         <div class="col-md-3"><input name="name" class="form-control form-control-sm" placeholder="{{ _('Name') }}" required></div>

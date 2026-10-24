@@ -13,7 +13,7 @@
                         {% for s in statements %}
                             <tr>
                                 <td>{{ (categories | selectattr('id', 'equalto', s.category_id) | first).category_name if s.category_id else _('Entity-wide') }}</td>
-                                <td><span class="badge bg-info">{{ s.appetite_level }}</span></td>
+                                <td><span class="badge bg-info">{{ s.appetite_level|label }}</span></td>
                                 <td>{{ s.max_acceptable_residual_score }}</td>
                                 <td class="small">{{ s.effective_from }} - {{ s.effective_to or _('ongoing') }}</td>
                             </tr>

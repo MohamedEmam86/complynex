@@ -3,7 +3,7 @@
 {% block title %}{{ d.title }} - ComplyNex CMS{% endblock %}
 {% block content %}
 <div class="container-fluid">
-    <h3 class="mb-1">{{ d.title }} <span class="badge bg-{{ {'overdue': 'danger', 'due_soon': 'warning text-dark', 'ok': 'success'}.get(d.state, 'secondary') }} fs-6">{{ d.state }}</span></h3>
+    <h3 class="mb-1">{{ d.title }} <span class="badge bg-{{ {'overdue': 'danger', 'due_soon': 'warning text-dark', 'ok': 'success'}.get(d.state, 'secondary') }} fs-6">{{ d.state|label }}</span></h3>
     <p class="small text-muted">{{ d.category }} · {{ d.regulator_name or '' }} · {{ _('due') }} {{ d.due_date }}{% if d.status == 'open' %} ({{ d.days_left }} {{ _('days') }}){% endif %}{% if d.board_escalated_at %} · <span class="text-danger">{{ _('escalated to the board') }} {{ d.board_escalated_at.strftime('%Y-%m-%d') }}</span>{% endif %}{% if d.finding_id %} · <a href="{{ url_for('regcontrols.finding_detail', finding_id=d.finding_id) }}">{{ _('finding') }}</a>{% endif %}</p>
     {{ pn.nav('prudential.deadlines') }}
     <div class="row g-3"><div class="col-lg-7">

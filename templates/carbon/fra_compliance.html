@@ -160,7 +160,7 @@
         {% endif %}
         <div class="col-auto">
           <div class="small text-muted">{{ _('Status') }}</div>
-          <span class="badge fs-6 bg-{{ 'success' if obligation.status == 'FULFILLED' else ('danger' if obligation.status == 'OVERDUE' else 'warning') }}">{{ obligation.status }}</span>
+          <span class="badge fs-6 bg-{{ 'success' if obligation.status == 'FULFILLED' else ('danger' if obligation.status == 'OVERDUE' else 'warning') }}">{{ obligation.status|label }}</span>
         </div>
       </div>
 

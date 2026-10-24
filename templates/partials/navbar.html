@@ -1,7 +1,7 @@
 {% set _nav_role_names = {'admin': _('Administrator'), 'compliance_manager': _('Compliance Manager'),
     'compliance_officer': _('Compliance Officer'), 'manager': _('Manager'), 'employee': _('Employee'),
     'auditor': _('Auditor'), 'viewer': _('Viewer'), 'mlro': _('MLRO')} %}
-{% set _nav_role_label = _nav_role_names.get(current_user.role, (current_user.role or '') | replace('_', ' ') | title) if current_user.is_authenticated else '' %}
+{% set _nav_role_label = _nav_role_names.get(current_user.role, current_user.role | label) if current_user.is_authenticated else '' %}
 <!-- Top Navigation Bar -->
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
     <div class="container-fluid">

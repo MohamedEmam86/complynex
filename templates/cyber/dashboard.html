@@ -78,11 +78,11 @@
                         {% for inc in active_incidents %}
                         <tr>
                             <td><a href="{{ url_for('cyber.incident_detail', incident_id=inc.id) }}"><code>{{ inc.incident_number }}</code></a></td>
-                            <td>{{ inc.incident_type }}</td>
+                            <td>{{ inc.incident_type|label }}</td>
                             <td>
                                 <span
                                     class="badge {% if inc.severity == 'CRITICAL' %}bg-danger{% elif inc.severity == 'HIGH' %}bg-warning text-dark{% else %}bg-info{% endif %}">
-                                    {{ inc.severity }}
+                                    {{ inc.severity|label }}
                                 </span>
                             </td>
                             <td>{{ inc.discovery_date }}</td>
@@ -94,7 +94,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="badge bg-secondary">{{ inc.status }}</span>
+                                <span class="badge bg-secondary">{{ inc.status|label }}</span>
                             </td>
                             <td>
                                 <a href="{{ url_for('cyber.incident_detail', incident_id=inc.id) }}" class="btn btn-sm btn-outline-danger">{{ _('Response Hub') }}</a>

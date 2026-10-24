@@ -48,8 +48,8 @@
                         <td>{{ f.finding_number }}</td>
                         <td>{{ f.finding_title }}</td>
                         <td class="small">{% if project %}<a href="{{ url_for('internal_audit.project_detail', project_id=project.id) }}">{{ project.audit_number }}</a>{% else %}-{% endif %}</td>
-                        <td><span class="badge {{ 'bg-danger' if f.severity == 'CRITICAL' else ('bg-warning text-dark' if f.severity == 'HIGH' else ('bg-info text-dark' if f.severity == 'MEDIUM' else 'bg-secondary')) }}">{{ f.severity }}</span></td>
-                        <td><span class="badge bg-secondary">{{ f.status.replace('_', ' ') }}</span></td>
+                        <td><span class="badge {{ 'bg-danger' if f.severity == 'CRITICAL' else ('bg-warning text-dark' if f.severity == 'HIGH' else ('bg-info text-dark' if f.severity == 'MEDIUM' else 'bg-secondary')) }}">{{ f.severity|label }}</span></td>
+                        <td><span class="badge bg-secondary">{{ f.status|label }}</span></td>
                         <td>{{ f.target_date or '-' }} {% if is_overdue %}<i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="{{ _('Overdue') }}"></i>{% endif %}</td>
                         <td><a href="{{ url_for('internal_audit.finding_detail', finding_id=f.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('View') }}</a></td>
                     </tr>

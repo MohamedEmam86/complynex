@@ -31,7 +31,7 @@
                     <div class="fw-bold">{{ u.first_name }} {{ u.last_name }}</div>
                     <div class="text-muted small">{{ u.email }}</div>
                 </td>
-                <td><span class="badge bg-secondary">{{ u.role }}</span></td>
+                <td><span class="badge bg-secondary">{{ u.role|label }}</span></td>
                 {% for m in modules %}
                 <td class="text-center">
                     {% if u.is_admin() %}

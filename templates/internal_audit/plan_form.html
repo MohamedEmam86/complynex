@@ -29,7 +29,7 @@
                         <thead><tr><th>{{ _('Area') }}</th><th>{{ _('Manual Level') }}</th><th>{{ _('Derived Score') }}</th></tr></thead>
                         <tbody>
                         {% for a in areas | sort(attribute='id', reverse=true) %}
-                            <tr><td>{{ a.auditable_area }}</td><td>{{ a.risk_level }}</td><td>{{ derived_scores.get(a.id) or '-' }}</td></tr>
+                            <tr><td>{{ a.auditable_area }}</td><td>{{ a.risk_level|label }}</td><td>{{ derived_scores.get(a.id) or '-' }}</td></tr>
                         {% endfor %}
                         </tbody>
                     </table>

@@ -60,7 +60,7 @@
                 <div class="card-body">
                     {% for status, count in pipeline.items() %}
                     <div class="d-flex justify-content-between small mb-1">
-                        <span>{{ status.replace('_', ' ') | title }}</span><span>{{ count }}</span>
+                        <span>{{ status|label }}</span><span>{{ count }}</span>
                     </div>
                     <div class="progress mb-2" style="height: 6px;">
                         <div class="progress-bar bg-primary" style="width: {{ (100 * count / all_projects|length) if all_projects|length else 0 }}%"></div>
@@ -80,7 +80,7 @@
                     <div class="progress mb-2" style="height: 10px;">
                         <div class="progress-bar bg-success" style="width: {{ plan_coverage.pct }}%"></div>
                     </div>
-                    <p class="text-muted small mb-0">{{ plan_coverage.pct }}% {{ _('coverage') }} — <span class="badge {{ 'bg-success' if current_plan.status == 'APPROVED' else 'bg-secondary' }}">{{ current_plan.status }}</span></p>
+                    <p class="text-muted small mb-0">{{ plan_coverage.pct }}% {{ _('coverage') }} — <span class="badge {{ 'bg-success' if current_plan.status == 'APPROVED' else 'bg-secondary' }}">{{ current_plan.status|label }}</span></p>
                     {% else %}
                     <p class="text-muted small mb-2">{{ _('No annual plan created yet for the current year.') }}</p>
                     {% if current_user.can_edit('internal_audit') %}
@@ -123,8 +123,8 @@
                 {% for f in open_findings %}
                     <tr>
                         <td>{{ f.finding_number }}</td><td>{{ f.finding_title }}</td>
-                        <td><span class="badge {{ 'bg-danger' if f.severity == 'CRITICAL' else ('bg-warning text-dark' if f.severity == 'HIGH' else 'bg-secondary') }}">{{ f.severity }}</span></td>
-                        <td>{{ f.target_date or '-' }}</td><td>{{ f.status.replace('_', ' ') }}</td>
+                        <td><span class="badge {{ 'bg-danger' if f.severity == 'CRITICAL' else ('bg-warning text-dark' if f.severity == 'HIGH' else 'bg-secondary') }}">{{ f.severity|label }}</span></td>
+                        <td>{{ f.target_date or '-' }}</td><td>{{ f.status|label }}</td>
                         <td><a href="{{ url_for('internal_audit.finding_detail', finding_id=f.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('View') }}</a></td>
                     </tr>
                 {% else %}

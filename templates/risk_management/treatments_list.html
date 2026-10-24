@@ -26,7 +26,7 @@
                         <td>{{ t.treatment_description[:80] }}</td>
                         <td class="small">{{ (owner.first_name ~ ' ' ~ owner.last_name) if owner else '-' }}</td>
                         <td>{{ t.target_date or '-' }} {% if is_overdue %}<i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="{{ _('Overdue') }}"></i>{% endif %}</td>
-                        <td><span class="badge {{ 'bg-success' if t.status in ('VERIFIED', 'CLOSED') else ('bg-info text-dark' if t.status == 'COMPLETED' else 'bg-secondary') }}">{{ t.status }}</span></td>
+                        <td><span class="badge {{ 'bg-success' if t.status in ('VERIFIED', 'CLOSED') else ('bg-info text-dark' if t.status == 'COMPLETED' else 'bg-secondary') }}">{{ t.status|label }}</span></td>
                         <td><a href="{{ url_for('risk_management.treatment_detail', treatment_id=t.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('View') }}</a></td>
                     </tr>
                 {% else %}

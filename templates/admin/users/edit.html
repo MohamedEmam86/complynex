@@ -106,7 +106,7 @@
                         <select class="form-select" id="manager_id" name="manager_id">
                             <option value="">{{ _('None') }}</option>
                             {% for m in managers %}
-                            <option value="{{ m.id }}" {% if user.manager_id and user.manager_id|int==m.id|int %}selected{% endif %}>{{ m.first_name }} {{ m.last_name }} ({{ m.role }})</option>
+                            <option value="{{ m.id }}" {% if user.manager_id and user.manager_id|int==m.id|int %}selected{% endif %}>{{ m.first_name }} {{ m.last_name }} ({{ m.role|label }})</option>
                             {% endfor %}
                         </select>
                         <div class="form-text">{{ _('Used to route COI, GHE and COBEC declarations to this employee\'s manager for review.') }}</div>

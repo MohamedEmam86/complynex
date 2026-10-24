@@ -255,7 +255,7 @@
             <td>{{ m.match_name or '-' }}</td>
             <td>{{ m.list_source or '-' }}</td>
             <td>{{ m.match_score }}%</td>
-            <td><span class="badge {{ 'badge-resolved' if m.status == 'Resolved' else 'badge-pending' }}">{{ m.status }}</span></td>
+            <td><span class="badge {{ 'badge-resolved' if m.status == 'Resolved' else 'badge-pending' }}">{{ m.status|label }}</span></td>
             <td>{{ m.resolution or '-' }}{% if m.resolution_notes %} — {{ m.resolution_notes }}{% endif %}</td>
             <td>{{ m.resolved_by_name or '-' }}</td>
             <td><span class="ltr">{{ m.resolved_date or '-' }}</span></td>
@@ -290,7 +290,7 @@
     <tbody>
         <tr>
             <td style="width:30%;">{{ _('حالة الجلسة / Session Status') }}</td>
-            <td>{{ session.status }}</td>
+            <td>{{ session.status|label }}</td>
         </tr>
         <tr>
             <td>{{ _('القرار النهائي / Final Decision') }}</td>

@@ -66,10 +66,10 @@
         <td>{{ f.finding_title }}</td>
         <td>
           <span class="badge {{ 'bg-danger' if f.severity in ('CRITICAL','HIGH') else ('bg-warning text-dark' if f.severity == 'MEDIUM' else 'bg-secondary') }}">
-            {{ f.severity }}
+            {{ f.severity|label }}
           </span>
         </td>
-        <td>{{ f.status }}</td>
+        <td>{{ f.status|label }}</td>
         <td>{{ (person.first_name ~ ' ' ~ person.last_name) if person else '-' }}</td>
         <td>{{ f.target_date or '-' }}</td>
       </tr>
@@ -82,7 +82,7 @@
   <h2>{{ _('3. Detail: Root Cause, Recommendation and Agreed Action') }}</h2>
   {% for f in findings %}
   <div class="mb-3 pb-2 border-bottom">
-    <p class="mb-1"><strong>{{ f.finding_number }} — {{ f.finding_title }}</strong> <span class="badge bg-secondary">{{ f.severity }} / {{ f.status }}</span></p>
+    <p class="mb-1"><strong>{{ f.finding_number }} — {{ f.finding_title }}</strong> <span class="badge bg-secondary">{{ f.severity|label }} / {{ f.status|label }}</span></p>
     {% if f.root_cause %}<p class="small mb-1"><strong>{{ _('Root Cause:') }}</strong> {{ f.root_cause }}</p>{% endif %}
     {% if f.recommendation %}<p class="small mb-1"><strong>{{ _('Recommendation:') }}</strong> {{ f.recommendation }}</p>{% endif %}
     {% if f.management_response %}<p class="small mb-1"><strong>{{ _('Management Response:') }}</strong> {{ f.management_response }}</p>{% endif %}

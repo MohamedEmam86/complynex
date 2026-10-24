@@ -18,13 +18,13 @@
     {% if inv.workflow.status != 'approved' %}<span class="alert alert-warning py-1 px-2 mb-0 small">{{ _('Draft — the inventory is not approved yet.') }} <a href="{{ url_for('carbon.workflow', period=p.id) }}">{{ _('Review & approval') }}</a></span>{% endif %}</div>{% endif %}
   {% include 'partials/corp_letterhead.html' %}
   <h2 class="h4">{{ _('Annual carbon footprint disclosure') }} <span class="text-muted">· الإفصاح السنوي عن البصمة الكربونية</span></h2>
-  <p class="small">{{ _('Reporting period') }}: <strong>{{ p.label }}</strong> ({{ p.start_date }} – {{ p.end_date }}) · {{ _('Status') }}: {{ inv.workflow.status }} · {{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+  <p class="small">{{ _('Reporting period') }}: <strong>{{ p.label }}</strong> ({{ p.start_date }} – {{ p.end_date }}) · {{ _('Status') }}: {{ inv.workflow.status|label }} · {{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</p>
   <h3 class="h6 mt-3">1. {{ _('Boundary and methodology') }}</h3>
   <p class="small">{{ _('Calculated under the GHG Protocol Corporate Standard (Scope 2 guidance: location- and market-based), with Scope 3 Category 15 under the PCAF Global Standard. Consolidation approach') }}: <strong>{{ inv.cfg.consolidation_approach or 'operational_control' }}</strong>. {{ _('Base year') }}: {{ inv.cfg.base_year or '-' }}{% if inv.cfg.base_year_tco2e %} ({{ cx.t(inv.cfg.base_year_tco2e) }} tCO2e){% endif %}. {{ _('Scopes reported') }}: {% for sc in inv.enabled %}{{ cx.scope_name(sc) }}{{ ', ' if not loop.last }}{% endfor %}.{% for sc in ('scope1', 'scope2', 'scope3') if sc not in inv.enabled %} {{ _('%(s)s is outside the reporting boundary and not included in the totals.', s=cx.scope_name(sc)) }}{% endfor %}
     {% if inv.cfg.recalculation_policy %}{{ _('Recalculation policy') }}: {{ inv.cfg.recalculation_policy }}{% endif %}</p>
   <table class="table table-sm table-bordered small"><thead><tr><th>{{ _('Entities and sites') }}</th><th>{{ _('Detail') }}</th></tr></thead><tbody>
     {% for e in inv.entities %}<tr><td>{{ e.name }}</td><td>{{ _('ownership') }} {{ e.ownership_pct }}% · {{ _('included') if e.included else _('excluded') }}</td></tr>{% endfor %}
-    {% for s in inv.sites if s.is_active %}<tr><td>{{ s.name }}</td><td>{{ s.site_type }} · {{ s.city or '' }} · {{ s.floor_area_m2 or '-' }} m² · {{ s.headcount or '-' }} {{ _('staff') }}</td></tr>{% endfor %}</tbody></table>
+    {% for s in inv.sites if s.is_active %}<tr><td>{{ s.name }}</td><td>{{ s.site_type|label }} · {{ s.city or '' }} · {{ s.floor_area_m2 or '-' }} m² · {{ s.headcount or '-' }} {{ _('staff') }}</td></tr>{% endfor %}</tbody></table>
   <h3 class="h6 mt-3">2. {{ _('Gross emissions (tCO2e)') }}</h3>
   <table class="table table-sm table-bordered small"><tbody>
     <tr><th>{{ _('Scope 1 — direct') }} · النطاق 1</th><td class="text-end">{{ cx.t(t.scope1) }}</td></tr>
