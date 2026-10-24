@@ -191,7 +191,7 @@ def match_view(m, kind, inputs):
     nm = d.get('name') or {}
     matched = [{'listed': a, 'screened': b} for a, b in (nm.get('matched') or [])]
     if kind == 'SANCTIONS':
-        action = {'CONFIRMED': 'Do not onboard or process. Freeze funds without delay and report to EMLCU and the CBE.',
+        action = {'CONFIRMED': 'Do not onboard or process. Freeze funds without delay and report to EMLCU and the supervisory regulator.',
                   'POTENTIAL': 'Hold the relationship/transaction. Verify identity with the national ID and date of birth, then decide.',
                   'LOW': 'Review and record why it is or is not the same person. Not an alert on its own.'}
     elif kind == 'PEP':
@@ -268,7 +268,7 @@ def overall(sanctions, peps, others, am_summary, adverse_hits):
     am = (am_summary or {}).get('risk_level')
     if s == 3:
         return ('danger', 'Confirmed sanctions match',
-                'Do not proceed. Freeze funds without delay, file the report to EMLCU and notify the CBE. Document the decision below.')
+                'Do not proceed. Freeze funds without delay, file the report to EMLCU and notify the supervisory regulator. Document the decision below.')
     if s == 2:
         return ('danger', 'Potential sanctions match — review required',
                 'Hold onboarding/transactions until the analyst confirms or clears the match with the national ID and date of birth.')

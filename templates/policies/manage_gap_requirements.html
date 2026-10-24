@@ -9,7 +9,7 @@
             <div>
                 <h1 class="h3 mb-1 fw-bold"><i class="bi bi-gear text-primary me-2"></i>{{ _('Manage Compliance
                     Requirements') }}</h1>
-                <p class="text-muted">{{ _('Define the set of policies required for CBE regulatory compliance.') }}</p>
+                <p class="text-muted">{{ _('Define the set of policies required for compliance with the requirements of %(reg)s.', reg=regulator_short) }}</p>
             </div>
             <a href="{{ url_for('policies.gap_analysis') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-2"></i>{{ _('Back to Gap Analysis') }}
@@ -41,7 +41,7 @@
                         <div class="mb-3">
                             <label class="form-label small fw-bold">{{ _('Regulatory Reference') }}</label>
                             <input type="text" name="regulatory_reference" class="form-control"
-                                placeholder="{{ _('e.g. CBE Circular 2023') }}">
+                                placeholder="{{ _('e.g. Circular No. 5 of 2023') }}">
                         </div>
                         <div class="mb-3">
                             <div class="form-check form-switch">

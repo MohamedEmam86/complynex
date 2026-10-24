@@ -109,8 +109,7 @@
     </div>
 
     <div class="alert alert-secondary mt-4 small border-0">
-        <strong>{{ _('Note:') }}</strong> {{ _('In a production environment, this report would be transmitted via encrypted CBE-connect
-        using the required XML format.') }}
+        <strong>{{ _('Note:') }}</strong> {{ _('In a production environment, this report would be transmitted through the secure reporting channel of %(reg)s using the required format.', reg=regulator_short) }}
     </div>
 </div>
 {% endblock %}

@@ -102,8 +102,8 @@ def anonymous_info():
     # Protection laws and policies
     protection_info = {
         'egypt_law': _('Egyptian Labor Law No. 12/2003 protects whistleblowers from retaliation'),
-        'cbe_regulation': _('Central Bank of Egypt mandates confidential reporting mechanisms'),
-        'company_policy': _('ComplyNex has a strict zero-tolerance policy for whistleblower retaliation'),
+        'cbe_regulation': _('Financial regulators require licensed institutions to maintain confidential reporting mechanisms'),
+        'company_policy': _('The company has a strict zero-tolerance policy for whistleblower retaliation'),
         'penalties': _('Retaliation against whistleblowers is grounds for immediate termination')
     }
     

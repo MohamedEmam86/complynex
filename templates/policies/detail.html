@@ -257,7 +257,7 @@
                                 <label class="text-muted small text-uppercase fw-bold d-block mb-1">{{ _('Regulatory
                                     Reference') }}</label>
                                 <span class="badge bg-info-soft text-info rounded-pill px-3">{{
-                                    policy.regulatory_reference or 'CBE General' }}</span>
+                                    policy.regulatory_reference or _('General') }}</span>
                             </div>
                             <div class="col-md-4">
                                 <label class="text-muted small text-uppercase fw-bold d-block mb-1">{{ _('Next Review')
@@ -360,8 +360,7 @@
                                 acknowledgment_date or policy.updated_at }}</b></p>
                     </div>
                     {% else %}
-                    <p class="text-muted small mb-4">{{ _('I hereby certify that I have read, understood, and agree to
-                        comply with the terms of this policy as per CBE regulatory requirements.') }}</p>
+                    <p class="text-muted small mb-4">{{ _('I hereby certify that I have read, understood, and agree to comply with the terms of this policy as per applicable regulatory requirements.') }}</p>
                     <form method="POST" action="{{ url_for('policies.acknowledge_policy', id=policy.id) }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-4">

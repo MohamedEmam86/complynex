@@ -691,7 +691,7 @@ def export_gap_analysis():
             
         writer.writerow([
             gap['required'].policy_name_en,
-            gap['required'].regulatory_reference or 'CBE Circular 2023',
+            gap['required'].regulatory_reference or '',
             _('Mandatory') if gap['required'].is_mandatory else _('Recommended'),
             status,
             gap['policy'].policy_name if gap['policy'] else ''
@@ -711,7 +711,7 @@ def export_gap_analysis():
 @permission_required('policies')
 @_policy_managers_only
 def gap_analysis():
-    """View policies gap analysis against CBE requirements"""
+    """View policies gap analysis against the regulator's requirements"""
     
     gaps = Policy.get_gap_analysis()
     return render_template('policies/gap_analysis.html', gaps=gaps)

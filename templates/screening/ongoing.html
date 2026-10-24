@@ -105,7 +105,7 @@
           {% if can_edit %}
           <label class="form-label small fw-bold mt-2">{{ _('Why these cadences?') }} <span class="text-danger">*</span></label>
           <textarea name="rationale" class="form-control form-control-sm" rows="2" required
-                    placeholder="{{ _('e.g. Aligned to the CBE-approved AML risk methodology approved by the Compliance Committee on ...') }}">{{ config[0].rationale or '' if config }}</textarea>
+                    placeholder="{{ _('e.g. Aligned to the AML risk methodology approved by the Compliance Committee on ...') }}">{{ config[0].rationale or '' if config }}</textarea>
           <div class="form-text">{{ _('Recorded against your name. An auditor will ask who set these and on what basis.') }}</div>
           <button class="btn btn-sm btn-primary w-100 mt-2">{{ _('Save cadences') }}</button>
           {% else %}

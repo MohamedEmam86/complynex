@@ -38,7 +38,7 @@ class ReportingService:
         into a structured compliance report.
         """
         report = {
-            'report_id': f"CBE-SAR-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            'report_id': f"SAR-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             'reporting_period': {
                 'start': start_date,
                 'end': end_date
