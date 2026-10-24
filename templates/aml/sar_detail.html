@@ -1,30 +1,71 @@
 {% extends "base.html" %}
 {% block title %}{{ sar.sar_reference }}{% endblock %}
 {% block content %}
-{% set ar = get_locale()|string == 'ar' %}
 {% set st = sar.investigation_status or 'NEW' %}
-{% set labels = {} %}{% for code, en, a in statuses %}{% set _x = labels.update({code: (a if ar else en)}) %}{% endfor %}
+{% set labels = status_labels %}
+{% set closed = st in ('NO_STR', 'FILED', 'CLOSED') %}
 <div class="container-fluid">
-  <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 pb-2 mb-3 border-bottom">
     <div>
       <h1 class="h3 mb-0">{{ _('Suspicious activity report') }} <code>{{ sar.sar_reference }}</code></h1>
       <div class="small text-muted">{{ _('Confidential — tipping-off rules apply.') }}</div>
     </div>
-    <div><span class="badge {{ 'bg-danger' if st in ('FILE_SAR', 'FILED') else ('bg-secondary' if st == 'NO_STR' else 'bg-primary') }} fs-6">{{ labels.get(st, st) }}</span>
-      <a href="{{ url_for('aml.sar_list') }}" class="btn btn-sm btn-outline-secondary ms-2">{{ _('Back to SARs') }}</a></div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <span class="badge bg-light text-dark border">{{ _('Source') }}: {{ source_labels.get(sar.source, sar.source) }}</span>
+      {% if due %}<span class="badge {{ 'bg-danger' if due.overdue else ('bg-warning text-dark' if due.days <= 3 else 'bg-info text-dark') }} fs-6">{{ due_text(due) }}</span>{% endif %}
+      <span class="badge {{ 'bg-danger' if st in ('FILE_SAR', 'FILED') else ('bg-secondary' if st in ('NO_STR', 'CLOSED') else 'bg-primary') }} fs-6">{{ labels.get(st, st) }}</span>
+      <a href="{{ url_for('aml.sar_list') }}" class="btn btn-sm btn-outline-secondary">{{ _('Back to the register') }}</a></div>
   </div>
   <div class="row g-3">
     <div class="col-lg-6">
       <div class="card mb-3"><div class="card-header fw-semibold">{{ _('Report') }}</div><div class="card-body">
         <p><strong>{{ _('Customer') }}:</strong>
-          {% if sar.customer_id %}<a href="{{ url_for('aml.view_customer', id=sar.customer_id) }}">{{ sar.customer_full_name or sar.customer_name }}</a> ({{ sar.customer_reference or '-' }}){% else %}-{% endif %}</p>
+          {% if sar.customer_id %}<a href="{{ url_for('aml.view_customer', id=sar.customer_id) }}">{{ sar.customer_full_name or sar.customer_name }}</a> ({{ sar.customer_reference or '-' }}){% else %}{{ sar.customer_name or '-' }}{% endif %}</p>
         <p><strong>{{ _('Activity Date') }}:</strong> {{ sar.activity_date or '-' }} · <strong>{{ _('Discovery Date') }}:</strong> {{ sar.discovery_date or '-' }}</p>
         <p><strong>{{ _('Amount') }}:</strong> {{ "{:,.2f}".format(sar.amount_involved or 0) }} {{ sar.currency or 'EGP' }}</p>
+        <p><strong>{{ _('Statutory deadline') }}:</strong>
+          {% if deadline %}{{ deadline }}{% if due %} — {{ due_text(due) }}{% endif %}
+          {% elif cfg.days and cfg.basis == 'decision' %}{{ _('Starts when the MLRO decides to report.') }}
+          {% elif not cfg.days %}{{ _('No statutory deadline is configured.') }}{% else %}-{% endif %}</p>
+        {% if sar.unusual_reference %}<p class="small"><strong>{{ _('Unusual-transactions register entry') }}:</strong> {{ sar.unusual_reference }}</p>{% endif %}
+        {% if sar.employee_report_reference %}<p class="small"><strong>{{ _('Employee report') }}:</strong>
+          {% if current_user.role in ('compliance_manager', 'admin') %}<a href="{{ url_for('aml.employee_report_view', report_id=sar.employee_report_id) }}">{{ sar.employee_report_reference }}</a>{% else %}{{ sar.employee_report_reference }}{% endif %}</p>{% endif %}
         <p class="mb-1"><strong>{{ _('Suspicion Description') }}:</strong></p>
         <p style="white-space: pre-wrap;">{{ sar.activity_description or '-' }}</p>
         {% if sar.red_flags_identified %}<p class="mb-1"><strong>{{ _('Red flags') }}:</strong></p><p style="white-space: pre-wrap;">{{ sar.red_flags_identified }}</p>{% endif %}
+        {% if legacy_attachments or report_attachments %}<p class="mb-1"><strong>{{ _('Attachments') }}:</strong></p>
+          <ul class="small">{% for a in legacy_attachments + report_attachments %}<li><a href="{{ url_for('attachments.download', attachment_id=a.id) }}">{{ a.filename }}</a></li>{% endfor %}</ul>{% endif %}
         <p class="small text-muted mb-0">{{ _('Raised by') }} {{ names.get('reported_by', '-') }} · {{ sar.report_date or '-' }}</p>
       </div></div>
+
+      <div class="card mb-3"><div class="card-header fw-semibold">{{ _('Linked alerts and transactions') }}</div><div class="card-body">
+        <table class="table table-sm mb-2">
+          <thead><tr><th>{{ _('Type') }}</th><th>{{ _('Reference') }}</th><th>{{ _('Details') }}</th><th>{{ _('Linked by') }}</th><th></th></tr></thead>
+          <tbody>
+          {% for l in links %}
+          <tr class="{{ 'text-muted text-decoration-line-through' if l.unlinked_at }}">
+            <td>{{ link_labels.get(l.link_type, l.link_type) }}</td>
+            <td>{% if l.link_type == 'tm_alert' and not l.unlinked_at %}<a href="{{ url_for('aml.view_alert', alert_id=l.target_id) }}">{{ l.label }}</a>{% elif l.link_type == 'transaction' and not l.unlinked_at %}<a href="{{ url_for('aml.view_transaction', tx_id=l.target_id) }}">{{ l.label }}</a>{% else %}{{ l.label }}{% endif %}</td>
+            <td class="small">{% if l.alert_status %}{{ alert_status_labels.get(l.alert_status, l.alert_status) }} · {% endif %}{{ l.detail }}</td>
+            <td class="small">{{ l.linked_by_name or _('Migrated') }}<div class="text-muted">{{ l.linked_at.strftime('%Y-%m-%d %H:%M') if l.linked_at }}</div>
+              {% if l.unlinked_at %}<div class="text-danger">{{ _('Removed by') }} {{ l.unlinked_by_name }} · {{ l.unlinked_at.strftime('%Y-%m-%d %H:%M') }}: {{ l.unlink_reason }}</div>{% endif %}</td>
+            <td>{% if not l.unlinked_at and current_user.can_edit('aml') and not closed %}
+              <form method="POST" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="unlink"><input type="hidden" name="link_id" value="{{ l.id }}">
+                <input type="text" name="reason" class="form-control form-control-sm" required minlength="5" placeholder="{{ _('Reason') }}">
+                <button class="btn btn-sm btn-outline-danger" title="{{ _('Remove link') }}"><i class="bi bi-x-lg"></i></button></form>{% endif %}</td>
+          </tr>
+          {% else %}<tr><td colspan="5" class="text-muted small">{{ _('Nothing linked yet.') }}</td></tr>{% endfor %}
+          </tbody>
+        </table>
+        {% if current_user.can_edit('aml') and not closed %}
+        <form method="POST" class="row g-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="link">
+          <div class="col-sm-4"><select name="link_type" class="form-select form-select-sm">{% for code, en, a in link_types %}<option value="{{ code }}">{{ link_labels[code] }}</option>{% endfor %}</select></div>
+          <div class="col-sm-5"><input type="text" name="target_ref" class="form-control form-control-sm" required placeholder="{{ _('Alert or transaction reference') }}"></div>
+          <div class="col-sm-3"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Add link') }}</button></div>
+        </form>
+        {% endif %}
+      </div></div>
+
       <div class="card mb-3"><div class="card-header fw-semibold">{{ _('Investigation') }}</div><div class="card-body">
         <p><strong>{{ _('Assigned to') }}:</strong> {{ names.get('assigned_to', _('Not assigned')) }}</p>
         {% if sar.investigation_findings %}<p class="mb-1"><strong>{{ _('Findings') }}:</strong></p><p style="white-space: pre-wrap;">{{ sar.investigation_findings }}</p>{% endif %}
@@ -36,7 +77,7 @@
       </div></div>
     </div>
     <div class="col-lg-6">
-      {% if current_user.can_edit('aml') and st not in ('NO_STR', 'FILED') %}
+      {% if current_user.can_edit('aml') and not closed %}
       <div class="card mb-3"><div class="card-header fw-semibold">{{ _('1. Assign') }}</div><div class="card-body">
         <form method="POST" class="d-flex gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="assign">
           <select name="assigned_to" class="form-select form-select-sm" required>{% for u in staff %}<option value="{{ u.id }}" {{ 'selected' if u.id == sar.assigned_to }}>{{ u.first_name }} {{ u.last_name }}</option>{% endfor %}</select>

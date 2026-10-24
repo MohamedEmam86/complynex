@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ r.reference }}{% endblock %}
+{% block content %}
+{% set open_ = r.status in ('NEW', 'UNDER_REVIEW') %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <div>
+      <h1 class="h3 mb-0">{{ _('Internal suspicious-activity report') }} <code>{{ r.reference }}</code></h1>
+      <div class="small text-muted">{{ _('Confidential — tipping-off rules apply.') }}</div>
+    </div>
+    <div><span class="badge bg-secondary fs-6">{{ status_labels.get(r.status, r.status) }}</span>
+      <a href="{{ url_for('aml.employee_report_inbox') }}" class="btn btn-sm btn-outline-secondary ms-2">{{ _('Back to the inbox') }}</a></div>
+  </div>
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card mb-3"><div class="card-header fw-semibold">{{ _('Report') }}</div><div class="card-body">
+        <p><strong>{{ _('Reported by') }}:</strong> {{ r.reporter_name }}{% if r.reporter_job_title %} — {{ r.reporter_job_title }}{% endif %} · {{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+        <p><strong>{{ _('Subject') }}:</strong> {{ r.subject_name }} ({{ subject_labels.get(r.subject_type, r.subject_type) }}){% if r.subject_ref %} · {{ r.subject_ref }}{% endif %}</p>
+        {% if r.activity_from or r.activity_to %}<p><strong>{{ _('Activity period') }}:</strong> {{ r.activity_from or '-' }} → {{ r.activity_to or '-' }}</p>{% endif %}
+        <p class="mb-1"><strong>{{ _('What was noticed') }}:</strong></p>
+        <p style="white-space: pre-wrap;">{{ r.description }}</p>
+        {% if r.related_transactions %}<p class="mb-1"><strong>{{ _('Related transactions') }}:</strong></p><p style="white-space: pre-wrap;">{{ r.related_transactions }}</p>{% endif %}
+        {% if attachments %}<p class="mb-1"><strong>{{ _('Attachments') }}:</strong></p>
+          <ul>{% for a in attachments %}<li><a href="{{ url_for('attachments.download', attachment_id=a.id) }}">{{ a.filename }}</a></li>{% endfor %}</ul>{% endif %}
+        {% if r.sar_id %}<p><strong>{{ _('STR case') }}:</strong> <a href="{{ url_for('aml.sar_detail', sar_id=r.sar_id) }}">{{ r.sar_reference }}</a></p>{% endif %}
+        {% if r.close_reason %}<p><strong>{{ _('Reason for closing') }}:</strong> {{ r.close_reason }}</p>{% endif %}
+      </div></div>
+      <div class="card"><div class="card-header fw-semibold">{{ _('History') }}</div><div class="card-body small">
+        {% for e in events %}<div class="border-bottom py-1">{{ e.created_at.strftime('%Y-%m-%d %H:%M') }} — {{ e.actor_name }}: {{ action_labels.get(e.action, e.action) }}{% if e.note %} — {{ e.note }}{% endif %}</div>{% endfor %}
+      </div></div>
+    </div>
+    <div class="col-lg-5">
+      {% if open_ %}
+      {% if r.status == 'NEW' %}
+      <div class="card mb-3"><div class="card-body">
+        <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="review">
+          <button class="btn btn-sm btn-outline-primary">{{ _('Start review') }}</button></form>
+      </div></div>
+      {% endif %}
+      <div class="card mb-3 border-danger"><div class="card-header fw-semibold">{{ _('Convert to an STR case') }}</div><div class="card-body">
+        <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="convert">
+          <label class="form-label small">{{ _('Customer in the system (optional)') }}</label>
+          <select name="customer_id" class="form-select form-select-sm mb-2"><option value="">—</option>
+            {% for c in customers %}<option value="{{ c.id }}" {{ 'selected' if c.id == r.customer_id }}>{{ c.full_name }} ({{ c.customer_reference }})</option>{% endfor %}</select>
+          <label class="form-label small">{{ _('Amount involved (if known)') }}</label>
+          <input type="number" step="0.01" min="0" name="amount" class="form-control form-control-sm mb-2">
+          <button class="btn btn-sm btn-danger">{{ _('Open STR case') }}</button>
+          <div class="small text-muted mt-1">{{ _('The case opens in the STR register with source "Employee report" and links back to this report.') }}</div></form>
+      </div></div>
+      <div class="card mb-3"><div class="card-header fw-semibold">{{ _('Close without action') }}</div><div class="card-body">
+        <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="close">
+          <textarea name="reason" class="form-control form-control-sm mb-2" rows="3" required minlength="20" placeholder="{{ _('Reason (at least 20 characters)') }}"></textarea>
+          <button class="btn btn-sm btn-outline-secondary">{{ _('Close – no action') }}</button></form>
+      </div></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

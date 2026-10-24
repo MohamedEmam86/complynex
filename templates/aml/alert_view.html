@@ -1,62 +1,60 @@
 {% extends "base.html" %}
-{% block title %}Alert {{ alert.alert_reference }}{% endblock %}
+{% block title %}{{ _('Alert') }} {{ alert.alert_reference }}{% endblock %}
 {% block extra_css %}
 <style>
-.severity-HIGH{background:#f8d7da;color:#842029;padding:3px 10px;border-radius:4px;font-weight:600;}
+.severity-HIGH, .severity-CRITICAL{background:#f8d7da;color:#842029;padding:3px 10px;border-radius:4px;font-weight:600;}
 .severity-MEDIUM{background:#fff3cd;color:#664d03;padding:3px 10px;border-radius:4px;font-weight:600;}
 .severity-LOW{background:#d1ecf1;color:#0c5460;padding:3px 10px;border-radius:4px;font-weight:600;}
 </style>
 {% endblock %}
 {% block content %}
 <div class="container-fluid mt-4">
-  <div class="d-flex justify-content-between mb-3">
-    <h4><i class="fas fa-exclamation-triangle text-warning"></i> Alert: {{ alert.alert_reference }}</h4>
-    <a href="{{ url_for('aml.alert_list') }}" class="btn btn-outline-secondary btn-sm">{{ _('← Back to Alerts') }}</a>
+  <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+    <h4><i class="bi bi-exclamation-triangle text-warning"></i> {{ _('Alert') }}: {{ alert.alert_reference }}</h4>
+    <div class="d-flex gap-2">
+      {% if current_user.can_edit('aml') and alert.status != 'SAR_CREATED' %}
+      <a href="{{ url_for('aml.create_sar', alert_id=alert.id) }}" class="btn btn-danger btn-sm"><i class="bi bi-journal-plus"></i> {{ _('Create SAR from alert') }}</a>
+      {% endif %}
+      <a href="{{ url_for('aml.alert_list') }}" class="btn btn-outline-secondary btn-sm">{{ _('← Back to Alerts') }}</a>
+    </div>
   </div>
 
   <div class="row g-3">
-    <!-- Alert Details -->
     <div class="col-md-8">
       <div class="card shadow-sm mb-3">
         <div class="card-header bg-warning bg-opacity-10"><strong>{{ _('Alert Details') }}</strong></div>
         <div class="card-body">
           <div class="row">
             <div class="col-md-6">
-              <p><strong>{{ _('Rule:') }}</strong> {{ alert.rule_name }} ({{ alert.rule_code }})</p>
-              <p><strong>{{ _('Severity:') }}</strong> <span class="severity-{{ alert.alert_severity }}">{{ alert.alert_severity }}</span></p>
-              <p><strong>{{ _('Status:') }}</strong> <span class="badge bg-secondary fs-6">{{ alert.status }}</span></p>
+              <p><strong>{{ _('Rule:') }}</strong> {{ rule_label }} ({{ alert.rule_code }})</p>
+              <p><strong>{{ _('Severity:') }}</strong> <span class="severity-{{ alert.alert_severity }}">{{ severity_labels.get(alert.alert_severity, alert.alert_severity) }}</span> · <strong>{{ _('Score') }}:</strong> {{ alert.risk_score if alert.risk_score is not none else '-' }}</p>
+              <p><strong>{{ _('Status:') }}</strong> <span class="badge bg-secondary fs-6">{{ status_labels.get(alert.status, alert.status) }}</span></p>
+              <p><strong>{{ _('Assigned To') }}:</strong> {{ alert.assigned_name or _('Not assigned') }}</p>
               <p><strong>{{ _('Date:') }}</strong> {{ alert.alert_date[:16] if alert.alert_date else '-' }}</p>
             </div>
             <div class="col-md-6">
-              <p><strong>{{ _('Customer:') }}</strong> <a href="{{ url_for('aml.view_customer', id=alert.cust_id) }}">{{ alert.full_name or alert.company_name }}</a></p>
+              <p><strong>{{ _('Customer:') }}</strong> {% if alert.cust_id %}<a href="{{ url_for('aml.view_customer', id=alert.cust_id) }}">{{ alert.full_name or alert.company_name }}</a>{% else %}-{% endif %}</p>
               <p><strong>{{ _('Reference:') }}</strong> {{ alert.customer_reference }}</p>
               <p><strong>{{ _('Risk Level:') }}</strong> {{ alert.risk_classification }}</p>
+              {% if linked_cases %}<p><strong>{{ _('STR cases') }}:</strong>
+                {% for s in linked_cases %}<a href="{{ url_for('aml.sar_detail', sar_id=s.id) }}">{{ s.sar_reference }}</a> ({{ case_status_labels.get(s.investigation_status or 'NEW', s.investigation_status) }}){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
             </div>
           </div>
-          <div class="alert alert-warning mt-2">
-            <strong>{{ _('Detection:') }}</strong> {{ alert.alert_description }}
-          </div>
+          <div class="alert alert-warning mt-2"><strong>{{ _('Detection:') }}</strong> {{ alert.alert_description }}</div>
           <p class="text-muted small"><strong>{{ _('Rule Description:') }}</strong> {{ alert.rule_description }}</p>
         </div>
       </div>
 
-      <!-- Triggered Transactions -->
       {% if transactions %}
       <div class="card shadow-sm mb-3">
         <div class="card-header"><strong>{{ _('Triggered Transactions') }}</strong></div>
-        <div class="card-body p-0">
+        <div class="card-body p-0 table-responsive">
           <table class="table table-sm mb-0">
             <thead class="table-light"><tr><th>{{ _('Reference') }}</th><th>{{ _('Date') }}</th><th>{{ _('Type') }}</th><th>{{ _('Amount') }}</th><th>{{ _('Counterparty') }}</th><th>{{ _('Country') }}</th></tr></thead>
             <tbody>
               {% for t in transactions %}
-              <tr>
-                <td><code>{{ t.transaction_reference }}</code></td>
-                <td>{{ t.transaction_date[:10] }}</td>
-                <td>{{ t.transaction_type }}</td>
-                <td><strong>{{ "{:,.2f}".format(t.amount) }} {{ t.currency }}</strong></td>
-                <td>{{ t.counterparty_name or '-' }}</td>
-                <td>{{ t.counterparty_country or '-' }}</td>
-              </tr>
+              <tr><td><code>{{ t.transaction_reference }}</code></td><td>{{ (t.transaction_date or '')[:10] }}</td><td>{{ t.transaction_type }}</td>
+                <td><strong>{{ "{:,.2f}".format(t.amount or 0) }} {{ t.currency }}</strong></td><td>{{ t.counterparty_name or '-' }}</td><td>{{ t.counterparty_country or '-' }}</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -64,20 +62,35 @@
       </div>
       {% endif %}
 
-      <!-- Recent Customer Transactions -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-header"><strong>{{ _('Activity history') }}</strong> <small class="text-muted">— {{ _('append-only record of every action') }}</small></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0">
+            <thead class="table-light"><tr><th>{{ _('When') }}</th><th>{{ _('Who') }}</th><th>{{ _('Action') }}</th><th>{{ _('Status') }}</th><th>{{ _('Details') }}</th></tr></thead>
+            <tbody>
+            {% for e in events %}
+              <tr><td class="text-nowrap small">{{ e.created_at.strftime('%Y-%m-%d %H:%M') }}</td><td class="small">{{ e.actor_name or '-' }}</td>
+                <td class="small">{{ action_labels.get(e.action, e.action) }}</td>
+                <td class="small">{% if e.from_status != e.to_status %}{{ status_labels.get(e.from_status, e.from_status or '-') }} → {{ status_labels.get(e.to_status, e.to_status) }}{% else %}{{ status_labels.get(e.to_status, e.to_status or '-') }}{% endif %}</td>
+                <td class="small">{% if e.assignee_name %}{{ _('Assigned to') }} {{ e.assignee_name }}. {% endif %}{{ e.note or '' }}</td></tr>
+            {% else %}
+              <tr><td colspan="5" class="text-muted small">{{ _('No activity yet.') }}</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card shadow-sm">
         <div class="card-header"><strong>{{ _('Recent Customer Transactions') }}</strong></div>
-        <div class="card-body p-0">
+        <div class="card-body p-0 table-responsive">
           <table class="table table-sm mb-0">
             <thead class="table-light"><tr><th>{{ _('Date') }}</th><th>{{ _('Type') }}</th><th>{{ _('Amount') }}</th><th>{{ _('Counterparty') }}</th><th>{{ _('Alert') }}</th></tr></thead>
             <tbody>
               {% for t in recent_txs %}
               <tr class="{% if t.alert_raised %}table-warning{% endif %}">
-                <td>{{ t.transaction_date[:10] }}</td>
-                <td>{{ t.transaction_type }}</td>
-                <td>{{ "{:,.2f}".format(t.amount) }} {{ t.currency }}</td>
-                <td>{{ t.counterparty_name or '-' }}</td>
-                <td>{% if t.alert_raised %}<span class="badge bg-danger">{{ t.rule_triggered }}</span>{% else %}-{% endif %}</td>
+                <td>{{ (t.transaction_date or '')[:10] }}</td><td>{{ t.transaction_type }}</td><td>{{ "{:,.2f}".format(t.amount or 0) }} {{ t.currency }}</td>
+                <td>{{ t.counterparty_name or '-' }}</td><td>{% if t.alert_raised %}<span class="badge bg-danger">{{ t.rule_triggered }}</span>{% else %}-{% endif %}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -86,13 +99,14 @@
       </div>
     </div>
 
-    <!-- Action Panel -->
     <div class="col-md-4">
+      {% if current_user.can_edit('aml') %}
       <div class="card shadow-sm">
         <div class="card-header bg-primary text-white"><strong>{{ _('Take Action') }}</strong></div>
         <div class="card-body">
           <form method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if not closed %}
             <div class="mb-3">
               <label class="form-label fw-bold">{{ _('Assign To') }}</label>
               <select name="assigned_to" class="form-select form-select-sm">
@@ -101,21 +115,28 @@
                 <option value="{{ u.id }}" {% if alert.assigned_to==u.id %}selected{% endif %}>{{ u.first_name }} {{ u.last_name }}</option>
                 {% endfor %}
               </select>
+              <div class="form-text">{{ _('Only staff with AML or transaction-monitoring rights are listed.') }}</div>
             </div>
+            {% endif %}
             <div class="mb-3">
-              <label class="form-label fw-bold">{{ _('Investigation Notes') }}</label>
-              <textarea name="notes" class="form-control form-control-sm" rows="4" placeholder="{{ _('Add your findings...') }}">{{ alert.investigation_notes or '' }}</textarea>
+              <label class="form-label fw-bold">{{ _('Note') }}</label>
+              <textarea name="notes" class="form-control form-control-sm" rows="4" placeholder="{{ _('Add your findings...') }}"></textarea>
+              <div class="form-text">{{ _('Each action is saved in the history with your name and the time; it cannot be edited or deleted.') }}</div>
             </div>
             <div class="d-grid gap-2">
+              <button name="action" value="note" class="btn btn-outline-secondary btn-sm">{{ _('Add note') }}</button>
+              {% if not closed %}
               <button name="action" value="assign" class="btn btn-outline-primary btn-sm">{{ _('Assign') }}</button>
               <button name="action" value="investigate" class="btn btn-outline-info btn-sm">{{ _('Mark Investigating') }}</button>
               <button name="action" value="escalate" class="btn btn-outline-warning btn-sm">{{ _('Escalate') }}</button>
               <button name="action" value="false_positive" class="btn btn-outline-success btn-sm">{{ _('False Positive') }}</button>
-              <button name="action" value="close" class="btn btn-outline-danger btn-sm" data-confirm="Close this alert?">{{ _('Close Alert') }}</button>
+              <button name="action" value="close" class="btn btn-outline-danger btn-sm" data-confirm="{{ _('Close this alert?') }}">{{ _('Close Alert') }}</button>
+              {% endif %}
             </div>
           </form>
         </div>
       </div>
+      {% endif %}
     </div>
   </div>
 </div>

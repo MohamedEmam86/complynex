@@ -819,7 +819,37 @@ class Seeder:
                        (uid,))
             db.commit()
             Case.sync_from_source('UNUSUAL_TXN', uid)
+            # the study above was written straight into the old register: bring its STR-register case in line
+            from aml.str_register import refresh_case_from_unusual
+            refresh_case_from_unusual(uid, db=db)
         db.commit()
+        # one STR register: alert scores, links for the seeded SARs, a deadline setting (fictional company)
+        c.q("""UPDATE tm_alerts SET risk_score = CASE upper(COALESCE(alert_severity, '')) WHEN 'CRITICAL' THEN 95
+               WHEN 'HIGH' THEN 80 WHEN 'MEDIUM' THEN 50 WHEN 'LOW' THEN 20 ELSE 0 END WHERE risk_score IS NULL""")
+        c.q("""UPDATE suspicious_activities s SET source = 'tm_alert'
+               WHERE source = 'manual' AND EXISTS (SELECT 1 FROM tm_alerts a WHERE a.sar_id = s.id)""")
+        c.q("""INSERT INTO aml_sar_links (sar_id, link_type, target_id, note, linked_by)
+               SELECT DISTINCT a.sar_id, 'tm_alert', a.id, 'demo', %s FROM tm_alerts a WHERE a.sar_id IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM aml_sar_links l WHERE l.sar_id = a.sar_id AND l.link_type = 'tm_alert'
+                               AND l.target_id = a.id AND l.unlinked_at IS NULL)""", (aml,))
+        c.q("""INSERT INTO aml_sar_links (sar_id, link_type, target_id, note, linked_by)
+               SELECT DISTINCT t.sar_id, 'transaction', t.id, 'demo', %s FROM transactions t WHERE t.sar_id IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM aml_sar_links l WHERE l.sar_id = t.sar_id AND l.link_type = 'transaction'
+                               AND l.target_id = t.id AND l.unlinked_at IS NULL)""", (aml,))
+        self.commit()
+        from models.settings import Settings
+        Settings.set('aml_str_deadline_days', '15', 'STR register: days to the statutory deadline')
+        Settings.set('aml_str_deadline_basis', 'detection', 'STR register: deadline counted from detection or decision date')
+        # an internal suspicious-activity report from a loan officer, waiting in the MLRO inbox
+        from aml import employee_reports as empr
+        lo = c.users.get('lo1')
+        if lo:
+            empr.submit_report(lo, {
+                'subject_type': 'customer', 'subject_name': k['walid']['en'], 'subject_ref': k['walid']['ref'],
+                'description': 'Customer asked twice how much cash he can pay in without the branch asking for '
+                               'documents, then came back with the full settlement amount in cash.',
+                'related_transactions': 'Early settlement in cash at the branch counter.',
+                'activity_from': str(self.dt(40, 10).date()), 'activity_to': str(self.dt(36, 10).date())}, db=db)
 
     # ------------------------------------------------------------ internal lists
     def lists(self):

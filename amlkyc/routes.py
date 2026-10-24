@@ -343,32 +343,21 @@ def employees():
 @bp.route('/unusual')
 @perm()
 def unusual():
-    return render_template('amlkyc/unusual.html', rows=service.unusual_list(request.args.get('status') or None),
-                           f_status=request.args.get('status') or '', missing=service.reconcile_register())
+    """Merged into the one STR register (aml.sar_list); kept so old links work."""
+    return redirect(url_for('aml.sar_list', register='1',
+                            status={'candidate': 'NEW', 'under_study': 'UNDER_INVESTIGATION', 'str_filed': 'FILED',
+                                    'no_str': 'NO_STR'}.get(request.args.get('status') or '') or None))
 
 
 @bp.route('/unusual/<int:item_id>', methods=['GET', 'POST'])
 @perm()
 def unusual_item(item_id):
-    db = get_db()
-    u = db.execute("SELECT * FROM aml_unusual_transactions WHERE id = %s", (item_id,)).fetchone()
-    if not u:
+    """An entry of the old unusual-transactions register opens its case in the STR register."""
+    from aml.str_register import ensure_case_for_unusual
+    sid = ensure_case_for_unusual(item_id)
+    if not sid:
         abort(404)
-    if request.method == 'POST':
-        if not current_user.can_edit('aml'):
-            abort(403)
-        try:
-            service.unusual_study(item_id, current_user.id, request.form.get('analysis'),
-                                  request.form.get('decision') or None, request.form.get('str_reference'))
-            _log('amlkyc_unusual_study', item_id, request.form.get('decision'))
-            flash(_('Saved.'), 'success')
-        except service.AssuranceError as e:
-            _err(e)
-        return redirect(url_for('amlkyc.unusual_item', item_id=item_id))
-    return render_template('amlkyc/unusual_item.html', u=dict(u),
-                           attach_module='aml', attach_record_type='aml_unusual', attach_record_id=item_id,
-                           attach_items=list_attachments('aml', 'aml_unusual', item_id),
-                           attach_can_edit=current_user.can_edit('aml') and u['status'] in ('candidate', 'under_study'))
+    return redirect(url_for('aml.sar_detail', sar_id=sid))
 
 
 # ------------------------------------------------------------------ KYC
