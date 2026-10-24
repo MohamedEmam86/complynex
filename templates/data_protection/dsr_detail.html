@@ -109,7 +109,7 @@
                                 <span class="fw-bold text-primary small">{{ event.action_type|code_label }}</span>
                                 <span class="text-muted smaller">{{ event.action_date or '—' }}</span>
                             </div>
-                            <div class="small">{{ event.action_description }}</div>
+                            <div class="small">{{ event.action_description|history }}</div>
                             <div class="smaller text-muted">{{ _('By') }}: {{ event.user_name or '-' }}</div>
                         </li>
                         {% endfor %}

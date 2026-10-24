@@ -12,6 +12,9 @@ def seed(ctx):
     # company is supervised by the FRA, so its own pages must not cite the CBE
     ctx.q(r"""UPDATE required_policies SET regulatory_reference = regexp_replace(regulatory_reference, '\mCBE\M', 'FRA', 'g')
              WHERE regulatory_reference ~ '\mCBE\M'""")
+    # the CBE does not supervise the demo company: keep its reports, but not as active obligations
+    ctx.q("UPDATE regulatory_reports SET is_active = 0 WHERE regulator_id IN (SELECT id FROM regulators WHERE regulator_code = 'CBE')")
+    ctx.q("UPDATE regulators SET is_active = 0 WHERE regulator_code = 'CBE'")
     ctx.q(r"""UPDATE risk_categories SET category_description = regexp_replace(category_description, '\mCBE\M', 'FRA', 'g')
              WHERE category_description ~ '\mCBE\M'""")
     ctx.q(r"""UPDATE whistleblowing_categories

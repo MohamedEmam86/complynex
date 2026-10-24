@@ -12,7 +12,7 @@
     <div class="card shadow-sm mb-3">
         <div class="card-body">
             <dl class="row mb-0">
-                <dt class="col-3">{{ _('Title') }}</dt><dd class="col-9">{{ case.title or '-' }}</dd>
+                <dt class="col-3">{{ _('Title') }}</dt><dd class="col-9">{{ (case.title or '-')|label_codes }}</dd>
                 <dt class="col-3">{{ _('Status') }}</dt><dd class="col-9">{{ case.status|code_label }}</dd>
                 <dt class="col-3">{{ _('Priority') }}</dt><dd class="col-9">{{ case.priority|code_label }}</dd>
                 <dt class="col-3">{{ _('Owner') }}</dt><dd class="col-9">{{ case.assigned_to|username }}</dd>

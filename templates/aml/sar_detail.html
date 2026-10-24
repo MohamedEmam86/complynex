@@ -111,7 +111,7 @@
       </div></div>
       {% endif %}
       <div class="card"><div class="card-header fw-semibold">{{ _('History') }}</div><div class="card-body small">
-        {% for h in history %}<div class="border-bottom py-1">{{ h.at.strftime('%Y-%m-%d %H:%M') if h.at and h.at.strftime else h.at }} — {{ h.first_name }} {{ h.last_name }}: {{ (h.details or '').split(' [deploy:')[0] }}</div>{% else %}<span class="text-muted">{{ _('No activity yet.') }}</span>{% endfor %}
+        {% for h in history %}<div class="border-bottom py-1">{{ h.at.strftime('%Y-%m-%d %H:%M') if h.at and h.at.strftime else h.at }} — {{ h.first_name }} {{ h.last_name }}: {{ (h.details or '').split(' [deploy:')[0]|history }}</div>{% else %}<span class="text-muted">{{ _('No activity yet.') }}</span>{% endfor %}
       </div></div>
     </div>
   </div>

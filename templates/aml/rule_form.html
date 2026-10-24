@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}{{ action }} TM Rule{% endblock %}
+{% block title %}{{ _('Edit TM Rule') if action == 'Edit' else _('Create TM Rule') }}{% endblock %}
 {% block content %}
 <div class="container mt-4">
   <div class="row">
     <div class="col-md-8 offset-md-2">
       <div class="card shadow-sm">
         <div class="card-header bg-primary text-white d-flex justify-content-between">
-          <h5 class="mb-0"><i class="fas fa-cogs"></i> {{ action }} Transaction Monitoring Rule</h5>
+          <h5 class="mb-0"><i class="fas fa-cogs"></i> {{ _('Edit Transaction Monitoring Rule') if action == 'Edit' else _('Create Transaction Monitoring Rule') }}</h5>
           <a href="{{ url_for('aml.rule_list') }}" class="btn btn-sm btn-outline-light">{{ _('← Back') }}</a>
         </div>
         <div class="card-body">
@@ -106,7 +106,7 @@
               <div class="d-flex gap-2">
                 <a href="{{ url_for('aml.rule_list') }}" class="btn btn-outline-secondary">{{ _('Cancel') }}</a>
                 <button type="submit" class="btn btn-success px-5">
-                  <i class="fas fa-save"></i> {{ action }} Rule
+                  <i class="fas fa-save"></i> {{ _('Save Rule') if action == 'Edit' else _('Create Rule') }}
                 </button>
               </div>
             </div>

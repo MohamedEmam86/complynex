@@ -1,5 +1,5 @@
 {% macro score_badge(s, big=false) -%}
 {% set b = 'none' if s is none else ('ready' if s >= 85 else ('partial' if s >= 60 else 'not_ready')) %}
-<span class="badge bg-{{ {'ready': 'success', 'partial': 'warning text-dark', 'not_ready': 'danger', 'none': 'secondary'}[b] }} {{ 'fs-4' if big }}">{{ (s ~ ' / 100') if s is not none else '-' }}</span>
+<span class="badge bg-{{ {'ready': 'success', 'partial': 'warning text-dark', 'not_ready': 'danger', 'none': 'secondary'}[b] }} {{ 'fs-4' if big }}">{{ (s|num ~ ' / 100') if s is not none else '-' }}</span>
 {%- endmacro %}
 {% macro band_label(s) -%}{{ _('Not assessed') if s is none else (_('Ready') if s >= 85 else (_('Partly ready') if s >= 60 else _('Not ready'))) }}{%- endmacro %}

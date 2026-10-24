@@ -8,7 +8,7 @@
   <h2 class="h4">{{ _('Compliance & inspection readiness — report to the board') }}</h2>
   <p class="small text-muted">{{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</p>
   <h3 class="h6">1. {{ _('Overall') }}</h3>
-  <p>{{ _('Readiness score') }}: <strong>{{ d.overall.score if d.overall.score is not none else '-' }} / 100</strong> — {{ rb.band_label(d.overall.score) }}. {{ d.overall.controls }} {{ _('controls') }}, {{ d.overall.failing }} {{ _('failing') }}, {{ d.overall.not_assessed }} {{ _('not assessed') }}; {{ d.open_findings|length }} {{ _('open findings') }} ({{ d.repeated|length }} {{ _('repeated violations') }}).</p>
+  <p>{{ _('Readiness score') }}: <strong>{{ d.overall.score|num if d.overall.score is not none else '-' }} / 100</strong> — {{ rb.band_label(d.overall.score) }}. {{ d.overall.controls }} {{ _('controls') }}, {{ d.overall.failing }} {{ _('failing') }}, {{ d.overall.not_assessed }} {{ _('not assessed') }}; {{ d.open_findings|length }} {{ _('open findings') }} ({{ d.repeated|length }} {{ _('repeated violations') }}).</p>
   <h3 class="h6">2. {{ _('By area') }}</h3>
   <table class="table table-sm table-bordered small"><thead><tr><th>{{ _('Area') }}</th><th class="text-end">{{ _('Score') }}</th><th class="text-end">{{ _('Failing') }}</th></tr></thead><tbody>
     {% for a, s in d.area_list %}<tr><td>{{ rc_label('AREAS', a) }}</td><td class="text-end">{{ s.score if s.score is not none else '-' }}</td><td class="text-end">{{ s.failing }}</td></tr>{% endfor %}</tbody></table>

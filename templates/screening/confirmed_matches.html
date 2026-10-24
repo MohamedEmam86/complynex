@@ -46,7 +46,7 @@
     <div class="col-md-2"><label class="form-label small mb-0">{{ _('List source') }}</label>
       <select name="source" class="form-select form-select-sm">
         <option value="">{{ _('All') }}</option>
-        {% for s in sources %}<option value="{{ s.source }}" {% if args.get('source')==s.source %}selected{% endif %}>{{ s.source }}</option>{% endfor %}
+        {% for s in sources %}<option value="{{ s.source }}" {% if args.get('source')==s.source %}selected{% endif %}>{{ s.source|scr_label('source') }}</option>{% endfor %}
       </select></div>
     <div class="col-md-2"><label class="form-label small mb-0">{{ _('Type') }}</label>
       <select name="list_type" class="form-select form-select-sm">

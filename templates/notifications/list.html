@@ -34,9 +34,9 @@
                 </div>
                 <div class="flex-grow-1">
                     {% if notif.title %}
-                    <div class="fw-bold {{ '' if not notif.is_read else 'text-muted' }}">{{ notif.title }}</div>
+                    <div class="fw-bold {{ '' if not notif.is_read else 'text-muted' }}">{{ notif.title|history }}</div>
                     {% endif %}
-                    <div class="{{ 'text-dark' if not notif.is_read else 'text-muted' }}">{{ notif.message }}</div>
+                    <div class="{{ 'text-dark' if not notif.is_read else 'text-muted' }}">{{ notif.message|history }}</div>
                     <div class="small text-muted mt-1">{{ notif.created_at }}</div>
                 </div>
                 <div class="flex-shrink-0 ms-2">

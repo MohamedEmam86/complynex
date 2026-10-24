@@ -59,7 +59,7 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="official_id" value="{{ o.id }}">
           <div class="col-md-5"><label class="form-label small">{{ _('Form') }}</label>
             <select name="template_code" class="form-select form-select-sm">
-              {% for fm in forms %}<option value="{{ fm.code }}" {{ 'selected' if (o.official_type == 'committee_external' and fm.code == 'internal_fp_committee') or (o.official_type != 'committee_external' and fm.default) }}>{{ fm.title_ar if lang == 'ar' else fm.title_en }}{{ ' — ' ~ fm.regulator if fm.regulator }}</option>{% endfor %}
+              {% for fm in forms if not fm.sector %}<option value="{{ fm.code }}" {{ 'selected' if (o.official_type == 'committee_external' and fm.code == 'internal_fp_committee') or (o.official_type != 'committee_external' and fm.default) }}>{{ fm.title_ar if lang == 'ar' else fm.title_en }}{{ ' — ' ~ fm.regulator if fm.regulator }}</option>{% endfor %}{% if forms|selectattr('sector')|list %}<optgroup label="{{ _('Other sector forms') }}">{% for fm in forms if fm.sector %}<option value="{{ fm.code }}" {{ 'selected' if (o.official_type == 'committee_external' and fm.code == 'internal_fp_committee') or (o.official_type != 'committee_external' and fm.default) }}>{{ fm.title_ar if lang == 'ar' else fm.title_en }}{{ ' — ' ~ fm.regulator if fm.regulator }}</option>{% endfor %}</optgroup>{% endif %}
             </select></div>
           <div class="col-md-3"><label class="form-label small">{{ _('Purpose') }}</label>
             <select name="purpose" class="form-select form-select-sm">{% for k, v in S.PURPOSES.items() %}<option value="{{ k }}">{{ v[1] if lang == 'ar' else v[0] }}</option>{% endfor %}</select></div>
@@ -93,7 +93,8 @@
   <div class="col-lg-6">
     <div class="card border-0 shadow-sm h-100"><div class="card-header bg-white fw-bold">{{ _('Forms available') }}</div>
       <ul class="list-group list-group-flush">
-      {% for fm in forms %}
+      {% for fm in (forms|rejectattr('sector')|list) + (forms|selectattr('sector')|list) %}
+        {% if fm.sector and loop.previtem is defined and not loop.previtem.sector %}<li class="list-group-item bg-light small fw-bold text-muted">{{ _('Other sector forms') }}</li>{% endif %}
         <li class="list-group-item">
           <div class="fw-semibold">{{ fm.title_ar if lang == 'ar' else fm.title_en }}</div>
           <div class="small text-muted">{{ fm.basis_ar if lang == 'ar' else fm.basis_en }}{% if fm.form_no %} · {{ fm.form_no }}{% endif %}</div>

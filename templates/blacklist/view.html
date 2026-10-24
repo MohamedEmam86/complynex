@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}View Blacklist Entry{% endblock %}
+{% block title %}{{ _('View Blacklist Entry') }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -20,7 +20,7 @@
                         <h4 class="mb-1">{{ entry.full_name }}</h4>
                         <span
                             class="badge bg-{% if entry.risk_level == 'HIGH' %}danger{% elif entry.risk_level == 'MEDIUM' %}warning{% else %}success{% endif %} fs-6 mb-2">
-                            {{ entry.risk_level }} RISK
+                            {{ entry.risk_level|label }} RISK
                         </span>
                         <p class="text-muted">{{ entry.category or 'No Category' }}</p>
                     </div>
@@ -78,7 +78,7 @@
                                 </div>
                                 <div class="col-sm-6 mb-3">
                                     <small class="text-muted d-block">{{ _('Entity Type') }}</small>
-                                    <span>{{ entry.entity_type }}</span>
+                                    <span>{{ entry.entity_type|label }}</span>
                                 </div>
                                 {% if entry.entity_type == 'INDIVIDUAL' %}
                                 <div class="col-sm-6 mb-3">

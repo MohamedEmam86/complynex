@@ -17,6 +17,7 @@ from datetime import datetime
 from flask import current_app, url_for
 
 from database.db import get_db
+from flask_babel import lazy_gettext as _l
 
 
 def _now():
@@ -39,9 +40,8 @@ def delivery_status():
     return {
         'inapp': True,
         'email': email_enabled(),
-        'note': ('In-app only. Email is not configured — set EMAIL_USER, '
-                 'EMAIL_PASS and EMAIL_MOCK_MODE=False in .env to enable it.')
-               if not email_enabled() else 'In-app and email.',
+        'note': (_l('In-app only. Email delivery is not configured — contact the system administrator.')
+                 if not email_enabled() else _l('In-app and email.')),
     }
 
 

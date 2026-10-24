@@ -36,6 +36,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
 from flask_babel import gettext, lazy_gettext as _l
+from markupsafe import Markup
 
 # code (lower case, '_' separated) -> English label (msgid)
 LABELS = {
@@ -154,7 +155,18 @@ LABELS = {
     'pentest': _l('Penetration test'), 'app_pentest': _l('Application penetration test'),
     'malware_test': _l('Malware test'), 'vulnerability_scan': _l('Vulnerability scan'),
     'cis_benchmark': _l('CIS benchmark review'), 'phishing_simulation': _l('Phishing simulation'),
-    'sar_created': _l('SAR created'), 'sme_loan': _l('SME loan'), 'micro_loan': _l('Micro loan'),
+    'file_sar': _l('File STR'), 'sar_created': _l('SAR created'), 'sme_loan': _l('SME loan'), 'micro_loan': _l('Micro loan'),
+    # ── transaction types / channels / sources ──
+    'cash_in': _l('Cash in'), 'cash_out': _l('Cash out'), 'transfer_in': _l('Incoming transfer'),
+    'transfer_out': _l('Outgoing transfer'), 'tm_alert': _l('Transaction monitoring alert'),
+    'screening': _l('Screening'), 'employee_report': _l('Employee report'),
+    'commercial_reg': _l('Commercial register'), 'commercial_register': _l('Commercial register'),
+    'tax_card': _l('Tax card'), 'id_card': _l('National ID card'), 'email': _l('Email'),
+    'manual_ad_hoc': _l('Manual (ad hoc)'), 'opensanctions_pep': _l('OpenSanctions PEP data'),
+    'internal_blacklist': _l('Internal blacklist'), 'internal_pep': _l('Internal PEP list'),
+    'un_sc_sanctions': _l('UN Security Council sanctions'), 'hr_notice': _l('HR notice'),
+    'it_notice': _l('IT notice'), 'dr_readiness': _l('Disaster-recovery readiness'),
+    'not_connected': _l('Not connected'), 'self_identified': _l('Self-identified'),
 }
 
 # Permission modules shown in administration (code, English label).
@@ -218,6 +230,13 @@ def label(value, default='—'):
         return str(MODULE_LABELS[k[5:]])
     if k in MODULE_LABELS:
         return str(MODULE_LABELS[k])
+    try:  # codes labelled by the case registry (channels, case types, sources)
+        from cases.labels import LABELS as CASE_LABELS
+        found = CASE_LABELS.get(s.upper())
+        if found is not None:
+            return str(found)
+    except Exception:  # pragma: no cover - module optional
+        pass
     if _CODE_RE.match(s) and (('_' in s) or s.isupper() or s.islower()) and not any(ch.isdigit() for ch in s):
         if len(s) <= 4 and s.isupper():   # acronyms (PEP, ESG, KYC) stay as they are
             return s
@@ -332,10 +351,204 @@ def fmt_date(value, default='—'):
     return dt.strftime('%Y-%m-%d')
 
 
+# ── codes inside stored sentences ───────────────────────────────────────────
+_TOKEN_RE = re.compile(r'(?<![\w/.@#-])([A-Za-z][A-Za-z0-9]*(?:[_\-][A-Za-z0-9]+)*)(?![\w/@-])')
+_TRAILING_ZERO_RE = re.compile(r'(?<![\d.])(\d+)\.0+(?![\d.])')
+
+
+def _code_text(tok):
+    """Label for a code-looking token, or None when it is an ordinary word."""
+    has_us = '_' in tok
+    if not (has_us or (tok.isupper() and len(tok) > 1)):
+        return None
+    k = _key(tok)
+    if k in LABELS:
+        return str(LABELS[k])
+    try:
+        from cases.labels import LABELS as CASE_LABELS
+        found = CASE_LABELS.get(tok.upper())
+        if found is not None:
+            return str(found)
+    except Exception:  # pragma: no cover - module optional
+        pass
+    if has_us and (tok.isupper() or tok.islower()) and not any(ch.isdigit() for ch in tok):
+        return _translated(humanise(tok))
+    return None
+
+
+def label_codes(text):
+    """Replace stored codes inside a sentence with their labels:
+    'Complaint submitted via PUBLIC_FORM' -> 'Complaint submitted via Online form'
+    and drop a trailing '.0' from whole numbers ('0.0%' -> '0%'). Ordinary words,
+    references (INC-2026-0001) and acronyms that are not codes stay as they are."""
+    if text is None:
+        return ''
+    if isinstance(text, Markup):
+        return text
+    s = str(text)
+    if not s:
+        return s
+
+    def rep(m):
+        out = _code_text(m.group(1))
+        return m.group(1) if out is None else out
+    s = _TOKEN_RE.sub(rep, s)
+    return _TRAILING_ZERO_RE.sub(r'\1', s)
+
+
+# Stored history sentences (written in English by earlier code and the demo
+# seed) -> translatable message; captured parts are labelled with label_codes.
+# A trailing remainder (free text the user typed) is kept as is.
+HISTORY_SENTENCES = [
+    (r'Complaint submitted via (?P<channel>\S+)', 'Complaint submitted via %(channel)s'),
+    (r'Complaint registered at branch counter', 'Complaint registered at branch counter'),
+    (r'Complaint escalated due to exceeding statutory deadline \((?P<days>\d+) days\)\.?',
+     'Complaint escalated due to exceeding the statutory deadline (%(days)s days).'),
+    (r'Status changed from (?P<old>\S+) to (?P<new>[A-Za-z_]+)', 'Status changed from %(old)s to %(new)s'),
+    (r'Root cause: (?P<root>[^;]+); redress: (?P<redress>.+)', 'Root cause: %(root)s; redress: %(redress)s'),
+    (r'Root cause identified: (?P<root>.+)', 'Root cause identified: %(root)s'),
+    (r'Assigned to (?P<name>[^—]+?)', 'Assigned to %(name)s'),
+    (r'Internal note added', 'Internal note added'),
+    (r'Request received via (?P<channel>\S+) on (?P<date>\S+)', 'Request received via %(channel)s on %(date)s'),
+    (r'Request received via (?P<channel>\S+)', 'Request received via %(channel)s'),
+    (r'Identity verified via (?P<method>\S+)', 'Identity verified via %(method)s'),
+    (r'Request (?P<status>[a-z_]+)\. Notes: ', 'Request %(status)s. Notes: '),
+    (r'SAR (?P<ref>\S+) opened \(source (?P<source>[^)]+)\)', 'SAR %(ref)s opened (source: %(source)s)'),
+    (r'Escalated to Compliance for review \(regulatory sensitivity\)',
+     'Escalated to Compliance for review (regulatory sensitivity)'),
+    (r'Customer confirmed resolution - complaint closed', 'Customer confirmed resolution - complaint closed'),
+    (r'SAR (?P<ref>\S+): assigned to (?P<name>.+)', 'SAR %(ref)s: assigned to %(name)s'),
+    (r'SAR (?P<ref>\S+): investigation note — sent for decision', 'SAR %(ref)s: investigation note — sent for decision'),
+    (r'SAR (?P<ref>\S+): investigation note', 'SAR %(ref)s: investigation note'),
+    (r'SAR (?P<ref>\S+): decision (?P<decision>\S+)', 'SAR %(ref)s: decision %(decision)s'),
+    (r'SAR (?P<ref>\S+): filed, reference (?P<fref>.+)', 'SAR %(ref)s: filed, reference %(fref)s'),
+    (r'SAR (?P<ref>\S+): linked (?P<kind>\S+) ', 'SAR %(ref)s: linked %(kind)s '),
+    (r'SAR (?P<ref>\S+): removed link to (?P<kind>\S+) ', 'SAR %(ref)s: removed link to %(kind)s '),
+]
+_HISTORY_RX = [(re.compile('^' + rx + r'(?P<_rest>.*)$', re.S), msg) for rx, msg in HISTORY_SENTENCES]
+
+
+def history_text(text):
+    """A stored history / activity sentence in the reader's language."""
+    if text is None:
+        return ''
+    if isinstance(text, Markup):
+        return text
+    s = str(text).strip()
+    for rx, msg in _HISTORY_RX:
+        m = rx.match(s)
+        if m:
+            vals = {k: (label(v) if _CODE_RE.match(v or '') else label_codes(v))
+                    for k, v in m.groupdict().items() if k != '_rest'}
+            rest = m.group('_rest') or ''
+            return gettext(msg, **vals) + label_codes(rest)
+    return label_codes(s)
+
+
+# ── template output finalizer ───────────────────────────────────────────────
+# Every {{ expression }} passes through finalize(): date-times print in the
+# standard display form (Africa/Cairo, no seconds or microseconds), whole
+# floats/Decimals without ".0", None as an empty string. Values stay
+# machine-readable (no thousands separators, "." decimal point), so
+# value="{{ x }}" in a form still posts a number. Markup (|tojson, |safe) is
+# never touched.
+_TS_FULL_RE = re.compile(r'^(\d{4}-\d{2}-\d{2})([ T])(\d{2}:\d{2})(?::(\d{2})(\.\d{1,6})?)?'
+                         r'\s*(Z|[+-]\d{2}(?::?\d{2})?)?$')
+_TS_EMBED_RE = re.compile(r'(?<![\d-])\d{4}-\d{2}-\d{2}( |T)\d{2}:\d{2}:\d{2}(\.\d{1,6})?'
+                          r'(\s?(?:Z|[+-]\d{2}(?::?\d{2})?))?(?![\d:])')
+
+
+def _iso_tz(tz):
+    if not tz:
+        return ''
+    if tz == 'Z':
+        return '+00:00'
+    tz = tz.replace(':', '')
+    return tz[:3] + ':' + (tz[3:5] or '00')
+
+
+def _fmt_datetime(dt):
+    if dt.tzinfo is None and dt.hour == dt.minute == dt.second == dt.microsecond == 0:
+        return dt.strftime('%Y-%m-%d')
+    return fmt_dt(dt)
+
+
+def _fmt_ts_string(day, sep, hm, sec, frac, tz):
+    """A timestamp string -> display form; None to leave it unchanged."""
+    if sec is None and not tz:
+        return None                       # already 'YYYY-MM-DD HH:MM'
+    if sep == 'T' and not frac and not tz:
+        return None                       # machine value (datetime-local inputs)
+    try:
+        dt = datetime.fromisoformat(f'{day}T{hm}:{sec or "00"}{frac or ""}{_iso_tz(tz)}')
+    except ValueError:
+        return None
+    return _fmt_datetime(dt)
+
+
+def _fmt_ts_text(s):
+    m = _TS_FULL_RE.match(s)
+    if m:
+        out = _fmt_ts_string(*m.groups())
+        return s if out is None else out
+    if ':' not in s or not _TS_EMBED_RE.search(s):
+        return s
+
+    def rep(mm):
+        if mm.group(1) == 'T' and not mm.group(2) and not mm.group(3):
+            return mm.group(0)
+        full = _TS_FULL_RE.match(mm.group(0).replace(' Z', 'Z'))
+        out = _fmt_ts_string(*full.groups()) if full else None
+        return mm.group(0) if out is None else out
+    return _TS_EMBED_RE.sub(rep, s)
+
+
+def _fmt_float(x):
+    if x != x or x in (float('inf'), float('-inf')):
+        return str(x)
+    if x.is_integer() and abs(x) < 1e15:
+        return str(int(x))
+    a = abs(x)
+    if a >= 1:
+        places = max(2, 6 - len(str(int(a))))
+    else:
+        import math
+        places = min(12, 5 - int(math.floor(math.log10(a))))
+    out = f'{x:.{places}f}'
+    return out.rstrip('0').rstrip('.') if '.' in out else out
+
+
+def _fmt_decimal(d):
+    if not d.is_finite():
+        return str(d)
+    if d == d.to_integral_value():
+        return str(int(d))
+    return format(d.normalize(), 'f')
+
+
+def finalize(value):
+    t = type(value)
+    if t is str:
+        if len(value) >= 16 and '-' in value and ':' in value:
+            return _fmt_ts_text(value)
+        return value
+    if value is None:
+        return ''
+    if t is float:
+        return _fmt_float(value)
+    if t is Decimal:
+        return _fmt_decimal(value)
+    if t is datetime:
+        return _fmt_datetime(value)
+    return value
+
+
 def register_filters(app):
     app.jinja_env.filters.update(label=label, num=num, money=money, pct=pct,
-                                 fmt_dt=fmt_dt, fmt_date=fmt_date, module_label=module_label)
-    from utils.breadcrumbs import breadcrumb_trail
-    app.jinja_env.globals.update(breadcrumb_trail=breadcrumb_trail)
+                                 fmt_dt=fmt_dt, fmt_date=fmt_date, module_label=module_label,
+                                 label_codes=label_codes, history=history_text)
+    app.jinja_env.finalize = finalize
+    from utils.breadcrumbs import breadcrumb_trail, breadcrumb_page_title
+    app.jinja_env.globals.update(breadcrumb_trail=breadcrumb_trail, breadcrumb_page_title=breadcrumb_page_title)
     from utils.regulator import register as _register_regulator
     _register_regulator(app)   # regulator_name / regulator_short for regulator-neutral wording
