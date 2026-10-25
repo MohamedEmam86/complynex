@@ -465,6 +465,8 @@ def create_app(config_name=None):
     app.register_blueprint(guides_bp)
     from demo_access import demo_access_bp
     app.register_blueprint(demo_access_bp)
+    from legal import legal_bp
+    app.register_blueprint(legal_bp)
 
     # Versioned REST API
     try:

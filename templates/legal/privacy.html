@@ -1,0 +1,99 @@
+{% extends 'legal/base.html' %}
+{% block title %}Privacy Policy{% endblock %}
+{% block content %}
+<article class="card">
+  <h1>Privacy Policy</h1>
+  <p class="meta">Last updated: {{ updated }} · Egypt Personal Data Protection Law No. 151 of 2020</p>
+
+  <h2>1. Who we are</h2>
+  <p>ComplyNex (complynex.online) is a governance, risk and compliance platform owned and operated by Mohamed Emam, Cairo, Egypt. Contact: <a href="mailto:{{ contact }}">{{ contact }}</a>.</p>
+
+  <h2>2. Our role</h2>
+  <p>Companies that subscribe to ComplyNex ("clients") use it to run their own compliance work. For the personal data a client enters or uploads (for example its customers, employees, board members or reporters), the client is the data controller and ComplyNex processes that data only on the client's instructions and only to provide the service. For the account data of people who sign in to ComplyNex, ComplyNex is the controller.</p>
+
+  <h2>3. What we process</h2>
+  <ul>
+    <li><b>Account data:</b> name, work email, job title, department, role, sign-in history and security settings (including two-factor authentication).</li>
+    <li><b>Client compliance data:</b> the records a client manages in the platform, such as customer due-diligence files, sanctions and PEP screening results, transaction-monitoring alerts, whistleblowing and complaint cases, governance and training records.</li>
+    <li><b>Identity verification (eKYC) data</b> when a client uses it: identity-card images, a selfie and the data read from them. These images are stored encrypted.</li>
+    <li><b>Technical data:</b> IP address, browser type and security logs, used to protect the service.</li>
+  </ul>
+
+  <h2>4. Why we process it</h2>
+  <ul>
+    <li>To provide the service the client subscribed to, and to keep audit trails the client is required to keep.</li>
+    <li>To secure the platform, prevent misuse and investigate incidents.</li>
+    <li>To meet legal obligations.</li>
+  </ul>
+  <p>We do not sell personal data, do not use it for advertising, and do not use client data to train any external artificial-intelligence model. Screening, document reading and face matching run on ComplyNex's own servers; no external AI service receives client data.</p>
+
+  <h2>5. Where data is stored</h2>
+  <p>The platform runs on servers controlled by ComplyNex. Encrypted transport (HTTPS) is used for all connections. Backups of the platform are stored in a Google Drive account owned by ComplyNex's operator, accessible only to the operator.</p>
+
+  <h2>6. How long we keep it</h2>
+  <p>Client data is kept for the period agreed with the client and the retention periods the client configures in the platform (for example, identity-verification images are deleted automatically when their retention period ends). Security logs are kept for as long as needed to protect the service. When a subscription ends, client data is returned or deleted as agreed with the client.</p>
+
+  <h2>7. Sharing</h2>
+  <p>Data is shared only with the client that owns it, with service providers needed to run the platform (hosting, email delivery, backup storage) under confidentiality obligations, or when required by law or a competent authority.</p>
+
+  <h2>8. Your rights</h2>
+  <p>Under Egyptian law you may ask to access, correct or delete your personal data, or object to its processing. If your data was entered by a client company (for example as its customer or employee), please contact that company first; we will support it in answering your request. For your own ComplyNex account, write to <a href="mailto:{{ contact }}">{{ contact }}</a>.</p>
+
+  <h2>9. Cookies</h2>
+  <p>We use only the cookies needed to sign you in and keep your session secure. We do not use advertising or tracking cookies.</p>
+
+  <h2>10. Google user data</h2>
+  <p>ComplyNex accesses Google Drive only through its operator's own Google account, to store and restore backups of the platform. It does not access the Google accounts of clients or users. ComplyNex's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+
+  <h2>11. Changes</h2>
+  <p>We may update this policy; the date at the top shows the latest version.</p>
+</article>
+
+<article class="card ar" lang="ar">
+  <h1>سياسة الخصوصية</h1>
+  <p class="meta">آخر تحديث: {{ updated }} · قانون حماية البيانات الشخصية المصري رقم 151 لسنة 2020</p>
+
+  <h2>1. من نحن</h2>
+  <p>ComplyNex (complynex.online) منصة للحوكمة وإدارة المخاطر والالتزام، يملكها ويديرها محمد إمام، القاهرة، مصر. للتواصل: <a href="mailto:{{ contact }}">{{ contact }}</a>.</p>
+
+  <h2>2. دورنا</h2>
+  <p>تستخدم الشركات المشتركة في ComplyNex («العملاء») المنصة لإدارة أعمال الالتزام الخاصة بها. بالنسبة للبيانات الشخصية التي يدخلها العميل أو يرفعها (مثل بيانات عملائه أو موظفيه أو أعضاء مجلس إدارته أو المبلّغين)، يكون العميل هو المتحكم في البيانات، وتعالجها ComplyNex بناءً على تعليماته فقط ولغرض تقديم الخدمة. أما بيانات حسابات من يسجلون الدخول إلى المنصة فتكون ComplyNex هي المتحكم فيها.</p>
+
+  <h2>3. البيانات التي نعالجها</h2>
+  <ul>
+    <li><b>بيانات الحساب:</b> الاسم، وبريد العمل، والمسمى الوظيفي، والإدارة، والدور، وسجل تسجيل الدخول، وإعدادات الأمان (بما فيها التحقق الثنائي).</li>
+    <li><b>بيانات الالتزام الخاصة بالعميل:</b> السجلات التي يديرها العميل على المنصة، مثل ملفات العناية الواجبة، ونتائج فحص العقوبات والأشخاص المعرضين سياسيًا، وتنبيهات مراقبة المعاملات، وبلاغات المخالفات والشكاوى، وسجلات الحوكمة والتدريب.</li>
+    <li><b>بيانات التحقق الإلكتروني من الهوية</b> عند استخدامه: صور بطاقة الهوية، وصورة شخصية، والبيانات المقروءة منهما. وتُحفظ هذه الصور مشفّرة.</li>
+    <li><b>بيانات تقنية:</b> عنوان IP، ونوع المتصفح، وسجلات الأمان، لحماية الخدمة.</li>
+  </ul>
+
+  <h2>4. أغراض المعالجة</h2>
+  <ul>
+    <li>تقديم الخدمة التي اشترك فيها العميل، والاحتفاظ بسجلات التدقيق المطلوبة منه.</li>
+    <li>تأمين المنصة ومنع إساءة استخدامها والتحقيق في الحوادث.</li>
+    <li>الوفاء بالالتزامات القانونية.</li>
+  </ul>
+  <p>لا نبيع البيانات الشخصية، ولا نستخدمها في الإعلانات، ولا نستخدم بيانات العملاء في تدريب أي نموذج ذكاء اصطناعي خارجي. يتم فحص الأسماء وقراءة المستندات ومطابقة الوجه على خوادم ComplyNex نفسها، ولا تُرسل بيانات العملاء إلى أي خدمة ذكاء اصطناعي خارجية.</p>
+
+  <h2>5. مكان حفظ البيانات</h2>
+  <p>تعمل المنصة على خوادم تحت سيطرة ComplyNex، وجميع الاتصالات مشفّرة (HTTPS). تُحفظ النسخ الاحتياطية للمنصة في حساب Google Drive مملوك لمشغّل ComplyNex، ولا يصل إليه غيره.</p>
+
+  <h2>6. مدة الاحتفاظ</h2>
+  <p>تُحفظ بيانات العميل للمدة المتفق عليها معه ووفق مدد الاحتفاظ التي يضبطها في المنصة (مثلًا تُحذف صور التحقق من الهوية تلقائيًا عند انتهاء مدة الاحتفاظ بها). وتُحفظ سجلات الأمان طالما كان ذلك لازمًا لحماية الخدمة. وعند انتهاء الاشتراك تُسلَّم بيانات العميل أو تُحذف وفق الاتفاق معه.</p>
+
+  <h2>7. مشاركة البيانات</h2>
+  <p>لا تُشارك البيانات إلا مع العميل صاحبها، أو مع مزودي الخدمات اللازمين لتشغيل المنصة (الاستضافة، وإرسال البريد، وتخزين النسخ الاحتياطية) مع التزامهم بالسرية، أو عند طلب القانون أو جهة مختصة.</p>
+
+  <h2>8. حقوقك</h2>
+  <p>وفقًا للقانون المصري يحق لك طلب الاطلاع على بياناتك الشخصية أو تصحيحها أو حذفها أو الاعتراض على معالجتها. إذا أدخلت شركة عميلة بياناتك (كعميل لديها أو موظف)، يُرجى التواصل معها أولًا، وسندعمها في الرد على طلبك. وبالنسبة لحسابك على ComplyNex راسلنا على <a href="mailto:{{ contact }}">{{ contact }}</a>.</p>
+
+  <h2>9. ملفات تعريف الارتباط (الكوكيز)</h2>
+  <p>نستخدم فقط ملفات الارتباط اللازمة لتسجيل دخولك والحفاظ على أمان جلستك، ولا نستخدم ملفات ارتباط إعلانية أو للتتبع.</p>
+
+  <h2>10. بيانات مستخدمي Google</h2>
+  <p>تصل ComplyNex إلى Google Drive فقط عبر حساب Google الخاص بمشغّلها، لحفظ النسخ الاحتياطية للمنصة واسترجاعها، ولا تصل إلى حسابات Google الخاصة بالعملاء أو المستخدمين. ويلتزم استخدام ComplyNex للمعلومات المستلمة من واجهات Google ونقلها بـ <a href="https://developers.google.com/terms/api-services-user-data-policy">سياسة بيانات مستخدمي خدمات Google API</a>، بما في ذلك متطلبات الاستخدام المحدود.</p>
+
+  <h2>11. التعديلات</h2>
+  <p>قد نحدّث هذه السياسة، ويوضح التاريخ في أعلاها آخر إصدار.</p>
+</article>
+{% endblock %}

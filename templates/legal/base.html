@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% endblock %} — ComplyNex</title>
+<style>
+  :root { --ink:#0B2540; --muted:#5A6878; --line:#D5DCE1; --accent:#007C87; --bg:#F4F6F7; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI", Tahoma, Arial, sans-serif; line-height:1.65; }
+  header { background:var(--ink); color:#fff; padding:18px 24px; }
+  header a { color:#fff; text-decoration:none; font-weight:700; font-size:20px; }
+  header nav { float:right; font-size:14px; }
+  header nav a { font-weight:400; font-size:14px; margin-left:16px; opacity:.85; }
+  main { max-width:860px; margin:28px auto; padding:0 16px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:28px 32px; margin-bottom:24px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  h2 { font-size:18px; margin:26px 0 6px; color:var(--accent); }
+  .meta { color:var(--muted); font-size:14px; margin:0 0 12px; }
+  .ar { direction:rtl; text-align:right; font-family:Tahoma, "Segoe UI", Arial, sans-serif; }
+  ul { padding-inline-start:22px; }
+  a { color:var(--accent); }
+  footer { text-align:center; color:var(--muted); font-size:13px; padding:12px 0 32px; }
+  @media (max-width:600px) { .card { padding:20px 18px; } header nav { float:none; display:block; margin-top:8px; } header nav a { margin:0 12px 0 0; } }
+</style>
+</head>
+<body>
+<header>
+  <a href="/">ComplyNex</a>
+  <nav><a href="{{ url_for('legal.privacy') }}">Privacy · الخصوصية</a><a href="{{ url_for('legal.terms') }}">Terms · الشروط</a></nav>
+</header>
+<main>
+{% block content %}{% endblock %}
+</main>
+<footer>&copy; 2026 ComplyNex · <a href="mailto:{{ contact }}">{{ contact }}</a></footer>
+</body>
+</html>

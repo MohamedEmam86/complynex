@@ -38049,6 +38049,9 @@ msgstr "داخل النظام وبالبريد الإلكتروني."
 msgid "Other sector forms"
 msgstr "نماذج قطاعات أخرى"
 
+msgid "Terms of Use"
+msgstr "شروط الاستخدام"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

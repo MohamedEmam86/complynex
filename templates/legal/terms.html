@@ -1,0 +1,83 @@
+{% extends 'legal/base.html' %}
+{% block title %}Terms of Use{% endblock %}
+{% block content %}
+<article class="card">
+  <h1>Terms of Use</h1>
+  <p class="meta">Last updated: {{ updated }}</p>
+  <p>These terms apply to the use of the ComplyNex platform (complynex.online and its sub-domains), owned and operated by Mohamed Emam, Cairo, Egypt. Where a client has a signed agreement with ComplyNex, that agreement prevails over these terms.</p>
+
+  <h2>1. The service</h2>
+  <p>ComplyNex provides software for governance, risk and compliance work, including screening, customer due diligence, monitoring, case management, governance and reporting tools. The platform supports the client's compliance function; decisions taken with it, and the client's compliance with the laws and regulations that apply to it, remain the client's responsibility.</p>
+
+  <h2>2. Accounts</h2>
+  <p>Accounts are personal. Users must keep their password and two-factor device confidential, and the client must remove access for people who leave. Activity carried out under an account is recorded in the platform's audit trail.</p>
+
+  <h2>3. Acceptable use</h2>
+  <ul>
+    <li>Use the platform only for lawful purposes and within the client's own business.</li>
+    <li>Do not attempt to access data of other clients, test the platform's security without written permission, or disrupt its operation.</li>
+    <li>Do not upload content you have no right to process.</li>
+  </ul>
+
+  <h2>4. Client data</h2>
+  <p>Data entered by a client belongs to that client. ComplyNex processes it only to provide the service, keeps it confidential, and handles it as described in the <a href="{{ url_for('legal.privacy') }}">Privacy Policy</a>.</p>
+
+  <h2>5. Intellectual property</h2>
+  <p>The platform, its software, content and trademarks are the property of ComplyNex and its owner. Clients receive a right to use the platform during their subscription; copying, reverse engineering or redistributing the software is not permitted.</p>
+
+  <h2>6. Availability</h2>
+  <p>We work to keep the platform available and secure and take regular backups. Service levels, support hours and any availability commitments are those set out in the client's agreement.</p>
+
+  <h2>7. Liability</h2>
+  <p>To the extent permitted by law, ComplyNex is not liable for indirect or consequential losses, or for decisions a client takes based on the platform's results. Any other liability is limited as set out in the client's agreement.</p>
+
+  <h2>8. Suspension and termination</h2>
+  <p>Access may be suspended in case of misuse or a security risk. When a subscription ends, client data is returned or deleted as agreed with the client.</p>
+
+  <h2>9. Governing law</h2>
+  <p>These terms are governed by the laws of the Arab Republic of Egypt, and the courts of Cairo have jurisdiction.</p>
+
+  <h2>10. Contact</h2>
+  <p><a href="mailto:{{ contact }}">{{ contact }}</a></p>
+</article>
+
+<article class="card ar" lang="ar">
+  <h1>شروط الاستخدام</h1>
+  <p class="meta">آخر تحديث: {{ updated }}</p>
+  <p>تنطبق هذه الشروط على استخدام منصة ComplyNex (complynex.online ونطاقاتها الفرعية)، المملوكة لمحمد إمام والتي يديرها، القاهرة، مصر. إذا كان لدى العميل عقد موقّع مع ComplyNex، تكون الأولوية لهذا العقد على هذه الشروط.</p>
+
+  <h2>1. الخدمة</h2>
+  <p>تقدم ComplyNex برنامجًا لأعمال الحوكمة وإدارة المخاطر والالتزام، يشمل الفحص، والعناية الواجبة تجاه العملاء، والمراقبة، وإدارة الحالات، وأدوات الحوكمة والتقارير. تدعم المنصة وظيفة الالتزام لدى العميل، وتظل القرارات المتخذة باستخدامها، والتزام العميل بالقوانين واللوائح المنطبقة عليه، مسؤولية العميل.</p>
+
+  <h2>2. الحسابات</h2>
+  <p>الحسابات شخصية. على المستخدم الحفاظ على سرية كلمة المرور وجهاز التحقق الثنائي، وعلى العميل إلغاء صلاحية من يترك العمل لديه. ويُسجَّل كل نشاط يتم من خلال الحساب في سجل التدقيق بالمنصة.</p>
+
+  <h2>3. الاستخدام المقبول</h2>
+  <ul>
+    <li>استخدام المنصة لأغراض مشروعة فقط وفي نطاق أعمال العميل.</li>
+    <li>عدم محاولة الوصول إلى بيانات عملاء آخرين، أو اختبار أمان المنصة دون إذن كتابي، أو تعطيل تشغيلها.</li>
+    <li>عدم رفع محتوى لا يحق لك معالجته.</li>
+  </ul>
+
+  <h2>4. بيانات العميل</h2>
+  <p>البيانات التي يدخلها العميل ملك له. تعالجها ComplyNex لتقديم الخدمة فقط، وتحافظ على سريتها، وتتعامل معها كما هو موضح في <a href="{{ url_for('legal.privacy') }}">سياسة الخصوصية</a>.</p>
+
+  <h2>5. الملكية الفكرية</h2>
+  <p>المنصة وبرمجياتها ومحتواها وعلاماتها التجارية ملك لـ ComplyNex ومالكها. يحصل العميل على حق استخدام المنصة خلال مدة اشتراكه، ولا يجوز نسخ البرنامج أو إجراء هندسة عكسية له أو إعادة توزيعه.</p>
+
+  <h2>6. إتاحة الخدمة</h2>
+  <p>نعمل على إبقاء المنصة متاحة وآمنة ونأخذ نسخًا احتياطية بانتظام. ومستويات الخدمة وساعات الدعم وأي التزامات بالإتاحة هي ما ينص عليه عقد العميل.</p>
+
+  <h2>7. المسؤولية</h2>
+  <p>في الحدود التي يسمح بها القانون، لا تتحمل ComplyNex مسؤولية الخسائر غير المباشرة أو التبعية، ولا القرارات التي يتخذها العميل بناءً على نتائج المنصة. وتكون أي مسؤولية أخرى في الحدود المنصوص عليها في عقد العميل.</p>
+
+  <h2>8. الإيقاف وإنهاء الخدمة</h2>
+  <p>يجوز إيقاف الوصول في حالة إساءة الاستخدام أو وجود خطر أمني. وعند انتهاء الاشتراك تُسلَّم بيانات العميل أو تُحذف وفق الاتفاق معه.</p>
+
+  <h2>9. القانون الواجب التطبيق</h2>
+  <p>تخضع هذه الشروط لقوانين جمهورية مصر العربية، وتختص محاكم القاهرة بنظر أي نزاع.</p>
+
+  <h2>10. التواصل</h2>
+  <p><a href="mailto:{{ contact }}">{{ contact }}</a></p>
+</article>
+{% endblock %}
