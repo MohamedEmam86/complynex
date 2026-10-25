@@ -768,8 +768,11 @@ def _columns(cur, table):
     return _COLS_CACHE[table]
 
 
-def _recall(cur, table, cols, field, q, limit):
-    norm_q = [normalize(t) for t in q]
+def _recall(cur, table, cols, field, q, limit, raw=False):
+    # raw=True: the elements are already in the stored spelling (lower-case
+    # Latin as typed) — the list's name_search column is not canonicalised, so
+    # 'kouchouk' must be searched as written, not as the canonical 'kuchuk'
+    norm_q = list(q) if raw else [normalize(t) for t in q]
     frags = []
     for t in dict.fromkeys(norm_q):
         if t:
@@ -812,6 +815,11 @@ def search_internal(conn, table, name, limit=150, min_score=LOW):
     q_ar = is_arabic(name)
     rows = {r['id']: r for r in _recall(cur, table, cols, field, q, limit)}
     if not q_ar:
+        typed = [w for w in re.sub(r"[^a-z\s]", " ", str(name).lower()).split()
+                 if len(w) >= 2 and w not in _PARTICLES and w not in _LEGAL_FORMS]
+        if typed and typed != q:
+            for r in _recall(cur, table, cols, field, typed, limit, raw=True):
+                rows.setdefault(r['id'], r)
         ar = to_arabic(name)
         if ar:
             for r in _recall(cur, table, cols, field, tokens(ar), limit):
