@@ -181,3 +181,26 @@ def test_engine_country_scoring_only_adds():
     assert f(80, 'Syria', 'Syria') == 88
     assert f(80, None, 'Syria') == 80
     assert f(80, 'Egypt', '') == 80
+
+
+def test_latin_spelling_variants_of_one_name():
+    import itertools
+    parts = [['Mohamed', 'Mohammed', 'Muhammad'], ['Abdel Aziz', 'Abdelaziz', 'Abd El-Aziz', 'Abdul Aziz'],
+             ['Abdel Wahab', 'Abdul Wahhab'], ['Mostafa', 'Moustafa', 'Mustafa', 'Mostapha']]
+    names = [' '.join(x) for x in itertools.product(*parts)]
+    for n in names:
+        assert mi.name_match(n, 'Mohamed Abdel Aziz Abdel Wahab Mostafa')['score'] >= 95, n
+        assert mi.name_match(n, 'محمد عبد العزيز عبد الوهاب مصطفى')['score'] >= 95, n
+
+
+def test_arabic_glued_and_colloquial_spelling():
+    ref = 'محمد عبد العزيز عبد الوهاب مصطفى'
+    for typed in ('محمدعبالعزيز عبدالوهاب  مصطفا', 'محمدعبد العزيز عبد الوهاب مصطفي',
+                  'محمد عبد العزيز عبد الوهاب مصطفا'):
+        assert mi.name_match(typed, ref)['score'] >= 95, typed
+    assert mi.normalize('احمد العبد') == 'احمد العبد'
+
+
+def test_well_known_names_with_one_skeleton_stay_apart():
+    assert mi.name_match('Mohamed Hassan Aly', 'Mahmoud Hassan Aly')['score'] < 75
+    assert mi.name_match('علا محمد', 'علي محمد')['score'] < 75

@@ -67,6 +67,8 @@ _LEGAL_FORMS = {'شركه', 'شركة', 'ش', 'م', 'ذ', 'ق', 'مؤسسه', '�
 _AR_SOUND = str.maketrans({'ث': 'س', 'ص': 'س', 'ذ': 'ز', 'ظ': 'ز', 'ض': 'د', 'ط': 'ت',
                            'ق': 'ك', 'غ': 'خ', 'ح': 'ه', 'ع': 'ا', 'ء': 'ا', 'ؤ': 'و', 'ئ': 'ي'})
 _LATIN_CANON = [
+    # generic spelling rules first: ph = f (Mostapha), doubled letters (Wahhab, Hassan)
+    (r'ph', 'f'), (r'([a-z])\1+', r'\1'),
     (r'\b(mo|mu)ha?mm?[ae]d\b', 'mohamed'), (r'\bahm[ae]d\b', 'ahmed'), (r'\bma[hk]m[ou]+d\b', 'mahmoud'),
     (r'\b(mo|mu|mou)st?[ae]fa\b', 'mostafa'), (r'\bh[ou]ss?[ae]i?n\b', 'hussein'), (r'\bh[ae]ss?an\b', 'hassan'),
     (r'\b(a|e)l[iy]\b', 'ali'), (r'\baly\b', 'ali'), (r'\by[ou]ss?[eo]f\b', 'youssef'), (r'\bkh?al[ei]d\b', 'khaled'),
@@ -80,6 +82,26 @@ def is_arabic(text):
     return bool(_ARABIC.search(str(text or '')))
 
 
+def _split_glued(t):
+    """Two names typed without a space before a compound: محمدعبد العزيز,
+    محمدعبدالعزيز, احمدابوبكر -> محمد عبد...  The family name العبد, and words
+    where the compound does not start a name, are left alone."""
+    words = t.split()
+    out = []
+    for k, w in enumerate(words):
+        nxt = words[k + 1] if k + 1 < len(words) else ''
+        m = re.search('(عبد|ابو)', w[2:])
+        if m:
+            i = m.start() + 2
+            head, rest = w[:i], w[i + 3:]
+            if head not in ('ال',) and not head.endswith('ال') and (
+                    len(rest) >= 3 or (rest == '' and nxt.startswith('ال'))):
+                out.extend([head, w[i:]])
+                continue
+        out.append(w)
+    return ' '.join(out)
+
+
 def normalize(text):
     """One canonical spelling for comparison (both scripts)."""
     t = str(text or '').strip()
@@ -89,6 +111,9 @@ def normalize(text):
         t = _AR_DIACRITICS.sub('', t)
         t = re.sub('[إأآٱ]', 'ا', t)
         t = t.replace('ة', 'ه').replace('ى', 'ي')
+        # colloquial contraction عبال... = عبد ال... (عبالعزيز = عبد العزيز)
+        t = re.sub('عبال(?=[ء-ي]{2,})', 'عبد ال', t)
+        t = _split_glued(t)
         # fused compounds: عبدالرحمن / ابوبكر -> عبد الرحمن / ابو بكر
         t = re.sub(r'\b(عبد|ابو)(?=ال|[ء-ي]{3,})', r'\1 ', t)
         t = re.sub(r'[^ء-ي\s]', ' ', t)
@@ -256,8 +281,13 @@ def _same_token(a, b):
     if is_arabic(a) != is_arabic(b):                 # Latin vs Arabic
         return _xs_same(b, a) if is_arabic(a) else _xs_same(a, b)
     ar = is_arabic(a) and is_arabic(b)
+    if not ar and a in _canon_names() and b in _canon_names():
+        return 0.0     # two different well-known names (Mohamed / Mahmoud share a consonant skeleton)
     if ar and a.translate(_AR_SOUND) == b.translate(_AR_SOUND):
         return 0.95
+    if ar and min(len(a), len(b)) >= 4 and len(a) == len(b) and a[:-1] == b[:-1] \
+            and {a[-1], b[-1]} <= {'ا', 'ي'}:
+        return 0.95                                   # مصطفا / مصطفى
     try:
         from rapidfuzz import fuzz
         r = fuzz.ratio(a, b)
@@ -278,6 +308,16 @@ def _same_token(a, b):
     if len(sa) >= 3 and sa == sb:
         return 0.85
     return 0.0
+
+
+_CANON_NAMES = None
+
+
+def _canon_names():
+    global _CANON_NAMES
+    if _CANON_NAMES is None:
+        _CANON_NAMES = {normalize(rep) for pat, rep in _LATIN_CANON if pat.startswith(r'\b')}
+    return _CANON_NAMES
 
 
 def _skeleton(t):
