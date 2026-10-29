@@ -1937,11 +1937,18 @@ class ComplyNexScreeningEngine:
             _es_name = _rec_re.sub(r'[أإآٱ]', 'ا', _es_name)
             _es_name = _rec_re.sub(r' {2,}', ' ', _es_name).strip()
         # Pass english_variants/arabic_variants so the ES query builds bilingual "should" clauses
-        es_candidates = self._search_elasticsearch(
+        # Two queries, unioned: the name as typed (same script) on its own, then the cross-script
+        # variants. In one combined query the variant clauses could push an exact same-script match
+        # out of the top-N (seen: an OFAC record with the exact Latin name dropped behind Arabic-script
+        # records once more list fields were indexed).
+        es_candidates = self._search_elasticsearch(_es_name, country)
+        _xs = self._search_elasticsearch(
             _es_name, country,
             english_variants=english_variants if is_arabic else None,
             arabic_variants=arabic_variants if not is_arabic else None,
-        )
+        ) if (english_variants if is_arabic else arabic_variants) else []
+        _have = {c.get('id') for c in es_candidates}
+        es_candidates = es_candidates + [c for c in _xs if c.get('id') not in _have]
         # If normalized form returned nothing, retry with original
         if not es_candidates and _es_name != processed_name:
             es_candidates = self._search_elasticsearch(

@@ -829,13 +829,18 @@ def _recall(cur, table, cols, field, q, limit, raw=False):
     distinctive = [f for t, f in ranked if _weight(t) >= 2.5 and len(f) >= 3][:3] or \
                   [f for t, f in ranked if len(f) >= 3][:2] or [ranked[0][1]]
     count_frags = [f for t, f in ranked][:6]
+    count_w = [round(_weight(t), 2) for t, f in ranked][:6]
     need = 1 if len(q) <= 1 else 2
     where = ' OR '.join([f'{field} LIKE %s'] * len(distinctive))
     hits = ' + '.join([f'(CASE WHEN {field} LIKE %s THEN 1 ELSE 0 END)'] * len(count_frags))
+    # rank by the RARITY of the elements found, not just how many: with a common name ('علي حسن')
+    # hundreds of records tie on the count and the LIMIT cut the one carrying the rare element
+    weighted = ' + '.join([f'(CASE WHEN {field} LIKE %s THEN {w} ELSE 0 END)' for w in count_w])
     active = 'COALESCE(is_active,1) != 0' if 'is_active' in cols else 'TRUE'
-    sql = (f"SELECT * FROM (SELECT *, ({hits}) AS _tok_hits FROM {table} "
-           f"WHERE {active} AND ({where})) s WHERE _tok_hits >= %s ORDER BY _tok_hits DESC LIMIT %s")
-    params = [f'%{f}%' for f in count_frags] + [f'%{f}%' for f in distinctive] + [min(need, len(count_frags)), limit]
+    sql = (f"SELECT * FROM (SELECT *, ({hits}) AS _tok_hits, ({weighted}) AS _tok_w FROM {table} "
+           f"WHERE {active} AND ({where})) s WHERE _tok_hits >= %s ORDER BY _tok_w DESC, _tok_hits DESC, length({field}), id LIMIT %s")
+    params = ([f'%{f}%' for f in count_frags] + [f'%{f}%' for f in count_frags] + [f'%{f}%' for f in distinctive]
+              + [min(need, len(count_frags)), limit])
     cur.execute(sql, params)
     return [dict(r) for r in cur.fetchall()]
 
