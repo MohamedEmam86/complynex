@@ -891,6 +891,92 @@ def view_result(id):
                            pending=CL.pending_request('result', id),
                            can_approve=CL.can_approve(current_user))
 
+@screening_bp.route('/result/<int:rid>/profile')
+@login_required
+@permission_required('screening', level='view')
+def match_profile(rid):
+    from flask import abort
+    """Match profile (BIO) of one hit: the listed record read live, compared with the customer."""
+    import psycopg2
+    import psycopg2.extras
+    from screening import profile_view as pv
+    from screening import result_view as rv
+    from config import Config
+    src, rec = request.args.get('src', ''), request.args.get('rec', '')
+    result = query_db(f"SELECT * FROM screening_results WHERE id = {get_param_style()}", (rid,), one=True)
+    if not result:
+        flash(gettext('Screening result not found'), 'error')
+        return redirect(url_for('screening.dashboard'))
+    matches_all = result['matches']
+    matches_all = json.loads(matches_all) if isinstance(matches_all, str) else (matches_all or [])
+
+    def _key(x):
+        s = str(x.get('source') or '')
+        return (s.upper(), str(x.get('entity_id') if s.upper().startswith('INTERNAL') else x.get('id')))
+    hit_keys = {_key(x) for x in matches_all if isinstance(x, dict)}
+    conn = psycopg2.connect(**Config.POSTGRES_CONFIG, cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        cur = conn.cursor()
+        if (src.upper(), str(rec)) not in hit_keys and not current_user.is_admin():
+            # a related record (same name on another list) of one of this result's hits is allowed
+            allowed = False
+            for hs, hr in list(hit_keys)[:20]:
+                t0, r0 = pv.load_record(cur, hs, hr)
+                if r0 and any((('INTERNAL_BLACKLIST' if x['table'] == 'internal_blacklist' else str(x.get('source') or '').upper()),
+                               str(x['id'])) == (src.upper(), str(rec)) for x in pv.related(cur, t0, r0)):
+                    allowed = True
+                    break
+            if not allowed:
+                abort(404)
+        table, row = pv.load_record(cur, src, rec)
+        if not row:
+            flash(gettext('The listed record is no longer available.'), 'warning')
+            return redirect(url_for('screening.view_result', id=rid))
+        rel = pv.related(cur, table, row)
+    finally:
+        conn.close()
+    p = pv.build(table, row, rel, labels={k.lower(): v for k, v in rv.SOURCE_LABEL.items()})
+    matches = result['matches']
+    matches = json.loads(matches) if isinstance(matches, str) else (matches or [])
+
+    def _ref(x):
+        return str(x.get('entity_id') if str(x.get('source') or '').upper().startswith('INTERNAL') else x.get('id'))
+    m = next((x for x in matches if isinstance(x, dict) and _ref(x) == str(rec)
+              and str(x.get('source') or '').upper() == src.upper()), None)
+    inputs = {}
+    try:
+        md = result.get('match_details')
+        md = json.loads(md) if isinstance(md, str) and md else (md or {})
+        inputs = md.get('inputs') or {}
+    except Exception:
+        inputs = {}
+    inputs.setdefault('dob', result.get('screened_dob'))
+    v, extra_rows = None, []
+    if m:
+        kind = 'PEP' if 'PEP' in str(m.get('list_type') or m.get('source') or '').upper() else 'SANCTIONS'
+        v = rv.match_view(m, kind, inputs)
+
+        def _row(label, mine, theirs):
+            if not mine and not theirs:
+                return None
+            if mine and theirs:
+                st = 'match' if str(mine).strip().lower() in str(theirs).strip().lower() else 'conflict'
+            else:
+                st = 'missing'
+            return {'label': label, 'screened': mine or '—', 'listed': theirs or '—', 'state': st}
+        extra_rows = [r for r in (
+            _row('Gender', inputs.get('gender'), p['identity']['gender']),
+            _row('Place of birth', inputs.get('place_of_birth'), p['identity']['place_of_birth']),
+        ) if r]
+    try:
+        from models.audit import AuditLog
+        AuditLog.log(current_user.id, 'Screening', 'Match profile', rid,
+                     f'Viewed the profile of {table}#{row.get("id")}', request.remote_addr)
+    except Exception:
+        pass
+    return render_template('screening/match_profile.html', result=result, p=p, v=v, extra_rows=extra_rows)
+
+
 @screening_bp.route('/history')
 @login_required
 @permission_required('screening', level='view')

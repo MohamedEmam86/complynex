@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Match profile') }} — {{ p.display_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mp-wrap { max-width: 1180px; }
+  .mp-card { border-radius: 12px; border: 1px solid #e3e6ea; background: #fff; margin-bottom: 1rem; }
+  .mp-card .h { padding: .7rem 1rem; border-bottom: 1px solid #eef0f3; font-weight: 600; }
+  .mp-card .b { padding: .9rem 1rem; }
+  .mp-kv { display: grid; grid-template-columns: 190px 1fr; gap: .35rem .9rem; font-size: .92rem; margin: 0; }
+  .mp-kv dt { color: #6c757d; font-weight: 500; } .mp-kv dd { margin: 0; word-break: break-word; }
+  .ar { direction: rtl; unicode-bidi: plaintext; }
+  .chip { display: inline-flex; align-items: center; gap: .25rem; border-radius: 999px; padding: .12rem .6rem; font-size: .82rem; margin: 0 .25rem .3rem 0; border: 1px solid #d9dce1; background: #f6f7f9; }
+  .chip.weak { border-style: dashed; color: #8a94a6; }
+  .chip.ok { background: #eaf7ef; border-color: #b7e2c6; color: #1e6b33; }
+  .chip.miss { background: #fff6e5; border-color: #f5d79a; color: #8a5a00; }
+  .chip.extra { background: #f2f3f5; border-color: #d9dce1; color: #495057; }
+  .lifted { background: #fff6e5; border: 1px solid #f5d79a; border-radius: 10px; padding: .6rem .8rem; color: #7a4f00; }
+  .st-match { color: #1e6b33; } .st-conflict { color: #c62828; } .st-unknown, .st-missing { color: #8a94a6; }
+  .mp-sub { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: #6c757d; font-weight: 600; margin: .6rem 0 .3rem; }
+  @media print { .no-print, .navbar, .sidebar, #sidebar { display: none !important; } .mp-card { break-inside: avoid; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mp-wrap py-3">
+  <div class="d-flex justify-content-between align-items-start mb-3 no-print">
+    <a href="{{ url_for('screening.view_result', id=result.id) }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>{{ _('Back to the screening result') }}</a>
+    <button class="btn btn-sm btn-outline-dark" onclick="window.print()"><i class="fas fa-print me-1"></i>{{ _('Print / save as PDF') }}</button>
+  </div>
+
+  <div class="mp-card">
+    <div class="b d-flex flex-wrap gap-3 align-items-center">
+      <div class="flex-grow-1">
+        <div class="small text-muted">{{ _('Match profile') }} · {{ _('screening') }} #{{ result.id }} · {{ _('screened name') }}: <span class="ar fw-semibold">{{ result.screened_name }}</span></div>
+        <h3 class="mb-0 ar fw-bold">{{ p.display_name }}</h3>
+        {% if p.names.arabic and p.names.primary and p.names.arabic != p.names.primary %}<div class="text-muted">{{ p.names.primary }}</div>{% endif %}
+        <div class="small mt-1"><i class="fas fa-list-alt me-1 text-muted"></i>{{ _(p.listing.source_label) }}{% if p.listing.dataset %} · {{ p.listing.dataset }}{% endif %}
+          {% if p.other.entity_type %} · {{ p.other.entity_type|scr_label('entity') }}{% endif %}</div>
+      </div>
+      {% if v %}<div class="text-center"><div class="fs-3 fw-bold">{{ "%.0f"|format(v.score) }}</div><div class="small text-muted">/100 · {{ _(v.tier_label) }}</div></div>{% endif %}
+      {% if p.listing.source_url %}<a href="{{ p.listing.source_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-dark no-print">{{ _('Official profile') }} <i class="fas fa-external-link-alt ms-1"></i></a>{% endif %}
+    </div>
+    {% if p.listing.legal_status == 'LIFTED' %}
+    <div class="b pt-0"><div class="lifted"><i class="fas fa-unlock-alt me-1"></i><strong>{{ _('Order lifted (إنهاء أثر)') }}</strong> — <span class="ar">{{ p.listing.legal_status_note }}</span>{% if p.listing.legal_status_date %} ({{ p.listing.legal_status_date }}){% endif %}.
+      {{ _('The record stays on the list for history; check whether another order or list still applies.') }}</div></div>
+    {% endif %}
+  </div>
+
+  {% if v %}
+  <div class="mp-card">
+    <div class="h">{{ _('Customer vs listed record') }}</div>
+    <div class="b">
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="mp-sub">{{ _('Name, element by element') }}</div>
+          {% for m in v.name_matched %}<span class="chip ok"><i class="fas fa-check"></i><span class="ar">{{ m.listed }}</span> ↔ {{ m.screened }}</span>{% endfor %}
+          {% for t in v.name_missing %}<span class="chip miss"><i class="fas fa-minus"></i><span class="ar">{{ t }}</span></span>{% endfor %}
+          {% for t in v.name_extra %}<span class="chip extra"><i class="fas fa-plus"></i><span class="ar">{{ t }}</span></span>{% endfor %}
+          {% if v.reasons %}<ul class="small mt-2 mb-0 ps-3">{% for r in v.reasons %}<li>{{ _(r.t) }}{% if r.a %}: <span class="ar">{{ r.a }}</span>{% endif %}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        <div class="col-lg-6">
+          <div class="mp-sub">{{ _('Identifiers') }} — <span class="st-{{ v.identity_state }}">{{ _(v.identity_label) }}</span></div>
+          <table class="table table-sm mb-0">
+            <thead><tr><th></th><th>{{ _('Customer') }}</th><th>{{ _('On the list') }}</th><th></th></tr></thead>
+            <tbody>
+            {% for r in v.identity_rows %}
+              <tr><td class="text-muted">{{ _(r.label) }}</td><td>{{ r.screened }}</td><td>{{ r.listed }}</td>
+                <td class="st-{{ r.state }}">{% if r.state == 'match' %}<i class="fas fa-check-circle"></i>{% elif r.state == 'conflict' %}<i class="fas fa-times-circle"></i>{% else %}<i class="fas fa-minus-circle"></i>{% endif %}</td></tr>
+            {% endfor %}
+            {% for r in extra_rows %}
+              <tr><td class="text-muted">{{ _(r.label) }}</td><td>{{ r.screened }}</td><td>{{ r.listed }}</td>
+                <td class="st-{{ r.state }}">{% if r.state == 'match' %}<i class="fas fa-check-circle"></i>{% elif r.state == 'conflict' %}<i class="fas fa-times-circle"></i>{% else %}<i class="fas fa-minus-circle"></i>{% endif %}</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% if v.action %}<div class="mt-3 small"><strong>{{ _('Required action') }}:</strong> {{ _(v.action) }}</div>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="mp-card">
+        <div class="h">{{ _('Identity') }}</div>
+        <div class="b"><dl class="mp-kv">
+          {% set i = p.identity %}
+          {% if i.date_of_birth %}<dt>{{ _('Date of birth') }}</dt><dd>{{ i.date_of_birth }}{% if i.dob_source %} <span class="small text-muted">({{ _(i.dob_source) }})</span>{% endif %}</dd>{% endif %}
+          {% if i.all_dates_of_birth|length > 1 %}<dt>{{ _('Other dates of birth') }}</dt><dd>{{ i.all_dates_of_birth|join(' · ') }}</dd>{% endif %}
+          {% if i.place_of_birth %}<dt>{{ _('Place of birth') }}</dt><dd>{{ i.place_of_birth }}</dd>{% endif %}
+          {% if i.all_places_of_birth|length > 1 %}<dt>{{ _('Other places of birth') }}</dt><dd>{{ i.all_places_of_birth|join(' · ') }}</dd>{% endif %}
+          {% if i.nationality %}<dt>{{ _('Nationality') }}</dt><dd>{{ i.nationality }}</dd>{% endif %}
+          {% if i.all_nationalities|length > 1 %}<dt>{{ _('Nationalities / citizenships') }}</dt><dd>{{ i.all_nationalities|join(' · ') }}</dd>{% endif %}
+          {% if i.gender %}<dt>{{ _('Gender') }}</dt><dd>{{ _(i.gender|capitalize) }}</dd>{% endif %}
+          {% if i.national_ids %}<dt>{{ _('National ID') }}</dt><dd>{{ i.national_ids|join(' · ') }}</dd>{% endif %}
+          {% if i.decoded_nid %}<dt>{{ _('From the Egyptian national ID') }}</dt><dd>{{ _('born') }} {{ i.decoded_nid.dob }} · {{ i.decoded_nid.governorate }} · {{ _('male') if i.decoded_nid.gender == 'M' else _('female') }}</dd>{% endif %}
+          {% if i.passports %}<dt>{{ _('Passports') }}</dt><dd>{{ i.passports|join(' · ') }}</dd>{% endif %}
+          {% if i.other_ids %}<dt>{{ _('Other identifiers') }}</dt><dd>{% for o in i.other_ids %}{{ o.type }}: {{ o.number }}{% if not loop.last %}<br>{% endif %}{% endfor %}</dd>{% endif %}
+          {% if p.other.father %}<dt>{{ _("Father's name") }}</dt><dd class="ar">{{ p.other.father }}</dd>{% endif %}
+          {% if p.other.mother %}<dt>{{ _("Mother's name") }}</dt><dd class="ar">{{ p.other.mother }}</dd>{% endif %}
+          {% if not (i.date_of_birth or i.place_of_birth or i.nationality or i.gender or i.national_ids or i.passports) %}
+          <dt>{{ _('Identity data') }}</dt><dd class="text-muted">{{ _('The list publishes no identity data for this record: decide on the name, the country and the documents the customer provides.') }}</dd>{% endif %}
+        </dl></div>
+      </div>
+      <div class="mp-card">
+        <div class="h">{{ _('Names') }}</div>
+        <div class="b">
+          {% if p.names.arabic %}<div class="mp-sub">{{ _('Arabic') }}</div><span class="chip ar">{{ p.names.arabic }}</span>{% for a in p.names.arabic_aliases %}<span class="chip ar">{{ a }}</span>{% endfor %}{% endif %}
+          {% if p.names.primary or p.names.latin_aliases %}<div class="mp-sub">{{ _('Latin') }}</div>{% if p.names.primary %}<span class="chip">{{ p.names.primary }}</span>{% endif %}
+            {% for a in p.names.latin_aliases %}<span class="chip {{ 'weak' if a in p.names.weak }}" {% if a in p.names.weak %}title="{{ _('Weak alias: low-quality a.k.a. on the list') }}"{% endif %}>{{ a }}</span>{% endfor %}{% endif %}
+          {% if p.names.other_script_aliases %}<div class="mp-sub">{{ _('Other scripts') }}</div>{% for a in p.names.other_script_aliases %}<span class="chip ar">{{ a }}</span>{% endfor %}{% endif %}
+          {% if p.names.weak %}<div class="small text-muted mt-1"><span class="chip weak py-0">…</span>{{ _('dashed = weak alias (low quality on the list)') }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="mp-card">
+        <div class="h">{{ _('Listing') }}</div>
+        <div class="b"><dl class="mp-kv">
+          {% set l = p.listing %}
+          <dt>{{ _('List') }}</dt><dd>{{ _(l.source_label) }}</dd>
+          {% if l.dataset %}<dt>{{ _('Dataset / category') }}</dt><dd>{{ l.dataset }}</dd>{% endif %}
+          {% if l.programs %}<dt>{{ _('Programmes') }}</dt><dd>{{ l.programs|join(' · ') }}</dd>{% endif %}
+          {% if l.regime %}<dt>{{ _('Regime') }}</dt><dd>{{ l.regime }}</dd>{% endif %}
+          {% if l.sanctions_imposed %}<dt>{{ _('Measures') }}</dt><dd>{{ l.sanctions_imposed }}</dd>{% endif %}
+          {% if l.reason %}<dt>{{ _('Reason for listing') }}</dt><dd class="ar">{{ l.reason }}</dd>{% endif %}
+          {% if l.case %}<dt>{{ _('Case') }}</dt><dd class="ar">{{ l.case }}</dd>{% endif %}
+          {% if l.other_information %}<dt>{{ _('Other information') }}</dt><dd class="ar">{{ l.other_information }}</dd>{% endif %}
+          {% if l.un_reference %}<dt>{{ _('UN reference') }}</dt><dd>{{ l.un_reference }}</dd>{% endif %}
+          {% if l.designation_source %}<dt>{{ _('Designated by') }}</dt><dd>{{ l.designation_source }}</dd>{% endif %}
+          {% if l.listed_since %}<dt>{{ _('Listed since') }}</dt><dd>{{ (l.listed_since|string)[:10] }}</dd>{% endif %}
+          {% if l.last_updated %}<dt>{{ _('Record last updated') }}</dt><dd>{{ (l.last_updated|string)[:10] }}</dd>{% endif %}
+          {% if l.risk_level %}<dt>{{ _('Risk level') }}</dt><dd>{{ l.risk_level }}</dd>{% endif %}
+          {% if l.notes %}<dt>{{ _('Notes') }}</dt><dd class="ar">{{ l.notes }}</dd>{% endif %}
+          <dt>{{ _('Record reference') }}</dt><dd class="small text-muted">{{ l.record_id }}</dd>
+        </dl></div>
+      </div>
+      {% if p.other.addresses or p.other.positions or p.other.titles or p.other.linked_entity %}
+      <div class="mp-card">
+        <div class="h">{{ _('Addresses, positions and links') }}</div>
+        <div class="b"><dl class="mp-kv">
+          {% if p.other.positions %}<dt>{{ _('Positions') }}</dt><dd>{{ p.other.positions|join('<br>'|safe) }}</dd>{% endif %}
+          {% if p.other.titles %}<dt>{{ _('Titles') }}</dt><dd>{{ p.other.titles|join(' · ') }}</dd>{% endif %}
+          {% if p.other.linked_entity %}<dt>{{ _('Linked entity') }}</dt><dd class="ar">{{ p.other.linked_entity }}</dd>{% endif %}
+          {% if p.other.addresses %}<dt>{{ _('Addresses') }}</dt><dd class="ar">{{ p.other.addresses|join('<br>'|safe) }}</dd>{% endif %}
+        </dl></div>
+      </div>
+      {% endif %}
+      <div class="mp-card">
+        <div class="h">{{ _('Same name on other lists') }}</div>
+        <div class="b">
+          {% if p.related %}
+          <table class="table table-sm mb-0"><thead><tr><th>{{ _('List') }}</th><th>{{ _('Name') }}</th><th>{{ _('Date of birth') }}</th><th></th></tr></thead><tbody>
+          {% for r in p.related %}
+            <tr><td class="small">{{ _(r.label) }}{% if r.dataset %}<div class="text-muted">{{ r.dataset }}</div>{% endif %}</td>
+              <td class="ar small">{{ r.full_name_arabic or r.full_name }}</td><td class="small">{{ r.date_of_birth or '—' }}</td>
+              <td class="small">{% if r.legal_status == 'LIFTED' %}<span class="badge bg-warning text-dark">{{ _('lifted') }}</span>{% endif %}
+                <a class="no-print" href="{{ url_for('screening.match_profile', rid=result.id, src=('INTERNAL_BLACKLIST' if r.table == 'internal_blacklist' else r.source), rec=r.id) }}">{{ _('profile') }}</a></td></tr>
+          {% endfor %}</tbody></table>
+          <div class="small text-muted mt-1">{{ _('Same written name; compare the date of birth and identifiers before treating them as one person.') }}</div>
+          {% else %}<span class="text-muted small">{{ _('No other list carries exactly this name.') }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

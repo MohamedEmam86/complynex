@@ -186,7 +186,7 @@ def main():
     if active_now and len(recs) < 0.5 * active_now:
         print(f'STOP: the file has {len(recs)} records but {active_now} are active today - not importing')
         sys.exit(2)
-    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    now = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')   # ISO: the search index rejects 'YYYY-MM-DD HH:MM:SS'
     for r in recs:
         full = r['latin'][0] if r['latin'] else r['name_ar']
         aliases = list(dict.fromkeys(r['latin'][1:] + r['aliases']))

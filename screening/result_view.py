@@ -237,6 +237,8 @@ def match_view(m, kind, inputs):
         'name_complete': nm.get('complete'),
         'action': action.get(tier),
         'url': _profile_url(m),
+        'profile_src': m.get('source'),
+        'profile_rec': m.get('entity_id') if str(m.get('source') or '').upper().startswith('INTERNAL') else m.get('id'),
         'has_decision': bool(d),
     }
 

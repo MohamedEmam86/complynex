@@ -152,6 +152,14 @@ def main():
 
     refresh_registry(conn)
     conn.close()
+    if not args.registry_only:
+        try:
+            import subprocess
+            r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'link_emlcu_internal.py'), '--apply'], capture_output=True, text=True, timeout=900)
+            log.info(f"EMLCU <-> Public Prosecution link: {(r.stdout or r.stderr).strip().splitlines()[-2:]}")
+        except Exception as e:
+            log.warning(f"EMLCU link step failed: {e}")
     marker.__exit__(None, None, None)
 
     if not args.registry_only:

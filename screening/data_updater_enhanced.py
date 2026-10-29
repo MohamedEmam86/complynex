@@ -473,7 +473,8 @@ class EnhancedDataUpdater:
             # Get existing records for this chunk
             placeholders = ','.join(['%s'] * len(source_ids))
             cursor.execute(
-                f"SELECT source_id, id, full_name FROM screening_watchlist WHERE source = %s AND source_id IN ({placeholders})",
+                f"SELECT source_id, id, full_name, content_hash FROM screening_watchlist "
+                f"WHERE source = %s AND source_id IN ({placeholders})",
                 [source_name] + source_ids
             )
             existing_map = {row['source_id']: dict(row) for row in cursor.fetchall()}
@@ -487,8 +488,10 @@ class EnhancedDataUpdater:
                     added += 1
                 else:
                     existing = existing_map[source_id]
-                    if existing.get('full_name') != entity.get('full_name'):
+                    rich_changed = entity.get('_rich') and existing.get('content_hash') != self._content_hash(entity)
+                    if existing.get('full_name') != entity.get('full_name') or rich_changed:
                         self._update_entity(entity, cursor)
+                        self._store_rich(entity, cursor, source_name)
                         updated += 1
                     else:
                         unchanged += 1
@@ -565,6 +568,43 @@ class EnhancedDataUpdater:
             return True
         return False
     
+    @staticmethod
+    def _content_hash(entity):
+        """Fingerprint of everything stored for a record, so a changed date of birth, alias or
+        identifier is updated even when the name is unchanged."""
+        import hashlib
+        keys = ('full_name', 'original_name', 'full_name_arabic', 'aliases', 'aliases_arabic', 'entity_type',
+                'date_of_birth', 'place_of_birth', 'nationality', 'gender', 'passport_numbers',
+                'national_id_numbers', 'addresses', 'details', 'properties', 'dataset', 'topics', 'first_seen')
+        blob = json.dumps({k: entity.get(k) for k in keys}, sort_keys=True, ensure_ascii=False, default=str)
+        return hashlib.sha1(blob.encode('utf-8')).hexdigest()
+
+    def _store_rich(self, entity, cursor, source_name):
+        """Profile fields (place of birth, identifiers, addresses, properties, Arabic names) and the
+        content hash, only for handlers that provide them (entity['_rich']). The list is the source of
+        truth: values are overwritten, so a document or address the list removes disappears too."""
+        if not entity.get('_rich'):
+            return
+        def j(v):
+            return json.dumps(v, ensure_ascii=False) if v not in (None, [], {}) else None
+        cursor.execute("""
+            UPDATE screening_watchlist SET
+                place_of_birth = %s,
+                passport_numbers = %s,
+                national_id_numbers = %s,
+                addresses = %s,
+                properties = %s,
+                full_name_arabic = %s,
+                aliases_arabic = %s,
+                first_seen = COALESCE(%s, first_seen),
+                content_hash = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE source = %s AND source_id = %s
+        """, (entity.get('place_of_birth'), j(entity.get('passport_numbers')), j(entity.get('national_id_numbers')),
+              j(entity.get('addresses')), j(entity.get('properties')), entity.get('full_name_arabic'),
+              j(entity.get('aliases_arabic')), entity.get('first_seen'), self._content_hash(entity),
+              source_name or entity.get('source'), entity['source_id']))
+
     def _batch_insert_entities(self, entities, cursor, source_name=None):
         """True bulk insert using executemany"""
         if not entities:
@@ -627,6 +667,9 @@ class EnhancedDataUpdater:
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ON CONFLICT (source, source_id) DO NOTHING
             """, insert_data)
+            for entity in entities:
+                if entity.get('_rich'):
+                    self._store_rich(entity, cursor, source_name)
 
     def _has_entity_changed(self, existing, new_entity):
         """

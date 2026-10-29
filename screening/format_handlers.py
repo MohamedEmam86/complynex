@@ -287,6 +287,54 @@ class UNSecurityCouncilHandler(BaseFormatHandler):
         return date_str  # Return as-is if can't parse
 
 
+_MONTHS = {m: i for i, m in enumerate(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct',
+                                          'nov', 'dec'], 1)}
+
+
+def iso_date(s):
+    """'19 Apr 1947' / '12/11/1967' / 'dd/mm/1968' / '1947' / 'Apr 1947' -> '1947-04-19' / '1967-11-12' /
+    '1968' / '1947' / '1947-04'. Anything else is returned as written (never invented)."""
+    import re as _re
+    s = (s or '').strip()
+    if not s:
+        return None
+    m = _re.fullmatch(r'(\d{1,2}) ([A-Za-z]{3})[a-z]* (\d{4})', s)
+    if m and m.group(2).lower() in _MONTHS:
+        return f'{m.group(3)}-{_MONTHS[m.group(2).lower()]:02d}-{int(m.group(1)):02d}'
+    m = _re.fullmatch(r'([A-Za-z]{3})[a-z]* (\d{4})', s)
+    if m and m.group(1).lower() in _MONTHS:
+        return f'{m.group(2)}-{_MONTHS[m.group(1).lower()]:02d}'
+    m = _re.fullmatch(r'(\d{1,2})/(\d{1,2})/(\d{4})', s)
+    if m:
+        d, mo, y = int(m.group(1)), int(m.group(2)), m.group(3)
+        if mo == 0:
+            return y
+        if d == 0:
+            return f'{y}-{mo:02d}'
+        try:
+            import datetime as _dt
+            _dt.date(int(y), mo, d)
+            return f'{y}-{mo:02d}-{d:02d}'
+        except ValueError:
+            return y
+    m = _re.fullmatch(r'(?:dd|\d{1,2})/(?:mm|\d{1,2})/(\d{4})', s, _re.I)
+    if m:
+        return m.group(1)
+    m = _re.fullmatch(r'\d{4}(-\d{2}(-\d{2})?)?', s)
+    if m:
+        return s
+    return s
+
+
+_PASSPORT = ('passport',)
+_NATIONAL_ID = ('national id', 'national identification', 'identification number', 'cedula', 'personal id',
+                'id card', 'nic', 'tax id', 'curp', 'c.u.r.p', 'personal number', 'citizen')
+# OFAC idList types that are not personal identity documents
+_NOT_ID = ('country', 'vessel', 'aircraft', 'imo', 'mmsi', 'swift', 'bic', 'website', 'email', 'phone',
+           'sanctions risk', 'executive order', 'gender', 'organization established', 'organization type',
+           'registration country', 'nationality of registration')
+
+
 class OFACHandler(BaseFormatHandler):
     """Parser for OFAC SDN List XML format"""
 
@@ -322,8 +370,8 @@ class OFACHandler(BaseFormatHandler):
                         for p in pl.findall(f'{ns}program'):
                             if p.text: programs.append(p.text)
 
-                    # Aliases
-                    aliases = []
+                    # Aliases (OFAC marks each a.k.a. strong or weak)
+                    aliases, weak_aliases = [], []
                     al = sdn_entry.find(f'{ns}akaList')
                     if al is not None:
                         for aka in al.findall(f'{ns}aka'):
@@ -332,6 +380,25 @@ class OFACHandler(BaseFormatHandler):
                             aka_name = f"{fn} {ln}".strip() if fn and ln else (fn or ln)
                             if aka_name and aka_name != full_name:
                                 aliases.append(aka_name)
+                                if (self._t(aka, f'{ns}category') or '').lower() == 'weak':
+                                    weak_aliases.append(aka_name)
+
+                    def _items(lst, item, field):
+                        out, main = [], None
+                        le = sdn_entry.find(f'{ns}{lst}')
+                        if le is not None:
+                            for it in le.findall(f'{ns}{item}'):
+                                v = self._t(it, f'{ns}{field}')
+                                if v:
+                                    out.append(v)
+                                    if (self._t(it, f'{ns}mainEntry') or '').lower() == 'true' and main is None:
+                                        main = v
+                        return out, (main or (out[0] if out else None))
+                    dobs, dob_main = _items('dateOfBirthList', 'dateOfBirthItem', 'dateOfBirth')
+                    pobs, pob_main = _items('placeOfBirthList', 'placeOfBirthItem', 'placeOfBirth')
+                    nats, nat_main = _items('nationalityList', 'nationality', 'country')
+                    cits, cit_main = _items('citizenshipList', 'citizenship', 'country')
+                    remarks = self._t(sdn_entry, f'{ns}remarks')
 
                     # Addresses
                     addresses = []
@@ -354,6 +421,11 @@ class OFACHandler(BaseFormatHandler):
                             if id_type and id_num:
                                 ids.append({'type': id_type, 'number': id_num})
 
+                    gender = next((i['number'] for i in ids if i['type'].lower() == 'gender'), None)
+                    passports = [i['number'] for i in ids if any(k in i['type'].lower() for k in _PASSPORT)]
+                    national_ids = [i['number'] for i in ids
+                                    if any(k in i['type'].lower() for k in _NATIONAL_ID)
+                                    and not any(k in i['type'].lower() for k in _PASSPORT + _NOT_ID)]
                     entity = {
                         'source_id':   source_id,
                         'source':      'ofac',
@@ -363,9 +435,22 @@ class OFACHandler(BaseFormatHandler):
                         'addresses':   addresses,
                         'ids':         ids,
                         'programs':    programs,
+                        'date_of_birth': ';'.join(dict.fromkeys(
+                            [d for d in [iso_date(dob_main)] + [iso_date(x) for x in dobs] if d])) or None,
+                        'place_of_birth': pob_main,
+                        'nationality': nat_main or cit_main,
+                        'gender':      gender.lower() if gender else None,
+                        'passport_numbers': passports,
+                        'national_id_numbers': national_ids,
                         'risk_level':  'HIGH',
                         'source_url':  'https://sanctionslistservice.ofac.treas.gov/api/publicationpreview/exports/sdn.xml',
                         'details':     {'programs': programs, 'sdn_type': sdn_type},
+                        'properties':  {'programs': programs, 'remarks': remarks,
+                                        'dates_of_birth': [iso_date(d) for d in dobs],
+                                        'places_of_birth': pobs, 'nationalities': nats, 'citizenships': cits,
+                                        'identifiers': [i for i in ids if i['type'].lower() != 'gender'],
+                                        'weak_aliases': weak_aliases},
+                        '_rich':       True,
                         'is_active':   True,
                         'last_updated': None,
                     }
@@ -482,18 +567,58 @@ class HMTreasuryHandler(BaseFormatHandler):
 
         regime = self._t(desig, 'RegimeName') or ''
 
+        def texts(path):
+            return [e.text.strip() for e in desig.findall(path) if e is not None and e.text and e.text.strip()]
+
+        weak = []
+        if names_el is not None:
+            for name_el in names_el.findall('Name'):
+                if 'low' in (self._t(name_el, 'AliasStrength') or '').lower() and self._t(name_el, 'Name6'):
+                    weak.append(self._t(name_el, 'Name6'))
+        non_latin = texts('NonLatinNames/NonLatinName/NameNonLatinScript')
+        arabic = [n for n in non_latin if any('\u0600' <= ch <= '\u06ff' for ch in n)]
+        dobs = texts('IndividualDetails/Individual/DOBs/DOB')
+        pobs = []
+        for loc in desig.findall('IndividualDetails/Individual/BirthDetails/Location'):
+            p = ', '.join(x for x in (self._t(loc, 'TownOfBirth'), self._t(loc, 'CountryOfBirth')) if x)
+            if p and p not in pobs:
+                pobs.append(p)
+        nats = texts('IndividualDetails/Individual/Nationalities/Nationality')
+        passports = texts('IndividualDetails/Individual/PassportDetails/Passport/PassportNumber')
+        nids = [e.text.strip() for e in desig.iter() if e.tag.endswith('NationalIdentifierNumber') and e.text and e.text.strip()]
+        genders = [e.text.strip() for e in desig.iter() if e.tag == 'Gender' and e.text and e.text.strip()]
+        positions = texts('IndividualDetails/Individual/Positions/Position')
+        dob_main = next((iso_date(d) for d in dobs if iso_date(d) and len(iso_date(d)) == 10), None) or \
+            (iso_date(dobs[0]) if dobs else None)
         return {
             'source_id':     f"HMT-{unique_id}",
             'source':        'hmt',
             'full_name':     full_name,
+            'full_name_arabic': arabic[0] if arabic else None,
+            'aliases_arabic': arabic[1:],
             'entity_type':   entity_type,
             'aliases':       aliases,
             'addresses':     addresses,
-            'date_of_birth': None,
-            'nationality':   None,
+            'date_of_birth': ';'.join(dict.fromkeys([d for d in [dob_main] + [iso_date(x) for x in dobs] if d])) or None,
+            'place_of_birth': pobs[0] if pobs else None,
+            'nationality':   nats[0] if nats else None,
+            'gender':        genders[0].lower() if genders else None,
+            'passport_numbers': passports,
+            'national_id_numbers': nids,
+            'first_seen':    iso_date(self._t(desig, 'DateDesignated')),
             'risk_level':    'HIGH',
             'source_url':    'https://sanctionslist.fcdo.gov.uk/docs/UK-Sanctions-List.xml',
             'details':       {'regime': regime, 'date_designated': self._t(desig, 'DateDesignated')},
+            'properties':    {'regime': regime, 'date_designated': iso_date(self._t(desig, 'DateDesignated')),
+                              'un_reference': self._t(desig, 'UNReferenceNumber'),
+                              'designation_source': self._t(desig, 'DesignationSource'),
+                              'sanctions_imposed': self._t(desig, 'SanctionsImposed'),
+                              'other_information': self._t(desig, 'OtherInformation'),
+                              'statement_of_reasons': self._t(desig, 'UKStatementofReasons'),
+                              'titles': texts('Titles/Title'), 'positions': positions,
+                              'dates_of_birth': [iso_date(d) for d in dobs], 'places_of_birth': pobs,
+                              'nationalities': nats, 'weak_aliases': weak, 'non_latin_names': non_latin},
+            '_rich':         True,
             'is_active':     True,
             'last_updated':  self._t(desig, 'LastUpdated'),
         }

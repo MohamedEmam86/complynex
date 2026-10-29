@@ -2465,6 +2465,10 @@ class ComplyNexScreeningEngine:
 
         if not candidate_dob:
             return score  # Record has no DOB — cannot confirm or deny, no change
+        # lists often give several possible dates of birth (';'-separated): judge on the closest one
+        if isinstance(candidate_dob, str) and ';' in candidate_dob:
+            return max(self._apply_dob_scoring(score, submitted_dob, c.strip())
+                       for c in candidate_dob.split(';') if c.strip())
 
         # Both exist — now compare
         try:
@@ -2490,6 +2494,8 @@ class ComplyNexScreeningEngine:
                 return score + 8   # Year and month match
             elif sub.year == can.year:
                 return score + 4   # Year only match
+            elif abs(sub.year - can.year) <= 1:
+                return score       # lists often give an approximate year: neither confirms nor contradicts
             else:
                 return score - 20  # DOB provided AND exists in record but does not match
                 # This is a strong signal this is the wrong person
