@@ -93,6 +93,7 @@ onnx==1.22.0
 onnxruntime==1.27.0
 opencv-python-headless==4.13.0.92
 openpyxl==3.1.5
+xlrd==2.0.1  # .xls lists (Palestine national designation list)
 ordered-set==4.1.0
 packageurl-python==0.17.6
 packaging==26.0

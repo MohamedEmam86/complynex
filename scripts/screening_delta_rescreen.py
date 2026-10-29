@@ -47,7 +47,11 @@ import psycopg2.extras  # noqa: E402
 from config import Config  # noqa: E402
 from screening import match_intel as mi  # noqa: E402
 
-MIN_SCORE = mi.POTENTIAL       # store potential and confirmed matches only
+def _min_score():
+    # store potential and confirmed matches only (thresholds in force, set by the MLRO)
+    from screening import thresholds
+    thresholds.apply()
+    return mi.POTENTIAL
 
 
 def _subjects(cur):
@@ -121,6 +125,8 @@ def main():
     ap.add_argument('--init', action='store_true', help='record the current list ids as the starting point')
     ap.add_argument('--since-bl', type=int, help='re-check internal blacklist records with id above this')
     a = ap.parse_args()
+    from screening import thresholds
+    thresholds.apply(force=True)
     from utils.demo import skip_in_demo
     if skip_in_demo("delta re-screening"):
         return
@@ -186,7 +192,7 @@ def main():
                     d = mi.decide(m, sn, national_id=s['nid'], dob=s['dob'], nationality=s['nat'])
                     if best is None or d['match_score'] > best[0]['match_score']:
                         best = (d, sn, f)
-            if best and best[0]['match_score'] >= MIN_SCORE:
+            if best and best[0]['match_score'] >= _min_score():
                 d, sn, f = best
                 cur.execute("""INSERT INTO screening_delta_hits (run_id, subject_table, subject_id, subject_name,
                                  list_table, list_record_id, listed_name, list_source, category, score, tier, decision)

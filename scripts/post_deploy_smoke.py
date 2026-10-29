@@ -26,7 +26,8 @@ os.chdir(BASE)
 import logging  # noqa: E402
 logging.disable(logging.WARNING)
 
-from screening.match_intel import tokens, POTENTIAL  # noqa: E402
+from screening.match_intel import tokens  # noqa: E402
+from screening import match_intel as _mi  # noqa: E402
 
 PATH = os.path.join(BASE, 'screening', 'data', 'gold', 'smoke_v1.json')
 # common Egyptian names that must NOT produce a potential or confirmed hit
@@ -95,7 +96,7 @@ def run():
                 fails.append((c, 'listed name not returned'))
         else:
             top = max([float(m.get('match_score') or 0) for m in ms] or [0])
-            if top >= POTENTIAL:
+            if top >= _mi.POTENTIAL:
                 fails.append((c, f'unexpected hit at {top:.0f}'))
     n = len(data['cases'])
     print(f'smoke: {n - len(fails)}/{n} passed in {time.time() - t0:.0f}s')

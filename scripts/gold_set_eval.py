@@ -57,6 +57,8 @@ def write_json(path, obj):
 
 
 def evaluate(version, retrieval=True):
+    from screening import thresholds
+    in_force = thresholds.apply(force=True)
     path = os.path.join(GOLD, f'gold_v{version}.jsonl')
     raw = open(path, 'rb').read()
     pairs = [json.loads(l) for l in raw.decode('utf-8').splitlines() if l.strip()]
@@ -77,7 +79,7 @@ def evaluate(version, retrieval=True):
         d['miss'] += miss
         d['fp'] += fp
     res = {'gold_version': version, 'gold_sha256': hashlib.sha256(raw).hexdigest(), 'commit': commit(),
-           'threshold': mi.LOW, 'pairs': len(pairs), 'categories': {}, 'holdout': hold, 'mixed_labels': []}
+           'threshold': mi.LOW, 'thresholds': in_force, 'pairs': len(pairs), 'categories': {}, 'holdout': hold, 'mixed_labels': []}
     for c, d in sorted(dev.items()):
         if len(d['labels']) != 1:
             res['mixed_labels'].append(c)
@@ -95,6 +97,18 @@ def evaluate(version, retrieval=True):
     if retrieval:
         res['retrieval'] = retrieval_check(pairs)
     return res
+
+
+def preview_scores(version):
+    """Sorted name scores of the core dev pairs (positives / negatives) for the threshold preview."""
+    pos, neg = [], []
+    with open(os.path.join(GOLD, f'gold_v{version}.jsonl'), encoding='utf-8') as f:
+        for line in f:
+            p = json.loads(line)
+            if p['holdout'] or p.get('tier', 'core') != 'core':
+                continue
+            (pos if p['label'] == 1 else neg).append(round(mi.name_match(p['query'], p['listed'])['score'], 3))
+    return {'version': version, 'commit': commit(), 'positive': sorted(pos), 'negative': sorted(neg)}
 
 
 def retrieval_check(pairs):
@@ -201,6 +215,7 @@ def main():
         print(f"  retrieval (internal lists): {r['found']}/{r['n']} = {r['recall']}%  ({r['seconds']}s)")
     if a.write_baseline:
         write_json(bpath, res)
+        write_json(os.path.join(GOLD, f'preview_scores_v{a.version}.json'), preview_scores(a.version))
         print(f'baseline written: {bpath}')
     if a.ratchet:
         if os.path.exists(bpath):
@@ -212,7 +227,15 @@ def main():
         if not os.path.exists(bpath):
             print('GATE: no baseline yet -> FAIL (write one with --write-baseline)')
             sys.exit(1)
-        problems = gate(res, json.load(open(bpath)))
+        base = json.load(open(bpath))
+        if float(base.get('threshold', mi.LOW)) != float(res['threshold']):
+            # never re-base inside the gate (a code regression would become the reference):
+            # the baseline is re-measured on the deployed code when the MLRO saves a new threshold
+            print(f"GATE FAILED: the alert threshold is {res['threshold']} but the baseline was measured at "
+                  f"{base.get('threshold')}. Re-measure on the deployed code first: "
+                  f"python scripts/gold_set_eval.py --write-baseline")
+            sys.exit(1)
+        problems = gate(res, base)
         if problems:
             print('GATE FAILED:')
             for p in problems:

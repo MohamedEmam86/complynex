@@ -740,7 +740,7 @@ def dedupe(matches):
         src = str(x.get('source') or '').lower()
         if src.startswith('internal') or src in ('emlcu', 'emlcu_egypt'):
             return 0
-        if src in ('un', 'un_consolidated', 'ofac', 'ofac_sdn', 'eu', 'eu_sanctions', 'hmt', 'uk_hmt'):
+        if src in ('un', 'un_consolidated', 'ofac', 'ofac_sdn', 'eu', 'eu_sanctions', 'hmt', 'uk_hmt', 'pma_ps'):
             return 1
         return 2
     for m in sorted(matches, key=lambda x: (-round(float(x.get('match_score') or 0), 1), _rank(x))):
@@ -840,7 +840,7 @@ def _recall(cur, table, cols, field, q, limit, raw=False):
     return [dict(r) for r in cur.fetchall()]
 
 
-def search_internal(conn, table, name, limit=150, min_score=LOW):
+def search_internal(conn, table, name, limit=150, min_score=None):
     """Token-based recall + analyst scoring over an internal list table.
     Returns rows (dicts) with ``_match_score`` in 0..1 and ``_name_match``.
 
@@ -849,6 +849,8 @@ def search_internal(conn, table, name, limit=150, min_score=LOW):
     then counts how many of its elements each candidate carries. A Latin
     query is also searched through its most likely Arabic spelling, because
     the local lists are Arabic first."""
+    if min_score is None:
+        min_score = LOW
     q = tokens(name)
     if not q:
         return []

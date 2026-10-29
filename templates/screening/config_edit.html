@@ -77,7 +77,15 @@
                         <h6 class="m-0 font-weight-bold">{{ _('Matching Thresholds') }}</h6>
                     </div>
                     <div class="card-body">
-                        <p class="small text-muted mb-2">{{ _('These are the thresholds the screening engine actually uses. They are fixed by ComplyNex and every change is measured on the Gold Set before release, so they cannot be edited here.') }}</p>
+                        <p class="small text-muted mb-2">{{ _('These are the thresholds the screening engine actually uses. Only the MLRO can change them, with a written reason; every change is recorded in the audit log and takes effect within a minute. Use "Preview impact" first to see how many listed names would be missed and how many false alerts would appear on the Gold Set.') }}</p>
+                        {% if can_approve %}
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-8"><input type="text" name="threshold_change_reason" class="form-control"
+                                placeholder="{{ _('Reason for changing the thresholds (required to save)') }}"></div>
+                            <div class="col-md-4"><button type="submit" name="action" value="preview" class="btn btn-outline-info w-100">
+                                {{ _('Preview impact') }}</button></div>
+                        </div>
+                        {% endif %}
                         <div class="table-responsive">
                             <table class="table align-middle">
                                 <thead>
@@ -95,9 +103,9 @@
                                                 }}</label>
                                         </td>
                                         <td style="width: 150px;">
-                                            <input type="number" id="{{ s.config_key }}"
+                                            <input type="number" id="{{ s.config_key }}" name="{{ s.config_key }}"
                                                 value="{{ '%g'|format(engine_thresholds.get(s.config_key, s.config_value)|float) }}"
-                                                class="form-control" disabled>
+                                                step="1" min="60" max="100" class="form-control" {% if not can_approve %}disabled{% endif %}>
                                         </td>
                                         <td class="small text-muted">{{ _(s.description) if s.description else "" }}</td>
                                     </tr>

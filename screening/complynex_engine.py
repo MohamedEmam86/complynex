@@ -1160,6 +1160,12 @@ class ComplyNexScreeningEngine:
         """
         Screen a person/entity using ensemble algorithm
         """
+        # tier thresholds in force (screening_config, set by the MLRO; cached 60 s)
+        try:
+            from screening import thresholds as _thr
+            _thr.apply(self)
+        except Exception as _e:
+            logger.warning(f'thresholds not applied, keeping defaults: {_e}')
         # SAFETY: Limit name to max 15 words to prevent PostgreSQL 'Expression tree is too large' errors
         if threshold is not None:
             self.active_threshold = int(threshold)  # FIX: allow caller to pass threshold
@@ -1290,13 +1296,20 @@ class ComplyNexScreeningEngine:
                 if bl_score < self.LOW_MATCH_THRESHOLD:
                     continue
 
+                _lifted = (hit.get('legal_status') or '').upper() == 'LIFTED'
+                _reason = hit['reason']
+                if _lifted:
+                    _reason = f"[إنهاء أثر / LIFTED] {hit.get('legal_status_note') or ''} — {hit['reason'] or ''}"
                 match = {
                     'entity_id': hit['id'],
                     'full_name': hit_name,
                     'watchlist_name_ar': hit['original_name'],
                     'entity_type': hit['entity_type'],
                     'match_score': round(float(bl_score), 2),
-                    'reason': hit['reason'],
+                    'reason': _reason,
+                    'legal_status': hit.get('legal_status'),
+                    'legal_status_note': hit.get('legal_status_note'),
+                    'legal_status_date': hit.get('legal_status_date'),
                     'risk_level': hit['risk_level'],
                     'source': 'INTERNAL_BLACKLIST',
                     'source_name': 'Internal Blacklist',
@@ -1311,9 +1324,11 @@ class ComplyNexScreeningEngine:
                     'is_internal': True,
                     '_mi_scored': bool(hit.get('_name_match')),
                     'details': {
-                        'reason': hit['reason'],
+                        'reason': _reason,
                         'category': hit['category'],
-                        'notes': hit['notes']
+                        'notes': hit['notes'],
+                        'legal_status': hit.get('legal_status'),
+                        'legal_status_note': hit.get('legal_status_note'),
                     },
                     'score_breakdown': {
                         'fuzzy_ratio': round(float(bl_score), 2),
@@ -2054,7 +2069,7 @@ class ComplyNexScreeningEngine:
                                 cur.execute(
                                     """SELECT id, full_name, original_name, entity_type, reason,
                                               risk_level, nationality, date_of_birth, category,
-                                              source_id
+                                              source_id, legal_status, legal_status_note
                                        FROM internal_blacklist
                                        WHERE id = ANY(%s) AND COALESCE(is_active, 1) != 0""",
                                     (blacklist_ids,)
@@ -2073,7 +2088,11 @@ class ComplyNexScreeningEngine:
                                         'entity_type': row['entity_type'], 'properties': '{}',
                                         'source': 'INTERNAL_BLACKLIST', 'source_name': 'Internal Blacklist',
                                         'watchlist_id': row['source_id'], 'source_id': row['source_id'],
-                                        'category': row['category'], 'reason': row['reason'],
+                                        'category': row['category'],
+                                        'reason': (f"[إنهاء أثر / LIFTED] {row.get('legal_status_note') or ''} — {row['reason'] or ''}"
+                                                   if (row.get('legal_status') or '').upper() == 'LIFTED' else row['reason']),
+                                        'legal_status': row.get('legal_status'),
+                                        'legal_status_note': row.get('legal_status_note'),
                                         'is_internal': True,
                                         'trgm_score': score_by_id[orig_id] / 100.0,
                                         'semantic_score': score_by_id[orig_id], 'is_semantic': True,

@@ -1,0 +1,9 @@
+[Unit]
+Description=Search-index health check every 6 hours (after the 15-minute sync settles)
+
+[Timer]
+OnCalendar=*-*-* 00/6:23:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

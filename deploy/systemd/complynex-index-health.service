@@ -1,0 +1,17 @@
+[Unit]
+Description=ComplyNex search-index health check (Elasticsearch / semantic index vs lists)
+After=network.target postgresql.service elasticsearch.service
+
+[Service]
+Type=oneshot
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+Environment="PATH=/var/www/complynex/venv/bin"
+EnvironmentFile=/var/www/complynex/.env
+ExecStart=/var/www/complynex/venv/bin/python /var/www/complynex/scripts/index_health.py
+TimeoutStartSec=600
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/complynex/logs

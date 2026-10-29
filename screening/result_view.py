@@ -50,6 +50,7 @@ SOURCE_LABEL = {
     'eu': 'EU Financial Sanctions', 'eu_sanctions': 'EU Financial Sanctions',
     'uk_hmt': 'UK HM Treasury (OFSI)', 'hmt': 'UK HM Treasury (OFSI)', 'uk': 'UK HM Treasury (OFSI)',
     'emlcu': 'EMLCU — Egyptian terrorist lists', 'emlcu_egypt': 'EMLCU — Egyptian terrorist lists',
+    'pma_ps': 'Palestine national list (UNSCR 1373)', 'pma_ps_national_1373': 'Palestine national list (UNSCR 1373)',
     'INTERNAL_BLACKLIST': 'Internal list (asset-freeze orders / local & UN terrorist lists)',
     'internal_blacklist': 'Internal list (asset-freeze orders / local & UN terrorist lists)',
     'INTERNAL_PEP': 'Internal PEP list', 'internal_pep': 'Internal PEP list',
@@ -74,6 +75,11 @@ def tier_of(m):
     if d.get('tier'):
         return d['tier']
     s = float(m.get('match_score') or 0)          # results saved before the decision layer
+    try:
+        from screening import thresholds
+        thresholds.apply()
+    except Exception:
+        pass
     return 'CONFIRMED' if s >= mi.CONFIRMED else 'POTENTIAL' if s >= mi.POTENTIAL else \
         'LOW' if s >= mi.LOW else 'BELOW'
 

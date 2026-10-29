@@ -907,7 +907,10 @@ def history():
     
     return render_template('screening/history.html', screenings=screenings, page=page)
 
+THRESHOLD_FORM = {'low': 'low_match_threshold', 'potential': 'potential_match_threshold',
+                  'confirmed': 'confirmed_hit_threshold'}
 ENGINE_FIXED_KEYS = {'confirmed_hit_threshold', 'potential_match_threshold', 'low_match_threshold',
+                     'threshold_change_reason', 'action',
                      'fuzzy_ratio_weight', 'jaro_winkler_weight', 'phonetic_weight', 'partial_ratio_weight',
                      'exact_match_favoritism', 'dob_exact_match_bonus', 'nationality_bonus', 'dob_mismatch_penalty'}
 
@@ -966,6 +969,55 @@ def config():
             # Matching thresholds / weights / bonuses are fixed in the engine (match_intel) and
             # protected by the Gold Set quality gate; the old database values were never read by
             # the engine, so editing them here only gave a false impression. They are shown read-only.
+            # Tier thresholds: MLRO only, written reason, validated, audited; the engine picks them
+            # up within a minute (screening/thresholds.py).
+            from screening import thresholds as _thr
+            if any(k in request.form for k in THRESHOLD_FORM.values()):
+                cur_t = _thr.current(force=True)
+                try:
+                    new_t = {k: float(request.form.get(v, cur_t[k])) for k, v in THRESHOLD_FORM.items()}
+                except (TypeError, ValueError):
+                    flash(gettext('Thresholds must be numbers. Nothing was saved.'), 'error')
+                    return redirect(url_for('screening.config'))
+                if request.form.get('action') == 'preview':
+                    if not CL.can_approve(current_user):
+                        flash(gettext('Only the MLRO (approval authority) can preview threshold changes.'), 'error')
+                        return redirect(url_for('screening.config'))
+                    _p = _thr.preview(new_t['low'])
+                    if _p:
+                        flash(gettext('Impact on the Gold Set (core, %(n)s pairs) at alert threshold %(low)s: '
+                                      'missed names %(miss)s%%, false alerts %(fp)s%%. Nothing was saved.',
+                                      n=_p['pairs'], low=('%g' % new_t['low']), miss=_p['miss_rate'], fp=_p['fp_rate']),
+                              'info')
+                    return redirect(url_for('screening.config'))
+                if new_t != cur_t:
+                    if not CL.can_approve(current_user):
+                        flash(gettext('Only the MLRO (approval authority) can change the screening thresholds.'), 'error')
+                        return redirect(url_for('screening.config'))
+                    probs = _thr.validate(new_t)
+                    if probs:
+                        flash(gettext('Invalid thresholds: %(p)s. Nothing was saved.', p='; '.join(probs)), 'error')
+                        return redirect(url_for('screening.config'))
+                    why = (request.form.get('threshold_change_reason') or '').strip()
+                    if len(why) < 15:
+                        flash(gettext('Please give the reason for the threshold change (at least 15 characters). Nothing was saved.'), 'error')
+                        return redirect(url_for('screening.config'))
+                    for k, v in THRESHOLD_FORM.items():
+                        execute_db(f"UPDATE screening_config SET config_value = {param}, updated_at = CURRENT_TIMESTAMP "
+                                   f"WHERE config_key = {param}", (('%g' % new_t[k]), v))
+                    _audit('Screening thresholds changed', None,
+                           f"low {cur_t['low']:g}->{new_t['low']:g}, potential {cur_t['potential']:g}->{new_t['potential']:g}, "
+                           f"confirmed {cur_t['confirmed']:g}->{new_t['confirmed']:g}; reason: {why}")
+                    _thr.current(force=True)
+                    # the Gold Set reference must follow the new threshold, measured on the code in production
+                    try:
+                        import subprocess
+                        subprocess.Popen([sys.executable, os.path.join(BASE_DIR, 'scripts', 'gold_set_eval.py'),
+                                          '--write-baseline'],
+                                         cwd=BASE_DIR, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                         start_new_session=True)
+                    except Exception as _e:
+                        logger.warning(f'baseline re-measure not started: {_e}')
             for key in request.form:
                 if key in ENGINE_FIXED_KEYS or key == 'csrf_token':
                     continue
@@ -979,9 +1031,8 @@ def config():
     settings = query_db("SELECT * FROM screening_config ORDER BY category, config_key")
     from screening import match_intel as _mi
     return render_template('screening/config_edit.html', settings=settings,
-                           engine_thresholds={'confirmed_hit_threshold': _mi.CONFIRMED,
-                                              'potential_match_threshold': _mi.POTENTIAL,
-                                              'low_match_threshold': _mi.LOW},
+                           engine_thresholds={THRESHOLD_FORM[k]: v for k, v in
+                                              __import__('screening.thresholds', fromlist=['x']).current(force=True).items()},
                            clearance_threshold=CL.approval_threshold(),
                            can_approve=CL.can_approve(current_user))
 
