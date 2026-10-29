@@ -39,6 +39,26 @@ sudo -u postgres pg_dump -d complynex_db --schema-only > "/var/backups/complynex
 $G merge --ff-only --quiet "$TARGET" || { echo "STOP: branch cannot fast-forward from the server version."; exit 1; }
 $G ls-files -z | (cd "$APP" && xargs -0 chown complynex:complynex) || true
 
+# ---- quality gate (Phase 0): engine tests + Gold Set must not get worse -------------
+# Runs on the new code before migrations, so a failure only needs a code rollback.
+# Emergency override (logged): sudo QUALITY_GATE_OVERRIDE="reason" ./deploy.sh
+echo "-- quality gate"
+GATE_OK=1
+T_OUT=$(timeout 300 sudo -u complynex env -C "$APP" PYTHONPATH="/opt/pytest_lib:$APP" "$APP/venv/bin/python" -m pytest -q   --noconftest -p no:cacheprovider tests/test_screening_intel 2>&1) && T_RC=0 || T_RC=$?
+echo "$T_OUT" | tail -3
+[ "$T_RC" = "0" ] || GATE_OK=0
+G_OUT=$(timeout 300 sudo -u complynex bash -c "set -a; . $APP/.env; set +a; cd $APP && $APP/venv/bin/python scripts/gold_set_eval.py --gate" 2>&1)   && G_RC=0 || G_RC=$?
+echo "$G_OUT" | grep -v -i -e warn -e faiss -e '^INFO' | tail -30 || true
+[ "$G_RC" = "0" ] || GATE_OK=0
+if [ "$GATE_OK" != "1" ]; then
+  if [ -n "${QUALITY_GATE_OVERRIDE:-}" ]; then
+    echo "QUALITY GATE FAILED but overridden: $QUALITY_GATE_OVERRIDE"
+  else
+    echo "QUALITY GATE FAILED — rolling code back to $PREV (nothing else changed)"
+    $G reset --hard --quiet "$PREV"; exit 1
+  fi
+fi
+
 for m in $MIGR; do
   echo "-- migration $m"
   if ! sudo -u postgres psql -d complynex_db -v ON_ERROR_STOP=1 -q < "$APP/$m"; then
@@ -48,12 +68,27 @@ done
 
 echo "-- guards"
 for g in csp_guard endpoint_guard url_guard method_guard; do
-  sudo -u complynex env -C "$APP" "$APP/venv/bin/python" "scripts/$g.py" 2>&1 | grep -v '^INFO' | tail -2
+  sudo -u complynex env -C "$APP" "$APP/venv/bin/python" "scripts/$g.py" 2>&1 | grep -v '^INFO' | tail -2 || true
 done
 
 echo "-- restart"
 if restart; then
   echo "DEPLOYED OK: $PREV -> $TARGET  (health 200)"
+  # post-deploy smoke check: known names through the live engine (report only — an
+  # infrastructure problem is not fixed by rolling code back)
+  echo "-- smoke check"
+  S_OUT=$(sudo -u complynex bash -c "set -a; . $APP/.env; set +a; cd $APP && timeout 600 $APP/venv/bin/python scripts/post_deploy_smoke.py" 2>&1) \
+    && S_RC=0 || S_RC=$?
+  echo "$S_OUT" | grep -v -i -e warn -e faiss -e '^INFO' | tail -15 || true
+  [ "$S_RC" = "0" ] || echo "WARNING: SMOKE CHECK FAILED — investigate before relying on screening results"
+  # ratchet: only after a clean deploy (gate passed without override, smoke passed) the
+  # baseline keeps the best of before / now per category — it can only get stricter
+  if [ "$GATE_OK" = "1" ] && [ -z "${QUALITY_GATE_OVERRIDE:-}" ] && [ "$S_RC" = "0" ]; then
+    timeout 300 sudo -u complynex bash -c "set -a; . $APP/.env; set +a; cd $APP && $APP/venv/bin/python scripts/gold_set_eval.py --ratchet" \
+      2>&1 | grep -i -e 'baseline' || echo "WARNING: baseline ratchet did not run"
+  else
+    echo "baseline NOT changed (gate overridden or smoke check failed)"
+  fi
   # The eKYC worker is a separate process: restart it so it runs the same code.
   systemctl restart complynex-ekyc-worker 2>/dev/null && echo "ekyc worker restarted" || true
   # Demo instance (same code in its own folder, own database of fictional data).

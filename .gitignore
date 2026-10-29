@@ -55,3 +55,6 @@ data/egypt_peps.*
 screening/data/name_idf.json
 static/images/_archived_pre_rebrand/
 deploy_logs/
+
+# Gold Set and smoke data hold listed names: never commit
+screening/data/gold/

@@ -127,6 +127,12 @@ def normalize(text):
     return re.sub(r'\s+', ' ', t).strip()
 
 
+# The generic Latin spelling rules above also apply to the stop-word lists, so
+# a form like "LLC" (normalised to "lc" by the doubled-letter rule) is still
+# recognised and dropped.
+_LEGAL_FORMS = _LEGAL_FORMS | {normalize(x) for x in _LEGAL_FORMS}
+_PARTICLES = _PARTICLES | {normalize(x) for x in _PARTICLES}
+
 def tokens(text):
     """Identity-bearing elements of a name, in order, particles dropped and
     the leading ال of a family element removed (الشاذلي == شاذلي)."""

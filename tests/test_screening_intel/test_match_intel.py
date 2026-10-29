@@ -114,6 +114,9 @@ def test_company_legal_forms_ignored():
     r = mi.name_match('شركة النور للمقاولات ش.م.م', 'النور للمقاولات')
     assert r['complete']
     assert mi.name_match('Al Nour Contracting Co. LLC', 'Al Nour Contracting')['complete']
+    # doubled-letter rule must not hide legal forms (LLC -> lc, LLP -> lp)
+    assert mi.name_match('Delta Trading LLP', 'Delta Trading')['complete']
+    assert 'lc' not in mi.tokens('Misr Holding LLC')
 
 
 def test_gender_from_national_id():
