@@ -526,7 +526,8 @@ class HMTreasuryHandler(BaseFormatHandler):
         names_el = desig.find('Names')
         if names_el is not None:
             for name_el in names_el.findall('Name'):
-                name_val = self._t(name_el, 'Name6')
+                # Name1..Name5 are the given / middle names, Name6 the family name: the full name is all of them
+                name_val = ' '.join(p for p in (self._t(name_el, f'Name{k}') for k in range(1, 7)) if p) or None
                 name_type = self._t(name_el, 'NameType') or ''
                 if not name_val:
                     continue
@@ -573,8 +574,9 @@ class HMTreasuryHandler(BaseFormatHandler):
         weak = []
         if names_el is not None:
             for name_el in names_el.findall('Name'):
-                if 'low' in (self._t(name_el, 'AliasStrength') or '').lower() and self._t(name_el, 'Name6'):
-                    weak.append(self._t(name_el, 'Name6'))
+                nm = ' '.join(p for p in (self._t(name_el, f'Name{k}') for k in range(1, 7)) if p)
+                if 'low' in (self._t(name_el, 'AliasStrength') or '').lower() and nm:
+                    weak.append(nm)
         non_latin = texts('NonLatinNames/NonLatinName/NameNonLatinScript')
         arabic = [n for n in non_latin if any('\u0600' <= ch <= '\u06ff' for ch in n)]
         dobs = texts('IndividualDetails/Individual/DOBs/DOB')

@@ -382,7 +382,9 @@ class EnhancedDataUpdater:
                 return entities
 
             # For large files, get raw content or text based on handler preference
-            if source_type in ['UN', 'UN_SECURITY_COUNCIL']:
+            # XML lists are passed as bytes so the parser reads the encoding the file declares
+            # (response.text guessed ISO-8859-1 for the UK list and garbled every Arabic name)
+            if source_type in ['UN', 'UN_SECURITY_COUNCIL', 'HMT', 'UK', 'HM_TREASURY', 'OFAC', 'OFAC_SDN', 'EU', 'EU_SANCTIONS']:
                 content = response.content
             else:
                 content = response.text
