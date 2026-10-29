@@ -143,7 +143,7 @@ class InternalPEPService:
                 RETURNING id, (xmax = 0) AS inserted
             """, (
                 entry_data.get('full_name'), entry_data.get('original_name'),
-                entry_data.get('entity_type', 'INDIVIDUAL'),
+                normalize_entity_type(entry_data.get('entity_type', 'INDIVIDUAL')) or 'INDIVIDUAL',
                 entry_data.get('national_id'), entry_data.get('passport_number'),
                 entry_data.get('date_of_birth'), entry_data.get('place_of_birth'),
                 entry_data.get('nationality'), entry_data.get('registration_number'),
@@ -202,7 +202,7 @@ class InternalPEPService:
             params += [f"%{filters['search']}%", f"%{filters['search']}%"]
         if filters.get('entity_type'):
             conditions.append("entity_type = %s")
-            params.append(filters['entity_type'])
+            params.append(normalize_entity_type(filters['entity_type']))
         if filters.get('risk_level'):
             conditions.append("risk_level = %s")
             params.append(filters['risk_level'])
@@ -414,7 +414,7 @@ class InternalPEPService:
                 WHERE id=%s
             """, (
                 update_data.get('full_name'), update_data.get('original_name'),
-                update_data.get('entity_type', 'INDIVIDUAL'),
+                normalize_entity_type(update_data.get('entity_type', 'INDIVIDUAL')) or 'INDIVIDUAL',
                 update_data.get('national_id'), update_data.get('passport_number'),
                 update_data.get('date_of_birth'), update_data.get('place_of_birth'),
                 update_data.get('nationality'), update_data.get('country'),
@@ -509,3 +509,6 @@ class InternalPEPService:
         # NOTHING below never matched, silently duplicating the entry.
         hash_str = hashlib.md5(name.strip().lower().encode()).hexdigest()
         return f"IPEP-{hash_str[:12].upper()}"
+
+
+from screening.internal_blacklist_service import normalize_entity_type  # noqa: E402,F401

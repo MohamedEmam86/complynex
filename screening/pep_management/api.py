@@ -90,7 +90,7 @@ def search_pep():
 
 @pep_api.route('/<int:pep_id>', methods=['GET'])
 @login_required
-@permission_required('screening', level='view')
+@permission_required('screening', level='admin')   # full record by id = walkable list: administrators only
 def get_pep_details(pep_id):
     """
     Get PEP details with full provenance

@@ -15,9 +15,11 @@
                     <a href="{{ url_for('blacklist.bulk_upload') }}" class="btn btn-info">
                         <i class="fas fa-upload"></i> {{ _('Bulk Upload') }}
                     </a>
+                    {% if current_user.role in ('admin', 'superadmin', 'it_admin') %}
                     <a href="{{ url_for('blacklist.export') }}" class="btn btn-success">
                         <i class="fas fa-download"></i> {{ _('Export') }}
                     </a>
+                    {% endif %}
                 </div>
             </div>
 
@@ -72,7 +74,7 @@
                                 <option value="">{{ _('All Types') }}</option>
                                 <option value="INDIVIDUAL" {% if filters.get('entity_type')=='INDIVIDUAL' %}selected{%
                                     endif %}>{{ _('Individual') }}</option>
-                                <option value="ORGANIZATION" {% if filters.get('entity_type')=='ORGANIZATION'
+                                <option value="ENTITY" {% if filters.get('entity_type')=='ENTITY'
                                     %}selected{% endif %}>{{ _('Organization') }}</option>
                             </select>
                         </div>

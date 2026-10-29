@@ -1,0 +1,20 @@
+[Unit]
+Description=ComplyNex internal lists (blacklist / internal PEP) -> screening_watchlist sync
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+User=complynex
+Group=complynex
+WorkingDirectory=/var/www/complynex
+Environment="PATH=/var/www/complynex/venv/bin"
+EnvironmentFile=/var/www/complynex/.env
+ExecStart=/var/www/complynex/venv/bin/python /var/www/complynex/scripts/sync_internal_to_watchlist.py
+TimeoutStartSec=900
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/complynex/logs
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

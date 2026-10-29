@@ -35,6 +35,8 @@ from screening.internal_blacklist_service import InternalBlacklistService
 from screening.internal_pep_service import InternalPEPService
 from utils.decorators import permission_required
 
+MAX_PER_PAGE = 200
+
 # Maps normalized variants of real-world sheet headers (EMLCU export, etc.) to
 # the canonical field names InternalBlacklistService/InternalPEPService expect.
 # Without this, headers like "Full Name (EN)" normalize to "full_name_en" —
@@ -121,7 +123,11 @@ def index():
     
     # Get page
     page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 50))
+    # capped: a huge per_page would turn the list page into a full export (P1-1)
+    try:
+        per_page = min(max(int(request.args.get('per_page', 50)), 1), MAX_PER_PAGE)
+    except (TypeError, ValueError):
+        per_page = 50
 
     # Get sort
     sort_by = request.args.get('sort', 'added_date')
@@ -369,13 +375,18 @@ def download_template():
 
 @blacklist_bp.route('/export')
 @login_required
-@permission_required('screening', level='view')
+@permission_required('screening', level='admin')   # the full list is ComplyNex data: administrators only
 def export():
-    """Export blacklist to CSV"""
+    """Export blacklist to CSV (administrators only, logged)"""
+    try:
+        from models.audit import AuditLog
+        AuditLog.log(current_user.id, 'Export', 'Internal Blacklist', None, 'Full list exported (Internal Blacklist)', request.remote_addr)
+    except Exception:
+        pass
     service = InternalBlacklistService()
     
     # Get all active entries
-    entries, _ = service.get_all_entries({'is_active': True}, page=1, per_page=10000)
+    entries, _ = service.get_all_entries({'is_active': True}, page=1, per_page=1000000)
     
     output = io.StringIO()
     writer = csv.writer(output)
@@ -503,7 +514,11 @@ def pep_index():
         filters['category'] = request.args.get('category')
 
     page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 50))
+    # capped: a huge per_page would turn the list page into a full export (P1-1)
+    try:
+        per_page = min(max(int(request.args.get('per_page', 50)), 1), MAX_PER_PAGE)
+    except (TypeError, ValueError):
+        per_page = 50
 
     sort_by = request.args.get('sort', 'added_date')
     sort_dir = request.args.get('dir', 'desc')

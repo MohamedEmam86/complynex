@@ -18,10 +18,11 @@
 
 """
 Sync internal_blacklist and internal_pep to screening_watchlist
-Run hourly via cron. Deactivation handled by admin UI, not this script.
+Runs hourly (deploy/systemd/complynex-internal-list-sync.timer) and after list edits in the UI.
 """
 import os
 import psycopg2
+import psycopg2.errors
 import hashlib
 import re
 import sys
@@ -57,6 +58,12 @@ def gen_source_id(prefix, name):
     h = hashlib.md5(name.strip().lower().encode()).hexdigest()
     return f"{prefix}-{h[:12].upper()}"
 
+def normalize_entity_type(v):
+    """INDIVIDUAL or ENTITY (legacy ORGANIZATION / case variants); default INDIVIDUAL."""
+    from screening.internal_blacklist_service import normalize_entity_type as _n
+    return _n(v) or 'INDIVIDUAL'
+
+
 def sync_table(cur, source_table, source_prefix, watchlist_source, now):
     cur.execute(f"""
         SELECT id, full_name, original_name, risk_level, category,
@@ -67,6 +74,7 @@ def sync_table(cur, source_table, source_prefix, watchlist_source, now):
     """)
     rows = cur.fetchall()
     count = 0
+    live_ids = set()
     for row in rows:
         (rid, full_name, orig_name, risk_level, category, entity_type,
          is_active, added_date, modified_date, dob, nationality,
@@ -82,6 +90,7 @@ def sync_table(cur, source_table, source_prefix, watchlist_source, now):
             sid = gen_source_id(source_prefix, full_name)
 
         name_norm = normalize_name(full_name)
+        live_ids.add(sid)
 
         cur.execute(f"""
             INSERT INTO screening_watchlist (
@@ -93,15 +102,32 @@ def sync_table(cur, source_table, source_prefix, watchlist_source, now):
                 full_name       = EXCLUDED.full_name,
                 original_name   = EXCLUDED.original_name,
                 risk_level      = EXCLUDED.risk_level,
+                entity_type     = EXCLUDED.entity_type,
                 name_normalized = EXCLUDED.name_normalized,
                 is_active       = 1,
                 updated_at      = NOW()
+            -- only touch rows that really changed, so the hourly run does not re-index everything
+            WHERE (screening_watchlist.full_name, screening_watchlist.original_name, screening_watchlist.risk_level,
+                   screening_watchlist.entity_type, screening_watchlist.name_normalized, screening_watchlist.is_active)
+                  IS DISTINCT FROM
+                  (EXCLUDED.full_name, EXCLUDED.original_name, EXCLUDED.risk_level,
+                   EXCLUDED.entity_type, EXCLUDED.name_normalized, 1)
         """, (full_name, orig_name or full_name, watchlist_source, sid,
               risk_level or 'HIGH', category or source_prefix,
-              entity_type or 'PERSON',
+              normalize_entity_type(entity_type),
               str(added_date or now), str(modified_date or now),
               str(modified_date or now), dob, nationality, aliases, name_norm))
         count += 1
+
+    # Mark inactive: watchlist copies that no longer have an active source row at all
+    # (entry deleted, deactivated or renamed). Guard: never on an empty source read.
+    if live_ids:
+        cur.execute("""
+            UPDATE screening_watchlist SET is_active = 0, updated_at = NOW()
+            WHERE source = %s AND is_active = 1 AND NOT (source_id = ANY(%s))
+        """, (watchlist_source, list(live_ids)))
+        if cur.rowcount:
+            logger.info(f'{watchlist_source}: {cur.rowcount} stale watchlist copies deactivated')
 
     # Mark inactive: watchlist rows whose source entry is now is_active=0
     cur.execute(f"""
@@ -120,6 +146,16 @@ def sync_internal_lists():
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
+        # one sync at a time (hourly timer and UI-triggered runs): the lock is taken before the
+        # source tables are read, so a run never deactivates a row another run just wrote
+        cur.execute("SET lock_timeout = '30s'")
+        try:
+            cur.execute("SELECT pg_advisory_xact_lock(hashtext('internal_list_sync'))")
+        except psycopg2.errors.LockNotAvailable:
+            conn.rollback()
+            logger.info('Another internal-list sync is running; skipped (the next run will catch up).')
+            return True
+        cur.execute("SET lock_timeout = 0")
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         logger.info('Syncing internal_blacklist...')

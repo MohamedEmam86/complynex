@@ -174,7 +174,7 @@ def main():
                   'targets': {' '.join(tokens(r['ar'])), ' '.join(tokens(r['lat']))},
                   'jobs': [('intl_arabic', r['ar']), ('intl_latin', r['lat']), ('intl_latin_variant', lat_var)]})
     # companies / entities
-    cur.execute("""SELECT original_name n FROM internal_blacklist WHERE is_active=1 AND entity_type='ORGANIZATION'
+    cur.execute("""SELECT original_name n FROM internal_blacklist WHERE is_active=1 AND entity_type IN ('ORGANIZATION','ENTITY')
                    AND original_name ~ '[ء-ي]'""")
     # a company is searched by its trading name; descriptive records
     # ("... owned by the terrorist / X") are not names anyone types

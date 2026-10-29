@@ -78,7 +78,7 @@
                                 <option value="">{{ _('All Types') }}</option>
                                 <option value="INDIVIDUAL" {% if filters.get('entity_type')=='INDIVIDUAL' %}selected{%
                                     endif %}>{{ _('Individual') }}</option>
-                                <option value="ORGANIZATION" {% if filters.get('entity_type')=='ORGANIZATION'
+                                <option value="ENTITY" {% if filters.get('entity_type')=='ENTITY'
                                     %}selected{% endif %}>{{ _('Organization') }}</option>
                             </select>
                         </div>

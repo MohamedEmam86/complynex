@@ -185,7 +185,7 @@ class InternalBlacklistService:
             """, (
                 entry_data['full_name'],
                 entry_data.get('original_name'),
-                entry_data.get('entity_type', 'INDIVIDUAL'),
+                normalize_entity_type(entry_data.get('entity_type', 'INDIVIDUAL')) or 'INDIVIDUAL',
                 entry_data.get('national_id'),
                 entry_data.get('passport_number'),
                 entry_data.get('date_of_birth'),
@@ -274,8 +274,8 @@ class InternalBlacklistService:
                 count_params.extend([search_term, search_term])
             if filters.get('entity_type'):
                 conditions.append("ib.entity_type = %s")
-                params.append(filters['entity_type'])
-                count_params.append(filters['entity_type'])
+                params.append(normalize_entity_type(filters['entity_type']))
+                count_params.append(normalize_entity_type(filters['entity_type']))
             if filters.get('risk_level'):
                 conditions.append("ib.risk_level = %s")
                 params.append(filters['risk_level'])
@@ -365,6 +365,8 @@ class InternalBlacklistService:
             if not row:
                 return False
 
+            if 'entity_type' in update_data:
+                update_data['entity_type'] = normalize_entity_type(update_data['entity_type'])
             if 'aliases' in update_data:
                 aliases = update_data['aliases']
                 if isinstance(aliases, str):
@@ -552,3 +554,13 @@ class InternalBlacklistService:
                   datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
         except Exception as e:
             logger.warning(f"Audit log failed (non-fatal): {e}")
+
+
+def normalize_entity_type(v):
+    """One spelling per entity type: INDIVIDUAL or ENTITY (legacy ORGANIZATION / case variants)."""
+    u = str(v or '').strip().upper()
+    if u in ('ORGANIZATION', 'ORGANISATION', 'COMPANY', 'CORPORATE', 'ENTITY'):
+        return 'ENTITY'
+    if u in ('INDIVIDUAL', 'PERSON'):
+        return 'INDIVIDUAL'
+    return v

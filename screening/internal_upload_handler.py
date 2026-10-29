@@ -108,7 +108,7 @@ def handle_internal_upload(file_path, source):
                     row.get('original_name', ''),
                     row.get('risk_level', 'HIGH'),
                     row.get('category', 'Manual Upload'),
-                    row.get('entity_type', 'INDIVIDUAL'),
+                    normalize_entity_type(row.get('entity_type', 'INDIVIDUAL')) or 'INDIVIDUAL',
                     row.get('date_of_birth'),
                     row.get('nationality'),
                     row.get('aliases'),
@@ -146,3 +146,6 @@ if __name__ == '__main__':
     if len(sys.argv) >= 3:
         result = handle_internal_upload(sys.argv[1], sys.argv[2])
         print(f"Import complete: {result}")
+
+
+from screening.internal_blacklist_service import normalize_entity_type  # noqa: E402,F401

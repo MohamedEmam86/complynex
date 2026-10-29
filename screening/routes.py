@@ -907,6 +907,11 @@ def history():
     
     return render_template('screening/history.html', screenings=screenings, page=page)
 
+ENGINE_FIXED_KEYS = {'confirmed_hit_threshold', 'potential_match_threshold', 'low_match_threshold',
+                     'fuzzy_ratio_weight', 'jaro_winkler_weight', 'phonetic_weight', 'partial_ratio_weight',
+                     'exact_match_favoritism', 'dob_exact_match_bonus', 'nationality_bonus', 'dob_mismatch_penalty'}
+
+
 @screening_bp.route('/config', methods=['GET', 'POST'])
 @login_required
 @permission_required('screening', level='view')
@@ -958,7 +963,12 @@ def config():
                 if thr != CL.approval_threshold():
                     _audit('Four-eyes threshold changed', None,
                            f"clearance_approval_threshold {CL.approval_threshold():g} -> {thr:g}")
+            # Matching thresholds / weights / bonuses are fixed in the engine (match_intel) and
+            # protected by the Gold Set quality gate; the old database values were never read by
+            # the engine, so editing them here only gave a false impression. They are shown read-only.
             for key in request.form:
+                if key in ENGINE_FIXED_KEYS or key == 'csrf_token':
+                    continue
                 val = request.form.get(key)
                 execute_db(f"UPDATE screening_config SET config_value = {param}, updated_at = CURRENT_TIMESTAMP WHERE config_key = {param}", (val, key))
             flash(gettext('Configuration updated and saved to database'), 'success')
@@ -967,7 +977,11 @@ def config():
             flash(f'Update failed: {str(e)}', 'error')
             
     settings = query_db("SELECT * FROM screening_config ORDER BY category, config_key")
+    from screening import match_intel as _mi
     return render_template('screening/config_edit.html', settings=settings,
+                           engine_thresholds={'confirmed_hit_threshold': _mi.CONFIRMED,
+                                              'potential_match_threshold': _mi.POTENTIAL,
+                                              'low_match_threshold': _mi.LOW},
                            clearance_threshold=CL.approval_threshold(),
                            can_approve=CL.can_approve(current_user))
 
@@ -2275,9 +2289,11 @@ def api_scrape_source():
             if not source_url:
                 urls = {
                     'un': 'https://scsanctions.un.org/resources/xml/en/consolidated.xml',
-                    'ofac': 'https://www.treasury.gov/ofac/downloads/sdn.xml',
+                    'ofac': 'https://sanctionslistservice.ofac.treas.gov/api/publicationpreview/exports/sdn.xml',
                     'eu': 'https://webgate.ec.europa.eu/fsd/fsf/public/files/xmlFullSanctionsList_1_1/content%stoken=dG9rZW4tMjAxNw',
-                    'hmt': 'https://ofsistorage.blob.core.windows.net/publish/oslist.json'
+                    # UK: the FCDO UK Sanctions List is the only UK source (the OFSI consolidated
+                    # list was retired in favour of it)
+                    'hmt': 'https://sanctionslist.fcdo.gov.uk/docs/UK-Sanctions-List.xml'
                     # EMLCU handled above
                 }
                 for k, v in urls.items():
@@ -3951,9 +3967,14 @@ def reinstate_whitelist(id):
 
 @screening_bp.route('/internal-pep/export')
 @login_required
-@permission_required('screening', level='view')
+@permission_required('screening', level='admin')   # the full list is ComplyNex data: administrators only
 def export_internal_pep():
-    """Download internal PEP list as Excel"""
+    """Download internal PEP list as Excel (administrators only, logged)"""
+    try:
+        from models.audit import AuditLog
+        AuditLog.log(current_user.id, 'Export', 'Internal PEP', None, 'Full list exported (Internal PEP)', request.remote_addr)
+    except Exception:
+        pass
     import io
     try:
         import openpyxl
