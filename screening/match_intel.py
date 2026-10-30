@@ -58,10 +58,12 @@ from screening import name_variants as _nv   # P3-7 / P3-8 Franco-Arabic and dia
 _AR_DIACRITICS = re.compile(r'[ً-ْٰـ]')
 _ARABIC = re.compile(r'[؀-ۿ]')
 _PARTICLES = {'ال', 'بن', 'ابن', 'بنت', 'ابو', 'عبد', 'ال', 'al', 'el', 'bin', 'ben', 'ibn',
-              'abu', 'abou', 'abo', 'abd', 'abdel', 'abdul', 'abdal',
-              # European name particles and their Arabic renderings (Alfred de Zayas = آلفرد د زایاس)
-              'de', 'da', 'dos', 'das', 'du', 'van', 'von', 'der', 'del', 'della', 'di',
-              'د', 'دي', 'دو', 'دا', 'فان', 'فون', 'دير', 'ديل', 'يل'}
+              'abu', 'abou', 'abo', 'abd', 'abdel', 'abdul', 'abdal', 'يل'}
+# European name particles and their Arabic renderings (Alfred de Zayas = آلفرد د زایاس). They are KEPT as
+# name elements with a low weight, not deleted: Van / Thi are Vietnamese middle names, Du a Chinese surname,
+# Di Maria is not Maria. A Latin particle and its Arabic rendering count as the same element.
+_SOFT_PARTICLE_GROUPS = (('de', 'di', 'du', 'da', 'د', 'دي', 'دو', 'دا'), ('dos', 'das', 'دوس', 'داس'),
+                         ('van', 'فان'), ('von', 'فون'), ('der', 'دير'), ('del', 'della', 'ديل'))
 # legal-form words in company names carry no identity (شركة ... ش.م.م / ... LLC)
 _LEGAL_FORMS = {'شركه', 'شركة', 'ش', 'م', 'ذ', 'ق', 'مؤسسه', 'منشاه', 'co', 'company', 'llc', 'ltd', 'limited',
                 'inc', 'corp', 'corporation', 'sae', 's', 'a', 'e', 'plc', 'llp', 'gmbh', 'sa', 'sarl', 'fzco',
@@ -178,6 +180,12 @@ def normalize(text):
 # recognised and dropped.
 _LEGAL_FORMS = _LEGAL_FORMS | {normalize(x) for x in _LEGAL_FORMS}
 _PARTICLES = _PARTICLES | {normalize(x) for x in _PARTICLES}
+_SOFT_PARTICLE = {}
+for _gi, _grp in enumerate(_SOFT_PARTICLE_GROUPS):
+    for _x in _grp:
+        _SOFT_PARTICLE[_x] = _gi
+        _SOFT_PARTICLE[normalize(_x)] = _gi
+SOFT_PARTICLE_WEIGHT = 1.0
 # honorifics / ranks written BEFORE a name (د/ ، المهندس ، الشيخ ، اللواء ، Dr ، Sheikh ...). Only dropped at
 # the start of the name and only while two elements remain: الشيخ / الحاج / الامير are also family names.
 _TITLES = {normalize(x) for x in (
@@ -211,14 +219,15 @@ def _drop_titles(a, b):
     return a
 
 
-def _uncomma(name):
-    # 'SURNAME, Given Names' (list format) -> 'Given Names SURNAME'
+def _uncomma(name, arabic_comma=True):
+    # 'SURNAME, Given Names' (list format) -> 'Given Names SURNAME'. The Arabic comma form (Surname، Given)
+    # is read on listed names only: a customer writes "محمد علي، القاهرة" (name, then a place)
     s = str(name or '')
     if s.count(',') == 1 and not is_arabic(s):
         head, tail = [x.strip() for x in s.split(',')]
         if head and tail:
             return f'{tail} {head}'
-    if s.count('،') == 1 and ',' not in s and is_arabic(s):
+    if arabic_comma and s.count('،') == 1 and ',' not in s and is_arabic(s):
         head, tail = [x.strip() for x in s.split('،')]
         if head and tail and not re.search(r'\d', tail):
             return f'{tail} {head}'
@@ -247,8 +256,10 @@ def _tokens_raw(text):
 
 
 def _weight(tok):
-    if len(tok) == 1:
+    if len(tok) == 1 and tok not in _SOFT_PARTICLE:
         return 0.6          # an initial (W., M.): it can confirm, it cannot identify
+    if tok in _SOFT_PARTICLE:
+        return SOFT_PARTICLE_WEIGHT   # de / van / di: part of the name, carries little identity
     try:
         from screening import name_idf
         w = name_idf.weight(tok)
@@ -344,7 +355,14 @@ def _ar_pattern(ar):
         elif ch == 'ه' and last and n > 2:
             p = '(?:a|ah|eh|e|at|et|h)?'
         elif ch in _XS_CONS:
-            p = _XS_CONS[ch] + ('e?' if last else '[aeiou]?')     # a silent final e (Pierre, Hilton -> e)
+            if not last:
+                p = _XS_CONS[ch] + '[aeiou]?'
+            elif i and ar[i - 1] in 'اوي':
+                p = _XS_CONS[ch] + 'e?'          # a silent final e after a long vowel (Pierre, Rachide, Amine = امين)
+            else:
+                # a silent final e only when no Latin vowel stands before the consonant: "-ine" carries a
+                # long i the Arabic lacks (Houcine / Hassine are حسين, not حسن; Amine is not امن)
+                p = '(?:' + _XS_CONS[ch] + '|(?<![aeiou])' + _XS_CONS[ch] + 'e)'
         else:
             p = ''
         parts.append(p)
@@ -391,7 +409,46 @@ def loose_ratio(lat, ar):
     return difflib.SequenceMatcher(None, kl, ka).ratio()
 
 
+_LAT_LONG_END = re.compile(r'(?:[aeiou][bcdfghjklmnpqrstvwxz]e|(?:ei|ai|ee|ie|ii|ey|ay)[bcdfghjklmnpqrstvwxz]e?)$')
+
+
+# letters a Latin spelling cannot tell apart: علاء and الاء are both Alaa, so neither vetoes the other
+_HOMOPHONE = str.maketrans({'ع': 'ا', 'ء': 'ا', 'ئ': 'ا', 'ؤ': 'ا', 'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ى': 'ي', 'ة': 'ه'})
+
+
+def _long_end_veto(lat, ar):
+    # only when the Arabic has no long vowel at all after its first letter (حسن، امن): a long vowel elsewhere
+    # (مايكل = Michail) means the Latin vowel is written, just not right before the last letter
+    return len(lat) >= 2 and len(ar) >= 3 and ar[-1] in _XS_CONS and ar[-1] != 'ه' \
+        and not any(ch in 'اويىءئؤع' for ch in ar[1:]) and bool(_LAT_LONG_END.search(lat))
+
+
 def _xs_same(lat, ar):
+    """Same name element written in Latin and in Arabic? (_xs_same_raw plus two vetoes)"""
+    s = _xs_same_raw(lat, ar)
+    if not s or len(lat) < 2 or len(ar) < 3:
+        return s
+    # 1. the Latin ends in a long vowel + consonant (-ine, -ein, -een) and the Arabic has no long vowel
+    #    there: Hassine / Houcine are حسين, not حسن (also when the dictionary learned such a pair)
+    if _long_end_veto(lat, ar):
+        return 0.0
+    # 2. look-alike names across scripts: when the Latin spelling is, by far, the usual spelling of another
+    #    short, well-known Arabic name with (almost) the same letters, it is that name (Hamed = حامد, not
+    #    احمد; Hosni = حسني, not حسين) - the same rule as for two Arabic names
+    cands = _xs_dict().get(lat)
+    if cands and len(ar) <= 5:
+        total = sum(c for _, c in cands)
+        top, top_c = cands[0]
+        mine = sum(c for a, c in cands if a == ar)
+        if top != ar and top.translate(_HOMOPHONE) != ar.translate(_HOMOPHONE) \
+                and (total >= 8 or (mine == 0 and total >= 3)) and top_c / total >= 0.5 \
+                and mine / total < 0.2 and len(top) == len(ar) \
+                and (sorted(top) == sorted(ar) or _osa(top, ar) <= 1) and _attested(top) and _attested(ar):
+            return 0.0
+    return s
+
+
+def _xs_same_raw(lat, ar):
     """Same name element written in Latin and in Arabic?"""
     if len(lat) == 1:
         return 0.9 if ar in _AR_LETTER_NAMES.get(lat, ()) or ar == lat.translate(_ONE_LAT) else 0.0
@@ -486,12 +543,22 @@ def _same_token(a, b, first=False):
     """
     if a == b:
         return 1.0
+    if a in _SOFT_PARTICLE or b in _SOFT_PARTICLE:
+        # name particles only match each other (de = د, van = فان), never a name element
+        if a in _SOFT_PARTICLE and b in _SOFT_PARTICLE and _SOFT_PARTICLE[a] == _SOFT_PARTICLE[b] \
+                and is_arabic(a) != is_arabic(b):
+            return 0.95
+        if is_arabic(a) != is_arabic(b):
+            lat, arb = (b, a) if is_arabic(a) else (a, b)
+            if len(lat) == 1:
+                return _xs_same(lat, arb)               # an initial and its Arabic letter name: D. = دي.
+        return 0.0
     if _cm.same_class(a, b):                          # generic company words: Trade = Trading = تجارة
         return 1.0
     if is_arabic(a) != is_arabic(b):                 # Latin vs Arabic
         lat, arb = (b, a) if is_arabic(a) else (a, b)
         s = _xs_same(lat, arb)
-        if not s and _nv.canon(lat) != lat:           # dialect spelling (Houcine, Mehmet): try the usual one
+        if not s and _nv.canon(lat) != lat and not _long_end_veto(lat, arb):   # dialect spelling (Mehmet)
             s = _xs_same(_nv.canon(lat), arb)
         return s
     ar = is_arabic(a) and is_arabic(b)
@@ -678,7 +745,7 @@ def _joins(c, q, used_c, used_q, pairs):
 def name_match(query, listed):
     """Analyst-style comparison of two names. Returns a dict with ``score``
     (0-100) and the evidence behind it."""
-    qr, cr = _tokens_raw(_uncomma(query)), _tokens_raw(_uncomma(listed))
+    qr, cr = _tokens_raw(_uncomma(query, arabic_comma=False)), _tokens_raw(_uncomma(listed))
     qr, cr = _drop_titles(qr, cr), _drop_titles(cr, qr)
     q, c = [t for t, _ in qr], [t for t, _ in cr]
     res = {'score': 0.0, 'q_tokens': q, 'l_tokens': c, 'matched': [], 'missing_from_query': [],

@@ -91,11 +91,11 @@ def _ofac(score=88.0, **kw):
 
 
 def test_split_forms():
-    strong, weak = aq.split_forms(_ofac(aliases='Abu Hamza Al Masri|Hamza|Mohammed Al Rashidi|Abu'))
+    strong, weak, _t = aq.split_forms(_ofac(aliases='Abu Hamza Al Masri|Hamza|Mohammed Al Rashidi|Abu'))
     assert 'Abu Hamza Al Masri' in weak and 'Hamza' in weak and 'Abu' in weak
     assert 'Mohammed Al Rashidi' in strong and 'Mohammed Hassan Al Rashidi' in strong
     # companies keep acronyms / one-word names as normal names
-    s2, w2 = aq.split_forms({'full_name': 'Islamic Revolutionary Guard Corps', 'aliases': 'IRGC|Sepah',
+    s2, w2, _t2 = aq.split_forms({'full_name': 'Islamic Revolutionary Guard Corps', 'aliases': 'IRGC|Sepah',
                              'entity_type': 'Organization', 'properties': '{}'})
     assert w2 == [] and 'IRGC' in s2
 

@@ -14,6 +14,10 @@ threshold while a weak alias scores at or above it - the hit is capped just
 below the threshold, unless an identifier agrees (national ID, date of birth,
 passport), in which case it stays and the explanation says that it matched
 through a weak alias. Internal lists are never touched.
+
+Passport: the screening form, the API and customer screening have no passport
+input today, so only a national ID or date of birth can keep such a hit; the
+engine passes passport= to apply_decisions as soon as an input carries one.
 """
 import json
 import logging
@@ -25,7 +29,7 @@ from screening import match_intel as mi
 logger = logging.getLogger(__name__)
 
 SHORT_LETTERS = 4
-MAX_ALIASES = 40
+MAX_FORMS = 400          # safety bound; a record with more forms than this is never capped
 REASON_CAPPED = ('matched only through a weak alias (low-quality / short AKA on the list): '
                  'not an alert on its own')
 REASON_KEPT = 'matched through a weak alias (low-quality / short AKA on the list); an identifier agrees'
@@ -71,11 +75,17 @@ def is_short_alias(alias, person=True):
         return False
     if _letters(alias) <= SHORT_LETTERS:
         return True
-    return len([w for w in str(alias or '').split() if _letters(w)]) == 1
+    # elements as the matcher reads them: ابومحمد / عبدالرحمن are two elements, not one word
+    try:
+        n = len(mi.tokens(alias))
+    except Exception:
+        n = len([w for w in str(alias or '').split() if _letters(w)])
+    return n <= 1
 
 
 def split_forms(m):
-    """(strong forms, weak aliases) of one listed record."""
+    """(strong forms, weak aliases, truncated) of one listed record. Every strong form is read: a strong
+    alias left unread could make a real hit look as if it rested on a weak alias only."""
     props = _j(m.get('properties'))
     props = props if isinstance(props, dict) else {}
     marked = {_key(a) for a in _list(props.get('weak_aliases'))}
@@ -85,8 +95,10 @@ def split_forms(m):
     strong = [n for n in dict.fromkeys(str(x).strip() for x in main if x) if n]
     main_keys = {_key(n) for n in strong}
     weak = []
+    truncated = False
     for a in dict.fromkeys(_list(m.get('aliases')) + _list(m.get('aliases_arabic'))):
-        if len(strong) + len(weak) > MAX_ALIASES:
+        if len(strong) + len(weak) >= MAX_FORMS:
+            truncated = True
             break
         k = _key(a)
         if k in main_keys:
@@ -98,7 +110,7 @@ def split_forms(m):
     # a marked-weak name never counts as strong, even when it is also the caption
     weak += [n for n in strong if _key(n) in marked and n not in weak]
     strong = [n for n in strong if _key(n) not in marked]
-    return strong, weak
+    return strong, weak, truncated
 
 
 def _best(query, forms):
@@ -125,9 +137,9 @@ def check(m, query, low=None):
     low = float(low if low is not None else mi.LOW)
     if _internal(m):
         return None
-    strong, weak = split_forms(m)
-    if not weak:
-        return None
+    strong, weak, truncated = split_forms(m)
+    if not weak or truncated:
+        return None                                    # unread forms: never cap on partial evidence
     ws, wform = _best(query, weak)
     if ws < low:
         return None
