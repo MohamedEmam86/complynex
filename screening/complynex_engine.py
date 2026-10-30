@@ -1166,6 +1166,13 @@ class ComplyNexScreeningEngine:
             _thr.apply(self)
         except Exception as _e:
             logger.warning(f'thresholds not applied, keeping defaults: {_e}')
+        # P3-11: quality of the name as entered (never blocks; saved with the result)
+        try:
+            from screening import input_quality as _iq
+            _input_warnings = _iq.assess(name, entity_type, nationality, date_of_birth, national_id)
+        except Exception as _e:
+            logger.warning(f'input quality check failed: {_e}')
+            _input_warnings = []
         # SAFETY: Limit name to max 15 words to prevent PostgreSQL 'Expression tree is too large' errors
         if threshold is not None:
             self.active_threshold = int(threshold)  # FIX: allow caller to pass threshold
@@ -1204,6 +1211,7 @@ class ComplyNexScreeningEngine:
                 'total_matches': 0,
                 'highest_score': 0.0,
                 'recommendation': '✅ WHITE-LISTED: No further action required',
+                'input_warnings': _input_warnings,
                 'processing_time_ms': int((datetime.now() - start_time).total_seconds() * 1000)
             }
 
@@ -1588,6 +1596,12 @@ class ComplyNexScreeningEngine:
             from screening import match_intel as _mi
             matches = _mi.apply_decisions(matches, name, national_id=national_id,
                                           dob=date_of_birth, nationality=nationality)
+            # G8: a hit that rests only on a weak / short alias never alerts on its own
+            try:
+                from screening import alias_quality as _aq
+                matches = _aq.apply(matches, name, low=self.LOW_MATCH_THRESHOLD)
+            except Exception as _e:
+                logger.warning(f"[ALIAS-QUALITY] layer failed: {_e}")
             matches = [m for m in matches if m['match_score'] >= self.LOW_MATCH_THRESHOLD]
         except Exception as _e:
             logger.warning(f"[MATCH-INTEL] decision layer failed: {_e}")
@@ -1631,7 +1645,8 @@ class ComplyNexScreeningEngine:
             'processing_time_ms': int((datetime.now() - start_time).total_seconds() * 1000),
             'from_cache': False,
             'search_degraded': bool(getattr(self, 'es_degraded', False)),
-            'total_candidates': len(candidates) if 'candidates' in locals() else 0
+            'total_candidates': len(candidates) if 'candidates' in locals() else 0,
+            'input_warnings': _input_warnings,
         }
         
         # --- REDIS CACHE COMMIT: INTENTIONALLY DISABLED (2026-07-20) ---

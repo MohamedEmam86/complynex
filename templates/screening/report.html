@@ -156,6 +156,14 @@
             {% endif %}
         </div>
 
+        {% if input_warnings %}
+        {% set _iq_ar = get_locale() == 'ar' %}
+        <div class="section-title">{{ 'ملاحظات على جودة البيانات المُدخلة' if _iq_ar else 'Input quality notes' }}</div>
+        <ul class="small mb-4">
+            {% for w in input_warnings %}<li>{{ w.ar if _iq_ar else w.en }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+
         <div class="section-title">Detailed Findings ({{ matches|length }} Results)</div>
 
         {% if matches %}

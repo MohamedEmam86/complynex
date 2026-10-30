@@ -64,6 +64,11 @@
                             class="{% if item.score >= 90 %}table-danger{% elif item.score >= 70 %}table-warning{% endif %}">
                             <td>
                                 <strong>{{ item.name }}</strong>
+                                {% set _iqw = (item.input_warnings or [])|selectattr('level', 'equalto', 'warning')|list %}
+                                {% if _iqw %}
+                                {% set _iq_ar = get_locale() == 'ar' %}
+                                <span class="badge bg-warning text-dark ms-1" title="{% for w in _iqw %}{{ w.ar if _iq_ar else w.en }}{% if not loop.last %} | {% endif %}{% endfor %}"><i class="fas fa-exclamation-circle"></i> {{ 'جودة الاسم' if _iq_ar else 'Name quality' }}</span>
+                                {% endif %}
                             </td>
                             <td>{{ item.type }}</td>
                             <td>

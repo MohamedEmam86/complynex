@@ -65,8 +65,9 @@ class ScreeningConfig:
     YEAR_MATCH_BONUS = 0.05
     YEAR_MISMATCH_PENALTY = -0.10
     COUNTRY_MATCH_BONUS = 0.05
-    GENDER_MATCH_BONUS = 0.02
-    GENDER_MISMATCH_PENALTY = -0.10
+    # P3-10: gender is shown to the analyst only, never used to score a hit
+    GENDER_MATCH_BONUS = 0.0
+    GENDER_MISMATCH_PENALTY = 0.0
     
     # Stop words (expanded from Moov Watchman)
     STOP_WORDS = {

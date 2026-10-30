@@ -775,7 +775,10 @@ def manual_screen():
     except Exception:
         current_threshold = 55
         
-    return render_template('screening/manual_screen.html', current_threshold=current_threshold)
+    from screening.input_quality import MESSAGES as _IQ_MESSAGES
+    return render_template('screening/manual_screen.html', current_threshold=current_threshold,
+                           iq_messages={k: {'level': v[0], 'en': v[1], 'ar': v[2]}
+                                        for k, v in _IQ_MESSAGES.items()})
 
 @screening_bp.route('/result/<int:id>')
 @login_required
@@ -872,6 +875,10 @@ def view_result(id):
     inputs.setdefault('dob', result.get('screened_dob'))
     am_summary = {}
     try:
+        input_warnings = [w for w in (md.get('input_warnings') or []) if isinstance(w, dict)]
+    except Exception:
+        input_warnings = []
+    try:
         am_summary = json.loads(result['adverse_media_summary']) if isinstance(result['adverse_media_summary'], str) \
             else (result['adverse_media_summary'] or {})
     except Exception:
@@ -885,7 +892,8 @@ def view_result(id):
                            sanction_matches=sanction_matches, pep_matches=pep_matches,
                            other_matches=other_matches,
                            s_views=s_views, p_views=p_views, o_views=o_views, verdict=verdict,
-                           inputs=inputs, am=rv.adverse_view(am_summary, adverse_hits),
+                           inputs=inputs, input_warnings=input_warnings,
+                           am=rv.adverse_view(am_summary, adverse_hits),
                            coverage=rv.coverage(),
                            decisions=CL.decision_history('result', id),
                            pending=CL.pending_request('result', id),
@@ -1977,7 +1985,15 @@ def download_report(id):
         except Exception:
             adverse_hits = []
 
-    return render_template('screening/report.html', result=result, matches=matches, adverse_hits=adverse_hits)
+    input_warnings = []
+    try:
+        md = result.get('match_details')
+        md = json.loads(md) if isinstance(md, str) and md else (md or {})
+        input_warnings = [w for w in (md.get('input_warnings') or []) if isinstance(w, dict)]
+    except Exception:
+        input_warnings = []
+    return render_template('screening/report.html', result=result, matches=matches, adverse_hits=adverse_hits,
+                           input_warnings=input_warnings)
 
 @screening_bp.route('/update_watchlist', methods=['POST'])
 @login_required
@@ -2112,6 +2128,7 @@ def background_bulk_processor(app, job_id, df, user_id):
                             'result': screen_res['screening_result'],
                             'score': screen_res['highest_score'],
                             'matches': len(screen_res['matches']),
+                            'input_warnings': screen_res.get('input_warnings') or [],
                             'details': screen_res
                         }
                         return index, res_item
@@ -3619,6 +3636,18 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
         status = 'Completed'
         screening_result = 'CLEAR'
 
+    # P3-11: input-quality warnings travel with the result (evidence of what
+    # the decision was based on). The engine computes them; recompute only for
+    # callers that pass a result built elsewhere.
+    input_warnings = result.get('input_warnings')
+    if input_warnings is None:
+        try:
+            from screening import input_quality as _iq
+            input_warnings = _iq.assess(name, entity_type, nationality, dob,
+                                        (inputs or {}).get('national_id'))
+        except Exception:
+            input_warnings = []
+
     # Save to screening_history
     param = get_param_style()
     db = get_db()
@@ -3643,7 +3672,8 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
             'matches': matches,
             'adverse_media': result.get('adverse_media', []),
             'adverse_media_summary': result.get('adverse_media_summary', {}),
-            'search_degraded': bool(result.get('search_degraded', False))
+            'search_degraded': bool(result.get('search_degraded', False)),
+            'input_warnings': input_warnings,
         }), status,
         result.get('processing_time_ms', 0),
         screened_at,
@@ -3669,7 +3699,8 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
         result.get('processing_time_ms', 0), user_id,
         1 if result.get('search_degraded') else 0,
         json.dumps({'inputs': dict(inputs or {}, dob=str(dob) if dob else None, nationality=nationality,
-                                   entity_type=entity_type)}, default=str)
+                                   entity_type=entity_type),
+                    'input_warnings': input_warnings}, default=str)
     ))
     result_id = cur.fetchone()['id']
     db.commit()
@@ -3821,7 +3852,8 @@ def api_run_screening():
         'highest_score': highest_score,
         'requires_review': len(high_risk) > 0,
         'queue_ids': queue_ids,
-        'processing_time_ms': result.get('processing_time_ms', 0)
+        'processing_time_ms': result.get('processing_time_ms', 0),
+        'input_warnings': result.get('input_warnings') or [],
     })
 
 
