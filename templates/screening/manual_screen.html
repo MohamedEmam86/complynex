@@ -11,6 +11,7 @@
                     <div class="col-md-6">
                         <label for="name" class="form-label">{{ _('Full Name') }} <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="name" name="name" required>
+                        <div id="nameQuality" class="small mt-1" aria-live="polite"></div>
                     </div>
                     <div class="col-md-6">
                         <label for="dob" class="form-label">{{ _('Date of Birth') }}</label>
@@ -111,6 +112,51 @@
 
                         slider.addEventListener("input", updateSliderUI);
                         updateSliderUI(); // initial run
+
+                        // P3-11: input-quality hints while typing (never block the screening;
+                        // the server repeats the same checks and saves them with the result)
+                        const IQ = {{ iq_messages|tojson }};
+                        const isAr = (document.documentElement.lang || "").startsWith("ar");
+                        const box = document.getElementById("nameQuality");
+                        const AR = /[\u0600-\u06ff\u0750-\u077f\ufb50-\ufdff\ufe70-\ufeff]/;
+                        const LAT = /[A-Za-z\u00c0-\u024f]/;
+                        function iqCheck() {
+                            const name = (document.getElementById("name").value || "").trim();
+                            const et = (document.getElementById("entity_type").value || "INDIVIDUAL").toUpperCase();
+                            const person = et === "INDIVIDUAL";
+                            const out = [];
+                            if (name) {
+                                const letters = (name.match(/\p{L}/gu) || []).length;
+                                if (letters < 3) out.push(["too_short"]);
+                                if (name.length > 150) out.push(["too_long"]);
+                                if (/[0-9\u0660-\u0669\u06f0-\u06f9]/.test(name)) out.push(["has_digits"]);
+                                const ok = person ? ".-'\u2019`\u02bc\u0640" : ".-'\u2019`\u02bc\u0640&,()/+\"\u201c\u201d:#;";
+                                const sym = [...new Set([...name].filter(c => !/[\p{L}\p{M}\p{N}\s]/u.test(c) && !ok.includes(c)))];
+                                if (sym.length) out.push(["has_symbols", sym.slice(0, 6).join(" ")]);
+                                if (AR.test(name) && LAT.test(name)) out.push(["mixed_scripts"]);
+                                if (person) {
+                                    const words = name.split(/\s+/).filter(w => /\p{L}/u.test(w));
+                                    if (words.length === 1 && letters >= 3) out.push(["single_word"]);
+                                    else if (words.length === 2) out.push(["two_words"]);
+                                }
+                                if (!(document.getElementById("country").value || "").trim()) out.push(["no_country"]);
+                                if (person && !document.getElementById("dob").value &&
+                                    !(document.getElementById("national_id").value || "").trim()) out.push(["no_identifier"]);
+                            }
+                            box.innerHTML = "";
+                            out.forEach(([code, detail]) => {
+                                const m = IQ[code]; if (!m) return;
+                                const d = document.createElement("div");
+                                d.className = m.level === "warning" ? "text-danger" : "text-muted";
+                                d.textContent = (m.level === "warning" ? "⚠ " : "ℹ ") +
+                                    (isAr ? m.ar : m.en).replace("{detail}", detail || "");
+                                box.appendChild(d);
+                            });
+                        }
+                        ["name", "country", "dob", "national_id", "entity_type"].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) { el.addEventListener("input", iqCheck); el.addEventListener("change", iqCheck); }
+                        });
                     });
                 </script>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> {{ _('Screen') }}</button>

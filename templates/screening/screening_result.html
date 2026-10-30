@@ -187,6 +187,17 @@
     </div>
   </div>
 
+  {# ---------------- INPUT QUALITY (P3-11) ---------------- #}
+  {% if input_warnings %}
+  {% set _iq_ar = get_locale() == 'ar' %}
+  <div class="alert alert-warning mb-4" role="note">
+    <div class="fw-bold mb-1"><i class="fas fa-exclamation-circle me-1"></i>{{ 'ملاحظات على جودة البيانات المُدخلة (لم تمنع الفحص)' if _iq_ar else 'Input quality notes (the screening was not blocked)' }}</div>
+    <ul class="mb-0 small">
+      {% for w in input_warnings %}<li{% if w.level == 'warning' %} class="fw-semibold"{% endif %}>{{ w.ar if _iq_ar else w.en }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
   {# ---------------- SUBJECT + COVERAGE ---------------- #}
   <div class="row g-3">
     <div class="col-lg-6">

@@ -730,9 +730,13 @@ def identity_verdict(query_nid=None, query_dob=None, query_country=None,
     if not l_gender and listed_gender:
         g = str(listed_gender).strip().lower()
         l_gender = 'M' if g in ('m', 'male', 'ذكر') else ('F' if g in ('f', 'female', 'انثى', 'أنثى') else None)
-    if q_gender and l_gender and q_gender != l_gender:
-        return {'verdict': 'gender_conflict', 'reasons': ['gender differs (from the national ID)'],
-                'identifier_match': False, 'dob': None, 'country': None}
+    # P3-10: gender is information for the analyst only. It never removes or
+    # lowers a hit (lists record it inconsistently, transliteration hides it).
+    gender_state = None
+    if q_gender and l_gender:
+        gender_state = 'agree' if q_gender == l_gender else 'differ'
+        if gender_state == 'differ':
+            reasons.append('gender differs (information only, does not lower the score)')
     # date of birth: given, or decoded from the customer's national ID
     q_years = _years(query_dob)
     if not q_years and qd.get('valid'):
@@ -747,7 +751,8 @@ def identity_verdict(query_nid=None, query_dob=None, query_country=None,
     if q_years and l_years:
         if min(abs(a - b) for a in q_years for b in l_years) > 2:
             return {'verdict': 'dob_conflict', 'identifier_match': False, 'dob': 'differ', 'country': None,
-                    'reasons': [f'birth year differs ({sorted(q_years)[0]} vs {sorted(l_years)[0]})']}
+                    'gender': gender_state,
+                    'reasons': reasons + [f'birth year differs ({sorted(q_years)[0]} vs {sorted(l_years)[0]})']}
         reasons.append('birth year agrees')
         corroborated = dob_ok = True
         dob_state = 'agree'
@@ -774,7 +779,7 @@ def identity_verdict(query_nid=None, query_dob=None, query_country=None,
     else:
         verdict = 'unknown'
     return {'verdict': verdict, 'reasons': reasons, 'identifier_match': dob_ok,
-            'dob': dob_state, 'country': country_state}
+            'dob': dob_state, 'country': country_state, 'gender': gender_state}
 
 
 # --------------------------------------------------------------------------- decision
@@ -840,8 +845,7 @@ def decide(m, query, national_id=None, dob=None, nationality=None, passport=None
         score = min(score, LOW + 1)
     elif idv['verdict'] == 'dob_conflict':
         score = min(score - 15, POTENTIAL - 1)
-    elif idv['verdict'] == 'gender_conflict':
-        score = min(score - 20, LOW + 1)
+    # (gender is never used to lower a score - P3-10; see identity_verdict)
     # a different nationality (country_conflict) lowers nothing: the name
     # score stands and the analyst sees the difference among the reasons
     reasons += idv['reasons']
@@ -897,7 +901,7 @@ def decide(m, query, national_id=None, dob=None, nationality=None, passport=None
         'tier': tier, 'original_score': round(original, 2), 'final_score': m['match_score'],
         'identity': idv['verdict'], 'reasons': reasons, 'judged_against': listed,
         'identifier_match': bool(idv.get('identifier_match')),
-        'dob': idv.get('dob'), 'country': idv.get('country'),
+        'dob': idv.get('dob'), 'country': idv.get('country'), 'gender': idv.get('gender'),
         'name': ({k: nm[k] for k in ('matched', 'missing_from_query', 'extra_in_query',
                                      'cov_listed', 'cov_query', 'order_ok', 'complete')}
                  if nm else None),
