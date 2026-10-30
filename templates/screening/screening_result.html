@@ -225,15 +225,15 @@
         {% if coverage %}
         <div style="max-height: 245px; overflow-y: auto;">
           <table class="table table-sm cov-table mb-0">
-            <thead><tr><th>{{ _('List') }}</th><th class="text-end">{{ _('Records') }}</th><th>{{ _('Last update') }}</th></tr></thead>
+            <thead><tr><th>{{ _('List') }}</th><th class="text-end">{{ _('Records') }}</th><th>{{ _('Version') }}</th><th>{{ _('Last update') }}</th></tr></thead>
             <tbody>
             {% for c in coverage %}
-            <tr><td><span class="fresh {{ c.state }} me-1"></span>{{ _(c.name) }}</td><td class="text-end">{{ "{:,}".format(c.records or 0) }}</td><td class="text-muted">{{ (c.updated|string)[:10] if c.updated else '—' }}</td></tr>
+            <tr><td><span class="fresh {{ c.state }} me-1"></span>{{ _(c.name) }}</td><td class="text-end">{{ "{:,}".format(c.records or 0) }}</td><td>{% if c.version_at %}<span title="{{ _('Version in force when this screening ran') }}">v{{ c.version_at }}</span>{% elif c.version %}<span class="text-muted" title="{{ _('Current version') }}">v{{ c.version }}</span>{% else %}—{% endif %}</td><td class="text-muted">{{ (c.updated|string)[:10] if c.updated else '—' }}</td></tr>
             {% endfor %}
             </tbody>
           </table>
         </div>
-        <div class="small text-muted mt-2"><span class="fresh green"></span> {{ _('updated in the last 2 days') }} · <span class="fresh amber"></span> {{ _('up to 7 days') }} · <span class="fresh red"></span> {{ _('older or failed') }} · <a href="{{ url_for('screening.quality') }}">{{ _('Screening Quality') }}</a></div>
+        <div class="small text-muted mt-2"><span class="fresh green"></span> {{ _('within the allowed age') }} · <span class="fresh amber"></span> {{ _('close to the limit') }} · <span class="fresh red"></span> {{ _('overdue, failed or blocked') }} · <a href="{{ url_for('screening.quality') }}">{{ _('Screening Quality') }}</a></div>
         {% else %}
         <p class="text-muted small mb-0">{{ _('List coverage is not available right now.') }}</p>
         {% endif %}

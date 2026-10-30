@@ -111,6 +111,24 @@ def _list_freshness():
                     'last_change': r['last_change'], 'last_run': lg.get('run_at'), 'last_status': lg.get('status'),
                     'error': lg.get('error'), 'last_ok': last_ok, 'age_days': age, 'state': state,
                     'delisted': lg.get('delisted'), 'added': lg.get('added')})
+    # P2-7: the version in force and the state against each list's allowed age
+    # (failed / blocked updates red) come from the list versions module.
+    try:
+        from screening import list_versions as LV
+        c = LV.connect()
+        try:
+            lv = {f['source']: f for f in LV.freshness(c)}
+        finally:
+            c.close()
+    except Exception as e:
+        logger.warning('list versions unavailable for the freshness view: %s', e)
+        lv = {}
+    for o in out:
+        f = lv.get(o['source'])
+        o.update(version_no=(f or {}).get('version_no'), latest_status=(f or {}).get('latest_status'),
+                 max_age_hours=(f or {}).get('max_age_hours'), problem=(f or {}).get('problem'))
+        if f:
+            o['state'] = f['state']
     return out
 
 

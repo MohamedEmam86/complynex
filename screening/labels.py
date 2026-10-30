@@ -48,6 +48,12 @@ STATUS = {
     'false positive': _l('False positive'), 'false positive (bulk)': _l('False positive (bulk)'),
     'true match - block': _l('True match — blocked'), 'true match - block (bulk)': _l('True match — blocked (bulk)'),
     'pep - flag': _l('PEP — flagged'),
+    # list versions (P2-1 / P2-7)
+    'applied': _l('Applied'), 'restored': _l('Restored'), 'rolled_back': _l('Rolled back'),
+    'running': _l('Running'), 'failed': _l('Failed'), 'overdue': _l('Overdue'),
+    'scheduled': _l('Scheduled update'), 'manual': _l('Manual update'), 'import': _l('File import'),
+    'rollback': _l('Rollback'), 'baseline': _l('State before versioning'), 'approved update': _l('Approved update'),
+    'fresh': _l('Fresh'), 'stale': _l('Stale'),
     # priority
     'high': _l('High'), 'medium': _l('Medium'), 'low': _l('Low'), 'critical': _l('Critical'),
 }

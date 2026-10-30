@@ -186,6 +186,21 @@ def main():
     if active_now and len(recs) < 0.5 * active_now:
         print(f'STOP: the file has {len(recs)} records but {active_now} are active today - not importing')
         sys.exit(2)
+    # List version + update guard (P2-1): only for a real import, before anything is written.
+    LV = vid = ev = None
+    if a.apply:
+        from screening import list_versions as LV
+        with open(a.path, 'rb') as fh:
+            sha = LV.file_sha256(fh.read())
+        ids_in = [r['source_id'] for r in recs]
+        vid = LV.begin(conn, SOURCE, sha, 'file', len(set(ids_in)), trigger='import')
+        ev = LV.evaluate(conn, SOURCE, ids_in, sha=sha)
+        if ev['blocked']:
+            LV.block(conn, vid, ev)
+            print('BLOCKED by the update guard: ' + '; '.join(ev['reasons']) +
+                  ' - nothing imported. If the change is genuine, approve the version on the list versions page and run again.')
+            sys.exit(2)
+        cur = conn.cursor()
     now = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')   # ISO: the search index rejects 'YYYY-MM-DD HH:MM:SS'
     for r in recs:
         full = r['latin'][0] if r['latin'] else r['name_ar']
@@ -228,6 +243,7 @@ def main():
     print(f'upserted {len(recs)}, deactivated (no longer in the file) {removed}')
     if a.apply:
         conn.commit()
+        LV.applied(conn, vid, {'updated': len(recs), 'delisted': removed}, ev)
         print('APPLIED')
     else:
         conn.rollback()

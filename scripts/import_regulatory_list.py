@@ -134,6 +134,14 @@ def main():
         print(f'STOP: the file has {n_unique} records but {active_now} are active today '
               f'(use --allow-shrink if the list really shrank)')
         sys.exit(2)
+    # List version (P2-1): opened before anything is written, closed after the commit
+    # (this importer keeps its own shrink check: --allow-shrink).
+    LV = vid = None
+    if a.apply:
+        from screening import list_versions as LV
+        with open(a.path, 'rb') as fh:
+            vid = LV.begin(conn, a.source, LV.file_sha256(fh.read()), 'file', len(recs), trigger='import')
+        cur = conn.cursor()
     now = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     groups = {}                       # one record per institution / person, all its measures kept
     for r in recs:
@@ -197,6 +205,7 @@ def main():
           f'deactivated (no longer listed) {removed}')
     if a.apply:
         conn.commit()
+        LV.applied(conn, vid, {'updated': len(ids), 'delisted': removed})
         print('APPLIED - the search index picks the change up within 15 minutes')
     else:
         conn.rollback()
