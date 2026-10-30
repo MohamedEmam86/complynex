@@ -20,7 +20,15 @@ sys.path.insert(0, BASE)
 os.chdir(BASE)
 import psycopg2  # noqa: E402
 from config import Config  # noqa: E402
-from screening.match_intel import tokens, is_arabic, _as_list  # noqa: E402
+from screening.match_intel import tokens, is_arabic, _as_list, _uncomma, loose_ratio  # noqa: E402
+
+
+def _plausible(lat, ar):
+    """Could these two elements be the same name? Their consonant skeletons, with the sounds languages write
+    differently merged (match_intel.loose_ratio), must be at least half alike. Keeps misaligned pairs (a list
+    writing 'SURNAME Given' against an Arabic 'Given Surname') out of the dictionary: they taught it that
+    SVYATENKO is يننا."""
+    return loose_ratio(lat, ar) >= 0.5
 
 OUT = os.path.join(BASE, 'screening', 'data', 'latin_arabic_dict.json')
 
@@ -32,11 +40,14 @@ def main():
     cur.itersize = 5000
 
     def learn(ar_name, lat_name, w=1):
-        a, l = tokens(ar_name), tokens(lat_name)
+        a, l = tokens(ar_name), tokens(_uncomma(lat_name))
         if not a or len(a) != len(l) or len(a) > 7:
             return
-        for x, y in zip(l, a):
-            if len(x) >= 2 and len(y) >= 2 and not is_arabic(x) and is_arabic(y):
+        # the Latin form may put the surname first: take the order in which most elements agree
+        orders = [l] + ([l[1:] + l[:1], l[-1:] + l[:-1]] if len(l) > 1 else [])
+        best = max(orders, key=lambda o: sum(_plausible(x, y) for x, y in zip(o, a)))
+        for x, y in zip(best, a):
+            if len(x) >= 2 and len(y) >= 2 and not is_arabic(x) and is_arabic(y) and _plausible(x, y):
                 pairs[x][y] += w
 
     cur.execute("""SELECT full_name_arabic, full_name, aliases FROM screening_watchlist
