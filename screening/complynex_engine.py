@@ -1684,6 +1684,11 @@ class ComplyNexScreeningEngine:
             'YOUSSEF': 'YOUSSEF', 'YUSUF': 'YOUSSEF', 'YOUSEF': 'YOUSSEF', 'JOSEF': 'YOUSSEF'
         }
         
+        try:   # accents folded, Franco-Arabic digits read as letters (Mo7amed -> MOHAMED) for recall
+            from screening import name_variants as _nv
+            name = _nv.latin(name.lower())
+        except Exception:
+            pass
         name_upper = name.upper()
         tokens: list[str] = name_upper.split()
         
