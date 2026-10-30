@@ -107,6 +107,16 @@ def main():
     except Exception as ex:
         fail('semantic', f'state unreadable: {ex}')
 
+    # P2-7: alert the MLRO about failed / blocked / overdue lists. Informational here:
+    # it does not change the index health verdict.
+    try:
+        from screening import list_versions as LV
+        red = LV.check_and_alert(conn)
+        out['checks']['list_freshness'] = {'ok': True, 'detail': f"{len(red)} list(s) need attention"
+                                           + (f": {[r['source'] for r in red]}" if red else '')}
+    except Exception as ex:
+        out['checks']['list_freshness'] = {'ok': True, 'detail': f'not checked: {ex}'}
+
     os.makedirs(os.path.join(BASE, 'logs'), exist_ok=True)
     tmp = os.path.join(BASE, 'logs', 'index_health.json.tmp')
     with open(tmp, 'w') as f:

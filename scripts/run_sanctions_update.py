@@ -128,6 +128,7 @@ def main():
             t0 = datetime.now()
             try:
                 updater = EnhancedDataUpdater(db_config)
+                updater.version_trigger = 'scheduled'     # recorded in the list version (P2-1)
                 stats = updater.update_watchlist(source_id=sid, user_id=1)
                 updater.close_db()
                 secs = (datetime.now() - t0).total_seconds()
@@ -138,9 +139,10 @@ def main():
                 st = per or stats or {}
                 if st.get('errors'):
                     err = st.get('error') or 'processing error (see log)'
-                    log.error(f"[FAIL] {sname} (id={sid}) in {secs:.0f}s stats={stats}")
+                    blocked = bool(st.get('blocked'))
+                    log.error(f"[{'BLOCKED' if blocked else 'FAIL'}] {sname} (id={sid}) in {secs:.0f}s stats={stats}")
                     failures.append(sname)
-                    _log_run(sname, 'failed', st, err, secs)
+                    _log_run(sname, 'blocked' if blocked else 'failed', st, err, secs)
                 else:
                     log.info(f"[OK] {sname} (id={sid}) in {secs:.0f}s stats={stats}")
                     _log_run(sname, 'ok', st, None, secs)
@@ -151,6 +153,14 @@ def main():
                 _log_run(sname, 'failed', {}, str(e)[:500], secs)
 
     refresh_registry(conn)
+    if not args.registry_only:
+        # P2-7: one MLRO alert per failed / blocked / overdue list (de-duplicated per day)
+        try:
+            from screening import list_versions as LV
+            red = LV.check_and_alert(conn)
+            log.info(f"list freshness: {len(red)} list(s) need attention" + (f": {[r['source'] for r in red]}" if red else ''))
+        except Exception as e:
+            log.warning(f"list freshness check failed: {e}")
     conn.close()
     if not args.registry_only:
         try:

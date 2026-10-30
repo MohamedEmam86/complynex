@@ -181,12 +181,13 @@
                     {% if source_freshness %}
                     <div class="table-responsive">
                     <table class="table table-sm small mb-2">
-                        <thead><tr><th>{{ _('List') }}</th><th>{{ _('Last Update') }}</th><th>{{ _('Status') }}</th></tr></thead>
+                        <thead><tr><th>{{ _('List') }}</th><th>{{ _('Version') }}</th><th>{{ _('Last Update') }}</th><th>{{ _('Status') }}</th></tr></thead>
                         <tbody>
                         {% for s in source_freshness %}
                         <tr>
-                            <td>{{ s.name }}</td>
-                            <td>{{ s.last }}{% if s.age_h is not none %} <span class="text-muted">({{ s.age_h }}h)</span>{% endif %}</td>
+                            <td>{{ _(s.name) }}</td>
+                            <td>{{ ('v' ~ s.version) if s.version else '—' }}</td>
+                            <td>{{ s.last }}{% if s.age_h is not none %} <span class="text-muted">({{ s.age_h }}h / {{ s.max_h|int }}h)</span>{% endif %}</td>
                             <td>
                                 <span class="badge bg-{{ s.badge }}">{{ s.status|scr_label }}</span>
                                 {% if s.failures > 0 %}<span class="badge bg-danger">{{ s.failures }} {{ _('fails') }}</span>{% endif %}
@@ -199,7 +200,7 @@
                     {% else %}
                     <p><strong>{{ _('Last Updated:') }}</strong> {{ last_update or 'Never' }}</p>
                     {% endif %}
-                    <p class="small text-muted mb-0">{{ _('Lists refresh automatically. Red rows need attention.') }}</p>
+                    <p class="small text-muted mb-0">{{ _('Lists refresh automatically. Red rows need attention.') }} <a href="{{ url_for('screening.list_versions') }}">{{ _('List versions') }}</a></p>
                 </div>
             </div>
         </div>

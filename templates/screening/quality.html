@@ -159,19 +159,20 @@
 
   {# ---------------- List freshness ---------------- #}
   <div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white fw-bold"><i class="fas fa-clock-rotate-left me-2"></i>{{ _('Are the lists current?') }}</div>
+    <div class="card-header bg-white fw-bold d-flex justify-content-between"><span><i class="fas fa-clock-rotate-left me-2"></i>{{ _('Are the lists current?') }}</span><a class="small" href="{{ url_for('screening.list_versions') }}">{{ _('List versions') }}</a></div>
     <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
-      <thead><tr><th>{{ _('Source') }}</th><th class="text-end">{{ _('Active records') }}</th><th>{{ _('Last update run') }}</th><th>{{ _('Result') }}</th><th class="text-end">{{ _('Age (days)') }}</th><th class="text-end">{{ _('Delisted last run') }}</th><th>{{ _('Problem') }}</th></tr></thead>
+      <thead><tr><th>{{ _('Source') }}</th><th>{{ _('Version') }}</th><th class="text-end">{{ _('Active records') }}</th><th>{{ _('Last update run') }}</th><th>{{ _('Result') }}</th><th class="text-end">{{ _('Age (days)') }}</th><th class="text-end">{{ _('Delisted last run') }}</th><th>{{ _('Problem') }}</th></tr></thead>
       <tbody>
       {% for f in fresh %}
         <tr>
           <td><span class="badge rounded-pill {{ {'green':'bg-success','amber':'bg-warning text-dark','red':'bg-danger'}[f.state] }}">&nbsp;</span> {{ f.source }}</td>
+          <td>{{ ('v' ~ f.version_no) if f.version_no else '—' }}</td>
           <td class="text-end">{{ '{:,}'.format(f.active) }}</td>
           <td class="small">{{ f.last_run.strftime('%Y-%m-%d %H:%M') if f.last_run else (_('no run logged yet') ) }}</td>
           <td>{{ f.last_status or '—' }}</td>
           <td class="text-end">{{ f.age_days if f.age_days is not none else '—' }}</td>
           <td class="text-end">{{ f.delisted if f.delisted is not none else '—' }}</td>
-          <td class="small text-danger">{{ f.error or '' }}</td>
+          <td class="small text-danger">{{ (f.problem|scr_label) if f.problem else '' }}{{ ' · ' if f.problem and f.error }}{{ f.error or '' }}</td>
         </tr>
       {% endfor %}
       </tbody>

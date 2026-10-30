@@ -579,59 +579,23 @@ def dashboard():
     # to query the database to know whether screening data is current.
     source_freshness = []
     try:
-        from datetime import datetime as _dt
-        _now = _dt.now()
-        _rows = query_db("""
-            SELECT source_name, source_display_name, last_successful_update,
-                   consecutive_failures, update_frequency_hours, total_records
-            FROM screening_data_sources WHERE is_active = 1 ORDER BY source_name
-        """) or []
+        # one source of truth for list freshness (P2-7): version in force, last good
+        # update, allowed age per list, failed / blocked updates shown red
+        from screening import list_versions as _LV
+        _c = _LV.connect()
+        try:
+            _rows = _LV.freshness(_c)
+        finally:
+            _c.close()
         for _r in _rows:
-            _raw = (_r['last_successful_update'] or '').strip() if _r['last_successful_update'] else ''
-            _age_h = None
-            if _raw:
-                # PostgreSQL renders the offset as +02 — hours only. strptime's
-                # %z accepts +0200 and +02:00 but NOT +02, so every one of these
-                # parses failed, _age_h stayed None, and all nine sources showed
-                # "never" with a red badge despite being updated two days ago.
-                # fromisoformat handles it; strptime stays as a fallback.
-                try:
-                    _parsed = _dt.fromisoformat(_raw)
-                    if _parsed.tzinfo is not None:
-                        _parsed = _parsed.replace(tzinfo=None)
-                    _age_h = (_now - _parsed).total_seconds() / 3600.0
-                except (ValueError, TypeError):
-                    _norm = _raw
-                    # pad a bare 2-digit offset so %z can read it
-                    if len(_norm) > 3 and _norm[-3] in '+-' and _norm[-2:].isdigit():
-                        _norm = _norm + '00'
-                    for _fmt in ('%Y-%m-%d %H:%M:%S.%f%z', '%Y-%m-%d %H:%M:%S%z',
-                                 '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S'):
-                        try:
-                            _parsed = _dt.strptime(_norm, _fmt)
-                            if _parsed.tzinfo is not None:
-                                _parsed = _parsed.replace(tzinfo=None)
-                            _age_h = (_now - _parsed).total_seconds() / 3600.0
-                            break
-                        except ValueError:
-                            continue
-            if _age_h is None:
-                _status, _badge = 'never', 'danger'
-            elif _age_h <= 48:
-                _status, _badge = 'fresh', 'success'
-            elif _age_h <= 168:
-                _status, _badge = 'stale', 'warning'
-            else:
-                _status, _badge = 'critical', 'danger'
-            if _r['consecutive_failures'] and _r['consecutive_failures'] > 0:
-                _badge = 'danger'
             source_freshness.append({
-                'name': _r['source_display_name'] or _r['source_name'],
-                'last': _raw[:16] if _raw else 'Never',
-                'age_h': round(_age_h) if _age_h is not None else None,
-                'status': _status, 'badge': _badge,
-                'failures': _r['consecutive_failures'] or 0,
-                'records': _r['total_records'] or 0,
+                'name': _r['name'], 'source': _r['source'],
+                'last': str(_r['last_ok'])[:16] if _r['last_ok'] else 'Never',
+                'age_h': round(_r['age_hours']) if _r['age_hours'] is not None else None,
+                'max_h': _r['max_age_hours'], 'version': _r['version_no'],
+                'status': {'green': 'fresh', 'amber': 'stale'}.get(_r['state'], _r['problem'] or 'critical'),
+                'badge': {'green': 'success', 'amber': 'warning'}.get(_r['state'], 'danger'),
+                'failures': 0, 'records': _r['records'] or 0,
             })
     except Exception as _e:
         logger.warning(f"source freshness panel failed: {_e}")
@@ -886,7 +850,7 @@ def view_result(id):
                            other_matches=other_matches,
                            s_views=s_views, p_views=p_views, o_views=o_views, verdict=verdict,
                            inputs=inputs, am=rv.adverse_view(am_summary, adverse_hits),
-                           coverage=rv.coverage(),
+                           coverage=rv.coverage(at=result.get('created_at')),
                            decisions=CL.decision_history('result', id),
                            pending=CL.pending_request('result', id),
                            can_approve=CL.can_approve(current_user))
@@ -5191,3 +5155,188 @@ def gold_review():
     _audit('Gold Set review sheet downloaded', None, f'{n} pairs')
     return send_file(out, as_attachment=True, download_name=f"gold_set_review_v{GR.VERSION}.xlsx",
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+# ---------------------------------------------------------------------------
+# List versions, update guard, rollback and freshness (Phase 2: P2-1, P2-7)
+# ---------------------------------------------------------------------------
+import re
+LIST_SETTING_FIELDS = (('age', 'max_age_hours'), ('drop', 'max_drop_pct'), ('delist', 'max_delist_pct'),
+                       ('min', 'min_abs'))
+
+
+def _lv_can_act():
+    return current_user.is_admin() or CL.can_approve(current_user)
+
+
+@screening_bp.route('/lists/versions')
+@login_required
+@permission_required('screening', level='view')
+def list_versions():
+    from screening import list_versions as LV
+    conn = LV.connect()
+    try:
+        fresh = LV.freshness(conn)
+        hist = LV.history(conn, request.args.get('source') or None, limit=80)
+        guard_cfg = LV._cfg_json(conn, LV.GUARD_KEY)
+        age_cfg = LV._cfg_json(conn, LV.MAX_AGE_KEY)
+        targets = {}
+        for f in fresh:
+            cur_v, prev_v = LV.rollback_target(conn, f['source'])
+            if cur_v and prev_v and prev_v.get('has_snapshot'):
+                targets[f['source']] = {'current': cur_v['version_no'], 'previous': prev_v['version_no'],
+                                        'records': prev_v['snapshot_count']}
+        settings = []
+        for f in [{'source': 'default', 'name': gettext('All lists (default)')}] + fresh:
+            g = guard_cfg.get(f['source']) if isinstance(guard_cfg.get(f['source']), dict) else {}
+            settings.append({'source': f['source'], 'name': f['name'],
+                             'age': age_cfg.get(f['source']), 'drop': g.get('max_drop_pct'),
+                             'delist': g.get('max_delist_pct'), 'min': g.get('min_abs'),
+                             'effective': (LV.guard_settings(conn, f['source'], guard_cfg),
+                                           LV.max_age_hours(f['source'], age_cfg))})
+    finally:
+        conn.close()
+    blocked = [h for h in hist if h['status'] == 'BLOCKED' and not h['approval_used_by']]
+    return render_template('screening/list_versions.html', fresh=fresh, history=hist, blocked=blocked,
+                           targets=targets, settings=settings, can_act=_lv_can_act(),
+                           source_filter=request.args.get('source') or '')
+
+
+@screening_bp.route('/lists/versions/<int:vid>/approve', methods=['POST'])
+@login_required
+@permission_required('screening', level='view')
+def list_version_approve(vid):
+    if not _lv_can_act():
+        flash(gettext('Only the MLRO (approval authority) can approve a blocked list update.'), 'error')
+        return redirect(url_for('screening.list_versions'))
+    from screening import list_versions as LV
+    conn = LV.connect()
+    try:
+        row = LV.approve(conn, vid, current_user.id, request.form.get('reason'))
+        src = conn.cursor()
+        src.execute("SELECT id FROM screening_data_sources WHERE source_name = %s AND is_active = 1", (row['source'],))
+        ds = src.fetchone()
+        conn.rollback()
+    except ValueError as e:
+        conn.close()
+        flash(gettext('Not approved: %(e)s', e=str(e)), 'error')
+        return redirect(url_for('screening.list_versions'))
+    conn.close()
+    _audit('Blocked list update approved', vid,
+           f"{row['source']} version {row['version_no']}; reason: {(request.form.get('reason') or '').strip()}")
+    if ds:
+        db_config = dict(get_config().POSTGRES_CONFIG)
+        uid = current_user.id
+
+        def _run(source_id):
+            try:
+                from screening.data_updater_enhanced import EnhancedDataUpdater
+                up = EnhancedDataUpdater(db_config)
+                up.version_trigger = 'approved'
+                up.update_watchlist(source_id=source_id, user_id=uid)
+                up.close_db()
+                trigger_es_incremental_sync()
+            except Exception:
+                logger.exception('approved list update failed')
+        threading.Thread(target=_run, args=(ds[0],), daemon=True).start()
+        flash(gettext('Approved. The update of %(s)s is running again now; if the download is unchanged it will be applied.',
+                      s=row['source']), 'success')
+    else:
+        flash(gettext('Approved. Run the import of %(s)s again with the same file to apply it.', s=row['source']),
+              'success')
+    return redirect(url_for('screening.list_versions'))
+
+
+@screening_bp.route('/lists/<source>/rollback', methods=['POST'])
+@login_required
+@permission_required('screening', level='view')
+def list_rollback(source):
+    if not _lv_can_act():
+        flash(gettext('Only the MLRO (approval authority) can roll a list back.'), 'error')
+        return redirect(url_for('screening.list_versions'))
+    from screening import list_versions as LV
+    reason = (request.form.get('reason') or '').strip()
+    if len(reason) < 15:
+        flash(gettext('Please give the reason for the rollback (at least 15 characters). Nothing was changed.'), 'error')
+        return redirect(url_for('screening.list_versions'))
+    conn = LV.connect()
+    try:
+        cur_v, prev_v = LV.rollback_target(conn, source)
+    finally:
+        conn.close()
+    if not (cur_v and prev_v and prev_v.get('has_snapshot')):
+        flash(gettext('There is no earlier version of this list to go back to.'), 'error')
+        return redirect(url_for('screening.list_versions'))
+    uid = current_user.id
+    _audit('List rollback started', None,
+           f"{source}: version {cur_v['version_no']} -> back to version {prev_v['version_no']}; reason: {reason}")
+
+    def _run():
+        c = LV.connect()
+        try:
+            out = LV.rollback(c, source, uid, reason)
+            logger.warning(f'[LIST ROLLBACK] {out}')
+            trigger_es_incremental_sync()
+        except Exception:
+            logger.exception('list rollback failed')
+            LV.alert(c, source, 'rollback_failed', f'List rollback failed: {source}',
+                     'The rollback did not complete; the list was left as it was. See the application log.', force=True)
+        finally:
+            c.close()
+    threading.Thread(target=_run, daemon=True).start()
+    flash(gettext('Rollback of %(s)s to version %(v)s started. It is recorded as a new version; the search index follows within minutes.',
+                  s=source, v=prev_v['version_no']), 'success')
+    return redirect(url_for('screening.list_versions'))
+
+
+@screening_bp.route('/lists/versions/settings', methods=['POST'])
+@login_required
+@permission_required('screening', level='view')
+def list_version_settings():
+    if not _lv_can_act():
+        flash(gettext('Only the MLRO (approval authority) can change the list settings.'), 'error')
+        return redirect(url_for('screening.list_versions'))
+    from screening import list_versions as LV
+    why = (request.form.get('reason') or '').strip()
+    if len(why) < 15:
+        flash(gettext('Please give the reason for the change (at least 15 characters). Nothing was saved.'), 'error')
+        return redirect(url_for('screening.list_versions'))
+    guard, age = {}, {}
+    sources = request.form.getlist('source')
+    for s in sources:
+        if not re.fullmatch(r'[a-z0-9_]{2,60}', s or ''):
+            continue
+        for field, key in LIST_SETTING_FIELDS:
+            raw = (request.form.get(f'{field}__{s}') or '').strip()
+            if raw == '':
+                continue
+            if key == 'max_age_hours':
+                age[s] = raw
+            else:
+                guard.setdefault(s, {})[key] = raw
+    problems = LV.validate_settings(guard, age)
+    if problems:
+        flash(gettext('Nothing was saved: %(p)s', p='; '.join(problems[:6])), 'error')
+        return redirect(url_for('screening.list_versions'))
+    guard = {s: {k: float(v) for k, v in g.items()} for s, g in guard.items()}
+    age = {s: float(v) for s, v in age.items()}
+    conn = LV.connect()
+    try:
+        old_g, old_a = LV._cfg_json(conn, LV.GUARD_KEY), LV._cfg_json(conn, LV.MAX_AGE_KEY)
+        c = conn.cursor()
+        for key, val, desc in ((LV.GUARD_KEY, guard, 'List update guard limits'),
+                               (LV.MAX_AGE_KEY, age, 'Allowed age of each list (hours)')):
+            c.execute("""INSERT INTO screening_config (config_key, config_value, category, description, updated_at)
+                         VALUES (%s, %s, 'lists', %s, CURRENT_TIMESTAMP)
+                         ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value,
+                                                                updated_at = CURRENT_TIMESTAMP""",
+                      (key, json.dumps(val, sort_keys=True), desc))
+        conn.commit()
+    finally:
+        conn.close()
+    if (old_g, old_a) != (guard, age):
+        _audit('List update settings changed', None,
+               f'guard {json.dumps(old_g, sort_keys=True)} -> {json.dumps(guard, sort_keys=True)}; '
+               f'allowed age {json.dumps(old_a, sort_keys=True)} -> {json.dumps(age, sort_keys=True)}; reason: {why}')
+    flash(gettext('List settings saved.'), 'success')
+    return redirect(url_for('screening.list_versions'))

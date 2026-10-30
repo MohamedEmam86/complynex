@@ -257,33 +257,81 @@ class EnhancedDataUpdater:
             # Fetch entities based on source type
             entities = self._fetch_entities(source)
             
+            sname = source['source_name']
+            trigger = getattr(self, 'version_trigger', None) or 'manual'
             if not entities:
                 # An empty download is a failure, not "nothing changed": the
                 # EU feed returned nothing for weeks while every run said [OK].
-                logger.error(f"No entities fetched from {source['source_name']}")
+                logger.error(f"No entities fetched from {sname}")
                 source_stats['errors'] += 1
                 source_stats['error'] = 'no entities fetched (download or parse failed)'
+                self._version_failed(sname, source_stats['error'], user_id, trigger)
                 return source_stats
                 
-            logger.info(f"Fetched {len(entities)} entities from {source['source_name']}")
+            logger.info(f"Fetched {len(entities)} entities from {sname}")
+
+            # List version + update guard (P2-1): nothing is written when the download
+            # would drop or deactivate too much of the list; the version in force stays.
+            from screening import list_versions as LV
+            vid, ev = None, None
+            try:
+                raw_sha = getattr(self, '_last_raw_sha', None)
+                sha = raw_sha or LV.content_sha256(entities)
+                n_ids = len({e.get('source_id') for e in entities if e.get('source_id')})
+                vid = LV.begin(self.db_conn, sname, sha, 'file' if raw_sha else 'content', n_ids,
+                               user_id=None if trigger == 'scheduled' else user_id, trigger=trigger)
+                ev = LV.evaluate(self.db_conn, sname, [e.get('source_id') for e in entities], sha=sha)
+            except Exception as e:
+                # Versioning infrastructure must not stop the daily update (the older
+                # partial-download check in _sync_delistings still applies).
+                logger.error(f"[VERSION] {sname}: version / guard unavailable: {e}")
+                try:
+                    self.db_conn.rollback()
+                except Exception:
+                    pass
+                if vid:
+                    LV.fail(self.db_conn, vid, f'guard check failed: {e}')
+                vid, ev = None, None
+            if ev and ev['blocked']:
+                LV.block(self.db_conn, vid, ev)
+                logger.error(f"[BLOCKED] {sname}: {'; '.join(ev['reasons'])} - previous version stays in force")
+                source_stats['errors'] += 1
+                source_stats['blocked'] = True
+                source_stats['error'] = 'BLOCKED by the update guard: ' + '; '.join(ev['reasons'])
+                return source_stats
             
+            # an MLRO-approved download is applied in full (also its deactivations)
+            self._delist_approved = bool(ev and ev.get('approved_version'))
             # Process entities in batch (MUCH faster - single SELECT for all)
             try:
-                added, updated, unchanged = self._import_entities_batch(entities, source['source_name'])
+                added, updated, unchanged = self._import_entities_batch(entities, sname)
                 source_stats['added'] += added
                 source_stats['updated'] += updated
                 source_stats['unchanged'] += unchanged
                 self.db_conn.commit()
                 try:
-                    source_stats.update(self._sync_delistings(entities, source['source_name']))
+                    source_stats.update(self._sync_delistings(entities, sname))
                 except Exception as e:
-                    logger.error(f"Delisting sync failed for {source['source_name']}: {e}")
+                    logger.error(f"Delisting sync failed for {sname}: {e}")
                     self.db_conn.rollback()
                 logger.info(f"Batch complete: {added} added, {updated} updated, {unchanged} unchanged")
+                if vid:
+                    try:
+                        LV.applied(self.db_conn, vid, source_stats, ev)
+                    except Exception as e:
+                        logger.error(f"[VERSION] {sname}: could not close version {vid}: {e}")
+                        try:
+                            self.db_conn.rollback()
+                        except Exception:
+                            pass
             except Exception as e:
-                logger.error(f"Failed to process {source['source_name']}: {e}")
+                logger.error(f"Failed to process {sname}: {e}")
                 self.db_conn.rollback()
                 source_stats['errors'] += 1
+                if vid:
+                    LV.fail(self.db_conn, vid, e)
+            finally:
+                self._delist_approved = False
                     
             return source_stats
             
@@ -295,6 +343,20 @@ class EnhancedDataUpdater:
             except Exception:
                 pass
             return source_stats
+
+    def _version_failed(self, sname, error, user_id, trigger):
+        """Record a failed download as a FAILED version (and alert). Never raises."""
+        try:
+            from screening import list_versions as LV
+            vid = LV.begin(self.db_conn, sname, None, None, 0,
+                           user_id=None if trigger == 'scheduled' else user_id, trigger=trigger)
+            LV.fail(self.db_conn, vid, error)
+        except Exception as e:
+            logger.error(f"[VERSION] {sname}: could not record the failed update: {e}")
+            try:
+                self.db_conn.rollback()
+            except Exception:
+                pass
             
     def _fetch_entities(self, source):
         """
@@ -307,6 +369,7 @@ class EnhancedDataUpdater:
             logger.error(f"No URL for source {source['source_name']}")
             return []
             
+        self._last_raw_sha = None   # hash of the downloaded file, recorded in the list version (P2-1)
         try:
             # EMLCU - Special case (XLSX)
             if source_type in ['EMLCU_SCRAPER', 'EMLCU']:
@@ -322,6 +385,12 @@ class EnhancedDataUpdater:
                 file_path = scraper.download_only()
                 if not file_path:
                     raise Exception("Failed to download EMLCU file")
+                try:
+                    from screening.list_versions import file_sha256 as _fsha
+                    with open(file_path, 'rb') as _fh:
+                        self._last_raw_sha = _fsha(_fh.read())
+                except Exception:
+                    self._last_raw_sha = None
                 scripts_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts')
                 if scripts_dir not in sys.path:
                     sys.path.append(scripts_dir)
@@ -389,6 +458,12 @@ class EnhancedDataUpdater:
             else:
                 content = response.text
 
+            try:
+                from screening.list_versions import file_sha256 as _fsha
+                self._last_raw_sha = _fsha(content)
+            except Exception:
+                self._last_raw_sha = None
+
             # Get appropriate handler
             if source_type in ['UN', 'UN_SECURITY_COUNCIL']:
                 handler = UNSecurityCouncilHandler()
@@ -430,7 +505,8 @@ class EnhancedDataUpdater:
                          AND substring(source_id from '^\\D*') = ANY(%s)""", (source_name, prefixes))
         row = cur.fetchone()
         active = row['n'] if isinstance(row, dict) else row[0]
-        if not ids or (active and len(ids) < 0.8 * active):
+        approved = getattr(self, '_delist_approved', False)   # MLRO approved this exact download (P2-1)
+        if not ids or (active and len(ids) < 0.8 * active and not approved):
             logger.warning(f"[DELIST] {source_name}: {len(ids)} fetched vs {active} active — skipped (partial download?)")
             return {'delisted': 0, 'relisted': 0, 'delist_skipped': True}
         cur.execute("CREATE TEMP TABLE IF NOT EXISTS _fetched_ids (source_id text PRIMARY KEY) ON COMMIT DROP")
@@ -896,10 +972,17 @@ class EnhancedDataUpdater:
     def _update_source_metadata(self, source_id, source_stats, user_id):
         """Update source metadata after processing"""
         cursor = self.db_conn.cursor()
+        if source_stats.get('errors'):
+            # A failed or blocked update must not make the list look fresh (P2-7):
+            # it used to stamp last_successful_update even when nothing was applied.
+            cursor.execute(f"UPDATE screening_data_sources SET consecutive_failures = COALESCE(consecutive_failures, 0) + 1 "
+                           f"WHERE id = {self.placeholder}", (source_id,))
+            return
         
         cursor.execute(f"""
             UPDATE screening_data_sources SET
                 last_successful_update = CURRENT_TIMESTAMP,
+                consecutive_failures = 0,
                 last_updated_by = {self.placeholder},
                 last_update_records_added = {self.placeholder},
                 last_update_records_updated = {self.placeholder}

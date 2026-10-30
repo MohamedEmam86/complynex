@@ -342,8 +342,25 @@ AM_LEVEL = {
 _COVERAGE = {'t': 0, 'data': None}
 
 
-def coverage(ttl=600):
-    """Lists searched, their size and last update (cached for ten minutes)."""
+def coverage(ttl=600, at=None):
+    """Lists searched, their size, last update and version (cached for ten minutes).
+    With `at` (when the screening ran) each list also carries the version in force then."""
+    rows = _coverage_rows(ttl)
+    if not at or not rows:
+        return rows
+    try:
+        from screening import list_versions as LV
+        c = LV.connect()
+        try:
+            v_at = LV.versions_at(c, at)
+        finally:
+            c.close()
+    except Exception:
+        v_at = {}
+    return [dict(r, version_at=v_at.get(r.get('source'))) for r in rows]
+
+
+def _coverage_rows(ttl):
     if _COVERAGE['data'] is not None and time.time() - _COVERAGE['t'] < ttl:
         return _COVERAGE['data']
     rows = []
@@ -351,7 +368,8 @@ def coverage(ttl=600):
         from screening import quality_service as qs
         for f in qs.list_freshness():
             rows.append({'name': SOURCE_LABEL.get(f['source'], f['source']), 'records': f['active'],
-                         'updated': f.get('last_run') or f.get('last_change'), 'state': f['state']})
+                         'updated': f.get('last_run') or f.get('last_change'), 'state': f['state'],
+                         'source': f['source'], 'version': f.get('version_no')})
         for i in qs.internal_lists():
             rows.append({'name': SOURCE_LABEL.get(i['table'], i['label']), 'records': i['active'],
                          'updated': i.get('last_added'), 'state': 'green'})

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}{{ _('List versions') }}{% endblock %}
+{% block content %}
+{% set st_badge = {'APPLIED':'bg-success','RESTORED':'bg-info text-dark','BLOCKED':'bg-danger','FAILED':'bg-danger','RUNNING':'bg-secondary','ROLLED_BACK':'bg-warning text-dark'} %}
+{% set dot = {'green':'bg-success','amber':'bg-warning text-dark','red':'bg-danger'} %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h1 class="h3 mb-1"><i class="fas fa-code-branch me-2"></i>{{ _('List versions') }}</h1>
+      <p class="text-muted mb-0">{{ _('Every list update is a numbered version. An update that would remove too much of a list is blocked and the version in force stays; the MLRO can approve it or roll a list back to its previous version.') }}</p>
+    </div>
+    <div>
+      <a href="{{ url_for('screening.data_sources') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-database me-1"></i>{{ _('Watchlist Data Sources') }}</a>
+      <a href="{{ url_for('screening.quality') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-bullseye me-1"></i>{{ _('Screening Quality') }}</a>
+    </div>
+  </div>
+
+  {# ---------------- Lists in force ---------------- #}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold"><i class="fas fa-clock-rotate-left me-2"></i>{{ _('Lists in force') }}</div>
+    <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+      <thead><tr><th>{{ _('List') }}</th><th>{{ _('Version in force') }}</th><th>{{ _('Last good update') }}</th><th class="text-end">{{ _('Age (hours)') }}</th><th class="text-end">{{ _('Allowed age (hours)') }}</th><th class="text-end">{{ _('Active records') }}</th><th>{{ _('Problem') }}</th>{% if can_act %}<th></th>{% endif %}</tr></thead>
+      <tbody>
+      {% for f in fresh %}
+        <tr>
+          <td><span class="badge rounded-pill {{ dot[f.state] }}">&nbsp;</span> {{ _(f.name) }} <span class="text-muted small">{{ f.source }}</span></td>
+          <td>{% if f.version_no %}v{{ f.version_no }}{% else %}<span class="text-muted">{{ _('not versioned yet') }}</span>{% endif %}
+              {% if f.latest_no and f.latest_no != f.version_no %} <span class="badge {{ st_badge.get(f.latest_status, 'bg-secondary') }}">v{{ f.latest_no }} {{ f.latest_status|scr_label }}</span>{% endif %}</td>
+          <td class="small">{{ f.last_ok or '—' }}</td>
+          <td class="text-end">{{ f.age_hours if f.age_hours is not none else '—' }}</td>
+          <td class="text-end">{{ f.max_age_hours }}</td>
+          <td class="text-end">{{ '{:,}'.format(f.records) if f.records is not none else '—' }}</td>
+          <td class="small {{ 'text-danger' if f.problem }}">{{ f.problem|scr_label if f.problem else '' }}</td>
+          {% if can_act %}
+          <td class="text-end">
+            {% if targets.get(f.source) %}
+            {% set t = targets[f.source] %}
+            <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#rb-{{ f.source }}">{{ _('Roll back') }}</button>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% if can_act and targets.get(f.source) %}
+        {% set t = targets[f.source] %}
+        <tr class="collapse" id="rb-{{ f.source }}"><td colspan="8" class="bg-light">
+          <form method="post" action="{{ url_for('screening.list_rollback', source=f.source) }}" class="row g-2 align-items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-md-5 small">{{ _('Go back from version %(c)s to version %(p)s (%(n)s active records). Records are re-activated or de-activated, never deleted; record content is not reverted.', c=t.current, p=t.previous, n='{:,}'.format(t.records or 0)) }}</div>
+            <div class="col-md-5"><input class="form-control form-control-sm" name="reason" minlength="15" required placeholder="{{ _('Reason (at least 15 characters)') }}"></div>
+            <div class="col-md-2"><button class="btn btn-danger btn-sm w-100">{{ _('Confirm rollback') }}</button></div>
+          </form>
+        </td></tr>
+        {% endif %}
+      {% else %}
+        <tr><td colspan="8" class="text-muted">{{ _('No list has been updated yet.') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <div class="card-footer bg-white small text-muted"><span class="badge rounded-pill bg-success">&nbsp;</span> {{ _('within the allowed age') }} · <span class="badge rounded-pill bg-warning">&nbsp;</span> {{ _('close to the limit') }} · <span class="badge rounded-pill bg-danger">&nbsp;</span> {{ _('overdue, failed or blocked: the MLRO is alerted') }}</div>
+  </div>
+
+  {# ---------------- Blocked updates ---------------- #}
+  {% if blocked %}
+  <div class="card shadow-sm border-danger mb-4">
+    <div class="card-header bg-white fw-bold text-danger"><i class="fas fa-hand me-2"></i>{{ _('Blocked updates') }}</div>
+    <div class="card-body">
+      {% for b in blocked %}
+      <div class="border rounded p-2 mb-2">
+        <div><strong>{{ b.source }} v{{ b.version_no }}</strong> · {{ b.started_at }} · {{ _('downloaded records') }}: {{ '{:,}'.format(b.fetched_count or 0) }}</div>
+        <div class="small text-danger">{{ b.reason }}</div>
+        {% if b.approved_at %}
+          <div class="small text-success">{{ _('Approved by %(u)s on %(d)s: %(r)s', u=b.approved_by_name or '—', d=b.approved_at, r=b.approval_reason) }}</div>
+        {% elif can_act %}
+        <form method="post" action="{{ url_for('screening.list_version_approve', vid=b.id) }}" class="row g-2 mt-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="col-md-9"><input class="form-control form-control-sm" name="reason" minlength="15" required placeholder="{{ _('Why the change is genuine (at least 15 characters)') }}"></div>
+          <div class="col-md-3"><button class="btn btn-warning btn-sm w-100">{{ _('Approve and apply') }}</button></div>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ---------------- History ---------------- #}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+      <span><i class="fas fa-list-ol me-2"></i>{{ _('Version history') }}</span>
+      <form method="get" class="d-flex gap-1">
+        <select name="source" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">{{ _('All lists') }}</option>
+          {% for f in fresh %}<option value="{{ f.source }}" {{ 'selected' if source_filter == f.source }}>{{ f.source }}</option>{% endfor %}
+        </select>
+      </form>
+    </div>
+    <div class="table-responsive"><table class="table table-sm mb-0 align-middle small">
+      <thead><tr><th>{{ _('List') }}</th><th>{{ _('Version') }}</th><th>{{ _('Status') }}</th><th>{{ _('Started by') }}</th><th>{{ _('Finished') }}</th><th class="text-end">{{ _('Downloaded') }}</th><th class="text-end">{{ _('Added') }}</th><th class="text-end">{{ _('Updated') }}</th><th class="text-end">{{ _('Deactivated') }}</th><th class="text-end">{{ _('Reactivated') }}</th><th class="text-end">{{ _('Active after') }}</th><th>{{ _('Hash') }}</th><th>{{ _('Notes') }}</th></tr></thead>
+      <tbody>
+      {% for h in history %}
+        <tr>
+          <td>{{ h.source }}</td>
+          <td>v{{ h.version_no }}</td>
+          <td><span class="badge {{ st_badge.get(h.status, 'bg-secondary') }}">{{ h.status|scr_label }}</span></td>
+          <td>{{ h.triggered_by_name or (h.trigger|scr_label) }}</td>
+          <td>{{ h.finished_at or '—' }}</td>
+          <td class="text-end">{{ '{:,}'.format(h.fetched_count) if h.fetched_count is not none else '—' }}</td>
+          <td class="text-end">{{ h.added or 0 }}</td>
+          <td class="text-end">{{ h.updated or 0 }}</td>
+          <td class="text-end">{{ h.delisted or 0 }}</td>
+          <td class="text-end">{{ h.relisted or 0 }}</td>
+          <td class="text-end">{{ '{:,}'.format(h.active_after) if h.active_after is not none else '—' }}</td>
+          <td><code title="{{ h.file_sha256 or '' }} ({{ h.hash_kind or '' }})">{{ (h.file_sha256 or '')[:10] }}</code></td>
+          <td>{{ h.reason or '' }}
+            {% if h.rolled_back_at %}<div class="text-warning">{{ _('Rolled back by %(u)s: %(r)s', u=h.rolled_back_by_name or '—', r=h.rollback_reason) }}</div>{% endif %}
+            {% if h.approved_at %}<div class="text-success">{{ _('Approved by %(u)s: %(r)s', u=h.approved_by_name or '—', r=h.approval_reason) }}</div>{% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="13" class="text-muted">{{ _('No versions recorded yet: the first one is recorded at the next list update.') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+
+  {# ---------------- Settings ---------------- #}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold"><i class="fas fa-sliders-h me-2"></i>{{ _('Guard limits and allowed age') }}</div>
+    <div class="card-body">
+      <p class="small text-muted">{{ _('An update is blocked when the record count falls by more than the drop limit, or more than the deactivation limit of the active records would be removed, and the change is at least the minimum number of records. Leave a field empty to use the default. In force values are shown in grey.') }}</p>
+      <form method="post" action="{{ url_for('screening.list_version_settings') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="table-responsive"><table class="table table-sm align-middle small">
+          <thead><tr><th>{{ _('List') }}</th><th>{{ _('Allowed age (hours)') }}</th><th>{{ _('Drop limit (percent)') }}</th><th>{{ _('Deactivation limit (percent)') }}</th><th>{{ _('Minimum records') }}</th></tr></thead>
+          <tbody>
+          {% for s in settings %}
+            {% set eg, ea = s.effective %}
+            <tr>
+              <td>{{ s.name }}<input type="hidden" name="source" value="{{ s.source }}"></td>
+              <td><input class="form-control form-control-sm" name="age__{{ s.source }}" value="{{ s.age if s.age is not none else '' }}" placeholder="{{ ea }}" {{ 'disabled' if not can_act }}></td>
+              <td><input class="form-control form-control-sm" name="drop__{{ s.source }}" value="{{ s.drop if s.drop is not none else '' }}" placeholder="{{ eg.max_drop_pct }}" {{ 'disabled' if not can_act }}></td>
+              <td><input class="form-control form-control-sm" name="delist__{{ s.source }}" value="{{ s.delist if s.delist is not none else '' }}" placeholder="{{ eg.max_delist_pct }}" {{ 'disabled' if not can_act }}></td>
+              <td><input class="form-control form-control-sm" name="min__{{ s.source }}" value="{{ s.min if s.min is not none else '' }}" placeholder="{{ eg.min_abs }}" {{ 'disabled' if not can_act }}></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+        {% if can_act %}
+        <div class="row g-2">
+          <div class="col-md-9"><input class="form-control form-control-sm" name="reason" minlength="15" required placeholder="{{ _('Reason for the change (at least 15 characters)') }}"></div>
+          <div class="col-md-3"><button class="btn btn-primary btn-sm w-100">{{ _('Save settings') }}</button></div>
+        </div>
+        {% else %}
+        <p class="small text-muted mb-0">{{ _('Only the MLRO can change these settings.') }}</p>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
