@@ -860,6 +860,7 @@ class OpenSanctionsHandler(BaseFormatHandler):
         # Datasets (source within OpenSanctions)
         datasets = data.get('datasets', [])
         dataset = datasets[0] if datasets else 'OpenSanctions'
+        from screening.list_category import categorize as _list_category
         
         # Source URL
         source_url = (data.get('referents') or [None])[0]
@@ -870,7 +871,7 @@ class OpenSanctionsHandler(BaseFormatHandler):
             'source_id': f"OS-{data.get('id')}",
             'full_name': full_name,
             'original_name': None,
-            'list_type': 'OpenSanctions',
+            'list_type': _list_category(topics, datasets or dataset),
             'entity_type': entity_type,
             'dataset': dataset,
             'source': 'opensanctions',

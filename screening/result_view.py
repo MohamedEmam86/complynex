@@ -160,6 +160,16 @@ def _aliases(m):
 
 def match_view(m, kind, inputs):
     """Everything the card shows for one hit."""
+    # aggregated databases: what the record is (sanctions, PEP, debarment, background data ...);
+    # its kind decides the card colour, the section and the default action
+    _nat = None
+    try:
+        from screening import list_category as _lc
+        _nat = _lc.nature(m)
+    except Exception:
+        _nat = None
+    if _nat:
+        kind = _nat['kind']
     d = m.get('decision') or {}
     p, det = _props(m), _details(m)
     tier = tier_of(m)
@@ -214,8 +224,10 @@ def match_view(m, kind, inputs):
     else:
         action = {'CONFIRMED': 'Escalate to compliance for a decision.', 'POTENTIAL': 'Review before proceeding.',
                   'LOW': 'Review and record the conclusion.'}
+    if _nat and _nat['action']:
+        action = {'CONFIRMED': _nat['action'], 'POTENTIAL': _nat['action'], 'LOW': 'Review and record the conclusion.'}
     return {
-        'kind': kind, 'tier': tier, 'tier_label': TIER_LABEL.get(tier, tier),
+        'kind': kind, 'nature': _nat, 'tier': tier, 'tier_label': TIER_LABEL.get(tier, tier),
         'score': float(m.get('match_score') or 0),
         'original_score': d.get('original_score'),
         'ar_name': ar_name, 'lat_name': lat_name,
@@ -279,7 +291,13 @@ def overall(sanctions, peps, others, am_summary, adverse_hits):
     def best(views):
         order = {'CONFIRMED': 3, 'POTENTIAL': 2, 'LOW': 1, 'BELOW': 0}
         return max([order.get(v['tier'], 0) for v in views] or [0])
+    # freeze wording only for real sanctions / terror listings; criminal / wanted lists and links to a
+    # sanctioned party stay on the strict side but are not freeze orders
+    _freeze = ('SANCTIONS', 'TERROR', 'UNCLASSIFIED')
+    strict = [v for v in sanctions if (v.get('nature') or {}).get('code') not in (None,) + _freeze]
+    sanctions = [v for v in sanctions if v not in strict]
     s, p, o = best(sanctions), best(peps), best(others)
+    s2 = best(strict)
     am = (am_summary or {}).get('risk_level')
     if s == 3:
         return ('danger', 'Confirmed sanctions match',
@@ -287,6 +305,10 @@ def overall(sanctions, peps, others, am_summary, adverse_hits):
     if s == 2:
         return ('danger', 'Potential sanctions match — review required',
                 'Hold onboarding/transactions until the analyst confirms or clears the match with the national ID and date of birth.')
+    if s2 >= 2:
+        return ('danger', 'Serious list match — MLRO decision required',
+                'The match is on a criminal / wanted list or linked to a sanctioned party, which is not a freeze order on its own. '
+                'Hold, confirm the identity, apply enhanced due diligence and let the MLRO decide; consider a suspicious transaction report.')
     if p == 3:
         return ('warning', 'Politically exposed person',
                 'Enhanced due diligence and senior-management approval are required before the relationship continues.')
@@ -296,7 +318,7 @@ def overall(sanctions, peps, others, am_summary, adverse_hits):
     if am in ('HIGH', 'MEDIUM'):
         return ('warning', 'Adverse media found',
                 'No list match, but the person is named in negative news. Review the articles and decide on enhanced due diligence.')
-    if s == 1 or p == 1 or o == 1 or am == 'LOW':
+    if s == 1 or s2 == 1 or p == 1 or o == 1 or am == 'LOW':
         return ('info', 'Low-confidence leads only',
                 'No alert. Review the leads below and record why they are not this person.')
     if am in ('PENDING',):

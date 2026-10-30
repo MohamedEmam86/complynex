@@ -1873,6 +1873,7 @@ class ComplyNexScreeningEngine:
                             # Prefer PostgreSQL values for fields that may be stale in ES
                             cand['properties'] = row.get('properties') or cand['properties'] or '{}'
                             cand['topics'] = row.get('topics') or cand['topics'] or ''
+                            cand['list_type'] = row.get('list_type') or cand.get('list_type')
                             cand['countries'] = row.get('countries') or cand['countries'] or ''
                             cand['date_of_birth'] = row.get('date_of_birth') or cand['date_of_birth'] or ''
                             cand['year_of_birth'] = row.get('year_of_birth') or cand['year_of_birth'] or ''

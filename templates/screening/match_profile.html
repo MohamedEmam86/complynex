@@ -37,6 +37,7 @@
         {% if p.names.arabic and p.names.primary and p.names.arabic != p.names.primary %}<div class="text-muted">{{ p.names.primary }}</div>{% endif %}
         <div class="small mt-1"><i class="fas fa-list-alt me-1 text-muted"></i>{{ _(p.listing.source_label) }}{% if p.listing.dataset %} · {{ p.listing.dataset }}{% endif %}
           {% if p.other.entity_type %} · {{ p.other.entity_type|scr_label('entity') }}{% endif %}</div>
+        {% if p.listing.nature %}<div class="small mt-1 ar" dir="rtl"><span class="badge bg-secondary">{{ p.listing.nature.label }}</span> {{ p.listing.nature.note }}</div>{% endif %}
       </div>
       {% if v %}<div class="text-center"><div class="fs-3 fw-bold">{{ "%.0f"|format(v.score) }}</div><div class="small text-muted">/100 · {{ _(v.tier_label) }}</div></div>{% endif %}
       {% if p.listing.source_url %}<a href="{{ p.listing.source_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-dark no-print">{{ _('Official profile') }} <i class="fas fa-external-link-alt ms-1"></i></a>{% endif %}

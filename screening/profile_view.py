@@ -106,6 +106,14 @@ def related(cur, table, row):
     return out[:30]
 
 
+def _nature(row):
+    try:
+        from screening import list_category as _lc
+        return _lc.nature(row)
+    except Exception:
+        return None
+
+
 def build(table, row, rel=None, labels=None):
     """Everything the profile page shows."""
     props = _j(row.get('properties')) or {}
@@ -179,6 +187,7 @@ def build(table, row, rel=None, labels=None):
         'risk_level': row.get('risk_level'),
         'category': row.get('category') or row.get('risk_category'),
         'notes': row.get('notes'),
+        'nature': _nature(row),
     }
     other = {
         'addresses': _uniq(_list(row.get('addresses')) + ([row['address']] if row.get('address') else [])),

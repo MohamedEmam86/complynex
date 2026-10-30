@@ -128,6 +128,9 @@
           {% if v.aliases %}<dt>{{ _('Aliases') }}</dt><dd class="ar">{{ v.aliases|join(' · ') }}</dd>{% endif %}
           {% if not (v.program or v.position or v.reason or v.bio or v.notes or v.aliases) %}<dt>{{ _('Details') }}</dt><dd class="text-muted">{{ _('The list gives no further details for this record.') }}</dd>{% endif %}
         </dl>
+        {% if v.nature %}
+        <div class="sr-action k-{{ v.kind }} mb-1" dir="rtl"><i class="fas fa-info-circle me-1"></i><strong>{{ v.nature.label }}</strong> — {{ v.nature.note }}</div>
+        {% endif %}
         {% if v.action %}
         <div class="sr-action k-{{ v.kind }}"><i class="fas fa-clipboard-check me-1"></i><strong>{{ _('Required action') }}:</strong> {{ _(v.action) }}</div>
         {% endif %}

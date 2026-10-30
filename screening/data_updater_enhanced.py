@@ -680,7 +680,7 @@ class EnhancedDataUpdater:
         # Compare key fields
         fields_to_compare = [
             'full_name', 'original_name', 'entity_type', 'risk_level',
-            'date_of_birth', 'nationality', 'aliases', 'details'
+            'date_of_birth', 'nationality', 'aliases', 'details', 'topics', 'list_type'
         ]
         
         for field in fields_to_compare:
@@ -693,6 +693,16 @@ class EnhancedDataUpdater:
                 existing_aliases = set(json.loads(existing_val) if existing_val else [])
                 new_aliases = set(new_val if isinstance(new_val, list) else [])
                 if existing_aliases != new_aliases:
+                    return True
+            elif field in ('topics', 'list_type'):
+                # only when the stored row was read with the field (older callers do not select it)
+                if field not in existing:
+                    continue
+                if field == 'topics':
+                    from screening.list_category import topics_list as _tl
+                    if set(_tl(existing_val)) != set(_tl(new_val)):
+                        return True
+                elif (existing_val or None) != (new_val or None):
                     return True
             elif field == 'details':
                 # Compare as JSON

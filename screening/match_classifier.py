@@ -89,6 +89,15 @@ def classify_match(m):
     if not isinstance(m, dict):
         return 'OTHER'
 
+    # 0a. aggregated databases (OpenSanctions): the record's own category (screening/list_category.py)
+    try:
+        from screening import list_category as _lc
+        _c = _lc.for_match(m)
+        if _c:
+            return _lc.CATEGORY[_c][0]
+    except Exception:
+        pass
+
     # 0. regulatory-measures lists (supervisory sanctions on financial institutions / staff):
     #    risk information for due diligence, never a freeze order
     if str(m.get('list_type') or '').strip().upper() == 'REGULATORY' or \
