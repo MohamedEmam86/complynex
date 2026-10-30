@@ -55,11 +55,14 @@ logger = logging.getLogger(__name__)
 _AR_DIACRITICS = re.compile(r'[ً-ْٰـ]')
 _ARABIC = re.compile(r'[؀-ۿ]')
 _PARTICLES = {'ال', 'بن', 'ابن', 'بنت', 'ابو', 'عبد', 'ال', 'al', 'el', 'bin', 'ben', 'ibn',
-              'abu', 'abou', 'abo', 'abd', 'abdel', 'abdul', 'abdal'}
+              'abu', 'abou', 'abo', 'abd', 'abdel', 'abdul', 'abdal',
+              # European name particles and their Arabic renderings (Alfred de Zayas = آلفرد د زایاس)
+              'de', 'da', 'dos', 'das', 'du', 'van', 'von', 'der', 'del', 'della', 'di',
+              'د', 'دي', 'دو', 'دا', 'فان', 'فون', 'دير', 'ديل', 'يل'}
 # legal-form words in company names carry no identity (شركة ... ش.م.م / ... LLC)
 _LEGAL_FORMS = {'شركه', 'شركة', 'ش', 'م', 'ذ', 'ق', 'مؤسسه', 'منشاه', 'co', 'company', 'llc', 'ltd', 'limited',
                 'inc', 'corp', 'corporation', 'sae', 's', 'a', 'e', 'plc', 'llp', 'gmbh', 'sa', 'sarl', 'fzco',
-                'fze', 'the', 'and', 'for', 'of', 'و',
+                'fze', 'the', 'and', 'for', 'of', 'و', 'junior', 'jr', 'snr', 'jnr', 'ii', 'iii', 'جونيور',
                 # titles
                 'دكتور', 'الدكتور', 'مهندس', 'المهندس', 'الحاج', 'الحاجه', 'لواء', 'اللواء', 'المستشار',
                 'mr', 'mrs', 'ms', 'dr', 'eng', 'haj', 'hajj', 'sheikh'}
@@ -90,6 +93,14 @@ def is_arabic(text):
     return bool(_ARABIC.search(str(text or '')))
 
 
+# Persian / Urdu / Kurdish letters (lists such as OpenSanctions carry names in these scripts) -> the Arabic
+# letter an Arabic reader would write. Without this they were stripped as "not Arabic" and صدیق read as صد ق.
+_FA_TO_AR = str.maketrans({'ی': 'ي', 'ې': 'ي', 'ے': 'ي', 'ۍ': 'ي', 'ێ': 'ي', 'ٸ': 'ي', 'ک': 'ك', 'ڪ': 'ك',
+                           'گ': 'ج', 'ڳ': 'ج', 'پ': 'ب', 'چ': 'ج', 'ڤ': 'ف', 'ڥ': 'ف', 'ژ': 'ج', 'ہ': 'ه',
+                           'ھ': 'ه', 'ۀ': 'ه', 'ە': 'ه', 'ۃ': 'ه', 'ٹ': 'ت', 'ڈ': 'د', 'ڑ': 'ر', 'ں': 'ن',
+                           'ڵ': 'ل', 'ۆ': 'و', 'ۇ': 'و', 'ۈ': 'و', 'ۋ': 'و', 'ٶ': 'و', 'ڕ': 'ر', 'ڎ': 'د'})
+
+
 def _split_glued(t):
     """Two names typed without a space before a compound: محمدعبد العزيز,
     محمدعبدالعزيز, احمدابوبكر -> محمد عبد...  The family name العبد, and words
@@ -117,17 +128,25 @@ def normalize(text):
         return ''
     if is_arabic(t):
         t = _AR_DIACRITICS.sub('', t)
+        t = t.translate(_FA_TO_AR)
         t = re.sub('[إأآٱ]', 'ا', t)
         t = t.replace('ة', 'ه').replace('ى', 'ي')
         # colloquial contraction عبال... = عبد ال... (عبالعزيز = عبد العزيز)
         t = re.sub('عبال(?=[ء-ي]{2,})', 'عبد ال', t)
+        # Abdul written letter by letter from a Latin source (ابدول مانان = Abdul Manan)
+        t = re.sub(r'(?<![ء-ي])(?:ابدو?ل+ا[هح]?ي?|عبدو?ل+ا[هح]?ي|عبدول+ا[هح]?)(?![ء-ي])', 'عبد الله', t)   # Abdullahi
+        t = re.sub(r'(?<![ء-ي])(?:ابدول|ابدل|ابديل|ابد|عبدول|عبدل)(?![ء-ي])', 'عبد', t)
+        t = re.sub(r'(?<![ء-ي])(?:ابدول|ابدو|عبدول)(?=[ء-ي]{3,})', 'عبد ', t)     # ابدولحاميد = Abdulhamid
+        # a letter typed three times or more (سيييد) is a slip: Arabic never writes it
+        t = re.sub(r'([ء-ي])\1{2,}', r'\1', t)
         t = _split_glued(t)
         # fused compounds: عبدالرحمن / ابوبكر -> عبد الرحمن / ابو بكر
         t = re.sub(r'\b(عبد|ابو)(?=ال|[ء-ي]{3,})', r'\1 ', t)
         t = re.sub(r'[^ء-ي\s]', ' ', t)
     else:
         t = t.lower()
-        t = re.sub(r"['`’\-\.]", ' ', t)
+        t = re.sub(r"['`’‘ʿʾ´]", '', t)
+        t = re.sub(r"[\-\.]", ' ', t)
         # every spelling of Abd-Allah (Abdallah, Abdullah, Abdullahi, Abdalla, Abdula, Abd Allah) -> one form
         t = re.sub(r'\babd ?[aeiu]?l{1,2}ah?i?\b', 'abd alah', t)
         # Abd al-Aal (Abdelaal, Abd El Aal): "aal" would collapse to "al" and read as the article
@@ -138,6 +157,7 @@ def normalize(text):
         t = re.sub(r'\babd ?[aeu]([lnrstdz])\1', r'abd \1', t)
         # glued "... el-Din" compounds: Salaheldin, Seifeldin, Noureddine = Salah / Seif / Nour + Din
         t = re.sub(r'\b(abdul|abdel|abdal|abd)(?=[a-z]{3,})', r'\1 ', t)
+        t = re.sub(r'\b(abu|abou)(?=[bcdfghjklmnpqrstvwxz][a-z]{3,})', r'\1 ', t)
         # every spelling of Allah after Abd (Abdallah, Abdullah, Abdullahi, Abdalah, Abdalla) -> one form
         t = re.sub(r'\b(abd|abdul|abdel|abdal) ([aeiu]?l+ahi?)\b', 'abd alah', t)
         t = re.sub(r'[^a-z\s]', ' ', t)
@@ -167,7 +187,9 @@ _TITLES = {normalize(x) for x in (
     'dr', 'doctor', 'prof', 'professor', 'eng', 'engineer', 'mr', 'mrs', 'ms', 'miss', 'sir',
     'sheikh', 'shaikh', 'sheik', 'shaykh', 'haj', 'hajj', 'hajji', 'hadj', 'gen', 'general', 'col', 'colonel',
     'maj', 'major', 'capt', 'captain', 'lt', 'brig', 'judge', 'counsellor', 'amb', 'ambassador', 'prince',
-    'princess')} - {''}
+    'princess', 'lord', 'lady', 'mme', 'mlle', 'madame', 'monsieur', 'senator', 'sen', 'hon', 'rev',
+    'مس', 'مستر', 'مدام', 'لورد', 'اللورد', 'سيناتور', 'السيناتور', 'مسز', 'حاجي', 'حاجى', 'الحاجي',
+    'انجينئر', 'انجينير', 'مولوي', 'مولانا', 'maulavi', 'maulvi', 'mawlawi', 'maulana', 'mawlana')} - {''}
 
 
 _TITLE_ABBREV = {normalize(x) for x in ('د', 'م', 'ا', 'أ', 'dr', 'eng', 'mr', 'mrs', 'ms', 'prof', 'capt', 'col',
@@ -192,6 +214,10 @@ def _uncomma(name):
     if s.count(',') == 1 and not is_arabic(s):
         head, tail = [x.strip() for x in s.split(',')]
         if head and tail:
+            return f'{tail} {head}'
+    if s.count('،') == 1 and ',' not in s and is_arabic(s):
+        head, tail = [x.strip() for x in s.split('،')]
+        if head and tail and not re.search(r'\d', tail):
             return f'{tail} {head}'
     return s
 
@@ -218,6 +244,8 @@ def _tokens_raw(text):
 
 
 def _weight(tok):
+    if len(tok) == 1:
+        return 0.6          # an initial (W., M.): it can confirm, it cannot identify
     try:
         from screening import name_idf
         w = name_idf.weight(tok)
@@ -271,10 +299,12 @@ def _xs_key(t):
     return re.sub(r'(.)\1+', r'\1', k)
 
 
-_XS_CONS = {'ب': '(?:b|p)', 'ت': 't', 'ث': '(?:th|s|t)', 'ج': '(?:g|j|dj|dg)', 'ح': 'h', 'خ': '(?:kh|k|h|ch|x)',
+_XS_CONS = {'ب': '(?:b|p|v)', 'ت': 't', 'ث': '(?:th|s|t)', 'ج': '(?:g|j|dj|dg|ch|tch|tsh|zh)', 'ح': 'h', 'خ': '(?:kh|k|h|ch|x)',
             'د': 'd', 'ذ': '(?:dh|z|d|th)', 'ر': 'r', 'ز': '(?:z|s)', 'س': '(?:s|c)', 'ش': '(?:sh|ch|sch|s|x)',
             'ص': 's', 'ض': '(?:d|dh|z)', 'ط': 't', 'ظ': '(?:z|dh|d)', 'غ': '(?:gh|g|r)', 'ف': '(?:f|v)',
-            'ق': '(?:q|k|g|c)', 'ك': '(?:k|c|q)', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h'}
+            'ق': '(?:q|k|g|c)', 'ك': '(?:ck|k|c|q)', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h'}
+_ONE_LAT = str.maketrans({'b': 'ب', 'd': 'د', 'f': 'ف', 'g': 'ج', 'h': 'ه', 'j': 'ج', 'k': 'ك', 'l': 'ل',
+                         'm': 'م', 'n': 'ن', 'r': 'ر', 's': 'س', 't': 'ت', 'z': 'ز'})
 _ALLAH = {'alah', 'lah', 'ulah', 'elah', 'ilah', 'alh'}
 
 
@@ -287,13 +317,23 @@ def _ar_pattern(ar):
     parts, n = [], len(ar)
     for i, ch in enumerate(ar):
         first, last = i == 0, i == n - 1
+        if i and ch == ar[i - 1] and ch not in 'هاوي':
+            # a doubled letter in a foreign name written in Arabic (ناسسيم = Nassim, يننا = Inna): the Latin
+            # side collapses doubled letters, so one letter is enough here
+            parts.append('')
+            continue
+        if ch == 'ش' and i and ar[i - 1] == 'ت':
+            parts[-1] = '(?:tsh|tch|ch|c|tz|ts)'      # تش = ch (Chuck = تشاك، Lamichhane = لاميتشهان)
+            p = '' if last else '[aeiou]?'
+            parts.append(p)
+            continue
         if ch == 'ا':
-            p = '[aeiou]?' if first else '(?:a|e)'
+            p = '[aeiou]?' if first else ('(?:a|e|o|ah)' if last else '(?:a|e|o|u)')
         elif ch == 'و':
-            p = '(?:w|v|u|o)[aeiou]?' if first else '(?:o|u|w|ow|aw|ew|uw|wa|we|wi|wo|wu)'
+            p = '(?:w|v|u|o)[aeiou]?' if first else '(?:o|u|w|v|ow|aw|ew|uw|wa|we|wi|wo|wu|va|ve|vi|vo)'
         elif ch == 'ي':
             p = '(?:y|i|j|e)[aeiou]?' if first else ('(?:i|y|e|a|ie|ey|ei|iy|ay|ai)' if last
-                                             else '(?:i|e|y|ei|ey|ie|ai|ay|ya|ye|yi|iy)')
+                                             else '(?:i|e|y|j|ei|ey|ie|ai|ay|ya|ye|yi|iy|ja|je)')
         elif ch == 'ع':
             p = '[aeiou]{0,2}'
         elif ch in 'ءئؤ':
@@ -301,7 +341,7 @@ def _ar_pattern(ar):
         elif ch == 'ه' and last and n > 2:
             p = '(?:a|ah|eh|e|at|et|h)?'
         elif ch in _XS_CONS:
-            p = _XS_CONS[ch] + ('' if last else '[aeiou]?')
+            p = _XS_CONS[ch] + ('e?' if last else '[aeiou]?')     # a silent final e (Pierre, Hilton -> e)
         else:
             p = ''
         parts.append(p)
@@ -322,16 +362,43 @@ def _xs_phonetic(lat, ar):
     if len(ar) < 2 or len(lat) < 2 or len(ar) > 15 or len(lat) > 2 * len(ar) + 4 or re.search('[عءئؤ]{2,}', ar):
         return False      # nonsense / hostile input: no expensive pattern
     rx = _ar_pattern(ar)
-    return bool(rx and rx.fullmatch(lat))
+    return bool(rx and (rx.fullmatch(lat) or ('x' in lat and rx.fullmatch(lat.replace('x', 'ks')))))
+
+
+_AR_LETTER_NAMES = {'a': ('اي', 'ايه', 'ا'), 'b': ('بي',), 'c': ('سي',), 'd': ('دي',), 'e': ('اي', 'ي'),
+                    'f': ('اف',), 'g': ('جي',), 'h': ('اتش', 'اش', 'اتش'), 'i': ('اي', 'اى'), 'j': ('جي', 'جيه', 'جاي'),
+                    'k': ('كيه', 'كي', 'كاي'), 'l': ('ال', 'يل'), 'm': ('ام', 'م', 'يم'), 'n': ('ان', 'ن'),
+                    'o': ('او',), 'p': ('بي',), 'q': ('كيو',), 'r': ('ار',), 's': ('اس', 'يس'), 't': ('تي',),
+                    'u': ('يو',), 'v': ('في',), 'w': ('دبليو', 'دبليوو'), 'x': ('اكس',), 'y': ('واي', 'وي'),
+                    'z': ('زد', 'زي')}
+
+
+_LOOSE = str.maketrans({'k': 'K', 'g': 'K', 'h': 'K', 'x': 'S', 's': 'S', 'z': 'S', 't': 'T', 'd': 'T',
+                        'b': 'B', 'f': 'B', 'v': 'B', 'p': 'B', 'q': 'K', 'c': 'K', 'j': 'K'})
+
+
+def loose_ratio(lat, ar):
+    """How alike the consonant skeletons of a Latin and an Arabic element are, with the sounds languages
+    write differently merged (Jorge / خورخي, Chuck / تشاك). 1.0 when one side has no consonant to compare."""
+    kl = re.sub(r'(.)\1+', r'\1', _xs_key(lat).translate(_LOOSE))
+    ka = re.sub(r'(.)\1+', r'\1', _xs_key(ar).translate(_LOOSE))
+    if not kl or not ka:
+        return 1.0
+    import difflib
+    return difflib.SequenceMatcher(None, kl, ka).ratio()
 
 
 def _xs_same(lat, ar):
     """Same name element written in Latin and in Arabic?"""
+    if len(lat) == 1:
+        return 0.9 if ar in _AR_LETTER_NAMES.get(lat, ()) or ar == lat.translate(_ONE_LAT) else 0.0
     cands = _xs_dict().get(lat)
     if cands:
         total = sum(c for _, c in cands)
         for a, c in cands:
             if a == ar or (len(a) == len(ar) and a.translate(_AR_SOUND) == ar.translate(_AR_SOUND)):
+                if (c < 10 or c / total < 0.1) and loose_ratio(lat, ar) < 0.7:
+                    break        # a rare learned pair whose sounds do not agree: a list alias of someone else
                 return 0.95 if c / total >= 0.1 else 0.85
         if lat in _canon_names():
             return 0.0          # a standard spelling of another well-known name (Mahmoud is محمود, not محمد)
@@ -426,6 +493,8 @@ def _same_token(a, b, first=False):
     if ar and min(len(a), len(b)) >= 4 and len(a) == len(b) and a[:-1] == b[:-1] \
             and {a[-1], b[-1]} <= {'ا', 'ي'}:
         return 0.95                                   # مصطفا / مصطفى
+    if ar and _long_vowel_variant(a, b):
+        return 0.9     # ميرفت / مرفت، شيرين / شرين، جيهان / جهان (Turkish / Persian names, the long i is optional)
     if ar and len(a) == len(b) and _eg_variant(a) == _eg_variant(b):
         return 0.9     # Egyptian spelling of the same name (ثامر / تامر، عثمان / عتمان، رءوف / رؤوف، مدحت / مدحه)
     if ar and len(a) == len(b) <= 5 and _attested(a) and _attested(b) and (first or sorted(a) != sorted(b)):
@@ -458,6 +527,16 @@ ATTESTED_WEIGHT = 9.0      # name_idf weight below which an element is a name se
 
 
 _EG_VARIANT = str.maketrans({'ث': 'ت', 'ذ': 'د', 'ظ': 'ض', 'ء': 'ا', 'ؤ': 'ا', 'ئ': 'ا'})
+
+
+def _long_vowel_variant(a, b):
+    """Same Arabic name with and without a long i (ي) right after the first letter: ميرفت / مرفت، نيرمين /
+    نرمين، جيهان / جهان. Only there, and only on names of 4+ letters: elsewhere a long vowel makes another
+    name (محمد / محمود، حسن / حسين، سعد / سعيد)."""
+    if abs(len(a) - len(b)) != 1:
+        return False
+    s, l = (a, b) if len(a) < len(b) else (b, a)
+    return len(s) >= 4 and l[0] == s[0] and l[1] == 'ي' and l[2:] == s[1:] and s[1] not in 'اوي'
 
 
 def _eg_variant(t):
@@ -522,6 +601,69 @@ def _swap_only(a, b):
     return len(a) == len(b) >= 5 and a != b and sorted(a) == sorted(b) and _osa(a, b) == 1
 
 
+def _pair_score(c, q, cr, qr, ci, qi):
+    ct, qt = c[ci], q[qi]
+    s = _same_token(ct, qt, first=(ci in (0, len(c) - 1) or qi in (0, len(q) - 1)))
+    if s < 0.88 and (cr[ci][1] != ct or qr[qi][1] != qt) and is_arabic(ct) and is_arabic(qt) \
+            and _swap_only(cr[ci][1], qr[qi][1]):
+        s = 0.88
+    if s < 0.85 and is_arabic(ct) != is_arabic(qt) and (cr[ci][1] != ct or qr[qi][1] != qt):
+        # a foreign name that only looks like it starts with the article: Elaine / الين, Alexander / الكسندر
+        # (the article is removed on one script only when the element is long enough, so compare as written)
+        for a, b in ((cr[ci][1], qr[qi][1]), (cr[ci][1], qt), (ct, qr[qi][1])):
+            if (a, b) != (ct, qt):
+                s = max(s, min(0.85, _same_token(a, b)))
+    return s
+
+
+def _align(c, q, cr, qr):
+    """Pair the elements of two names: best-scoring pairs first, the closer position wins a tie. (Taking the
+    listed elements in order let an early element take a later element's partner: Inna / SVYATENKO.)"""
+    cand = []
+    for ci in range(len(c)):
+        for qi in range(len(q)):
+            s = _pair_score(c, q, cr, qr, ci, qi)
+            if s > 0:
+                cand.append((-s, abs(ci - qi), ci, qi))
+    cand.sort()
+    used_c, used_q, pairs = set(), set(), []
+    for ns, _, ci, qi in cand:
+        if ci in used_c or qi in used_q:
+            continue
+        used_c.add(ci)
+        used_q.add(qi)
+        pairs.append((ci, qi, -ns))
+    return pairs, _joins(c, q, used_c, used_q, pairs)
+
+
+def _joins(c, q, used_c, used_q, pairs):
+    """One element on one side written as two on the other, across scripts only (Khoshsima / خوش سیما,
+    Gulbuddin / غلب الدين, Shamsunnahar / شمس النهار). Returns the extra elements covered: [('c'|'q', i, s)]."""
+    extra = []
+    for side, one, two, u1, u2 in (('q', c, q, used_c, used_q), ('c', q, c, used_q, used_c)):
+        for i in range(len(one)):
+            if i in u1:
+                continue
+            for j in range(len(two) - 1):
+                if j in u2 or j + 1 in u2 or is_arabic(two[j]) != is_arabic(two[j + 1]) \
+                        or is_arabic(one[i]) == is_arabic(two[j]):
+                    continue
+                joined = two[j] + two[j + 1]
+                if len(joined) < 4 or len(joined) > 24:
+                    continue
+                s = _same_token(one[i], joined) if side == 'q' else _same_token(joined, one[i])
+                if s >= 0.85:
+                    u1.add(i)
+                    u2.update((j, j + 1))
+                    if side == 'q':
+                        pairs.append((i, j, s))
+                    else:
+                        pairs.append((j, i, s))
+                    extra.append((side, j + 1, s))
+                    break
+    return extra
+
+
 def name_match(query, listed):
     """Analyst-style comparison of two names. Returns a dict with ``score``
     (0-100) and the evidence behind it."""
@@ -533,32 +675,17 @@ def name_match(query, listed):
            'first_ok': False, 'family_ok': False, 'complete': False, 'partial': True}
     if not q or not c:
         return res
-    used, pairs = set(), []
-    for ci, ct in enumerate(c):
-        best, bj = 0.0, None
-        for qi, qt in enumerate(q):
-            if qi in used:
-                continue
-            s = _same_token(ct, qt, first=(ci in (0, len(c) - 1) or qi in (0, len(q) - 1)))
-            if s < 0.88 and (cr[ci][1] != ct or qr[qi][1] != qt) and is_arabic(ct) and is_arabic(qt) \
-                    and _swap_only(cr[ci][1], qr[qi][1]):
-                s = 0.88
-            if s > best:
-                best, bj = s, qi
-                if s == 1.0:
-                    break
-        if bj is not None and best > 0:
-            used.add(bj)
-            pairs.append((ci, bj, best))
+    pairs, joined = _align(c, q, cr, qr)
+    used = {qi for _, qi, _ in pairs} | {i for side, i, _ in joined if side == 'q'}
     wl = [_weight(t) for t in c]
     wq = [_weight(t) for t in q]
-    got_l = sum(wl[ci] * s for ci, qi, s in pairs)
-    got_q = sum(wq[qi] * s for ci, qi, s in pairs)
+    got_l = sum(wl[ci] * s for ci, qi, s in pairs) + sum(wl[i] * s for side, i, s in joined if side == 'c')
+    got_q = sum(wq[qi] * s for ci, qi, s in pairs) + sum(wq[i] * s for side, i, s in joined if side == 'q')
     cov_l = got_l / sum(wl)
     cov_q = got_q / sum(wq)
     qidx = [qi for ci, qi, s in sorted(pairs)]
     order_ok = qidx == sorted(qidx)
-    matched_c = {ci for ci, _, _ in pairs}
+    matched_c = {ci for ci, _, _ in pairs} | {i for side, i, _ in joined if side == 'c'}
     first_ok = 0 in matched_c and dict((ci, qi) for ci, qi, _ in pairs).get(0) == 0
     family_ok = (len(c) - 1) in matched_c
     score = 100.0 * (0.55 * cov_l + 0.45 * cov_q)
@@ -569,7 +696,7 @@ def name_match(query, listed):
     if len(c) >= 3 and len(q) >= 3 and not family_ok and (len(q) - 1) not in used:
         # neither side's family element is matched: different families
         score = min(score, 74.0)
-    complete = (len(pairs) == len(c) and len(used) == len(q) and order_ok and first_ok)
+    complete = (len(matched_c) == len(c) and len(used) == len(q) and order_ok and first_ok)
     missing = [c[i] for i in range(len(c)) if i not in matched_c]
     extra = [q[i] for i in range(len(q)) if i not in used]
     if len(c) >= 3 and len(q) >= 3 and 0 not in matched_c and 0 not in used and _distinct_names(c[0], q[0]):
