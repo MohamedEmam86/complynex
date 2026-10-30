@@ -139,6 +139,11 @@ def main():
     LV = vid = None
     if a.apply:
         from screening import list_versions as LV
+        try:   # one writer per list; released when this script's connection closes
+            LV.source_lock(conn, a.source).__enter__()
+        except LV.SourceBusy as e:
+            print(f'STOP: {e}')
+            sys.exit(2)
         with open(a.path, 'rb') as fh:
             vid = LV.begin(conn, a.source, LV.file_sha256(fh.read()), 'file', len(recs), trigger='import')
         cur = conn.cursor()

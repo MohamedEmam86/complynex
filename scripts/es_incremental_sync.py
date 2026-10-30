@@ -64,6 +64,8 @@ def run():
         # picks everything up.
         log.info("Sanctions list update in progress - sync skipped, checkpoint unchanged.")
         return
+    from screening.es_client import guard_es_write
+    guard_es_write('incremental sync', PG.get('database') or PG.get('dbname'))   # raises: exit code 1
     log.info("Starting Incremental Sync...")
     es = get_es_client(timeout=60)
     if not es.indices.exists(index="aml_watchlist"): log.error("Index missing. Run full migration first."); return

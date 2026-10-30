@@ -115,11 +115,7 @@ def _list_freshness():
     # (failed / blocked updates red) come from the list versions module.
     try:
         from screening import list_versions as LV
-        c = LV.connect()
-        try:
-            lv = {f['source']: f for f in LV.freshness(c)}
-        finally:
-            c.close()
+        lv = {f['source']: f for f in LV.cached_freshness()}
     except Exception as e:
         logger.warning('list versions unavailable for the freshness view: %s', e)
         lv = {}

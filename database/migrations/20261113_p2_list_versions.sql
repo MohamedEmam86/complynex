@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS screening_list_versions (
     restored_from    INTEGER REFERENCES screening_list_versions(id),
     UNIQUE (source, version_no)
 );
+-- the parsed-list fingerprint: approvals are matched on it (a re-download often has another file hash)
+ALTER TABLE screening_list_versions ADD COLUMN IF NOT EXISTS content_sha256 TEXT;
 CREATE INDEX IF NOT EXISTS idx_slv_source_status ON screening_list_versions (source, status, version_no DESC);
 CREATE INDEX IF NOT EXISTS idx_slv_finished ON screening_list_versions (finished_at);
 
@@ -50,6 +52,10 @@ INSERT INTO screening_config (config_key, config_value, category, description, u
 SELECT 'list_update_guard', '{"default": {"max_drop_pct": 10, "max_delist_pct": 10, "min_abs": 25}}', 'lists',
        'List update guard: block an update when the record count falls, or deactivations exceed, these limits', CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM screening_config WHERE config_key = 'list_update_guard');
+INSERT INTO screening_config (config_key, config_value, category, description, updated_at)
+SELECT 'list_four_eyes', 'true', 'lists',
+       'A blocked list update must be approved by an MLRO other than the one who started it (false = off)', CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM screening_config WHERE config_key = 'list_four_eyes');
 INSERT INTO screening_config (config_key, config_value, category, description, updated_at)
 SELECT 'list_max_age_hours', '{"default": 48, "pma_ps": 1080}', 'lists',
        'Allowed age of each list (hours) before it is shown red and the MLRO is alerted', CURRENT_TIMESTAMP

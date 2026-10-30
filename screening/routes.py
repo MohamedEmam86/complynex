@@ -470,6 +470,11 @@ def trigger_es_incremental_sync():
     from utils.demo import is_demo
     if is_demo():
         return
+    from screening.es_client import es_write_allowed
+    ok, why = es_write_allowed()
+    if not ok:
+        logger.error(f"ES incremental sync not started: {why}")
+        return
     try:
         import subprocess
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -582,11 +587,7 @@ def dashboard():
         # one source of truth for list freshness (P2-7): version in force, last good
         # update, allowed age per list, failed / blocked updates shown red
         from screening import list_versions as _LV
-        _c = _LV.connect()
-        try:
-            _rows = _LV.freshness(_c)
-        finally:
-            _c.close()
+        _rows = _LV.cached_freshness()
         for _r in _rows:
             source_freshness.append({
                 'name': _r['name'], 'source': _r['source'],
@@ -595,7 +596,7 @@ def dashboard():
                 'max_h': _r['max_age_hours'], 'version': _r['version_no'],
                 'status': {'green': 'fresh', 'amber': 'stale'}.get(_r['state'], _r['problem'] or 'critical'),
                 'badge': {'green': 'success', 'amber': 'warning'}.get(_r['state'], 'danger'),
-                'failures': 0, 'records': _r['records'] or 0,
+                'failures': _r.get('failures') or 0, 'records': _r['records'] or 0,
             })
     except Exception as _e:
         logger.warning(f"source freshness panel failed: {_e}")
@@ -5225,7 +5226,7 @@ def list_versions():
                              'age': age_cfg.get(f['source']), 'drop': g.get('max_drop_pct'),
                              'delist': g.get('max_delist_pct'), 'min': g.get('min_abs'),
                              'effective': (LV.guard_settings(conn, f['source'], guard_cfg),
-                                           LV.max_age_hours(f['source'], age_cfg))})
+                                           LV.max_age_hours(f['source'], age_cfg, f.get('freq')))})
     finally:
         conn.close()
     blocked = [h for h in hist if h['status'] == 'BLOCKED' and not h['approval_used_by']]
@@ -5293,9 +5294,13 @@ def list_rollback(source):
         return redirect(url_for('screening.list_versions'))
     conn = LV.connect()
     try:
+        problem = LV.rollback_problem(conn, source)
         cur_v, prev_v = LV.rollback_target(conn, source)
     finally:
         conn.close()
+    if problem:
+        flash(gettext('Rollback not started: %(p)s', p=problem), 'error')
+        return redirect(url_for('screening.list_versions'))
     if not (cur_v and prev_v and prev_v.get('has_snapshot')):
         flash(gettext('There is no earlier version of this list to go back to.'), 'error')
         return redirect(url_for('screening.list_versions'))
@@ -5308,9 +5313,14 @@ def list_rollback(source):
         try:
             out = LV.rollback(c, source, uid, reason)
             logger.warning(f'[LIST ROLLBACK] {out}')
+            LV.audit(c, uid, 'List rollback completed',
+                     f"{source}: now version {out['version_no']} (restored version {out['restored_version']}); "
+                     f"deactivated {out['deactivated']}, reactivated {out['reactivated']}, "
+                     f"active {out['active_before']} -> {out['active_after']}")
             trigger_es_incremental_sync()
-        except Exception:
+        except Exception as e:
             logger.exception('list rollback failed')
+            LV.audit(c, uid, 'List rollback failed', f'{source}: {str(e)[:300]}')
             LV.alert(c, source, 'rollback_failed', f'List rollback failed: {source}',
                      'The rollback did not complete; the list was left as it was. See the application log.', force=True)
         finally:
@@ -5333,11 +5343,13 @@ def list_version_settings():
     if len(why) < 15:
         flash(gettext('Please give the reason for the change (at least 15 characters). Nothing was saved.'), 'error')
         return redirect(url_for('screening.list_versions'))
-    guard, age = {}, {}
+    guard, age, skipped, shown = {}, {}, [], []
     sources = request.form.getlist('source')
     for s in sources:
         if not re.fullmatch(r'[a-z0-9_]{2,60}', s or ''):
+            skipped.append(s)
             continue
+        shown.append(s)
         for field, key in LIST_SETTING_FIELDS:
             raw = (request.form.get(f'{field}__{s}') or '').strip()
             if raw == '':
@@ -5355,6 +5367,10 @@ def list_version_settings():
     conn = LV.connect()
     try:
         old_g, old_a = LV._cfg_json(conn, LV.GUARD_KEY), LV._cfg_json(conn, LV.MAX_AGE_KEY)
+        # merge: lists shown on the form are replaced (a cleared field removes the override);
+        # lists that were not on the form keep their stored values
+        guard = dict({k: v for k, v in old_g.items() if k not in shown}, **guard)
+        age = dict({k: v for k, v in old_a.items() if k not in shown}, **age)
         c = conn.cursor()
         for key, val, desc in ((LV.GUARD_KEY, guard, 'List update guard limits'),
                                (LV.MAX_AGE_KEY, age, 'Allowed age of each list (hours)')):
@@ -5370,5 +5386,7 @@ def list_version_settings():
         _audit('List update settings changed', None,
                f'guard {json.dumps(old_g, sort_keys=True)} -> {json.dumps(guard, sort_keys=True)}; '
                f'allowed age {json.dumps(old_a, sort_keys=True)} -> {json.dumps(age, sort_keys=True)}; reason: {why}')
+    if skipped:
+        flash(gettext('Not saved for these list names (invalid): %(n)s', n=', '.join(skipped[:10])), 'warning')
     flash(gettext('List settings saved.'), 'success')
     return redirect(url_for('screening.list_versions'))

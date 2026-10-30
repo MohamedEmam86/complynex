@@ -351,11 +351,7 @@ def coverage(ttl=600, at=None):
         return rows
     try:
         from screening import list_versions as LV
-        c = LV.connect()
-        try:
-            v_at = LV.versions_at(c, at)
-        finally:
-            c.close()
+        v_at = LV.versions_at_cached(at)
     except Exception:
         v_at = {}
     return [dict(r, version_at=v_at.get(r.get('source'))) for r in rows]

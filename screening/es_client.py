@@ -39,6 +39,42 @@ def _load_credentials():
         pass
 
 
+PRODUCTION_DB = 'complynex_db'
+
+
+class ESTargetError(RuntimeError):
+    """A process reading one database tried to write to the search index of another."""
+
+
+def _current_db():
+    try:
+        from config import Config
+        cfg = Config.POSTGRES_CONFIG
+        return cfg.get('database') or cfg.get('dbname')
+    except Exception:
+        return os.getenv('POSTGRES_DB', PRODUCTION_DB)
+
+
+def es_write_allowed(db_name=None):
+    """(ok, why). The index names are fixed (aml_watchlist ...) and belong to ONE database:
+    ES_INDEX_DB (default complynex_db). A process reading any other database (a scratch
+    or test copy, the demo) must never write to them: on 30 Oct 2026 a scratch test
+    overwrote 593 production documents this way."""
+    db = db_name or _current_db()
+    expected = os.getenv('ES_INDEX_DB', PRODUCTION_DB)
+    if db != expected:
+        return False, (f"refusing to write to the search index: this process reads database '{db}', "
+                       f"the index belongs to '{expected}'")
+    return True, ''
+
+
+def guard_es_write(what='search index write', db_name=None):
+    """Raise ESTargetError unless es_write_allowed(). Call before any index write."""
+    ok, why = es_write_allowed(db_name)
+    if not ok:
+        raise ESTargetError(f'{what}: {why}')
+
+
 def get_es_client(timeout=None):
     """The ONE way to open an Elasticsearch connection (credentials included)."""
     _load_credentials()

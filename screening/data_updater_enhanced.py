@@ -245,6 +245,30 @@ class EnhancedDataUpdater:
             self.close_db()
             
     def _update_source(self, source, user_id):
+        """One writer per list: the update holds the list's lock for its whole run, so a
+        rollback (or a second update of the same list) cannot interleave with it (P2-1)."""
+        from screening import list_versions as LV
+        try:
+            lock = LV.source_lock(self.db_conn, source['source_name'])
+            lock.__enter__()
+        except LV.SourceBusy as e:
+            logger.error(f"[VERSION] {source['source_name']}: {e} - this update was not run")
+            return {'added': 0, 'updated': 0, 'unchanged': 0, 'errors': 1,
+                    'error': 'another update or rollback of this list is running'}
+        except Exception as e:
+            logger.warning(f"[VERSION] {source['source_name']}: list lock unavailable ({e}); continuing")
+            try:
+                self.db_conn.rollback()
+            except Exception:
+                pass
+            lock = None
+        try:
+            return self._update_source_locked(source, user_id)
+        finally:
+            if lock is not None:
+                lock.__exit__(None, None, None)
+
+    def _update_source_locked(self, source, user_id):
         """
         Update a single data source.
         
@@ -276,11 +300,15 @@ class EnhancedDataUpdater:
             vid, ev = None, None
             try:
                 raw_sha = getattr(self, '_last_raw_sha', None)
-                sha = raw_sha or LV.content_sha256(entities)
+                # approvals are matched on the parsed content: a re-download of the same list
+                # often has another file hash (generation date inside the file)
+                csha = LV.content_sha256(entities)
+                sha = raw_sha or csha
                 n_ids = len({e.get('source_id') for e in entities if e.get('source_id')})
                 vid = LV.begin(self.db_conn, sname, sha, 'file' if raw_sha else 'content', n_ids,
-                               user_id=None if trigger == 'scheduled' else user_id, trigger=trigger)
-                ev = LV.evaluate(self.db_conn, sname, [e.get('source_id') for e in entities], sha=sha)
+                               user_id=None if trigger == 'scheduled' else user_id, trigger=trigger, content_sha=csha)
+                ev = LV.evaluate(self.db_conn, sname, [e.get('source_id') for e in entities], sha=sha,
+                                 content_sha=csha)
             except Exception as e:
                 # Versioning infrastructure must not stop the daily update (the older
                 # partial-download check in _sync_delistings still applies).
@@ -291,6 +319,9 @@ class EnhancedDataUpdater:
                     pass
                 if vid:
                     LV.fail(self.db_conn, vid, f'guard check failed: {e}')
+                LV.alert(self.db_conn, sname, 'guard_error', f'List update guard unavailable: {sname}',
+                         f'The update of {sname} ran without the version check (no guard, no rollback point): '
+                         f'{str(e)[:300]}. Check the list after the run.')
                 vid, ev = None, None
             if ev and ev['blocked']:
                 LV.block(self.db_conn, vid, ev)
@@ -975,13 +1006,17 @@ class EnhancedDataUpdater:
         if source_stats.get('errors'):
             # A failed or blocked update must not make the list look fresh (P2-7):
             # it used to stamp last_successful_update even when nothing was applied.
-            cursor.execute(f"UPDATE screening_data_sources SET consecutive_failures = COALESCE(consecutive_failures, 0) + 1 "
-                           f"WHERE id = {self.placeholder}", (source_id,))
+            cursor.execute(f"UPDATE screening_data_sources SET consecutive_failures = COALESCE(consecutive_failures, 0) + 1, "
+                           f"last_update_attempt = CURRENT_TIMESTAMP, last_update_error = {self.placeholder} "
+                           f"WHERE id = {self.placeholder}",
+                           (str(source_stats.get('error') or 'update failed')[:1000], source_id))
             return
         
         cursor.execute(f"""
             UPDATE screening_data_sources SET
                 last_successful_update = CURRENT_TIMESTAMP,
+                last_update_attempt = CURRENT_TIMESTAMP,
+                last_update_error = NULL,
                 consecutive_failures = 0,
                 last_updated_by = {self.placeholder},
                 last_update_records_added = {self.placeholder},

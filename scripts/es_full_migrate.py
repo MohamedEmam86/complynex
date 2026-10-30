@@ -101,6 +101,8 @@ def build_doc(row):
     return doc
 
 def run(fresh=False):
+    from screening.es_client import guard_es_write
+    guard_es_write('es_full_migrate')
     es = get_es(); ensure_index(es); ensure_meta_index(es)
     checkpoint = {"last_id": 0, "indexed": 0} if fresh else load_checkpoint()
     start_id, total_done = checkpoint["last_id"], checkpoint["indexed"]

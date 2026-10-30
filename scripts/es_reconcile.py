@@ -43,6 +43,8 @@ def _bulk(es, actions):
 
 
 def run(dry_run=False):
+    from screening.es_client import guard_es_write
+    guard_es_write('es_reconcile')
     from utils.demo import skip_in_demo
     if skip_in_demo("search index check", log):
         return {}

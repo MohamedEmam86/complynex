@@ -33,6 +33,8 @@ es = get_es_client(timeout=120)
 INDEX_NAME = "aml_watchlist"
 
 def setup_index():
+    from screening.es_client import guard_es_write
+    guard_es_write('migrate_to_es')
     if es.indices.exists(index=INDEX_NAME):
         es.indices.delete(index=INDEX_NAME)
         print(f"🗑️ Deleted old index '{INDEX_NAME}'")

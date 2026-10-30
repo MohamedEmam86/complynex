@@ -190,6 +190,11 @@ def main():
     LV = vid = ev = None
     if a.apply:
         from screening import list_versions as LV
+        try:   # one writer per list; released when this script's connection closes
+            LV.source_lock(conn, SOURCE).__enter__()
+        except LV.SourceBusy as e:
+            print(f'STOP: {e}')
+            sys.exit(2)
         with open(a.path, 'rb') as fh:
             sha = LV.file_sha256(fh.read())
         ids_in = [r['source_id'] for r in recs]

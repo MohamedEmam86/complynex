@@ -127,7 +127,7 @@
   <div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-white fw-bold"><i class="fas fa-sliders-h me-2"></i>{{ _('Guard limits and allowed age') }}</div>
     <div class="card-body">
-      <p class="small text-muted">{{ _('An update is blocked when the record count falls by more than the drop limit, or more than the deactivation limit of the active records would be removed, and the change is at least the minimum number of records. Leave a field empty to use the default. In force values are shown in grey.') }}</p>
+      <p class="small text-muted">{{ _('An update is blocked when the record count falls by more than the drop limit, or more than the deactivation limit of the active records would be removed, and the change is at least the minimum number of records (a list losing more than half of its records is always blocked). Leave a field empty to use the default. In force values are shown in grey.') }}</p>
       <form method="post" action="{{ url_for('screening.list_version_settings') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="table-responsive"><table class="table table-sm align-middle small">

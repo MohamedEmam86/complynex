@@ -53,6 +53,7 @@ STATUS = {
     'running': _l('Running'), 'failed': _l('Failed'), 'overdue': _l('Overdue'),
     'scheduled': _l('Scheduled update'), 'manual': _l('Manual update'), 'import': _l('File import'),
     'rollback': _l('Rollback'), 'baseline': _l('State before versioning'), 'approved update': _l('Approved update'),
+    'approved': _l('Approved update'), 'blocked': _l('Blocked'), 'guard_error': _l('Guard unavailable'),
     'fresh': _l('Fresh'), 'stale': _l('Stale'),
     # priority
     'high': _l('High'), 'medium': _l('Medium'), 'low': _l('Low'), 'critical': _l('Critical'),

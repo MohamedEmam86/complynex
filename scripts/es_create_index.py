@@ -73,6 +73,8 @@ MAPPING = {
 }
 
 def create_index(force: bool = False):
+    from screening.es_client import guard_es_write
+    guard_es_write('es_create_index')
     es = get_es_client()
     if not es.ping():
         print("FATAL: Cannot reach Elasticsearch at", ES_HOST); sys.exit(1)

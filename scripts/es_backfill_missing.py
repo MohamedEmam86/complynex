@@ -40,6 +40,8 @@ def doc_for(row):
 
 
 def main():
+    from screening.es_client import guard_es_write
+    guard_es_write('es_backfill_missing')
     ap = argparse.ArgumentParser()
     ap.add_argument('--source')
     ap.add_argument('--dry-run', action='store_true')

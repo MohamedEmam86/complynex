@@ -39,6 +39,8 @@ def get_db_connection():
     return conn
 
 def setup_indices(es: Elasticsearch, wl_index: str, bl_index: str):
+    from screening.es_client import guard_es_write
+    guard_es_write('es_indexer')
     """Create indices with specific analyzers for Arabic and Latin text."""
     
     settings = {
@@ -99,6 +101,8 @@ def setup_indices(es: Elasticsearch, wl_index: str, bl_index: str):
     es.indices.create(index=bl_index, settings=settings, mappings=mapping)
 
 def index_watchlist(es: Elasticsearch, wl_index: str):
+    from screening.es_client import guard_es_write
+    guard_es_write('es_indexer')
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -151,6 +155,8 @@ def index_watchlist(es: Elasticsearch, wl_index: str):
     return len(actions), stats
 
 def index_blacklist(es: Elasticsearch, bl_index: str):
+    from screening.es_client import guard_es_write
+    guard_es_write('es_indexer')
     conn = get_db_connection()
     cursor = conn.cursor()
     
