@@ -38052,6 +38052,213 @@ msgstr "نماذج قطاعات أخرى"
 msgid "Terms of Use"
 msgstr "شروط الاستخدام"
 
+
+# list versions, guard, rollback and freshness (P2-1 / P2-7 / P2-5)
+
+msgid "Applied"
+msgstr "مُطبَّق"
+
+msgid "Restored"
+msgstr "مُستعاد"
+
+msgid "Rolled back"
+msgstr "تم التراجع عنه"
+
+msgid "Scheduled update"
+msgstr "تحديث مجدول"
+
+msgid "Manual update"
+msgstr "تحديث يدوي"
+
+msgid "File import"
+msgstr "استيراد ملف"
+
+msgid "Rollback"
+msgstr "تراجع"
+
+msgid "State before versioning"
+msgstr "الحالة قبل بدء الإصدارات"
+
+msgid "Approved update"
+msgstr "تحديث معتمد"
+
+msgid "Guard unavailable"
+msgstr "فحص الحماية غير متاح"
+
+msgid "Fresh"
+msgstr "محدَّثة"
+
+msgid "All lists (default)"
+msgstr "كل القوائم (الافتراضي)"
+
+msgid "Only the MLRO (approval authority) can approve a blocked list update."
+msgstr "اعتماد تحديث قائمة موقوف من صلاحية مسؤول الإبلاغ (MLRO) فقط."
+
+msgid "Not approved: %(e)s"
+msgstr "لم يتم الاعتماد: %(e)s"
+
+msgid "Approved. The update of %(s)s is running again now; if the download is unchanged it will be applied."
+msgstr "تم الاعتماد. يُعاد الآن تشغيل تحديث %(s)s، وسيُطبَّق إذا لم يتغير محتوى التنزيل."
+
+msgid "Approved. Run the import of %(s)s again with the same file to apply it."
+msgstr "تم الاعتماد. أعد استيراد %(s)s بنفس الملف لتطبيقه."
+
+msgid "Only the MLRO (approval authority) can roll a list back."
+msgstr "التراجع عن إصدار قائمة من صلاحية مسؤول الإبلاغ (MLRO) فقط."
+
+msgid "Please give the reason for the rollback (at least 15 characters). Nothing was changed."
+msgstr "برجاء كتابة سبب التراجع (15 حرفًا على الأقل). لم يتم تغيير أي شيء."
+
+msgid "Rollback not started: %(p)s"
+msgstr "لم يبدأ التراجع: %(p)s"
+
+msgid "There is no earlier version of this list to go back to."
+msgstr "لا يوجد إصدار سابق لهذه القائمة للرجوع إليه."
+
+msgid "Rollback of %(s)s to version %(v)s started. It is recorded as a new version; the search index follows within minutes."
+msgstr "بدأ التراجع بقائمة %(s)s إلى الإصدار %(v)s. يُسجَّل كإصدار جديد، ويُحدَّث فهرس البحث خلال دقائق."
+
+msgid "Only the MLRO (approval authority) can change the list settings."
+msgstr "تعديل إعدادات القوائم من صلاحية مسؤول الإبلاغ (MLRO) فقط."
+
+msgid "Please give the reason for the change (at least 15 characters). Nothing was saved."
+msgstr "برجاء كتابة سبب التعديل (15 حرفًا على الأقل). لم يتم حفظ أي شيء."
+
+msgid "Nothing was saved: %(p)s"
+msgstr "لم يتم حفظ أي شيء: %(p)s"
+
+msgid "Not saved for these list names (invalid): %(n)s"
+msgstr "لم يتم الحفظ لأسماء القوائم التالية (غير صالحة): %(n)s"
+
+msgid "List settings saved."
+msgstr "تم حفظ إعدادات القوائم."
+
+msgid "List versions"
+msgstr "إصدارات القوائم"
+
+msgid "Every list update is a numbered version. An update that would remove too much of a list is blocked and the version in force stays; the MLRO can approve it or roll a list back to its previous version."
+msgstr "كل تحديث لقائمة يُسجَّل كإصدار مرقَّم. التحديث الذي يحذف جزءًا كبيرًا من القائمة يُوقَف ويظل الإصدار الساري كما هو، ويمكن لمسؤول الإبلاغ اعتماده أو الرجوع بالقائمة إلى إصدارها السابق."
+
+msgid "Lists in force"
+msgstr "القوائم السارية"
+
+msgid "Version in force"
+msgstr "الإصدار الساري"
+
+msgid "Last good update"
+msgstr "آخر تحديث ناجح"
+
+msgid "Age (hours)"
+msgstr "العمر (ساعات)"
+
+msgid "Allowed age (hours)"
+msgstr "العمر المسموح (ساعات)"
+
+msgid "not versioned yet"
+msgstr "لا توجد إصدارات بعد"
+
+msgid "Go back from version %(c)s to version %(p)s (%(n)s active records). Records are re-activated or de-activated, never deleted; record content is not reverted."
+msgstr "الرجوع من الإصدار %(c)s إلى الإصدار %(p)s (%(n)s سجل فعّال). تُعاد السجلات للتفعيل أو يُلغى تفعيلها دون حذف، ولا يُسترجع محتوى السجلات."
+
+msgid "Reason (at least 15 characters)"
+msgstr "السبب (15 حرفًا على الأقل)"
+
+msgid "Confirm rollback"
+msgstr "تأكيد التراجع"
+
+msgid "No list has been updated yet."
+msgstr "لم يتم تحديث أي قائمة بعد."
+
+msgid "within the allowed age"
+msgstr "ضمن العمر المسموح"
+
+msgid "close to the limit"
+msgstr "قريبة من الحد"
+
+msgid "overdue, failed or blocked: the MLRO is alerted"
+msgstr "متأخرة أو فشل تحديثها أو موقوفة: تم تنبيه مسؤول الإبلاغ"
+
+msgid "Blocked updates"
+msgstr "التحديثات الموقوفة"
+
+msgid "downloaded records"
+msgstr "سجلات تم تنزيلها"
+
+msgid "Approved by %(u)s on %(d)s: %(r)s"
+msgstr "اعتمده %(u)s في %(d)s: %(r)s"
+
+msgid "Why the change is genuine (at least 15 characters)"
+msgstr "لماذا التغيير حقيقي (15 حرفًا على الأقل)"
+
+msgid "Approve and apply"
+msgstr "اعتماد وتطبيق"
+
+msgid "All lists"
+msgstr "كل القوائم"
+
+msgid "Started by"
+msgstr "بدأه"
+
+msgid "Finished"
+msgstr "انتهى"
+
+msgid "Downloaded"
+msgstr "تم تنزيله"
+
+msgid "Deactivated"
+msgstr "أُلغي تفعيله"
+
+msgid "Reactivated"
+msgstr "أُعيد تفعيله"
+
+msgid "Active after"
+msgstr "الفعّال بعد التحديث"
+
+msgid "Hash"
+msgstr "البصمة (Hash)"
+
+msgid "Rolled back by %(u)s: %(r)s"
+msgstr "تراجع عنه %(u)s: %(r)s"
+
+msgid "Approved by %(u)s: %(r)s"
+msgstr "اعتمده %(u)s: %(r)s"
+
+msgid "No versions recorded yet: the first one is recorded at the next list update."
+msgstr "لا توجد إصدارات مسجلة بعد: يُسجَّل أول إصدار عند تحديث القائمة القادم."
+
+msgid "Guard limits and allowed age"
+msgstr "حدود الحماية والعمر المسموح"
+
+msgid "An update is blocked when the record count falls by more than the drop limit, or more than the deactivation limit of the active records would be removed, and the change is at least the minimum number of records (a list losing more than half of its records is always blocked). Leave a field empty to use the default. In force values are shown in grey."
+msgstr "يُوقَف التحديث إذا انخفض عدد السجلات بأكثر من حد الانخفاض، أو إذا كان سيُلغي تفعيل نسبة من السجلات الفعّالة أكبر من حد إلغاء التفعيل، وكان التغيير لا يقل عن الحد الأدنى لعدد السجلات (القائمة التي تفقد أكثر من نصف سجلاتها تُوقَف دائمًا). اترك الحقل فارغًا لاستخدام القيمة الافتراضية. القيم السارية معروضة باللون الرمادي."
+
+msgid "Drop limit (percent)"
+msgstr "حد الانخفاض (نسبة مئوية)"
+
+msgid "Deactivation limit (percent)"
+msgstr "حد إلغاء التفعيل (نسبة مئوية)"
+
+msgid "Minimum records"
+msgstr "الحد الأدنى للسجلات"
+
+msgid "Reason for the change (at least 15 characters)"
+msgstr "سبب التعديل (15 حرفًا على الأقل)"
+
+msgid "Only the MLRO can change these settings."
+msgstr "تعديل هذه الإعدادات من صلاحية مسؤول الإبلاغ فقط."
+
+msgid "Version in force when this screening ran"
+msgstr "الإصدار الساري وقت إجراء هذا الفحص"
+
+msgid "Current version"
+msgstr "الإصدار الحالي"
+
+msgid "overdue, failed or blocked"
+msgstr "متأخرة أو فشل تحديثها أو موقوفة"
+
+msgid "Palestine (PMA): the UN Security Council consolidated list that the PMA requires is covered by the UN source; the PMA national list (UNSCR 1373) is its own source."
+msgstr "فلسطين (سلطة النقد): قائمة مجلس الأمن الموحدة التي تطلبها سلطة النقد مغطاة بمصدر الأمم المتحدة، والقائمة الوطنية لسلطة النقد (القرار 1373) مصدر مستقل."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

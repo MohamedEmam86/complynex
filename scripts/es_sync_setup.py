@@ -41,6 +41,8 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger("setup")
 
 def setup():
+    from screening.es_client import guard_es_write
+    guard_es_write('es_sync_setup')
     log.info("[1/4] Setting up PG timestamps...")
     conn = psycopg2.connect(**PG); cur = conn.cursor()
     cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'screening_watchlist' AND column_name IN ('created_at', 'updated_at')")
