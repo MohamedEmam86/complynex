@@ -52,6 +52,9 @@ from datetime import date
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- normalisation
+from screening import company_match as _cm   # P3-6 company words
+from screening import name_variants as _nv   # P3-7 / P3-8 Franco-Arabic and dialect spellings
+
 _AR_DIACRITICS = re.compile(r'[ً-ْٰـ]')
 _ARABIC = re.compile(r'[؀-ۿ]')
 _PARTICLES = {'ال', 'بن', 'ابن', 'بنت', 'ابو', 'عبد', 'ال', 'al', 'el', 'bin', 'ben', 'ibn',
@@ -144,7 +147,7 @@ def normalize(text):
         t = re.sub(r'\b(عبد|ابو)(?=ال|[ء-ي]{3,})', r'\1 ', t)
         t = re.sub(r'[^ء-ي\s]', ' ', t)
     else:
-        t = t.lower()
+        t = _nv.latin(t.lower())       # Franco-Arabic digits, accents, dialect spellings (name_variants.py)
         t = re.sub(r"['`’‘ʿʾ´]", '', t)
         t = re.sub(r"[\-\.]", ' ', t)
         # every spelling of Abd-Allah (Abdallah, Abdullah, Abdullahi, Abdalla, Abdula, Abd Allah) -> one form
@@ -483,11 +486,19 @@ def _same_token(a, b, first=False):
     """
     if a == b:
         return 1.0
+    if _cm.same_class(a, b):                          # generic company words: Trade = Trading = تجارة
+        return 1.0
     if is_arabic(a) != is_arabic(b):                 # Latin vs Arabic
-        return _xs_same(b, a) if is_arabic(a) else _xs_same(a, b)
+        lat, arb = (b, a) if is_arabic(a) else (a, b)
+        s = _xs_same(lat, arb)
+        if not s and _nv.canon(lat) != lat:           # dialect spelling (Houcine, Mehmet): try the usual one
+            s = _xs_same(_nv.canon(lat), arb)
+        return s
     ar = is_arabic(a) and is_arabic(b)
     if not ar and a in _canon_names() and b in _canon_names():
         return 0.0     # two different well-known names (Mohamed / Mahmoud share a consonant skeleton)
+    if not ar and _nv.canon(a) == _nv.canon(b) and (_nv.canon(a) != a or _nv.canon(b) != b):
+        return 0.95    # dialect spelling of the same name: Houcine = Hussein, Hacen = Hassan, Mehmet = Mohamed
     if ar and a.translate(_AR_SOUND) == b.translate(_AR_SOUND):
         return 0.95
     if ar and min(len(a), len(b)) >= 4 and len(a) == len(b) and a[:-1] == b[:-1] \
