@@ -1142,6 +1142,8 @@ def config():
                                               __import__('screening.thresholds', fromlist=['x']).current(force=True).items()},
                            clearance_threshold=CL.approval_threshold(),
                            regulatory_scope=__import__('screening.regulatory', fromlist=['x']).scope(force=True),
+                           gold_review=(__import__('screening.gold_review', fromlist=['x']).status()
+                                        if current_user.is_admin() else None),
                            can_approve=CL.can_approve(current_user))
 
 @screening_bp.route('/sources', methods=['GET', 'POST'])
@@ -5151,3 +5153,41 @@ def whitelist_approval(id):
         except Exception as ex:
             logger.error(f"notify maker failed: {ex}")
     return redirect(back)
+
+
+@screening_bp.route('/admin/gold-review', methods=['GET', 'POST'])
+@login_required
+def gold_review():
+    """Gold Set human review by hand in Excel (admin only, audited)."""
+    from flask import abort
+    from screening import gold_review as GR
+    if not current_user.is_admin():
+        abort(403)
+    if request.method == 'POST':
+        f = request.files.get('review_file')
+        if not f or not (f.filename or '').lower().endswith('.xlsx'):
+            flash(gettext('Choose the filled review workbook (.xlsx).'), 'error')
+            return redirect(url_for('screening.config'))
+        data = io.BytesIO(f.read(5 * 1024 * 1024 + 1))
+        if data.getbuffer().nbytes > 5 * 1024 * 1024:
+            flash(gettext('The file is too large.'), 'error')
+            return redirect(url_for('screening.config'))
+        decisions, problems = GR.parse_upload(data)
+        if problems:
+            flash(gettext('The review file was not saved: %(p)s', p=' | '.join(problems[:8])), 'error')
+            return redirect(url_for('screening.config'))
+        totals = GR.save(decisions, current_user.id)
+        _audit('Gold Set review uploaded', None,
+               f"{len(decisions)} decisions in this file; total reviewed {totals['reviewed']}, "
+               f"wrong {totals['wrong']}, unsure {totals['unsure']}")
+        flash(gettext('Review saved: %(n)s decisions in this file; %(r)s reviewed so far (%(w)s wrong, %(u)s unsure).',
+                      n=len(decisions), r=totals['reviewed'], w=totals['wrong'], u=totals['unsure']), 'success')
+        return redirect(url_for('screening.config'))
+    try:
+        out, n = GR.build_xlsx()
+    except OSError:
+        flash(gettext('The Gold Set review sample is not available on this server.'), 'error')
+        return redirect(url_for('screening.config'))
+    _audit('Gold Set review sheet downloaded', None, f'{n} pairs')
+    return send_file(out, as_attachment=True, download_name=f"gold_set_review_v{GR.VERSION}.xlsx",
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

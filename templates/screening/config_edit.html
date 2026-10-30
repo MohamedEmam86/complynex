@@ -166,5 +166,30 @@
             </div>
         </div>
     </form>
+    {% if gold_review %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">{{ _('Gold Set human review') }}</h6>
+        </div>
+        <div class="card-body row g-3 align-items-center">
+            <div class="col-md-5 small text-muted">
+                {{ _('Check by hand that the expected answer of each test pair is right. Download the sheet, fill the yellow columns, and upload it (partly filled is fine). Nothing changes the Gold Set until the corrections are reviewed and applied.') }}
+                <div class="mt-1 fw-bold">{{ _('Reviewed') }}: {{ gold_review.reviewed }} / {{ gold_review.total }}
+                    &middot; {{ _('wrong') }}: {{ gold_review.wrong }} &middot; {{ _('unsure') }}: {{ gold_review.unsure }}</div>
+            </div>
+            <div class="col-md-3">
+                <a href="{{ url_for('screening.gold_review') }}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-download me-1"></i>{{ _('Download review sheet') }}</a>
+            </div>
+            <div class="col-md-4">
+                <form method="POST" action="{{ url_for('screening.gold_review') }}" enctype="multipart/form-data" class="d-flex gap-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="file" name="review_file" accept=".xlsx" class="form-control form-control-sm" required>
+                    <button type="submit" class="btn btn-primary btn-sm">{{ _('Upload') }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
