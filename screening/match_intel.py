@@ -78,6 +78,14 @@ _LATIN_CANON = [
 ]
 
 
+# first parts of "... ad-Din" compound names (Salah ad-Din, Seif ad-Din, Nour ad-Din ...)
+_DIN_HEADS = ('salah|slah|sala|seif|saif|sayf|sif|nur|nor|ala|iz|ez|shams|gamal|jamal|kamal|nasr|naser|nasir|'
+              'sharaf|badr|zein|zain|zin|taj|tag|fakhr|fakhar|hosam|husam|emad|imad|baha|mohy|muhy|mohi|muhi|'
+              'mohyi|muhyi|sad|nizam|jalal|galal|khair|kheir|khayr|siraj|serag|burhan|qutb|kutb|shihab|shehab|'
+              'rukn|diya|dia|sam|sayed|ghias|ghiyas|ghiath|ghiyath|ghus|ghaus|nazir|qamar|wahid|nagm|najm|'
+              'hesam|hisham|saf|safi|alam|tag|shuja|zahir|zaher|nasser')
+
+
 def is_arabic(text):
     return bool(_ARABIC.search(str(text or '')))
 
@@ -120,10 +128,24 @@ def normalize(text):
     else:
         t = t.lower()
         t = re.sub(r"['`’\-\.]", ' ', t)
-        t = re.sub(r'\b(abd|abdel|abdul)(?=[a-z]{3,})', r'\1 ', t)
+        # every spelling of Abd-Allah (Abdallah, Abdullah, Abdullahi, Abdalla, Abdula, Abd Allah) -> one form
+        t = re.sub(r'\babd ?[aeiu]?l{1,2}ah?i?\b', 'abd alah', t)
+        # Abd al-Aal (Abdelaal, Abd El Aal): "aal" would collapse to "al" and read as the article
+        t = re.sub(r'\babd ?(?:[aeu]l ?)?aal\b', 'abd eal', t)
+        # Abd + el/ul assimilated to the next letter: Abdellatif = Abd Latif, Abdessalam = Abd Salam,
+        # Abdallah / Abdullah = Abd Lah (the doubled letter would otherwise be collapsed into "atif")
+        t = re.sub(r'\babd ?[aeu]([lnrstdz])\1', r'abd \1', t)
+        # glued "... el-Din" compounds: Salaheldin, Seifeldin, Noureddine = Salah / Seif / Nour + Din
+        t = re.sub(r'\b(abdul|abdel|abdal|abd)(?=[a-z]{3,})', r'\1 ', t)
+        # every spelling of Allah after Abd (Abdallah, Abdullah, Abdullahi, Abdalah, Abdalla) -> one form
+        t = re.sub(r'\b(abd|abdul|abdel|abdal) ([aeiu]?l+ahi?)\b', 'abd alah', t)
         t = re.sub(r'[^a-z\s]', ' ', t)
         for pat, rep in _LATIN_CANON:
             t = re.sub(pat, rep, t)
+        # "... ad-Din" compounds, glued or not, in any spelling (Salaheldin, Salah Eddine, Salahudin,
+        # Ezeldin, Nour Eldin) -> first part + din; only after a known first part (not LinkedIn, Geraldine)
+        t = re.sub(r'\b(' + _DIN_HEADS + r') ?(?:[aeiu]l?)?d(?:in|ine|en|ein)\b', r'\1 din', t)
+        t = re.sub(r'\b(?:eldin|eldine|elden|edin|edine|udin|aldin|adin)\b', 'din', t)
     return re.sub(r'\s+', ' ', t).strip()
 
 
@@ -132,19 +154,65 @@ def normalize(text):
 # recognised and dropped.
 _LEGAL_FORMS = _LEGAL_FORMS | {normalize(x) for x in _LEGAL_FORMS}
 _PARTICLES = _PARTICLES | {normalize(x) for x in _PARTICLES}
+# honorifics / ranks written BEFORE a name (د/ ، المهندس ، الشيخ ، اللواء ، Dr ، Sheikh ...). Only dropped at
+# the start of the name and only while two elements remain: الشيخ / الحاج / الامير are also family names.
+_TITLES = {normalize(x) for x in (
+    'د', 'دكتور', 'الدكتور', 'دكتورة', 'الدكتورة', 'م', 'مهندس', 'المهندس', 'مهندسة', 'المهندسة',
+    'ا', 'أ', 'استاذ', 'الاستاذ', 'الأستاذ', 'استاذة', 'الاستاذة', 'الأستاذة', 'شيخ', 'الشيخ', 'الشيخة',
+    'حاج', 'الحاج', 'حاجة', 'الحاجة', 'لواء', 'اللواء', 'عميد', 'العميد', 'عقيد', 'العقيد', 'مقدم', 'المقدم',
+    'الرائد', 'النقيب', 'مستشار', 'المستشار', 'المستشارة', 'سفير', 'السفير', 'السفيرة',
+    'الامير', 'الأمير', 'الاميرة', 'الأميرة', 'النائب', 'النائبة', 'محاسب', 'المحاسب',
+    'كابتن', 'الكابتن', 'فضيلة', 'سيادة', 'معالي', 'سعادة', 'القس', 'الانبا', 'الأنبا',
+    'dr', 'doctor', 'prof', 'professor', 'eng', 'engineer', 'mr', 'mrs', 'ms', 'miss', 'sir',
+    'sheikh', 'shaikh', 'sheik', 'shaykh', 'haj', 'hajj', 'hajji', 'hadj', 'gen', 'general', 'col', 'colonel',
+    'maj', 'major', 'capt', 'captain', 'lt', 'brig', 'judge', 'counsellor', 'amb', 'ambassador', 'prince',
+    'princess')} - {''}
+
+
+_TITLE_ABBREV = {normalize(x) for x in ('د', 'م', 'ا', 'أ', 'dr', 'eng', 'mr', 'mrs', 'ms', 'prof', 'capt', 'col',
+                                          'gen', 'lt', 'maj', 'brig', 'amb')} - {''}
+
+
+def _drop_titles(a, b):
+    # leading titles of name `a` (list of (element, raw form)): abbreviations (د/ م/ Dr) while one element
+    # remains, title words (الشيخ، اللواء ...) while two remain - they can also be a family name - and
+    # never when name `b` starts with the same element (then they simply match)
+    while a and a[0][1] in _TITLES and not (b and b[0][0] == a[0][0]):
+        if len(a) > 2 or (len(a) > 1 and a[0][1] in _TITLE_ABBREV):
+            a = a[1:]
+        else:
+            break
+    return a
+
+
+def _uncomma(name):
+    # 'SURNAME, Given Names' (list format) -> 'Given Names SURNAME'
+    s = str(name or '')
+    if s.count(',') == 1 and not is_arabic(s):
+        head, tail = [x.strip() for x in s.split(',')]
+        if head and tail:
+            return f'{tail} {head}'
+    return s
 
 def tokens(text):
     """Identity-bearing elements of a name, in order, particles dropped and
     the leading ال of a family element removed (الشاذلي == شاذلي)."""
+    return [t for t, _ in _tokens_raw(text)]
+
+
+def _tokens_raw(text):
+    """tokens() with each element's normalised form before ال / el was removed
+    (a typo can move the ال: اسليد = السيد, اليشخ = الشيخ)."""
     out = []
     for tok in normalize(text).split():
+        raw = tok
         if tok in _PARTICLES or tok in _LEGAL_FORMS:
             continue
         if is_arabic(tok) and tok.startswith('ال') and len(tok) > 4:
             tok = tok[2:]
         if not is_arabic(tok) and tok.startswith(('el', 'al')) and len(tok) > 5:
             tok = tok[2:]
-        out.append(tok)
+        out.append((tok, raw))
     return out
 
 
@@ -202,6 +270,60 @@ def _xs_key(t):
     return re.sub(r'(.)\1+', r'\1', k)
 
 
+_XS_CONS = {'ب': '(?:b|p)', 'ت': 't', 'ث': '(?:th|s|t)', 'ج': '(?:g|j|dj|dg)', 'ح': 'h', 'خ': '(?:kh|k|h|ch|x)',
+            'د': 'd', 'ذ': '(?:dh|z|d|th)', 'ر': 'r', 'ز': '(?:z|s)', 'س': '(?:s|c)', 'ش': '(?:sh|ch|sch|s|x)',
+            'ص': 's', 'ض': '(?:d|dh|z)', 'ط': 't', 'ظ': '(?:z|dh|d)', 'غ': '(?:gh|g|r)', 'ف': '(?:f|v)',
+            'ق': '(?:q|k|g|c)', 'ك': '(?:k|c|q)', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h'}
+_ALLAH = {'alah', 'lah', 'ulah', 'elah', 'ilah', 'alh'}
+
+
+def _ar_pattern(ar):
+    """Regular expression of the Latin spellings an Arabic element can have: consonants as written,
+    long vowels (ا و ي) required, ع / ء free, a short vowel allowed between consonants."""
+    cache = _ar_pattern.__dict__.setdefault('cache', {})
+    if ar in cache:
+        return cache[ar]
+    parts, n = [], len(ar)
+    for i, ch in enumerate(ar):
+        first, last = i == 0, i == n - 1
+        if ch == 'ا':
+            p = '[aeiou]?' if first else '(?:a|e)'
+        elif ch == 'و':
+            p = '(?:w|v|u|o)[aeiou]?' if first else '(?:o|u|w|ow|aw|ew|uw|wa|we|wi|wo|wu)'
+        elif ch == 'ي':
+            p = '(?:y|i|j|e)[aeiou]?' if first else ('(?:i|y|e|a|ie|ey|ei|iy|ay|ai)' if last
+                                             else '(?:i|e|y|ei|ey|ie|ai|ay|ya|ye|yi|iy)')
+        elif ch == 'ع':
+            p = '[aeiou]{0,2}'
+        elif ch in 'ءئؤ':
+            p = '[aeiouyw]?'
+        elif ch == 'ه' and last and n > 2:
+            p = '(?:a|ah|eh|e|at|et|h)?'
+        elif ch in _XS_CONS:
+            p = _XS_CONS[ch] + ('' if last else '[aeiou]?')
+        else:
+            p = ''
+        parts.append(p)
+    try:
+        rx = re.compile(''.join(parts))
+    except re.error:
+        rx = None
+    if len(cache) < 50000:
+        cache[ar] = rx
+    return rx
+
+
+def _xs_phonetic(lat, ar):
+    if ar == 'الله':
+        return lat in _ALLAH
+    if ar == 'دين':
+        return lat in ('din', 'deen', 'den', 'dine')
+    if len(ar) < 2 or len(lat) < 2 or len(ar) > 15 or len(lat) > 2 * len(ar) + 4 or re.search('[عءئؤ]{2,}', ar):
+        return False      # nonsense / hostile input: no expensive pattern
+    rx = _ar_pattern(ar)
+    return bool(rx and rx.fullmatch(lat))
+
+
 def _xs_same(lat, ar):
     """Same name element written in Latin and in Arabic?"""
     cands = _xs_dict().get(lat)
@@ -210,8 +332,14 @@ def _xs_same(lat, ar):
         for a, c in cands:
             if a == ar or (len(a) == len(ar) and a.translate(_AR_SOUND) == ar.translate(_AR_SOUND)):
                 return 0.95 if c / total >= 0.1 else 0.85
+        if lat in _canon_names():
+            return 0.0          # a standard spelling of another well-known name (Mahmoud is محمود, not محمد)
+        if _xs_phonetic(lat, ar):
+            return 0.85         # the spelling fits this Arabic name too (Saed = سعيد as well as سعد)
         if total >= 8:
             return 0.0          # a well-known element that is written otherwise (Mohamed is not محمود)
+    if _xs_phonetic(lat, ar):
+        return 0.85
     kl, ka = _xs_key(lat), _xs_key(ar)
     if len(kl) >= 2 and kl == ka:
         return 0.85
@@ -226,6 +354,9 @@ def to_arabic(name):
     for t in tokens(name):
         if is_arabic(t):
             out.append(t)
+            continue
+        if t in ('alah', 'din'):
+            out.append('الله' if t == 'alah' else 'الدين')
             continue
         cands = _xs_dict().get(t)
         if cands:
@@ -294,6 +425,10 @@ def _same_token(a, b):
     if ar and min(len(a), len(b)) >= 4 and len(a) == len(b) and a[:-1] == b[:-1] \
             and {a[-1], b[-1]} <= {'ا', 'ي'}:
         return 0.95                                   # مصطفا / مصطفى
+    if ar and len(a) == len(b) and _eg_variant(a) == _eg_variant(b):
+        return 0.9     # Egyptian spelling of the same name (ثامر / تامر، عثمان / عتمان، رءوف / رؤوف، مدحت / مدحه)
+    if ar and len(a) == len(b) <= 5 and _attested(a) and _attested(b):
+        return 0.0     # two short, real, known names one letter apart (احمد / حامد، سامي / سامح): a different name
     try:
         from rapidfuzz import fuzz
         r = fuzz.ratio(a, b)
@@ -317,6 +452,33 @@ def _same_token(a, b):
 
 
 _CANON_NAMES = None
+ATTESTED_WEIGHT = 9.0      # name_idf weight below which an element is a name seen many times in the lists
+
+
+_EG_VARIANT = str.maketrans({'ث': 'ت', 'ذ': 'د', 'ظ': 'ض', 'ء': 'ا', 'ؤ': 'ا', 'ئ': 'ا'})
+
+
+def _eg_variant(t):
+    t = t.translate(_EG_VARIANT)
+    return t[:-1] + 'ت' if t.endswith('ه') else t
+
+
+def _distinct_names(a, b):
+    """Two first names that are both real, known names in the same script (احمد / حامد, Mohamed / Mahmoud).
+    An unknown or foreign spelling is not enough to call two people different."""
+    if is_arabic(a) and is_arabic(b):
+        return _attested(a) and _attested(b)
+    if not is_arabic(a) and not is_arabic(b):
+        return a in _canon_names() and b in _canon_names()
+    return False
+
+
+def _attested(t):
+    try:
+        from screening import name_idf
+        return name_idf.weight(t) < ATTESTED_WEIGHT
+    except Exception:
+        return False
 
 
 def _canon_names():
@@ -353,10 +515,17 @@ def _osa(a, b):
 
 
 # --------------------------------------------------------------------------- name match
+def _swap_only(a, b):
+    """Same letters with exactly one adjacent swap (a typing slip), length >= 5."""
+    return len(a) == len(b) >= 5 and a != b and sorted(a) == sorted(b) and _osa(a, b) == 1
+
+
 def name_match(query, listed):
     """Analyst-style comparison of two names. Returns a dict with ``score``
     (0-100) and the evidence behind it."""
-    q, c = tokens(query), tokens(listed)
+    qr, cr = _tokens_raw(_uncomma(query)), _tokens_raw(_uncomma(listed))
+    qr, cr = _drop_titles(qr, cr), _drop_titles(cr, qr)
+    q, c = [t for t, _ in qr], [t for t, _ in cr]
     res = {'score': 0.0, 'q_tokens': q, 'l_tokens': c, 'matched': [], 'missing_from_query': [],
            'extra_in_query': [], 'cov_listed': 0.0, 'cov_query': 0.0, 'order_ok': False,
            'first_ok': False, 'family_ok': False, 'complete': False, 'partial': True}
@@ -369,6 +538,9 @@ def name_match(query, listed):
             if qi in used:
                 continue
             s = _same_token(ct, qt)
+            if s < 0.88 and (cr[ci][1] != ct or qr[qi][1] != qt) and is_arabic(ct) and is_arabic(qt) \
+                    and _swap_only(cr[ci][1], qr[qi][1]):
+                s = 0.88
             if s > best:
                 best, bj = s, qi
                 if s == 1.0:
@@ -398,6 +570,13 @@ def name_match(query, listed):
     complete = (len(pairs) == len(c) and len(used) == len(q) and order_ok and first_ok)
     missing = [c[i] for i in range(len(c)) if i not in matched_c]
     extra = [q[i] for i in range(len(q)) if i not in used]
+    if len(c) >= 3 and len(q) >= 3 and 0 not in matched_c and 0 not in used and _distinct_names(c[0], q[0]):
+        # each name starts with a different, known first name (a brother, a cousin): different people
+        score = min(score, 74.0)
+    elif (len(c) >= 4 and len(q) >= 3 and len(used) == len(q) and order_ok and first_ok and family_ok
+            and len(missing) == 1 and 0 < [i for i in range(len(c)) if i not in matched_c][0] < len(c) - 1):
+        # the customer left out one middle element (a father's second name / grandfather): a lead to review
+        score = max(score, 76.0)
     if len(c) >= 3 and len(q) >= 3 and missing and extra:
         # both names carry an element the other lacks at the same place in the
         # chain (a different father / grandfather): different people unless an
