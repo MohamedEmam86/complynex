@@ -246,6 +246,7 @@ def match_view(m, kind, inputs):
         'risk_level': _first(m.get('risk_level')),
         'listed_since': _first(p.get('listingDate'), p.get('createdAt'), m.get('first_seen'), m.get('created_at')),
         'identity': ident, 'identity_label': id_label, 'identity_state': id_state,
+        'gender_differs': d.get('gender') == 'differ',
         'identity_rows': identity_rows,
         'reasons': [_reason(r) for r in (d.get('reasons') or [])],
         'judged_against': d.get('judged_against'),

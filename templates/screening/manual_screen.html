@@ -120,9 +120,11 @@
                         const box = document.getElementById("nameQuality");
                         const AR = /[\u0600-\u06ff\u0750-\u077f\ufb50-\ufdff\ufe70-\ufeff]/;
                         const LAT = /[A-Za-z\u00c0-\u024f]/;
+                        const val = id => { const el = document.getElementById(id); return el ? (el.value || "") : ""; };
                         function iqCheck() {
-                            const name = (document.getElementById("name").value || "").trim();
-                            const et = (document.getElementById("entity_type").value || "INDIVIDUAL").toUpperCase();
+                            if (!box) return;
+                            const name = val("name").trim();
+                            const et = (val("entity_type") || "INDIVIDUAL").toUpperCase();
                             const person = et === "INDIVIDUAL";
                             const out = [];
                             if (name) {
@@ -139,9 +141,8 @@
                                     if (words.length === 1 && letters >= 3) out.push(["single_word"]);
                                     else if (words.length === 2) out.push(["two_words"]);
                                 }
-                                if (!(document.getElementById("country").value || "").trim()) out.push(["no_country"]);
-                                if (person && !document.getElementById("dob").value &&
-                                    !(document.getElementById("national_id").value || "").trim()) out.push(["no_identifier"]);
+                                if (!val("country").trim()) out.push(["no_country"]);
+                                if (person && !val("dob") && !val("national_id").trim()) out.push(["no_identifier"]);
                             }
                             box.innerHTML = "";
                             out.forEach(([code, detail]) => {

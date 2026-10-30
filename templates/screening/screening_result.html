@@ -61,6 +61,7 @@
         <span class="badge tier-badge tier-{{ v.tier }}">{{ _(v.tier_label) }}</span>
         {% if v.entity_type %}<span class="badge bg-light text-dark border">{{ v.entity_type|scr_label('entity') }}</span>{% endif %}
         {% if v.risk_level %}<span class="badge bg-light text-dark border">{{ _('Risk') }}: {{ v.risk_level }}</span>{% endif %}
+        {% if v.gender_differs %}<span class="badge bg-light text-dark border" title="{{ _('Gender differs (information only, does not lower the score)') }}"><i class="fas fa-info-circle me-1"></i>{{ _('Gender differs (information only)') }}</span>{% endif %}
       </div>
       <h5 class="mb-0 fw-bold ar">{{ v.display_name }}</h5>
       {% if v.ar_name and v.lat_name %}<div class="text-muted">{{ v.lat_name }}</div>{% endif %}

@@ -43,7 +43,7 @@ def main():
     table = dict(raw)
     changed = 0
     for tok, c in counts.items():
-        w = round(math.log(total / min(c, total)), 4)
+        w = round(math.log(total / min(max(c, 1e-9), total)), 4)
         if table.get(tok) != w:
             changed += 1
         table[tok] = w
