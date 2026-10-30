@@ -85,3 +85,11 @@ def test_more_allah_and_aal_spellings():
     assert mi.tokens('Abd El Aal Hassan') == mi.tokens('Abdelaal Hassan') == ['eal', 'hassan']
     assert mi.tokens('Abd Al Rahman Hassan') == ['rahman', 'hassan']
     assert mi.tokens('Abdo Hassan Ali')[0] != 'alah'
+
+
+def test_typo_between_two_real_names_in_the_middle_still_matches():
+    assert s('هشام علي حفني محمد', 'هشام علي حنفي محمد') >= 80
+
+
+def test_alaal_without_abd():
+    assert s('Mohamed Sayed Razk Alaal', 'MOHAMED EL-SAYED ABD ALRAZQ ABD ALAAL') >= 80

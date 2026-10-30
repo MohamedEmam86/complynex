@@ -132,6 +132,7 @@ def normalize(text):
         t = re.sub(r'\babd ?[aeiu]?l{1,2}ah?i?\b', 'abd alah', t)
         # Abd al-Aal (Abdelaal, Abd El Aal): "aal" would collapse to "al" and read as the article
         t = re.sub(r'\babd ?(?:[aeu]l ?)?aal\b', 'abd eal', t)
+        t = re.sub(r'\b(?:[ae]l ?)?aal\b', 'eal', t)
         # Abd + el/ul assimilated to the next letter: Abdellatif = Abd Latif, Abdessalam = Abd Salam,
         # Abdallah / Abdullah = Abd Lah (the doubled letter would otherwise be collapsed into "atif")
         t = re.sub(r'\babd ?[aeu]([lnrstdz])\1', r'abd \1', t)
@@ -406,7 +407,7 @@ def to_arabic_display(name):
     return ' '.join(x for x in out if x)
 
 
-def _same_token(a, b):
+def _same_token(a, b, first=False):
     """Are two name elements the same name, allowing for spelling?
 
     Arabic is stricter than Latin on purpose: inserting a long vowel changes
@@ -427,8 +428,9 @@ def _same_token(a, b):
         return 0.95                                   # مصطفا / مصطفى
     if ar and len(a) == len(b) and _eg_variant(a) == _eg_variant(b):
         return 0.9     # Egyptian spelling of the same name (ثامر / تامر، عثمان / عتمان، رءوف / رؤوف، مدحت / مدحه)
-    if ar and len(a) == len(b) <= 5 and _attested(a) and _attested(b):
-        return 0.0     # two short, real, known names one letter apart (احمد / حامد، سامي / سامح): a different name
+    if ar and len(a) == len(b) <= 5 and _attested(a) and _attested(b) and (first or sorted(a) != sorted(b)):
+        return 0.0     # two short, real, known names one letter apart (احمد / حامد، سامي / سامح، احمد / محمد) are
+                       # different names; only two swapped letters inside the chain pass as a typo (حنفي / حفني)
     try:
         from rapidfuzz import fuzz
         r = fuzz.ratio(a, b)
@@ -537,7 +539,7 @@ def name_match(query, listed):
         for qi, qt in enumerate(q):
             if qi in used:
                 continue
-            s = _same_token(ct, qt)
+            s = _same_token(ct, qt, first=(ci in (0, len(c) - 1) or qi in (0, len(q) - 1)))
             if s < 0.88 and (cr[ci][1] != ct or qr[qi][1] != qt) and is_arabic(ct) and is_arabic(qt) \
                     and _swap_only(cr[ci][1], qr[qi][1]):
                 s = 0.88
