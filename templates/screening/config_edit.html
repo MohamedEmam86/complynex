@@ -34,6 +34,24 @@
                 </div>
             </div>
         </div>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">{{ _('Regulatory-measures lists') }}</h6>
+            </div>
+            <div class="card-body row g-3 align-items-center">
+                <div class="col-md-4">
+                    <label for="regulatory_lists_scope" class="fw-bold">{{ _('Search these lists in') }}</label>
+                    <select name="regulatory_lists_scope" id="regulatory_lists_scope" class="form-select" {% if not can_approve %}disabled{% endif %}>
+                        <option value="kyb" {% if regulatory_scope == 'kyb' %}selected{% endif %}>{{ _('KYB / merchant / company screenings only') }}</option>
+                        <option value="all" {% if regulatory_scope == 'all' %}selected{% endif %}>{{ _('All screenings') }}</option>
+                        <option value="off" {% if regulatory_scope == 'off' %}selected{% endif %}>{{ _('Never') }}</option>
+                    </select>
+                </div>
+                <div class="col-md-8 small text-muted">
+                    {{ _('Lists of supervisory measures taken against financial institutions and their staff for AML/CFT breaches (for example the Palestine Monetary Authority list, Article 58 of Decree-Law 39/2022). A hit is risk information for onboarding a financial institution, agent or counterparty, not a freeze order. Only the MLRO can change this; the change is recorded in the audit log.') }}
+                </div>
+            </div>
+        </div>
         <div class="row">
             <!-- Algorithm Weights -->
             <div class="col-md-8">

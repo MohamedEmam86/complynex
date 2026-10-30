@@ -89,6 +89,12 @@ def classify_match(m):
     if not isinstance(m, dict):
         return 'OTHER'
 
+    # 0. regulatory-measures lists (supervisory sanctions on financial institutions / staff):
+    #    risk information for due diligence, never a freeze order
+    if str(m.get('list_type') or '').strip().upper() == 'REGULATORY' or \
+            str(m.get('source') or '').strip().lower().endswith('_reg') or 'reg.action' in _topics(m):
+        return 'OTHER'
+
     topics = _topics(m)
     # 1. structured taxonomy wins. Sanctions outranks PEP: if an entity is
     #    both, the blocking obligation is the stricter one.

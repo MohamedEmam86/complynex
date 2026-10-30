@@ -703,7 +703,8 @@ def run_screening(id):
             result = engine.screen_person(
                 name=name,
                 nationality=merchant.get('merchant_country'),
-                entity_type='INDIVIDUAL' if name == ubo_name else 'ENTITY'
+                entity_type='INDIVIDUAL' if name == ubo_name else 'ENTITY',
+                screening_type='KYB'
             )
 
             matches = result.get('matches', [])

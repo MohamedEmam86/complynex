@@ -1104,8 +1104,29 @@ def config():
                                          start_new_session=True)
                     except Exception as _e:
                         logger.warning(f'baseline re-measure not started: {_e}')
+            # Regulatory-measures lists scope: MLRO only, audited
+            from screening import regulatory as _reg
+            if 'regulatory_lists_scope' in request.form:
+                new_sc = (request.form.get('regulatory_lists_scope') or '').strip().lower()
+                old_sc = _reg.scope(force=True)
+                if new_sc not in _reg.SCOPES:
+                    flash(gettext('Invalid scope for the regulatory-measures lists; that setting was not changed.'), 'error')
+                elif new_sc != old_sc and not CL.can_approve(current_user):
+                    flash(gettext('Only the MLRO (approval authority) can change where the regulatory-measures lists are searched; that setting was not changed.'), 'error')
+                elif new_sc != old_sc:
+                    row = query_db(f"SELECT 1 AS x FROM screening_config WHERE config_key = {param}",
+                                   (_reg.CONFIG_KEY,), one=True)
+                    if row:
+                        execute_db(f"UPDATE screening_config SET config_value = {param}, updated_at = CURRENT_TIMESTAMP "
+                                   f"WHERE config_key = {param}", (new_sc, _reg.CONFIG_KEY))
+                    else:
+                        execute_db(f"INSERT INTO screening_config (config_key, config_value, category, description, updated_at) "
+                                   f"VALUES ({param}, {param}, 'lists', {param}, CURRENT_TIMESTAMP)",
+                                   (_reg.CONFIG_KEY, new_sc, 'Where regulatory-measures lists are searched: kyb / all / off'))
+                    _audit('Regulatory lists scope changed', None, f'regulatory_lists_scope {old_sc} -> {new_sc}')
+                    _reg.scope(force=True)
             for key in request.form:
-                if key in ENGINE_FIXED_KEYS or key == 'csrf_token':
+                if key in ENGINE_FIXED_KEYS or key in ('csrf_token', 'regulatory_lists_scope'):
                     continue
                 val = request.form.get(key)
                 execute_db(f"UPDATE screening_config SET config_value = {param}, updated_at = CURRENT_TIMESTAMP WHERE config_key = {param}", (val, key))
@@ -1120,6 +1141,7 @@ def config():
                            engine_thresholds={THRESHOLD_FORM[k]: v for k, v in
                                               __import__('screening.thresholds', fromlist=['x']).current(force=True).items()},
                            clearance_threshold=CL.approval_threshold(),
+                           regulatory_scope=__import__('screening.regulatory', fromlist=['x']).scope(force=True),
                            can_approve=CL.can_approve(current_user))
 
 @screening_bp.route('/sources', methods=['GET', 'POST'])

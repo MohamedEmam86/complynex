@@ -82,6 +82,8 @@ SOURCE = {
     'uk_hmt': _l('UK HM Treasury (OFSI)'), 'hmt': _l('UK HM Treasury (OFSI)'), 'uk': _l('UK HM Treasury (OFSI)'),
     'emlcu': _l('EMLCU — Egyptian terrorist lists'), 'emlcu_egypt': _l('EMLCU — Egyptian terrorist lists'),
     'pma_ps': _l('Palestine national list (UNSCR 1373)'), 'pma_ps_national_1373': _l('Palestine national list (UNSCR 1373)'),
+    'pma_ps_reg': _l('Palestine Monetary Authority - AML/CFT regulatory measures'),
+    'pma_ps_regulatory_art58': _l('Palestine Monetary Authority - AML/CFT regulatory measures'),
     'internal_blacklist': _l('Internal list (asset-freeze orders / local & UN terrorist lists)'),
     'internal blacklist': _l('Internal list (asset-freeze orders / local & UN terrorist lists)'),
     'internal_pep': _l('Internal PEP list'), 'opensanctions': _l('OpenSanctions'),

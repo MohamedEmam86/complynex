@@ -1156,7 +1156,7 @@ class ComplyNexScreeningEngine:
                 logger.warning("[NAME-LOGIC] internal gate failed: %s", e)
         return internal_matches
 
-    def screen_person(self: "ComplyNexScreeningEngine", name: str, date_of_birth=None, nationality=None, entity_type='INDIVIDUAL', address=None, user_id=1, include_media=True, is_internal_blacklist=False, national_id=None, employer=None, threshold=None) -> dict:
+    def screen_person(self: "ComplyNexScreeningEngine", name: str, date_of_birth=None, nationality=None, entity_type='INDIVIDUAL', address=None, user_id=1, include_media=True, is_internal_blacklist=False, national_id=None, employer=None, threshold=None, screening_type=None, include_regulatory=None) -> dict:
         """
         Screen a person/entity using ensemble algorithm
         """
@@ -1528,6 +1528,17 @@ class ComplyNexScreeningEngine:
             arabic_variants=arabic_variants
         )
         
+        # Regulatory-measures lists (supervisory sanctions on financial institutions / staff) are
+        # searched only in the scope the compliance officer chose (screening/regulatory.py)
+        try:
+            from screening import regulatory as _reg
+            candidates = _reg.apply(candidates, _reg.included(entity_type, screening_type, include_regulatory))
+        except Exception as _e:          # fail closed: out of scope unless decided
+            logger.warning(f'regulatory scope not decided ({_e}); regulatory lists left out')
+            candidates = [c for c in candidates
+                          if str(c.get('list_type') or '').upper() != 'REGULATORY'
+                          and not str(c.get('source') or '').lower().endswith('_reg')]
+
         # 2. Precision Phase (Scoring)
         import time
         logger.debug("[Precision scoring started: {len(candidates)} candidates")

@@ -65,6 +65,7 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
         entity_type=entity_type,
         national_id=national_id,
         employer=employer,
+        screening_type=(screening_type, results_screening_type),
     )
 
     matches = result.get('matches', [])

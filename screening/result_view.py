@@ -51,6 +51,8 @@ SOURCE_LABEL = {
     'uk_hmt': 'UK HM Treasury (OFSI)', 'hmt': 'UK HM Treasury (OFSI)', 'uk': 'UK HM Treasury (OFSI)',
     'emlcu': 'EMLCU — Egyptian terrorist lists', 'emlcu_egypt': 'EMLCU — Egyptian terrorist lists',
     'pma_ps': 'Palestine national list (UNSCR 1373)', 'pma_ps_national_1373': 'Palestine national list (UNSCR 1373)',
+    'pma_ps_reg': 'Palestine Monetary Authority - AML/CFT regulatory measures',
+    'pma_ps_regulatory_art58': 'Palestine Monetary Authority - AML/CFT regulatory measures',
     'INTERNAL_BLACKLIST': 'Internal list (asset-freeze orders / local & UN terrorist lists)',
     'internal_blacklist': 'Internal list (asset-freeze orders / local & UN terrorist lists)',
     'INTERNAL_PEP': 'Internal PEP list', 'internal_pep': 'Internal PEP list',
@@ -203,6 +205,11 @@ def match_view(m, kind, inputs):
     elif kind == 'PEP':
         action = {'CONFIRMED': 'Enhanced due diligence: source of funds and wealth, senior-management approval, enhanced ongoing monitoring.',
                   'POTENTIAL': 'Confirm whether the customer is this PEP (or a family member / close associate) before onboarding.',
+                  'LOW': 'Review and record the conclusion.'}
+    elif str(m.get('list_type') or '').upper() == 'REGULATORY' or str(m.get('source') or '').lower().endswith('_reg'):
+        action = {'CONFIRMED': 'Regulatory measure on record: enhanced due diligence on the institution / person, '
+                               'record the measure and its date, and decide the relationship with compliance approval.',
+                  'POTENTIAL': 'Confirm whether the customer is the institution / person the measure was taken against.',
                   'LOW': 'Review and record the conclusion.'}
     else:
         action = {'CONFIRMED': 'Escalate to compliance for a decision.', 'POTENTIAL': 'Review before proceeding.',
