@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Hits by list and country') }}{% endblock %}
+{% macro bd_table(rows, key, title, link=False) %}
+<div class="card border-0 shadow-sm h-100">
+  <div class="card-header bg-white fw-bold">{{ title }}</div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0 small">
+      <thead class="table-light"><tr>
+        <th>{{ title }}</th><th class="text-end">{{ _('Hits') }}</th><th class="text-end">{{ _('True matches') }}</th>
+        <th class="text-end">{{ _('False positives') }}</th><th class="text-end">{{ _('Pending') }}</th>
+        <th class="text-end">{{ _('False-positive rate') }} (%)</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="fw-semibold">{% if link %}<a href="{{ url_for('screening.screening_queue', list_source=r.raw_source, date_from=date_from, date_to=date_to) }}">{{ r[key] }}</a>{% else %}{{ r[key] }}{% endif %}</td>
+          <td class="text-end">{{ r.hits }}</td>
+          <td class="text-end">{{ r.true_matches }}</td>
+          <td class="text-end">{{ r.false_positives }}</td>
+          <td class="text-end">{{ r.pending }}</td>
+          <td class="text-end">{% if r.fp_rate is none %}—{% else %}<span class="{{ 'text-danger fw-bold' if r.fp_rate >= 95 else '' }}">{{ r.fp_rate }}</span>{% endif %}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-3">{{ _('No hits in this period.') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endmacro %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h4 class="mb-0"><i class="fas fa-list me-2 text-primary"></i>{{ _('Hits by list and country') }}</h4>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('screening.team_report', date_from=date_from, date_to=date_to) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-user-check me-1"></i>{{ _('Screening work by user') }}</a>
+      <a href="{{ url_for('screening.list_report', date_from=date_from, date_to=date_to, export='excel') }}" class="btn btn-sm btn-outline-success"><i class="fas fa-file-excel me-1"></i>{{ _('Export to Excel') }}</a>
+      <a href="{{ url_for('screening.reports_dashboard') }}" class="btn btn-sm btn-outline-secondary">{{ _('Reports') }}</a>
+    </div>
+  </div>
+  <form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('From') }}</label>
+      <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm"></div>
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('To') }}</label>
+      <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm"></div>
+    <div class="col-auto"><button class="btn btn-sm btn-primary">{{ _('Apply') }}</button></div>
+    <div class="col-auto small text-muted">{{ _('Hits raised in the period') }}: <b>{{ bd.total }}</b></div>
+  </form>
+  <p class="small text-muted">{{ _('False-positive rate = false positives / (true matches + false positives), decided hits only. A list or country with a very high rate is a candidate for tuning (thresholds, name rules, list scope); a rate alone never justifies switching a list off.') }}</p>
+
+  {% if bd.by_list %}
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body"><canvas id="repListChart" height="80"></canvas></div></div>
+  {% endif %}
+
+  <div class="row g-3">
+    <div class="col-xl-6">{{ bd_table(bd.by_list, 'list', _('List'), link=True) }}</div>
+    <div class="col-xl-6">{{ bd_table(bd.by_category, 'category', _('List category')) }}</div>
+    <div class="col-xl-6">{{ bd_table(bd.by_customer_country, 'country', _('Customer country')) }}</div>
+    <div class="col-xl-6">{{ bd_table(bd.by_listed_country, 'country', _('Listed country')) }}</div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+{% if bd.by_list %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.latest.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var el = document.getElementById('repListChart');
+  if (!el || typeof Chart === 'undefined') { return; }
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: {{ bd.by_list|map(attribute='list')|list|tojson }},
+      datasets: [
+        {label: {{ _('True matches')|tojson }}, data: {{ bd.by_list|map(attribute='true_matches')|list|tojson }}, backgroundColor: '#dc3545', stack: 'h'},
+        {label: {{ _('False positives')|tojson }}, data: {{ bd.by_list|map(attribute='false_positives')|list|tojson }}, backgroundColor: '#adb5bd', stack: 'h'},
+        {label: {{ _('Pending')|tojson }}, data: {{ bd.by_list|map(attribute='pending')|list|tojson }}, backgroundColor: '#ffc107', stack: 'h'}
+      ]
+    },
+    options: {responsive: true, plugins: {legend: {position: 'bottom'}}, scales: {x: {stacked: true}, y: {stacked: true, beginAtZero: true}}}
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}
