@@ -874,6 +874,7 @@ def match_profile(rid):
     import psycopg2.extras
     from screening import profile_view as pv
     from screening import result_view as rv
+    from screening import entity_links as EL
     from config import Config
     src, rec = request.args.get('src', ''), request.args.get('rec', '')
     result = query_db(f"SELECT * FROM screening_results WHERE id = {get_param_style()}", (rid,), one=True)
@@ -899,6 +900,12 @@ def match_profile(rid):
                                str(x['id'])) == (src.upper(), str(rec)) for x in pv.related(cur, t0, r0)):
                     allowed = True
                     break
+                # P2-6: another record of the same linked person
+                if r0 and any((str(x.get('source') or '').upper(), str(x['watchlist_id'])) == (src.upper(), str(rec))
+                              for x in EL.members(cur, t0, r0)[0]
+                              if not str(x.get('source') or '').lower().startswith('internal')):
+                    allowed = True
+                    break
             if not allowed:
                 abort(404)
         table, row = pv.load_record(cur, src, rec)
@@ -906,6 +913,7 @@ def match_profile(rid):
             flash(gettext('The listed record is no longer available.'), 'warning')
             return redirect(url_for('screening.view_result', id=rid))
         rel = pv.related(cur, table, row)
+        group, group_diffs = EL.members(cur, table, row)
     finally:
         conn.close()
     p = pv.build(table, row, rel, labels={k.lower(): v for k, v in rv.SOURCE_LABEL.items()})
@@ -947,7 +955,46 @@ def match_profile(rid):
                      f'Viewed the profile of {table}#{row.get("id")}', request.remote_addr)
     except Exception:
         pass
-    return render_template('screening/match_profile.html', result=result, p=p, v=v, extra_rows=extra_rows)
+    for g in group:
+        g['label'] = rv.SOURCE_LABEL.get(str(g.get('source') or '').lower(), g.get('label'))
+    return render_template('screening/match_profile.html', result=result, p=p, v=v, extra_rows=extra_rows,
+                           group=group, group_diffs=group_diffs,
+                           can_unlink=current_user.is_admin() or CL.can_approve(current_user))
+
+
+@screening_bp.route('/entity-links/<int:wid>/unlink', methods=['POST'])
+@login_required
+@permission_required('screening', level='view')
+def entity_unlink(wid):
+    """P2-6: MLRO takes one record out of its linked group (audited; the next rebuild respects it)."""
+    import psycopg2
+    from config import Config
+    from screening import entity_links as EL
+    rid = request.form.get('rid', type=int)
+    back = request.form.get('back') or ''
+    if not (current_user.is_admin() or CL.can_approve(current_user)):
+        flash(gettext('Only the MLRO can unlink records.'), 'error')
+    else:
+        reason = (request.form.get('reason') or '').strip()
+        conn = psycopg2.connect(**Config.POSTGRES_CONFIG)
+        try:
+            cid = EL.unlink(conn, wid, current_user.id, reason)
+            from models.audit import AuditLog
+            AuditLog.log(current_user.id, 'Screening', 'Entity link', wid,
+                         f'Record {wid} taken out of linked group {cid}: {reason[:300]}', request.remote_addr)
+            flash(gettext('The record was taken out of the group. The next rebuild will not link it again.'), 'success')
+        except ValueError as e:
+            flash(gettext(str(e)), 'error')
+        except Exception as e:
+            current_app.logger.error(f'entity unlink failed: {e}')
+            flash(gettext('The record could not be unlinked.'), 'error')
+        finally:
+            conn.close()
+    if rid and back.startswith('/screening/result/'):
+        return redirect(back)
+    if rid:
+        return redirect(url_for('screening.view_result', id=rid))
+    return redirect(url_for('screening.dashboard'))
 
 
 @screening_bp.route('/history')

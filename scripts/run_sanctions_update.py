@@ -170,6 +170,15 @@ def main():
             log.info(f"EMLCU <-> Public Prosecution link: {(r.stdout or r.stderr).strip().splitlines()[-2:]}")
         except Exception as e:
             log.warning(f"EMLCU link step failed: {e}")
+        # P2-6: rebuild the links between records of the same person on several lists
+        # (new tables only; never changes a watchlist row). ENTITY_LINKS_AUTO=0 turns it off.
+        if os.getenv('ENTITY_LINKS_AUTO', '1') != '0':
+            try:
+                r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    'build_entity_links.py'), '--apply'], capture_output=True, text=True, timeout=1800)
+                log.info(f"entity links: {(r.stdout or r.stderr).strip().splitlines()[-1:]}")
+            except Exception as e:
+                log.warning(f"entity link step failed: {e}")
     marker.__exit__(None, None, None)
 
     if not args.registry_only:

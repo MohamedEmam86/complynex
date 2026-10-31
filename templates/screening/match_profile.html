@@ -149,6 +149,39 @@
         </dl></div>
       </div>
       {% endif %}
+      {% if group %}
+      <div class="mp-card">
+        <div class="h"><i class="fas fa-link me-1"></i>{{ _('Same person on other lists') }} <span class="badge rounded-pill bg-secondary ms-1">{{ group|length }}</span></div>
+        <div class="b">
+          <table class="table table-sm mb-2"><thead><tr><th>{{ _('List') }}</th><th>{{ _('Name') }}</th><th>{{ _('Date of birth') }}</th><th>{{ _('Linked by') }}</th><th></th></tr></thead><tbody>
+          {% for g in group %}
+            <tr{% if g.is_self %} class="table-light"{% endif %}><td class="small">{{ _(g.label) }}{% if g.dataset and g.dataset != g.source %}<div class="text-muted">{{ g.dataset }}</div>{% endif %}{% if g.basis == 'lead' %}<span class="badge bg-dark ms-1">{{ _('leads') }}</span>{% endif %}</td>
+              <td class="ar small">{{ g.full_name_arabic or g.full_name }}</td><td class="small">{{ g.date_of_birth or '—' }}</td>
+              <td class="small">{{ _(g.basis_label) }}</td>
+              <td class="small no-print">
+                {% if g.is_self %}<span class="text-muted">{{ _('this record') }}</span>
+                {% elif not (g.source or '').startswith('internal') %}<a href="{{ url_for('screening.match_profile', rid=result.id, src=g.source, rec=g.watchlist_id) }}">{{ _('profile') }}</a>{% endif %}
+                {% if can_unlink and group|length > 1 %}
+                <details class="mt-1"><summary class="text-danger" style="cursor:pointer">{{ _('Unlink') }}</summary>
+                  <form method="post" action="{{ url_for('screening.entity_unlink', wid=g.watchlist_id) }}" class="mt-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="rid" value="{{ result.id }}">
+                    <input type="text" name="reason" class="form-control form-control-sm mb-1" minlength="15" required placeholder="{{ _('Reason (at least 15 characters)') }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">{{ _('Not the same person - unlink') }}</button>
+                  </form></details>
+                {% endif %}
+              </td></tr>
+          {% endfor %}</tbody></table>
+          {% if group_diffs %}
+          <div class="small fw-semibold text-danger mb-1"><i class="fas fa-exclamation-triangle me-1"></i>{{ _('The linked records disagree') }}</div>
+          <table class="table table-sm mb-1"><tbody>
+          {% for d in group_diffs %}<tr><th class="small" style="width:22%">{{ _(d.field) }}</th><td class="small">{% for l, val in d['values'] %}<div>{{ _(l) }}: <span class="ar">{{ val }}</span></div>{% endfor %}</td></tr>{% endfor %}
+          </tbody></table>
+          {% endif %}
+          <div class="small text-muted">{{ _('Linked by an official ID, the same OpenSanctions entity, or the same full name, date of birth and nationality - never by the name alone. The official list leads.') }}</div>
+        </div>
+      </div>
+      {% endif %}
       <div class="mp-card">
         <div class="h">{{ _('Same name on other lists') }}</div>
         <div class="b">
