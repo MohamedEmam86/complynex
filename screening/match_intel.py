@@ -132,7 +132,22 @@ def _split_glued(t):
 _ALLAH_HEAD_STOP = {'abd', 'abdul', 'abdel', 'abdal', 'abdoul', 'abu', 'abou', 'abo', 'bin', 'ben', 'ibn',
                     'el', 'al', 'ul', 'abdu'}
 _ALLAH_HEAD_STOP_AR = {'عبد', 'ابو', 'بن', 'ابن', 'بنت', 'ال'}
-_LAT_ALLAH_SPLIT = re.compile(r'\b([a-z]{3,}) (allah|alla|ullah|ulla|ollah|alah|ulah|olah)\b')
+# first parts of the common "X Allah" names. A split "X الله" is glued only after one of these: any other
+# word before الله is a separate element (a name with a part left out, محمد احمد الله, stays three elements)
+_ALLAH_HEADS_AR = {'نصر', 'فضل', 'خير', 'جاد', 'عطا', 'عطاء', 'فتح', 'سعد', 'حمد', 'نعمت', 'نعمه', 'رزق', 'ضيف',
+                   'عوض', 'حسب', 'جار', 'فرج', 'شكر', 'هبه', 'هبت', 'منه', 'كرم', 'نور', 'سيف', 'روح', 'ولي',
+                   'حب', 'ثناء', 'عزت', 'ذكر', 'خلف', 'دخيل', 'مال', 'رحمه', 'رحمت', 'فيض', 'قدر', 'شرف', 'بركه',
+                   'حجت', 'حبيب', 'اسد', 'عبيد', 'عزيز', 'حيات', 'عنايت', 'سميع', 'ضياء', 'قدرت', 'امان', 'كليم',
+                   'ذبيح', 'جند', 'حزب', 'انصار', 'ثار', 'لطف', 'فيض', 'وجه', 'حرز', 'جبر'}
+_ALLAH_HEADS_LAT = {'nasr', 'fadl', 'fadel', 'khair', 'kheir', 'khayr', 'kher', 'gad', 'jad', 'ata', 'fath', 'fat',
+                    'saad', 'sad', 'hamd', 'hamad', 'nimat', 'nemat', 'neamat', 'rizk', 'rizq', 'rezk', 'deif', 'daif',
+                    'dhaif', 'awad', 'hasab', 'gar', 'jar', 'farag', 'faraj', 'shukr', 'shokr', 'heba', 'hiba', 'hibat',
+                    'minat', 'karam', 'nour', 'nur', 'seif', 'saif', 'sayf', 'ruh', 'rouh', 'wali', 'waly', 'hab',
+                    'hob', 'sana', 'thana', 'ezzat', 'izzat', 'zikr', 'zekr', 'khalaf', 'dakhil', 'mal', 'rahmat',
+                    'rahma', 'faid', 'feid', 'qadr', 'kadr', 'sharaf', 'baraka', 'hojat', 'hujjat', 'habib', 'asad',
+                    'obaid', 'ubaid', 'ubayd', 'aziz', 'hayat', 'inayat', 'enayat', 'sami', 'zia', 'ziya', 'qudrat',
+                    'aman', 'kalim', 'zabih', 'jund', 'hizb', 'ansar', 'lutf', 'wajh', 'jabr', 'gabr'}
+_LAT_ALLAH_SPLIT = re.compile(r'\b([a-z]{2,}) (allah|alla|ullah|ulla|ollah|alah|ulah|olah)\b')
 _LAT_ALLAH_STEM = re.compile(r'^([a-z]{3,}?)[aeiou]?l{1,2}ah$')
 _AR_ALLAH_SPLIT = re.compile(r'(?<![ء-ي])([ء-ي]{2,})\s+الله(?![ء-ي])')
 
@@ -140,13 +155,14 @@ _AR_ALLAH_SPLIT = re.compile(r'(?<![ء-ي])([ء-ي]{2,})\s+الله(?![ء-ي])')
 def _glue_allah_lat(t):
     # "Nasr Allah" is written as the glued form a Latin writer uses ("Nasrallah"); glued spellings are
     # left as written (Saifullah stays close to a letter-by-letter Arabic rendering سايفوللاح)
-    return _LAT_ALLAH_SPLIT.sub(lambda m: m.group(0) if m.group(1) in _ALLAH_HEAD_STOP
-                                else m.group(1) + m.group(2), t)
+    return _LAT_ALLAH_SPLIT.sub(lambda m: m.group(1) + m.group(2)
+                                if re.sub(r'(.)\1+', r'\1', m.group(1)) in _ALLAH_HEADS_LAT
+                                or m.group(1) in _ALLAH_HEADS_LAT else m.group(0), t)
 
 
 def _glue_allah_ar(t):
-    return _AR_ALLAH_SPLIT.sub(lambda m: m.group(0) if m.group(1) in _ALLAH_HEAD_STOP_AR
-                               else m.group(1) + 'الله', t)
+    return _AR_ALLAH_SPLIT.sub(lambda m: m.group(1) + 'الله'
+                               if m.group(1).replace('ة', 'ه') in _ALLAH_HEADS_AR else m.group(0), t)
 
 
 def _allah_stem(t):
