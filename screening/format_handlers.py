@@ -31,6 +31,7 @@ Each handler converts source format to standardized entity dictionary.
 
 import xml.etree.ElementTree as ET
 import csv
+import zlib
 import json
 import logging
 import re
@@ -786,11 +787,48 @@ class EUSanctionsHandler(BaseFormatHandler):
         return date_str
 
 
+def expand_rich(entity):
+    """OpenSanctions keeps its profile fields in one compact JSON string (entity['_os_rich']):
+    ~2.2M records are held in memory during an update, and separate keys / lists would roughly
+    double their size. Returns the entity with those fields as normal keys (a new dict), or the
+    entity itself when it has none. Used wherever the fields are read (hash, store, backfill)."""
+    blob = entity.get('_os_rich') if isinstance(entity, dict) else None
+    if not blob:
+        return entity
+    out = dict(entity)
+    out.pop('_os_rich', None)
+    out.update(json.loads(zlib.decompress(blob).decode('utf-8')))
+    return out
+
+
+def _pack_rich(d):
+    """Profile fields -> compressed JSON bytes (key order fixed by the caller)."""
+    return zlib.compress(json.dumps(d, ensure_ascii=False, separators=(',', ':')).encode('utf-8'), 6)
+
+
+# OpenSanctions identifier properties kept in properties.identifiers (type label, FtM property).
+# passportNumber / idNumber also fill passport_numbers / national_id_numbers.
+_OS_ID_PROPS = (
+    ('idNumber', 'ID number'), ('passportNumber', 'Passport'), ('taxNumber', 'Tax number'),
+    ('innCode', 'INN'), ('registrationNumber', 'Registration number'), ('leiCode', 'LEI'),
+    ('ogrnCode', 'OGRN'), ('swiftBic', 'SWIFT/BIC'), ('imoNumber', 'IMO'),
+    ('uniqueEntityId', 'UEI'), ('permId', 'PermID'), ('vatCode', 'VAT'),
+)
+
+
 class OpenSanctionsHandler(BaseFormatHandler):
     """
     Enhanced parser for OpenSanctions FTJSON format
     URL: https://data.opensanctions.org/datasets/latest/default/entities.ftm.json
+
+    rich=False (default): the record exactly as before the profile fields (first date of birth,
+    `nationality` only, no gender / identifiers). rich=True: profile fields too, used once
+    screening_config 'opensanctions_rich' is on (see scripts/backfill_opensanctions_rich.py).
     """
+
+    def __init__(self, rich=False):
+        super().__init__()
+        self.rich = bool(rich)
     
     def parse(self, content):
         """
@@ -851,23 +889,113 @@ class OpenSanctionsHandler(BaseFormatHandler):
         # Topics
         topics = props.get('topics', [])
         
-        # Date of Birth
-        dob = (props.get('birthDate') or [None])[0]
-        
-        # Nationality
-        nationality = (props.get('nationality') or [None])[0]
-        
-        # Datasets (source within OpenSanctions)
-        datasets = data.get('datasets', [])
+        if not self.rich:
+            return self._legacy_entity(data, props, full_name, aliases, entity_type, countries, topics)
+
+        # ---- profile fields (P2-2 for OpenSanctions): every date of birth, place of birth,
+        # nationality / citizenship, gender, identifiers, addresses and all datasets, stored the
+        # way the OFAC / UK loaders store them so DOB / ID scoring and the match profile use them.
+        def _vals(key, cap=20, size=300):
+            out = []
+            for v in props.get(key) or []:
+                v = str(v).strip()[:size] if v is not None else ''
+                if v and v not in out:
+                    out.append(v)
+                if len(out) >= cap:
+                    break
+            return out
+
+        dobs = _vals('birthDate')
+        dob = ';'.join(dobs) or None
+        pobs = _vals('birthPlace', 5)
+        nats = _vals('nationality', 10)
+        cits = _vals('citizenship', 10)
+        nationality = (nats or cits or [None])[0]
+        genders = _vals('gender', 2)
+        gender = genders[0].lower() if genders else None
+        passports = _vals('passportNumber', 10, 60)
+        # idNumber is a generic "ID number" from any country (national ID, register, tax ...):
+        # it is kept in properties.identifiers, NOT in national_id_numbers, which the engine
+        # treats as national IDs (an equal number there can confirm a hit)
+        identifiers = []
+        for key, label in _OS_ID_PROPS:
+            for v in _vals(key, 10, 60):
+                identifiers.append({'type': label, 'number': v})
+        addresses = _vals('address', 10)
+        positions = _vals('position', 10, 200)
+
+        # Datasets (source within OpenSanctions): the first one stays in `dataset` (the category
+        # and the display read it); the full list goes into properties.datasets.
+        datasets = [str(d) for d in (data.get('datasets') or []) if d]
         dataset = datasets[0] if datasets else 'OpenSanctions'
         from screening.list_category import categorize as _list_category
-        
+
         # Source URL
         source_url = (data.get('referents') or [None])[0]
         if not source_url:
             source_url = f"https://www.opensanctions.org/entities/{data.get('id')}/"
-            
+
+        first_seen = str(data.get('first_seen') or '').strip()[:19].replace(' ', 'T') or None
+
+        properties = {k: v for k, v in (
+            ('datasets', datasets),
+            ('dates_of_birth', dobs),
+            ('places_of_birth', pobs),
+            ('nationalities', nats),
+            ('citizenships', cits),
+            ('identifiers', identifiers),
+            ('weak_aliases', _vals('weakAlias', 20)),
+            ('positions', positions),
+            ('programs', _vals('programId', 10, 100)),
+            ('father_name', _vals('fatherName', 2, 100)),
+        ) if v}
+
         entity = {
+            'source_id': f"OS-{data.get('id')}",
+            'full_name': full_name,
+            'original_name': None,
+            'list_type': _list_category(topics, datasets or dataset),
+            'entity_type': entity_type,
+            'dataset': dataset,
+            'source': 'opensanctions',
+            'source_url': source_url,
+            'risk_level': 'HIGH' if any(t in topics for t in ['sanction', 'crime']) else 'MEDIUM',
+            'topics': topics,
+            'countries': countries,
+            'date_of_birth': dob,
+            'nationality': nationality,
+            'gender': gender,
+            # profile fields in one compact string (see expand_rich); key order is fixed, so the
+            # content hash computed from the expanded record is stable from run to run
+            '_os_rich': _pack_rich({
+                'place_of_birth': pobs[0] if pobs else None,
+                'passport_numbers': passports,
+                'national_id_numbers': [],
+                'addresses': addresses,
+                'properties': properties,
+                'first_seen': first_seen,
+            }),
+            'aliases': aliases,
+            'details': props.get('notes', {}),
+            # rich fields are written (and compared by content hash) only once the backfill has
+            # run: see EnhancedDataUpdater._import_entities_batch and
+            # scripts/backfill_opensanctions_rich.py (screening_config 'opensanctions_rich').
+            '_rich': True,
+        }
+        
+        return entity
+
+    def _legacy_entity(self, data, props, full_name, aliases, entity_type, countries, topics):
+        """The OpenSanctions record as the loader built it before the profile fields."""
+        dob = (props.get('birthDate') or [None])[0]
+        nationality = (props.get('nationality') or [None])[0]
+        datasets = data.get('datasets', [])
+        dataset = datasets[0] if datasets else 'OpenSanctions'
+        from screening.list_category import categorize as _list_category
+        source_url = (data.get('referents') or [None])[0]
+        if not source_url:
+            source_url = f"https://www.opensanctions.org/entities/{data.get('id')}/"
+        return {
             'source_id': f"OS-{data.get('id')}",
             'full_name': full_name,
             'original_name': None,
@@ -884,8 +1012,6 @@ class OpenSanctionsHandler(BaseFormatHandler):
             'aliases': aliases,
             'details': props.get('notes', {})
         }
-        
-        return entity
 
 
 # Factory function to get appropriate handler

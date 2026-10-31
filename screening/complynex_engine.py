@@ -3011,10 +3011,16 @@ class ComplyNexScreeningEngine:
             # Apply Disambiguation / Tie-breakers
             exact_nid_match = False
             if national_id and interim['candidate_national_id']:
-                if str(national_id).strip() == str(interim['candidate_national_id']).strip():
+                # same rule as the decision layer (match_intel.id_relation): the stored value is a
+                # JSON list and IDs from other countries are not comparable, so a plain string
+                # comparison lowered every listed record that carried any ID by 25 points
+                from screening import match_intel as _mi
+                _rel = _mi.id_relation(national_id, interim['candidate_national_id'],
+                                       nationality, interim.get('candidate_country'))
+                if _rel == 'match':
                     final_score += 25
                     exact_nid_match = True
-                else:
+                elif _rel == 'conflict':
                     final_score -= 25
             
             address_bonus = (float(interim['address_score']) / 100.0) * 15.0
