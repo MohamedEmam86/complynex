@@ -178,6 +178,6 @@ def apply_screening_override(decision, screening_result):
     at REVIEW (a human must look at any real compliance hit) even if
     every other signal scored perfectly.
     """
-    if screening_result in ('CONFIRMED_HIT', 'POTENTIAL_MATCH') and decision == 'PASS':
+    if screening_result in ('CONFIRMED_HIT', 'POTENTIAL_MATCH', 'INCOMPLETE') and decision == 'PASS':
         return 'REVIEW', [f"Screening result '{screening_result}' requires manual review regardless of biometric score"]
     return decision, []

@@ -127,7 +127,7 @@
                             </td>
                             <td>
                                 <span
-                                    class="badge {% if r.screening_result == 'CLEAR' %}bg-success{% elif r.screening_result == 'POTENTIAL_MATCH' %}bg-warning text-dark{% elif r.screening_result == 'CONFIRMED_HIT' %}bg-danger{% elif r.screening_result == 'WHITE_LISTED' %}bg-info{% else %}bg-secondary{% endif %}">
+                                    class="badge {% if r.screening_result == 'CLEAR' %}bg-success{% elif r.screening_result == 'POTENTIAL_MATCH' %}bg-warning text-dark{% elif r.screening_result == 'CONFIRMED_HIT' %}bg-danger{% elif r.screening_result == 'WHITE_LISTED' %}bg-info{% elif r.screening_result == 'INCOMPLETE' %}bg-danger{% else %}bg-secondary{% endif %}">
                                     {{ r.screening_result|scr_label }}
                                 </span>
                             </td>

@@ -80,6 +80,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{{ _('Clear') }}</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.clear_results or 0 }}</div>
+                            {% if stats.incomplete_results %}<div class="small text-danger fw-semibold mt-1"><i class="fas fa-exclamation-triangle me-1"></i>{{ _('%(n)s incomplete (re-screen)', n=stats.incomplete_results) }}</div>{% endif %}
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-check-circle fa-2x text-gray-300"></i>
@@ -123,6 +124,8 @@
                                         <span class="badge bg-danger">{{ _('HIT') }}</span>
                                         {% elif s.screening_result == 'POTENTIAL_MATCH' %}
                                         <span class="badge bg-warning">{{ _('MATCH') }}</span>
+                                        {% elif s.screening_result == 'INCOMPLETE' %}
+                                        <span class="badge bg-danger">{{ _('INCOMPLETE') }}</span>
                                         {% else %}
                                         <span class="badge bg-success">{{ _('CLEAR') }}</span>
                                         {% endif %}

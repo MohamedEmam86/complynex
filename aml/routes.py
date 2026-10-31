@@ -182,6 +182,9 @@ def create_customer():
                 if res['screening_result'] == 'POTENTIAL_MATCH':
                     db.execute("UPDATE customers SET status = 'UNDER_REVIEW', risk_classification = 'HIGH' WHERE id = %s", (customer_id,))
                     flash(gettext('⚠️ WARNING: Automated screening found potential matches for "%(screening_name)s". Customer assigned HIGH risk and status set to UNDER_REVIEW.', screening_name=screening_name), 'warning')
+                elif res['screening_result'] == 'INCOMPLETE':
+                    # P4-1: a source was unavailable: not a clear result, re-screen before relying on it
+                    flash(gettext('Screening of "%(screening_name)s" is INCOMPLETE (a list source was unavailable). Re-screen before relying on it.', screening_name=screening_name), 'warning')
                 else:
                     flash(gettext('✅ Screening completed for "%(screening_name)s". No hits found.', screening_name=screening_name))
 
@@ -872,6 +875,8 @@ def run_customer_screening(id):
                 overall_score = res['highest_score']
             if res['screening_result'] == 'POTENTIAL_MATCH':
                 overall_result = res['screening_result']
+            elif res['screening_result'] == 'INCOMPLETE' and overall_result == 'CLEAR':
+                overall_result = 'INCOMPLETE'      # P4-1
 
         except Exception as e:
             flash(f'Screening error for "{name}": {str(e)}', 'danger')
@@ -880,6 +885,9 @@ def run_customer_screening(id):
     if overall_result == 'CLEAR' or overall_result == 'WHITE_LISTED':
         screening_status = 'Clear'
         risk_class = customer.get('risk_classification', 'LOW')  # Keep existing
+    elif overall_result == 'INCOMPLETE' and total_high_risk == 0:
+        screening_status = 'Incomplete'     # P4-1: a source was unavailable; re-screen
+        risk_class = customer.get('risk_classification', 'LOW')
     elif total_high_risk > 0:
         screening_status = 'Pending Review'
         risk_class = 'HIGH'

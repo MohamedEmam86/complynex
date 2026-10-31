@@ -557,7 +557,8 @@ def dashboard():
             COUNT(*) as total_screenings,
             SUM(CASE WHEN screening_result = 'CONFIRMED_HIT' THEN 1 ELSE 0 END) as confirmed_hits,
             SUM(CASE WHEN screening_result = 'POTENTIAL_MATCH' THEN 1 ELSE 0 END) as potential_matches,
-            SUM(CASE WHEN screening_result = 'CLEAR' THEN 1 ELSE 0 END) as clear_results
+            SUM(CASE WHEN screening_result = 'CLEAR' THEN 1 ELSE 0 END) as clear_results,
+            SUM(CASE WHEN screening_result = 'INCOMPLETE' THEN 1 ELSE 0 END) as incomplete_results
         FROM screening_results
     """, one=True)
     
@@ -843,6 +844,15 @@ def view_result(id):
         input_warnings = [w for w in (md.get('input_warnings') or []) if isinstance(w, dict)]
     except Exception:
         input_warnings = []
+    # P4-1: sources that were unavailable during this screening (stored with the result)
+    try:
+        incomplete_reasons = [w for w in (md.get('incomplete_reasons') or []) if isinstance(w, dict)]
+        coverage_warnings = [w for w in (md.get('coverage_warnings') or []) if isinstance(w, dict)]
+    except Exception:
+        incomplete_reasons, coverage_warnings = [], []
+    if not incomplete_reasons and result.get('screening_result') == 'INCOMPLETE':
+        incomplete_reasons = [{'code': 'unknown', 'en': 'A source was unavailable during this screening.',
+                               'ar': 'مصدر ماكانش متاح وقت الفحص.'}]
     try:
         am_summary = json.loads(result['adverse_media_summary']) if isinstance(result['adverse_media_summary'], str) \
             else (result['adverse_media_summary'] or {})
@@ -851,7 +861,7 @@ def view_result(id):
     s_views = [rv.match_view(m, 'SANCTIONS', inputs) for m in sanction_matches if isinstance(m, dict)]
     p_views = [rv.match_view(m, 'PEP', inputs) for m in pep_matches if isinstance(m, dict)]
     o_views = [rv.match_view(m, 'OTHER', inputs) for m in other_matches if isinstance(m, dict)]
-    verdict = rv.overall(s_views, p_views, o_views, am_summary, adverse_hits)
+    verdict = rv.overall(s_views, p_views, o_views, am_summary, adverse_hits, incomplete=incomplete_reasons)
     # P2-6, display only: a hit grouped under a better hit of the same person and kind is shown
     # inside that card (the stored matches, queue rows and counts keep every hit)
     from screening.entity_links import fold_views
@@ -866,6 +876,7 @@ def view_result(id):
                            s_views=s_views, p_views=p_views, o_views=o_views, verdict=verdict,
                            fold_counts=fold_counts,
                            inputs=inputs, input_warnings=input_warnings,
+                           incomplete_reasons=incomplete_reasons, coverage_warnings=coverage_warnings,
                            am=rv.adverse_view(am_summary, adverse_hits),
                            coverage=rv.coverage(at=result.get('created_at')),
                            decisions=CL.decision_history('result', id),
@@ -2016,8 +2027,23 @@ def download_report(id):
         input_warnings = [w for w in (md.get('input_warnings') or []) if isinstance(w, dict)]
     except Exception:
         input_warnings = []
+    try:      # P4-1
+        incomplete_reasons = [w for w in (md.get('incomplete_reasons') or []) if isinstance(w, dict)]
+    except Exception:
+        incomplete_reasons = []
+    if not incomplete_reasons and result.get('screening_result') == 'INCOMPLETE':
+        incomplete_reasons = [{'en': 'A source was unavailable during this screening.', 'ar': 'مصدر ماكانش متاح وقت الفحص.'}]
+    # P4-2 / P4-3 / G9: workflow block for hits saved before Phase 4
+    try:
+        from screening import workflow as _wf
+        _inp = (md.get('inputs') or {}) if isinstance(md, dict) else {}
+        for _m in matches or []:
+            if isinstance(_m, dict) and not _m.get('workflow'):
+                _m['workflow'] = _wf.view(_m, _inp)
+    except Exception:
+        pass
     return render_template('screening/report.html', result=result, matches=matches, adverse_hits=adverse_hits,
-                           input_warnings=input_warnings)
+                           input_warnings=input_warnings, incomplete_reasons=incomplete_reasons)
 
 @screening_bp.route('/update_watchlist', methods=['POST'])
 @login_required
@@ -3656,6 +3682,10 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
     elif high_risk:
         status = 'Pending Review'
         screening_result = 'POTENTIAL_MATCH'
+    elif result.get('incomplete') or result.get('screening_result') == 'INCOMPLETE':
+        # P4-1: a source was unavailable during this screening: never "clear"
+        status = 'Pending Review'
+        screening_result = 'INCOMPLETE'
     else:
         status = 'Completed'
         screening_result = 'CLEAR'
@@ -3698,6 +3728,8 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
             'adverse_media_summary': result.get('adverse_media_summary', {}),
             'search_degraded': bool(result.get('search_degraded', False)),
             'input_warnings': input_warnings,
+            'incomplete_reasons': result.get('incomplete_reasons') or [],
+            'coverage_warnings': result.get('coverage_warnings') or [],
         }), status,
         result.get('processing_time_ms', 0),
         screened_at,
@@ -3724,7 +3756,9 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
         1 if result.get('search_degraded') else 0,
         json.dumps({'inputs': dict(inputs or {}, dob=str(dob) if dob else None, nationality=nationality,
                                    entity_type=entity_type),
-                    'input_warnings': input_warnings}, default=str)
+                    'input_warnings': input_warnings,
+                    'incomplete_reasons': result.get('incomplete_reasons') or [],
+                    'coverage_warnings': result.get('coverage_warnings') or []}, default=str)
     ))
     result_id = cur.fetchone()['id']
     db.commit()
@@ -3792,7 +3826,7 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
     # Update source record screening status
     if source_record_id:
         if source_module == 'Merchant KYC':
-            ss = 'Pending Review' if high_risk else ('Whitelisted' if screening_result == 'WHITE_LISTED' else 'Clear')
+            ss = 'Pending Review' if high_risk else ('Whitelisted' if screening_result == 'WHITE_LISTED' else ('Incomplete' if screening_result == 'INCOMPLETE' else 'Clear'))
             risk_rating = 'High' if high_risk else ('Low' if not matches else 'Medium')
             execute_db(f"""
                 UPDATE merchants
@@ -3801,7 +3835,7 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
                 WHERE id = {param}
             """, (ss, user_id, risk_rating, source_record_id))
         elif source_module == 'Customer KYC':
-            ss = 'Pending Review' if high_risk else ('Whitelisted' if screening_result == 'WHITE_LISTED' else 'Clear')
+            ss = 'Pending Review' if high_risk else ('Whitelisted' if screening_result == 'WHITE_LISTED' else ('Incomplete' if screening_result == 'INCOMPLETE' else 'Clear'))
             execute_db(f"""
                 UPDATE customers
                 SET screening_status = {param}, last_screening_date = CURRENT_TIMESTAMP,
@@ -3864,6 +3898,16 @@ def api_run_screening():
         user_id=current_user.id,
         screening_type=data.get('screening_type', 'API')
     )
+    # the summary below used names that were never defined here (a NameError on every call):
+    # read them back from what was saved
+    high_risk = [m for m in matches if (m.get('match_score') or 0) >= HIGH_RISK_THRESHOLD]
+    auto_cleared = [m for m in matches if (m.get('match_score') or 0) < HIGH_RISK_THRESHOLD]
+    _h = query_db(f"SELECT screening_result, status FROM screening_history WHERE id = {get_param_style()}",
+                  (history_id,), one=True) or {}
+    screening_result, status = _h.get('screening_result'), _h.get('status')
+    queue_ids = [r['id'] for r in (query_db(
+        f"SELECT id FROM screening_queue WHERE screening_history_id = {get_param_style()} ORDER BY id",
+        (history_id,)) or [])]
 
     return jsonify({
         'success': True,
@@ -3878,6 +3922,7 @@ def api_run_screening():
         'queue_ids': queue_ids,
         'processing_time_ms': result.get('processing_time_ms', 0),
         'input_warnings': result.get('input_warnings') or [],
+        'incomplete_reasons': result.get('incomplete_reasons') or [],
     })
 
 
@@ -5449,3 +5494,51 @@ def list_version_settings():
         flash(gettext('Not saved for these list names (invalid): %(n)s', n=', '.join(skipped[:10])), 'warning')
     flash(gettext('List settings saved.'), 'success')
     return redirect(url_for('screening.list_versions'))
+
+
+# ============================================================================ P4-3 action by list type
+# (kept as one block at the end of the file: another Phase 4 branch edits other parts of routes.py)
+@screening_bp.route('/config/list-actions')
+@login_required
+@permission_required('screening', level='view')
+def list_actions():
+    from screening import workflow as WF
+    table = WF.action_table(force=True)
+    return render_template('screening/list_actions.html', types=WF.LIST_TYPES, labels=WF.LIST_TYPE_LABEL,
+                           actions=WF.ACTIONS, table=table, defaults=WF.DEFAULT_TABLE, can_edit=_lv_can_act())
+
+
+@screening_bp.route('/config/list-actions', methods=['POST'])
+@login_required
+@permission_required('screening', level='view')
+def list_actions_save():
+    from screening import workflow as WF
+    if not _lv_can_act():
+        flash(gettext('Only the MLRO (approval authority) can change this table.'), 'error')
+        return redirect(url_for('screening.list_actions'))
+    why = (request.form.get('reason') or '').strip()
+    if len(why) < 15:
+        flash(gettext('Please give the reason for the change (at least 15 characters). Nothing was saved.'), 'error')
+        return redirect(url_for('screening.list_actions'))
+    old = WF.action_table(force=True)
+    new = dict(old)
+    for t in WF.LIST_TYPES:
+        v = (request.form.get(f'action__{t}') or '').strip()
+        if v:
+            new[t] = v
+    problems = WF.validate_table(new)
+    if problems:
+        flash(gettext('Nothing was saved: %(p)s', p='; '.join(problems[:6])), 'error')
+        return redirect(url_for('screening.list_actions'))
+    if new == old:
+        flash(gettext('No change.'), 'info')
+        return redirect(url_for('screening.list_actions'))
+    execute_db(f"""INSERT INTO screening_config (config_key, config_value, category, description, updated_at)
+                   VALUES ({get_param_style()}, {get_param_style()}, 'workflow', 'Action required for each kind of list (MLRO)', CURRENT_TIMESTAMP)
+                   ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value, updated_at = CURRENT_TIMESTAMP""",
+               (WF.TABLE_KEY, json.dumps(new, sort_keys=True)))
+    changed = {k: f'{old.get(k)} -> {v}' for k, v in new.items() if old.get(k) != v}
+    _audit('List action table changed', None, f'{json.dumps(changed, sort_keys=True)}; reason: {why}')
+    WF.action_table(force=True)
+    flash(gettext('Action table saved. It applies to new screenings (and to hits shown from older results).'), 'success')
+    return redirect(url_for('screening.list_actions'))

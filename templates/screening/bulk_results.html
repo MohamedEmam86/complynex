@@ -78,6 +78,8 @@
                                 <span class="badge bg-warning text-dark">{{ _('Potential Match') }}</span>
                                 {% elif item.result == 'WHITE_LISTED' %}
                                 <span class="badge bg-secondary">{{ _('Whitelisted') }}</span>
+                                {% elif item.result == 'INCOMPLETE' %}
+                                <span class="badge bg-danger" title="{{ _('A source was unavailable: re-screen') }}">{{ _('Incomplete') }}</span>
                                 {% else %}
                                 <span class="badge bg-success">{{ _('Clear') }}</span>
                                 {% endif %}

@@ -80,6 +80,10 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
     elif high_risk:
         status = 'Pending Review'
         screening_result = 'POTENTIAL_MATCH'
+    elif result.get('incomplete') or result.get('screening_result') == 'INCOMPLETE':
+        # P4-1: a source was unavailable during this screening: never "clear"
+        status = 'Pending Review'
+        screening_result = 'INCOMPLETE'
     else:
         status = 'Completed'
         screening_result = 'CLEAR'
@@ -102,6 +106,8 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
             'matches': matches,
             'adverse_media': result.get('adverse_media', []),
             'adverse_media_summary': result.get('adverse_media_summary', {}),
+            'incomplete_reasons': result.get('incomplete_reasons') or [],
+            'coverage_warnings': result.get('coverage_warnings') or [],
         }),
         status, result.get('processing_time_ms', 0),
     ))
@@ -169,7 +175,7 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
 
     if source_record_id:
         if source_module == 'Merchant KYC':
-            ss = 'Pending Review' if high_risk else ('Whitelisted' if screening_result == 'WHITE_LISTED' else 'Clear')
+            ss = 'Pending Review' if high_risk else ('Whitelisted' if screening_result == 'WHITE_LISTED' else ('Incomplete' if screening_result == 'INCOMPLETE' else 'Clear'))
             risk_rating = 'High' if high_risk else ('Low' if not matches else 'Medium')
             db.execute("""
                 UPDATE merchants
@@ -178,7 +184,7 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
                 WHERE id = %s
             """, (ss, user_id, risk_rating, source_record_id))
         elif source_module == 'Customer KYC':
-            ss = 'Pending Review' if high_risk else ('Whitelisted' if screening_result == 'WHITE_LISTED' else 'Clear')
+            ss = 'Pending Review' if high_risk else ('Whitelisted' if screening_result == 'WHITE_LISTED' else ('Incomplete' if screening_result == 'INCOMPLETE' else 'Clear'))
             db.execute("""
                 UPDATE customers
                 SET screening_status = %s, last_screening_date = CURRENT_TIMESTAMP,
@@ -202,4 +208,5 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
         'adverse_media': result.get('adverse_media', []),
         'adverse_media_summary': result.get('adverse_media_summary', {}),
         'processing_time_ms': result.get('processing_time_ms', 0),
+        'incomplete_reasons': result.get('incomplete_reasons') or [],
     }

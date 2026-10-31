@@ -145,10 +145,20 @@
             <div><span class="label">{{ _('Reference:') }}</span> {{ result.id }}</div>
         </div>
 
+        {# P4-1: incomplete screening #}
+        {% if incomplete_reasons %}
+        {% set _inc_ar = get_locale() == 'ar' %}
+        <div class="alert alert-danger py-2">
+            <strong>{{ _('Screening incomplete — a source was unavailable') }}</strong>
+            <ul class="mb-0 small">{% for w in incomplete_reasons %}<li>{{ w.ar if _inc_ar else w.en }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
         <div
             class="alert {% if result.screening_result == 'CLEAR' %}alert-success{% else %}alert-warning{% endif %} py-2">
             <strong>{{ _('Compliance Executive Summary:') }}</strong>
-            {% if result.screening_result == 'CLEAR' %}
+            {% if result.screening_result == 'INCOMPLETE' %}
+            {{ _('The screening is incomplete: one or more sources were unavailable. It is not a clear result; re-screen before relying on it.') }}
+            {% elif result.screening_result == 'CLEAR' %}
             Subject does not appear on any monitored international sanctions or PEP lists.
             {% else %}
             Potential match detected. Manual verification is required before proceeding with the transaction or
@@ -196,6 +206,16 @@
                     {% else %}{{ match.source_name or match.dataset or match.source }}{% endif %}
                     | {{ match.list_type }}</span>
             </div>
+            {# P4-2 / P4-3 / G9 #}
+            {% set _w = match.workflow %}
+            {% if _w %}
+            {% set _war = get_locale() == 'ar' %}
+            <div class="small mb-2"{% if _war %} dir="rtl"{% endif %}>
+                {% if _w.action %}<div><strong>{{ _('Required action') }}:</strong> {{ _w.action.label.ar if _war else _w.action.label.en }} — {{ _w.action.step.ar if _war else _w.action.step.en }}</div>{% endif %}
+                {% if _w.identity_status %}<div>{{ _w.identity_status.ar if _war else _w.identity_status.en }}</div>{% endif %}
+                {% if _w.explanation %}<div class="text-muted">{{ (_w.explanation.ar if _war else _w.explanation.en)|join(' ') }}</div>{% endif %}
+            </div>
+            {% endif %}
 
             <div class="row small mb-2 border-top pt-2">
                 <div class="col-6">

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Action by list type') }}{% endblock %}
+{% block content %}
+{% set _ar = get_locale() == 'ar' %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h1 class="h3 mb-1"><i class="fas fa-table-list me-2"></i>{{ _('Action by list type') }}</h1>
+      <p class="text-muted mb-0">{{ _('The score says how similar the names are, the identifiers say whether it is the same person, and this table says what to do: it depends on the kind of list the record is on. The MLRO maintains it; every change needs a reason and is audited.') }}</p>
+    </div>
+    <a href="{{ url_for('screening.list_versions') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-code-branch me-1"></i>{{ _('List versions') }}</a>
+  </div>
+
+  <form method="post" action="{{ url_for('screening.list_actions_save') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light"><tr><th>{{ _('List type') }}</th><th>{{ _('Action') }}</th><th>{{ _('Default') }}</th><th>{{ _('What the analyst is told (confirmed match)') }}</th></tr></thead>
+          <tbody>
+          {% for t in types %}
+          <tr>
+            <td><strong>{{ labels[t][1] if _ar else labels[t][0] }}</strong><div class="small text-muted">{{ t }}</div></td>
+            <td>
+              {% if can_edit %}
+              <select name="action__{{ t }}" class="form-select form-select-sm">
+                {% for code, a in actions.items() %}<option value="{{ code }}" {{ 'selected' if table[t] == code }}>{{ a.label[1] if _ar else a.label[0] }}</option>{% endfor %}
+              </select>
+              {% else %}{{ actions[table[t]].label[1] if _ar else actions[table[t]].label[0] }}{% endif %}
+            </td>
+            <td class="small">{{ actions[defaults[t]].label[1] if _ar else actions[defaults[t]].label[0] }}{% if table[t] != defaults[t] %} <span class="badge bg-warning text-dark">{{ _('changed') }}</span>{% endif %}</td>
+            <td class="small"{% if _ar %} dir="rtl"{% endif %}>{{ actions[table[t]]['CONFIRMED'][1] if _ar else actions[table[t]]['CONFIRMED'][0] }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% if can_edit %}
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <label class="form-label fw-semibold" for="reason">{{ _('Reason for the change (at least 15 characters)') }}</label>
+        <textarea class="form-control mb-2" id="reason" name="reason" rows="2" minlength="15" required></textarea>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i>{{ _('Save') }}</button>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-muted small">{{ _('Only the MLRO (approval authority) can change this table.') }}</p>
+    {% endif %}
+  </form>
+
+  <div class="card shadow-sm border-0 mt-3">
+    <div class="card-body small text-muted">
+      <strong>{{ _('When identifiers are missing') }}:</strong>
+      {{ _('a hit with no national ID or date of birth on either side is shown as "identity not verifiable", with the next step (obtain the customer\'s ID documents, or compare other details when the listed record has no identifiers). A freeze action on a potential match means: hold and escalate, freeze once identity is confirmed.') }}
+    </div>
+  </div>
+</div>
+{% endblock %}
