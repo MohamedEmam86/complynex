@@ -448,6 +448,26 @@ def _xs_same(lat, ar):
     return s
 
 
+def _drops_initial_vowel(lat, ar):
+    """The Arabic starts with a written alif before a consonant (احمد، امجد، اشرف) but the Latin starts
+    with that consonant: the Latin is another name (Hamid is حامد / حميد, not احمد)."""
+    return len(ar) >= 3 and ar[0] in 'اأإآ' and ar[1] not in 'اويىءئؤ' \
+        and bool(lat) and lat[0] not in 'aeiouy'
+
+
+def _xs_phonetic_score(lat, ar):
+    """Score of a spelling that fits the Arabic by sound (no learned pair): 0.95 when it is a clean,
+    standard transliteration of a well-known name (every consonant the same sound class, the first
+    letter in place: Hamid = حامد, Majid = ماجد, Saeed = سعيد), else 0.85."""
+    if _drops_initial_vowel(lat, ar):
+        return 0.0
+    if not _xs_phonetic(lat, ar):
+        return 0.0
+    if 3 <= len(ar) <= 6 and len(lat) >= 4 and loose_ratio(lat, ar) == 1.0 and _attested(ar):
+        return 0.95
+    return 0.85
+
+
 def _xs_same_raw(lat, ar):
     """Same name element written in Latin and in Arabic?"""
     if len(lat) == 1:
@@ -459,15 +479,23 @@ def _xs_same_raw(lat, ar):
             if a == ar or (len(a) == len(ar) and a.translate(_AR_SOUND) == ar.translate(_AR_SOUND)):
                 if (c < 10 or c / total < 0.1) and loose_ratio(lat, ar) < 0.7:
                     break        # a rare learned pair whose sounds do not agree: a list alias of someone else
-                return 0.95 if c / total >= 0.1 else 0.85
+                if c / total >= 0.1:
+                    return 0.95
+                # a less frequent learned pair that is also a clean standard transliteration of a
+                # well-known name keeps full strength (Majid = ماجد although lists write مجيد more often)
+                return 0.95 if c / total >= 0.05 and _xs_phonetic_score(lat, ar) >= 0.95 else 0.85
         if lat in _canon_names():
             return 0.0          # a standard spelling of another well-known name (Mahmoud is محمود, not محمد)
-        if _xs_phonetic(lat, ar):
-            return 0.85         # the spelling fits this Arabic name too (Saed = سعيد as well as سعد)
+        ps = _xs_phonetic_score(lat, ar)
+        if ps:
+            return ps           # the spelling fits this Arabic name too (Hamid = حامد as well as حميد)
         if total >= 8:
             return 0.0          # a well-known element that is written otherwise (Mohamed is not محمود)
-    if _xs_phonetic(lat, ar):
-        return 0.85
+    ps = _xs_phonetic_score(lat, ar)
+    if ps:
+        return ps
+    if _drops_initial_vowel(lat, ar):
+        return 0.0
     kl, ka = _xs_key(lat), _xs_key(ar)
     if len(kl) >= 2 and kl == ka:
         return 0.85
@@ -784,6 +812,12 @@ def name_match(query, listed):
             and len(missing) == 1 and 0 < [i for i in range(len(c)) if i not in matched_c][0] < len(c) - 1):
         # the customer left out one middle element (a father's second name / grandfather): a lead to review
         score = max(score, 76.0)
+    left_out = missing + extra
+    if left_out and all(t in _SOFT_PARTICLE for t in left_out) and \
+            min(sum(t not in _SOFT_PARTICLE for t in c), sum(t not in _SOFT_PARTICLE for t in q)) <= 1:
+        # the names differ only by a particle and one element is all that is left (Maria / Di Maria,
+        # Hai / Van Hai): one given name is not an identity (Isabel Santos = Isabel dos Santos still is)
+        score = min(score, 74.0)
     if len(c) >= 3 and len(q) >= 3 and missing and extra:
         # both names carry an element the other lacks at the same place in the
         # chain (a different father / grandfather): different people unless an
