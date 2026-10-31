@@ -60,6 +60,14 @@ from .format_handlers import (
 )
 
 
+def stored_json_value(v):
+    """How a profile field is written to its TEXT column: JSON (ensure_ascii=False), nothing
+    for empty values."""
+    if v in (None, [], {}, ''):
+        return None
+    return json.dumps(v, ensure_ascii=False)
+
+
 def normalize_arabic_text(text):
     """Normalize Arabic text for comparison"""
     if not text:
@@ -572,7 +580,15 @@ class EnhancedDataUpdater:
         """
         if not entities:
             return 0, 0, 0
-        
+
+        if str(source_name or '').startswith('opensanctions') and not self._os_rich_enabled():
+            # Until scripts/backfill_opensanctions_rich.py has filled the profile fields of the
+            # ~2.2M existing rows (and switched this on), a daily run must not rewrite every row
+            # because its content hash is still empty: rich fields are only stored for rows that
+            # change for another reason (name) or are new.
+            for e in entities:
+                e.pop('_rich', None)
+
         cursor = self.db_conn.cursor()
         added, updated, unchanged = 0, 0, 0
         
@@ -677,6 +693,15 @@ class EnhancedDataUpdater:
         except Exception as _e:
             logger.warning(f"_update_download_progress failed: {_e}")
 
+    def _os_rich_enabled(self):
+        """screening_config 'opensanctions_rich' = 'on' (set by the backfill when it completes)."""
+        try:
+            from screening.list_versions import _cfg_raw
+            return str(_cfg_raw(self.db_conn, 'opensanctions_rich') or '').strip().lower() == 'on'
+        except Exception as e:
+            logger.warning(f"opensanctions_rich flag unreadable ({e}); rich fields off")
+            return False
+
     def _has_entity_changed_fast(self, existing, new_entity):
         """Quick comparison without JSON parsing"""
         if existing.get('full_name') != new_entity.get('full_name'):
@@ -688,6 +713,8 @@ class EnhancedDataUpdater:
         """Fingerprint of everything stored for a record, so a changed date of birth, alias or
         identifier is updated even when the name is unchanged."""
         import hashlib
+        from screening.format_handlers import expand_rich
+        entity = expand_rich(entity)
         keys = ('full_name', 'original_name', 'full_name_arabic', 'aliases', 'aliases_arabic', 'entity_type',
                 'date_of_birth', 'place_of_birth', 'nationality', 'gender', 'passport_numbers',
                 'national_id_numbers', 'addresses', 'details', 'properties', 'dataset', 'topics', 'first_seen')
@@ -700,8 +727,9 @@ class EnhancedDataUpdater:
         truth: values are overwritten, so a document or address the list removes disappears too."""
         if not entity.get('_rich'):
             return
-        def j(v):
-            return json.dumps(v, ensure_ascii=False) if v not in (None, [], {}) else None
+        from screening.format_handlers import expand_rich
+        entity = expand_rich(entity)
+        j = stored_json_value
         cursor.execute("""
             UPDATE screening_watchlist SET
                 place_of_birth = %s,
