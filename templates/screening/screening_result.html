@@ -109,6 +109,11 @@
           <span class="chip extra py-0 ms-2"><i class="fas fa-plus"></i></span>{{ _('in the screened name only') }}
         </div>
         {% endif %}
+        {% if v.workflow and v.workflow.explanation %}
+        {% set _war = get_locale() == 'ar' %}
+        <div class="sr-sub mt-2">{{ _('Why this record was returned') }}</div>
+        <ul class="small mb-2 ps-3"{% if _war %} dir="rtl"{% endif %}>{% for line in (v.workflow.explanation.ar if _war else v.workflow.explanation.en) %}<li>{{ line }}</li>{% endfor %}</ul>
+        {% endif %}
         {% if v.reasons %}
         <ul class="small mb-2 ps-3">{% for r in v.reasons %}<li>{{ _(r.t) }}{% if r.a %}: <span class="ar">{{ r.a }}</span>{% endif %}</li>{% endfor %}</ul>
         {% elif not v.has_decision %}
@@ -145,9 +150,24 @@
         {% if v.nature %}
         <div class="sr-action k-{{ v.kind }} mb-1" dir="rtl"><i class="fas fa-info-circle me-1"></i><strong>{{ v.nature.label }}</strong> — {{ v.nature.note }}</div>
         {% endif %}
-        {% if v.action %}
+        {# ---- P4-2 / P4-3 / G9 (screening/workflow.py) ---- #}
+        {% set _w = v.workflow %}
+        {% set _war = get_locale() == 'ar' %}
+        {% if _w and _w.action %}
+        <div class="sr-action k-{{ v.kind }}"><i class="fas fa-clipboard-check me-1"></i><strong>{{ _('Required action') }}</strong>
+          <span class="badge bg-light text-dark border ms-1">{{ _w.action.list_label.ar if _war else _w.action.list_label.en }}</span>
+          <span class="badge bg-dark ms-1">{{ _w.action.label.ar if _war else _w.action.label.en }}</span>
+          <div class="mt-1"{% if _war %} dir="rtl"{% endif %}>{{ _w.action.step.ar if _war else _w.action.step.en }}</div>
+        </div>
+        {% elif v.action %}
         <div class="sr-action k-{{ v.kind }}"><i class="fas fa-clipboard-check me-1"></i><strong>{{ _('Required action') }}:</strong> {{ _(v.action) }}</div>
         {% endif %}
+        {% if _w and _w.identity_status and _w.identity_status.state in ('not_verifiable', 'unknown', 'conflict') %}
+        <div class="alert {% if _w.identity_status.state == 'conflict' %}alert-secondary{% else %}alert-warning{% endif %} small py-2 mt-2 mb-0"{% if _war %} dir="rtl"{% endif %}>
+          <i class="fas fa-id-card me-1"></i>{{ _w.identity_status.ar if _war else _w.identity_status.en }}
+        </div>
+        {% endif %}
+        {# ---- end P4 ---- #}
       </div>
     </div>
   </div>
@@ -202,6 +222,36 @@
       </div>
     </div>
   </div>
+
+  {# ---------------- INCOMPLETE SCREENING (P4-1) ---------------- #}
+  {% set _inc_ar = get_locale() == 'ar' %}
+  {% if incomplete_reasons %}
+  <div class="alert alert-danger mb-4" role="alert">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+      <div>
+        <div class="fw-bold mb-1"><i class="fas fa-exclamation-triangle me-1"></i>{{ _('Screening incomplete — a source was unavailable') }}</div>
+        <ul class="mb-0 small"{% if _inc_ar %} dir="rtl"{% endif %}>
+          {% for w in incomplete_reasons %}<li>{{ w.ar if _inc_ar else w.en }}</li>{% endfor %}
+        </ul>
+      </div>
+      <form method="post" action="{{ url_for('screening.manual_screen') }}" class="m-0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="name" value="{{ result.screened_name }}">
+        <input type="hidden" name="entity_type" value="{{ inputs.entity_type or 'INDIVIDUAL' }}">
+        {% if inputs.dob %}<input type="hidden" name="dob" value="{{ inputs.dob }}">{% endif %}
+        {% if inputs.nationality %}<input type="hidden" name="country" value="{{ inputs.nationality }}">{% endif %}
+        {% if inputs.national_id %}<input type="hidden" name="national_id" value="{{ inputs.national_id }}">{% endif %}
+        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-redo me-1"></i>{{ _('Re-screen now') }}</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+  {% if coverage_warnings %}
+  <div class="alert alert-warning small mb-4" role="note">
+    <div class="fw-semibold mb-1"><i class="fas fa-info-circle me-1"></i>{{ _('List update notes (the screening is complete)') }}</div>
+    <ul class="mb-0"{% if _inc_ar %} dir="rtl"{% endif %}>{% for w in coverage_warnings %}<li>{{ w.ar if _inc_ar else w.en }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
 
   {# ---------------- INPUT QUALITY (P3-11) ---------------- #}
   {% if input_warnings %}

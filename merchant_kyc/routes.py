@@ -716,6 +716,8 @@ def run_screening(id):
                 sr = 'WHITE_LISTED'
             elif high_risk:
                 sr = 'POTENTIAL_MATCH'
+            elif result.get('incomplete') or result.get('screening_result') == 'INCOMPLETE':
+                sr = 'INCOMPLETE'     # P4-1: a source was unavailable; never "clear"
             else:
                 sr = 'CLEAR'
 
@@ -733,7 +735,7 @@ def run_screening(id):
                 len(matches), len(high_risk), len(matches) - len(high_risk),
                 highest_score, sr,
                 json.dumps(matches),
-                'Pending Review' if high_risk else 'Completed',
+                'Pending Review' if (high_risk or sr == 'INCOMPLETE') else 'Completed',
                 result.get('processing_time_ms', 0)
             ))
 
@@ -782,6 +784,8 @@ def run_screening(id):
 
             if sr == 'POTENTIAL_MATCH' or sr == 'CONFIRMED_HIT':
                 overall_result = sr
+            elif sr == 'INCOMPLETE' and overall_result == 'CLEAR':
+                overall_result = 'INCOMPLETE'      # P4-1
 
             results_summary.append({
                 'name': name,
@@ -799,6 +803,9 @@ def run_screening(id):
     if overall_result == 'CLEAR' or overall_result == 'WHITE_LISTED':
         screening_status = 'Clear'
         risk_rating = 'Low'
+    elif overall_result == 'INCOMPLETE' and total_high_risk == 0:
+        screening_status = 'Incomplete'     # P4-1: a source was unavailable; re-screen
+        risk_rating = 'Medium'
     elif total_high_risk > 0:
         screening_status = 'Pending Review'
         risk_rating = 'High'

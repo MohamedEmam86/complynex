@@ -232,6 +232,11 @@ def run(engine=None, run_type='scheduled', triggered_by=None, limit=500,
                                  score, None, None)
                         stats['new_matches'] += 1
                         found_new = True
+                if res.get('incomplete'):
+                    # P4-1: a source was unavailable, so "nothing new" is not proven: not counted as
+                    # unchanged, the name stays due and is screened again on the next run
+                    stats['errors'] += 1
+                    continue
                 if not found_new:
                     stats['unchanged'] += 1
             else:

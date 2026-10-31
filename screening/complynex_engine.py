@@ -1635,6 +1635,24 @@ class ComplyNexScreeningEngine:
         if adverse_media_hits and result_status == 'CLEAR':
             result_status = 'REVIEW_REQUIRED'
 
+        # ---- P4-1 / P4-2 / P4-3 (screening/workflow.py) -------------------------------------
+        # A screening during which a source was unavailable is never "clear": INCOMPLETE with the
+        # reasons. Every hit gets its explanation, the action for its list type and the identity
+        # status. Fails open: an error here never removes or lowers a hit.
+        _wf_blocking, _wf_warnings = [], []
+        try:
+            from screening import workflow as _wf
+            _wf_blocking, _wf_warnings = _wf.completeness(
+                es_degraded=bool(getattr(self, 'es_degraded', False)),
+                semantic_degraded=bool(getattr(self, 'semantic_degraded', False)),
+                adverse_error=(adverse_media_info or {}).get('error'))
+            result_status = _wf.finalize_status(result_status, _wf_blocking)
+            _wf.annotate(matches, {'dob': bool(date_of_birth), 'nid': bool(national_id),
+                                   'nationality': bool(nationality)})
+        except Exception as _e:
+            logger.warning(f"[WORKFLOW] layer failed: {_e}")
+        # ---- end P4 ---------------------------------------------------------------------------
+
         result = {
             'screening_result': result_status,
             'matches': matches,
@@ -1655,6 +1673,9 @@ class ComplyNexScreeningEngine:
             'search_degraded': bool(getattr(self, 'es_degraded', False)),
             'total_candidates': len(candidates) if 'candidates' in locals() else 0,
             'input_warnings': _input_warnings,
+            'incomplete': bool(_wf_blocking),
+            'incomplete_reasons': _wf_blocking,
+            'coverage_warnings': _wf_warnings,
         }
         
         # --- REDIS CACHE COMMIT: INTENTIONALLY DISABLED (2026-07-20) ---
@@ -1943,6 +1964,8 @@ class ComplyNexScreeningEngine:
         # Reset the degraded-search marker for this screening; set again only
         # if the ES layer actually fails during this recall (Rec #2).
         self.es_degraded = False
+        # P4-1: same for the semantic recall (service down, timeout, error)
+        self.semantic_degraded = False
 
         # ES and semantic recall are independent I/O (two local HTTP
         # services) — kick the semantic search off first so it runs
@@ -1952,7 +1975,11 @@ class ComplyNexScreeningEngine:
         # on this thread, so no db_pool connection crosses threads.
         sem_thread = None
         sem_out = {}
-        if getattr(self, 'semantic_matcher', None) and self.semantic_matcher.enabled:
+        if getattr(self, 'semantic_matcher', None) is None:
+            self.semantic_degraded = True
+        # P4-1: also when the client reported the service down: search_index() re-checks its
+        # health at most once a minute, so a recovered service is picked up again
+        if getattr(self, 'semantic_matcher', None) is not None:
             import threading
 
             def _sem_search():
@@ -2015,10 +2042,13 @@ class ComplyNexScreeningEngine:
                 sem_thread.join(timeout=8.0)
                 if sem_thread.is_alive():
                     logger.warning("[FAISS] semantic search thread still running after 8s — skipping")
+                    self.semantic_degraded = True
                 elif 'error' in sem_out:
                     raise sem_out['error']
                 else:
                     s_results = sem_out.get('results') or []
+                    if getattr(self.semantic_matcher, 'last_ok', True) is False:
+                        self.semantic_degraded = True
             if s_results:
                 # search_index() returns bare {'id', 'semantic_score'} — the
                 # index only stores ids now (see semantic_matcher.py), so
@@ -2155,6 +2185,7 @@ class ComplyNexScreeningEngine:
             logger.info(f"[TIMER] FAISS recall: {round((time.time()-t1)*1000)}ms — {len(faiss_candidates)} candidates")
         except Exception as e:
             logger.warning(f"[FAISS] Search failed: {e}")
+            self.semantic_degraded = True
 
         # FALLBACK: PostgreSQL — only if ES returned zero results
         if len(es_candidates) == 0:

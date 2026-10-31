@@ -379,6 +379,8 @@ class SemanticMatcherClient:
         self.base_url = base_url or self.DEFAULT_BASE_URL
         self.enabled = self._check_health()
         self._next_recheck = time.monotonic() + self.HEALTH_RECHECK_INTERVAL_S
+        # P4-1: did the last search reach the service? (the engine marks the screening INCOMPLETE if not)
+        self.last_ok = None
 
     def _check_health(self):
         try:
@@ -398,10 +400,12 @@ class SemanticMatcherClient:
             # hammering a dead one on every screen.
             now = time.monotonic()
             if now < self._next_recheck:
+                self.last_ok = False
                 return []
             self._next_recheck = now + self.HEALTH_RECHECK_INTERVAL_S
             self.enabled = self._check_health()
             if not self.enabled:
+                self.last_ok = False
                 return []
         try:
             import requests
@@ -411,6 +415,7 @@ class SemanticMatcherClient:
                 timeout=self.SEARCH_TIMEOUT_S,
             )
             if resp.ok:
+                self.last_ok = True
                 return resp.json().get('results', [])
             logger.warning(f"Semantic service returned {resp.status_code}: {resp.text[:200]}")
         except Exception as e:
@@ -418,4 +423,5 @@ class SemanticMatcherClient:
             # screening request down with it — same fallback behavior as
             # the service being disabled.
             logger.warning(f"Semantic service call failed: {e}")
+        self.last_ok = False
         return []

@@ -267,7 +267,17 @@ def match_view(m, kind, inputs):
         'profile_src': m.get('source'),
         'profile_rec': m.get('entity_id') if str(m.get('source') or '').upper().startswith('INTERNAL') else m.get('id'),
         'has_decision': bool(d),
+        # P4-2 / P4-3 / G9: explanation, action by list type, identity status (screening/workflow.py)
+        'workflow': _workflow(m, inputs),
     }
+
+
+def _workflow(m, inputs):
+    try:
+        from screening import workflow as _wf
+        return _wf.view(m, inputs)
+    except Exception:
+        return None
 
 
 _REASON_PREFIX = ('name structure: ', 'not in the customer name: ', 'extra in the customer name: ')
@@ -294,11 +304,17 @@ def _profile_url(m):
     return None
 
 
-def overall(sanctions, peps, others, am_summary, adverse_hits):
-    """The single verdict at the top of the page and what the analyst must do."""
+def overall(sanctions, peps, others, am_summary, adverse_hits, incomplete=None):
+    """The single verdict at the top of the page and what the analyst must do.
+    incomplete: the reasons a source was unavailable during the screening (P4-1)."""
     def best(views):
         order = {'CONFIRMED': 3, 'POTENTIAL': 2, 'LOW': 1, 'BELOW': 0}
         return max([order.get(v['tier'], 0) for v in views] or [0])
+    if incomplete and max(best(sanctions), best(peps), best(others)) < 2:
+        # P4-1: never "no match" when a source was unavailable
+        return ('danger', 'Screening incomplete — not a clear result',
+                'One or more sources were unavailable during this screening (see the reasons below). '
+                'Do not rely on it: re-screen before deciding.')
     # freeze wording only for real sanctions / terror listings; criminal / wanted lists and links to a
     # sanctioned party stay on the strict side but are not freeze orders
     _freeze = ('SANCTIONS', 'TERROR', 'UNCLASSIFIED')

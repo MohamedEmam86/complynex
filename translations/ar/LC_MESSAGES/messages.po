@@ -38990,3 +38990,87 @@ msgstr "الملف"
 #, python-format
 msgid "%(n)s hits (%(m)s grouped)"
 msgstr "%(n)s نتيجة (%(m)s مجمّعة)"
+
+#: P4 workflow
+msgid "Why this record was returned"
+msgstr "ليه السجل ده ظهر"
+
+#: P4 workflow
+msgid "Screening incomplete — a source was unavailable"
+msgstr "الفحص غير مكتمل — مصدر ماكانش متاح"
+
+#: P4 workflow
+msgid "Re-screen now"
+msgstr "أعد الفحص الآن"
+
+#: P4 workflow
+msgid "List update notes (the screening is complete)"
+msgstr "ملاحظات على تحديث القوايم (الفحص مكتمل)"
+
+#: P4 workflow
+msgid "INCOMPLETE"
+msgstr "غير مكتمل"
+
+#: P4 workflow
+msgid "%(n)s incomplete (re-screen)"
+msgstr "%(n)s غير مكتمل (أعد الفحص)"
+
+#: P4 workflow
+msgid "A source was unavailable: re-screen"
+msgstr "مصدر ماكانش متاح: أعد الفحص"
+
+#: P4 workflow
+msgid "Incomplete — re-screen"
+msgstr "غير مكتمل — أعد الفحص"
+
+#: P4 workflow
+msgid "The screening is incomplete: one or more sources were unavailable. It is not a clear result; re-screen before relying on it."
+msgstr "الفحص غير مكتمل: مصدر أو أكتر ماكانش متاح. ده مش نتيجة \"لا تطابق\"؛ أعد الفحص قبل الاعتماد عليه."
+
+#: P4 workflow
+msgid "Screening incomplete — not a clear result"
+msgstr "الفحص غير مكتمل — مش نتيجة \"لا تطابق\""
+
+#: P4 workflow
+msgid "One or more sources were unavailable during this screening (see the reasons below). Do not rely on it: re-screen before deciding."
+msgstr "مصدر أو أكتر ماكانش متاح وقت الفحص (شوف الأسباب تحت). ماتعتمدش عليه: أعد الفحص قبل القرار."
+
+#: P4 workflow
+msgid "Screening of \"%(screening_name)s\" is INCOMPLETE (a list source was unavailable). Re-screen before relying on it."
+msgstr "فحص \"%(screening_name)s\" غير مكتمل (مصدر قوايم ماكانش متاح). أعد الفحص قبل الاعتماد عليه."
+
+#: P4 workflow
+msgid "Action by list type"
+msgstr "الإجراء حسب نوع القايمة"
+
+#: P4 workflow
+msgid "The score says how similar the names are, the identifiers say whether it is the same person, and this table says what to do: it depends on the kind of list the record is on. The MLRO maintains it; every change needs a reason and is audited."
+msgstr "الدرجة بتقول الأسماء متشابهة قد إيه، والمعرّفات بتقول هل هو نفس الشخص، والجدول ده بيقول نعمل إيه: حسب نوع القايمة اللي السجل عليها. مسؤول الإبلاغ هو اللي بيعدّله؛ وكل تعديل محتاج سبب وبيتسجل في سجل التدقيق."
+
+#: P4 workflow
+msgid "List type"
+msgstr "نوع القايمة"
+
+#: P4 workflow
+msgid "What the analyst is told (confirmed match)"
+msgstr "اللي بيظهر للمحلل (تطابق مؤكد)"
+
+#: P4 workflow
+msgid "Only the MLRO (approval authority) can change this table."
+msgstr "مسؤول الإبلاغ (صاحب صلاحية الاعتماد) بس اللي يقدر يعدّل الجدول ده."
+
+#: P4 workflow
+msgid "When identifiers are missing"
+msgstr "لما المعرّفات تكون ناقصة"
+
+#: P4 workflow
+msgid "a hit with no national ID or date of birth on either side is shown as \"identity not verifiable\", with the next step (obtain the customer's ID documents, or compare other details when the listed record has no identifiers). A freeze action on a potential match means: hold and escalate, freeze once identity is confirmed."
+msgstr "النتيجة اللي مفيهاش رقم قومي أو تاريخ ميلاد عند أي طرف بتظهر \"الهوية مش قابلة للتحقق\" ومعاها الخطوة الجاية (هات مستندات هوية العميل، أو قارن بيانات تانية لو السجل المدرج مفيهوش معرّفات). إجراء التجميد على تطابق محتمل معناه: أوقف وصعّد، وجمّد لما الهوية تتأكد."
+
+#: P4 workflow
+msgid "No change."
+msgstr "مفيش تغيير."
+
+#: P4 workflow
+msgid "Action table saved. It applies to new screenings (and to hits shown from older results)."
+msgstr "جدول الإجراءات اتحفظ. بيتطبق على الفحوصات الجديدة (وعلى النتائج القديمة لما تتعرض)."

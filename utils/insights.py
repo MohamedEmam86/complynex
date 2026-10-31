@@ -118,9 +118,9 @@ def _aml():
 
 def _screening():
     res = {'CONFIRMED_HIT': '#dc3545', 'POTENTIAL_MATCH': '#fd7e14', 'REVIEW_REQUIRED': '#ffc107', 'LOW_MATCH': '#0dcaf0',
-           'CLEAR': '#20c997'}
+           'CLEAR': '#20c997', 'INCOMPLETE': '#6c757d'}
     lab = {'CONFIRMED_HIT': _('Confirmed hit'), 'POTENTIAL_MATCH': _('Potential match'), 'REVIEW_REQUIRED': _('Review required'),
-           'LOW_MATCH': _('Low match'), 'CLEAR': _('Clear')}
+           'LOW_MATCH': _('Low match'), 'CLEAR': _('Clear'), 'INCOMPLETE': _('Incomplete — re-screen')}
     rows = _rows(f"""SELECT to_char(created_at::timestamp, 'YYYY-MM') AS m, UPPER(screening_result) AS r, COUNT(*) AS n
                      FROM screening_results WHERE created_at::timestamp >= {START} GROUP BY 1, 2""")
     q = _rows("SELECT INITCAP(status) AS k, COUNT(*) AS n FROM screening_queue GROUP BY 1 ORDER BY 2 DESC")

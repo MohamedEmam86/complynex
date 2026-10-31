@@ -33,6 +33,7 @@ STATUS = {
     # screening outcome
     'confirmed_hit': _l('Confirmed hit'), 'potential_match': _l('Potential match'),
     'low_match': _l('Low match'), 'review_required': _l('Review required'),
+    'incomplete': _l('Incomplete — re-screen'),
     'white_listed': _l('Whitelisted'), 'whitelisted': _l('Whitelisted'), 'blocked': _l('Blocked'),
     'error': _l('Error'),
     # whitelist

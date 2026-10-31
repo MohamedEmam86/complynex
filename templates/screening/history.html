@@ -39,6 +39,8 @@
                             <td>
                                 {% if s.screening_result == 'CONFIRMED_HIT' %}
                                 <span class="badge bg-danger">{{ _('HIT') }}</span>
+                                {% elif s.screening_result == 'INCOMPLETE' %}
+                                <span class="badge bg-danger">{{ _('INCOMPLETE') }}</span>
                                 {% elif s.screening_result == 'POTENTIAL_MATCH' %}
                                 <span class="badge bg-warning">{{ _('MATCH') }}</span>
                                 {% else %}
