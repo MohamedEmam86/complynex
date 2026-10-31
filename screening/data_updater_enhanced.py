@@ -581,11 +581,19 @@ class EnhancedDataUpdater:
         if not entities:
             return 0, 0, 0
 
-        if str(source_name or '').startswith('opensanctions') and not self._os_rich_enabled():
-            # Until scripts/backfill_opensanctions_rich.py has filled the profile fields of the
-            # ~2.2M existing rows (and switched this on), a daily run must not rewrite every row
-            # because its content hash is still empty: rich fields are only stored for rows that
-            # change for another reason (name) or are new.
+        is_os = str(source_name or '').startswith('opensanctions')
+        os_mode = self._os_rich_mode() if is_os else 'off'
+        if is_os:
+            # The handler sets source='opensanctions' for both OpenSanctions feeds; _update_entity
+            # matches on (source_id, source), so updates of the PEP feed were written to the
+            # main feed's row of the same entity and the PEP row was never updated.
+            for e in entities:
+                e['source'] = source_name
+        if is_os and os_mode == 'off':
+            # Until scripts/backfill_opensanctions_rich.py has started filling the profile fields of
+            # the ~2.2M existing rows, a daily run must not rewrite every row because its content
+            # hash is still empty: rich fields are only stored for rows that change for another
+            # reason (name) or are new.
             for e in entities:
                 e.pop('_rich', None)
 
@@ -619,7 +627,15 @@ class EnhancedDataUpdater:
                     added += 1
                 else:
                     existing = existing_map[source_id]
-                    rich_changed = entity.get('_rich') and existing.get('content_hash') != self._content_hash(entity)
+                    # rows that carry a content hash are compared on it; a row without one (not yet
+                    # back-filled) only once the backfill has completed (mode 'on'): while it runs
+                    # ('partial') such a row is rewritten only when its name changed, as before
+                    if not entity.get('_rich'):
+                        rich_changed = False
+                    elif existing.get('content_hash'):
+                        rich_changed = existing['content_hash'] != self._content_hash(entity)
+                    else:
+                        rich_changed = os_mode == 'on'
                     if existing.get('full_name') != entity.get('full_name') or rich_changed:
                         self._update_entity(entity, cursor)
                         self._store_rich(entity, cursor, source_name)
@@ -693,14 +709,24 @@ class EnhancedDataUpdater:
         except Exception as _e:
             logger.warning(f"_update_download_progress failed: {_e}")
 
-    def _os_rich_enabled(self):
-        """screening_config 'opensanctions_rich' = 'on' (set by the backfill when it completes)."""
+    def _os_rich_mode(self):
+        """screening_config 'opensanctions_rich': 'off' (default), 'partial' (set when
+        scripts/backfill_opensanctions_rich.py starts writing) or 'on' (set when it completes)."""
         try:
             from screening.list_versions import _cfg_raw
-            return str(_cfg_raw(self.db_conn, 'opensanctions_rich') or '').strip().lower() == 'on'
+            v = str(_cfg_raw(self.db_conn, 'opensanctions_rich') or '').strip().lower()
+            return v if v in ('partial', 'on') else 'off'
         except Exception as e:
             logger.warning(f"opensanctions_rich flag unreadable ({e}); rich fields off")
-            return False
+            try:
+                self.db_conn.rollback()
+            except Exception:
+                pass
+            return 'off'
+
+    def _os_rich_enabled(self):
+        """Parse OpenSanctions with the profile fields and the deterministic record (partial / on)."""
+        return self._os_rich_mode() in ('partial', 'on')
 
     def _has_entity_changed_fast(self, existing, new_entity):
         """Quick comparison without JSON parsing"""
@@ -730,6 +756,7 @@ class EnhancedDataUpdater:
         from screening.format_handlers import expand_rich
         entity = expand_rich(entity)
         j = stored_json_value
+        keep_ar = str(source_name or entity.get('source') or '').startswith('opensanctions')
         cursor.execute("""
             UPDATE screening_watchlist SET
                 place_of_birth = %s,
@@ -737,15 +764,18 @@ class EnhancedDataUpdater:
                 national_id_numbers = %s,
                 addresses = %s,
                 properties = %s,
-                full_name_arabic = %s,
-                aliases_arabic = %s,
+                full_name_arabic = CASE WHEN %s THEN COALESCE(%s, full_name_arabic) ELSE %s END,
+                aliases_arabic = CASE WHEN %s THEN COALESCE(%s, aliases_arabic) ELSE %s END,
                 first_seen = COALESCE(%s, first_seen),
                 content_hash = %s,
                 updated_at = CURRENT_TIMESTAMP
             WHERE source = %s AND source_id = %s
         """, (entity.get('place_of_birth'), j(entity.get('passport_numbers')), j(entity.get('national_id_numbers')),
-              j(entity.get('addresses')), j(entity.get('properties')), entity.get('full_name_arabic'),
-              j(entity.get('aliases_arabic')), entity.get('first_seen'), self._content_hash(entity),
+              j(entity.get('addresses')), j(entity.get('properties')),
+              # OpenSanctions gives no Arabic names: keep the transliteration another job stored
+              keep_ar, entity.get('full_name_arabic'), entity.get('full_name_arabic'),
+              keep_ar, j(entity.get('aliases_arabic')), j(entity.get('aliases_arabic')),
+              entity.get('first_seen'), self._content_hash(entity),
               source_name or entity.get('source'), entity['source_id']))
 
     def _batch_insert_entities(self, entities, cursor, source_name=None):

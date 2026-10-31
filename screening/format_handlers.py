@@ -816,6 +816,37 @@ _OS_ID_PROPS = (
 )
 
 
+def _os_clean(v):
+    """One spelling of a value for comparison: str, inner whitespace collapsed."""
+    return ' '.join(str(v).split()) if v is not None else ''
+
+
+# Datasets preferred for the `dataset` column (the list a hit is shown under) when an entity is on
+# several; otherwise the alphabetically first. OpenSanctions does not keep the order of an entity's
+# datasets from one export to the next, so "the first one" changed daily and rewrote the row.
+_OS_DATASET_PRIORITY = ('un_sc_sanctions', 'us_ofac_sdn', 'eu_fsf', 'gb_hmt_sanctions', 'gb_fcdo_sanctions',
+                        'ch_seco_sanctions', 'us_ofac_cons')
+
+
+def _os_pick_dataset(datasets):
+    if not datasets:
+        return 'OpenSanctions'
+    for d in _OS_DATASET_PRIORITY:
+        if d in datasets:
+            return d
+    return sorted(datasets)[0]
+
+
+def _os_pick_referent(referents):
+    """The referent kept as source_url: an OFAC SDN uid first (build_entity_links.py links on it),
+    then the alphabetically first, so it does not change with OpenSanctions' order."""
+    refs = sorted(str(r) for r in (referents or []) if r)
+    for r in refs:
+        if re.match(r'^ofac-[0-9]+$', r):
+            return r
+    return refs[0] if refs else None
+
+
 class OpenSanctionsHandler(BaseFormatHandler):
     """
     Enhanced parser for OpenSanctions FTJSON format
@@ -892,18 +923,26 @@ class OpenSanctionsHandler(BaseFormatHandler):
         if not self.rich:
             return self._legacy_entity(data, props, full_name, aliases, entity_type, countries, topics)
 
+        # ---- deterministic record (P2 churn fix): OpenSanctions re-orders an entity's names, aliases,
+        # datasets, topics and referents between exports. The legacy record took "the first name" as
+        # full_name, so ~1/3 of the rows were rewritten every day with nothing changed. The rich record
+        # uses the entity's caption (its display name) and sorted values, so the same entity in two
+        # exports gives the same record and only real changes are written.
+        uniq = sorted({_os_clean(n) for n in names if _os_clean(n)})
+        full_name = _os_clean(data.get('caption')) or (uniq[0] if uniq else '')
+        if not full_name:
+            return None
+        aliases = [n for n in uniq if n != full_name]
+        countries = sorted({_os_clean(c) for c in countries if _os_clean(c)})
+        topics = sorted({_os_clean(t) for t in topics if _os_clean(t)})
+
         # ---- profile fields (P2-2 for OpenSanctions): every date of birth, place of birth,
         # nationality / citizenship, gender, identifiers, addresses and all datasets, stored the
         # way the OFAC / UK loaders store them so DOB / ID scoring and the match profile use them.
         def _vals(key, cap=20, size=300):
-            out = []
-            for v in props.get(key) or []:
-                v = str(v).strip()[:size] if v is not None else ''
-                if v and v not in out:
-                    out.append(v)
-                if len(out) >= cap:
-                    break
-            return out
+            # sorted and de-duplicated before the cap: the same values in any order give the same list
+            out = sorted({_os_clean(v)[:size] for v in (props.get(key) or []) if _os_clean(v)})
+            return out[:cap]
 
         dobs = _vals('birthDate')
         dob = ';'.join(dobs) or None
@@ -926,12 +965,12 @@ class OpenSanctionsHandler(BaseFormatHandler):
 
         # Datasets (source within OpenSanctions): the first one stays in `dataset` (the category
         # and the display read it); the full list goes into properties.datasets.
-        datasets = [str(d) for d in (data.get('datasets') or []) if d]
-        dataset = datasets[0] if datasets else 'OpenSanctions'
+        datasets = sorted({str(d) for d in (data.get('datasets') or []) if d})
+        dataset = _os_pick_dataset(datasets)
         from screening.list_category import categorize as _list_category
 
         # Source URL
-        source_url = (data.get('referents') or [None])[0]
+        source_url = _os_pick_referent(data.get('referents'))
         if not source_url:
             source_url = f"https://www.opensanctions.org/entities/{data.get('id')}/"
 
@@ -976,7 +1015,7 @@ class OpenSanctionsHandler(BaseFormatHandler):
                 'first_seen': first_seen,
             }),
             'aliases': aliases,
-            'details': props.get('notes', {}),
+            'details': sorted({_os_clean(x) for x in (props.get('notes') or []) if _os_clean(x)}),
             # rich fields are written (and compared by content hash) only once the backfill has
             # run: see EnhancedDataUpdater._import_entities_batch and
             # scripts/backfill_opensanctions_rich.py (screening_config 'opensanctions_rich').
