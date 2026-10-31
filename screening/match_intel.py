@@ -916,7 +916,7 @@ def decode_egyptian_nid(nid):
     13 = gender (odd male, even female)."""
     d = re.sub(r'\D', '', str(nid or ''))
     out = {'valid': False, 'nid': d}
-    if len(d) != 14 or d[0] not in '23':
+    if len(d) != 14 or d[0] not in '23' or d[7:9] not in _GOVERNORATES:
         return out
     try:
         y = (1900 if d[0] == '2' else 2000) + int(d[1:3])
@@ -972,6 +972,39 @@ def _countries(*vals):
     return out
 
 
+def _iso2(*vals):
+    """ISO alpha-2 codes in the values (screening/country_codes.py: codes, names, demonyms,
+    Arabic). The same file is added by the P2-6 entity-links branch (identical copy)."""
+    try:
+        from screening.country_codes import to_iso2
+        return to_iso2(*vals)
+    except Exception:
+        return set()
+
+
+def countries_agree(query_vals, listed_vals):
+    """True / False / None (not comparable). RU, Russia, Russian and Russian Federation are
+    one country; the older name table still counts as agreement, so nothing that agreed
+    before stops agreeing."""
+    qi, li = _iso2(*query_vals), _iso2(*listed_vals)
+    qn, ln = _countries(*query_vals), _countries(*listed_vals)
+    if (qi and li and qi & li) or (qn and ln and qn & ln):
+        return True
+    if (qi and li) or (qn and ln):
+        return False
+    return None
+
+
+# lists kept for Egyptian subjects: their 14-digit numbers are Egyptian national IDs even
+# when the record carries no nationality (and even when a typed number does not decode)
+EGYPTIAN_SOURCES = {'emlcu', 'internal_blacklist', 'internal_pep'}
+
+
+def _egyptian_source(source):
+    s = str(source or '').strip().lower()
+    return s in EGYPTIAN_SOURCES or s.startswith('eg_')
+
+
 def country_score_adjust(score, submitted_country, candidate_country, bonus=8.0):
     """Engine scoring step for nationality / country: agreement ADDS a bonus,
     a different or missing country leaves the name score unchanged. Lists
@@ -981,9 +1014,8 @@ def country_score_adjust(score, submitted_country, candidate_country, bonus=8.0)
     analyst — it never hides a name match."""
     if not submitted_country or not candidate_country:
         return score
-    qc, lc = _countries(submitted_country), _countries(candidate_country)
     sub, cand = str(submitted_country).lower().strip(), str(candidate_country).lower().strip()
-    if (qc and lc and qc & lc) or (sub and cand and (sub in cand or cand in sub)):
+    if countries_agree((submitted_country,), (candidate_country,)) or (sub and cand and (sub in cand or cand in sub)):
         return score + bonus
     return score
 
@@ -1009,7 +1041,7 @@ def _eg_nids(x):
     return found
 
 
-def id_relation(query_id, listed_ids, query_country=None, listed_countries=None):
+def id_relation(query_id, listed_ids, query_country=None, listed_countries=None, listed_source=None):
     """How the customer's ID relates to the IDs on a listed record:
     'match'            both are the same valid Egyptian 14-digit national ID, or the full
                        alphanumeric numbers (>= 8 characters) are equal AND the record's
@@ -1017,8 +1049,9 @@ def id_relation(query_id, listed_ids, query_country=None, listed_countries=None)
     'match_unverified' equal numbers but the issuing country is not confirmed: supporting
                        evidence only, never CONFIRMED on its own (lists such as OpenSanctions
                        carry ID / register numbers from every country);
-    'conflict'         the customer has a valid Egyptian national ID and the record carries
-                       a different valid Egyptian national ID;
+    'conflict'         the customer has a valid Egyptian national ID and an Egyptian-side
+                       record (Egyptian list, or nationality empty / Egypt) carries a
+                       different valid Egyptian national ID - never for a foreign number;
     None               nothing comparable."""
     q = _id_key(query_id)
     if not q:
@@ -1032,14 +1065,18 @@ def id_relation(query_id, listed_ids, query_country=None, listed_countries=None)
         l_eg |= _eg_nids(x)
     if q_eg and q_eg in l_eg:
         return 'match'
+    eg_src = _egyptian_source(listed_source)
     keys = {_id_key(x) for x in listed}
     keys = {k for k in keys if len(k) >= MIN_ID_LEN and not set(k) <= {'0'}}
     if len(q) >= MIN_ID_LEN and q in keys:
-        qc = _countries(query_country, 'egypt' if q_eg else None)
-        lc = _countries(listed_countries)
-        return 'match' if (qc and lc and qc & lc) else 'match_unverified'
+        if eg_src:          # Egyptian list: the number typed exactly as listed (as before)
+            return 'match'
+        agree = countries_agree((query_country, 'egypt' if q_eg else None), (listed_countries,))
+        return 'match' if agree else 'match_unverified'
     if q_eg and l_eg:
-        return 'conflict'
+        li, ln = _iso2(listed_countries), _countries(listed_countries)
+        egyptian_side = eg_src or (not li and not ln) or 'eg' in li or 'egypt' in ln
+        return 'conflict' if egyptian_side else None
     return None
 
 
@@ -1049,7 +1086,7 @@ def _passports(v):
 
 def identity_verdict(query_nid=None, query_dob=None, query_country=None,
                      listed_nids=None, listed_dob=None, listed_countries=None, listed_gender=None,
-                     query_passport=None, listed_passports=None):
+                     query_passport=None, listed_passports=None, listed_source=None):
     """Compare secondary identifiers. Returns {'verdict', 'reasons',
     'identifier_match', 'dob', 'country'}.
 
@@ -1065,13 +1102,13 @@ def identity_verdict(query_nid=None, query_dob=None, query_country=None,
     qp, lp = _passports(query_passport), _passports(listed_passports)
     if qp and lp and qp & lp:
         # a passport number is unique only within its issuing country
-        if _countries(query_country) & _countries(listed_countries):
+        if countries_agree((query_country,), (listed_countries,)):
             return {'verdict': 'id_match', 'reasons': ['passport number matches the listed record'],
                     'identifier_match': True, 'dob': None, 'country': None}
         reasons.append('passport number equals one on the record, issuing country not confirmed '
                        '(supporting evidence only)')
         id_support = True
-    rel = id_relation(query_nid, listed_nids, query_country, listed_countries)
+    rel = id_relation(query_nid, listed_nids, query_country, listed_countries, listed_source)
     if rel == 'match':
         return {'verdict': 'id_match', 'reasons': ['national ID matches the listed record'],
                 'identifier_match': True, 'dob': None, 'country': None}
@@ -1128,14 +1165,14 @@ def identity_verdict(query_nid=None, query_dob=None, query_country=None,
     # nationalities, lists record them inconsistently)
     qc = _countries(query_country, 'egypt' if qd.get('valid') else None)
     lc = _countries(listed_countries)
-    if qc and lc:
-        if qc & lc:
-            reasons.append('nationality / country agrees')
-            corroborated = True
-            country_state = 'agree'
-        else:
-            reasons.append(f"nationality differs ({', '.join(sorted(qc))} vs {', '.join(sorted(lc))})")
-            country_state = 'differ'
+    agree = countries_agree((query_country, 'egypt' if qd.get('valid') else None), (listed_countries,))
+    if agree is True:
+        reasons.append('nationality / country agrees')
+        corroborated = True
+        country_state = 'agree'
+    elif agree is False:
+        reasons.append(f"nationality differs ({', '.join(sorted(qc))} vs {', '.join(sorted(lc))})")
+        country_state = 'differ'
     if not lids and not l_years and not lc:
         reasons.append('listed record has no identifiers: decision rests on the name')
     if corroborated:
@@ -1203,7 +1240,8 @@ def decide(m, query, national_id=None, dob=None, nationality=None, passport=None
         [m.get('nationality'), m.get('countries'), m.get('country')],
         m.get('gender'),
         query_passport=passport,
-        listed_passports=m.get('passport_number') or m.get('passport_numbers') or m.get('passport'))
+        listed_passports=m.get('passport_number') or m.get('passport_numbers') or m.get('passport'),
+        listed_source=m.get('source'))
     tier = None
     if idv['verdict'] == 'id_match':
         score, tier = 100.0, 'CONFIRMED'

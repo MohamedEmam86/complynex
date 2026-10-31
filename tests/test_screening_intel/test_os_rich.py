@@ -201,3 +201,38 @@ def test_passport_needs_the_same_country():
     v = mi.identity_verdict(None, None, 'Egypt', None, None, ['Egypt'], query_passport='A12345678',
                             listed_passports=['A12345678'])
     assert v['verdict'] == 'id_match'
+
+
+# ------------------------------------------------------------------ re-review fixes
+def test_governorate_must_be_known():
+    assert mi.decode_egyptian_nid('26404101900276')['valid'] is True        # 19 = Ismailia
+    assert mi.decode_egyptian_nid('26404109900276')['valid'] is False       # 99: no such governorate
+
+
+def test_conflict_only_for_egyptian_side_records():
+    q, other = '26404101900276', '28812011234567'
+    assert mi.id_relation(q, [other]) == 'conflict'                         # no country: Egyptian side
+    assert mi.id_relation(q, [other], 'EG', ['Egypt']) == 'conflict'
+    assert mi.id_relation(q, [other], 'EG', ['ru']) is None                 # foreign record: no -25
+    assert mi.id_relation(q, [other], 'EG', ['ru'], 'emlcu') == 'conflict'  # Egyptian list
+
+
+def test_iso2_country_agreement():
+    assert mi.countries_agree(('RU',), (['Russia'],)) is True
+    assert mi.countries_agree(('Russian Federation',), ('russian',)) is True
+    assert mi.countries_agree(('EG',), (['Russia'],)) is False
+    assert mi.countries_agree((None,), ([],)) is None
+    assert mi.id_relation('AB1234567', ['AB-123-4567'], 'Russian Federation', ['RU']) == 'match'
+    v = mi.identity_verdict(None, None, 'Russian Federation', None, None, ['ru'])
+    assert v['country'] == 'agree'
+
+
+def test_exact_number_on_egyptian_list_still_confirms():
+    typed = '29912341234567'                     # does not decode (month 12, day 34)
+    assert mi.decode_egyptian_nid(typed)['valid'] is False
+    for src in ('emlcu', 'INTERNAL_BLACKLIST', 'internal_pep'):
+        assert mi.id_relation(typed, [typed], None, None, src) == 'match'
+    assert mi.id_relation(typed, [typed]) == 'match_unverified'           # unknown list, no country
+    m = {'match_score': 80, 'watchlist_name_ar': 'نبيل على محمود البوشى', 'full_name': 'نبيل على محمود البوشى',
+         'national_id': typed, 'source': 'INTERNAL_BLACKLIST'}
+    assert mi.decide(m, 'نبيل على محمود البوشى', national_id=typed)['decision']['tier'] == 'CONFIRMED'
