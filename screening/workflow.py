@@ -263,6 +263,10 @@ def list_type_of(m):
         from screening import list_category as lc
         code = lc.for_match(m)
         if code:
+            # G13: a background / person-of-interest record that is a relative or close
+            # associate of a PEP is handled as a PEP (enhanced due diligence)
+            if m.get('pep_related') and code in ('CONTEXT', 'POI'):
+                return 'PEP'
             return code
     except Exception:
         pass
@@ -411,10 +415,16 @@ def explain(m, provided=None):
     if str(m.get('legal_status') or '').upper() == 'LIFTED':
         en.append('This listing was lifted (إنهاء أثر); the record is kept for history.')
         ar.append('الإدراج ده اتنهى أثره؛ السجل محفوظ للتاريخ.')
+    try:                         # G13: relatives / close associates of PEPs
+        from screening.pep_relations import explain_lines
+        _en, _ar = explain_lines(m)
+        en.extend(_en); ar.extend(_ar)
+    except Exception:
+        pass
     lt = list_type_of(m)
     lab = LIST_TYPE_LABEL.get(lt, (lt, lt))
     en.append(f'List type: {lab[0]}.'); ar.append(f'نوع القايمة: {lab[1]}.')
-    return {'en': en[:9], 'ar': ar[:9]}
+    return {'en': en[:10], 'ar': ar[:10]}
 
 
 def annotate(matches, provided=None):

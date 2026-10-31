@@ -1645,6 +1645,12 @@ class ComplyNexScreeningEngine:
                 matches = _el.annotate(matches)
             except Exception as _e:
                 logger.warning(f"[ENTITY-LINKS] layer failed: {_e}")
+            # G13: hits that are relatives / close associates of a PEP are tagged (never removed)
+            try:
+                from screening import pep_relations as _pr
+                matches = _pr.annotate(matches)
+            except Exception as _e:
+                logger.warning(f"[PEP-RELATIONS] layer failed: {_e}")
         except Exception as _e:
             logger.warning(f"[MATCH-INTEL] decision layer failed: {_e}")
             _mi = None

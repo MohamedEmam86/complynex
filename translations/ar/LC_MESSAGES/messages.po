@@ -41792,6 +41792,172 @@ msgstr "نسبة الرفض من المراجع (%)"
 msgid "False-positive rate (%)"
 msgstr "نسبة التطابقات غير الصحيحة (%)"
 
+msgid "Screening incomplete"
+msgstr "الفحص غير مكتمل"
+
+#, python-format
+msgid ""
+"Screening of beneficial owner %(name)s was incomplete (a source was "
+"unavailable); screen again."
+msgstr ""
+"فحص المستفيد الحقيقي %(name)s لم يكتمل (مصدر من مصادر الفحص لم يكن متاحاً)؛ "
+"أعد الفحص."
+
+#, python-format
+msgid ""
+"Screening of signatory %(name)s was incomplete (a source was unavailable); "
+"screen again."
+msgstr ""
+"فحص المفوض بالتوقيع %(name)s لم يكتمل (مصدر من مصادر الفحص لم يكن متاحاً)؛ "
+"أعد الفحص."
+
+msgid "Status of the record with its parties"
+msgstr "الحالة شاملة الأطراف المرتبطة"
+
+msgid ""
+"No beneficial owner or authorised signatory is recorded for this company "
+"yet; complete its KYB file."
+msgstr ""
+"لم يتم تسجيل أي مستفيد حقيقي أو مفوض بالتوقيع لهذه الشركة بعد؛ استكمل ملف "
+"اعرف عميلك للشركة."
+
+msgid ""
+"A related party has an open or confirmed screening hit: the company needs "
+"review."
+msgstr ""
+"أحد الأطراف المرتبطة عليه نتيجة فحص مفتوحة أو مؤكدة: الشركة تحتاج إلى "
+"مراجعة."
+
+msgid ""
+"A related party was not fully screened: the company cannot read clear until "
+"it is screened again."
+msgstr ""
+"أحد الأطراف المرتبطة لم يُفحص بالكامل: لا يمكن اعتبار الشركة سليمة حتى يُعاد"
+" الفحص."
+
+msgid "Screened on"
+msgstr "تاريخ الفحص"
+
+msgid "result"
+msgstr "النتيجة"
+
+msgid ""
+"Each party is a screening of its own (result, queue, evidence pack, "
+"clearance). The company is re-screened with all of them."
+msgstr ""
+"كل طرف له فحص مستقل (النتيجة، قائمة المراجعة، ملف الأدلة، الإغلاق). وعند "
+"إعادة فحص الشركة يُعاد فحص جميع الأطراف معها."
+
+msgid "Beneficial owner"
+msgstr "مستفيد حقيقي"
+
+msgid "Authorised signatory"
+msgstr "مفوض بالتوقيع"
+
+#, python-format
+msgid ""
+"Related parties: a screening hit on one of the %(n)s owners / signatories "
+"needs review."
+msgstr ""
+"الأطراف المرتبطة: توجد نتيجة فحص على أحد الملاك / المفوضين بالتوقيع (%(n)s) "
+"تحتاج إلى مراجعة."
+
+#, python-format
+msgid ""
+"Related parties: the screening of one of the %(n)s owners / signatories is "
+"incomplete; screen again."
+msgstr ""
+"الأطراف المرتبطة: فحص أحد الملاك / المفوضين بالتوقيع (%(n)s) غير مكتمل؛ أعد "
+"الفحص."
+
+#, python-format
+msgid "Related parties: %(n)s owners / signatories screened, no open hit."
+msgstr ""
+"الأطراف المرتبطة: تم فحص %(n)s من الملاك / المفوضين بالتوقيع، ولا توجد نتيجة"
+" مفتوحة."
+
+msgid "Relatives and close associates"
+msgstr "الأقارب والمقرّبون"
+
+msgid "Linked record"
+msgstr "السجل المرتبط"
+
+msgid "This record is a"
+msgstr "هذا السجل"
+
+msgid "Their"
+msgstr "له"
+
+msgid "family member"
+msgstr "فرد من العائلة"
+
+msgid "close associate"
+msgstr "شريك / مقرّب"
+
+msgid "Family member"
+msgstr "فرد من العائلة"
+
+msgid "Close associate"
+msgstr "شريك / مقرّب"
+
+msgid "Added by the MLRO"
+msgstr "أضافه مسؤول الإبلاغ"
+
+msgid "Remove the relation"
+msgstr "إزالة العلاقة"
+
+msgid ""
+"A relative or close associate of a PEP is handled with enhanced due "
+"diligence."
+msgstr ""
+"يُتعامل مع أقارب الأشخاص السياسيين ممثلي المخاطر والمقرّبين منهم بإجراءات "
+"عناية واجبة مشددة."
+
+msgid "No relative or close associate of a PEP is linked to this record."
+msgstr "لا يوجد قريب أو مقرّب لشخص سياسي ممثل للمخاطر مرتبط بهذا السجل."
+
+msgid "Record a relation with another hit of this screening"
+msgstr "تسجيل علاقة مع نتيجة أخرى في هذا الفحص"
+
+msgid "This record is a relative / associate of"
+msgstr "هذا السجل قريب / مقرّب من"
+
+msgid "This record is the PEP; their relative / associate is"
+msgstr "هذا السجل هو الشخص السياسي؛ وقريبه / المقرّب منه هو"
+
+msgid "e.g. spouse"
+msgstr "مثال: زوج / زوجة"
+
+msgid "Reason and source (at least 15 characters)"
+msgstr "السبب والمصدر (15 حرفاً على الأقل)"
+
+msgid "Record the relation"
+msgstr "تسجيل العلاقة"
+
+msgid "Both records must be active listed records."
+msgstr "يجب أن يكون السجلان مدرجين ونشطين."
+
+msgid "Relation recorded."
+msgstr "تم تسجيل العلاقة."
+
+msgid "The relation could not be recorded."
+msgstr "تعذر تسجيل العلاقة."
+
+msgid "Relation removed."
+msgstr "تمت إزالة العلاقة."
+
+msgid "The relation was already removed."
+msgstr "العلاقة أُزيلت بالفعل."
+
+msgid "The relation could not be removed."
+msgstr "تعذرت إزالة العلاقة."
+
+msgid "Invalid relation type."
+msgstr "نوع العلاقة غير صحيح."
+
+msgid "Both records must be different listed records."
+msgstr "يجب أن يكون السجلان مختلفين ومدرجين."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

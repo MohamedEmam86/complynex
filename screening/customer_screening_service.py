@@ -133,6 +133,8 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
             result.get('processing_time_ms', 0), user_id,
         ))
         results_id = results_cursor.fetchone()['id']
+        # the result page finds its history row (and so the screened record: G10 parties section)
+        db.execute("UPDATE screening_history SET screening_result_id = %s WHERE id = %s", (results_id, history_id))
 
     queue_ids = []
     for match in high_risk:
@@ -194,7 +196,20 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
 
     db.commit()
 
+    # G10: a merchant / corporate customer is screened together with its related parties
+    # (beneficial owners, controllers, senior managers, signatories); its status becomes the
+    # worst of its own and theirs. The parties are screened under their own modules, so this
+    # never recurses.
+    parties = None
+    if source_record_id and source_module in ('Merchant KYC', 'Customer KYC'):
+        try:
+            from kyb import parties_screening as _g10
+            parties = _g10.after_parent_screening(source_module, source_record_id, user_id, db)
+        except Exception:
+            parties = None
+
     return {
+        'parties': parties,
         'history_id': history_id,
         'results_id': results_id,
         'queue_ids': queue_ids,

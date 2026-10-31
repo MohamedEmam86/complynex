@@ -51,7 +51,7 @@ LABELS = {
                    'approved': N_('Approved'), 'returned': N_('Returned')},
     'screening': {'not_screened': N_('Not screened'), 'clear': N_('Clear'), 'cleared': N_('Cleared (false positive)'),
                   'open': N_('Potential match - open'), 'confirmed': N_('Confirmed match'), 'pep': N_('PEP'),
-                  'error': N_('Screening failed')},
+                  'error': N_('Screening failed'), 'incomplete': N_('Screening incomplete')},
     'legal_form': {'SOLE_PROPRIETORSHIP': N_('Sole proprietorship'), 'PARTNERSHIP': N_('General partnership'),
                    'LIMITED_PARTNERSHIP': N_('Limited partnership'), 'LLC': N_('Limited liability company'),
                    'ONE_PERSON_COMPANY': N_('One-person company'), 'JOINT_STOCK': N_('Joint stock company'),

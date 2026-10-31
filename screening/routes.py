@@ -882,6 +882,7 @@ def view_result(id):
                            decisions=CL.decision_history('result', id),
                            pending=CL.pending_request('result', id),
                            can_approve=CL.can_approve(current_user),
+                           g10_parties=_g10_parties(id),
                            **_p4_result_extras(md if isinstance(md, dict) else {}, matches))
 
 
@@ -938,6 +939,13 @@ def match_profile(rid):
                               if not str(x.get('source') or '').lower().startswith('internal')):
                     allowed = True
                     break
+                # G13: a relative / close associate (or the PEP) linked to one of the hits
+                if r0:
+                    from screening import pep_relations as _PR
+                    if any((str(x.get('other_source') or '').upper(), str(x.get('other_watchlist_id'))) == (src.upper(), str(rec))
+                           for x in _PR.for_record(cur, r0)):
+                        allowed = True
+                        break
             if not allowed:
                 abort(404)
         table, row = pv.load_record(cur, src, rec)
@@ -946,6 +954,8 @@ def match_profile(rid):
             return redirect(url_for('screening.view_result', id=rid))
         rel = pv.related(cur, table, row)
         group, group_diffs = EL.members(cur, table, row)
+        from screening import pep_relations as _PR
+        pep_rel = _PR.for_record(cur, row) if table == 'screening_watchlist' else []
     finally:
         conn.close()
     p = pv.build(table, row, rel, labels={k.lower(): v for k, v in rv.SOURCE_LABEL.items()})
@@ -990,7 +1000,13 @@ def match_profile(rid):
     for g in group:
         g['label'] = rv.SOURCE_LABEL.get(str(g.get('source') or '').lower(), g.get('label'))
     return render_template('screening/match_profile.html', result=result, p=p, v=v, extra_rows=extra_rows,
-                           group=group, group_diffs=group_diffs,
+                           group=group, group_diffs=group_diffs, pep_rel=pep_rel,
+                           pep_rel_record=row if table == 'screening_watchlist' else None,
+                           pep_rel_hits=[{'id': x.get('id'), 'name': x.get('matched_name') or x.get('full_name') or x.get('name'),
+                                          'source': x.get('source')} for x in matches
+                                         if isinstance(x, dict) and x.get('id')
+                                         and not str(x.get('source') or '').upper().startswith('INTERNAL')
+                                         and str(x.get('id')) != str(row.get('id'))][:30],
                            can_unlink=current_user.is_admin() or CL.can_approve(current_user))
 
 
@@ -5863,3 +5879,138 @@ def list_report():
                          download_name=f'screening_hits_by_list_{df}_{dt}.xlsx')
     return render_template('screening/list_report.html', bd=bd, date_from=df, date_to=dt)
 # ==== end P4-10 / G11 ===========================================================================
+
+
+# ============================================================================================
+# p4-parties: G10 related parties on the result page, G13 PEP relatives / associates (manual)
+# ============================================================================================
+def _g10_parties(rid):
+    """Parties section of a merchant / corporate customer's screening result (None otherwise)."""
+    try:
+        from kyb import parties_screening as _g10
+        return _g10.for_result(rid)
+    except Exception:
+        return None
+
+
+def _g13_relation_back(rid):
+    back = request.form.get('back') or ''
+    if back.startswith('/screening/result/'):
+        return redirect(back)
+    return redirect(url_for('screening.view_result', id=rid)) if rid else redirect(url_for('screening.dashboard'))
+
+
+@screening_bp.route('/pep-relations/add', methods=['POST'])
+@login_required
+@permission_required('screening', level='view')
+def pep_relation_add():
+    """G13: the MLRO records that a listed record is a relative / close associate of a listed PEP
+    (reason required, audited). Both records must belong to the screening result."""
+    import psycopg2
+    import psycopg2.extras
+    from flask import abort
+    from config import Config
+    from screening import pep_relations as PR
+    from screening import profile_view as pv
+    if not (current_user.is_admin() or CL.can_approve(current_user)):
+        abort(403)
+    rid = request.form.get('rid', type=int)
+    this_id = request.form.get('this_id', type=int)
+    other_id = request.form.get('other_id', type=int)
+    direction = request.form.get('direction') or 'relative_of'
+    rtype = request.form.get('relation_type') or ''
+    relship = (request.form.get('relationship') or '').strip()
+    reason = (request.form.get('reason') or '').strip()
+    result = query_db(f"SELECT matches FROM screening_results WHERE id = {get_param_style()}", (rid,), one=True) if rid else None
+    if not result or not this_id or not other_id:
+        abort(404)
+    matches_all = result['matches']
+    matches_all = json.loads(matches_all) if isinstance(matches_all, str) else (matches_all or [])
+    hit_ids = {str(x.get('id')) for x in matches_all if isinstance(x, dict)
+               and not str(x.get('source') or '').upper().startswith('INTERNAL')}
+    if str(this_id) not in hit_ids:
+        abort(403)                      # the record must be a hit of this result
+    conn = psycopg2.connect(**Config.POSTGRES_CONFIG, cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM screening_watchlist WHERE id = ANY(%s) AND is_active = 1", ([this_id, other_id],))
+        rows = {r['id']: dict(r) for r in cur.fetchall()}
+        if this_id not in rows or other_id not in rows:
+            flash(gettext('Both records must be active listed records.'), 'warning')
+            return _g13_relation_back(rid)
+        this_row, other_row = rows[this_id], rows[other_id]
+        pep_row, rel_row = (other_row, this_row) if direction == 'relative_of' else (this_row, other_row)
+        try:
+            new_id = PR.add_manual(conn, pep_row, rel_row, rtype, relship, current_user.id, reason)
+        except ValueError as e:
+            conn.rollback()
+            flash(gettext(str(e)), 'warning')
+            return _g13_relation_back(rid)
+        cur.execute("""INSERT INTO audit_logs (user_id, action, module, item_id, details, ip_address, created_at)
+                       VALUES (%s, 'PEP relation added', 'Screening', %s, %s, %s, now())""",
+                    (current_user.id, new_id,
+                     f'Relation {new_id}: watchlist #{rel_row["id"]} is {rtype} of #{pep_row["id"]} '
+                     f'({relship[:60]}); result {rid}; reason: {reason[:300]}', request.remote_addr))
+        conn.commit()
+        flash(gettext('Relation recorded.'), 'success')
+    except Exception:
+        conn.rollback()
+        current_app.logger.exception('G13: relation could not be recorded')
+        flash(gettext('The relation could not be recorded.'), 'danger')
+    finally:
+        conn.close()
+    return _g13_relation_back(rid)
+
+
+@screening_bp.route('/pep-relations/<int:relation_id>/remove', methods=['POST'])
+@login_required
+@permission_required('screening', level='view')
+def pep_relation_remove(relation_id):
+    """G13: the MLRO removes a relation (kept as inactive; an import never revives it)."""
+    import psycopg2
+    import psycopg2.extras
+    from flask import abort
+    from config import Config
+    from screening import pep_relations as PR
+    if not (current_user.is_admin() or CL.can_approve(current_user)):
+        abort(403)
+    rid = request.form.get('rid', type=int)
+    reason = (request.form.get('reason') or '').strip()
+    result = query_db(f"SELECT matches FROM screening_results WHERE id = {get_param_style()}", (rid,), one=True) if rid else None
+    if not result:
+        abort(404)
+    matches_all = result['matches']
+    matches_all = json.loads(matches_all) if isinstance(matches_all, str) else (matches_all or [])
+    conn = psycopg2.connect(**Config.POSTGRES_CONFIG, cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        cur = conn.cursor()
+        # the relation must touch a hit of this result
+        sids = {(PR.side_source(x.get('source')), str(x.get('source_id'))) for x in matches_all
+                if isinstance(x, dict) and x.get('source_id')}
+        cur.execute("""SELECT pep_source, pep_source_id, related_source, related_source_id
+                         FROM screening_pep_relations WHERE id = %s""", (relation_id,))
+        r = cur.fetchone()
+        if not r or not ({(r['pep_source'], r['pep_source_id']), (r['related_source'], r['related_source_id'])} & sids):
+            abort(403)
+        try:
+            ok = PR.deactivate(conn, relation_id, current_user.id, reason)
+        except ValueError as e:
+            conn.rollback()
+            flash(gettext(str(e)), 'warning')
+            return _g13_relation_back(rid)
+        if ok:
+            cur.execute("""INSERT INTO audit_logs (user_id, action, module, item_id, details, ip_address, created_at)
+                           VALUES (%s, 'PEP relation removed', 'Screening', %s, %s, %s, now())""",
+                        (current_user.id, relation_id, f'Relation {relation_id} removed; result {rid}; reason: {reason[:300]}',
+                         request.remote_addr))
+        conn.commit()
+        flash(gettext('Relation removed.') if ok else gettext('The relation was already removed.'), 'success' if ok else 'info')
+    except Exception as e:
+        conn.rollback()
+        if getattr(e, 'code', None) == 403:
+            raise
+        current_app.logger.exception('G13: relation could not be removed')
+        flash(gettext('The relation could not be removed.'), 'danger')
+    finally:
+        conn.close()
+    return _g13_relation_back(rid)

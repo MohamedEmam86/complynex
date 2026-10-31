@@ -111,7 +111,17 @@ def screen_key(person):
 # screening states shown per person
 NOT_SCREENED, CLEAR, CLEARED, OPEN, CONFIRMED, PEP, ERROR = (
     'not_screened', 'clear', 'cleared', 'open', 'confirmed', 'pep', 'error')
-BLOCKING_STATES = (NOT_SCREENED, OPEN, CONFIRMED, ERROR)
+INCOMPLETE = 'incomplete'          # P4-1: a screening source was unavailable; screen again
+BLOCKING_STATES = (NOT_SCREENED, OPEN, CONFIRMED, ERROR, INCOMPLETE)
+# worst first (G10: a company's status is the worst of its own and its parties')
+SEVERITY = (CONFIRMED, OPEN, INCOMPLETE, ERROR, NOT_SCREENED, PEP, CLEARED, CLEAR)
+
+
+def worst_state(states):
+    """The most severe of several screening states (None for an empty list)."""
+    rank = {s: i for i, s in enumerate(SEVERITY)}
+    states = [s for s in states or [] if s]
+    return min(states, key=lambda s: rank.get(s, len(SEVERITY))) if states else None
 
 
 def screening_state(person, history, queue_items):
@@ -138,6 +148,8 @@ def screening_state(person, history, queue_items):
             has_pep = True
         else:
             has_fp = True
+    if (history.get('screening_result') or '') == 'INCOMPLETE':
+        return INCOMPLETE            # a source was down: "no open hit" is not proven
     if has_pep:
         return PEP
     if (history.get('screening_result') or '') == 'POTENTIAL_MATCH' and not queue_items:
@@ -177,7 +189,9 @@ def approval_blockers(entity, ubos, signatories, states):
                        ('signatory', NOT_SCREENED): 'Signatory %(name)s has not been screened.',
                        ('signatory', OPEN): 'Screening hit on signatory %(name)s is still open.',
                        ('signatory', CONFIRMED): 'Signatory %(name)s is a confirmed sanctions match.',
-                       ('signatory', ERROR): 'Screening of signatory %(name)s failed; screen again.'}[(kind, st)]
+                       ('signatory', ERROR): 'Screening of signatory %(name)s failed; screen again.',
+                       ('ubo', INCOMPLETE): 'Screening of beneficial owner %(name)s was incomplete (a source was unavailable); screen again.',
+                       ('signatory', INCOMPLETE): 'Screening of signatory %(name)s was incomplete (a source was unavailable); screen again.'}[(kind, st)]
                 out.append(M(msg, name=r.get('full_name')))
     return out
 
@@ -202,7 +216,7 @@ def sanctions_summary(entity_checked, people):
     when the entity and all persons (at least one declared) have a current
     screening."""
     total = len(people or [])
-    screened = sum(1 for p in people or [] if p.get('screening_state') not in (NOT_SCREENED, ERROR, None))
+    screened = sum(1 for p in people or [] if p.get('screening_state') not in (NOT_SCREENED, ERROR, INCOMPLETE, None))
     open_ = sum(1 for p in people or [] if p.get('screening_state') in (OPEN, CONFIRMED))
     return {'entity': bool(entity_checked), 'people_total': total, 'people_screened': screened,
             'people_open': open_, 'complete': bool(entity_checked) and total > 0 and screened == total}
