@@ -264,6 +264,12 @@ class EnhancedDataUpdater:
             lock = None
         try:
             return self._update_source_locked(source, user_id)
+        except BaseException:
+            try:
+                self.db_conn.rollback()   # the unlock must not commit a half-written update
+            except Exception:
+                pass
+            raise
         finally:
             if lock is not None:
                 lock.__exit__(None, None, None)

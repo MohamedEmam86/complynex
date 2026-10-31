@@ -140,7 +140,7 @@ def main():
     if a.apply:
         from screening import list_versions as LV
         try:   # one writer per list; released when this script's connection closes
-            LV.source_lock(conn, a.source).__enter__()
+            LV.hold_source_lock(conn, a.source)
         except LV.SourceBusy as e:
             print(f'STOP: {e}')
             sys.exit(2)

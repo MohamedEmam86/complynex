@@ -85,6 +85,18 @@ class SourceBusy(RuntimeError):
     """Another update, import or rollback of the same list is running."""
 
 
+def hold_source_lock(conn, source):
+    """For one-shot import scripts: take the list's lock and keep it until the
+    script's connection closes (no context manager whose cleanup could run early)."""
+    key = 'cx_list_source:' + source
+    c = _plain(conn)
+    c.execute("SELECT pg_try_advisory_lock(hashtext(%s))", (key,))
+    ok = c.fetchone()[0]
+    conn.commit()
+    if not ok:
+        raise SourceBusy(f'another update or rollback of {source} is running')
+
+
 @contextmanager
 def source_lock(conn, source):
     """One writer per list at a time (scheduled / approved update, import, rollback).
@@ -94,9 +106,20 @@ def source_lock(conn, source):
     c = _plain(conn)
     c.execute("SELECT pg_try_advisory_lock(hashtext(%s))", (key,))
     if not c.fetchone()[0]:
+        conn.rollback()
         raise SourceBusy(f'another update or rollback of {source} is running')
+    # a session lock survives the commit; committing here keeps no transaction open
+    # (idle in transaction) for the whole download of a long list
+    conn.commit()
     try:
         yield
+    except BaseException:
+        # never let the unlock below commit half of a failed update / rollback
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
     finally:
         try:
             try:
@@ -466,8 +489,8 @@ def approve(conn, vid, user_id, reason):
     pre = c.fetchone()
     if pre and pre.get('triggered_by') and user_id and int(pre['triggered_by']) == int(user_id) and four_eyes_on(conn):
         # four eyes: whoever started the update does not approve it, unless no other MLRO exists
-        c.execute("""SELECT count(*) AS n FROM users WHERE is_active = 1 AND role = 'compliance_manager'
-                     AND id <> %s""", (user_id,))
+        c.execute("""SELECT count(*) AS n FROM users WHERE is_active = 1
+                     AND role IN ('compliance_manager', 'admin') AND id <> %s""", (user_id,))
         if c.fetchone()['n']:
             conn.rollback()
             raise ValueError('You started this update; another MLRO must approve it (four eyes).')
@@ -547,6 +570,12 @@ def rollback(conn, source, user_id, reason):
     try:
         with hold(f'rollback {source}'):
             return _rollback_locked(conn, source, user_id, reason)
+    except BaseException:
+        try:
+            conn.rollback()     # a half-done rollback is never committed by the unlock
+        except Exception:
+            pass
+        raise
     finally:
         lock.__exit__(None, None, None)
 
