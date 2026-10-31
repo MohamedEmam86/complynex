@@ -214,8 +214,25 @@ def build(result_id):
                           'summary': _j(r.get('adverse_media_summary'), {}) or {}},
         'queue': queue,
         'decisions': decisions,
+        'parties': _parties(r['id']),
     }
     return content, content_hash(content)
+
+
+def _parties(result_id):
+    """G10: a company's related parties and their screening state at pack time (None for persons)."""
+    try:
+        from kyb import parties_screening as _g10
+        p = _g10.for_result(result_id)
+    except Exception:
+        return None
+    if not p:
+        return None
+    ov = p.get('overview') or {}
+    return {'name': p.get('name'), 'status': p.get('status'), 'worst': ov.get('worst'),
+            'people': [{'name': x.get('name'), 'role': x.get('role'), 'detail': x.get('detail'),
+                        'state': x.get('state'), 'screened_at': x.get('screened_at'),
+                        'result_id': x.get('result_id')} for x in (ov.get('people') or [])]}
 
 
 def render_pdf(content, digest, generated_by, base_url):

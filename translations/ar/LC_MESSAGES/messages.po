@@ -41958,6 +41958,18 @@ msgstr "نوع العلاقة غير صحيح."
 msgid "Both records must be different listed records."
 msgstr "يجب أن يكون السجلان مختلفين ومدرجين."
 
+msgid "Filtered from a report"
+msgstr "تصفية من تقرير"
+
+msgid "Clear filter"
+msgstr "إلغاء التصفية"
+
+msgid "Proposed by"
+msgstr "اقترحه"
+
+msgid "Minimum score"
+msgstr "أقل درجة"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

@@ -3,6 +3,7 @@
 {% block title %}{{ _('Screening Queue') }}{% endblock %}
 
 {% block content %}
+{% with clear_url=url_for('screening.screening_queue') %}{% include 'screening/_drill_banner.html' %}{% endwith %}
 <style>
     .row-false-positive>td {
         background-color: rgba(57, 255, 20, 0.2) !important;
@@ -135,7 +136,7 @@
                         style="position: sticky; top: 0; z-index: 1020; box-shadow: 0 2px 4px rgba(0,0,0,0.05); background-color: #f8f9fa !important;">
                         {% macro sort_link(label, field) %}
                         {% set new_order = 'desc' if sort == field and order == 'asc' else 'asc' %}
-                        <a href="{{ url_for('screening.screening_queue', sort=field, order=new_order, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, per_page=per_page) }}"
+                        <a href="{{ url_for('screening.screening_queue', sort=field, order=new_order, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, per_page=per_page, **drill_args('list_source')) }}"
                             class="text-dark text-decoration-none d-flex align-items-center gap-1 bg-light">
                             {{ label }}
                             {% if sort == field %}
@@ -379,13 +380,13 @@
         <ul class="pagination pagination-sm justify-content-center">
             <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                 <a class="page-link"
-                    href="{{ url_for('screening.screening_queue', page=page-1, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, sort=sort, order=order, per_page=per_page) }}">«</a>
+                    href="{{ url_for('screening.screening_queue', page=page-1, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, sort=sort, order=order, per_page=per_page, **drill_args('list_source')) }}">«</a>
             </li>
             {% for p in range(1, total_pages + 1) %}
             {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %} <li
                 class="page-item {% if p == page %}active{% endif %}">
                 <a class="page-link"
-                    href="{{ url_for('screening.screening_queue', page=p, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, sort=sort, order=order, per_page=per_page) }}">{{
+                    href="{{ url_for('screening.screening_queue', page=p, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, sort=sort, order=order, per_page=per_page, **drill_args('list_source')) }}">{{
                     p
                     }}</a>
                 </li>
@@ -397,7 +398,7 @@
                     {% endfor %}
                     <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                         <a class="page-link"
-                            href="{{ url_for('screening.screening_queue', page=page+1, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, sort=sort, order=order, per_page=per_page) }}">»</a>
+                            href="{{ url_for('screening.screening_queue', page=page+1, status=status_filter, priority=priority_filter, list_source=source_filter, assigned=assigned_filter, sort=sort, order=order, per_page=per_page, **drill_args('list_source')) }}">»</a>
                     </li>
         </ul>
     </nav>

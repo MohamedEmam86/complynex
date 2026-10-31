@@ -6014,3 +6014,37 @@ def pep_relation_remove(relation_id):
     finally:
         conn.close()
     return _g13_relation_back(rid)
+
+
+# ==== wave4: report drill-down filters survive pagination and are shown ========================
+_DRILL_KEYS = ('initiated_by', 'resolved_by', 'requested_by', 'decided_by',
+               'list_source', 'result', 'min_score', 'date_from', 'date_to')
+_DRILL_USER_KEYS = {'initiated_by': 'Run by', 'resolved_by': 'Resolved by',
+                    'requested_by': 'Proposed by', 'decided_by': 'Decided by'}
+_DRILL_LABELS = {'list_source': 'List', 'result': 'Result', 'min_score': 'Minimum score',
+                 'date_from': 'From', 'date_to': 'To'}
+
+
+@screening_bp.context_processor
+def _drill_context():
+    def drill_args(*exclude):
+        try:
+            return {k: request.args.get(k) for k in _DRILL_KEYS
+                    if k not in exclude and request.args.get(k)}
+        except Exception:
+            return {}
+
+    def drill_labels():
+        out = []
+        for k, v in drill_args().items():
+            label = _DRILL_USER_KEYS.get(k) or _DRILL_LABELS.get(k) or k
+            if k in _DRILL_USER_KEYS:
+                try:
+                    u = query_db("SELECT TRIM(COALESCE(first_name,'') || ' ' || COALESCE(last_name,'')) AS n "
+                                 "FROM users WHERE id = %s", (int(v),), one=True)
+                    v = (u or {}).get('n') or v
+                except Exception:
+                    pass
+            out.append((gettext(label), v))
+        return out
+    return {'drill_args': drill_args, 'drill_labels': drill_labels}

@@ -1,0 +1,9 @@
+{# wave4: shows the report drill-down filters that narrow this list, with a way to clear them #}
+{% set _dl = drill_labels() %}
+{% if _dl %}
+<div class="alert alert-info d-flex flex-wrap align-items-center gap-2 py-2 mb-3">
+  <i class="fas fa-filter"></i><strong>{{ _('Filtered from a report') }}:</strong>
+  {% for label, value in _dl %}<span class="badge bg-light text-dark border">{{ label }}: {{ value }}</span>{% endfor %}
+  <a class="ms-auto btn btn-sm btn-outline-secondary" href="{{ clear_url }}">{{ _('Clear filter') }}</a>
+</div>
+{% endif %}

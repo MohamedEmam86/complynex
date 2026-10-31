@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _('MLRO approvals') }}{% endblock %}
 {% block content %}
+{% with clear_url=url_for('screening.approvals') %}{% include 'screening/_drill_banner.html' %}{% endwith %}
 <div class="container-fluid mt-4">
   <nav aria-label="breadcrumb"><ol class="breadcrumb small">
     <li class="breadcrumb-item"><a href="{{ url_for('screening.dashboard') }}">{{ _('Screening') }}</a></li>
@@ -25,8 +26,8 @@
   {% endif %}
 
   <ul class="nav nav-tabs mb-3">
-    <li class="nav-item"><a class="nav-link {{ 'active' if show != 'decided' }}" href="{{ url_for('screening.approvals') }}">{{ _('Waiting for approval') }}</a></li>
-    <li class="nav-item"><a class="nav-link {{ 'active' if show == 'decided' }}" href="{{ url_for('screening.approvals', show='decided') }}">{{ _('Decided') }}</a></li>
+    <li class="nav-item"><a class="nav-link {{ 'active' if show != 'decided' }}" href="{{ url_for('screening.approvals', **drill_args()) }}">{{ _('Waiting for approval') }}</a></li>
+    <li class="nav-item"><a class="nav-link {{ 'active' if show == 'decided' }}" href="{{ url_for('screening.approvals', show='decided', **drill_args()) }}">{{ _('Decided') }}</a></li>
   </ul>
 
   <div class="card shadow-sm border-0 mb-4">

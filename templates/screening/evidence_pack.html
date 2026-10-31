@@ -100,6 +100,15 @@
 </table>
 {% endif %}
 
+{% if c.parties %}
+<h2>6b. {{ _('Related parties') }} ({{ c.parties.people|length }})</h2>
+<div>{{ _('Status of the record with its parties') }}: {{ _(c.parties.status or 'Not screened') }}</div>
+<table><tr><th>{{ _('Name') }}</th><th>{{ _('Role') }}</th><th>{{ _('Screening') }}</th><th>{{ _('Screened on') }}</th><th>{{ _('Result') }}</th></tr>
+{% for p in c.parties.people %}<tr><td dir="auto">{{ p.name }}</td><td>{{ _(p.role or '') }}{% if p.detail %} · {{ p.detail }}{% endif %}</td><td>{{ p.state }}</td><td>{{ p.screened_at or '-' }}</td><td>{{ p.result_id or '-' }}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">{{ _('No beneficial owner or authorised signatory is recorded for this company yet; complete its KYB file.') }}</td></tr>{% endfor %}
+</table>
+{% endif %}
+
 <h2>7. {{ _('Adverse media') }}</h2>
 <div>{{ c.adverse_media.hits }} {{ _('articles') }}{% if c.adverse_media.summary.risk_level %} · {{ c.adverse_media.summary.risk_level }}{% endif %}</div>
 
