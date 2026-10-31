@@ -2284,91 +2284,49 @@ import uuid
 import pandas as pd
 from flask import jsonify
 
-# Global in-memory dictionary to store bulk upload job states
-BULK_JOBS = {}
-
+# ---- P4-9 bulk screening (p4-bulk) ------------------------------------------------------
+# Jobs and rows live in screening_bulk_jobs / screening_bulk_rows (any web worker shows the
+# progress, a restart loses nothing); the run is a separate process
+# (scripts/bulk_screening_worker.py); every row ends DONE / FAILED / SKIPPED with its reason.
 from flask import current_app
 from database.db import get_db, query_db
 
-def background_bulk_processor(app, job_id, df, user_id):
-    """Processes a bulk screening job in the background with parallel processing."""
-    with app.app_context():
-        results_map = {}
-        total = len(df)
-        
-        def process_single_row(index, row):
-            try:
-                with app.app_context():
-                    engine = get_engine()
-                    try:
-                        name = str(row.get('name', '')).strip()
-                        if not name or str(name).lower() == 'nan':
-                            return index, None
-                            
-                        entity_type = row.get('type', 'Individual')
-                        dob = row.get('dob', None)
-                        nationality = row.get('nationality', None)
-                        
-                        screen_res = engine.screen_person(
-                            name=name,
-                            date_of_birth=str(dob) if dob else None,
-                            nationality=str(nationality) if nationality else None,
-                            entity_type=str(entity_type).upper(),
-                            user_id=user_id,
-                            include_media=False
-                        )
-                        
-                        _save_screening_result(
-                            name=name,
-                            entity_type=entity_type,
-                            dob=dob,
-                            nationality=nationality,
-                            source_module='Bulk Upload',
-                            source_record_id=None,
-                            result=screen_res,
-                            user_id=user_id,
-                            screening_type='BULK'
-                        )
-                        
-                        res_item = {
-                            'name': name,
-                            'type': entity_type,
-                            'result': screen_res['screening_result'],
-                            'score': screen_res['highest_score'],
-                            'matches': len(screen_res['matches']),
-                            'input_warnings': screen_res.get('input_warnings') or [],
-                            'details': screen_res
-                        }
-                        return index, res_item
-                    finally:
-                        # engine.close()  # REMOVED: singleton must not be closed per-request
-                        pass
-            except Exception as e:
-                logger.error(f"Error screening row {index}: {str(e)}")
-                return index, None
 
-        # Execute in parallel
-        futures = []
-        # Use a reasonable number of workers for DB operations - 4 is balanced for SQLite
-        with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
-            for idx, row in df.iterrows():
-                futures.append(executor.submit(process_single_row, idx, row))
-            
-            completed = 0
-            for future in concurrent.futures.as_completed(futures):
-                idx, res = future.result()
-                if res:
-                    results_map[idx] = res
-                completed += 1
-                if job_id in BULK_JOBS:
-                    BULK_JOBS[job_id]['current_count'] = completed
+def _bulk_store():
+    from screening import bulk_jobs as BJ
+    from screening import list_versions as LV
+    return BJ.SqlStore(LV.connect())
 
-        # Sort results back to original order
-        final_results = [results_map[i] for i in sorted(results_map.keys())]
-        
-        if job_id in BULK_JOBS:
-            BULK_JOBS[job_id]['status'] = 'completed'
-            BULK_JOBS[job_id]['results'] = final_results
+
+def _bulk_close(store):
+    try:
+        store.conn.close()
+    except Exception:
+        pass
+
+
+def _bulk_job_or_abort(store, job_id):
+    from flask import abort
+    j = store.job(job_id)
+    if not j:
+        abort(404)
+    if not (current_user.is_admin() or CL.can_approve(current_user)
+            or int(j.get('created_by') or 0) == int(current_user.id)):
+        abort(403)
+    return j
+
+
+def _bulk_launch(job_id):
+    """Start the background worker for a job (detached: a web restart does not stop it)."""
+    import subprocess
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    logdir = os.path.join(base, 'logs')
+    os.makedirs(logdir, exist_ok=True)
+    out = open(os.path.join(logdir, f'bulk_{job_id[:8]}.log'), 'ab')
+    subprocess.Popen([sys.executable, os.path.join(base, 'scripts', 'bulk_screening_worker.py'), '--job', job_id],
+                     cwd=base, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                     start_new_session=True, close_fds=True)
+
 
 @screening_bp.route('/bulk-upload', methods=['GET', 'POST'])
 @limiter.limit('10 per minute')
@@ -2376,134 +2334,202 @@ def background_bulk_processor(app, job_id, df, user_id):
 @permission_required('screening')
 @permission_required('screening', level='edit')
 def bulk_screening_upload():
-    """Handle bulk screening via file upload mapping."""
+    """Bulk screening step 1: upload a CSV / Excel file (the rows are stored, nothing runs yet)."""
+    from screening import bulk_jobs as BJ
     if request.method == 'POST':
-        # Now handles AJAX API requests
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-        
-        if 'file' not in request.files:
-            if is_ajax: return jsonify({"status": "error", "message": "No file part"}), 400
-            flash(gettext('No file part'), 'error')
-            return redirect(request.url)
-            
-        file = request.files['file']
-        if file.filename == '':
-            if is_ajax: return jsonify({"status": "error", "message": "No selected file"}), 400
+        f = request.files.get('file')
+        if not f or not f.filename:
             flash(gettext('No selected file'), 'error')
             return redirect(request.url)
-            
-        if file and (file.filename.endswith('.csv') or file.filename.endswith('.xlsx')):
-            try:
-                if file.filename.endswith('.csv'):
-                    df = pd.read_csv(file)
-                else:
-                    df = pd.read_excel(file)
-                
-                # normalize columns
-                df.columns = [c.lower().strip().replace(' ', '_') for c in df.columns]
-                
-                if 'name' not in df.columns:
-                    if is_ajax: return jsonify({"status": "error", "message": 'File must contain a "Name" column.'}), 400
-                    flash(gettext('File must contain a "Name" column.'), 'error')
-                    return redirect(request.url)
-                
-                # Generate unique ID and start job
-                job_id = str(uuid.uuid4())
-                BULK_JOBS[job_id] = {
-                    'status': 'processing',
-                    'total_count': len(df),
-                    'current_count': 0,
-                    'results': None,
-                    'message': ''
-                }
-                
-                # Spawning Thread
-                app = current_app._get_current_object()
-                user_id = current_user.id
-                thread = threading.Thread(target=background_bulk_processor, args=(app, job_id, df, user_id))
-                thread.daemon = True
-                thread.start()
-                
-                if is_ajax: 
-                    return jsonify({"status": "started", "job_id": job_id})
-                
-                flash(gettext('Upload started. Warning: synchronous render deprecated.'), 'info')
-                return redirect(request.url)
-                
-            except Exception as e:
-                logger.error(f"Bulk setup failed: {e}")
-                if is_ajax: return jsonify({"status": "error", "message": f'Error processing file: {str(e)}'}), 500
-                flash(f'Error processing file: {str(e)}', 'error')
-                return redirect(request.url)
-        else:
-            if is_ajax: return jsonify({"status": "error", "message": 'Allowed file types are CSV and Excel (.xlsx)'}), 400
-            flash(gettext('Allowed file types are CSV and Excel (.xlsx)'), 'error')
+        try:
+            headers, rows = BJ.read_file(f.stream, f.filename)
+        except ValueError as e:
+            flash(gettext('The file could not be used: %(why)s', why=str(e)), 'error')
             return redirect(request.url)
+        if not rows:
+            flash(gettext('The file has no rows.'), 'error')
+            return redirect(request.url)
+        store = _bulk_store()
+        try:
+            jid = store.create_job(current_user.id, f.filename, headers, rows)
+        finally:
+            _bulk_close(store)
+        _audit('BULK_UPLOAD', None, f'job {jid}: {f.filename} ({len(rows)} rows)')
+        return redirect(url_for('screening.bulk_map', job_id=jid))
+    store = _bulk_store()
+    try:
+        c = store._c()
+        if current_user.is_admin() or CL.can_approve(current_user):
+            c.execute("""SELECT j.*, NULLIF(trim(coalesce(u.first_name,'') || ' ' || coalesce(u.last_name,'')), '') AS created_by_name FROM screening_bulk_jobs j
+                         LEFT JOIN users u ON u.id = j.created_by ORDER BY j.created_at DESC LIMIT 30""")
+        else:
+            c.execute("""SELECT j.*, NULLIF(trim(coalesce(u.first_name,'') || ' ' || coalesce(u.last_name,'')), '') AS created_by_name FROM screening_bulk_jobs j
+                         LEFT JOIN users u ON u.id = j.created_by WHERE j.created_by = %s
+                         ORDER BY j.created_at DESC LIMIT 30""", (current_user.id,))
+        jobs = [dict(r) for r in c.fetchall()]
+        store.conn.commit()
+    except Exception as e:
+        logger.warning(f'[BULK] job list unavailable: {e}')
+        jobs = []
+    finally:
+        _bulk_close(store)
+    return render_template('screening/bulk_upload.html', jobs=jobs, max_rows=BJ.MAX_ROWS)
 
-    return render_template('screening/bulk_upload.html')
+
+@screening_bp.route('/bulk/<job_id>/map', methods=['GET', 'POST'])
+@login_required
+@permission_required('screening', level='edit')
+def bulk_map(job_id):
+    """Bulk screening step 2: which column holds what, then the input check (no screening yet)."""
+    from screening import bulk_jobs as BJ
+    store = _bulk_store()
+    try:
+        j = _bulk_job_or_abort(store, job_id)
+        headers = j.get('headers') or []
+        if j['status'] not in ('MAPPING', 'READY'):
+            return redirect(url_for('screening.bulk_job', job_id=job_id))
+        if request.method == 'POST':
+            mapping = {}
+            for fld in BJ.FIELDS:
+                h = request.form.get(f'map_{fld}') or ''
+                if h and h in headers:
+                    mapping[fld] = h
+            default_type = 'ENTITY' if request.form.get('default_type') == 'ENTITY' else 'INDIVIDUAL'
+            try:
+                summary = BJ.prepare(store, job_id, mapping, default_type)
+            except ValueError as e:
+                flash(gettext('%(why)s', why=str(e)), 'error')
+                return redirect(request.url)
+            _audit('BULK_MAPPED', None, f'job {job_id}: {summary}')
+            return redirect(url_for('screening.bulk_job', job_id=job_id))
+        mapping = j.get('column_map') or BJ.guess_mapping(headers)
+        sample = [r for _n, r in store.raw_rows(job_id)[:5]]
+        return render_template('screening/bulk_map.html', job=j, headers=headers, mapping=mapping,
+                               fields=BJ.FIELDS, sample=sample)
+    finally:
+        _bulk_close(store)
+
+
+@screening_bp.route('/bulk/<job_id>')
+@login_required
+@permission_required('screening', level='view')
+def bulk_job(job_id):
+    """Bulk screening: summary before the run, progress while it runs, report after."""
+    from screening import bulk_jobs as BJ
+    store = _bulk_store()
+    try:
+        j = _bulk_job_or_abort(store, job_id)
+        prog = BJ.progress_of(store, job_id)
+        rows = store.rows_for_report(job_id, flagged_only=True) if prog['finished'] else []
+        return render_template('screening/bulk_job.html', job=j, prog=prog, rows=rows,
+                               summary=j.get('summary') or {})
+    finally:
+        _bulk_close(store)
+
+
+@screening_bp.route('/bulk/<job_id>/start', methods=['POST'])
+@login_required
+@permission_required('screening', level='edit')
+def bulk_start(job_id):
+    """Start (or resume) the background run of a job."""
+    from screening import bulk_jobs as BJ
+    store = _bulk_store()
+    try:
+        j = _bulk_job_or_abort(store, job_id)
+        st = j['status']
+        if st == 'RUNNING' and not BJ.is_stale(j):
+            flash(gettext('This file is already being screened.'), 'info')
+        elif st in ('READY', 'PAUSED', 'RUNNING', 'DONE_WITH_GAP'):
+            store.set_status(job_id, st, started_by=current_user.id)
+            _bulk_launch(job_id)
+            _audit('BULK_START', None, f'job {job_id} ({st})')
+            flash(gettext('Screening started in the background. You can leave this page.'), 'success')
+        else:
+            flash(gettext('This file cannot be started in its current state.'), 'warning')
+    finally:
+        _bulk_close(store)
+    return redirect(url_for('screening.bulk_job', job_id=job_id))
+
+
+@screening_bp.route('/bulk/<job_id>/cancel', methods=['POST'])
+@login_required
+@permission_required('screening', level='edit')
+def bulk_cancel(job_id):
+    store = _bulk_store()
+    try:
+        j = _bulk_job_or_abort(store, job_id)
+        if j['status'] in ('MAPPING', 'READY', 'RUNNING', 'PAUSED'):
+            store.set_status(job_id, 'CANCELLED')
+            _audit('BULK_CANCEL', None, f'job {job_id}')
+            flash(gettext('Cancelled. Rows already screened keep their results.'), 'info')
+    finally:
+        _bulk_close(store)
+    return redirect(url_for('screening.bulk_job', job_id=job_id))
+
 
 @screening_bp.route('/bulk-upload-status/<job_id>', methods=['GET'])
 @login_required
-@permission_required('screening')
-@permission_required('screening', level='edit')
+@permission_required('screening', level='view')
 def bulk_upload_status(job_id):
-    """AJAX Polling route to return current upload processing metrics"""
-    job = BULK_JOBS.get(job_id)
-    if not job:
-        return jsonify({"status": "error", "message": "Job ID not found"}), 404
-        
-    return jsonify({
-        "status": job['status'],
-        "total_count": job['total_count'],
-        "current_count": job['current_count'],
-        "message": job.get('message', '')
-    })
+    """Progress of a job (polled by the job page)."""
+    from screening import bulk_jobs as BJ
+    store = _bulk_store()
+    try:
+        _bulk_job_or_abort(store, job_id)
+        return jsonify(BJ.progress_of(store, job_id))
+    finally:
+        _bulk_close(store)
+
 
 @screening_bp.route('/bulk-results/<job_id>', methods=['GET'])
 @login_required
 @permission_required('screening')
 def bulk_results_view(job_id):
-    """Serves the completion view payload"""
-    job = BULK_JOBS.get(job_id)
-    if not job or job['status'] != 'completed':
-        flash(gettext('Invalid or incomplete job result payload request.'), 'error')
-        return redirect(url_for('screening.screening_queue'))
-        
-    results = job['results']
-    # Cleanup memory
-    del BULK_JOBS[job_id] 
-    
-    return render_template('screening/bulk_results.html', results=results)
+    """Old link: the report is on the job page."""
+    return redirect(url_for('screening.bulk_job', job_id=job_id))
+
+
+@screening_bp.route('/bulk/<job_id>/export')
+@login_required
+@permission_required('screening', level='view')
+def bulk_export(job_id):
+    """Excel: summary, hits / incomplete / failed rows, every row."""
+    from screening import bulk_jobs as BJ
+    store = _bulk_store()
+    try:
+        j = _bulk_job_or_abort(store, job_id)
+        out = BJ.export_xlsx(store, job_id)
+    finally:
+        _bulk_close(store)
+    _audit('BULK_EXPORT', None, f'job {job_id}')
+    base = re.sub(r'[^A-Za-z0-9_.-]+', '_', (j.get('filename') or 'bulk').rsplit('.', 1)[0])[:60]
+    return send_file(out, download_name=f'bulk_screening_{base}_{job_id[:8]}.xlsx', as_attachment=True,
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
 
 @screening_bp.route('/bulk-template')
 @login_required
 @permission_required('screening', level='view')
 def bulk_template():
-    """Generate and download a sample bulk screening template."""
+    """Sample bulk screening file (invented names)."""
     import pandas as pd
     from io import BytesIO
-    
-    data = {
-        'Name': ['Ahmed Mohamed', 'Global Trade Corp'],
+    df = pd.DataFrame({
+        'Name': ['Ahmed Mohamed Ali', 'Example Trading Company'],
         'Type': ['Individual', 'Entity'],
         'DOB': ['1980-01-01', ''],
-        'Nationality': ['Egypt', ''],
-        'ID': ['123456789', '']
-    }
-    df = pd.DataFrame(data)
-    
+        'Nationality': ['Egypt', 'Egypt'],
+        'ID': ['', ''],
+        'Customer ref': ['C-0001', 'M-0001'],
+    })
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Sheet1')
-        
     output.seek(0)
-    
-    return send_file(
-        output,
-        download_name='bulk_screening_template.xlsx',
-        as_attachment=True,
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
+    return send_file(output, download_name='bulk_screening_template.xlsx', as_attachment=True,
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+# ---- end P4-9 bulk screening ---------------------------------------------------------------
+
 
 @screening_bp.route('/api/scrape-all', methods=['POST'])
 @limiter.limit('5 per hour')

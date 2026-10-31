@@ -343,6 +343,7 @@
             {% if am.sources_used %}{{ _('Sources answered') }}: {{ am.sources_used|join(', ')|replace('Source', '') }}{% endif %}
             {% if am.sources_failed %} · <span class="text-danger">{{ _('Did not answer') }}: {{ am.sources_failed|join(', ')|replace('Source', '') }}</span>{% endif %}
             {% if am.searched_at %} · {{ am.searched_at }}{% endif %}
+            {% if am.dedup and (am.dedup.duplicates_merged or am.dedup.over_cap) %}<br>{{ _('Same story from several outlets shown once') }}: {{ am.dedup.duplicates_merged or 0 }}{% if am.dedup.over_cap %} · {{ _('Further stories not shown (limit %(n)s)', n=am.dedup.cap) }}: {{ am.dedup.over_cap }}{% endif %}{% endif %}
           </div>
           {% if am.legacy %}<div class="text-warning mt-1"><i class="fas fa-exclamation-triangle me-1"></i>{{ _('This search ran with the earlier method, which listed every article returned. Re-run it for articles about this person only.') }}</div>{% endif %}
         </div>
@@ -363,6 +364,11 @@
             {% for kw in (hit.matched_keywords or [])[:4] %}<span class="chip extra">{{ kw }}</span>{% endfor %}
             {% if hit.name_match %}<span class="chip {% if hit.name_match in ['exact', 'strong'] %}ok{% else %}extra{% endif %}" title="{{ _('How the article names the person') }}">{{ _('name') }}: {{ _(hit.name_match) }}</span>{% endif %}
           </div>
+          {% if hit.also_reported_by %}
+          <details class="small mt-1"><summary class="text-muted">{{ _('Also reported by') }} ({{ hit.also_reported_by|length }})</summary>
+            <ul class="mb-0">{% for o in hit.also_reported_by %}<li>{% if o.url %}<a href="{{ o.url }}" target="_blank" rel="noopener">{{ o.source or o.url }}</a>{% else %}{{ o.source }}{% endif %} <span class="text-muted">{{ (o.published_at or '')[:10] }}</span></li>{% endfor %}</ul>
+          </details>
+          {% endif %}
         </div>
         {% endmacro %}
         {% for hit in adverse_hits[:8] %}{{ am_item(hit) }}{% endfor %}

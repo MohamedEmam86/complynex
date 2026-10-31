@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Map columns') }}{% endblock %}
+
+{% block content %}
+{% set labels = {'name': _('Name'), 'entity_type': _('Type (individual / entity)'), 'dob': _('Date of birth'),
+                 'nationality': _('Nationality / country'), 'national_id': _('National ID / registration number'),
+                 'customer_ref': _('Customer reference')} %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-table"></i> {{ _('Map columns') }}</h2>
+        <a href="{{ url_for('screening.bulk_screening_upload') }}" class="btn btn-outline-secondary">{{ _('Back') }}</a>
+    </div>
+    <p class="text-muted">{{ job.filename }} — {{ job.total_rows }} {{ _('rows') }}</p>
+
+    <form method="post" class="card border-0 shadow-sm mb-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="card-body">
+            <div class="row g-3">
+                {% for f in fields %}
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold" for="map_{{ f }}">{{ labels[f] }}{% if f == 'name' %} <span class="text-danger">*</span>{% endif %}</label>
+                    <select class="form-select" id="map_{{ f }}" name="map_{{ f }}" {% if f == 'name' %}required{% endif %}>
+                        <option value="">{{ _('— not in the file —') }}</option>
+                        {% for h in headers %}<option value="{{ h }}" {{ 'selected' if mapping.get(f) == h }}>{{ h }}</option>{% endfor %}
+                    </select>
+                </div>
+                {% endfor %}
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold" for="default_type">{{ _('Type when the file does not say') }}</label>
+                    <select class="form-select" id="default_type" name="default_type">
+                        <option value="INDIVIDUAL" {{ 'selected' if job.default_type != 'ENTITY' }}>{{ _('Individual') }}</option>
+                        <option value="ENTITY" {{ 'selected' if job.default_type == 'ENTITY' }}>{{ _('Entity') }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-white text-end">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>{{ _('Check the rows') }}</button>
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h6 class="fw-bold">{{ _('First rows of the file') }}</h6>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead><tr>{% for h in headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+                    <tbody>{% for r in sample %}<tr>{% for h in headers %}<td class="text-break">{{ r.get(h, '') }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

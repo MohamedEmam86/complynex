@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Bulk Screening Upload') }}{% endblock %}
+{% block title %}{{ _('Bulk Screening') }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -12,170 +12,60 @@
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body p-4">
-                    <h5 class="card-title mb-4">{{ _('Upload Names for Screening') }}</h5>
-
-                    <div class="alert alert-info d-flex gap-3 align-items-center">
-                        <i class="bi bi-info-circle fs-4"></i>
-                        <div>
-                            <strong>{{ _('Instructions:') }}</strong>
-                            <ul class="mb-0 ps-3">
-                                <li>{{ _('Supported file formats:') }} <strong>.csv, .xlsx</strong></li>
-                                <li>{{ _('Maximum file size: 5MB') }}</li>
-                                <li>{{ _('Required column:') }} <strong>{{ _('Name') }}</strong></li>
-                                <li>{{ _('Optional columns:') }} <strong>{{ _('Type, DOB, Nationality, ID') }}</strong></li>
-                            </ul>
-                        </div>
+                    <h5 class="card-title mb-3">{{ _('Upload Names for Screening') }}</h5>
+                    <div class="alert alert-info small">
+                        <ol class="mb-0 ps-3">
+                            <li>{{ _('Upload a CSV or Excel (.xlsx) file, up to %(n)s rows.', n='{:,}'.format(max_rows)) }}</li>
+                            <li>{{ _('Choose which column holds the name, type, date of birth, nationality, ID and your customer reference.') }}</li>
+                            <li>{{ _('Each row is checked for input quality before anything runs; you see the summary first.') }}</li>
+                            <li>{{ _('The screening runs in the background. Every row gets its own screening result; the report lists hits, incomplete screenings and failed rows.') }}</li>
+                        </ol>
                     </div>
-
-                    <!-- Standard form elements without standard submit action -->
-                    <form id="bulkUploadForm" enctype="multipart/form-data" class="mt-4">
-                        <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token() }}">
-
-                        <div class="mb-4">
+                    <form method="post" enctype="multipart/form-data" class="mt-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
                             <label for="fileUpload" class="form-label fw-bold">{{ _('Select File') }}</label>
-                            <input class="form-control form-control-lg" type="file" id="fileUpload" name="file"
-                                accept=".csv, .xlsx" required>
+                            <input class="form-control" type="file" id="fileUpload" name="file" accept=".csv,.xlsx" required>
                         </div>
-
-                        <!-- Progress Bar Section (Hidden initially) -->
-                        <div id="progressSection" class="mb-4 d-none">
-                            <label class="form-label fw-bold text-primary"
-                                id="progressStatusLabel">{{ _('Initializing...') }}</label>
-                            <div class="progress" style="height: 25px;">
-                                <div id="uploadProgressBar"
-                                    class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
-                                    role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0"
-                                    aria-valuemax="100">
-                                    0%
-                                </div>
-                            </div>
-                            <small class="text-muted mt-2 d-block text-center" id="progressDetails">{{ _('0 of 0
-                                processed') }}</small>
-                        </div>
-
                         <div class="d-flex justify-content-between align-items-center">
-                            <a href="{{ url_for('screening.bulk_template') }}" class="text-decoration-none"
-                                id="downloadTemplateBtn">
-                                <i class="bi bi-file-earmark-arrow-down"></i> {{ _('Download Template') }}
-                            </a>
-                            <button type="submit" class="btn btn-primary btn-lg px-4" id="btnRunScreening">
-                                <i class="bi bi-play-circle me-2"></i> {{ _('Run Screening') }}
-                            </button>
+                            <a href="{{ url_for('screening.bulk_template') }}" class="text-decoration-none">
+                                <i class="bi bi-download"></i> {{ _('Download template') }}</a>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-right-circle me-1"></i>{{ _('Upload and map columns') }}</button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">{{ _('Recent bulk screenings') }}</h6>
+                    {% if jobs %}
+                    <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead><tr><th>{{ _('File') }}</th><th>{{ _('Rows') }}</th><th>{{ _('Status') }}</th><th>{{ _('Uploaded by') }}</th><th>{{ _('Date') }}</th><th></th></tr></thead>
+                        <tbody>
+                        {% for j in jobs %}
+                        <tr>
+                            <td class="text-break">{{ j.filename }}</td>
+                            <td>{{ j.total_rows }}</td>
+                            <td><span class="badge {% if j.status == 'DONE' %}bg-success{% elif j.status in ['RUNNING', 'READY'] %}bg-primary{% elif j.status in ['DONE_WITH_GAP', 'PAUSED'] %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ _(j.status) }}</span></td>
+                            <td>{{ j.created_by_name or '—' }}</td>
+                            <td class="text-nowrap">{{ j.created_at }}</td>
+                            <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('screening.bulk_job', job_id=j.id) }}">{{ _('Open') }}</a></td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                    {% else %}
+                    <div class="text-muted small">{{ _('No bulk screenings yet.') }}</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<script nonce="{{ csp_nonce }}">
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('bulkUploadForm');
-        const fileInput = document.getElementById('fileUpload');
-        const btnRunScreening = document.getElementById('btnRunScreening');
-        const progressSection = document.getElementById('progressSection');
-        const progressBar = document.getElementById('uploadProgressBar');
-        const progressStatusLabel = document.getElementById('progressStatusLabel');
-        const progressDetails = document.getElementById('progressDetails');
-
-        let pollInterval = null;
-
-        form.addEventListener('submit', function (e) {
-            e.preventDefault(); // Stop normal form POST
-
-            if (fileInput.files.length === 0) {
-                alert('Please select a file to upload.');
-                return;
-            }
-
-            const formData = new FormData(form);
-
-            // UI Updates for starting state
-            btnRunScreening.disabled = true;
-            btnRunScreening.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
-            fileInput.disabled = true;
-            progressSection.classList.remove('d-none');
-            progressBar.style.width = '0%';
-            progressBar.innerText = '0%';
-            progressStatusLabel.innerText = 'Uploading file & preparing batch...';
-            progressDetails.innerText = 'Estimating rows...';
-
-            // 1. Submit the file and get a Job ID back
-            fetch('{{ url_for("screening.bulk_screening_upload") }}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    // CSRF is included in formData automatically
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'error') {
-                        throw new Error(data.message);
-                    }
-
-                    // 2. We received a Job ID. Start polling.
-                    const jobId = data.job_id;
-                    progressStatusLabel.innerText = 'Processing rows...';
-                    btnRunScreening.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-
-                    pollInterval = setInterval(() => checkJobStatus(jobId), 1000);
-                })
-                .catch(error => {
-                    alert('Error starting upload: ' + error.message);
-                    resetForm();
-                });
-        });
-
-        function checkJobStatus(jobId) {
-            fetch(`/screening/bulk-upload-status/${jobId}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'error') {
-                        clearInterval(pollInterval);
-                        alert('Job Error: ' + data.message);
-                        resetForm();
-                        return;
-                    }
-
-                    const current = data.current_count;
-                    const total = data.total_count;
-
-                    if (total > 0) {
-                        const percentage = Math.round((current / total) * 100);
-                        progressBar.style.width = `${percentage}%`;
-                        progressBar.innerText = `${percentage}%`;
-                        progressBar.setAttribute('aria-valuenow', percentage);
-                        progressDetails.innerText = `${current} of ${total} processed`;
-                    }
-
-                    if (data.status === 'completed') {
-                        clearInterval(pollInterval);
-                        progressStatusLabel.innerText = 'Complete! Redirecting...';
-                        progressBar.classList.remove('progress-bar-animated');
-                        progressBar.classList.remove('bg-primary');
-                        progressBar.classList.add('bg-success');
-
-                        // 3. Redirect to the results payload endpoint
-                        window.location.href = `/screening/bulk-results/${jobId}`;
-                    }
-                })
-                .catch(err => {
-                    console.error('Polling error', err);
-                });
-        }
-
-        function resetForm() {
-            btnRunScreening.disabled = false;
-            btnRunScreening.innerHTML = '<i class="bi bi-play-circle me-2"></i> {{ _('Run Screening\';
-            fileInput.disabled = false;
-            progressSection.classList.add(\'d-none\');
-        }
-    });') }}
-</script>
 {% endblock %}
