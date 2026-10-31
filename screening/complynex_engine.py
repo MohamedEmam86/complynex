@@ -2927,6 +2927,7 @@ class ComplyNexScreeningEngine:
                 'candidate_dob': candidate_dob,
                 'candidate_country': candidate_country,
                 'candidate_national_id': candidate_national_id,
+                'candidate_source': candidate.get('source'),
                 'address_score': address_score,
                 'common_name_penalty_val': common_name_penalty_val,
                 'is_variant_match': is_variant_match,
@@ -3016,7 +3017,8 @@ class ComplyNexScreeningEngine:
                 # comparison lowered every listed record that carried any ID by 25 points
                 from screening import match_intel as _mi
                 _rel = _mi.id_relation(national_id, interim['candidate_national_id'],
-                                       nationality, interim.get('candidate_country'))
+                                       nationality, interim.get('candidate_country'),
+                                       interim.get('candidate_source'))
                 if _rel == 'match':
                     final_score += 25
                     exact_nid_match = True
