@@ -1,0 +1,33 @@
+{# P4-6: standard false-positive reasons (required when clearing). `fp_compact` = one select for toolbars. #}
+{% set _fp = [
+  ('dob_differs', _('Date of birth differs from the listed person')),
+  ('id_differs', _('National ID / passport differs from the listed one')),
+  ('nationality_differs_with_id', _('Different nationality, proven by an identity document')),
+  ('age_incompatible', _('Age is incompatible with the listing (e.g. a minor at listing date)')),
+  ('entity_type_differs', _('Different entity type (person vs. company)')),
+  ('different_name_elements', _('Name elements differ on review (different father / family name)')),
+  ('documents_verified', _('Identity documents verified and inconsistent with the listing')),
+  ('record_lifted', _('The listing was lifted / delisted for this record')),
+  ('registry_differs', _('Company registry number / place of registration differs')),
+  ('gender_differs', _('Gender differs (information only — not sufficient alone)')),
+  ('common_name', _('Common name, no other identifiers (not sufficient alone)')),
+  ('other', _('Other (explained in the rationale)')),
+] %}
+{% if fp_compact %}
+<select name="fp_reasons" class="form-select form-select-sm" style="width: 220px;" title="{{ _('False-positive reason (required to clear)') }}">
+  <option value="">{{ _('FP reason (required to clear)') }}</option>
+  {% for code, label in _fp %}{% if code not in ('gender_differs', 'common_name') %}<option value="{{ code }}">{{ label }}</option>{% endif %}{% endfor %}
+</select>
+{% else %}
+<div class="mb-3 cx-fp-reasons">
+  <label class="form-label fw-semibold">{{ _('False-positive reasons') }} <span class="text-muted small">({{ _('required to clear; gender or a common name alone is not enough') }})</span></label>
+  <div class="row g-1">
+    {% for code, label in _fp %}
+    <div class="col-md-6"><div class="form-check small">
+      <input class="form-check-input" type="checkbox" name="fp_reasons" value="{{ code }}" id="fp_{{ code }}{{ fp_suffix or '' }}">
+      <label class="form-check-label" for="fp_{{ code }}{{ fp_suffix or '' }}">{{ label }}</label>
+    </div></div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="{{ 'ar' if (get_locale is defined and get_locale()|string == 'ar') else 'en' }}">
+<head>
+<meta charset="UTF-8">
+<title>{{ _('Screening evidence pack') }} #{{ c.screening.result_id }}</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 20mm 14mm;
+    @bottom-left { content: "SHA-256 {{ digest }}"; font-size: 6.5pt; color: #666; font-family: "DejaVu Sans Mono", monospace; }
+    @bottom-right { content: "{{ _('Page') }} " counter(page) " / " counter(pages); font-size: 7pt; color: #666; } }
+  body { font-family: "DejaVu Sans", "Noto Sans Arabic", Arial, sans-serif; font-size: 8.5pt; color: #222; }
+  h1 { font-size: 14pt; margin: 0 0 2mm 0; }
+  h2 { font-size: 10pt; background: #eef2f6; border-left: 3px solid #1f4e79; padding: 1.5mm 2mm; margin: 5mm 0 2mm 0; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }
+  th, td { border: 0.4pt solid #bbb; padding: 1.2mm 1.5mm; vertical-align: top; text-align: start; }
+  th { background: #f4f6f8; font-weight: bold; }
+  .kv th { width: 32%; }
+  .muted { color: #666; }
+  .hash { font-family: "DejaVu Sans Mono", monospace; font-size: 7.5pt; word-break: break-all; }
+  .hit { border: 0.5pt solid #999; padding: 2mm; margin-bottom: 2.5mm; page-break-inside: avoid; }
+  .tag { display: inline-block; border: 0.4pt solid #888; padding: 0 1.5mm; border-radius: 1mm; font-size: 7.5pt; }
+  .warn { color: #8a5300; }
+  .bad { color: #a00; }
+  .ok { color: #176c2e; }
+</style>
+</head>
+<body>
+<h1>{{ _('Screening evidence pack') }}</h1>
+<div class="muted">{{ _('Result') }} #{{ c.screening.result_id }} · {{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }} · {{ _('by') }} {{ generated_by }}</div>
+<div class="hash">SHA-256: {{ digest }}</div>
+<div class="muted">{{ _('This hash is recorded in ComplyNex when the pack is issued; a copy can be checked against the system.') }}</div>
+
+<h2>1. {{ _('Screening') }}</h2>
+<table class="kv">
+  <tr><th>{{ _('Screened name') }}</th><td dir="auto">{{ c.screening.name }}</td></tr>
+  <tr><th>{{ _('Type / method') }}</th><td>{{ c.screening.type or '-' }} / {{ c.screening.method or '-' }}</td></tr>
+  <tr><th>{{ _('Run at / by') }}</th><td>{{ c.screening.run_at }} · {{ c.screening.run_by or '-' }}</td></tr>
+  <tr><th>{{ _('Engine result') }}</th><td>{{ c.screening.engine_result }} · {{ _('highest score') }} {{ c.screening.highest_score }} · {{ c.screening.hits }} {{ _('hits') }}</td></tr>
+  {% if c.screening.search_degraded %}<tr><th>{{ _('Search mode') }}</th><td class="bad">{{ _('DEGRADED (primary search engine unavailable)') }}</td></tr>{% endif %}
+  <tr><th>{{ _('Status') }}</th><td>{{ c.screening.status }}{% if c.screening.resolved_by %} · {{ c.screening.resolved_by }} · {{ c.screening.resolved_at }}{% endif %}</td></tr>
+  {% if c.screening.resolution_notes %}<tr><th>{{ _('Reviewer rationale') }}</th><td dir="auto">{{ c.screening.resolution_notes }}</td></tr>{% endif %}
+</table>
+
+<h2>2. {{ _('Inputs') }}</h2>
+<table class="kv">
+  {% for k, v in c.inputs|dictsort %}<tr><th>{{ k }}</th><td dir="auto">{{ v }}</td></tr>{% else %}<tr><td class="muted">{{ _('Name only') }}</td></tr>{% endfor %}
+</table>
+{% if c.input_warnings %}
+<table><tr><th>{{ _('Input-quality warnings') }}</th></tr>
+  {% for w in c.input_warnings %}<tr><td class="warn">{{ w.en }}{% if w.ar %} — <span dir="rtl">{{ w.ar }}</span>{% endif %}</td></tr>{% endfor %}
+</table>
+{% endif %}
+
+<h2>3. {{ _('Lists searched and version in force at screening time') }}</h2>
+<table>
+  <tr><th>{{ _('List') }}</th><th>{{ _('Records') }}</th><th>{{ _('Version at screening') }}</th></tr>
+  {% for l in c.lists %}<tr><td>{{ l.name }}</td><td>{{ l.records }}</td><td>{{ ('v' ~ l.version_at_screening) if l.version_at_screening else _('before versioning') }}</td></tr>
+  {% else %}<tr><td colspan="3" class="muted">{{ _('Not available') }}</td></tr>{% endfor %}
+</table>
+
+<h2>4. {{ _('Settings') }}</h2>
+<table class="kv">
+  {% for k, v in c.settings|dictsort %}<tr><th>{{ k }}</th><td>{{ v }}</td></tr>{% endfor %}
+</table>
+<div class="muted">{{ _('Settings as in force when the pack was generated; changes are recorded in the audit log.') }}</div>
+
+<h2>5. {{ _('Hits') }} ({{ c.hits|length }})</h2>
+{% for h in c.hits %}
+<div class="hit">
+  <div><b dir="auto">{{ h.name }}</b>{% if h.latin and h.arabic %} · <span dir="auto">{{ h.latin }}</span>{% endif %}
+    <span class="tag">{{ h.kind }}</span> <span class="tag">{{ h.tier or '-' }}</span> <span class="tag">{{ _('score') }} {{ h.score }}</span>
+    {% if h.grouped_under %}<span class="tag">{{ _('same person as another hit') }}</span>{% endif %}</div>
+  <div class="muted">{{ h.source }}{% if h.program %} · {{ h.program }}{% endif %}{% if h.listed_since %} · {{ _('listed since') }} {{ h.listed_since }}{% endif %}{% if h.nature %} · {{ h.nature }}{% endif %} · {{ h.ref }}</div>
+  {% if h.identity %}<div>{{ _('Identity') }}: <b>{{ h.identity }}</b></div>{% endif %}
+  {% if h.identity_rows %}<table>{% for r in h.identity_rows %}<tr><td>{{ r.label }}</td><td dir="auto">{{ r.screened }}</td><td dir="auto">{{ r.listed }}</td><td>{{ r.state }}</td></tr>{% endfor %}</table>{% endif %}
+  {% if h.reasons %}<div>{{ _('Explanation') }}:<ul>{% for r in h.reasons %}<li dir="auto">{{ r }}</li>{% endfor %}</ul></div>{% endif %}
+  {% if h.action %}<div>{{ _('Action') }}: {{ h.action }}</div>{% endif %}
+  {% if h.clearance %}<div class="warn">{{ _('Earlier clearance') }}: {{ h.clearance.state }} · {{ h.clearance.by or '-' }} · {{ h.clearance.at or '-' }}</div>{% endif %}
+</div>
+{% else %}<div class="muted">{{ _('No hits.') }}</div>{% endfor %}
+
+{% if c.cleared_earlier %}
+<h2>6. {{ _('Cleared earlier, record unchanged (not raised)') }}</h2>
+<table><tr><th>{{ _('Listed record') }}</th><th>{{ _('List') }}</th><th>{{ _('Score') }}</th><th>{{ _('Cleared by / on') }}</th></tr>
+{% for x in c.cleared_earlier %}<tr><td dir="auto">{{ x.name }}</td><td>{{ x.source }}</td><td>{{ x.score }}</td><td>{{ (x.clearance or {}).by or '-' }} · {{ (x.clearance or {}).at or '-' }}</td></tr>{% endfor %}
+</table>
+{% endif %}
+
+<h2>7. {{ _('Adverse media') }}</h2>
+<div>{{ c.adverse_media.hits }} {{ _('articles') }}{% if c.adverse_media.summary.risk_level %} · {{ c.adverse_media.summary.risk_level }}{% endif %}</div>
+
+<h2>8. {{ _('Review queue') }}</h2>
+<table><tr><th>#</th><th>{{ _('Hit') }}</th><th>{{ _('Score') }}</th><th>{{ _('Status') }}</th><th>{{ _('Resolution') }}</th><th>{{ _('By / on') }}</th></tr>
+{% for q in c.queue %}<tr><td>{{ q.id }}</td><td dir="auto">{{ q.hit }}</td><td>{{ q.score }}</td><td>{{ q.status }}</td><td dir="auto">{{ q.resolution or '-' }}{% if q.notes %}<br><span class="muted">{{ q.notes }}</span>{% endif %}</td><td>{{ q.by or '-' }} {{ q.at or '' }}</td></tr>
+{% else %}<tr><td colspan="6" class="muted">{{ _('No queue items.') }}</td></tr>{% endfor %}
+</table>
+
+<h2>9. {{ _('Decisions (who / when / why)') }}</h2>
+<table><tr><th>{{ _('When') }}</th><th>{{ _('On') }}</th><th>{{ _('Action') }}</th><th>{{ _('Decision') }}</th><th>{{ _('By') }}</th><th>{{ _('Reason') }}</th></tr>
+{% for d in c.decisions %}<tr><td>{{ d.at }}</td><td>{{ d.on }}</td><td>{{ d.action }}</td><td>{{ d.decision or '-' }}</td><td>{{ d.by or '-' }}</td><td dir="auto">{{ d.reason or '' }}</td></tr>
+{% else %}<tr><td colspan="6" class="muted">{{ _('No decision recorded yet.') }}</td></tr>{% endfor %}
+</table>
+</body>
+</html>

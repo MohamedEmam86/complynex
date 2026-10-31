@@ -870,7 +870,20 @@ def view_result(id):
                            coverage=rv.coverage(at=result.get('created_at')),
                            decisions=CL.decision_history('result', id),
                            pending=CL.pending_request('result', id),
-                           can_approve=CL.can_approve(current_user))
+                           can_approve=CL.can_approve(current_user),
+                           **_p4_result_extras(md if isinstance(md, dict) else {}, matches))
+
+
+def _p4_result_extras(md, matches):
+    """P4-5 (p4-evidence): hits not raised because cleared earlier, and why others came back."""
+    cleared = [c for c in (md.get('cleared_matches') or []) if isinstance(c, dict)]
+    returned = []
+    for m in (matches or []):
+        c = m.get('clearance') if isinstance(m, dict) else None
+        if isinstance(c, dict) and c.get('state') and c.get('state') != 'cleared':
+            returned.append({'name': m.get('full_name') or m.get('watchlist_name_ar'), 'state': c.get('state'),
+                             'by': c.get('by'), 'at': c.get('at')})
+    return {'cleared_hits': cleared, 'returned_hits': returned}
 
 @screening_bp.route('/result/<int:rid>/profile')
 @login_required
@@ -1605,6 +1618,65 @@ def _wl_from_clearance(name, norm_name, reason, decider_id, entity_type=None, ma
     return row
 
 
+# ==== P4-5 / P4-6 helpers (p4-evidence) ====================================================
+def _p4_record_clearance(wl_row, matches, cleared_by, inputs=None):
+    """Remember the listed records a clearance covers (screening/clearance_scope.py) and the
+    identifiers it was made with. Never raises: a failure leaves a name-only entry."""
+    if not wl_row or not wl_row.get('id'):
+        return 0
+    try:
+        from screening import clearance_scope as CS
+        db = get_db()
+        n = CS.record_links(db, wl_row['id'], matches, cleared_by=cleared_by)
+        CS.remember_identity(db, wl_row['id'], inputs or {})
+        db.commit()
+        return n
+    except Exception as e:
+        logger.error(f"clearance records not stored: {e}")
+        try:
+            get_db().rollback()
+        except Exception:
+            pass
+        return 0
+
+
+def _p4_inputs_of_history(history_id):
+    if not history_id:
+        return None
+    try:
+        r = query_db("""SELECT r.match_details FROM screening_results r
+                          JOIN screening_history h ON h.screening_result_id = r.id WHERE h.id = %s""",
+                     (history_id,), one=True)
+        md = json.loads(r['match_details']) if r and isinstance(r['match_details'], str) else ((r or {}).get('match_details') or {})
+        return md.get('inputs') if isinstance(md, dict) else None
+    except Exception:
+        return None
+
+
+def _p4_fp_codes(notes):
+    """(codes, error) for a false-positive clearance from the posted form (P4-6)."""
+    from screening import fp_reasons as FPR
+    codes = FPR.parse(request.form.getlist('fp_reasons'))
+    return codes, FPR.validate(codes, notes)
+
+
+def _p4_store_fp_codes(target_type, target_id, codes):
+    """Keep the reason codes on the pending request and on the latest decision of the target."""
+    if not codes:
+        return
+    from screening import fp_reasons as FPR
+    js = FPR.as_json(codes)
+    try:
+        execute_db("""UPDATE screening_clearance_requests SET reason_codes = %s
+                       WHERE target_type = %s AND target_id = %s AND status = 'pending'""", (js, target_type, target_id))
+        execute_db("""UPDATE screening_hit_decisions SET reason_codes = %s
+                       WHERE id = (SELECT max(id) FROM screening_hit_decisions WHERE target_type = %s AND target_id = %s)""",
+                   (js, target_type, target_id))
+    except Exception as e:
+        logger.error(f"fp reason codes not stored: {e}")
+# ==== end P4-5 / P4-6 helpers ================================================================
+
+
 def _apply_queue_clearance(item, notes, decider_id, bulk=False, approved_by=None, approval_comment=None):
     """The effect of clearing a queue hit as a false positive."""
     resolution = 'False Positive (Bulk)' if bulk else 'False Positive'
@@ -1615,10 +1687,17 @@ def _apply_queue_clearance(item, notes, decider_id, bulk=False, approved_by=None
         WHERE id = %s
     """, (resolution, notes, decider_id, item['id']))
     try:
-        _wl_from_clearance(item['entity_name'], (item['entity_name'] or '').upper().strip(),
+        wl_row = _wl_from_clearance(item['entity_name'], _norm_wl_name(item['entity_name']),
                            (f"Whitelisted via Bulk Action: {notes}" if bulk else f"Whitelisted from queue review: {notes}"),
                            decider_id, item['entity_type'], item['match_name'], item['match_score'],
                            item['list_source'], approved_by=approved_by, approval_comment=approval_comment)
+        # ==== P4-5 (p4-evidence): the clearance covers this listed record as it is now ====
+        try:
+            md = json.loads(item['match_details']) if item['match_details'] else {}
+        except (TypeError, ValueError):
+            md = {}
+        _p4_record_clearance(wl_row, [md] if isinstance(md, dict) and md else [], decider_id,
+                             _p4_inputs_of_history(item['screening_history_id']))
     except Exception as e:
         logger.error(f"Whitelist insert on clearance failed: {e}")
     if bulk and item['source_module']:
@@ -1639,12 +1718,21 @@ def _apply_result_clearance(result_id, notes, decider_id, approved_by=None, appr
         SET status = 'FALSE_POSITIVE', resolution_notes = %s, resolved_by = %s, resolved_at = CURRENT_TIMESTAMP
         WHERE id = %s
     """, (notes, decider_id, result_id))
-    res = query_db("SELECT screened_name FROM screening_results WHERE id = %s", (result_id,), one=True)
+    res = query_db("SELECT screened_name, matches, match_details FROM screening_results WHERE id = %s",
+                   (result_id,), one=True)
     if res:
         try:
-            _wl_from_clearance(res['screened_name'], _norm_wl_name(res['screened_name']),
+            wl_row = _wl_from_clearance(res['screened_name'], _norm_wl_name(res['screened_name']),
                                f"Whitelisted via screening resolution: {notes}", decider_id,
                                approved_by=approved_by, approval_comment=approval_comment)
+            # ==== P4-5 (p4-evidence): the clearance covers every listed record of this result ====
+            try:
+                ms = json.loads(res['matches']) if isinstance(res['matches'], str) else (res['matches'] or [])
+                md = json.loads(res['match_details']) if isinstance(res['match_details'], str) else (res['match_details'] or {})
+            except (TypeError, ValueError):
+                ms, md = [], {}
+            _p4_record_clearance(wl_row, [m for m in ms if isinstance(m, dict)], decider_id,
+                                 (md or {}).get('inputs') if isinstance(md, dict) else None)
         except Exception as e:
             logger.error(f"Whitelist insert failed: {e}")
     try:
@@ -1723,6 +1811,15 @@ def resolve_hit():
     if current['status'] and current['status'] != 'PENDING':
         flash(gettext('This result has already been decided and cannot be decided again.'), 'error')
         return redirect(url_for('screening.view_result', id=result_id))
+    fp_codes = []
+    if status == 'FALSE_POSITIVE':
+        # P4-6: standard reasons (p4-evidence)
+        fp_codes, fp_err = _p4_fp_codes(notes)
+        if fp_err:
+            flash(gettext(fp_err), 'error')
+            return redirect(url_for('screening.view_result', id=result_id))
+        from screening import fp_reasons as FPR
+        notes = f"{FPR.as_text(fp_codes)} {notes}".strip()
     if status == 'FALSE_POSITIVE':
         row = query_db("SELECT id, screened_name, highest_match_score, matches FROM screening_results WHERE id = %s",
                        (result_id,), one=True)
@@ -1730,10 +1827,12 @@ def resolve_hit():
         if CL.needs_approval(row['highest_match_score'], sanctions, CL.approval_threshold()):
             _request_clearance('result', result_id, row['screened_name'], None, row['highest_match_score'],
                                None, sanctions, 'FALSE_POSITIVE', notes, current['status'] or 'PENDING')
+            _p4_store_fp_codes('result', result_id, fp_codes)
             flash(gettext('Clearance submitted. It takes effect only after MLRO approval (four-eyes).'), 'warning')
             return redirect(url_for('screening.view_result', id=result_id))
         _apply_result_clearance(result_id, notes, current_user.id)
         CL.log_decision('result', result_id, 'decided', 'FALSE_POSITIVE', notes, current_user.id)
+        _p4_store_fp_codes('result', result_id, fp_codes)
         _audit('Screening result cleared', result_id, f"Result #{result_id} cleared as false positive: {notes}")
         flash(gettext('Result resolved successfully.'), 'success')
         return redirect(url_for('screening.view_result', id=result_id))
@@ -2018,6 +2117,31 @@ def download_report(id):
         input_warnings = []
     return render_template('screening/report.html', result=result, matches=matches, adverse_hits=adverse_hits,
                            input_warnings=input_warnings)
+
+# ==== P4-7 (p4-evidence): evidence pack ========================================================
+@screening_bp.route('/result/<int:id>/evidence-pack')
+@login_required
+@permission_required('screening', level='view')
+def evidence_pack(id):
+    """One PDF with everything an examiner needs about this screening; its SHA-256 is printed on
+    every page and recorded."""
+    from screening import evidence_pack as EP
+    content, digest = EP.build(id)
+    if not content:
+        flash(gettext('Screening result not found'), 'error')
+        return redirect(url_for('screening.dashboard'))
+    try:
+        pdf = EP.render_pdf(content, digest, current_user.get_full_name(), current_app.root_path + '/')
+    except Exception as e:
+        logger.error(f"evidence pack PDF failed for result {id}: {e}")
+        flash(gettext('The evidence pack could not be generated.'), 'error')
+        return redirect(url_for('screening.view_result', id=id))
+    EP.record(id, digest, current_user.id, len(pdf))
+    _audit('Evidence pack generated', id, f"Result #{id} evidence pack sha256={digest}")
+    return send_file(io.BytesIO(pdf), mimetype='application/pdf', as_attachment=True,
+                     download_name=f"evidence_pack_{id}_{datetime.now():%Y%m%d_%H%M}.pdf")
+# ==== end P4-7 ================================================================================
+
 
 @screening_bp.route('/update_watchlist', methods=['POST'])
 @login_required
@@ -3335,14 +3459,23 @@ def queue_review(id):
             return redirect(url_for('screening.queue_review', id=id))
 
         if action == 'false_positive':
+            # P4-6: standard reasons (p4-evidence)
+            fp_codes, fp_err = _p4_fp_codes(notes)
+            if fp_err:
+                flash(gettext(fp_err), 'error')
+                return redirect(url_for('screening.queue_review', id=id))
+            from screening import fp_reasons as FPR
+            notes = f"{FPR.as_text(fp_codes)} {notes}".strip()
             sanctions = CL.is_sanctions_hit(item['list_source'], match_details)
             if CL.needs_approval(item['match_score'], sanctions, CL.approval_threshold()):
                 _request_clearance('queue', id, item['entity_name'], item['match_name'], item['match_score'],
                                    item['list_source'], sanctions, 'false_positive', notes, item['status'])
+                _p4_store_fp_codes('queue', id, fp_codes)
                 flash(gettext('Clearance submitted. It takes effect only after MLRO approval (four-eyes).'), 'warning')
                 return redirect(url_for('screening.queue_review', id=id))
             _apply_queue_clearance(item, notes, current_user.id)
             CL.log_decision('queue', id, 'decided', 'false_positive', notes, current_user.id)
+            _p4_store_fp_codes('queue', id, fp_codes)
             _audit('Screening hit cleared', id, f"Queue #{id} {item['entity_name']!r} cleared: {notes}")
             flash(gettext('Marked as False Positive. The whitelist entry takes effect after MLRO approval.'), 'success')
             return redirect(url_for('screening.screening_queue'))
@@ -3556,6 +3689,15 @@ def queue_bulk_resolve():
     pending_count = 0
     confirmed = []
     threshold = CL.approval_threshold()
+    fp_codes = []
+    if action == 'false_positive':
+        # P4-6: standard reasons (p4-evidence)
+        fp_codes, fp_err = _p4_fp_codes(notes)
+        if fp_err:
+            flash(gettext(fp_err), 'error')
+            return redirect(url_for('screening.screening_queue'))
+        from screening import fp_reasons as FPR
+        notes = f"{FPR.as_text(fp_codes)} {notes}".strip()
 
     for id in selected_ids:
         # Get item details
@@ -3574,10 +3716,12 @@ def queue_bulk_resolve():
             if CL.needs_approval(item['match_score'], sanctions, threshold):
                 _request_clearance('queue', id, item['entity_name'], item['match_name'], item['match_score'],
                                    item['list_source'], sanctions, 'false_positive', notes, item['status'])
+                _p4_store_fp_codes('queue', id, fp_codes)
                 pending_count += 1
                 continue
             _apply_queue_clearance(item, notes, current_user.id, bulk=True)
             CL.log_decision('queue', id, 'decided', 'false_positive', f"(bulk) {notes}", current_user.id)
+            _p4_store_fp_codes('queue', id, fp_codes)
             processed_count += 1
             continue
 
@@ -3724,7 +3868,10 @@ def _save_screening_result(name, entity_type, dob, nationality, source_module, s
         1 if result.get('search_degraded') else 0,
         json.dumps({'inputs': dict(inputs or {}, dob=str(dob) if dob else None, nationality=nationality,
                                    entity_type=entity_type),
-                    'input_warnings': input_warnings}, default=str)
+                    'input_warnings': input_warnings,
+                    # P4-5 (p4-evidence): records cleared earlier and unchanged (not raised)
+                    'cleared_matches': result.get('cleared_matches') or [],
+                    'clearance': result.get('clearance')}, default=str)
     ))
     result_id = cur.fetchone()['id']
     db.commit()
@@ -5053,9 +5200,31 @@ def approvals():
           LEFT JOIN users u ON u.id = COALESCE(w.requested_by, w.added_by)
          WHERE w.status = 'Pending Approval'
          ORDER BY w.requested_at NULLS LAST, w.id""")
+    # P4-6 (p4-evidence): SLA per pending decision
+    sla_hours = _p4_sla_hours()
+    now = datetime.now()
+    overdue = 0
+    for r in (reqs or []):
+        try:
+            if r.get('status') == 'pending' and r.get('requested_at'):
+                age_h = (now - r['requested_at']).total_seconds() / 3600.0
+                r['sla_age_h'] = round(age_h, 1)
+                r['sla_overdue'] = age_h > sla_hours
+                overdue += 1 if r['sla_overdue'] else 0
+        except Exception:
+            pass
     return render_template('screening/approvals.html', reqs=reqs, wl=wl, show=show,
                            can_approve=CL.can_approve(current_user),
-                           threshold=CL.approval_threshold())
+                           threshold=CL.approval_threshold(), sla_hours=sla_hours, sla_overdue=overdue)
+
+
+def _p4_sla_hours():
+    try:
+        r = query_db("SELECT config_value FROM screening_config WHERE config_key = 'clearance_sla_hours'", one=True)
+        v = float(r['config_value']) if r and r['config_value'] else 24.0
+        return v if 1 <= v <= 24 * 30 else 24.0
+    except Exception:
+        return 24.0
 
 
 @screening_bp.route('/approvals/<int:rid>/decide', methods=['POST'])

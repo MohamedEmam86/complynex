@@ -1,0 +1,19 @@
+{# P4-5: hits not raised because the same record was cleared earlier and is unchanged; notes on hits that came back. #}
+{% if cleared_hits %}
+<div class="sr-card mt-4">
+  <div class="p-3 border-bottom"><h6 class="mb-0 fw-bold"><i class="fas fa-user-check me-2 text-success"></i>{{ _('Cleared earlier — record unchanged (not raised)') }} ({{ cleared_hits|length }})</h6>
+    <div class="small text-muted">{{ _('These listed records were reviewed and cleared for this name before. Their content has not changed since, so they are not raised again. Any change, re-listing or a matching identifier brings a hit back.') }}</div></div>
+  <div class="p-3"><table class="table table-sm mb-0">
+    <thead><tr><th>{{ _('Listed record') }}</th><th>{{ _('List') }}</th><th>{{ _('Score') }}</th><th>{{ _('Cleared by') }}</th><th>{{ _('On') }}</th></tr></thead>
+    <tbody>{% for c in cleared_hits %}<tr>
+      <td dir="auto">{{ c.full_name or c.watchlist_name_ar or '-' }}</td><td>{{ c.source }}</td><td>{{ c.match_score }}</td>
+      <td>{{ (c.clearance or {}).by or '-' }}</td><td>{{ (c.clearance or {}).at or '-' }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+{% if returned_hits %}
+<div class="alert alert-warning mt-3 small mb-0">
+  <b>{{ _('Earlier clearance of this name') }}:</b>
+  <ul class="mb-0">{% for r in returned_hits %}<li dir="auto">{{ r.name }} — {% if r.state == 'changed' %}{{ _('record changed since it was cleared') }}{% elif r.state == 'relisted' %}{{ _('record was delisted and listed again since it was cleared') }}{% elif r.state == 'identifier' %}{{ _('an identifier now agrees — the earlier clearance does not apply') }}{% elif r.state == 'legacy' %}{{ _('cleared by name only (no record baseline) — re-confirm the clearance') }}{% else %}{{ _('not part of the earlier clearance (new or newly matched record)') }}{% endif %}{% if r.by %} · {{ r.by }}{% endif %}{% if r.at %} · {{ r.at }}{% endif %}</li>{% endfor %}</ul>
+</div>
+{% endif %}
