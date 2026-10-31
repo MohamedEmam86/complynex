@@ -47,10 +47,10 @@ def fingerprint(entity):
     """
     if not entity:
         return None
-    parts = [str(entity.get(k) or '') for k in
-             ('full_name', 'full_name_arabic', 'aliases', 'date_of_birth',
-              'nationality', 'source', 'list_type', 'risk_level')]
-    return hashlib.sha256('|'.join(parts).encode('utf-8')).hexdigest()[:32]
+    # P4-5: one definition shared with live screening (screening/clearance_scope.py):
+    # order-insensitive, so a list re-ordering names is not a change.
+    from screening.clearance_scope import fingerprint as _fp, KIND_WATCHLIST
+    return _fp(KIND_WATCHLIST, entity)
 
 
 def get_entity(entity_id):
@@ -145,13 +145,9 @@ def whitelist_from_false_positive(name, matches, reason, cleared_by,
          approved_by if status == 'Active' else None, status, status)).fetchone()
     wid = dict(wl)['id']
 
-    for eid, ename, esrc, score, fp in rows:
-        db.execute("""INSERT INTO screening_whitelist_matches
-                        (whitelist_id, entity_id, entity_name, entity_source,
-                         match_score, fingerprint)
-                      VALUES (%s,%s,%s,%s,%s,%s)
-                      ON CONFLICT (whitelist_id, entity_id) DO NOTHING""",
-                   (wid, eid, ename, esrc, score, fp))
+    # P4-5: each cleared record with its kind (list / internal list) and fingerprint
+    from screening import clearance_scope as CS
+    CS.record_links(db, wid, [m for m in (matches or []) if isinstance(m, dict)], cleared_by=cleared_by)
     db.commit()
     return wid
 
@@ -202,18 +198,22 @@ def run(engine=None, run_type='scheduled', triggered_by=None, limit=500,
                                 include_legacy=include_legacy):
         stats['names'] += 1
         try:
+            from screening import clearance_scope as CS
             cleared = cleared_matches(wl['id'])
-            cleared_ids = {c['entity_id'] for c in cleared}
+            keys = [((c.get('entity_kind') or CS.KIND_WATCHLIST), int(c['entity_id'])) for c in cleared]
+            cleared_keys = set(keys)
+            state = CS.current_state(db, keys)
 
             # 1. has anything in the cleared SET changed or gone away?
-            for c in cleared:
-                ent = get_entity(c['entity_id'])
-                if ent is None:
+            for c, k in zip(cleared, keys):
+                fp, active = state.get(k, (None, False))
+                if fp is None or not active:
                     _finding(run_id, wl, 'delisted', None, None, c['fingerprint'], None)
                     stats['delisted'] += 1
                     continue
-                fp = fingerprint(ent)
                 if c['fingerprint'] and fp != c['fingerprint']:
+                    ent = get_entity(c['entity_id']) if k[0] == CS.KIND_WATCHLIST else \
+                        {'id': c['entity_id'], 'full_name': c.get('entity_name'), 'source': c.get('entity_source')}
                     _finding(run_id, wl, 'entity_changed', ent, None, c['fingerprint'], fp)
                     stats['changed'] += 1
 
@@ -224,7 +224,8 @@ def run(engine=None, run_type='scheduled', triggered_by=None, limit=500,
                 for m in (res.get('matches') or []):
                     mid = m.get('id') or m.get('entity_id') or m.get('watchlist_id')
                     score = m.get('match_score') or m.get('score') or 0
-                    if mid and int(mid) not in cleared_ids and score >= 85:
+                    mk = CS.record_key(m)
+                    if mid and mk and mk not in cleared_keys and score >= 85:
                         _finding(run_id, wl, 'new_entity',
                                  {'id': mid,
                                   'full_name': m.get('matched_name') or m.get('name'),

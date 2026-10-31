@@ -209,6 +209,9 @@
                             </select>
                         </div>
 
+                        {# P4-6 (p4-evidence): required for a false positive #}
+                        {% include 'screening/_fp_reasons.html' %}
+
                         <div class="mb-3">
                             <label class="form-label">{{ _('Resolution Notes') }} <span class="text-danger">*</span></label>
                             <textarea name="resolution_notes" class="form-control" rows="3" required

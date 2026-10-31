@@ -17,6 +17,7 @@
     <i class="bi bi-info-circle me-1"></i>
     {{ _('Four-eyes rule: clearing a hit from a sanctions list, or a hit scoring at or above the threshold, takes effect only after a second person with approval authority approves it. The approver must be someone other than the officer who made the decision.') }}
     <strong>{{ _('Threshold') }}: {{ '%.0f'|format(threshold) }}</strong>
+    {# P4-6 (p4-evidence) #}{% if sla_hours is defined %} · <strong>{{ _('Decision SLA') }}: {{ sla_hours|int }} h</strong>{% if sla_overdue %} · <span class="text-danger fw-bold">{{ sla_overdue }} {{ _('overdue') }}</span>{% endif %}{% endif %}
     · <a href="{{ url_for('screening.config') }}">{{ _('Change in screening settings') }}</a>
   </div>
   {% if not can_approve %}
@@ -47,7 +48,9 @@
             <td class="small">{% if r.list_source %}{{ r.list_source|scr_label('source') }}{% else %}—{% endif %}
               {% if r.is_sanctions %}<div><span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ _('Sanctions list') }}</span></div>{% endif %}</td>
             <td>{{ r.proposed_decision|scr_label('decision') }}</td>
-            <td class="small">{{ r.requested_by_name or '—' }}<div class="text-muted">{{ r.requested_at.strftime('%d %b %Y %H:%M') if r.requested_at }}</div></td>
+            <td class="small">{{ r.requested_by_name or '—' }}<div class="text-muted">{{ r.requested_at.strftime('%d %b %Y %H:%M') if r.requested_at }}</div>
+              {# P4-6 (p4-evidence): SLA #}{% if r.sla_age_h is defined %}<div class="{{ 'text-danger fw-bold' if r.sla_overdue else 'text-muted' }}">
+                {% if r.sla_overdue %}<i class="bi bi-alarm"></i> {{ _('Overdue') }}{% else %}{{ _('Waiting') }}{% endif %} · {{ r.sla_age_h }} h / {{ sla_hours|int }} h</div>{% endif %}</td>
             <td class="small" style="max-width:260px">{{ r.reason }}</td>
             <td style="min-width:250px">
               {% if r.status == 'pending' %}

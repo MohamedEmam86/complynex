@@ -201,6 +201,7 @@
       <a href="{{ url_for('screening.manual_screen') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-search me-1"></i>{{ _('New screening') }}</a>
       <a href="{{ url_for('screening.download_report', id=result.id) }}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="fas fa-file-pdf me-1"></i>{{ _('Download Report') }}</a>
       <button type="button" class="btn btn-outline-dark btn-sm" id="sr-print"><i class="fas fa-print me-1"></i>{{ _('Print') }}</button>
+      {# P4-7 (p4-evidence) #}<a href="{{ url_for('screening.evidence_pack', id=result.id) }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-file-shield me-1"></i>{{ _('Evidence pack (PDF)') }}</a>
     </div>
   </div>
 
@@ -403,6 +404,9 @@
   </div>
   {% endif %}
 
+  {# ---------------- P4-5 (p4-evidence): earlier clearance of this name ---------------- #}
+  {% include 'screening/_cleared_hits.html' %}
+
   {# ---------------- FOUR-EYES + DECISION HISTORY ---------------- #}
   <div class="mt-4">{% include 'screening/_hit_decisions.html' %}</div>
 
@@ -429,6 +433,8 @@
             <label class="form-label fw-semibold">{{ _('Reviewer Rationale') }}</label>
             <textarea name="notes" class="form-control" rows="2" placeholder="{{ _('Provide justification for the compliance decision...') }}" required></textarea>
           </div>
+          {# P4-6 (p4-evidence): required when the decision is a false positive #}
+          <div class="col-12">{% with fp_suffix='_r' %}{% include 'screening/_fp_reasons.html' %}{% endwith %}</div>
         </div>
         <div class="text-end mt-3"><button type="submit" class="btn btn-dark px-4 fw-bold">{{ _('SUBMIT ADJUDICATION') }}</button></div>
       </form>

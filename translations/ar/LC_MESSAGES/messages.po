@@ -39074,3 +39074,198 @@ msgstr "مفيش تغيير."
 #: P4 workflow
 msgid "Action table saved. It applies to new screenings (and to hits shown from older results)."
 msgstr "جدول الإجراءات اتحفظ. بيتطبق على الفحوصات الجديدة (وعلى النتائج القديمة لما تتعرض)."
+
+msgid "Screening evidence pack"
+msgstr "حزمة أدلة الفحص"
+
+msgid "Page"
+msgstr "صفحة"
+
+msgid "This hash is recorded in ComplyNex when the pack is issued; a copy can be checked against the system."
+msgstr "تُسجَّل هذه البصمة في ComplyNex عند إصدار الحزمة، ويمكن مطابقة أي نسخة منها مع النظام."
+
+msgid "Type / method"
+msgstr "النوع / الطريقة"
+
+msgid "Run at / by"
+msgstr "وقت التشغيل / بواسطة"
+
+msgid "Engine result"
+msgstr "نتيجة المحرك"
+
+msgid "highest score"
+msgstr "أعلى درجة"
+
+msgid "hits"
+msgstr "نتائج"
+
+msgid "DEGRADED (primary search engine unavailable)"
+msgstr "منخفض (محرك البحث الأساسي غير متاح)"
+
+msgid "Reviewer rationale"
+msgstr "مبررات المراجع"
+
+msgid "Inputs"
+msgstr "المدخلات"
+
+msgid "Name only"
+msgstr "الاسم فقط"
+
+msgid "Input-quality warnings"
+msgstr "تحذيرات جودة المدخلات"
+
+msgid "Lists searched and version in force at screening time"
+msgstr "القوائم التي تم البحث فيها والإصدار الساري وقت الفحص"
+
+msgid "Version at screening"
+msgstr "الإصدار وقت الفحص"
+
+msgid "before versioning"
+msgstr "قبل ترقيم الإصدارات"
+
+msgid "Settings as in force when the pack was generated; changes are recorded in the audit log."
+msgstr "الإعدادات السارية وقت إصدار الحزمة؛ أي تغيير مسجَّل في سجل التدقيق."
+
+msgid "Hits"
+msgstr "النتائج"
+
+msgid "score"
+msgstr "الدرجة"
+
+msgid "same person as another hit"
+msgstr "نفس الشخص في نتيجة أخرى"
+
+msgid "listed since"
+msgstr "مُدرج منذ"
+
+msgid "Identity"
+msgstr "الهوية"
+
+msgid "Explanation"
+msgstr "التفسير"
+
+msgid "Earlier clearance"
+msgstr "استبعاد سابق"
+
+msgid "No hits."
+msgstr "لا توجد نتائج."
+
+msgid "Cleared earlier, record unchanged (not raised)"
+msgstr "استُبعد سابقاً والسجل لم يتغير (لم يُرفع)"
+
+msgid "Listed record"
+msgstr "السجل المُدرج"
+
+msgid "Cleared by / on"
+msgstr "استبعده / بتاريخ"
+
+msgid "articles"
+msgstr "مقالات"
+
+msgid "Hit"
+msgstr "النتيجة"
+
+msgid "By / on"
+msgstr "بواسطة / بتاريخ"
+
+msgid "No queue items."
+msgstr "لا توجد عناصر في قائمة المراجعة."
+
+msgid "Decisions (who / when / why)"
+msgstr "القرارات (من / متى / لماذا)"
+
+msgid "Evidence pack (PDF)"
+msgstr "حزمة الأدلة (PDF)"
+
+msgid "The evidence pack could not be generated."
+msgstr "تعذّر إنشاء حزمة الأدلة."
+
+msgid "Cleared earlier — record unchanged (not raised)"
+msgstr "استُبعد سابقاً — السجل لم يتغير (لم يُرفع)"
+
+msgid "These listed records were reviewed and cleared for this name before. Their content has not changed since, so they are not raised again. Any change, re-listing or a matching identifier brings a hit back."
+msgstr "تمت مراجعة هذه السجلات واستبعادها لهذا الاسم من قبل، ولم يتغير محتواها منذ ذلك الحين، لذلك لا تُرفع مرة أخرى. أي تغيير أو إعادة إدراج أو تطابق في رقم تعريفي يُعيد النتيجة."
+
+msgid "Cleared by"
+msgstr "استبعده"
+
+msgid "Earlier clearance of this name"
+msgstr "استبعاد سابق لهذا الاسم"
+
+msgid "record changed since it was cleared"
+msgstr "السجل تغيّر منذ استبعاده"
+
+msgid "record was delisted and listed again since it was cleared"
+msgstr "السجل رُفع من القائمة ثم أُعيد إدراجه منذ استبعاده"
+
+msgid "an identifier now agrees — the earlier clearance does not apply"
+msgstr "رقم تعريفي متطابق الآن — الاستبعاد السابق لا ينطبق"
+
+msgid "cleared by name only (no record baseline) — re-confirm the clearance"
+msgstr "استُبعد بالاسم فقط (بدون سجلات مرجعية) — أعد تأكيد الاستبعاد"
+
+msgid "not part of the earlier clearance (new or newly matched record)"
+msgstr "ليس ضمن الاستبعاد السابق (سجل جديد أو مطابقة جديدة)"
+
+msgid "Date of birth differs from the listed person"
+msgstr "تاريخ الميلاد مختلف عن الشخص المُدرج"
+
+msgid "National ID / passport differs from the listed one"
+msgstr "الرقم القومي / جواز السفر مختلف عن المُدرج"
+
+msgid "Different nationality, proven by an identity document"
+msgstr "جنسية مختلفة مثبتة بمستند هوية"
+
+msgid "Age is incompatible with the listing (e.g. a minor at listing date)"
+msgstr "العمر لا يتوافق مع الإدراج (مثلاً كان قاصراً وقت الإدراج)"
+
+msgid "Different entity type (person vs. company)"
+msgstr "نوع كيان مختلف (شخص / شركة)"
+
+msgid "Name elements differ on review (different father / family name)"
+msgstr "عناصر الاسم مختلفة عند المراجعة (اسم أب / عائلة مختلف)"
+
+msgid "Identity documents verified and inconsistent with the listing"
+msgstr "تم التحقق من مستندات الهوية وهي لا تتفق مع الإدراج"
+
+msgid "The listing was lifted / delisted for this record"
+msgstr "تم إنهاء أثر / رفع إدراج هذا السجل"
+
+msgid "Company registry number / place of registration differs"
+msgstr "رقم السجل التجاري / مكان التسجيل مختلف"
+
+msgid "Gender differs (information only — not sufficient alone)"
+msgstr "النوع مختلف (معلومة فقط — لا يكفي وحده)"
+
+msgid "Common name, no other identifiers (not sufficient alone)"
+msgstr "اسم شائع بدون أي معرّفات أخرى (لا يكفي وحده)"
+
+msgid "Other (explained in the rationale)"
+msgstr "أخرى (موضّحة في المبررات)"
+
+msgid "False-positive reason (required to clear)"
+msgstr "سبب الاستبعاد (مطلوب للاستبعاد)"
+
+msgid "FP reason (required to clear)"
+msgstr "سبب الاستبعاد (مطلوب)"
+
+msgid "False-positive reasons"
+msgstr "أسباب الاستبعاد (تطابق غير صحيح)"
+
+msgid "required to clear; gender or a common name alone is not enough"
+msgstr "مطلوبة للاستبعاد؛ النوع أو الاسم الشائع وحده لا يكفي"
+
+msgid "Select at least one false-positive reason."
+msgstr "اختر سبباً واحداً على الأقل للاستبعاد."
+
+msgid "Gender or a common name alone is not a reason to clear a hit: add a substantive reason (identifier, date of birth, documents ...)."
+msgstr "النوع أو الاسم الشائع وحده ليس سبباً لاستبعاد نتيجة: أضف سبباً جوهرياً (رقم تعريفي، تاريخ ميلاد، مستندات ...)."
+
+msgid "'Other' needs the explanation in the rationale (at least 20 characters)."
+msgstr "اختيار 'أخرى' يتطلب توضيحاً في المبررات (20 حرفاً على الأقل)."
+
+msgid "Waiting"
+msgstr "في الانتظار"
+
+msgid "Decision SLA"
+msgstr "مهلة القرار"

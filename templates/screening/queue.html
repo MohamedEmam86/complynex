@@ -330,6 +330,7 @@
 
             <input type="text" name="resolution_notes" class="form-control form-control-sm"
                 placeholder="{{ _('Resolution note...') }}" required style="width: 200px;">
+            {# P4-6 (p4-evidence) #}{% with fp_compact=True %}{% include 'screening/_fp_reasons.html' %}{% endwith %}
 
             <button type="submit" name="action" value="false_positive"
                 class="btn btn-sm btn-success d-flex align-items-center gap-1">

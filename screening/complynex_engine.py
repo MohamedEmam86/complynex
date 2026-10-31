@@ -1204,7 +1204,17 @@ class ComplyNexScreeningEngine:
         processed_name = normalize_arabic_text(name) if self._is_arabic(name) else self._normalize_english(name)
         logger.debug(f"[TIMER] Arabic normalisation: {round((time.time()-t_start)*1000)}ms")
         
-        if self._is_whitelisted(processed_name):
+        # P4-5: a whitelist entry covers the listed RECORDS that were reviewed and cleared
+        # (screening/clearance_scope.py), not the name. Only a legacy name-only entry in
+        # 'suppress' mode still skips the screening of the name (old behaviour).
+        _cs_ctx = None
+        try:
+            from screening import clearance_scope as _csm
+            _cs_ctx = _csm.lookup(self.db_conn, processed_name, national_id=national_id, dob=date_of_birth, raw_name=name)
+        except Exception as _e:
+            logger.warning(f"[CLEARANCE-SCOPE] lookup skipped: {_e}")
+            _cs_ctx = None
+        if _cs_ctx and _cs_ctx.get('suppress_all'):
             return {
                 'screening_result': 'WHITE_LISTED',
                 'matches': [],
@@ -1212,6 +1222,7 @@ class ComplyNexScreeningEngine:
                 'highest_score': 0.0,
                 'recommendation': '✅ WHITE-LISTED: No further action required',
                 'input_warnings': _input_warnings,
+                'clearance': _cs_ctx.get('summary'),
                 'processing_time_ms': int((datetime.now() - start_time).total_seconds() * 1000)
             }
 
@@ -1615,6 +1626,18 @@ class ComplyNexScreeningEngine:
             logger.warning(f"[MATCH-INTEL] decision layer failed: {_e}")
             _mi = None
 
+        # P4-5: hits of records cleared earlier for this name and unchanged since are not raised
+        # again (kept in cleared_matches); changed / re-listed / identifier-agreeing records and
+        # records outside the clearance stay hits, annotated. Fails open (every hit kept).
+        _cleared = []
+        if _cs_ctx:
+            try:
+                from screening import clearance_scope as _csm
+                matches, _cleared = _csm.filter_hits(self.db_conn, matches, _cs_ctx)
+            except Exception as _e:
+                logger.warning(f"[CLEARANCE-SCOPE] filter skipped: {_e}")
+                _cleared = []
+
         # Sort matches by score desc
         matches.sort(key=lambda x: x['match_score'], reverse=True)
         
@@ -1631,8 +1654,12 @@ class ComplyNexScreeningEngine:
         elif highest_score >= self.LOW_MATCH_THRESHOLD:
             result_status = 'LOW_MATCH'
         
+        # P4-5: every hit was a record cleared earlier and unchanged
+        if _cleared and not matches and result_status == 'CLEAR':
+            result_status = 'WHITE_LISTED'
+
         # Escalate status if Adverse Media found
-        if adverse_media_hits and result_status == 'CLEAR':
+        if adverse_media_hits and result_status in ('CLEAR', 'WHITE_LISTED'):
             result_status = 'REVIEW_REQUIRED'
 
         # ---- P4-1 / P4-2 / P4-3 (screening/workflow.py) -------------------------------------
@@ -1646,6 +1673,10 @@ class ComplyNexScreeningEngine:
                 es_degraded=bool(getattr(self, 'es_degraded', False)),
                 semantic_degraded=bool(getattr(self, 'semantic_degraded', False)),
                 adverse_error=(adverse_media_info or {}).get('error'))
+            # P4-5 x P4-1: "all hits cleared earlier" is not trustworthy when a source was down
+            # (a new listing could have been missed): INCOMPLETE, with the cleared records kept.
+            if _wf_blocking and result_status == 'WHITE_LISTED':
+                result_status = 'CLEAR'
             result_status = _wf.finalize_status(result_status, _wf_blocking)
             _wf.annotate(matches, {'dob': bool(date_of_birth), 'nid': bool(national_id),
                                    'nationality': bool(nationality)})
@@ -1676,6 +1707,8 @@ class ComplyNexScreeningEngine:
             'incomplete': bool(_wf_blocking),
             'incomplete_reasons': _wf_blocking,
             'coverage_warnings': _wf_warnings,
+            'cleared_matches': _cleared,
+            'clearance': (_cs_ctx or {}).get('summary'),
         }
         
         # --- REDIS CACHE COMMIT: INTENTIONALLY DISABLED (2026-07-20) ---

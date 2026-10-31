@@ -161,6 +161,19 @@ def main():
             log.info(f"list freshness: {len(red)} list(s) need attention" + (f": {[r['source'] for r in red]}" if red else ''))
         except Exception as e:
             log.warning(f"list freshness check failed: {e}")
+        # P4-5: a cleared record that is no longer listed loses its clearance; if it is listed
+        # again later its hit comes back ('relisted')
+        try:
+            from screening import clearance_scope as CS
+            n = CS.expire_delisted(conn)
+            conn.commit()
+            log.info(f"clearances of delisted records closed: {n}")
+        except Exception as e:
+            log.warning(f"clearance expiry step failed: {e}")
+            try:
+                conn.rollback()
+            except Exception:
+                pass
     conn.close()
     if not args.registry_only:
         try:
