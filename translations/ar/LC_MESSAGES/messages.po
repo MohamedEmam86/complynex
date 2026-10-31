@@ -39277,3 +39277,231 @@ msgstr "اتعمل له استبعاد قبل كده لعميل تاني بنف�
 #: wave3 review
 msgid "This hash covers the canonical content of the pack (the data listed below), not the PDF file; the hash of the issued PDF file is kept in the system register of evidence packs."
 msgstr "البصمة دي بتغطي المحتوى المعياري للملف (البيانات اللي تحت)، مش ملف الـ PDF نفسه؛ بصمة ملف الـ PDF اللي اتصدر محفوظة في سجل ملفات الأدلة في السيستم."
+
+#: p4-bulk
+msgid "Upload a CSV or Excel (.xlsx) file, up to %(n)s rows."
+msgstr "ارفع ملف CSV أو Excel (.xlsx)، بحد أقصى %(n)s صف."
+
+#: p4-bulk
+msgid "Choose which column holds the name, type, date of birth, nationality, ID and your customer reference."
+msgstr "حدد أي عمود فيه الاسم والنوع وتاريخ الميلاد والجنسية والرقم ورقم العميل عندك."
+
+#: p4-bulk
+msgid "Each row is checked for input quality before anything runs; you see the summary first."
+msgstr "كل صف بيتراجع جودة بياناته قبل أي فحص، وبتشوف الملخص الأول."
+
+#: p4-bulk
+msgid "The screening runs in the background. Every row gets its own screening result; the report lists hits, incomplete screenings and failed rows."
+msgstr "الفحص بيشتغل في الخلفية. كل صف له نتيجة فحص مستقلة، والتقرير بيعرض التطابقات والفحوص غير المكتملة والصفوف اللي فشلت."
+
+#: p4-bulk
+msgid "Upload and map columns"
+msgstr "رفع الملف وتحديد الأعمدة"
+
+#: p4-bulk
+msgid "Recent bulk screenings"
+msgstr "آخر عمليات الفحص الجماعي"
+
+#: p4-bulk
+msgid "Rows"
+msgstr "الصفوف"
+
+#: p4-bulk
+msgid "No bulk screenings yet."
+msgstr "لا توجد عمليات فحص جماعي بعد."
+
+#: p4-bulk
+msgid "Map columns"
+msgstr "تحديد الأعمدة"
+
+#: p4-bulk
+msgid "rows"
+msgstr "صف"
+
+#: p4-bulk
+msgid "Type (individual / entity)"
+msgstr "النوع (فرد / كيان)"
+
+#: p4-bulk
+msgid "Nationality / country"
+msgstr "الجنسية / الدولة"
+
+#: p4-bulk
+msgid "National ID / registration number"
+msgstr "الرقم القومي / رقم السجل"
+
+#: p4-bulk
+msgid "— not in the file —"
+msgstr "— غير موجود في الملف —"
+
+#: p4-bulk
+msgid "Type when the file does not say"
+msgstr "النوع لو الملف مش محدده"
+
+#: p4-bulk
+msgid "Check the rows"
+msgstr "مراجعة الصفوف"
+
+#: p4-bulk
+msgid "First rows of the file"
+msgstr "أول صفوف في الملف"
+
+#: p4-bulk
+msgid "All bulk screenings"
+msgstr "كل عمليات الفحص الجماعي"
+
+#: p4-bulk
+msgid "Export to Excel"
+msgstr "تصدير إلى Excel"
+
+#: p4-bulk
+msgid "Columns not mapped yet."
+msgstr "الأعمدة لم تُحدد بعد."
+
+#: p4-bulk
+msgid "Input check (before screening)"
+msgstr "مراجعة البيانات (قبل الفحص)"
+
+#: p4-bulk
+msgid "Rows in file"
+msgstr "صفوف الملف"
+
+#: p4-bulk
+msgid "To screen"
+msgstr "للفحص"
+
+#: p4-bulk
+msgid "Rows with input warnings"
+msgstr "صفوف عليها تنبيهات بيانات"
+
+#: p4-bulk
+msgid "Skipped (empty name)"
+msgstr "متخطاة (اسم فارغ)"
+
+#: p4-bulk
+msgid "Start screening"
+msgstr "بدء الفحص"
+
+#: p4-bulk
+msgid "Resume"
+msgstr "استكمال"
+
+#: p4-bulk
+msgid "Change the mapping"
+msgstr "تعديل الأعمدة"
+
+#: p4-bulk
+msgid "failed"
+msgstr "فشل"
+
+#: p4-bulk
+msgid "skipped"
+msgstr "متخطى"
+
+#: p4-bulk
+msgid "The background run stopped responding. Press Resume: rows already screened are kept."
+msgstr "التشغيل في الخلفية توقف عن الاستجابة. اضغط استكمال: الصفوف اللي اتفحصت محفوظة."
+
+#: p4-bulk
+msgid "Totals"
+msgstr "الإجماليات"
+
+#: p4-bulk
+msgid "Confirmed hits"
+msgstr "تطابقات مؤكدة"
+
+#: p4-bulk
+msgid "Potential matches"
+msgstr "تطابقات محتملة"
+
+#: p4-bulk
+msgid "Low matches"
+msgstr "تطابقات ضعيفة"
+
+#: p4-bulk
+msgid "Clear / cleared earlier"
+msgstr "سليم / أُغلق سابقاً"
+
+#: p4-bulk
+msgid "Failed rows"
+msgstr "صفوف فشلت"
+
+#: p4-bulk
+msgid "rows accounted for"
+msgstr "صفوف تم حسابها"
+
+#: p4-bulk
+msgid "Hits, incomplete screenings and failed rows"
+msgstr "التطابقات والفحوص غير المكتملة والصفوف اللي فشلت"
+
+#: p4-bulk
+msgid "Input warnings"
+msgstr "تنبيهات البيانات"
+
+#: p4-bulk
+msgid "No hits, incomplete screenings or failed rows."
+msgstr "لا توجد تطابقات أو فحوص غير مكتملة أو صفوف فاشلة."
+
+#: p4-bulk
+msgid "The file could not be used: %(why)s"
+msgstr "الملف لا يمكن استخدامه: %(why)s"
+
+#: p4-bulk
+msgid "The file has no rows."
+msgstr "الملف لا يحتوي على صفوف."
+
+#: p4-bulk
+msgid "This file is already being screened."
+msgstr "الملف ده بيتفحص بالفعل."
+
+#: p4-bulk
+msgid "Screening started in the background. You can leave this page."
+msgstr "الفحص بدأ في الخلفية. تقدر تقفل الصفحة."
+
+#: p4-bulk
+msgid "This file cannot be started in its current state."
+msgstr "لا يمكن بدء الملف ده في حالته الحالية."
+
+#: p4-bulk
+msgid "Cancelled. Rows already screened keep their results."
+msgstr "تم الإلغاء. الصفوف اللي اتفحصت محتفظة بنتايجها."
+
+#: p4-bulk
+msgid "MAPPING"
+msgstr "تحديد الأعمدة"
+
+#: p4-bulk
+msgid "READY"
+msgstr "جاهز"
+
+#: p4-bulk
+msgid "RUNNING"
+msgstr "قيد الفحص"
+
+#: p4-bulk
+msgid "PAUSED"
+msgstr "متوقف مؤقتاً"
+
+#: p4-bulk
+msgid "DONE"
+msgstr "اكتمل"
+
+#: p4-bulk
+msgid "DONE_WITH_GAP"
+msgstr "اكتمل مع نقص"
+
+#: p4-bulk
+msgid "CANCELLED"
+msgstr "ملغي"
+
+#: p4-bulk
+msgid "Same story from several outlets shown once"
+msgstr "نفس الخبر من أكتر من مصدر معروض مرة واحدة"
+
+#: p4-bulk
+msgid "Further stories not shown (limit %(n)s)"
+msgstr "أخبار إضافية لم تُعرض (الحد %(n)s)"
+
+#: p4-bulk
+msgid "Also reported by"
+msgstr "نشره أيضاً"

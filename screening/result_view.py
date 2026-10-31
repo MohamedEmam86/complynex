@@ -420,6 +420,7 @@ def adverse_view(summary, hits):
         'unrelated': s.get('unrelated_filtered'),
         'mentions': s.get('mentions') or [],
         'mentions_count': s.get('mentions_count') or 0,
+        'dedup': s.get('dedup') or {},
         'searched_at': s.get('searched_at'),
         'by_category': sorted(by_cat.items(), key=lambda x: -x[1]),
         'legacy': legacy,

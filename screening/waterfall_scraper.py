@@ -642,10 +642,23 @@ class WaterfallAdverseMediaScraper:
                     'categories': article.get('categories', []),
                     'matched_keywords': article.get('matched_keywords', []),
                     'name_match': article.get('name_match'),
+                    'relevance': article.get('relevance'),
+                    'outlets': article.get('outlets', 1),
+                    'also_reported_by': [
+                        {'source': o.get('source'), 'url': o.get('url'),
+                         'published_at': (o.get('published_at').isoformat()
+                                          if isinstance(o.get('published_at'), datetime)
+                                          else o.get('published_at'))}
+                        for o in (article.get('also_reported_by') or [])][:10],
                 }
 
-            mapped_hits = [_map(a) for a in verdict['hits']]
-            mentions = [_map(a) for a in verdict['mentions']][:10]
+            # P4-8: one story once (same URL / headline / near-identical headline across
+            # outlets), most relevant first, capped; other outlets kept in also_reported_by
+            from screening import media_rank as _mr
+            _hits, _dedup = _mr.consolidate(verdict['hits'], name)
+            _ments, _mdedup = _mr.consolidate(verdict['mentions'], name, cap=_mr.MAX_MENTIONS)
+            mapped_hits = [_map(a) for a in _hits]
+            mentions = [_map(a) for a in _ments]
             risk_level = verdict['risk_level']
             recommendation = {
                 'HIGH': '🚨 HIGH RISK: the person is named in news about terrorism, sanctions or financial crime. Escalate.',
@@ -665,6 +678,9 @@ class WaterfallAdverseMediaScraper:
                 'recommendation': recommendation,
                 'mentions': mentions,
                 'mentions_count': len(verdict['mentions']),
+                'dedup': {'stories': _dedup['stories'], 'duplicates_merged': _dedup['duplicates_merged']
+                          + _mdedup['duplicates_merged'], 'over_cap': _dedup['over_cap'],
+                          'cap': _mr.MAX_HITS},
                 'unrelated_filtered': verdict['unrelated'],
                 'articles_reviewed': len(result.get('articles', [])),
                 'queries': queries,

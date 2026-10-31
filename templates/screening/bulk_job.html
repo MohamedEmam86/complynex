@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Bulk Screening Report') }}{% endblock %}
+
+{% block content %}
+{% set res = prog.results or {} %}
+<div class="container mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h2 class="mb-0"><i class="bi bi-file-earmark-spreadsheet"></i> {{ _('Bulk Screening') }}</h2>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('screening.bulk_screening_upload') }}" class="btn btn-outline-secondary">{{ _('All bulk screenings') }}</a>
+            {% if prog.finished %}<a href="{{ url_for('screening.bulk_export', job_id=job.id) }}" class="btn btn-outline-success"><i class="bi bi-file-earmark-excel me-1"></i>{{ _('Export to Excel') }}</a>{% endif %}
+        </div>
+    </div>
+    <p class="text-muted mb-3">{{ job.filename }} · {{ job.total_rows }} {{ _('rows') }} ·
+        <span class="badge {% if job.status == 'DONE' %}bg-success{% elif job.status in ['RUNNING', 'READY'] %}bg-primary{% elif job.status in ['DONE_WITH_GAP', 'PAUSED'] %}bg-warning text-dark{% else %}bg-secondary{% endif %}" id="bulkStatus">{{ _(job.status) }}</span></p>
+
+    {% if job.status == 'MAPPING' %}
+    <div class="alert alert-info">{{ _('Columns not mapped yet.') }} <a href="{{ url_for('screening.bulk_map', job_id=job.id) }}">{{ _('Map columns') }}</a></div>
+    {% endif %}
+
+    {% if summary.total is defined %}
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <h6 class="fw-bold">{{ _('Input check (before screening)') }}</h6>
+            <div class="row text-center g-2">
+                <div class="col-6 col-md-3"><div class="fs-4 fw-bold">{{ summary.total }}</div><small class="text-muted">{{ _('Rows in file') }}</small></div>
+                <div class="col-6 col-md-3"><div class="fs-4 fw-bold text-primary">{{ summary.to_screen }}</div><small class="text-muted">{{ _('To screen') }}</small></div>
+                <div class="col-6 col-md-3"><div class="fs-4 fw-bold text-warning">{{ summary.with_warnings }}</div><small class="text-muted">{{ _('Rows with input warnings') }}</small></div>
+                <div class="col-6 col-md-3"><div class="fs-4 fw-bold text-secondary">{{ summary.skipped }}</div><small class="text-muted">{{ _('Skipped (empty name)') }}</small></div>
+            </div>
+            {% if summary.warnings_by_code %}
+            <div class="small mt-2">{% for code, w in summary.warnings_by_code.items() %}<span class="badge bg-light text-dark border me-1">{% if w is mapping %}{{ w.ar if get_locale() == 'ar' else w.en }} · {{ w.n }}{% else %}{{ code }} · {{ w }}{% endif %}</span>{% endfor %}</div>
+            {% endif %}
+            {% if job.status in ['READY', 'PAUSED', 'DONE_WITH_GAP'] or prog.stale %}
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <form method="post" action="{{ url_for('screening.bulk_start', job_id=job.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-primary"><i class="bi bi-play-circle me-1"></i>{% if job.status == 'READY' %}{{ _('Start screening') }}{% else %}{{ _('Resume') }}{% endif %}</button>
+                </form>
+                {% if job.status == 'READY' %}<a class="btn btn-outline-secondary" href="{{ url_for('screening.bulk_map', job_id=job.id) }}">{{ _('Change the mapping') }}</a>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if job.status in ['RUNNING', 'PAUSED', 'DONE', 'DONE_WITH_GAP', 'CANCELLED'] %}
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between"><h6 class="fw-bold mb-2">{{ _('Progress') }}</h6>
+                {% if job.status == 'RUNNING' %}
+                <form method="post" action="{{ url_for('screening.bulk_cancel', job_id=job.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-sm btn-outline-danger">{{ _('Cancel') }}</button>
+                </form>{% endif %}
+            </div>
+            <div class="progress" style="height: 22px;">
+                <div class="progress-bar {% if job.status == 'RUNNING' %}progress-bar-striped progress-bar-animated{% endif %}" id="bulkBar" role="progressbar" style="width: {{ prog.percent }}%;">{{ prog.percent }}%</div>
+            </div>
+            <div class="small text-muted mt-1" id="bulkDetail">{{ prog.finished }} / {{ prog.total }} · {{ _('screened') }} {{ prog.done }} · {{ _('failed') }} {{ prog.failed }} · {{ _('skipped') }} {{ prog.skipped }}</div>
+            {% if prog.stale %}<div class="alert alert-warning small mt-2 mb-0">{{ _('The background run stopped responding. Press Resume: rows already screened are kept.') }}</div>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if prog.finished %}
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <h6 class="fw-bold">{{ _('Totals') }}</h6>
+            <div class="row text-center g-2">
+                <div class="col-6 col-md-2"><div class="fs-4 fw-bold text-danger">{{ res.get('CONFIRMED_HIT', 0) }}</div><small class="text-muted">{{ _('Confirmed hits') }}</small></div>
+                <div class="col-6 col-md-2"><div class="fs-4 fw-bold text-warning">{{ res.get('POTENTIAL_MATCH', 0) }}</div><small class="text-muted">{{ _('Potential matches') }}</small></div>
+                <div class="col-6 col-md-2"><div class="fs-4 fw-bold text-info">{{ res.get('LOW_MATCH', 0) }}</div><small class="text-muted">{{ _('Low matches') }}</small></div>
+                <div class="col-6 col-md-2"><div class="fs-4 fw-bold text-danger">{{ res.get('INCOMPLETE', 0) }}</div><small class="text-muted">{{ _('Incomplete') }}</small></div>
+                <div class="col-6 col-md-2"><div class="fs-4 fw-bold text-success">{{ res.get('CLEAR', 0) + res.get('WHITE_LISTED', 0) }}</div><small class="text-muted">{{ _('Clear / cleared earlier') }}</small></div>
+                <div class="col-6 col-md-2"><div class="fs-4 fw-bold text-secondary">{{ prog.failed }}</div><small class="text-muted">{{ _('Failed rows') }}</small></div>
+            </div>
+            <div class="small mt-2 {% if prog.finished == prog.total %}text-success{% else %}text-danger{% endif %}">
+                {{ _('Rows in file') }}: {{ prog.total }} · {{ _('rows accounted for') }}: {{ prog.finished }}{% if prog.finished == prog.total %} ✓{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="p-3 pb-0"><h6 class="fw-bold">{{ _('Hits, incomplete screenings and failed rows') }}</h6></div>
+            {% if rows %}
+            <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light"><tr><th>#</th><th>{{ _('Name') }}</th><th>{{ _('Customer reference') }}</th><th>{{ _('Result') }}</th><th>{{ _('Score') }}</th><th>{{ _('Matches') }}</th><th>{{ _('Input warnings') }}</th><th></th></tr></thead>
+                <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td>{{ r.row_no }}</td>
+                    <td class="ar">{{ r.name }}</td>
+                    <td>{{ r.customer_ref or '' }}</td>
+                    <td>{% if r.status == 'FAILED' %}<span class="badge bg-secondary">{{ _('Failed') }}</span> <span class="small text-muted">{{ r.error }}</span>
+                        {% else %}<span class="badge {% if r.result_status == 'CONFIRMED_HIT' %}bg-danger{% elif r.result_status == 'POTENTIAL_MATCH' %}bg-warning text-dark{% elif r.result_status == 'INCOMPLETE' %}bg-danger{% else %}bg-info{% endif %}">{{ _(r.result_status) }}</span>{% endif %}</td>
+                    <td>{{ "%.0f"|format(r.highest_score or 0) }}</td>
+                    <td>{{ r.match_count or 0 }}</td>
+                    <td class="small">{% for w in r.input_warnings or [] %}<span class="badge bg-light text-dark border me-1">{{ (w.ar if get_locale() == 'ar' else w.en) if w is mapping else w }}</span>{% endfor %}</td>
+                    <td>{% if r.screening_result_id %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('screening.view_result', id=r.screening_result_id) }}">{{ _('Open') }}</a>{% endif %}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <div class="p-3 text-muted small">{{ _('No hits, incomplete screenings or failed rows.') }}</div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% if job.status == 'RUNNING' %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+    var url = "{{ url_for('screening.bulk_upload_status', job_id=job.id) }}";
+    var bar = document.getElementById('bulkBar'), det = document.getElementById('bulkDetail');
+    function tick() {
+        fetch(url, {credentials: 'same-origin'}).then(function (r) { return r.json(); }).then(function (d) {
+            if (bar) { bar.style.width = d.percent + '%'; bar.textContent = d.percent + '%'; }
+            if (det) { det.textContent = d.finished + ' / ' + d.total; }
+            if (d.status !== 'RUNNING' || d.stale) { window.location.reload(); return; }
+            setTimeout(tick, 3000);
+        }).catch(function () { setTimeout(tick, 6000); });
+    }
+    setTimeout(tick, 3000);
+})();
+</script>
+{% endif %}
+{% endblock %}
