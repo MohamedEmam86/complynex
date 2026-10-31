@@ -27,6 +27,7 @@
 <h1>{{ _('Screening evidence pack') }}</h1>
 <div class="muted">{{ _('Result') }} #{{ c.screening.result_id }} · {{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }} · {{ _('by') }} {{ generated_by }}</div>
 <div class="hash">SHA-256: {{ digest }}</div>
+<div class="muted">{{ _('This hash covers the canonical content of the pack (the data listed below), not the PDF file; the hash of the issued PDF file is kept in the system register of evidence packs.') }}</div>
 <div class="muted">{{ _('This hash is recorded in ComplyNex when the pack is issued; a copy can be checked against the system.') }}</div>
 
 <h2>1. {{ _('Screening') }}</h2>

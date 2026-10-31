@@ -1630,17 +1630,40 @@ def _wl_from_clearance(name, norm_name, reason, decider_id, entity_type=None, ma
 
 
 # ==== P4-5 / P4-6 helpers (p4-evidence) ====================================================
-def _p4_record_clearance(wl_row, matches, cleared_by, inputs=None):
+def _p4_record_clearance(wl_row, matches, cleared_by, inputs=None, screened_at=None, approved_now=False):
     """Remember the listed records a clearance covers (screening/clearance_scope.py) and the
-    identifiers it was made with. Never raises: a failure leaves a name-only entry."""
+    identifiers it was made with. Never raises: a failure leaves a name-only entry.
+
+    Records are linked only when THIS clearance made the entry effective (four-eyes approved
+    now) or the entry still waits for MLRO approval; an unapproved clearance never adds
+    records to an entry that is already Active. Records changed since the screening are not
+    linked (they stay hits) and the fact is written to the whitelist audit."""
     if not wl_row or not wl_row.get('id'):
+        return 0
+    if wl_row.get('status') == 'Active' and not approved_now:
+        try:
+            execute_db("""INSERT INTO screening_whitelist_audit
+                            (whitelist_id, entry_name, action, previous_status, new_status, reason, performed_by)
+                          VALUES (%s, NULL, 'records_not_added', 'Active', 'Active', %s, %s)""",
+                       (wl_row['id'], 'clearance not approved: records stay outside the active entry', cleared_by))
+        except Exception as e:
+            logger.error(f"whitelist audit (records_not_added) failed: {e}")
         return 0
     try:
         from screening import clearance_scope as CS
         db = get_db()
-        n = CS.record_links(db, wl_row['id'], matches, cleared_by=cleared_by)
+        skipped = []
+        n = CS.record_links(db, wl_row['id'], matches, cleared_by=cleared_by,
+                            screened_at=screened_at, skipped=skipped)
         CS.remember_identity(db, wl_row['id'], inputs or {})
         db.commit()
+        if skipped:
+            execute_db("""INSERT INTO screening_whitelist_audit
+                            (whitelist_id, entry_name, action, previous_status, new_status, reason, performed_by)
+                          VALUES (%s, NULL, 'record_changed_since_screening', %s, %s, %s, %s)""",
+                       (wl_row['id'], wl_row.get('status'), wl_row.get('status'),
+                        'changed since screening, not covered (stays a hit): ' +
+                        ', '.join(f"{s['kind']}#{s['id']}" for s in skipped)[:900], cleared_by))
         return n
     except Exception as e:
         logger.error(f"clearance records not stored: {e}")
@@ -1649,6 +1672,14 @@ def _p4_record_clearance(wl_row, matches, cleared_by, inputs=None):
         except Exception:
             pass
         return 0
+
+
+def _p4_queue_screened_at(item):
+    """When the queued hit was screened (the queue row is written with the screening)."""
+    try:
+        return item['created_at']
+    except (KeyError, IndexError, TypeError):
+        return None
 
 
 def _p4_inputs_of_history(history_id):
@@ -1708,7 +1739,8 @@ def _apply_queue_clearance(item, notes, decider_id, bulk=False, approved_by=None
         except (TypeError, ValueError):
             md = {}
         _p4_record_clearance(wl_row, [md] if isinstance(md, dict) and md else [], decider_id,
-                             _p4_inputs_of_history(item['screening_history_id']))
+                             _p4_inputs_of_history(item['screening_history_id']),
+                             screened_at=_p4_queue_screened_at(item), approved_now=bool(approved_by))
     except Exception as e:
         logger.error(f"Whitelist insert on clearance failed: {e}")
     if bulk and item['source_module']:
@@ -1729,7 +1761,7 @@ def _apply_result_clearance(result_id, notes, decider_id, approved_by=None, appr
         SET status = 'FALSE_POSITIVE', resolution_notes = %s, resolved_by = %s, resolved_at = CURRENT_TIMESTAMP
         WHERE id = %s
     """, (notes, decider_id, result_id))
-    res = query_db("SELECT screened_name, matches, match_details FROM screening_results WHERE id = %s",
+    res = query_db("SELECT screened_name, matches, match_details, created_at FROM screening_results WHERE id = %s",
                    (result_id,), one=True)
     if res:
         try:
@@ -1743,7 +1775,8 @@ def _apply_result_clearance(result_id, notes, decider_id, approved_by=None, appr
             except (TypeError, ValueError):
                 ms, md = [], {}
             _p4_record_clearance(wl_row, [m for m in ms if isinstance(m, dict)], decider_id,
-                                 (md or {}).get('inputs') if isinstance(md, dict) else None)
+                                 (md or {}).get('inputs') if isinstance(md, dict) else None,
+                                 screened_at=res.get('created_at'), approved_now=bool(approved_by))
         except Exception as e:
             logger.error(f"Whitelist insert failed: {e}")
     try:
@@ -2162,7 +2195,8 @@ def evidence_pack(id):
         logger.error(f"evidence pack PDF failed for result {id}: {e}")
         flash(gettext('The evidence pack could not be generated.'), 'error')
         return redirect(url_for('screening.view_result', id=id))
-    EP.record(id, digest, current_user.id, len(pdf))
+    import hashlib as _hl
+    EP.record(id, digest, current_user.id, len(pdf), pdf_sha256=_hl.sha256(pdf).hexdigest())
     _audit('Evidence pack generated', id, f"Result #{id} evidence pack sha256={digest}")
     return send_file(io.BytesIO(pdf), mimetype='application/pdf', as_attachment=True,
                      download_name=f"evidence_pack_{id}_{datetime.now():%Y%m%d_%H%M}.pdf")
@@ -4065,7 +4099,9 @@ def api_run_screening():
         'high_risk_matches': len(high_risk),
         'auto_cleared_matches': len(auto_cleared),
         'highest_score': highest_score,
-        'requires_review': len(high_risk) > 0,
+        'requires_review': (len(high_risk) > 0 or screening_result == 'INCOMPLETE'
+                            or status == 'Pending Review' or bool(result.get('incomplete'))),
+        'incomplete': bool(result.get('incomplete')) or screening_result == 'INCOMPLETE',
         'queue_ids': queue_ids,
         'processing_time_ms': result.get('processing_time_ms', 0),
         'input_warnings': result.get('input_warnings') or [],

@@ -35,8 +35,10 @@ CREATE TABLE IF NOT EXISTS screening_evidence_packs (
     sha256        TEXT NOT NULL,
     generated_by  INTEGER,
     generated_at  TIMESTAMP NOT NULL DEFAULT now(),
-    size_bytes    INTEGER
+    size_bytes    INTEGER,
+    pdf_sha256    TEXT
 );
+ALTER TABLE screening_evidence_packs ADD COLUMN IF NOT EXISTS pdf_sha256 TEXT;
 CREATE INDEX IF NOT EXISTS idx_sep_result ON screening_evidence_packs (result_id, generated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sep_hash ON screening_evidence_packs (sha256);
 

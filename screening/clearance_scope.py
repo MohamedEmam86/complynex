@@ -63,16 +63,19 @@ ST_RELISTED = 'relisted'          # record was delisted after the clearance and 
 ST_IDENTIFIER = 'identifier'      # an identifier now agrees: never cleared silently
 ST_NEW = 'new'                    # not part of the clearance
 ST_LEGACY = 'legacy'              # name-only clearance, no record baseline
+ST_OTHER = 'other_customer'       # the entry was made for another customer of the same name
 
 _FIELDS = {
     KIND_WATCHLIST: ('full_name', 'original_name', 'aliases', 'full_name_arabic', 'aliases_arabic',
                      'date_of_birth', 'year_of_birth', 'nationality', 'countries',
-                     'national_id_numbers', 'passport_numbers', 'list_type', 'source', 'entity_type'),
+                     'national_id_numbers', 'passport_numbers', 'list_type', 'source', 'entity_type',
+                     'place_of_birth', 'gender', 'topics', 'properties', 'content_hash'),
     KIND_BLACKLIST: ('full_name', 'original_name', 'aliases', 'date_of_birth', 'nationality',
                      'national_id', 'passport_number', 'registration_number', 'category',
                      'legal_status', 'entity_type'),
     KIND_PEP: ('full_name', 'original_name', 'aliases', 'date_of_birth', 'nationality',
-               'national_id', 'position', 'country', 'entity_type'),
+               'national_id', 'position', 'country', 'entity_type', 'passport_number',
+               'registration_number', 'place_of_birth'),
 }
 _TABLE = {KIND_WATCHLIST: 'screening_watchlist', KIND_BLACKLIST: 'internal_blacklist',
           KIND_PEP: 'internal_pep'}
@@ -143,6 +146,18 @@ def fingerprint(kind, row):
     parts = []
     for f in fields:
         v = row.get(f) if hasattr(row, 'get') else None
+        if f == 'properties':
+            # only what defines the listing, not every enrichment field
+            p = v
+            if isinstance(p, str):
+                try:
+                    p = json.loads(p)
+                except (ValueError, TypeError):
+                    p = None
+            p = p if isinstance(p, dict) else {}
+            for k in ('datasets', 'jurisdiction'):
+                parts.append('p.' + k + '=' + ','.join(sorted(_items(p.get(k)))))
+            continue
         if f in ('full_name', 'original_name', 'aliases', 'full_name_arabic', 'aliases_arabic'):
             names |= _items(v)
         else:
@@ -185,7 +200,26 @@ def entry_applies(entry, national_id=None, dob=None):
     return True
 
 
-def classify(matches, entry, links, current, mode=LEGACY_REVIEW):
+def same_customer(entry, customer_id=None, national_id=None, dob=None):
+    """A name entry silently covers a record only for the customer it was made for: the same
+    customer id, or an identifier of this screening (national ID or full DOB) that agrees
+    with the one recorded on the entry. Otherwise the hit is shown with a re-confirm note."""
+    if not entry:
+        return False
+    e_cid = entry.get('customer_id')
+    if e_cid not in (None, '') and customer_id not in (None, '') and str(e_cid) == str(customer_id):
+        return True
+    e_id = re.sub(r'\D', '', str(entry.get('national_id') or ''))
+    q_id = re.sub(r'\D', '', str(national_id or ''))
+    if len(e_id) >= 8 and e_id == q_id:
+        return True
+    e_dob, q_dob = str(entry.get('date_of_birth') or '')[:10], str(dob or '')[:10]
+    if len(e_dob) == 10 and e_dob == q_dob and e_dob not in ('None',):
+        return True
+    return False
+
+
+def classify(matches, entry, links, current, mode=LEGACY_REVIEW, who=None):
     """Pure core. (kept, cleared): kept = hits still raised (each annotated with
     'clearance' when the entry has something to say about it), cleared = hits not raised
     because the same record was cleared and is unchanged.
@@ -199,6 +233,8 @@ def classify(matches, entry, links, current, mode=LEGACY_REVIEW):
             'at': str(entry.get('approval_date') or entry.get('added_at') or '')[:16]}
     kept, cleared = [], []
     legacy = not links
+    who = who if isinstance(who, dict) else None
+    same = True if who is None else same_customer(entry, **who)
     for m in (matches or []):
         if not isinstance(m, dict):
             kept.append(m)
@@ -227,6 +263,9 @@ def classify(matches, entry, links, current, mode=LEGACY_REVIEW):
             kept.append(m)
         elif not active_now:
             kept.append(m)          # cannot happen for a live hit; never hide on doubt
+        elif not same:
+            m['clearance'] = dict(info, state=ST_OTHER)
+            kept.append(m)
         else:
             m['clearance'] = dict(info, state=ST_CLEARED)
             cleared.append(m)
@@ -274,6 +313,7 @@ def find_entry(conn, normalized_name, raw_name=None):
     match, an entry with recorded records wins, then the most recent."""
     rows = _rows(conn, """
         SELECT w.id, w.name, w.scope, w.national_id, w.date_of_birth, w.approval_date, w.added_at,
+               w.customer_id,
                TRIM(COALESCE(a.first_name,'') || ' ' || COALESCE(a.last_name,'')) AS approved_by_name,
                TRIM(COALESCE(r.first_name,'') || ' ' || COALESCE(r.last_name,'')) AS requested_by_name
           FROM screening_whitelist w
@@ -312,7 +352,7 @@ def current_state(conn, keys):
     return out
 
 
-def lookup(conn, normalized_name, national_id=None, dob=None, raw_name=None):
+def lookup(conn, normalized_name, national_id=None, dob=None, raw_name=None, customer_id=None):
     """Engine hook, before the search. The clearance context of a screened name, or None:
     {'entry', 'links', 'summary', 'suppress_all'}. suppress_all is True only for a legacy
     (name-only) entry in 'suppress' mode, the old behaviour."""
@@ -328,7 +368,8 @@ def lookup(conn, normalized_name, national_id=None, dob=None, raw_name=None):
         if not links:
             summary['legacy'] = legacy_mode(conn)
             suppress = summary['legacy'] == LEGACY_SUPPRESS
-        return {'entry': entry, 'links': links, 'summary': summary, 'suppress_all': suppress}
+        return {'entry': entry, 'links': links, 'summary': summary, 'suppress_all': suppress,
+                'who': {'customer_id': customer_id, 'national_id': national_id, 'dob': dob}}
     except Exception as e:
         logger.warning('[CLEARANCE-SCOPE] lookup failed, no clearance applied: %s', e)
         try:
@@ -346,7 +387,7 @@ def filter_hits(conn, matches, ctx):
         links = ctx.get('links') or {}
         keys = [record_key(m) for m in (matches or [])]
         current = current_state(conn, [k for k in keys if k and k in links]) if links else {}
-        return classify(matches, ctx['entry'], links, current)
+        return classify(matches, ctx['entry'], links, current, who=ctx.get('who'))
     except Exception as e:
         logger.warning('[CLEARANCE-SCOPE] failed, all hits kept: %s', e)
         try:
@@ -359,20 +400,78 @@ def filter_hits(conn, matches, ctx):
         return list(matches or []), []
 
 
-def record_links(conn, whitelist_id, matches, cleared_by=None):
+def stamp(conn, matches):
+    """Engine hook: record each hit's record fingerprint AS IT WAS AT SCREENING TIME
+    (m['record_fp']), so a later clearance covers exactly what the analyst reviewed."""
+    try:
+        keys = [record_key(m) for m in (matches or []) if isinstance(m, dict)]
+        state = current_state(conn, [k for k in keys if k])
+        for m in (matches or []):
+            k = record_key(m) if isinstance(m, dict) else None
+            fp = state.get(k, (None, False))[0] if k else None
+            if fp:
+                m['record_fp'] = fp
+    except Exception as e:
+        logger.warning('[CLEARANCE-SCOPE] fingerprints not stamped: %s', e)
+        try:
+            _raw(conn).rollback()
+        except Exception:
+            pass
+    return matches
+
+
+def _ts(v):
+    s = str(v or '').replace('T', ' ')
+    return s[:19] if len(s) >= 19 else ''
+
+
+def updated_at(conn, keys):
+    """{(kind, id): 'YYYY-MM-DD HH:MM:SS'} last change time of the given records ('' if unknown)."""
+    out = {}
+    by_kind = {}
+    for k in keys or ():
+        if k and k[0] in _TABLE:
+            by_kind.setdefault(k[0], set()).add(int(k[1]))
+    for kind, ids in by_kind.items():
+        avail = {r['column_name'] for r in _rows(
+            conn, "SELECT column_name FROM information_schema.columns WHERE table_name = %s", (_TABLE[kind],))}
+        cols = [c for c in ('updated_at', 'modified_date', 'last_updated') if c in avail]
+        if not cols:
+            continue
+        for r in _rows(conn, f"SELECT id, {', '.join(cols)} FROM {_TABLE[kind]} WHERE id = ANY(%s)", (sorted(ids),)):
+            out[(kind, int(r['id']))] = max((_ts(r.get(c)) for c in cols), default='')
+    return out
+
+
+def record_links(conn, whitelist_id, matches, cleared_by=None, screened_at=None, skipped=None):
     """Remember the records a clearance covered (called when the clearance is made). Re-clearing
-    a record refreshes its fingerprint and re-activates it. Returns the number recorded."""
+    a record refreshes its fingerprint and re-activates it. Returns the number recorded.
+
+    Only records still as they were when the analyst screened them are covered: a hit carrying
+    its screening-time fingerprint (record_fp) is linked only if the record is unchanged; for
+    older results without one, a record updated after screened_at is not linked. Records left
+    out stay hits on the next screening; they are appended to `skipped` (list) when given."""
     keyed = [(record_key(m), m) for m in (matches or []) if isinstance(m, dict)]
     keyed = [(k, m) for k, m in keyed if k]
     if not whitelist_id or not keyed:
         return 0
     state = current_state(conn, [k for k, _ in keyed])
+    need_ts = [k for k, m in keyed if not m.get('record_fp')]
+    upd = updated_at(conn, need_ts) if (need_ts and _ts(screened_at)) else {}
     cur = _raw(conn).cursor()
     n = 0
     try:
         for (kind, rid), m in keyed:
             fp = state.get((kind, rid), (None, False))[0]
             if not fp:
+                continue
+            then = m.get('record_fp')
+            changed = (then and then != fp) or (
+                not then and _ts(screened_at) and upd.get((kind, rid), '') > _ts(screened_at))
+            if changed:
+                if isinstance(skipped, list):
+                    skipped.append({'kind': kind, 'id': rid, 'reason': 'changed_since_screening',
+                                    'name': m.get('full_name') or m.get('matched_name') or m.get('watchlist_name_ar')})
                 continue
             cur.execute("""
                 INSERT INTO screening_whitelist_matches

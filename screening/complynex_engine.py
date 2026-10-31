@@ -868,6 +868,28 @@ class ComplyNexScreeningEngine:
             tl = self.__dict__.setdefault('_tl_conn', threading.local())
         tl.conn = value
     
+    # P4-1: the "a source was unavailable during THIS screening" flags must be per request.
+    # The engine is shared by every greenlet of a gevent worker (routes.get_engine, KYB,
+    # ongoing screening); with plain attributes one screening's ES / semantic outage could
+    # mark another screening INCOMPLETE, or hide it. threading.local is per greenlet under
+    # gevent's patch_all (same pattern as db_conn above).
+    def _req_flag(name):
+        def _get(self):
+            tl = self.__dict__.get('_tl_flags')
+            return bool(getattr(tl, name, False)) if tl is not None else False
+
+        def _set(self, value):
+            import threading
+            tl = self.__dict__.get('_tl_flags')
+            if tl is None:
+                tl = self.__dict__.setdefault('_tl_flags', threading.local())
+            setattr(tl, name, bool(value))
+        return property(_get, _set)
+
+    es_degraded = _req_flag('es_degraded')
+    semantic_degraded = _req_flag('semantic_degraded')
+    del _req_flag
+
     # Algorithm weights (Optimized 2024-02-11)
     FUZZY_RATIO_WEIGHT = 0.40      # 40% (Core)
     JARO_WINKLER_WEIGHT = 0.33     # 33% (Better for names)
@@ -1156,7 +1178,7 @@ class ComplyNexScreeningEngine:
                 logger.warning("[NAME-LOGIC] internal gate failed: %s", e)
         return internal_matches
 
-    def screen_person(self: "ComplyNexScreeningEngine", name: str, date_of_birth=None, nationality=None, entity_type='INDIVIDUAL', address=None, user_id=1, include_media=True, is_internal_blacklist=False, national_id=None, employer=None, threshold=None, screening_type=None, include_regulatory=None) -> dict:
+    def screen_person(self: "ComplyNexScreeningEngine", name: str, date_of_birth=None, nationality=None, entity_type='INDIVIDUAL', address=None, user_id=1, include_media=True, is_internal_blacklist=False, national_id=None, employer=None, threshold=None, screening_type=None, include_regulatory=None, customer_id=None) -> dict:
         """
         Screen a person/entity using ensemble algorithm
         """
@@ -1210,7 +1232,8 @@ class ComplyNexScreeningEngine:
         _cs_ctx = None
         try:
             from screening import clearance_scope as _csm
-            _cs_ctx = _csm.lookup(self.db_conn, processed_name, national_id=national_id, dob=date_of_birth, raw_name=name)
+            _cs_ctx = _csm.lookup(self.db_conn, processed_name, national_id=national_id, dob=date_of_birth, raw_name=name,
+                                  customer_id=customer_id)
         except Exception as _e:
             logger.warning(f"[CLEARANCE-SCOPE] lookup skipped: {_e}")
             _cs_ctx = None
@@ -1637,6 +1660,14 @@ class ComplyNexScreeningEngine:
             except Exception as _e:
                 logger.warning(f"[CLEARANCE-SCOPE] filter skipped: {_e}")
                 _cleared = []
+        # each hit carries its record's fingerprint as screened, so a later clearance covers
+        # exactly what was reviewed (a record changed before approval stays a hit)
+        if matches:
+            try:
+                from screening import clearance_scope as _csm
+                _csm.stamp(self.db_conn, matches)
+            except Exception as _e:
+                logger.warning(f"[CLEARANCE-SCOPE] stamp skipped: {_e}")
 
         # Sort matches by score desc
         matches.sort(key=lambda x: x['match_score'], reverse=True)
@@ -1682,6 +1713,14 @@ class ComplyNexScreeningEngine:
                                    'nationality': bool(nationality)})
         except Exception as _e:
             logger.warning(f"[WORKFLOW] layer failed: {_e}")
+            # fail safe: a source WAS down, so never let this screening read clear
+            if getattr(self, 'es_degraded', False) or getattr(self, 'semantic_degraded', False):
+                if not _wf_blocking:
+                    _wf_blocking = [{'code': 'source_unavailable',
+                                     'en': 'A screening source was unavailable during this screening.',
+                                     'ar': 'مصدر من مصادر الفحص ماكانش متاح أثناء الفحص ده.'}]
+                if result_status in ('CLEAR', 'LOW_MATCH', 'WHITE_LISTED'):
+                    result_status = 'INCOMPLETE'
         # ---- end P4 ---------------------------------------------------------------------------
 
         result = {
@@ -2019,6 +2058,9 @@ class ComplyNexScreeningEngine:
                 try:
                     sem_out['results'] = self.semantic_matcher.search_index(
                         processed_name, top_k=25, country=country)
+                    # read the client's health right away (no I/O in between, so no greenlet
+                    # switch): last_ok is shared by every screening of this worker
+                    sem_out['ok'] = getattr(self.semantic_matcher, 'last_ok', True)
                 except Exception as e:  # surfaced after join, same as the old inline call
                     sem_out['error'] = e
             sem_thread = threading.Thread(target=_sem_search, daemon=True)
@@ -2080,7 +2122,7 @@ class ComplyNexScreeningEngine:
                     raise sem_out['error']
                 else:
                     s_results = sem_out.get('results') or []
-                    if getattr(self.semantic_matcher, 'last_ok', True) is False:
+                    if sem_out.get('ok', True) is False:
                         self.semantic_degraded = True
             if s_results:
                 # search_index() returns bare {'id', 'semantic_score'} — the

@@ -226,10 +226,12 @@ def render_pdf(content, digest, generated_by, base_url):
     return HTML(string=html, base_url=base_url).write_pdf()
 
 
-def record(result_id, digest, user_id, size):
+def record(result_id, digest, user_id, size, pdf_sha256=None):
+    """digest = hash of the canonical content (printed on the pack); pdf_sha256 = hash of the
+    exact PDF file issued (the file itself differs on each render: timestamps, generator)."""
     from database.db import execute_db
     try:
-        execute_db("""INSERT INTO screening_evidence_packs (result_id, sha256, generated_by, size_bytes)
-                      VALUES (%s,%s,%s,%s)""", (result_id, digest, user_id, size))
+        execute_db("""INSERT INTO screening_evidence_packs (result_id, sha256, generated_by, size_bytes, pdf_sha256)
+                      VALUES (%s,%s,%s,%s,%s)""", (result_id, digest, user_id, size, pdf_sha256))
     except Exception as e:
         logger.error('evidence pack record failed: %s', e)

@@ -69,7 +69,11 @@ def process_chunk(df_chunk, engine):
         
         # Save outcome for Master Excel
         result_row = row.to_dict()
-        result_row['Screening Status'] = 'MATCH' if is_match else 'CLEAR'
+        # P4-1: a screening during which a source was unavailable is never CLEAR
+        incomplete = bool(hit.get('incomplete')) or hit.get('screening_result') == 'INCOMPLETE'
+        result_row['Screening Status'] = 'MATCH' if is_match else ('INCOMPLETE' if incomplete else 'CLEAR')
+        result_row['Incomplete Reasons'] = " | ".join(
+            (w.get('en') or '') for w in (hit.get('incomplete_reasons') or []) if isinstance(w, dict))
         result_row['ML Score'] = round(ml_score, 2)
         result_row['Confidence'] = hit.get('confidence', 'low')
         result_row['Matched Watchlist Entities'] = " | ".join(matched_identities) if matched_identities else ''

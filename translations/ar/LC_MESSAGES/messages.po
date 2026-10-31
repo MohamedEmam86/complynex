@@ -39269,3 +39269,11 @@ msgstr "في الانتظار"
 
 msgid "Decision SLA"
 msgstr "مهلة القرار"
+
+#: wave3 review
+msgid "cleared earlier for another customer with the same name — re-confirm"
+msgstr "اتعمل له استبعاد قبل كده لعميل تاني بنفس الاسم — لازم يتأكد تاني"
+
+#: wave3 review
+msgid "This hash covers the canonical content of the pack (the data listed below), not the PDF file; the hash of the issued PDF file is kept in the system register of evidence packs."
+msgstr "البصمة دي بتغطي المحتوى المعياري للملف (البيانات اللي تحت)، مش ملف الـ PDF نفسه؛ بصمة ملف الـ PDF اللي اتصدر محفوظة في سجل ملفات الأدلة في السيستم."
