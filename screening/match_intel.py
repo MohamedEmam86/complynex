@@ -126,6 +126,54 @@ def _split_glued(t):
     return ' '.join(out)
 
 
+# "X Allah" compounds (Nasrallah, Fadlallah, Khairallah, Fathallah): written glued or split, in any
+# vowel (Nasrullah, Nasrollah). They are one name element; the part before Allah alone is another name
+# (Nasr is not Nasrallah). Abd Allah keeps its own handling (Abd + Allah).
+_ALLAH_HEAD_STOP = {'abd', 'abdul', 'abdel', 'abdal', 'abdoul', 'abu', 'abou', 'abo', 'bin', 'ben', 'ibn',
+                    'el', 'al', 'ul', 'abdu'}
+_ALLAH_HEAD_STOP_AR = {'عبد', 'ابو', 'بن', 'ابن', 'بنت', 'ال'}
+# first parts of the common "X Allah" names. A split "X الله" is glued only after one of these: any other
+# word before الله is a separate element (a name with a part left out, محمد احمد الله, stays three elements)
+_ALLAH_HEADS_AR = {'نصر', 'فضل', 'خير', 'جاد', 'عطا', 'عطاء', 'فتح', 'سعد', 'حمد', 'نعمت', 'نعمه', 'رزق', 'ضيف',
+                   'عوض', 'حسب', 'جار', 'فرج', 'شكر', 'هبه', 'هبت', 'منه', 'كرم', 'نور', 'سيف', 'روح', 'ولي',
+                   'حب', 'ثناء', 'عزت', 'ذكر', 'خلف', 'دخيل', 'مال', 'رحمه', 'رحمت', 'فيض', 'قدر', 'شرف', 'بركه',
+                   'حجت', 'حبيب', 'اسد', 'عبيد', 'عزيز', 'حيات', 'عنايت', 'سميع', 'ضياء', 'قدرت', 'امان', 'كليم',
+                   'ذبيح', 'جند', 'حزب', 'انصار', 'ثار', 'لطف', 'فيض', 'وجه', 'حرز', 'جبر'}
+_ALLAH_HEADS_LAT = {'nasr', 'fadl', 'fadel', 'khair', 'kheir', 'khayr', 'kher', 'gad', 'jad', 'ata', 'fath', 'fat',
+                    'saad', 'sad', 'hamd', 'hamad', 'nimat', 'nemat', 'neamat', 'rizk', 'rizq', 'rezk', 'deif', 'daif',
+                    'dhaif', 'awad', 'hasab', 'gar', 'jar', 'farag', 'faraj', 'shukr', 'shokr', 'heba', 'hiba', 'hibat',
+                    'minat', 'karam', 'nour', 'nur', 'seif', 'saif', 'sayf', 'ruh', 'rouh', 'wali', 'waly', 'hab',
+                    'hob', 'sana', 'thana', 'ezzat', 'izzat', 'zikr', 'zekr', 'khalaf', 'dakhil', 'mal', 'rahmat',
+                    'rahma', 'faid', 'feid', 'qadr', 'kadr', 'sharaf', 'baraka', 'hojat', 'hujjat', 'habib', 'asad',
+                    'obaid', 'ubaid', 'ubayd', 'aziz', 'hayat', 'inayat', 'enayat', 'sami', 'zia', 'ziya', 'qudrat',
+                    'aman', 'kalim', 'zabih', 'jund', 'hizb', 'ansar', 'lutf', 'wajh', 'jabr', 'gabr'}
+_LAT_ALLAH_SPLIT = re.compile(r'\b([a-z]{2,}) (allah|alla|ullah|ulla|ollah|alah|ulah|olah)\b')
+_LAT_ALLAH_STEM = re.compile(r'^([a-z]{3,}?)[aeiou]?l{1,2}ah$')
+_AR_ALLAH_SPLIT = re.compile(r'(?<![ء-ي])([ء-ي]{2,})\s+الله(?![ء-ي])')
+
+
+def _glue_allah_lat(t):
+    # "Nasr Allah" is written as the glued form a Latin writer uses ("Nasrallah"); glued spellings are
+    # left as written (Saifullah stays close to a letter-by-letter Arabic rendering سايفوللاح)
+    return _LAT_ALLAH_SPLIT.sub(lambda m: m.group(1) + m.group(2)
+                                if re.sub(r'(.)\1+', r'\1', m.group(1)) in _ALLAH_HEADS_LAT
+                                or m.group(1) in _ALLAH_HEADS_LAT else m.group(0), t)
+
+
+def _glue_allah_ar(t):
+    return _AR_ALLAH_SPLIT.sub(lambda m: m.group(1) + 'الله'
+                               if m.group(1).replace('ة', 'ه') in _ALLAH_HEADS_AR else m.group(0), t)
+
+
+def _allah_stem(t):
+    """'nasralah' -> 'nasr', 'نصرالله' -> 'نصر'; None when t is not an X-Allah compound."""
+    if is_arabic(t):
+        return t[:-4] if t.endswith('الله') and len(t) >= 6 else None
+    m_ = _LAT_ALLAH_STEM.match(t)
+    return m_.group(1) if m_ and m_.group(1) not in _ALLAH_HEAD_STOP and not m_.group(1).startswith('abd') \
+        else None
+
+
 def normalize(text):
     """One canonical spelling for comparison (both scripts)."""
     t = str(text or '').strip()
@@ -147,6 +195,7 @@ def normalize(text):
         t = _split_glued(t)
         # fused compounds: عبدالرحمن / ابوبكر -> عبد الرحمن / ابو بكر
         t = re.sub(r'\b(عبد|ابو)(?=ال|[ء-ي]{3,})', r'\1 ', t)
+        t = _glue_allah_ar(t)
         t = re.sub(r'[^ء-ي\s]', ' ', t)
     else:
         t = _nv.latin(t.lower())       # Franco-Arabic digits, accents, dialect spellings (name_variants.py)
@@ -165,6 +214,7 @@ def normalize(text):
         t = re.sub(r'\b(abu|abou)(?=[bcdfghjklmnpqrstvwxz][a-z]{3,})', r'\1 ', t)
         # every spelling of Allah after Abd (Abdallah, Abdullah, Abdullahi, Abdalah, Abdalla) -> one form
         t = re.sub(r'\b(abd|abdul|abdel|abdal) ([aeiu]?l+ahi?)\b', 'abd alah', t)
+        t = _glue_allah_lat(t)
         t = re.sub(r'[^a-z\s]', ' ', t)
         for pat, rep in _LATIN_CANON:
             t = re.sub(pat, rep, t)
@@ -448,6 +498,26 @@ def _xs_same(lat, ar):
     return s
 
 
+def _drops_initial_vowel(lat, ar):
+    """The Arabic starts with a written alif before a consonant (احمد، امجد، اشرف) but the Latin starts
+    with that consonant: the Latin is another name (Hamid is حامد / حميد, not احمد)."""
+    return 3 <= len(ar) <= 5 and ar[0] in 'اأإآ' and ar[1] not in 'اويىءئؤل' \
+        and len(lat) >= 2 and lat[0] not in 'aeiouy' and lat[1] in 'aeiou' and _attested(ar)
+
+
+def _xs_phonetic_score(lat, ar):
+    """Score of a spelling that fits the Arabic by sound (no learned pair): 0.95 when it is a clean,
+    standard transliteration of a well-known name (every consonant the same sound class, the first
+    letter in place: Hamid = حامد, Majid = ماجد, Saeed = سعيد), else 0.85."""
+    if _drops_initial_vowel(lat, ar):
+        return 0.0
+    if not _xs_phonetic(lat, ar):
+        return 0.0
+    if 3 <= len(ar) <= 6 and len(lat) >= 4 and loose_ratio(lat, ar) == 1.0 and _attested(ar):
+        return 0.95
+    return 0.85
+
+
 def _xs_same_raw(lat, ar):
     """Same name element written in Latin and in Arabic?"""
     if len(lat) == 1:
@@ -459,15 +529,23 @@ def _xs_same_raw(lat, ar):
             if a == ar or (len(a) == len(ar) and a.translate(_AR_SOUND) == ar.translate(_AR_SOUND)):
                 if (c < 10 or c / total < 0.1) and loose_ratio(lat, ar) < 0.7:
                     break        # a rare learned pair whose sounds do not agree: a list alias of someone else
-                return 0.95 if c / total >= 0.1 else 0.85
+                if c / total >= 0.1:
+                    return 0.95
+                # a less frequent learned pair that is also a clean standard transliteration of a
+                # well-known name keeps full strength (Majid = ماجد although lists write مجيد more often)
+                return 0.95 if c / total >= 0.05 and _xs_phonetic_score(lat, ar) >= 0.95 else 0.85
         if lat in _canon_names():
             return 0.0          # a standard spelling of another well-known name (Mahmoud is محمود, not محمد)
-        if _xs_phonetic(lat, ar):
-            return 0.85         # the spelling fits this Arabic name too (Saed = سعيد as well as سعد)
+        ps = _xs_phonetic_score(lat, ar)
+        if ps:
+            return ps           # the spelling fits this Arabic name too (Hamid = حامد as well as حميد)
         if total >= 8:
             return 0.0          # a well-known element that is written otherwise (Mohamed is not محمود)
-    if _xs_phonetic(lat, ar):
-        return 0.85
+    ps = _xs_phonetic_score(lat, ar)
+    if ps:
+        return ps
+    if _drops_initial_vowel(lat, ar):
+        return 0.0
     kl, ka = _xs_key(lat), _xs_key(ar)
     if len(kl) >= 2 and kl == ka:
         return 0.85
@@ -485,6 +563,9 @@ def to_arabic(name):
             continue
         if t in ('alah', 'din'):
             out.append('الله' if t == 'alah' else 'الدين')
+            continue
+        if _allah_stem(t) and not _xs_dict().get(t):
+            out.append(to_arabic(_allah_stem(t)) + 'الله')
             continue
         cands = _xs_dict().get(t)
         if cands:
@@ -557,11 +638,22 @@ def _same_token(a, b, first=False):
         return 1.0
     if is_arabic(a) != is_arabic(b):                 # Latin vs Arabic
         lat, arb = (b, a) if is_arabic(a) else (a, b)
+        sl, sa = _allah_stem(lat), _allah_stem(arb)
+        if sl and sa:
+            # Nasrallah = نصرالله when Nasr = نصر. A spelling that fits the first part counts in full: the
+            # compound itself is the identity (lists write Nasr for ناصر too, which weakens Nasr = نصر alone)
+            s = _same_token(sl, sa)
+            return 0.95 if s >= 0.85 else s
         s = _xs_same(lat, arb)
         if not s and _nv.canon(lat) != lat and not _long_end_veto(lat, arb):   # dialect spelling (Mehmet)
             s = _xs_same(_nv.canon(lat), arb)
         return s
     ar = is_arabic(a) and is_arabic(b)
+    if not is_arabic(a) and not is_arabic(b):
+        sa_, sb_ = _allah_stem(a), _allah_stem(b)
+        if sa_ and sb_:
+            st = 1.0 if sa_ == sb_ else _same_token(sa_, sb_)
+            return 0.95 if st >= 0.85 else st      # Nasrullah = Nasrallah (the linking vowel varies)
     if not ar and a in _canon_names() and b in _canon_names():
         return 0.0     # two different well-known names (Mohamed / Mahmoud share a consonant skeleton)
     if not ar and _nv.canon(a) == _nv.canon(b) and (_nv.canon(a) != a or _nv.canon(b) != b):
@@ -784,6 +876,12 @@ def name_match(query, listed):
             and len(missing) == 1 and 0 < [i for i in range(len(c)) if i not in matched_c][0] < len(c) - 1):
         # the customer left out one middle element (a father's second name / grandfather): a lead to review
         score = max(score, 76.0)
+    left_out = missing + extra
+    if left_out and all(t in _SOFT_PARTICLE for t in left_out) and \
+            min(sum(t not in _SOFT_PARTICLE for t in c), sum(t not in _SOFT_PARTICLE for t in q)) <= 1:
+        # the names differ only by a particle and one element is all that is left (Maria / Di Maria,
+        # Hai / Van Hai): one given name is not an identity (Isabel Santos = Isabel dos Santos still is)
+        score = min(score, 74.0)
     if len(c) >= 3 and len(q) >= 3 and missing and extra:
         # both names carry an element the other lacks at the same place in the
         # chain (a different father / grandfather): different people unless an
