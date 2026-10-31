@@ -745,19 +745,23 @@ def run_screening(id):
             history_id = history_row['id'] if history_row else None
 
             # Also save to screening_results for backward compat
-            db.execute("""
+            _res_row = db.execute("""
                 INSERT INTO screening_results (
                     screening_type, screened_name, screening_method,
                     total_matches_found, highest_match_score,
                     screening_result, matches, adverse_media, processing_time_ms, created_by
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
             """, (
                 'MERCHANT_KYC', name, 'API',
                 len(matches), highest_score, sr,
                 json.dumps(matches),
                 json.dumps(result.get('adverse_media', [])),
                 result.get('processing_time_ms', 0), current_user.id
-            ))
+            )).fetchone()
+            if _res_row and history_id:      # the result page finds the merchant (G10 parties section)
+                db.execute("UPDATE screening_history SET screening_result_id = %s WHERE id = %s",
+                           (_res_row['id'], history_id))
 
             # Create queue items for high-risk matches
             for match in high_risk:
@@ -820,6 +824,24 @@ def run_screening(id):
         WHERE id = %s
     """, (screening_status, current_user.id, risk_rating, id))
     db.commit()
+
+    # G10: the merchant's related parties (KYB register) are screened with it; the merchant's
+    # status becomes the worst of its own and theirs
+    try:
+        from kyb import parties_screening as _g10
+        _p = _g10.after_parent_screening('Merchant KYC', id, current_user.id, db)
+        if _p and _p['overview']['total']:
+            _ov = _p['overview']
+            if _ov['worst'] in ('open', 'confirmed'):
+                flash(gettext('Related parties: a screening hit on one of the %(n)s owners / signatories needs review.',
+                              n=_ov['total']), 'danger')
+            elif _ov['worst'] in ('incomplete', 'error', 'not_screened'):
+                flash(gettext('Related parties: the screening of one of the %(n)s owners / signatories is incomplete; screen again.',
+                              n=_ov['total']), 'warning')
+            else:
+                flash(gettext('Related parties: %(n)s owners / signatories screened, no open hit.', n=_ov['total']), 'info')
+    except Exception:
+        current_app.logger.exception('G10 related-party screening failed for merchant %s', id)
 
     if total_high_risk > 0:
         flash(gettext('Screening completed: %(total_high_risk)s high-risk match(es) found! Review required in Screening Queue.', total_high_risk=total_high_risk), 'danger')

@@ -1,0 +1,40 @@
+{# G10: a company is screened together with its related parties (KYB register) #}
+{% if g10_parties %}
+{% set _ov = g10_parties.overview %}
+{% set _w = _ov.worst %}
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header bg-white fw-bold d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span><i class="fas fa-users me-2"></i>{{ _('Related parties') }} <span class="badge rounded-pill bg-secondary ms-1">{{ _ov.total }}</span></span>
+    <span class="small">
+      {{ _('Status of the record with its parties') }}:
+      <span class="badge {% if g10_parties.status in ('Clear', 'Whitelisted') %}bg-success{% elif g10_parties.status == 'Incomplete' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ _(g10_parties.status or 'Not screened') }}</span>
+    </span>
+  </div>
+  <div class="card-body">
+    {% if not _ov.total %}
+      <p class="text-muted small mb-0">{{ _('No beneficial owner or authorised signatory is recorded for this company yet; complete its KYB file.') }}</p>
+    {% else %}
+      {% if _w in ('open', 'confirmed') %}
+      <div class="alert alert-warning small py-2 mb-2">{{ _('A related party has an open or confirmed screening hit: the company needs review.') }}</div>
+      {% elif _w in ('incomplete', 'error', 'not_screened') %}
+      <div class="alert alert-danger small py-2 mb-2">{{ _('A related party was not fully screened: the company cannot read clear until it is screened again.') }}</div>
+      {% endif %}
+      <table class="table table-sm mb-1">
+        <thead><tr><th>{{ _('Name') }}</th><th>{{ _('Role') }}</th><th>{{ _('Screening') }}</th><th>{{ _('Screened on') }}</th><th></th></tr></thead>
+        <tbody>
+        {% for p in _ov.people %}
+          <tr>
+            <td class="small">{{ p.name }}</td>
+            <td class="small">{{ _(p.role) }}{% if p.detail %}<div class="text-muted">{{ p.detail }}</div>{% endif %}</td>
+            <td class="small"><span class="badge {% if p.state in ('clear', 'cleared') %}bg-success{% elif p.state == 'pep' %}bg-info text-dark{% elif p.state in ('open', 'not_screened') %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ p.state|kyc_label('screening') }}</span></td>
+            <td class="small">{{ p.screened_at or '—' }}</td>
+            <td class="small">{% if p.result_id %}<a href="{{ url_for('screening.view_result', id=p.result_id) }}">{{ _('result') }}</a>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div class="small text-muted">{{ _('Each party is a screening of its own (result, queue, evidence pack, clearance). The company is re-screened with all of them.') }}</div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

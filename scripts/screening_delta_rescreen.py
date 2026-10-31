@@ -73,6 +73,16 @@ def _subjects(cur):
     for r in cur.fetchall():
         out.append({'table': 'parties', 'id': r['id'], 'names': [r['full_name'], r['full_name_arabic']],
                     'nid': None, 'dob': r['date_of_birth'], 'nat': r['nationality']})
+    # G10: the related parties of companies (KYB register: owners, controllers, signatories)
+    for table, label in (('kyc_beneficial_owners', 'kyb.ubo'), ('kyb_signatories', 'kyb.signatory')):
+        try:
+            cur.execute(f"SELECT id, full_name, id_number, date_of_birth, nationality FROM {table}")
+        except Exception:
+            cur.connection.rollback()
+            continue
+        for r in cur.fetchall():
+            out.append({'table': label, 'id': r['id'], 'names': [r['full_name']],
+                        'nid': r['id_number'], 'dob': r['date_of_birth'], 'nat': r['nationality']})
     for s in out:
         s['names'] = [n for n in dict.fromkeys(s['names']) if n and str(n).strip()]
     return [s for s in out if s['names']]

@@ -254,6 +254,8 @@
   </div>
   {% endif %}
 
+  {% include 'screening/_parties_section.html' %}
+
   {# ---------------- INPUT QUALITY (P3-11) ---------------- #}
   {% if input_warnings %}
   {% set _iq_ar = get_locale() == 'ar' %}

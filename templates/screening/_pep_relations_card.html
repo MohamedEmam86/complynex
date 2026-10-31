@@ -1,0 +1,53 @@
+{# G13: relatives and close associates of PEPs linked to this record #}
+{% if pep_rel_record %}
+<div class="mp-card">
+  <div class="h"><i class="fas fa-people-arrows me-1"></i>{{ _('Relatives and close associates') }}{% if pep_rel %} <span class="badge rounded-pill bg-secondary ms-1">{{ pep_rel|length }}</span>{% endif %}</div>
+  <div class="b">
+    {% if pep_rel %}
+    <table class="table table-sm mb-2"><thead><tr><th>{{ _('Linked record') }}</th><th>{{ _('Relation') }}</th><th>{{ _('Source') }}</th><th></th></tr></thead><tbody>
+    {% for r in pep_rel %}
+      <tr><td class="small"><span class="ar">{{ r.other_name }}</span>{% if r.other_is_pep %} <span class="badge bg-info text-dark">PEP</span>{% endif %}</td>
+        <td class="small">{% if r.role == 'relative_of' %}{{ _('This record is a') }} {{ _('family member' if r.type == 'family' else 'close associate') }}{% else %}{{ _('Their') }} {{ _('family member' if r.type == 'family' else 'close associate') }}{% endif %}{% if r.relationship %} — {{ r.relationship }}{% endif %}</td>
+        <td class="small">{{ _('OpenSanctions' if r.origin == 'opensanctions' else 'Added by the MLRO') }}</td>
+        <td class="small no-print">
+          {% if r.other_source and r.other_watchlist_id %}<a href="{{ url_for('screening.match_profile', rid=result.id, src=r.other_source, rec=r.other_watchlist_id) }}">{{ _('profile') }}</a>{% endif %}
+          {% if can_unlink %}
+          <details class="mt-1"><summary class="text-danger" style="cursor:pointer">{{ _('Remove') }}</summary>
+            <form method="post" action="{{ url_for('screening.pep_relation_remove', relation_id=r.relation_id) }}" class="mt-1">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="rid" value="{{ result.id }}">
+              <input type="hidden" name="back" value="{{ request.full_path }}">
+              <input type="text" name="reason" class="form-control form-control-sm mb-1" minlength="15" required placeholder="{{ _('Reason (at least 15 characters)') }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger">{{ _('Remove the relation') }}</button>
+            </form></details>
+          {% endif %}
+        </td></tr>
+    {% endfor %}</tbody></table>
+    <div class="small text-muted mb-2">{{ _('A relative or close associate of a PEP is handled with enhanced due diligence.') }}</div>
+    {% else %}
+    <p class="text-muted small mb-2">{{ _('No relative or close associate of a PEP is linked to this record.') }}</p>
+    {% endif %}
+    {% if can_unlink and pep_rel_hits %}
+    <details><summary class="small" style="cursor:pointer">{{ _('Record a relation with another hit of this screening') }}</summary>
+      <form method="post" action="{{ url_for('screening.pep_relation_add') }}" class="mt-2 small">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="rid" value="{{ result.id }}">
+        <input type="hidden" name="this_id" value="{{ pep_rel_record.id }}">
+        <input type="hidden" name="back" value="{{ request.full_path }}">
+        <div class="row g-1 mb-1">
+          <div class="col-md-4"><select name="direction" class="form-select form-select-sm">
+            <option value="relative_of">{{ _('This record is a relative / associate of') }}</option>
+            <option value="has_relative">{{ _('This record is the PEP; their relative / associate is') }}</option></select></div>
+          <div class="col-md-4"><select name="other_id" class="form-select form-select-sm" required>
+            {% for h in pep_rel_hits %}<option value="{{ h.id }}">{{ h.name }} ({{ h.source }})</option>{% endfor %}</select></div>
+          <div class="col-md-2"><select name="relation_type" class="form-select form-select-sm">
+            <option value="family">{{ _('Family member') }}</option><option value="associate">{{ _('Close associate') }}</option></select></div>
+          <div class="col-md-2"><input type="text" name="relationship" maxlength="120" class="form-control form-control-sm" placeholder="{{ _('e.g. spouse') }}"></div>
+        </div>
+        <input type="text" name="reason" class="form-control form-control-sm mb-1" minlength="15" required placeholder="{{ _('Reason and source (at least 15 characters)') }}">
+        <button type="submit" class="btn btn-sm btn-outline-primary">{{ _('Record the relation') }}</button>
+      </form></details>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
