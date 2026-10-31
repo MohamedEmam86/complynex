@@ -144,9 +144,13 @@ def test_dob_agreement_is_an_identifier_and_confirms():
 
 def test_passport_match_is_an_identifier():
     name = 'نبيل علي محمود البوشي'
+    # a passport number is unique only within its issuing country (review B2, Oct 2026)
+    hit = dict(_m(90, name), passport_number='A12345678', nationality='Egyptian')
+    m = mi.decide(hit, name, passport='a-12345678', nationality='EG')
+    assert m['decision']['tier'] == 'CONFIRMED' and m['match_score'] == 100
     hit = dict(_m(90, name), passport_number='A12345678')
     m = mi.decide(hit, name, passport='a-12345678')
-    assert m['decision']['tier'] == 'CONFIRMED' and m['match_score'] == 100
+    assert m['decision']['tier'] != 'CONFIRMED'
 
 
 def test_different_nationality_never_lowers_the_name_score():

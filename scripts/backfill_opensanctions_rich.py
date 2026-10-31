@@ -2,49 +2,62 @@
 """Backfill the OpenSanctions profile fields (P2-2 for OpenSanctions).
 
 The daily update only rewrites rows whose name changed, so the ~2.2M existing
-OpenSanctions rows never receive the fields the loader now parses: every date
-of birth, place of birth, nationality / citizenship, gender, passport and ID
-numbers, other identifiers, addresses and all datasets (properties.datasets).
+OpenSanctions rows never receive the fields the rich loader parses: every date
+of birth, place of birth, nationality / citizenship, gender, passport numbers,
+other identifiers (properties.identifiers), addresses and all datasets
+(properties.datasets).
 
-This script reads the current OpenSanctions files and writes, for every
-existing row, exactly what the loader writes for a changed record
-(EnhancedDataUpdater._update_entity + _store_rich), including the content
-hash, so the next daily run sees those rows as unchanged. When every source
-completed with --apply (no --limit), it switches screening_config
-'opensanctions_rich' to 'on': from then on the daily update compares and
-stores the rich fields itself.
+This script writes ONLY those profile columns (date_of_birth, year_of_birth,
+nationality, gender, place_of_birth, passport_numbers, national_id_numbers,
+addresses, properties, first_seen) and the content hash. The hash is written
+only when every other stored column already equals what the loader would
+write; otherwise it stays empty and the next daily update rewrites that row in
+full. list_type is never touched (the OpenSanctions classification job owns it);
+rows whose list_type would differ are only counted.
 
-    --dry-run (default)  read only: coverage report and timing, no writes
-    --apply              write in batches (one short transaction each)
+When every source has completed with --apply (no --limit, not stopped), it
+switches screening_config 'opensanctions_rich' to 'on': from then on the daily
+update parses, compares and stores the profile fields itself.
+
+    --dry-run (default)  read only: coverage report, DOB clears, other differences
+    --apply              write in batches; each batch takes the list's lock and the
+                         update marker for its own few seconds only
     --source             opensanctions | opensanctions_pep | all (default)
     --limit N            stop after N parsed entities per source
     --batch / --pause    rows per transaction / seconds between batches
+    --stop-at HH:MM      stop cleanly at this local time (default 03:45, before the
+                         daily list update); run again the next night to resume
     --file SRC=PATH      use a local copy of a source file instead of downloading
     --keep-download      keep the downloaded file(s) in --workdir
     --restart            forget which sources were completed (state file)
 
 With --apply each file is downloaded completely first (about 2.6 GB + 0.9 GB in
---workdir) and removed at the end unless --keep-download.
-
-Rows are matched on (source, source_id); rows that do not exist yet are left
-to the daily update. is_active is never changed. The search-index sync is held
-off (update marker) while writing; run scripts/es_incremental_sync.py after.
-Run at night, not on the same night as another mass update of these rows.
+--workdir) and removed at the end unless --keep-download. --apply must run from
+/var/www/complynex (the update marker lives there). Running again resumes:
+rows already written carry the loader's hash and are skipped after one read.
+After a run: scripts/es_incremental_sync.py (search index) and index_health.py.
 """
 import argparse
 import json
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
 
+PROD_BASE = '/var/www/complynex'
 SOURCES = ('opensanctions', 'opensanctions_pep')
 STATE = '/var/backups/complynex/os_rich_backfill_state.json'
-COVER_KEYS = ('date_of_birth', 'multi_dob', 'place_of_birth', 'nationality', 'gender', 'passport_numbers',
-              'national_id_numbers', 'identifiers', 'addresses', 'multi_datasets', 'weak_aliases', 'first_seen')
+PROFILE_COLS = ('date_of_birth', 'year_of_birth', 'nationality', 'gender', 'place_of_birth', 'passport_numbers',
+                'national_id_numbers', 'addresses', 'properties', 'first_seen')
+OTHER_COLS = ('full_name', 'original_name', 'entity_type', 'dataset', 'topics', 'aliases', 'details',
+              'full_name_arabic', 'aliases_arabic')
+
+
+class StopRun(Exception):
+    pass
 
 
 def _log(msg):
@@ -69,6 +82,13 @@ def _save_state(st):
         _log(f'could not save state: {e}')
 
 
+def _deadline(hhmm):
+    h, m = (int(x) for x in hhmm.split(':'))
+    now = datetime.now()
+    d = now.replace(hour=h, minute=m, second=0, microsecond=0)
+    return d if d > now else d + timedelta(days=1)
+
+
 def _source_url(conn, source):
     c = conn.cursor()
     c.execute("SELECT source_url FROM screening_data_sources WHERE source_name = %s", (source,))
@@ -77,223 +97,224 @@ def _source_url(conn, source):
     return r[0] if r else None
 
 
-def _lines(source, url, local_path, workdir, keep):
-    """Yield raw JSON lines of one OpenSanctions file (a local copy, or streamed from the source)."""
-    if local_path:
-        with open(local_path, 'rb') as f:
-            for line in f:
-                yield line
-        return
+def _stream(url):
     import requests
-    path = None
-    if keep:
-        os.makedirs(workdir, exist_ok=True)
-        path = os.path.join(workdir, f'{source}.ftm.json')
-    r = requests.get(url, timeout=(15, 300), stream=True)
-    r.raise_for_status()
-    out = open(path, 'wb') if path else None
-    try:
+    with requests.get(url, timeout=(15, 300), stream=True) as r:
+        r.raise_for_status()
         for line in r.iter_lines():
-            if out is not None:
-                out.write(line + b'\n')
             yield line
-    finally:
-        if out is not None:
-            out.close()
-        r.close()
 
 
-def _row_values(U, entity):
-    """The columns the loader writes for a changed record, in UPDATE order."""
-    import jellyfish
-    from screening.data_updater_enhanced import normalize_arabic_text, stored_json_value as j
-    from screening.format_handlers import expand_rich
-    entity = expand_rich(entity)
-    name_norm = normalize_arabic_text(entity['full_name'])
+def _file_lines(path):
+    with open(path, 'rb') as f:
+        for line in f:
+            yield line
+
+
+def _download(url, path):
+    import requests
+    with requests.get(url, timeout=(15, 300), stream=True) as r:
+        r.raise_for_status()
+        with open(path + '.part', 'wb') as f:
+            for chunk in r.iter_content(1 << 20):
+                f.write(chunk)
+    os.replace(path + '.part', path)
+
+
+def _profile(entity):
+    """Profile columns as the loader writes them (EnhancedDataUpdater._update_entity / _store_rich)."""
+    from screening.data_updater_enhanced import stored_json_value as j
     yob = None
     if entity.get('date_of_birth'):
         try:
             yob = int(str(entity['date_of_birth'])[:4])
         except Exception:
             yob = None
-    return (
-        entity['full_name'], entity.get('original_name'), name_norm,
-        jellyfish.soundex(name_norm) if name_norm else None,
-        jellyfish.metaphone(name_norm) if name_norm else None,
-        entity.get('dataset', entity.get('source', 'unknown')),
-        entity.get('list_type', 'SANCTIONS'), entity.get('entity_type', 'INDIVIDUAL'),
-        json.dumps(entity.get('topics', [])), json.dumps(entity.get('countries', [])),
-        entity.get('date_of_birth'), yob, entity.get('nationality'), entity.get('gender'),
-        entity.get('source_url'), entity.get('risk_level', 'MEDIUM'),
-        json.dumps(entity.get('aliases', [])), json.dumps(entity.get('details', {})),
-        entity.get('place_of_birth'), j(entity.get('passport_numbers')), j(entity.get('national_id_numbers')),
-        j(entity.get('addresses')), j(entity.get('properties')), entity.get('full_name_arabic'),
-        j(entity.get('aliases_arabic')), entity.get('first_seen'), U._content_hash(entity),
-    )
+    return {
+        'date_of_birth': entity.get('date_of_birth'), 'year_of_birth': yob,
+        'nationality': entity.get('nationality'), 'gender': entity.get('gender'),
+        'place_of_birth': entity.get('place_of_birth'), 'passport_numbers': j(entity.get('passport_numbers')),
+        'national_id_numbers': j(entity.get('national_id_numbers')), 'addresses': j(entity.get('addresses')),
+        'properties': j(entity.get('properties')), 'first_seen': entity.get('first_seen'),
+    }
+
+
+def _others(entity):
+    """The other columns as the loader would write them (to know if the stored row is current)."""
+    from screening.data_updater_enhanced import stored_json_value as j
+    return {
+        'full_name': entity['full_name'], 'original_name': entity.get('original_name'),
+        'entity_type': entity.get('entity_type', 'INDIVIDUAL'),
+        'dataset': entity.get('dataset', entity.get('source', 'unknown')),
+        'topics': json.dumps(entity.get('topics', [])), 'aliases': json.dumps(entity.get('aliases', [])),
+        'details': json.dumps(entity.get('details', {})),
+        'full_name_arabic': entity.get('full_name_arabic'), 'aliases_arabic': j(entity.get('aliases_arabic')),
+    }
+
+
+def _row_values(U, entity, with_hash=True):
+    """(profile values in PROFILE_COLS order) + content hash (or None)."""
+    from screening.format_handlers import expand_rich
+    e = expand_rich(entity)
+    p = _profile(e)
+    return tuple(p[k] for k in PROFILE_COLS) + ((U._content_hash(e) if with_hash else None),)
 
 
 UPDATE_SQL = """
 UPDATE screening_watchlist w SET
-    full_name = v.full_name, original_name = v.original_name, name_normalized = v.name_normalized,
-    name_soundex = v.name_soundex, name_metaphone = v.name_metaphone, dataset = v.dataset,
-    list_type = v.list_type, entity_type = v.entity_type, topics = v.topics, countries = v.countries,
     date_of_birth = v.date_of_birth, year_of_birth = v.year_of_birth::integer, nationality = v.nationality,
-    gender = v.gender, source_url = v.source_url, risk_level = v.risk_level, aliases = v.aliases,
-    details = v.details, place_of_birth = v.place_of_birth, passport_numbers = v.passport_numbers,
+    gender = v.gender, place_of_birth = v.place_of_birth, passport_numbers = v.passport_numbers,
     national_id_numbers = v.national_id_numbers, addresses = v.addresses, properties = v.properties,
-    full_name_arabic = v.full_name_arabic, aliases_arabic = v.aliases_arabic,
-    first_seen = COALESCE(v.first_seen, w.first_seen), content_hash = v.content_hash,
-    last_updated = CURRENT_TIMESTAMP
-FROM (VALUES %s) AS v(id, full_name, original_name, name_normalized, name_soundex, name_metaphone, dataset,
-      list_type, entity_type, topics, countries, date_of_birth, year_of_birth, nationality, gender, source_url,
-      risk_level, aliases, details, place_of_birth, passport_numbers, national_id_numbers, addresses,
-      properties, full_name_arabic, aliases_arabic, first_seen, content_hash)
+    first_seen = COALESCE(v.first_seen, w.first_seen), content_hash = v.content_hash
+FROM (VALUES %s) AS v(id, date_of_birth, year_of_birth, nationality, gender, place_of_birth, passport_numbers,
+      national_id_numbers, addresses, properties, first_seen, content_hash)
 WHERE w.id = v.id
 """
 
 
-def _cover(entity, cov):
-    from screening.format_handlers import expand_rich
-    entity = expand_rich(entity)
-    p = entity.get('properties') or {}
-    checks = {
-        'date_of_birth': entity.get('date_of_birth'),
-        'multi_dob': len(p.get('dates_of_birth') or []) > 1,
-        'place_of_birth': entity.get('place_of_birth'),
-        'nationality': entity.get('nationality'),
-        'gender': entity.get('gender'),
-        'passport_numbers': entity.get('passport_numbers'),
-        'national_id_numbers': entity.get('national_id_numbers'),
-        'identifiers': p.get('identifiers'),
-        'addresses': entity.get('addresses'),
-        'multi_datasets': len(p.get('datasets') or []) > 1,
-        'weak_aliases': p.get('weak_aliases'),
-        'first_seen': entity.get('first_seen'),
-    }
-    for k, v in checks.items():
+def _same(stored, new):
+    return (stored or None) == (new or None)
+
+
+def _cover(e, cov):
+    p = e.get('properties') or {}
+    for k, v in (('date_of_birth', e.get('date_of_birth')), ('multi_dob', len(p.get('dates_of_birth') or []) > 1),
+                 ('place_of_birth', e.get('place_of_birth')), ('nationality', e.get('nationality')),
+                 ('gender', e.get('gender')), ('passport_numbers', e.get('passport_numbers')),
+                 ('identifiers', p.get('identifiers')), ('addresses', e.get('addresses')),
+                 ('multi_datasets', len(p.get('datasets') or []) > 1), ('weak_aliases', p.get('weak_aliases')),
+                 ('first_seen', e.get('first_seen'))):
         if v:
             cov[k] = cov.get(k, 0) + 1
 
 
-def run_source(conn, U, H, source, a, st):
+def run_source(conn, U, H, source, a, deadline):
     from psycopg2.extras import RealDictCursor, execute_values
+    from screening.format_handlers import expand_rich
     url = _source_url(conn, source)
     local = dict(x.split('=', 1) for x in a.file).get(source) if a.file else None
     if not url and not local:
         _log(f'{source}: no source URL - skipped')
         return False
-    # resuming = running again: rows already written carry the loader's content hash and are
-    # skipped after one read (a fresh download has other line positions, so lines are not skipped)
-    skip = 0
-    _log(f'{source}: start ({"apply" if a.apply else "dry-run"})')
-    stats = {'lines': 0, 'parsed': 0, 'matched': 0, 'missing_in_db': 0, 'already_current': 0,
-             'to_write': 0, 'written': 0, 'inactive_rows': 0, 'seconds_read_db': 0.0, 'seconds_write': 0.0}
-    cov_new, cov_db = {}, {}
+    downloaded = None
+    if a.apply and not local:
+        os.makedirs(a.workdir, exist_ok=True)
+        downloaded = os.path.join(a.workdir, f'{source}.ftm.json')
+        _log(f'{source}: downloading to {downloaded}')
+        _download(url, downloaded)
+        local = downloaded
+        _log(f'{source}: downloaded {os.path.getsize(downloaded) / 1e9:.2f} GB')
+    lines = _file_lines(local) if local else _stream(url)
+    _log(f'{source}: start ({"apply" if a.apply else "dry-run"}), stop at {deadline:%Y-%m-%d %H:%M}')
+    st = {'parsed': 0, 'matched': 0, 'missing_in_db': 0, 'already_current': 0, 'to_write': 0,
+          'with_hash': 0, 'without_hash_other_columns_differ': 0, 'written': 0, 'dob_cleared': 0,
+          'dob_changed': 0, 'dob_added': 0, 'nationality_changed': 0, 'list_type_would_differ': 0,
+          'seconds_read_db': 0.0, 'seconds_write': 0.0}
+    other_diff, cov = {}, {}
     t0 = time.time()
-    batch = []
+    batch, stopped = [], False
 
-    def flush(final=False):
+    def flush():
         if not batch:
             return
-        ids = [e['source_id'] for e in batch]
         c = conn.cursor(cursor_factory=RealDictCursor)
         t = time.time()
-        c.execute("""SELECT id, source_id, is_active, content_hash, date_of_birth, place_of_birth, nationality, gender,
-                            passport_numbers, national_id_numbers, addresses, properties, first_seen
-                     FROM screening_watchlist WHERE source = %s AND source_id = ANY(%s)""", (source, ids))
+        c.execute(f"""SELECT id, source_id, content_hash, list_type, {', '.join(PROFILE_COLS + OTHER_COLS)}
+                      FROM screening_watchlist WHERE source = %s AND source_id = ANY(%s)""",
+                  (source, [e['source_id'] for e in batch]))
         rows = {r['source_id']: r for r in c.fetchall()}
         conn.commit()
-        stats['seconds_read_db'] += time.time() - t
+        st['seconds_read_db'] += time.time() - t
         values = []
-        for e in batch:
-            r = rows.get(e['source_id'])
+        for raw_e in batch:
+            r = rows.get(raw_e['source_id'])
             if not r:
-                stats['missing_in_db'] += 1
+                st['missing_in_db'] += 1
                 continue
-            stats['matched'] += 1
-            if not r['is_active']:
-                stats['inactive_rows'] += 1
-            for k in ('date_of_birth', 'place_of_birth', 'nationality', 'gender', 'passport_numbers',
-                      'national_id_numbers', 'addresses', 'properties', 'first_seen'):
-                if r.get(k):
-                    cov_db[k] = cov_db.get(k, 0) + 1
-            if r.get('content_hash') and r['content_hash'] == U._content_hash(e):
-                stats['already_current'] += 1
+            st['matched'] += 1
+            e = expand_rich(raw_e)
+            h = U._content_hash(e)
+            if r.get('content_hash') and r['content_hash'] == h:
+                st['already_current'] += 1
                 continue
-            stats['to_write'] += 1
-            values.append((r['id'],) + _row_values(U, e))
+            p, o = _profile(e), _others(e)
+            if r.get('date_of_birth') and not p['date_of_birth']:
+                st['dob_cleared'] += 1
+            elif r.get('date_of_birth') and p['date_of_birth'] != r['date_of_birth']:
+                st['dob_changed'] += 1
+            elif p['date_of_birth'] and not r.get('date_of_birth'):
+                st['dob_added'] += 1
+            if not _same(r.get('nationality'), p['nationality']):
+                st['nationality_changed'] += 1
+            if not _same(r.get('list_type'), e.get('list_type')):
+                st['list_type_would_differ'] += 1
+            diff = [k for k in OTHER_COLS if not _same(r.get(k), o[k])]
+            for k in diff:
+                other_diff[k] = other_diff.get(k, 0) + 1
+            if diff:
+                st['without_hash_other_columns_differ'] += 1
+            else:
+                st['with_hash'] += 1
+            st['to_write'] += 1
+            values.append((r['id'],) + tuple(p[k] for k in PROFILE_COLS) + ((None if diff else h),))
         if a.apply and values:
+            from screening import list_versions as LV
+            from screening.update_lock import hold
             t = time.time()
-            c = conn.cursor()
-            execute_values(c, UPDATE_SQL, values, template=None, page_size=len(values))
-            # updated_at is set by trg_watchlist_updated_at (NOW()), as for every list update, so the
-            # incremental search-index sync picks these rows up
-            conn.commit()
-            stats['written'] += len(values)
-            stats['seconds_write'] += time.time() - t
+            try:
+                # the list's lock and the update marker for this batch only (a few seconds):
+                # a list update or a rollback is never kept waiting by the backfill
+                with LV.source_lock(conn, source):
+                    with hold(f'opensanctions rich backfill {source}'):
+                        execute_values(conn.cursor(), UPDATE_SQL, values, page_size=len(values))
+                        conn.commit()
+            except LV.SourceBusy:
+                raise StopRun(f'{source}: a list update or rollback is running - stopped, run again later')
+            st['written'] += len(values)
+            st['seconds_write'] += time.time() - t
             if a.pause:
                 time.sleep(a.pause)
         batch.clear()
 
-    downloaded = None
-    if a.apply and not local:
-        # download the whole file first: a stream held open for an hour of writes can be cut
-        import requests
-        os.makedirs(a.workdir, exist_ok=True)
-        downloaded = os.path.join(a.workdir, f'{source}.ftm.json')
-        _log(f'{source}: downloading to {downloaded}')
-        with requests.get(url, timeout=(15, 300), stream=True) as r:
-            r.raise_for_status()
-            with open(downloaded + '.part', 'wb') as f:
-                for chunk in r.iter_content(1 << 20):
-                    f.write(chunk)
-        os.replace(downloaded + '.part', downloaded)
-        local = downloaded
-        _log(f'{source}: downloaded {os.path.getsize(downloaded) / 1e9:.2f} GB')
-    for raw in _lines(source, url, local, a.workdir, a.keep_download and not downloaded):
-        stats['lines'] += 1
-        if stats['lines'] <= skip:
-            continue
-        try:
-            line = raw.decode('utf-8') if isinstance(raw, bytes) else raw
-            if not line.strip():
+    try:
+        for raw in lines:
+            try:
+                line = raw.decode('utf-8') if isinstance(raw, bytes) else raw
+                if not line.strip():
+                    continue
+                e = H._parse_line(line)
+            except Exception:
                 continue
-            e = H._parse_line(line)
-        except Exception:
-            continue
-        if not e:
-            continue
-        stats['parsed'] += 1
-        _cover(e, cov_new)
-        batch.append(e)
-        if len(batch) >= a.batch:
-            flush()
-            if a.apply:
-                st.setdefault(source, {})['lines'] = stats['lines']
-                _save_state(st)
-            if stats['parsed'] % (a.batch * 50) == 0:
-                el = time.time() - t0
-                _log(f"{source}: {stats['parsed']:,} parsed, {stats['written']:,} written, {el:,.0f}s")
-        if a.limit and stats['parsed'] >= a.limit:
-            break
-    flush(final=True)
-    if downloaded and not a.keep_download:
-        try:
-            os.remove(downloaded)
-        except OSError:
-            pass
-    complete = not a.limit
-    if a.apply:
-        st.setdefault(source, {}).update({'lines': stats['lines'], 'complete': complete,
-                                          'finished_at': datetime.now().isoformat(timespec='seconds')})
-        _save_state(st)
-    el = time.time() - t0
-    stats['seconds_total'] = round(el, 1)
-    stats['seconds_read_db'] = round(stats['seconds_read_db'], 1)
-    stats['seconds_write'] = round(stats['seconds_write'], 1)
-    out = {'source': source, 'mode': 'apply' if a.apply else 'dry-run', 'stats': stats,
-           'coverage_in_source_file': cov_new, 'coverage_stored_now': cov_db}
-    print(json.dumps(out, indent=1), flush=True)
+            if not e:
+                continue
+            st['parsed'] += 1
+            _cover(expand_rich(e), cov)
+            batch.append(e)
+            if len(batch) >= a.batch:
+                if a.apply and datetime.now() >= deadline:
+                    raise StopRun(f'{source}: reached {deadline:%H:%M} - stopped cleanly, run again to resume')
+                flush()
+                if st['parsed'] % (a.batch * 100) == 0:
+                    _log(f"{source}: {st['parsed']:,} parsed, {st['written']:,} written, {time.time() - t0:,.0f}s")
+            if a.limit and st['parsed'] >= a.limit:
+                break
+        flush()
+    except StopRun as ex:
+        _log(str(ex))
+        stopped = True
+    finally:
+        if downloaded and not a.keep_download:
+            try:
+                os.remove(downloaded)
+            except OSError:
+                pass
+    complete = not a.limit and not stopped
+    st['seconds_total'] = round(time.time() - t0, 1)
+    st['seconds_read_db'] = round(st['seconds_read_db'], 1)
+    st['seconds_write'] = round(st['seconds_write'], 1)
+    print(json.dumps({'source': source, 'mode': 'apply' if a.apply else 'dry-run', 'complete': complete,
+                      'stats': st, 'other_columns_differ': other_diff, 'coverage_in_source_file': cov},
+                     indent=1), flush=True)
     return complete
 
 
@@ -305,6 +326,7 @@ def main():
     ap.add_argument('--limit', type=int, default=0)
     ap.add_argument('--batch', type=int, default=1000)
     ap.add_argument('--pause', type=float, default=0.2)
+    ap.add_argument('--stop-at', default='03:45')
     ap.add_argument('--file', action='append', default=[], help='SOURCE=/path/to/entities.ftm.json')
     ap.add_argument('--workdir', default='/var/tmp/complynex_os')
     ap.add_argument('--keep-download', action='store_true')
@@ -313,6 +335,10 @@ def main():
     if a.dry_run:
         a.apply = False
     a.batch = max(100, min(a.batch, 5000))
+    if a.apply:
+        from screening import update_lock
+        if os.path.realpath(BASE) != PROD_BASE or not os.path.realpath(update_lock.LOCK_DIR).startswith(PROD_BASE + '/'):
+            sys.exit(f'--apply must run from {PROD_BASE} (update marker there); this copy is {BASE}')
 
     import psycopg2
     from config import Config
@@ -320,25 +346,21 @@ def main():
     from screening.data_updater_enhanced import EnhancedDataUpdater as U
     conn = psycopg2.connect(**Config.POSTGRES_CONFIG)
     sources = SOURCES if a.source == 'all' else (a.source,)
+    deadline = _deadline(a.stop_at)
     st = _load_state() if a.apply else {}
     if a.apply and a.restart:
         st = {}
         _save_state(st)
-
-    lock_ctx = None
-    if a.apply:
-        from screening import list_versions as LV
-        from screening.update_lock import hold
-        for s in sources:
-            LV.hold_source_lock(conn, s)          # no list update / rollback of these lists meanwhile
-        lock_ctx = hold('opensanctions rich backfill')   # the search-index sync waits, checkpoint unchanged
-        lock_ctx.__enter__()
-    try:
-        done = [run_source(conn, U, OpenSanctionsHandler(), s, a, st) for s in sources]
-    finally:
-        if lock_ctx is not None:
-            lock_ctx.__exit__(None, None, None)
-
+    for s in sources:
+        if a.apply and st.get(s, {}).get('complete') and not a.restart:
+            _log(f'{s}: already complete (state file) - skipped; --restart to run it again')
+            continue
+        done = run_source(conn, U, OpenSanctionsHandler(rich=True), s, a, deadline)
+        if a.apply:
+            st.setdefault(s, {}).update({'complete': done, 'finished_at': datetime.now().isoformat(timespec='seconds')})
+            _save_state(st)
+        if a.apply and datetime.now() >= deadline:
+            break
     if a.apply:
         st = _load_state()
         if all(st.get(s, {}).get('complete') for s in SOURCES):
@@ -347,10 +369,10 @@ def main():
                          VALUES ('opensanctions_rich', 'on')
                          ON CONFLICT (config_key) DO UPDATE SET config_value = 'on'""")
             conn.commit()
-            _log("both sources complete: screening_config opensanctions_rich = on")
-            _log("next: run scripts/es_incremental_sync.py (search index) and scripts/index_health.py")
+            _log('both sources complete: screening_config opensanctions_rich = on')
         else:
-            _log('not every source is complete yet: the daily update keeps rich fields off')
+            _log('not every source is complete yet: the daily update keeps the profile fields off')
+        _log('next: scripts/es_incremental_sync.py (search index) and scripts/index_health.py')
     conn.close()
 
 

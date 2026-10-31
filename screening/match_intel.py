@@ -890,9 +890,63 @@ def country_score_adjust(score, submitted_country, candidate_country, bonus=8.0)
     return score
 
 
+_ID_DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹', '01234567890123456789')
+MIN_ID_LEN = 8           # shorter numbers (registers, old cards) collide across countries
+
+
+def _id_key(x):
+    """An identifier as compared: letters and digits only (Arabic / Persian digits read as
+    digits), upper case. Letters are kept: 'RU-123456' is not '123456'."""
+    return re.sub(r'[^0-9A-Z]', '', str(x or '').translate(_ID_DIGITS).upper())
+
+
+def _eg_nids(x):
+    """Valid 14-digit Egyptian national IDs written in a value ('29001011234567',
+    'NID: 2900101 1234567', Arabic digits)."""
+    s = str(x or '').translate(_ID_DIGITS)
+    found = set()
+    for cand in [re.sub(r'\D', '', s)] + re.findall(r'(?<!\d)[23]\d{13}(?!\d)', s):
+        if decode_egyptian_nid(cand).get('valid'):
+            found.add(cand)
+    return found
+
+
+def id_relation(query_id, listed_ids, query_country=None, listed_countries=None):
+    """How the customer's ID relates to the IDs on a listed record:
+    'match'            both are the same valid Egyptian 14-digit national ID, or the full
+                       alphanumeric numbers (>= 8 characters) are equal AND the record's
+                       country / nationality agrees with the customer's;
+    'match_unverified' equal numbers but the issuing country is not confirmed: supporting
+                       evidence only, never CONFIRMED on its own (lists such as OpenSanctions
+                       carry ID / register numbers from every country);
+    'conflict'         the customer has a valid Egyptian national ID and the record carries
+                       a different valid Egyptian national ID;
+    None               nothing comparable."""
+    q = _id_key(query_id)
+    if not q:
+        return None
+    listed = _as_list(listed_ids)
+    if not listed:
+        return None
+    q_eg = q if (q.isdigit() and decode_egyptian_nid(q).get('valid')) else None
+    l_eg = set()
+    for x in listed:
+        l_eg |= _eg_nids(x)
+    if q_eg and q_eg in l_eg:
+        return 'match'
+    keys = {_id_key(x) for x in listed}
+    keys = {k for k in keys if len(k) >= MIN_ID_LEN and not set(k) <= {'0'}}
+    if len(q) >= MIN_ID_LEN and q in keys:
+        qc = _countries(query_country, 'egypt' if q_eg else None)
+        lc = _countries(listed_countries)
+        return 'match' if (qc and lc and qc & lc) else 'match_unverified'
+    if q_eg and l_eg:
+        return 'conflict'
+    return None
+
+
 def _passports(v):
-    return {re.sub(r'[^0-9A-Za-z]', '', x).upper() for x in _as_list(v)
-            if len(re.sub(r'[^0-9A-Za-z]', '', x)) >= 5}
+    return {k for k in (_id_key(x) for x in _as_list(v)) if len(k) >= 6}
 
 
 def identity_verdict(query_nid=None, query_dob=None, query_country=None,
@@ -909,21 +963,30 @@ def identity_verdict(query_nid=None, query_dob=None, query_country=None,
     dob / country: 'agree' | 'differ' | None (not comparable).
     """
     reasons, qd = [], decode_egyptian_nid(query_nid) if query_nid else {'valid': False}
+    id_support = False
     qp, lp = _passports(query_passport), _passports(listed_passports)
     if qp and lp and qp & lp:
-        return {'verdict': 'id_match', 'reasons': ['passport number matches the listed record'],
-                'identifier_match': True, 'dob': None, 'country': None}
-    lids = [re.sub(r'\D', '', x) for x in _as_list(listed_nids)]
-    lids = [x for x in lids if len(x) >= 6 and not set(x) <= {'0'}]
-    qn = re.sub(r'\D', '', str(query_nid or ''))
-    if qn and lids:
-        if qn in lids:
-            return {'verdict': 'id_match', 'reasons': ['national ID matches the listed record'],
+        # a passport number is unique only within its issuing country
+        if _countries(query_country) & _countries(listed_countries):
+            return {'verdict': 'id_match', 'reasons': ['passport number matches the listed record'],
                     'identifier_match': True, 'dob': None, 'country': None}
-        valid14 = [x for x in lids if len(x) == 14]
-        if qd.get('valid') and valid14:
-            return {'verdict': 'id_conflict', 'identifier_match': False, 'dob': None, 'country': None,
-                    'reasons': ['listed record carries a different national ID']}
+        reasons.append('passport number equals one on the record, issuing country not confirmed '
+                       '(supporting evidence only)')
+        id_support = True
+    rel = id_relation(query_nid, listed_nids, query_country, listed_countries)
+    if rel == 'match':
+        return {'verdict': 'id_match', 'reasons': ['national ID matches the listed record'],
+                'identifier_match': True, 'dob': None, 'country': None}
+    if rel == 'conflict':
+        return {'verdict': 'id_conflict', 'identifier_match': False, 'dob': None, 'country': None,
+                'reasons': ['listed record carries a different national ID']}
+    if rel == 'match_unverified':
+        reasons.append('an ID number on the record equals the customer\'s, issuing country not '
+                       'confirmed (supporting evidence only)')
+        id_support = True
+    # digits of the listed IDs: an Egyptian national ID among them gives gender / birth year
+    lids = [re.sub(r'\D', '', x.translate(_ID_DIGITS)) for x in _as_list(listed_nids)]
+    lids = [x for x in lids if len(x) >= 6 and not set(x) <= {'0'}]
     # gender: the 13th digit of an Egyptian national ID, on either side
     q_gender = qd.get('gender') if qd.get('valid') else None
     l_gender = None
@@ -951,7 +1014,7 @@ def identity_verdict(query_nid=None, query_dob=None, query_country=None,
         d = decode_egyptian_nid(x)
         if d.get('valid'):
             l_years.add(d['year'])
-    corroborated = dob_ok = False
+    corroborated, dob_ok = id_support, False
     dob_state = country_state = None
     if q_years and l_years:
         if min(abs(a - b) for a in q_years for b in l_years) > 2:

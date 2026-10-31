@@ -466,7 +466,7 @@ class EnhancedDataUpdater:
             if source_type in ['OPENSANCTIONS', 'FTJSON', 'JSON']:
                 import json as _json
                 entities = []
-                handler = OpenSanctionsHandler()
+                handler = OpenSanctionsHandler(rich=self._os_rich_enabled())
                 raw_line_count = 0  # Count ALL lines, not just valid entities
                 for raw_line in response.iter_lines():
                     try:

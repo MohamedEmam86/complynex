@@ -1,5 +1,5 @@
-"""OpenSanctions profile fields (P2-2 for OpenSanctions) and their backfill.
-No database, no network: invented records and fake connections only."""
+"""OpenSanctions profile fields (P2-2 for OpenSanctions), their backfill, and the ID rule
+that keeps foreign ID numbers from confirming a hit. Invented records, no DB, no network."""
 import json
 import os
 import sys
@@ -9,8 +9,9 @@ sys.path.insert(0, BASE)
 sys.path.insert(0, os.path.join(BASE, 'scripts'))
 os.environ.setdefault('SECRET_KEY', 'test-only-not-a-secret')
 
-from screening.format_handlers import OpenSanctionsHandler  # noqa: E402
+from screening.format_handlers import OpenSanctionsHandler, expand_rich  # noqa: E402
 from screening.data_updater_enhanced import EnhancedDataUpdater as U  # noqa: E402
+from screening import match_intel as mi  # noqa: E402
 
 PERSON = {
     'id': 'test-person-1', 'schema': 'Person', 'datasets': ['test_sanctions_a', 'test_peps_b'],
@@ -26,15 +27,15 @@ PERSON = {
 }
 
 
-def _raw(d=PERSON):
-    return OpenSanctionsHandler()._parse_line(json.dumps(d))
+def _raw(d=PERSON, rich=True):
+    return OpenSanctionsHandler(rich=rich)._parse_line(json.dumps(d))
 
 
 def _parse(d=PERSON):
-    from screening.format_handlers import expand_rich
     return expand_rich(_raw(d))
 
 
+# ------------------------------------------------------------------ parsing
 def test_rich_fields_parsed():
     e = _parse()
     assert e['date_of_birth'] == '1971-02-03;1972'
@@ -42,28 +43,37 @@ def test_rich_fields_parsed():
     assert e['nationality'] == 'xa'                       # citizenship when no nationality
     assert e['gender'] == 'male'
     assert e['passport_numbers'] == ['P1234567']
-    assert e['national_id_numbers'] == ['ID-998877']
+    assert e['national_id_numbers'] == []                 # generic idNumber is NOT a national ID
     assert e['addresses'] == ['1 Invented Street, Testville']
     assert e['first_seen'] == '2023-05-01T10:11:12'        # ISO with T (the index maps it as a date)
     p = e['properties']
     assert p['datasets'] == ['test_sanctions_a', 'test_peps_b']
-    assert e['dataset'] == 'test_sanctions_a'              # the first dataset stays in `dataset`
+    assert e['dataset'] == 'test_sanctions_a'
     assert p['weak_aliases'] == ['Zork']
+    assert {'type': 'ID number', 'number': 'ID-998877'} in p['identifiers']
     assert {'type': 'Tax number', 'number': 'TX-1'} in p['identifiers']
-    assert {'type': 'Passport', 'number': 'P1234567'} in p['identifiers']
-    assert 'Zork' not in e['aliases']                      # weak aliases are not searched as aliases
+    assert 'Zork' not in e['aliases']
     assert e['_rich'] is True
 
 
+def test_rich_off_record_equals_previous_loader():
+    e = _raw(rich=False)
+    assert e == {
+        'source_id': 'OS-test-person-1', 'full_name': 'Zorvan Test Keldar', 'original_name': None,
+        'list_type': e['list_type'], 'entity_type': 'INDIVIDUAL', 'dataset': 'test_sanctions_a',
+        'source': 'opensanctions', 'source_url': 'ref-1', 'risk_level': 'HIGH', 'topics': ['sanction'],
+        'countries': ['xa'], 'date_of_birth': '1971-02-03', 'nationality': None,
+        'aliases': ['Zorvan Keldar'], 'details': ['invented record for tests']}
+    assert OpenSanctionsHandler()._parse_line(json.dumps(PERSON)) == e      # default is off
+
+
 def test_hash_ignores_volatile_fields():
-    a = _parse()
+    a = _raw()
     d = json.loads(json.dumps(PERSON))
-    d['last_seen'] = '2026-11-02T00:00:00'
-    d['last_change'] = '2026-11-02T00:00:00'
-    b = _parse(d)
-    assert U._content_hash(a) == U._content_hash(b)        # no mass "updated" every day
+    d['last_seen'] = d['last_change'] = '2026-11-02T00:00:00'
+    assert U._content_hash(a) == U._content_hash(_raw(d))
     d['properties']['passportNumber'] = ['P7654321']
-    assert U._content_hash(_parse(d)) != U._content_hash(a)
+    assert U._content_hash(_raw(d)) != U._content_hash(a)
 
 
 def test_values_are_capped():
@@ -71,8 +81,7 @@ def test_values_are_capped():
     d['properties']['address'] = [f'addr {i}' for i in range(50)]
     d['properties']['birthPlace'] = ['x' * 5000]
     e = _parse(d)
-    assert len(e['addresses']) == 10
-    assert len(e['place_of_birth']) == 300
+    assert len(e['addresses']) == 10 and len(e['place_of_birth']) == 300
 
 
 def test_minimal_entity_still_parses():
@@ -81,6 +90,13 @@ def test_minimal_entity_still_parses():
     assert e['first_seen'] is None and e['dataset'] == 'OpenSanctions'
 
 
+def test_compact_record_stays_small():
+    e = _raw()
+    assert len(e) <= 21 and isinstance(e['_os_rich'], bytes)
+    assert U._content_hash(e) == U._content_hash(_parse())
+
+
+# ------------------------------------------------------------------ loader flag
 class _Cur:
     def __init__(self, value):
         self.value = value
@@ -122,51 +138,66 @@ def test_flag_defaults_off():
     assert _updater('on')._os_rich_enabled() is True
 
 
-def test_rich_stripped_until_backfill(monkeypatch):
+def test_rich_stripped_while_flag_off(monkeypatch):
     seen = {}
-    u = _updater(None)
-
-    def fake_batch(self, entities, source_name):
-        seen['rich'] = [e.get('_rich') for e in entities]
-        return 0, 0, 0
-    # call only the guard part: replace the rest of the method after the flag check
-    entities = [_raw()]
-    if str('opensanctions').startswith('opensanctions') and not u._os_rich_enabled():
-        for e in entities:
-            e.pop('_rich', None)
-    assert entities[0].get('_rich') is None
-    # and the real method strips it too (no DB rows: the fake cursor returns nothing)
-    entities = [_raw()]
     monkeypatch.setattr(U, '_batch_insert_entities', lambda self, ents, cur, src=None: seen.setdefault('ins', ents))
-    u._import_entities_batch(entities, 'opensanctions_pep')
+    _updater(None)._import_entities_batch([_raw()], 'opensanctions_pep')
     assert seen['ins'][0].get('_rich') is None
-    u2 = _updater('on')
     seen.clear()
-    u2._import_entities_batch([_raw()], 'opensanctions')
+    _updater('on')._import_entities_batch([_raw()], 'opensanctions')
     assert seen['ins'][0].get('_rich') is True
 
 
-def test_backfill_row_values_match_loader_columns():
+# ------------------------------------------------------------------ backfill
+def test_backfill_writes_only_profile_columns():
     import backfill_opensanctions_rich as B
-    e = _raw()
-    vals = B._row_values(U, e)
-    assert len(vals) == 27                         # id is prepended by the caller: 28 VALUES columns
-    assert vals[-1] == U._content_hash(e)          # the stored hash is the loader's hash
-    assert vals[10] == '1971-02-03;1972' and vals[11] == 1971
-    assert json.loads(vals[22])['datasets'] == ['test_sanctions_a', 'test_peps_b']
-    assert B.UPDATE_SQL.count('%s') == 1           # execute_values needs exactly one placeholder
-    # the stored text is plain JSON, written exactly like the OFAC / UK profile fields
-    assert vals[19] == '["P1234567"]' and json.loads(vals[22])['weak_aliases'] == ['Zork']
+    vals = B._row_values(U, _raw())
+    assert len(vals) == len(B.PROFILE_COLS) + 1
+    assert vals[-1] == U._content_hash(_raw())
+    assert vals[0] == '1971-02-03;1972' and vals[1] == 1971 and vals[2] == 'xa' and vals[3] == 'male'
+    assert vals[5] == '["P1234567"]' and vals[6] is None
+    assert json.loads(vals[8])['weak_aliases'] == ['Zork']
+    sql = B.UPDATE_SQL
+    assert sql.count('%s') == 1
+    for col in ('list_type', 'full_name', 'aliases', 'name_normalized', 'topics', 'dataset', 'is_active'):
+        assert f'{col} =' not in sql.split('FROM')[0]
+    assert B._row_values(U, _raw(), with_hash=False)[-1] is None
 
 
-def test_stored_json_value_keeps_other_lists_unchanged():
-    from screening.data_updater_enhanced import stored_json_value
-    assert stored_json_value(['A1', 'Ä']) == '["A1", "Ä"]'         # OFAC / UK lists: as before
-    assert stored_json_value({'k': 1}) == '{"k": 1}'
-    assert stored_json_value([]) is None and stored_json_value(None) is None
+def test_backfill_others_match_loader_serialisation():
+    import backfill_opensanctions_rich as B
+    o = B._others(_parse())
+    assert o['aliases'] == json.dumps(['Zorvan Keldar']) and o['topics'] == json.dumps(['sanction'])
 
 
-def test_compact_record_stays_small():
-    e = _raw()
-    assert len(e) <= 21          # one dict size class: the 2.2M records held in memory do not grow
-    assert U._content_hash(e) == U._content_hash(_parse())   # hash reads the expanded fields
+# ------------------------------------------------------------------ ID rule (review B2)
+def test_egyptian_national_id_still_confirms():
+    assert mi.id_relation('26404101900276', ['26404101900276']) == 'match'
+    assert mi.id_relation('26404101900276', '["26404101900276"]') == 'match'          # stored JSON list
+    assert mi.id_relation('٢٦٤٠٤١٠١٩٠٠٢٧٦', ['26404101900276']) == 'match'           # Arabic digits
+    assert mi.id_relation('28812011234567', ['26404101900276']) == 'conflict'
+    assert mi.identity_verdict('26404101900276', listed_nids=['26404101900276'])['verdict'] == 'id_match'
+    m = {'match_score': 80, 'watchlist_name_ar': 'نبيل على محمود البوشى', 'full_name': 'نبيل على محمود البوشى',
+         'national_id': '26404101900276'}
+    assert mi.decide(m, 'نبيل على محمود البوشى', national_id='26404101900276')['decision']['tier'] == 'CONFIRMED'
+
+
+def test_foreign_or_short_ids_never_confirm_alone():
+    assert mi.id_relation('123456', ['RU-123456']) is None                 # short, letters differ
+    assert mi.id_relation('123456', ['123456']) is None                    # shorter than 8
+    assert mi.id_relation('AB1234567', ['AB-123-4567']) == 'match_unverified'
+    assert mi.id_relation('AB1234567', ['AB-123-4567'], 'Russia', ['russia']) == 'match'
+    v = mi.identity_verdict('AB1234567', None, 'EG', ['AB1234567'], None, ['Russia'])
+    assert v['verdict'] == 'corroborated' and v['identifier_match'] is False
+    m = {'match_score': 82, 'full_name': 'Zorvan Keldar', 'national_id_numbers': '["12345678"]', 'countries': '["ru"]'}
+    out = mi.decide(m, 'Zorvan Keldar', national_id='12345678')
+    assert out['decision'].get('tier') != 'CONFIRMED' and out['match_score'] < 100
+
+
+def test_passport_needs_the_same_country():
+    v = mi.identity_verdict(None, None, 'Egypt', None, None, ['Russia'], query_passport='A12345678',
+                            listed_passports=['A12345678'])
+    assert v['verdict'] != 'id_match'
+    v = mi.identity_verdict(None, None, 'Egypt', None, None, ['Egypt'], query_passport='A12345678',
+                            listed_passports=['A12345678'])
+    assert v['verdict'] == 'id_match'
