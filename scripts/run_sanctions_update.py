@@ -183,6 +183,19 @@ def main():
             log.error(f"search index check failed: {e}", exc_info=True)
             failures.append('es_reconcile')
 
+    # P2-6: rebuild the links between records of the same person on several lists, after the
+    # update marker is released (the search-index sync is not held up) and only when something
+    # changed (new tables only; never changes a watchlist row). ENTITY_LINKS_AUTO=0 turns it off.
+    if not args.registry_only and os.getenv('ENTITY_LINKS_AUTO', '1') != '0':
+        try:
+            import subprocess
+            r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'build_entity_links.py'), '--apply', '--if-changed'],
+                               capture_output=True, text=True, timeout=1800)
+            log.info(f"entity links: {(r.stdout or r.stderr).strip().splitlines()[-1:]}")
+        except Exception as e:
+            log.warning(f"entity link step failed: {e}")
+
     if failures:
         log.error(f"=== run finished WITH FAILURES: {failures} ===")
         sys.exit(1)

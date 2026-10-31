@@ -38918,3 +38918,71 @@ msgstr "فلسطين (سلطة النقد): قائمة مجلس الأمن ال�
 #~ msgid "Charter document not found."
 #~ msgstr "لم يتم العثور على مستند النظام الأساسي."
 
+msgid "Same person on other lists"
+msgstr "نفس الشخص على قوائم أخرى"
+
+msgid "leads"
+msgstr "السجل الأساسي"
+
+msgid "this record"
+msgstr "هذا السجل"
+
+msgid "Not the same person - unlink"
+msgstr "ليس نفس الشخص - فك الربط"
+
+msgid "The linked records disagree"
+msgstr "السجلات المرتبطة غير متطابقة"
+
+msgid "Linked by an official ID, the same OpenSanctions entity, or the same full name, date of birth and nationality - never by the name alone. The official list leads."
+msgstr "الربط يتم برقم هوية رسمي، أو نفس الكيان في OpenSanctions، أو نفس الاسم الكامل وتاريخ الميلاد والجنسية - ولا يتم أبداً بالاسم وحده. القائمة الرسمية هي الأساس."
+
+msgid "Leading (official) record"
+msgstr "السجل الأساسي (الرسمي)"
+
+msgid "Same OpenSanctions entity"
+msgstr "نفس الكيان في OpenSanctions"
+
+msgid "OpenSanctions copy of this OFAC record"
+msgstr "نسخة OpenSanctions من سجل OFAC هذا"
+
+msgid "Same full national ID (EMLCU and Public Prosecution order)"
+msgstr "نفس الرقم القومي الكامل (وحدة مكافحة غسل الأموال وقرار النيابة العامة)"
+
+msgid "Same official ID number"
+msgstr "نفس رقم الهوية الرسمي"
+
+msgid "Same passport number and nationality / birth year"
+msgstr "نفس رقم جواز السفر والجنسية / سنة الميلاد"
+
+msgid "Same full name, date of birth and nationality"
+msgstr "نفس الاسم الكامل وتاريخ الميلاد والجنسية"
+
+msgid "National / official ID"
+msgstr "الرقم القومي / الرسمي"
+
+msgid "Same person (linked records)"
+msgstr "نفس الشخص (سجلات مرتبطة)"
+
+msgid "also shown under"
+msgstr "يظهر أيضاً تحت"
+
+msgid "Grouped hits of the same person"
+msgstr "نتائج مجمعة لنفس الشخص"
+
+msgid "Only the MLRO can unlink records."
+msgstr "فك ربط السجلات متاح لمسؤول الإبلاغ عن غسل الأموال فقط."
+
+msgid "The record was taken out of the group. The next rebuild will not link it again."
+msgstr "تم إخراج السجل من المجموعة، ولن يُربط مرة أخرى عند إعادة البناء."
+
+msgid "The record could not be unlinked."
+msgstr "تعذر فك ربط السجل."
+
+msgid "Please give the reason (at least 15 characters)."
+msgstr "يرجى كتابة السبب (15 حرفاً على الأقل)."
+
+msgid "This record is not linked to any other record."
+msgstr "هذا السجل غير مرتبط بأي سجل آخر."
+
+msgid "profile"
+msgstr "الملف"

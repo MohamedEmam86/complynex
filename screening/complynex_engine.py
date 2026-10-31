@@ -1603,6 +1603,14 @@ class ComplyNexScreeningEngine:
             except Exception as _e:
                 logger.warning(f"[ALIAS-QUALITY] layer failed: {_e}")
             matches = [m for m in matches if m['match_score'] >= self.LOW_MATCH_THRESHOLD]
+            # P2-6: records of one person on several lists (linked by an ID, the same
+            # OpenSanctions entity, or name + full DOB + nationality - never the name alone)
+            # are shown as one hit with several sources; fails open
+            try:
+                from screening import entity_links as _el
+                matches = _el.annotate(matches)
+            except Exception as _e:
+                logger.warning(f"[ENTITY-LINKS] layer failed: {_e}")
         except Exception as _e:
             logger.warning(f"[MATCH-INTEL] decision layer failed: {_e}")
             _mi = None
