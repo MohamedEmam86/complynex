@@ -7,17 +7,21 @@ of birth, place of birth, nationality / citizenship, gender, passport numbers,
 other identifiers (properties.identifiers), addresses and all datasets
 (properties.datasets).
 
-This script writes ONLY those profile columns (date_of_birth, year_of_birth,
-nationality, gender, place_of_birth, passport_numbers, national_id_numbers,
-addresses, properties, first_seen) and the content hash. The hash is written
-only when every other stored column already equals what the loader would
-write; otherwise it stays empty and the next daily update rewrites that row in
-full. list_type is never touched (the OpenSanctions classification job owns it);
-rows whose list_type would differ are only counted.
+It writes the FULL record the rich loader builds (deterministic: caption as
+full_name, sorted aliases / datasets / topics / identifiers, see
+OpenSanctionsHandler) - every column the daily update writes, list_type
+included, plus the content hash - so the first daily run afterwards finds the
+rows unchanged. It never changes is_active and never deletes. Kept as stored:
+full_name_arabic / aliases_arabic (transliterations from another job) and an
+original_name that differs from the stored full_name (a value from another
+process); an original_name equal to the old full_name is cleared, as the
+loader does.
 
-When every source has completed with --apply (no --limit, not stopped), it
-switches screening_config 'opensanctions_rich' to 'on': from then on the daily
-update parses, compares and stores the profile fields itself.
+screening_config 'opensanctions_rich': set to 'partial' when --apply starts
+(the daily update then parses the deterministic rich record, compares rows that
+carry a hash on it, and rewrites a row without one only when its name
+changed), and to 'on' when every source has completed (no --limit, not
+stopped): rows still without a hash are then rewritten by the daily update.
 
     --dry-run (default)  read only: coverage report, DOB clears, other differences
     --apply              write in batches; each batch takes the list's lock and the
@@ -54,6 +58,11 @@ PROFILE_COLS = ('date_of_birth', 'year_of_birth', 'nationality', 'gender', 'plac
                 'national_id_numbers', 'addresses', 'properties', 'first_seen')
 OTHER_COLS = ('full_name', 'original_name', 'entity_type', 'dataset', 'topics', 'aliases', 'details',
               'full_name_arabic', 'aliases_arabic')
+# every column written by --apply, in the order of FULL_SQL's VALUES list (after id)
+FULL_COLS = ('full_name', 'original_name', 'name_normalized', 'name_soundex', 'name_metaphone', 'dataset',
+             'list_type', 'entity_type', 'topics', 'countries', 'date_of_birth', 'year_of_birth', 'nationality',
+             'gender', 'source_url', 'risk_level', 'aliases', 'details', 'place_of_birth', 'passport_numbers',
+             'national_id_numbers', 'addresses', 'properties', 'first_seen', 'content_hash')
 
 
 class StopRun(Exception):
@@ -160,16 +169,64 @@ def _row_values(U, entity, with_hash=True):
     return tuple(p[k] for k in PROFILE_COLS) + ((U._content_hash(e) if with_hash else None),)
 
 
-UPDATE_SQL = """
+FULL_SQL = """
 UPDATE screening_watchlist w SET
-    date_of_birth = v.date_of_birth, year_of_birth = v.year_of_birth::integer, nationality = v.nationality,
-    gender = v.gender, place_of_birth = v.place_of_birth, passport_numbers = v.passport_numbers,
-    national_id_numbers = v.national_id_numbers, addresses = v.addresses, properties = v.properties,
-    first_seen = COALESCE(v.first_seen, w.first_seen), content_hash = v.content_hash
-FROM (VALUES %s) AS v(id, date_of_birth, year_of_birth, nationality, gender, place_of_birth, passport_numbers,
-      national_id_numbers, addresses, properties, first_seen, content_hash)
+    full_name = v.full_name,
+    original_name = CASE WHEN COALESCE(w.original_name, '') <> '' AND w.original_name <> w.full_name
+                         THEN w.original_name ELSE v.original_name END,
+    name_normalized = v.name_normalized, name_soundex = v.name_soundex, name_metaphone = v.name_metaphone,
+    dataset = v.dataset, list_type = v.list_type, entity_type = v.entity_type, topics = v.topics,
+    countries = v.countries, date_of_birth = v.date_of_birth, year_of_birth = v.year_of_birth::integer,
+    nationality = v.nationality, gender = v.gender, source_url = v.source_url, risk_level = v.risk_level,
+    aliases = v.aliases, details = v.details, place_of_birth = v.place_of_birth,
+    passport_numbers = v.passport_numbers, national_id_numbers = v.national_id_numbers, addresses = v.addresses,
+    properties = v.properties, first_seen = COALESCE(v.first_seen, w.first_seen), content_hash = v.content_hash,
+    last_updated = CURRENT_TIMESTAMP
+FROM (VALUES %s) AS v(id, full_name, original_name, name_normalized, name_soundex, name_metaphone, dataset, list_type, entity_type, topics, countries, date_of_birth, year_of_birth, nationality, gender, source_url, risk_level, aliases, details, place_of_birth, passport_numbers, national_id_numbers, addresses, properties, first_seen, content_hash)
 WHERE w.id = v.id
 """
+
+
+def _full(U, e):
+    """Every column as the daily update writes it (EnhancedDataUpdater._update_entity + _store_rich)."""
+    import jellyfish
+    from screening.data_updater_enhanced import normalize_arabic_text
+    p = _profile(e)
+    norm = normalize_arabic_text(e['full_name'])
+    return {
+        'full_name': e['full_name'], 'original_name': e.get('original_name'), 'name_normalized': norm,
+        'name_soundex': jellyfish.soundex(norm) if norm else None,
+        'name_metaphone': jellyfish.metaphone(norm) if norm else None,
+        'dataset': e.get('dataset', e.get('source', 'unknown')), 'list_type': e.get('list_type', 'SANCTIONS'),
+        'entity_type': e.get('entity_type', 'INDIVIDUAL'), 'topics': json.dumps(e.get('topics', [])),
+        'countries': json.dumps(e.get('countries', [])), 'date_of_birth': p['date_of_birth'],
+        'year_of_birth': p['year_of_birth'], 'nationality': p['nationality'], 'gender': p['gender'],
+        'source_url': e.get('source_url'), 'risk_level': e.get('risk_level', 'MEDIUM'),
+        'aliases': json.dumps(e.get('aliases', [])), 'details': json.dumps(e.get('details', {})),
+        'place_of_birth': p['place_of_birth'], 'passport_numbers': p['passport_numbers'],
+        'national_id_numbers': p['national_id_numbers'], 'addresses': p['addresses'],
+        'properties': p['properties'], 'first_seen': p['first_seen'], 'content_hash': U._content_hash(e),
+    }
+
+
+def _shuffled_line(line, rnd):
+    """The same entity with every list in another order (a 'next export' for the dry run)."""
+    d = json.loads(line)
+    for k in ('datasets', 'referents'):
+        if isinstance(d.get(k), list):
+            rnd.shuffle(d[k])
+    props = d.get('properties') or {}
+    for k, v in props.items():
+        if isinstance(v, list):
+            rnd.shuffle(v)
+    # names: move values between name / alias the way exports do
+    allnames = (props.get('name') or []) + (props.get('alias') or [])
+    if len(allnames) > 1:
+        rnd.shuffle(allnames)
+        cut = rnd.randint(1, len(allnames))
+        props['name'], props['alias'] = allnames[:cut], allnames[cut:]
+    return json.dumps(d, ensure_ascii=False)
+
 
 
 def _same(stored, new):
@@ -207,10 +264,13 @@ def run_source(conn, U, H, source, a, deadline):
     lines = _file_lines(local) if local else _stream(url)
     _log(f'{source}: start ({"apply" if a.apply else "dry-run"}), stop at {deadline:%Y-%m-%d %H:%M}')
     st = {'parsed': 0, 'matched': 0, 'missing_in_db': 0, 'already_current': 0, 'to_write': 0,
-          'with_hash': 0, 'without_hash_other_columns_differ': 0, 'written': 0, 'dob_cleared': 0,
+          'full_name_changes': 0, 'other_columns_also_rewritten': 0, 'written': 0, 'dob_cleared': 0,
+          'simulated_next_export_checked': 0, 'simulated_next_export_differs': 0,
           'dob_changed': 0, 'dob_added': 0, 'nationality_changed': 0, 'list_type_would_differ': 0,
           'seconds_read_db': 0.0, 'seconds_write': 0.0}
     other_diff, cov = {}, {}
+    import random
+    rnd = random.Random(7)
     t0 = time.time()
     batch, stopped = [], False
 
@@ -234,7 +294,7 @@ def run_source(conn, U, H, source, a, deadline):
             st['matched'] += 1
             e = expand_rich(raw_e)
             h = U._content_hash(e)
-            if r.get('content_hash') and r['content_hash'] == h:
+            if r.get('content_hash') and r['content_hash'] == h and r.get('full_name') == e['full_name']:
                 st['already_current'] += 1
                 continue
             p, o = _profile(e), _others(e)
@@ -251,12 +311,13 @@ def run_source(conn, U, H, source, a, deadline):
             diff = [k for k in OTHER_COLS if not _same(r.get(k), o[k])]
             for k in diff:
                 other_diff[k] = other_diff.get(k, 0) + 1
+            if r.get('full_name') != e['full_name']:
+                st['full_name_changes'] += 1
             if diff:
-                st['without_hash_other_columns_differ'] += 1
-            else:
-                st['with_hash'] += 1
+                st['other_columns_also_rewritten'] += 1
             st['to_write'] += 1
-            values.append((r['id'],) + tuple(p[k] for k in PROFILE_COLS) + ((None if diff else h),))
+            full = _full(U, e)
+            values.append((r['id'],) + tuple(full[k] for k in FULL_COLS))
         if a.apply and values:
             from screening import list_versions as LV
             from screening.update_lock import hold
@@ -266,7 +327,7 @@ def run_source(conn, U, H, source, a, deadline):
                 # a list update or a rollback is never kept waiting by the backfill
                 with LV.source_lock(conn, source):
                     with hold(f'opensanctions rich backfill {source}'):
-                        execute_values(conn.cursor(), UPDATE_SQL, values, page_size=len(values))
+                        execute_values(conn.cursor(), FULL_SQL, values, page_size=len(values))
                         conn.commit()
             except LV.SourceBusy:
                 raise StopRun(f'{source}: a list update or rollback is running - stopped, run again later')
@@ -288,6 +349,16 @@ def run_source(conn, U, H, source, a, deadline):
             if not e:
                 continue
             st['parsed'] += 1
+            if not a.apply:
+                try:
+                    e2 = H._parse_line(_shuffled_line(line, rnd))
+                    st['simulated_next_export_checked'] += 1
+                    x1, x2 = expand_rich(e), expand_rich(e2)
+                    if x1['full_name'] != x2['full_name'] or U._content_hash(x1) != U._content_hash(x2) \
+                            or x1.get('list_type') != x2.get('list_type') or x1.get('source_url') != x2.get('source_url'):
+                        st['simulated_next_export_differs'] += 1
+                except Exception:
+                    st['simulated_next_export_differs'] += 1
             _cover(expand_rich(e), cov)
             batch.append(e)
             if len(batch) >= a.batch:
@@ -348,6 +419,14 @@ def main():
     sources = SOURCES if a.source == 'all' else (a.source,)
     deadline = _deadline(a.stop_at)
     st = _load_state() if a.apply else {}
+    if a.apply:
+        c = conn.cursor()
+        c.execute("""INSERT INTO screening_config (config_key, config_value)
+                     VALUES ('opensanctions_rich', 'partial')
+                     ON CONFLICT (config_key) DO UPDATE SET config_value = 'partial'
+                     WHERE screening_config.config_value IS DISTINCT FROM 'on'""")
+        conn.commit()
+        _log("screening_config opensanctions_rich = partial (unless already on)")
     if a.apply and a.restart:
         st = {}
         _save_state(st)
@@ -371,7 +450,7 @@ def main():
             conn.commit()
             _log('both sources complete: screening_config opensanctions_rich = on')
         else:
-            _log('not every source is complete yet: the daily update keeps the profile fields off')
+            _log("not every source is complete yet: opensanctions_rich stays 'partial' - run again to resume")
         _log('next: scripts/es_incremental_sync.py (search index) and scripts/index_health.py')
     conn.close()
 

@@ -14,7 +14,8 @@ from screening.data_updater_enhanced import EnhancedDataUpdater as U  # noqa: E4
 from screening import match_intel as mi  # noqa: E402
 
 PERSON = {
-    'id': 'test-person-1', 'schema': 'Person', 'datasets': ['test_sanctions_a', 'test_peps_b'],
+    'id': 'test-person-1', 'caption': 'Zorvan Test Keldar', 'schema': 'Person',
+    'datasets': ['test_sanctions_a', 'test_peps_b'],
     'referents': ['ref-1'], 'first_seen': '2023-05-01T10:11:12', 'last_seen': '2026-10-30T00:00:00',
     'last_change': '2026-10-29T08:00:00',
     'properties': {
@@ -47,8 +48,8 @@ def test_rich_fields_parsed():
     assert e['addresses'] == ['1 Invented Street, Testville']
     assert e['first_seen'] == '2023-05-01T10:11:12'        # ISO with T (the index maps it as a date)
     p = e['properties']
-    assert p['datasets'] == ['test_sanctions_a', 'test_peps_b']
-    assert e['dataset'] == 'test_sanctions_a'
+    assert p['datasets'] == ['test_peps_b', 'test_sanctions_a']      # sorted (deterministic record)
+    assert e['dataset'] == 'test_peps_b'                              # no priority list -> sorted first
     assert p['weak_aliases'] == ['Zork']
     assert {'type': 'ID number', 'number': 'ID-998877'} in p['identifiers']
     assert {'type': 'Tax number', 'number': 'TX-1'} in p['identifiers']
@@ -149,19 +150,18 @@ def test_rich_stripped_while_flag_off(monkeypatch):
 
 
 # ------------------------------------------------------------------ backfill
-def test_backfill_writes_only_profile_columns():
+def test_backfill_writes_the_full_record():
     import backfill_opensanctions_rich as B
-    vals = B._row_values(U, _raw())
-    assert len(vals) == len(B.PROFILE_COLS) + 1
-    assert vals[-1] == U._content_hash(_raw())
-    assert vals[0] == '1971-02-03;1972' and vals[1] == 1971 and vals[2] == 'xa' and vals[3] == 'male'
-    assert vals[5] == '["P1234567"]' and vals[6] is None
-    assert json.loads(vals[8])['weak_aliases'] == ['Zork']
-    sql = B.UPDATE_SQL
+    full = B._full(U, _parse())
+    assert tuple(full) == B.FULL_COLS and full['content_hash'] == U._content_hash(_raw())
+    assert full['date_of_birth'] == '1971-02-03;1972' and full['year_of_birth'] == 1971
+    assert full['passport_numbers'] == '["P1234567"]' and full['national_id_numbers'] is None
+    assert json.loads(full['properties'])['weak_aliases'] == ['Zork']
+    sql = B.FULL_SQL
     assert sql.count('%s') == 1
-    for col in ('list_type', 'full_name', 'aliases', 'name_normalized', 'topics', 'dataset', 'is_active'):
-        assert f'{col} =' not in sql.split('FROM')[0]
-    assert B._row_values(U, _raw(), with_hash=False)[-1] is None
+    head = sql.split('FROM')[0]
+    assert 'is_active' not in head and 'full_name_arabic' not in head and 'aliases_arabic' not in head
+    assert 'list_type = v.list_type' in head and 'content_hash = v.content_hash' in head
 
 
 def test_backfill_others_match_loader_serialisation():
