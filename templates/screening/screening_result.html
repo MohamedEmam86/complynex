@@ -89,7 +89,7 @@
     <a href="{{ url_for('screening.match_profile', rid=result.id, src=v.profile_src, rec=v.profile_rec) }}" class="btn btn-sm btn-dark">{{ _('Profile (BIO)') }} <i class="fas fa-id-card ms-1"></i></a>
     {% endif %}
     {% if v.url %}
-    <a href="{{ v.url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-dark">{{ _('Official profile') }} <i class="fas fa-external-link-alt ms-1"></i></a>
+    <a href="{{ v.url|http_only }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-dark">{{ _('Official profile') }} <i class="fas fa-external-link-alt ms-1"></i></a>
     {% endif %}
     </div>
   </div>
@@ -357,7 +357,7 @@
         {% macro am_item(hit) %}
         <div class="am-item">
           <div class="d-flex flex-wrap justify-content-between gap-2">
-            <a href="{{ hit.link or hit.url }}" target="_blank" rel="noopener" class="fw-semibold text-decoration-none ar">{{ hit.title }}</a>
+            <a href="{{ (hit.link or hit.url)|http_only }}" target="_blank" rel="noopener" class="fw-semibold text-decoration-none ar">{{ hit.title }}</a>
             <span class="small text-muted text-nowrap">{{ hit.source }} · {{ (hit.published_at or hit.published or '')[:10] }}</span>
           </div>
           {% if hit.description and hit.description != hit.title %}<div class="small text-muted ar mt-1">{{ hit.description|truncate(260) }}</div>{% endif %}
@@ -368,7 +368,7 @@
           </div>
           {% if hit.also_reported_by %}
           <details class="small mt-1"><summary class="text-muted">{{ _('Also reported by') }} ({{ hit.also_reported_by|length }})</summary>
-            <ul class="mb-0">{% for o in hit.also_reported_by %}<li>{% if o.url %}<a href="{{ o.url }}" target="_blank" rel="noopener">{{ o.source or o.url }}</a>{% else %}{{ o.source }}{% endif %} <span class="text-muted">{{ (o.published_at or '')[:10] }}</span></li>{% endfor %}</ul>
+            <ul class="mb-0">{% for o in hit.also_reported_by %}<li>{% if o.url %}<a href="{{ o.url|http_only }}" target="_blank" rel="noopener">{{ o.source or o.url }}</a>{% else %}{{ o.source }}{% endif %} <span class="text-muted">{{ (o.published_at or '')[:10] }}</span></li>{% endfor %}</ul>
           </details>
           {% endif %}
         </div>
@@ -388,7 +388,7 @@
       <details class="mt-3">
         <summary class="small fw-semibold">{{ _('Other news naming the person, without risk terms') }} ({{ am.mentions_count }})</summary>
         <ul class="small mt-2 mb-0">
-          {% for m in am.mentions %}<li><a href="{{ m.url }}" target="_blank" rel="noopener" class="ar">{{ m.title }}</a> <span class="text-muted">— {{ m.source }} {{ (m.published_at or '')[:10] }}</span></li>{% endfor %}
+          {% for m in am.mentions %}<li><a href="{{ m.url|http_only }}" target="_blank" rel="noopener" class="ar">{{ m.title }}</a> <span class="text-muted">— {{ m.source }} {{ (m.published_at or '')[:10] }}</span></li>{% endfor %}
         </ul>
       </details>
       {% endif %}

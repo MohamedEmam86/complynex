@@ -44,6 +44,10 @@ _TRACKING = re.compile(r'^(utm_|fbclid|gclid|mc_|ref$|ocid$|oc$|ved$|usg$)')
 _NAME_RANK = {'exact': 3, 'strong': 2, 'partial': 1}
 
 
+def safe_url(url):
+    return str(url or '').strip().lower().startswith(('http://', 'https://'))
+
+
 def canonical_url(url):
     u = str(url or '').strip()
     if not u:
@@ -141,6 +145,9 @@ def consolidate(articles, name=None, cap=MAX_HITS):
     """(stories, info): de-duplicated, ranked, capped."""
     arts = [dict(a) for a in (articles or []) if isinstance(a, dict)]
     for a in arts:
+        for k in ('url', 'link'):
+            if a.get(k) is not None and not safe_url(a.get(k)):
+                a[k] = None              # javascript:, data: ... never reach a link
         a['_rel0'] = relevance(a, name)
     arts.sort(key=lambda a: a['_rel0'], reverse=True)
     stories, by_url, by_head = [], {}, {}

@@ -2358,6 +2358,15 @@ def bulk_screening_upload():
             flash(gettext('No selected file'), 'error')
             return redirect(request.url)
         try:
+            f.stream.seek(0, 2)
+            _size = f.stream.tell()
+            f.stream.seek(0)
+        except Exception:
+            _size = request.content_length or 0
+        if _size > BJ.MAX_UPLOAD_BYTES:
+            flash(gettext('The file is larger than 10 MB; split it into smaller files.'), 'error')
+            return redirect(request.url)
+        try:
             headers, rows = BJ.read_file(f.stream, f.filename)
         except ValueError as e:
             flash(gettext('The file could not be used: %(why)s', why=str(e)), 'error')
@@ -2444,6 +2453,7 @@ def bulk_job(job_id):
 
 
 @screening_bp.route('/bulk/<job_id>/start', methods=['POST'])
+@limiter.limit('6 per minute')
 @login_required
 @permission_required('screening', level='edit')
 def bulk_start(job_id):
@@ -2453,9 +2463,18 @@ def bulk_start(job_id):
     try:
         j = _bulk_job_or_abort(store, job_id)
         st = j['status']
+        _busy = [x for x in store.running_jobs(exclude=job_id) if not BJ.is_stale(x)]
         if st == 'RUNNING' and not BJ.is_stale(j):
             flash(gettext('This file is already being screened.'), 'info')
+        elif st in ('READY', 'PAUSED', 'RUNNING', 'DONE_WITH_GAP') and len(_busy) >= BJ.MAX_CONCURRENT:
+            flash(gettext('%(n)s bulk files are being screened now (the limit is %(max)s). Start this one when one of them has finished.',
+                          n=len(_busy), max=BJ.MAX_CONCURRENT), 'warning')
         elif st in ('READY', 'PAUSED', 'RUNNING', 'DONE_WITH_GAP'):
+            if st == 'DONE_WITH_GAP':
+                _n = store.retry_failed(job_id)       # resume = screen the failed rows again
+                st = 'PAUSED'
+                if _n:
+                    flash(gettext('%(n)s failed rows will be screened again.', n=_n), 'info')
             store.set_status(job_id, st, started_by=current_user.id)
             _bulk_launch(job_id)
             _audit('BULK_START', None, f'job {job_id} ({st})')
@@ -3416,13 +3435,15 @@ def screening_queue():
     if request.args.get('resolved_by', type=int):
         conditions.append("q.resolved_by = %s")
         params.append(request.args.get('resolved_by', type=int))
-    _rq_from, _rq_to = request.args.get('date_from', ''), request.args.get('date_to', '')
-    if _rq_from[:10].count('-') == 2:
+    from screening import user_reports as _UR
+    _rq_from = _UR._parse_day(request.args.get('date_from', '')[:10])
+    _rq_to = _UR._parse_day(request.args.get('date_to', '')[:10])
+    if _rq_from:
         conditions.append("q.created_at >= %s::date")
-        params.append(_rq_from[:10])
-    if _rq_to[:10].count('-') == 2:
+        params.append(_rq_from.isoformat())
+    if _rq_to:
         conditions.append("q.created_at < (%s::date + 1)")
-        params.append(_rq_to[:10])
+        params.append(_rq_to.isoformat())
     # ---- end p4-reports ----
 
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
@@ -6048,3 +6069,10 @@ def _drill_context():
             out.append((gettext(label), v))
         return out
     return {'drill_args': drill_args, 'drill_labels': drill_labels}
+
+
+@screening_bp.app_template_filter('http_only')
+def _http_only(url):
+    """A link from list / media data is rendered only when it is http(s); otherwise '#'."""
+    u = str(url or '').strip()
+    return u if u.lower().startswith(('http://', 'https://')) else '#'

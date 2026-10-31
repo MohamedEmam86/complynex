@@ -867,6 +867,7 @@ def run_customer_screening(id):
                 source_record_id=id,
                 screening_type='Customer CDD',
                 write_results_table=False,  # this call site never wrote to screening_results before
+                screen_parties=False,       # G10 runs once below, after this route's own status update
             )
 
             high_risk_count = res['high_risk_matches']
@@ -908,6 +909,24 @@ def run_customer_screening(id):
         db.execute("UPDATE customers SET risk_classification = 'HIGH', status = 'SUSPENDED' WHERE id = %s", (id,))
 
     db.commit()
+
+    # G10: a corporate customer is screened with its related parties ONCE, after the status
+    # above is written, so the stored status is the worst of the customer's and its parties'
+    # (never overwritten back to 'Clear' by this route)
+    try:
+        from kyb import parties_screening as _g10
+        _p = _g10.after_parent_screening('Customer KYC', id, current_user.id, db)
+        if _p and _p['overview']['total']:
+            _ov = _p['overview']
+            if _ov['worst'] in ('open', 'confirmed', 'pep'):
+                flash(gettext('Related parties: a screening hit on one of the %(n)s owners / signatories needs review.',
+                              n=_ov['total']), 'danger')
+            elif _ov['worst'] in ('incomplete', 'error', 'not_screened') or _p.get('not_screened_now'):
+                flash(gettext('Related parties: the screening of one of the %(n)s owners / signatories is incomplete; screen again.',
+                              n=_ov['total']), 'warning')
+    except Exception:
+        current_app.logger.exception('G10: related-party screening failed for customer %s', id)
+
     from . import edd as _edd
     _edd.reassess(id, current_user.id)
 

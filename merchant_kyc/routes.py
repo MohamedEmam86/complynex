@@ -832,7 +832,7 @@ def run_screening(id):
         _p = _g10.after_parent_screening('Merchant KYC', id, current_user.id, db)
         if _p and _p['overview']['total']:
             _ov = _p['overview']
-            if _ov['worst'] in ('open', 'confirmed'):
+            if _ov['worst'] in ('open', 'confirmed', 'pep'):
                 flash(gettext('Related parties: a screening hit on one of the %(n)s owners / signatories needs review.',
                               n=_ov['total']), 'danger')
             elif _ov['worst'] in ('incomplete', 'error', 'not_screened'):

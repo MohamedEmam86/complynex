@@ -41970,6 +41970,22 @@ msgstr "اقترحه"
 msgid "Minimum score"
 msgstr "أقل درجة"
 
+#, python-format
+msgid "The file is larger than 10 MB; split it into smaller files."
+msgstr "حجم الملف أكبر من 10 ميجابايت؛ قسّمه إلى ملفات أصغر."
+
+#, python-format
+msgid ""
+"%(n)s bulk files are being screened now (the limit is %(max)s). Start this "
+"one when one of them has finished."
+msgstr ""
+"يجري الآن فحص %(n)s من الملفات المجمّعة (الحد الأقصى %(max)s). ابدأ هذا "
+"الملف بعد انتهاء أحدها."
+
+#, python-format
+msgid "%(n)s failed rows will be screened again."
+msgstr "سيُعاد فحص %(n)s من الصفوف التي فشلت."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

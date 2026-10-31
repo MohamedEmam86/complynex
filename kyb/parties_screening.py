@@ -46,7 +46,11 @@ SUBJECT_BY_MODULE = {'Merchant KYC': 'merchant', 'Customer KYC': 'aml_customer'}
 STATUS_TABLE = {'merchant': 'merchants', 'aml_customer': 'customers'}
 ROLE_LABEL = {'ubo': 'Beneficial owner', 'signatory': 'Authorised signatory'}
 CONTROL_LABEL = {'ownership': 'Ownership', 'control': 'Control', 'senior_manager': 'Senior manager'}
-MAX_PARTIES = 60                  # a larger register is screened from its KYB page, not inline
+import os
+# parties screened inline with their parent; the rest stay "not screened now" and keep the
+# parent Incomplete until they are screened from the KYB page
+INLINE_CAP = int(os.getenv('G10_INLINE_CAP', '15'))
+_RANK = {'Clear': 0, 'Whitelisted': 0, 'Incomplete': 1, 'Pending Review': 2}
 
 
 def is_corporate(subject, record):
@@ -59,13 +63,19 @@ def is_corporate(subject, record):
 
 def combined_status(own_status, worst):
     """Parent screening status (the merchants / customers screening_status wording)
-    combined with the worst state of its related parties."""
+    combined with the worst state of its related parties. Never lowers the parent: a parent
+    status more severe than (or unknown to) this scale is kept as it is. A PEP party needs
+    review (EDD) like a hit."""
     own = own_status or 'Clear'
-    if worst in (logic.OPEN, logic.CONFIRMED):
-        return 'Pending Review'
-    if worst in (logic.INCOMPLETE, logic.ERROR, logic.NOT_SCREENED) and own in ('Clear', 'Whitelisted'):
-        return 'Incomplete'
-    return own
+    if worst in (logic.OPEN, logic.CONFIRMED, logic.PEP):
+        party = 'Pending Review'
+    elif worst in (logic.INCOMPLETE, logic.ERROR, logic.NOT_SCREENED):
+        party = 'Incomplete'
+    else:
+        return own
+    if own not in _RANK:
+        return own
+    return party if _RANK[party] > _RANK[own] else own
 
 
 def overview(subject, subject_id, db=None):
@@ -116,25 +126,35 @@ def after_parent_screening(source_module, source_record_id, user_id, db=None):
         rec = service.record(subject, source_record_id, db)
         if not is_corporate(subject, rec):
             return None
-        n = 0
-        for kind in ('ubo', 'signatory'):
-            n += len(service.people(kind, subject, source_record_id, db))
-        if not n:
+        plist = [(kind, p) for kind in ('ubo', 'signatory')
+                 for p in service.people(kind, subject, source_record_id, db)]
+        if not plist:
             return None
-        if n <= MAX_PARTIES:
-            service.screen_all(subject, source_record_id, user_id, only_needed=False, db=db)
-        else:
-            log.info('G10: %s %s has %s parties; only changed ones are screened inline', subject, source_record_id, n)
-            service.screen_all(subject, source_record_id, user_id, only_needed=True, db=db)
+        # parties never screened on their current data first, then the others, up to the cap
+        need = [x for x in plist if not (x[1].get('screening_history_id')
+                                         and x[1].get('screened_key') == logic.screen_key(x[1]))]
+        order = need + [x for x in plist if x not in need]
+        todo, later = order[:INLINE_CAP], order[INLINE_CAP:]
+        try:
+            for kind, p in todo:
+                service.screen_person(kind, p, user_id, db, release=False)
+        finally:
+            service._release_engine_connection()
+        if later:
+            log.info('G10: %s %s has %s parties; %s screened inline, %s left for the KYB page',
+                     subject, source_record_id, len(plist), len(todo), len(later))
         ov = overview(subject, source_record_id, db)
         rec = service.record(subject, source_record_id, db) or rec
         own = rec.get('screening_status')
         new = combined_status(own, ov['worst'])
+        if later:
+            # parties not re-screened now: the parent is not proven clear
+            new = combined_status(new, logic.NOT_SCREENED)
         if new != own:
             db.execute(f"UPDATE {STATUS_TABLE[subject]} SET screening_status = %s WHERE id = %s",
                        (new, source_record_id))
             db.commit()
-        return {'subject': subject, 'overview': ov, 'status': new}
+        return {'subject': subject, 'overview': ov, 'status': new, 'not_screened_now': len(later)}
     except Exception:
         log.exception('G10: related-party screening failed for %s %s', subject, source_record_id)
         try:

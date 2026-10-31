@@ -55,7 +55,7 @@ def test_combined_status():
     assert PS.combined_status('Whitelisted', L.ERROR) == 'Incomplete'
     assert PS.combined_status('Pending Review', L.INCOMPLETE) == 'Pending Review'   # never lowered
     assert PS.combined_status('Clear', L.CLEAR) == 'Clear'
-    assert PS.combined_status('Clear', L.PEP) == 'Clear'
+    assert PS.combined_status('Clear', L.PEP) == 'Pending Review'        # a PEP party needs EDD review
     assert PS.combined_status('Clear', None) == 'Clear'
 
 
@@ -92,12 +92,12 @@ def _fake_service(monkeypatch, record, people, states, fail=False):
     monkeypatch.setattr(S, 'record', lambda subject, sid, db=None: dict(record) if record else None)
     monkeypatch.setattr(S, 'people', lambda kind, subject, sid, db=None: [p for p in people if p['kind'] == kind])
 
-    def _screen_all(subject, sid, user_id, only_needed=True, db=None):
+    def _screen_person(kind, p, user_id, db=None, release=True):
         if fail:
             raise RuntimeError('engine down')
-        calls['screen_all'] = only_needed
-        return len(people)
-    monkeypatch.setattr(S, 'screen_all', _screen_all)
+        calls.setdefault('screened', []).append(p['id'])
+    monkeypatch.setattr(S, 'screen_person', _screen_person)
+    monkeypatch.setattr(S, '_release_engine_connection', lambda: None)
 
     def _with_states(subject, sid, db=None):
         ubos = [dict(p, screening_state=states[p['id']]) for p in people if p['kind'] == 'ubo']
@@ -113,7 +113,7 @@ def test_parent_screening_folds_party_hit(monkeypatch):
     calls = _fake_service(monkeypatch, {'id': 5, 'screening_status': 'Clear'}, people, {1: L.OPEN, 2: L.CLEAR})
     db = FakeDb()
     out = PS.after_parent_screening('Merchant KYC', 5, 1, db)
-    assert calls['screen_all'] is False                     # every party re-screened with the company
+    assert sorted(calls['screened']) == [1, 2]              # every party re-screened with the company
     assert out['status'] == 'Pending Review' and out['overview']['worst'] == L.OPEN
     assert any('UPDATE merchants SET screening_status' in s for s, _ in db.sql)
 

@@ -33,7 +33,7 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
                      gender=None, national_id=None, employer=None,
                      source_module='Manual Screening', source_record_id=None,
                      screening_type='API', user_id=None,
-                     write_results_table=True, results_screening_type=None):
+                     write_results_table=True, results_screening_type=None, screen_parties=True):
     """
     Screen `name` and persist the result to screening_history, screening_results
     (backward compat), and screening_queue (for high-risk hits).
@@ -201,7 +201,9 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
     # worst of its own and theirs. The parties are screened under their own modules, so this
     # never recurses.
     parties = None
-    if source_record_id and source_module in ('Merchant KYC', 'Customer KYC'):
+    # screen_parties=False: the caller screens several names of one record and runs G10 once
+    # itself, after writing its own combined status (aml.routes.run_customer_screening)
+    if screen_parties and source_record_id and source_module in ('Merchant KYC', 'Customer KYC'):
         try:
             from kyb import parties_screening as _g10
             parties = _g10.after_parent_screening(source_module, source_record_id, user_id, db)

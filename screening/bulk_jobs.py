@@ -42,6 +42,7 @@ production, MemoryStore for tests and dry runs) so it can be proved on a
 large file without writing anything.
 """
 import json
+import os
 import logging
 import re
 import threading
@@ -53,6 +54,8 @@ logger = logging.getLogger(__name__)
 
 MAX_ROWS = 20000
 STALE_SECONDS = 180
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+MAX_CONCURRENT = int(os.getenv('BULK_MAX_CONCURRENT', '2'))
 FIELDS = ('name', 'entity_type', 'dob', 'nationality', 'national_id', 'customer_ref')
 
 # header synonyms (normalised: lower case, no spaces / punctuation)
@@ -138,6 +141,22 @@ def read_file(stream, filename):
             import io
             df = pd.read_csv(io.StringIO(text), dtype=str, keep_default_na=False)
         elif fn.endswith('.xlsx') or fn.endswith('.xls'):
+            if fn.endswith('.xlsx'):
+                # count rows cheaply (read-only) before pandas loads the whole sheet
+                import openpyxl
+                wb = openpyxl.load_workbook(stream, read_only=True, data_only=True)
+                try:
+                    ws = wb.worksheets[0]
+                    nrows = 0
+                    for _r in ws.iter_rows(values_only=True):
+                        nrows += 1
+                        if nrows > MAX_ROWS + 1:
+                            break
+                finally:
+                    wb.close()
+                if nrows > MAX_ROWS + 1:
+                    raise ValueError(f'The file has more than {MAX_ROWS:,} rows; the limit is {MAX_ROWS:,} per file.')
+                stream.seek(0)
             df = pd.read_excel(stream, dtype=object)
         else:
             raise ValueError('Allowed file types are CSV and Excel (.xlsx)')
@@ -237,6 +256,19 @@ class MemoryStore:
         with self.lock:
             self.jobs[jid]['status'] = status
             self.jobs[jid].update(extra)
+
+    def retry_failed(self, jid):
+        with self.lock:
+            n = 0
+            for r in self.rows[jid]:
+                if r['status'] == 'FAILED':
+                    r['status'], r['error'] = 'PENDING', None
+                    n += 1
+            return n
+
+    def running_jobs(self, exclude=None):
+        with self.lock:
+            return [dict(j) for k, j in self.jobs.items() if j.get('status') == 'RUNNING' and k != exclude]
 
     def reset_stale(self, jid):
         with self.lock:
@@ -388,6 +420,25 @@ class SqlStore:
             c.execute(f"UPDATE screening_bulk_jobs SET {', '.join(cols)} WHERE id = %s", args + [jid])
             self._done()
 
+    def retry_failed(self, jid):
+        """Resume of a finished-with-gap job: failed rows are screened again."""
+        with self.lock:
+            c = self._c()
+            c.execute("UPDATE screening_bulk_rows SET status = 'PENDING', error = NULL "
+                      "WHERE job_id = %s AND status = 'FAILED'", (jid,))
+            n = c.rowcount
+            self._done()
+        return n
+
+    def running_jobs(self, exclude=None):
+        with self.lock:
+            c = self._c()
+            c.execute("SELECT id, status, heartbeat, started_at FROM screening_bulk_jobs "
+                      "WHERE status = 'RUNNING' AND id <> %s", (exclude or '',))
+            out = [dict(r) for r in c.fetchall()]
+            self._done()
+        return out
+
     def reset_stale(self, jid):
         with self.lock:
             c = self._c()
@@ -490,6 +541,8 @@ def run(store, jid, screen_fn, save_fn, threads=4, batch=20, stop=None, progress
             status = res.get('screening_result') or ('INCOMPLETE' if res.get('incomplete') else None)
             if res.get('incomplete') and status in ('CLEAR', 'LOW_MATCH', 'WHITE_LISTED', None):
                 status = 'INCOMPLETE'
+            if not status:
+                raise RuntimeError('the screening engine returned no screening result for this row')
             rid = save_fn(row, res)
             store.finish_row(jid, row['row_no'], 'DONE', result_status=status,
                              highest_score=float(res.get('highest_score') or 0),
@@ -525,6 +578,9 @@ def run(store, jid, screen_fn, save_fn, threads=4, batch=20, stop=None, progress
     summary = dict(j.get('summary') or {})
     summary.update({'rows_in': total, 'rows_out': accounted, 'left': left, 'counts': st, 'results': res,
                     'seconds': round(time.time() - t0, 1)})
+    # re-read: a cancel pressed during the last batch must not be overwritten by DONE / PAUSED
+    if not cancelled and (store.job(jid) or {}).get('status') == 'CANCELLED':
+        cancelled = True
     if cancelled:
         store.set_status(jid, 'CANCELLED', finished_at=datetime.now(), summary=summary)
     elif left:
@@ -561,6 +617,14 @@ def progress_of(store, jid):
             'stale': j.get('status') == 'RUNNING' and is_stale(j)}
 
 
+def _xl(v):
+    """Spreadsheet cell guard: a text cell must never be read as a formula (= + - @, tab, CR)."""
+    if v is None or isinstance(v, (int, float)):
+        return v
+    s = str(v)
+    return "'" + s if s[:1] in ('=', '+', '-', '@', '\t', '\r') else s
+
+
 def export_xlsx(store, jid):
     """BytesIO with three sheets: summary, flagged rows, every row."""
     import io
@@ -570,20 +634,20 @@ def export_xlsx(store, jid):
     allrows = store.rows_for_report(jid, flagged_only=False)
 
     def frame(rows):
-        return pd.DataFrame([{
+        return pd.DataFrame([{k: _xl(v) for k, v in {
             'Row': r.get('row_no'), 'Name': r.get('name'), 'Type': r.get('entity_type'), 'DOB': r.get('dob'),
             'Nationality': r.get('nationality'), 'ID': r.get('national_id'), 'Customer ref': r.get('customer_ref'),
             'Row status': r.get('status'), 'Result': r.get('result_status'), 'Highest score': r.get('highest_score'),
             'Matches': r.get('match_count'), 'Screening result id': r.get('screening_result_id'),
             'Input warnings': '; '.join((w.get('en') or w.get('code') or '') if isinstance(w, dict) else str(w)
                                         for w in (r.get('input_warnings') or [])),
-            'Error / reason': r.get('error')} for r in rows])
+            'Error / reason': r.get('error')}.items()} for r in rows])
     summ = pd.DataFrame([
         ('File', j.get('filename')), ('Rows in file', p['total']), ('Screened', p['done']),
         ('Failed', p['failed']), ('Skipped (empty name)', p['skipped']), ('Not finished', p['pending']),
         ('Rows in = rows out', 'YES' if p['finished'] == p['total'] else 'NO')]
         + [(f'Result: {k}', v) for k, v in sorted((p['results'] or {}).items(), key=lambda x: str(x[0]))],
-        columns=['Item', 'Value'])
+        columns=['Item', 'Value']).map(_xl)
     flagged = [r for r in allrows if r.get('status') == 'FAILED' or r.get('result_status') in FLAGGED]
     out = io.BytesIO()
     with pd.ExcelWriter(out, engine='openpyxl') as w:

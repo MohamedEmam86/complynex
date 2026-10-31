@@ -433,4 +433,4 @@ def _cell(v):
         return v
     s = str(v)
     # spreadsheet formula injection: a cell must never start with = + - @
-    return "'" + s if s[:1] in ('=', '+', '-', '@') else s
+    return "'" + s if s[:1] in ('=', '+', '-', '@', '\t', '\r') else s

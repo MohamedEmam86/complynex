@@ -113,7 +113,7 @@
     </div>
     {% endif %}
 </div>
-{% if job.status == 'RUNNING' %}
+{% if job.status == 'RUNNING' and not prog.stale %}
 <script nonce="{{ csp_nonce }}">
 (function () {
     var url = "{{ url_for('screening.bulk_upload_status', job_id=job.id) }}";
