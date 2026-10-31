@@ -44,6 +44,8 @@ def test_builder_helpers():
 
 # ------------------------------------------------------------------ runtime grouping
 class FakeCur:
+    """links: (watchlist_id, cluster_id, source, source_id); members: (cluster_id, watchlist_id, source,
+    basis, list_type, dataset). Answers the one CTE query of lookup()."""
     def __init__(self, links, members, tables=True):
         self.links, self.members, self.tables = links, members, tables
         self.rows = []
@@ -51,11 +53,12 @@ class FakeCur:
     def execute(self, sql, params=None):
         if 'to_regclass' in sql:
             self.rows = [(self.tables,)]
-        elif 'FROM screening_entity_links l JOIN' in sql:
-            self.rows = [m for m in self.members if m[0] in params[0]]
-        elif 'FROM screening_entity_links' in sql:
+        elif 'WITH hit AS' in sql:
             ids = set(params[0])
-            self.rows = [r for r in self.links if r[0] in ids]
+            cids = {r[1] for r in self.links if r[0] in ids}
+            src = {(r[0]): (r[2], r[3]) for r in self.links}
+            self.rows = [(m[0], m[1], m[2], src.get(m[1], (None, None))[1], m[3], m[4], m[5])
+                         for m in self.members if m[0] in cids]
         else:
             self.rows = []
 
@@ -68,7 +71,7 @@ class FakeCur:
 
 @pytest.fixture(autouse=True)
 def _reset(monkeypatch):
-    EL._TABLES['ok'] = None
+    EL._TABLES['ok'], EL._TABLES['at'] = None, 0.0
     import screening.match_classifier as mc
     monkeypatch.setattr(mc, 'classify_match',
                         lambda m: 'PEP' if 'PEP' in str(m.get('list_type')) else 'SANCTIONS')
@@ -87,39 +90,67 @@ def _hits():
 
 def _cur():
     links = [(10, 7, 'ofac', 'OFAC-1'), (11, 7, 'opensanctions', 'OS-x'), (12, 7, 'opensanctions_pep', 'OS-x')]
-    members = [(7, 10, 'ofac', 'lead', 'SANCTIONS', 'ofac', 'Person A', None),
-               (7, 11, 'opensanctions', 'os_referent', 'SANCTIONS', 'us_ofac_sdn', 'Person A', None),
-               (7, 12, 'opensanctions_pep', 'os_id', 'PEP', 'peps', 'Person A', None),
-               (7, 13, 'un', 'os_id', 'SANCTIONS', 'un_sc_sanctions', 'Person A', None)]
+    members = [(7, 10, 'ofac', 'lead', 'SANCTIONS', 'ofac'),
+               (7, 11, 'opensanctions', 'os_referent', 'SANCTIONS', 'us_ofac_sdn'),
+               (7, 12, 'opensanctions_pep', 'os_id', 'PEP', 'peps'),
+               (7, 13, 'un', 'os_id', 'SANCTIONS', 'un_sc_sanctions')]
     return FakeCur(links, members)
 
 
-def test_same_cluster_same_kind_becomes_one_hit():
+def _strip(hits):
+    return [{k: v for k, v in h.items() if k not in EL.ANNOTATION_KEYS} for h in hits]
+
+
+def test_annotate_never_removes_or_changes_a_hit():
+    import copy
+    before = _hits()
+    out = EL.annotate(copy.deepcopy(before), cur=_cur())
+    assert len(out) == len(before)                      # queue rows, counts, ongoing screening, API: every hit
+    assert _strip(out) == before                       # same hits, same order, same fields
+    assert set(k for h in out for k in h) - set(k for h in before for k in h) <= set(EL.ANNOTATION_KEYS)
+
+
+def test_same_cluster_same_kind_is_tagged_not_dropped():
     out = EL.annotate(_hits(), cur=_cur())
-    ids = [m['id'] for m in out]
-    assert 10 not in ids and 11 in ids                 # the best-scored sanctions hit leads ...
-    prim = next(m for m in out if m['id'] == 11)
-    assert [g['id'] for g in prim['grouped_hits']] == [10]   # ... and keeps the other one inside
-    assert prim['cluster']['other_kinds'] == ['PEP']
-    assert any('UN' in x or 'un' in x.lower() for x in prim['also_listed_in'])
+    by = {m['id']: m for m in out}
+    assert by[10]['grouped_under'] == 'OPENSANCTIONS:11'   # the best-scored sanctions hit leads ...
+    assert [g['ref'] for g in by[11]['grouped_hits']] == ['OFAC:10']
+    assert 'grouped_under' not in by[11]
+    assert by[11]['cluster']['other_kinds'] == ['PEP']
+    assert by[10]['cluster']['id'] == by[11]['cluster']['id'] == 7
 
 
 def test_other_kind_kept_and_points_back():
     out = EL.annotate(_hits(), cur=_cur())
     pep = next(m for m in out if m['id'] == 12)        # a PEP record is never folded into a sanctions hit
-    assert pep['cluster']['other_kinds'] == ['SANCTIONS']
+    assert pep['cluster']['other_kinds'] == ['SANCTIONS'] and 'grouped_under' not in pep
     assert next(m for m in out if m['id'] == 20).get('cluster') is None   # unlinked hit untouched
+
+
+def test_fold_views_is_display_only_and_keeps_orphans():
+    views = [{'ref': 'OPENSANCTIONS:11'}, {'ref': 'OFAC:10', 'grouped_under': 'OPENSANCTIONS:11'},
+             {'ref': 'EMLCU:5', 'grouped_under': 'OPENSANCTIONS:99'}]          # its primary is not on the page
+    shown = [v['ref'] for v in EL.fold_views(views)]
+    assert shown == ['OPENSANCTIONS:11', 'EMLCU:5']
 
 
 def test_nothing_lost_without_tables_or_on_error():
     h = _hits()
-    assert EL.annotate(h, cur=FakeCur([], [], tables=False)) == h
+    assert EL.annotate(h, cur=FakeCur([], [], tables=False)) == _hits()
 
     class Boom(FakeCur):
         def execute(self, sql, params=None):
             raise RuntimeError('db down')
-    h = _hits()
-    assert EL.annotate(h, cur=Boom([], [])) == h
+    assert EL.annotate(_hits(), cur=Boom([], [])) == _hits()
+
+
+def test_tables_missing_is_rechecked(monkeypatch):
+    cur = FakeCur([], [], tables=False)
+    assert EL._tables_ok(cur) is False
+    cur.tables = True
+    assert EL._tables_ok(cur) is False                 # cached for a while ...
+    EL._TABLES['at'] -= EL._RECHECK + 1
+    assert EL._tables_ok(cur) is True                  # ... but not forever
 
 
 def test_internal_hit_maps_to_watchlist_copy():
@@ -146,3 +177,65 @@ def test_differences_report():
 def test_unlink_needs_a_reason():
     with pytest.raises(ValueError):
         EL.unlink(object(), 1, 1, 'too short')
+
+
+class _UConn:
+    """Fake connection for unlink(): build lock result and the cluster of the record."""
+    def __init__(self, lock_ok=True, cluster=7):
+        self.lock_ok, self.cluster, self.rolled, self.committed, self.sql = lock_ok, cluster, 0, 0, []
+
+    def cursor(self):
+        conn = self
+
+        class C:
+            rows = []
+
+            def execute(self, sql, params=None):
+                conn.sql.append(sql)
+                if 'pg_try_advisory_xact_lock' in sql:
+                    self.rows = [(conn.lock_ok,)]
+                elif 'SELECT cluster_id FROM screening_entity_links' in sql:
+                    self.rows = [(conn.cluster,)] if conn.cluster else []
+                elif 'SELECT watchlist_id FROM screening_entity_links' in sql:
+                    self.rows = [(1,), (2,)]
+                elif 'SELECT lead_watchlist_id' in sql:
+                    self.rows = [(1,)]
+                else:
+                    self.rows = []
+
+            def fetchone(self):
+                return self.rows[0] if self.rows else None
+
+            def fetchall(self):
+                return list(self.rows)
+        return C()
+
+    def rollback(self):
+        self.rolled += 1
+
+    def commit(self):
+        self.committed += 1
+
+
+def test_unlink_refused_while_a_rebuild_runs():
+    c = _UConn(lock_ok=False)
+    with pytest.raises(ValueError):
+        EL.unlink(c, 3, 1, 'not the same person at all')
+    assert c.rolled and not c.committed
+
+
+def test_unlink_only_for_a_cluster_of_this_result():
+    c = _UConn(cluster=7)
+    with pytest.raises(PermissionError):
+        EL.unlink(c, 3, 1, 'not the same person at all', allowed_clusters={8})
+    assert c.rolled and not c.committed
+
+
+def test_unlink_audits_in_the_same_transaction():
+    c = _UConn(cluster=7)
+    assert EL.unlink(c, 3, 1, 'not the same person at all', allowed_clusters={7}, ip_address='127.0.0.1') == 7
+    assert c.committed == 1
+    i_audit = next(i for i, q in enumerate(c.sql) if 'INSERT INTO audit_logs' in q)
+    i_unl = next(i for i, q in enumerate(c.sql) if 'INSERT INTO screening_entity_unlinks' in q)
+    assert i_unl < i_audit                              # both before the single commit
+    assert any('lock_timeout' in q for q in c.sql)

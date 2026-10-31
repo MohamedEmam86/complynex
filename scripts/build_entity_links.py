@@ -9,9 +9,10 @@ alone. A link needs one of:
   os_id                 the same OpenSanctions entity id (opensanctions, opensanctions_pep, un)
   os_referent           an OpenSanctions record whose referent is an OFAC SDN uid
   linked_internal       EMLCU record already tied to the Public Prosecution order by full national ID
-  official_id           the same national / official ID number (8+ characters), same kind of entity
+  official_id           the same national / official ID number (8+ characters), same kind of entity,
+                        and no contradiction (birth years more than 1 apart, or different nationalities)
   passport              the same passport number + the same nationality or birth year
-  name_dob_nationality  the same full name (all elements), the same full date of birth (not 1 Jan)
+  name_dob_nationality  the same full name (all elements, 3 or more), the same full date of birth (not 1 Jan)
                         and a shared nationality / country; persons only; small groups only
 
 The official record leads the cluster (EMLCU, PMA, internal orders, UN, OFAC,
@@ -232,6 +233,7 @@ def build(conn, log=print):
 
     # 4 + 5. official ID numbers and passports
     by_id, by_pp, pp_ctx, srcof = collections.defaultdict(set), collections.defaultdict(set), {}, {}
+    id_ctx = {}                 # wid -> (nationality codes, birth years): an ID match must not contradict them
     cur.execute("""SELECT id, source, entity_type, national_id_numbers, passport_numbers, nationality, countries, date_of_birth
                    FROM screening_watchlist WHERE is_active = 1
                      AND (coalesce(national_id_numbers, '') NOT IN ('', '[]') OR coalesce(passport_numbers, '') NOT IN ('', '[]'))""")
@@ -242,6 +244,7 @@ def build(conn, log=print):
             v = norm_id(n)
             if v:
                 by_id[(k, v)].add(wid)
+                id_ctx[wid] = (to_iso2(nat), years(dob))
         has_pp = False
         for p in as_list(pps):
             v = norm_passport(p)
@@ -250,20 +253,33 @@ def build(conn, log=print):
                 has_pp = True
         if has_pp:
             pp_ctx[wid] = (to_iso2(nat) or to_iso2(ctr), years(dob))
-    cur.execute("""SELECT w.id, w.entity_type, b.national_id FROM internal_blacklist b
+    cur.execute("""SELECT w.id, w.entity_type, b.national_id, b.nationality, b.date_of_birth FROM internal_blacklist b
                    JOIN screening_watchlist w ON w.source = 'internal_blacklist' AND w.source_id = """ + IBL_SID.replace('%%', '%') + """
                         AND w.is_active = 1
                    WHERE coalesce(b.national_id, '') <> '' AND coalesce(b.is_active, 1) <> 0""")
-    for wid, et, nid in cur:
+    for wid, et, nid, nat, dob in cur:
         srcof[wid] = 'internal_blacklist'
         v = norm_id(nid)
         if v:
             by_id[(kind(et), v)].add(wid)
+            id_ctx[wid] = (to_iso2(nat), years(dob))
+
+    def agree(a, b):
+        (ia, ya), (ib, yb) = id_ctx.get(a, (set(), set())), id_ctx.get(b, (set(), set()))
+        if ya and yb and not any(abs(x - y) <= 1 for x in ya for y in yb):
+            return False
+        if ia and ib and not (ia & ib):
+            return False
+        return True
     for ws in by_id.values():
         if 1 < len(ws) <= MAX_ID_GROUP:
             ws = sorted(ws)
-            for w in ws[1:]:
-                link(ws[0], srcof[ws[0]], w, srcof[w], 'official_id')
+            for i, w in enumerate(ws[1:], 1):
+                to = next((x for x in ws[:i] if agree(x, w)), None)
+                if to is None:
+                    stats['official_id_refused_contradiction'] += 1
+                    continue
+                link(to, srcof[to], w, srcof[w], 'official_id')
         elif len(ws) > MAX_ID_GROUP:
             stats['skipped_id_groups_too_big'] += 1
     for ws in by_pp.values():
@@ -276,7 +292,7 @@ def build(conn, log=print):
                 ib, yb = pp_ctx.get(b, (set(), set()))
                 if (ia & ib) or any(abs(x - y) <= 1 for x in ya for y in yb):
                     link(a, srcof[a], b, srcof[b], 'passport')
-    del by_id, by_pp, pp_ctx, srcof
+    del by_id, by_pp, pp_ctx, srcof, id_ctx
     log(f'official_id / passport done ({time.time()-t0:.0f}s)')
 
     # 6. full name + full date of birth + shared nationality (persons, small groups only)
@@ -300,7 +316,7 @@ def build(conn, log=print):
         keyed = False
         for name in {fn, fa}:
             toks = tokens(name or '')
-            if len(toks) < 2:
+            if len(toks) < 3:          # two elements are too common to identify a person
                 continue
             key = ' '.join(sorted(toks))
             for d in dates:
@@ -404,7 +420,34 @@ def _conflicts(conn, clusters, stats):
     stats['groups_checked_for_conflicts'] = len(todo)
 
 
-def apply(conn, clusters, stats, log=print):
+def fingerprint(cur):
+    """Cheap summary of everything the links depend on: when it has not changed since the last
+    applied build, the daily rebuild is skipped (--if-changed)."""
+    cur.execute("""SELECT count(*) FILTER (WHERE is_active = 1), count(*), max(updated_at::timestamptz)
+                   FROM screening_watchlist""")
+    w = cur.fetchone()
+    cur.execute("""SELECT count(*), max(modified_date::text), md5(string_agg(coalesce(national_id, '') || coalesce(date_of_birth::text, ''), ',' ORDER BY id))
+                   FROM internal_blacklist WHERE coalesce(is_active, 1) <> 0""")
+    b = cur.fetchone()
+    cur.execute("SELECT to_regclass('screening_entity_unlinks') IS NOT NULL")
+    u = None
+    if cur.fetchone()[0]:
+        cur.execute("SELECT count(*), max(unlinked_at), max(revoked_at) FROM screening_entity_unlinks")
+        u = cur.fetchone()
+    return json.dumps([str(x) for x in (w or ())] + [str(x) for x in (b or ())] + [str(x) for x in (u or ())])
+
+
+def last_fingerprint(cur):
+    cur.execute("""SELECT stats FROM screening_entity_link_runs WHERE status = 'APPLIED'
+                   ORDER BY id DESC LIMIT 1""")
+    r = cur.fetchone()
+    try:
+        return (json.loads(r[0]) or {}).get('fingerprint') if r else None
+    except Exception:
+        return None
+
+
+def apply(conn, clusters, stats, log=print, fp=None):
     cur = conn.cursor()
     cur.execute("INSERT INTO screening_entity_link_runs (status) VALUES ('RUNNING') RETURNING id")
     run_id = cur.fetchone()[0]
@@ -431,7 +474,7 @@ def apply(conn, clusters, stats, log=print):
         cur.execute("SELECT setval('screening_entity_clusters_id_seq', GREATEST(%s, 1))", (len(clusters),))
         cur.execute("""UPDATE screening_entity_link_runs SET finished_at = now(), status = 'APPLIED', clusters = %s,
                        links = %s, stats = %s WHERE id = %s""",
-                    (stats.get('clusters', 0), stats.get('links', 0), json.dumps(stats), run_id))
+                    (stats.get('clusters', 0), stats.get('links', 0), json.dumps(dict(stats, fingerprint=fp)), run_id))
         conn.commit()
     except Exception as e:
         conn.rollback()
@@ -446,6 +489,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--apply', action='store_true', help='rebuild the link tables (default: dry run)')
     ap.add_argument('--json', action='store_true', help='print the counts as JSON')
+    ap.add_argument('--if-changed', action='store_true',
+                    help='with --apply: skip when no list, internal record or unlink changed since the last build')
     a = ap.parse_args()
     try:
         from dotenv import load_dotenv
@@ -461,9 +506,17 @@ def main():
         print('entity link tables are missing - dry run only')
     cur.execute("SELECT pg_try_advisory_lock(hashtext(%s))", (LOCK_KEY,))
     if not cur.fetchone()[0]:
-        print('another entity-link build is running - stop')
+        print('another entity-link build (or an unlink) is running - stop')
         return 2
     conn.commit()
+    fp = None
+    if a.apply:
+        fp = fingerprint(cur)
+        if a.if_changed and fp == last_fingerprint(cur):
+            conn.close()
+            print('no list, internal record or unlink changed since the last build - skipped')
+            return 0
+        conn.commit()
     clusters, stats = build(conn, log=lambda m: print(m, flush=True))
     out = dict(sorted(stats.items()))
     if a.json:
@@ -475,7 +528,7 @@ def main():
               for c in clusters if c['conflict'] or 'name_dob_nationality' in c['bases']][:5]
     print('sample (ids only):', json.dumps(sample))
     if a.apply:
-        apply(conn, clusters, stats)
+        apply(conn, clusters, stats, fp=fp)
     else:
         print('dry run: nothing written')
     conn.close()

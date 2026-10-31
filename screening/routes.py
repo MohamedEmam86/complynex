@@ -852,6 +852,10 @@ def view_result(id):
     p_views = [rv.match_view(m, 'PEP', inputs) for m in pep_matches if isinstance(m, dict)]
     o_views = [rv.match_view(m, 'OTHER', inputs) for m in other_matches if isinstance(m, dict)]
     verdict = rv.overall(s_views, p_views, o_views, am_summary, adverse_hits)
+    # P2-6, display only: a hit grouped under a better hit of the same person and kind is shown
+    # inside that card (the stored matches, queue rows and counts keep every hit)
+    from screening.entity_links import fold_views
+    s_views, p_views, o_views = fold_views(s_views), fold_views(p_views), fold_views(o_views)
     return render_template('screening/screening_result.html', result=result, matches=matches,
                            adverse_hits=adverse_hits, adverse_media_count=adverse_media_count,
                            sanction_matches=sanction_matches, pep_matches=pep_matches,
@@ -970,31 +974,35 @@ def entity_unlink(wid):
     import psycopg2
     from config import Config
     from screening import entity_links as EL
+    from flask import abort
     rid = request.form.get('rid', type=int)
-    back = request.form.get('back') or ''
     if not (current_user.is_admin() or CL.can_approve(current_user)):
-        flash(gettext('Only the MLRO can unlink records.'), 'error')
-    else:
-        reason = (request.form.get('reason') or '').strip()
-        conn = psycopg2.connect(**Config.POSTGRES_CONFIG)
-        try:
-            cid = EL.unlink(conn, wid, current_user.id, reason)
-            from models.audit import AuditLog
-            AuditLog.log(current_user.id, 'Screening', 'Entity link', wid,
-                         f'Record {wid} taken out of linked group {cid}: {reason[:300]}', request.remote_addr)
-            flash(gettext('The record was taken out of the group. The next rebuild will not link it again.'), 'success')
-        except ValueError as e:
-            flash(gettext(str(e)), 'error')
-        except Exception as e:
-            current_app.logger.error(f'entity unlink failed: {e}')
-            flash(gettext('The record could not be unlinked.'), 'error')
-        finally:
+        abort(403)
+    result = query_db(f"SELECT matches FROM screening_results WHERE id = {get_param_style()}", (rid,), one=True) if rid else None
+    if not result:
+        abort(403)
+    matches = result['matches']
+    matches = json.loads(matches) if isinstance(matches, str) else (matches or [])
+    reason = (request.form.get('reason') or '').strip()
+    conn = psycopg2.connect(**Config.POSTGRES_CONFIG)
+    try:
+        # only a record linked to a hit of THIS result can be unlinked from its page
+        allowed = EL.cluster_ids_of_hits(conn.cursor(), matches)
+        conn.rollback()
+        EL.unlink(conn, wid, current_user.id, reason, allowed_clusters=allowed, ip_address=request.remote_addr)
+        flash(gettext('The record was taken out of the group. The next rebuild will not link it again.'), 'success')
+    except PermissionError:
+        conn.close()
+        abort(403)
+    except ValueError as e:
+        flash(gettext(str(e)), 'error')
+    except Exception as e:
+        current_app.logger.error(f'entity unlink failed: {e}')
+        flash(gettext('The record could not be unlinked.'), 'error')
+    finally:
+        if not conn.closed:
             conn.close()
-    if rid and back.startswith('/screening/result/'):
-        return redirect(back)
-    if rid:
-        return redirect(url_for('screening.view_result', id=rid))
-    return redirect(url_for('screening.dashboard'))
+    return redirect(url_for('screening.view_result', id=rid))
 
 
 @screening_bp.route('/history')
