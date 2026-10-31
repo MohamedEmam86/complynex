@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Screening work by user') }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h4 class="mb-0"><i class="fas fa-user-check me-2 text-primary"></i>{{ _('Screening work by user') }}
+      <span class="badge bg-light text-dark border ms-2">{{ _('Team') if team else _('Own figures') }}</span></h4>
+    <div class="d-flex gap-2">
+      {% if team %}<a href="{{ url_for('screening.list_report', date_from=date_from, date_to=date_to) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-list me-1"></i>{{ _('Hits by list and country') }}</a>{% endif %}
+      <a href="{{ url_for('screening.team_report', date_from=date_from, date_to=date_to, export='excel') }}" class="btn btn-sm btn-outline-success"><i class="fas fa-file-excel me-1"></i>{{ _('Export to Excel') }}</a>
+      <a href="{{ url_for('screening.reports_dashboard') }}" class="btn btn-sm btn-outline-secondary">{{ _('Reports') }}</a>
+    </div>
+  </div>
+
+  <form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('From') }}</label>
+      <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm"></div>
+    <div class="col-auto"><label class="form-label small mb-0">{{ _('To') }}</label>
+      <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm"></div>
+    <div class="col-auto"><button class="btn btn-sm btn-primary">{{ _('Apply') }}</button></div>
+    <div class="col-auto small text-muted">{{ _('Decision SLA') }}: {{ sla|round(0)|int }} {{ _('hours') }}</div>
+  </form>
+
+  <div class="row g-2 mb-3">
+    {% for k, label, cls in [('screenings', _('Screenings run'), 'primary'), ('incomplete', _('Incomplete'), 'danger'),
+                             ('hits_handled', _('Hits handled'), 'info'), ('true_matches', _('True matches'), 'dark'),
+                             ('proposed', _('Clearances proposed'), 'secondary'), ('proposed_rejected', _('Overridden (four eyes)'), 'warning'),
+                             ('decided_overdue', _('Decided after SLA'), 'danger'), ('evidence_packs', _('Evidence packs issued'), 'success')] %}
+    <div class="col-6 col-md-3 col-xl">
+      <div class="card border-0 shadow-sm h-100"><div class="card-body py-2">
+        <div class="small text-muted">{{ label }}</div>
+        <div class="fs-4 fw-bold text-{{ cls }}">{{ tot[k] }}</div>
+      </div></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if rows|length > 1 %}
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+    <canvas id="repUserChart" height="90"></canvas>
+  </div></div>
+  {% endif %}
+
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 small">
+        <thead class="table-light">
+          <tr>
+            <th>{{ _('Analyst / MLRO') }}</th>
+            <th class="text-end">{{ _('Screenings run') }}</th>
+            <th class="text-end">{{ _('Incomplete') }}</th>
+            <th class="text-end">{{ _('Re-screens') }}</th>
+            <th class="text-end">{{ _('Hits handled') }}</th>
+            <th class="text-end">{{ _('True matches') }}</th>
+            <th class="text-end">{{ _('False positives') }}</th>
+            <th class="text-end">{{ _('Avg hours to resolve a hit') }}</th>
+            <th class="text-end">{{ _('Clearances proposed') }}</th>
+            <th class="text-end">{{ _('Overridden (four eyes)') }}</th>
+            <th class="text-end">{{ _('Pending past SLA') }}</th>
+            <th class="text-end">{{ _('Clearances decided') }}</th>
+            <th class="text-end">{{ _('Avg hours to decide') }}</th>
+            <th class="text-end">{{ _('Decided after SLA') }}</th>
+            <th class="text-end">{{ _('Evidence packs issued') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for r in rows %}
+          <tr>
+            <td class="fw-semibold">{{ r.name }}</td>
+            <td class="text-end"><a href="{{ url_for('screening.screening_history_full', initiated_by=r.user_id, date_from=date_from, date_to=date_to) }}">{{ r.screenings }}</a></td>
+            <td class="text-end">{% if r.incomplete %}<a class="text-danger fw-bold" href="{{ url_for('screening.screening_history_full', initiated_by=r.user_id, date_from=date_from, date_to=date_to, result='INCOMPLETE') }}">{{ r.incomplete }}</a>{% else %}0{% endif %}</td>
+            <td class="text-end">{{ r.rescreens }}</td>
+            <td class="text-end"><a href="{{ url_for('screening.screening_queue', resolved_by=r.user_id, status='Resolved') }}">{{ r.hits_handled }}</a>{% if r.bulk_resolved %} <span class="text-muted" title="{{ _('Bulk-resolved') }}">({{ r.bulk_resolved }})</span>{% endif %}</td>
+            <td class="text-end">{{ r.true_matches }}</td>
+            <td class="text-end">{{ r.false_positives }}</td>
+            <td class="text-end">{{ r.avg_hit_hours if r.avg_hit_hours is not none else '—' }}{% if r.hits_overdue %} <span class="badge bg-danger">{{ r.hits_overdue }}</span>{% endif %}</td>
+            <td class="text-end"><a href="{{ url_for('screening.approvals', show='decided', requested_by=r.user_id) }}">{{ r.proposed }}</a></td>
+            <td class="text-end">{{ r.proposed_rejected }}{% if r.override_rate is not none %} <span class="text-muted">({{ r.override_rate }}%)</span>{% endif %}</td>
+            <td class="text-end">{% if r.proposed_pending_overdue %}<a class="text-danger fw-bold" href="{{ url_for('screening.approvals', requested_by=r.user_id) }}">{{ r.proposed_pending_overdue }}</a>{% else %}0{% endif %}</td>
+            <td class="text-end"><a href="{{ url_for('screening.approvals', show='decided', decided_by=r.user_id) }}">{{ r.decided }}</a></td>
+            <td class="text-end">{{ r.avg_decision_hours if r.avg_decision_hours is not none else '—' }}</td>
+            <td class="text-end">{% if r.decided_overdue %}<span class="text-danger fw-bold">{{ r.decided_overdue }}</span>{% else %}0{% endif %}</td>
+            <td class="text-end">{{ r.evidence_packs }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="15" class="text-center text-muted py-4">{{ _('No screening work in this period.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="small text-muted mt-2 mb-0">{{ _('A re-screen is a screening of a name that was screened before. The column Overridden (four eyes) counts the clearance proposals of this person that the MLRO rejected. Bulk-resolved hits are shown in brackets.') }}</p>
+</div>
+{% endblock %}
+{% block extra_js %}
+{% if rows|length > 1 %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.latest.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var el = document.getElementById('repUserChart');
+  if (!el || typeof Chart === 'undefined') { return; }
+  var rows = {{ rows|map(attribute='name')|list|tojson }};
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: rows,
+      datasets: [
+        {label: {{ _('Screenings run')|tojson }}, data: {{ rows|map(attribute='screenings')|list|tojson }}, backgroundColor: '#0d6efd'},
+        {label: {{ _('Hits handled')|tojson }}, data: {{ rows|map(attribute='hits_handled')|list|tojson }}, backgroundColor: '#0dcaf0'},
+        {label: {{ _('Clearances decided')|tojson }}, data: {{ rows|map(attribute='decided')|list|tojson }}, backgroundColor: '#6c757d'}
+      ]
+    },
+    options: {responsive: true, plugins: {legend: {position: 'bottom'}}, scales: {y: {beginAtZero: true}}}
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

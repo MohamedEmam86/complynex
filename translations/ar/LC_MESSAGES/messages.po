@@ -39277,3 +39277,99 @@ msgstr "اتعمل له استبعاد قبل كده لعميل تاني بنف�
 #: wave3 review
 msgid "This hash covers the canonical content of the pack (the data listed below), not the PDF file; the hash of the issued PDF file is kept in the system register of evidence packs."
 msgstr "البصمة دي بتغطي المحتوى المعياري للملف (البيانات اللي تحت)، مش ملف الـ PDF نفسه؛ بصمة ملف الـ PDF اللي اتصدر محفوظة في سجل ملفات الأدلة في السيستم."
+
+msgid "Screening work by user"
+msgstr "أعمال الفحص لكل مستخدم"
+
+msgid "Hits by list and country"
+msgstr "النتائج حسب القائمة والدولة"
+
+msgid "Own figures"
+msgstr "أرقامي فقط"
+
+msgid "Export to Excel"
+msgstr "تصدير إلى Excel"
+
+msgid "hours"
+msgstr "ساعة"
+
+msgid "Screenings run"
+msgstr "عمليات الفحص"
+
+msgid "Re-screens"
+msgstr "إعادة الفحص"
+
+msgid "Hits handled"
+msgstr "نتائج تمت معالجتها"
+
+msgid "True matches"
+msgstr "تطابقات حقيقية"
+
+msgid "False positives"
+msgstr "تطابقات غير صحيحة"
+
+msgid "Bulk-resolved"
+msgstr "تمت تسويتها بشكل جماعي"
+
+msgid "Avg hours to resolve a hit"
+msgstr "متوسط ساعات معالجة النتيجة"
+
+msgid "Clearances proposed"
+msgstr "طلبات الإغلاق المقترحة"
+
+msgid "Overridden (four eyes)"
+msgstr "رُفضت من المراجع (مبدأ الأربع أعين)"
+
+msgid "Pending past SLA"
+msgstr "معلّقة بعد المهلة"
+
+msgid "Clearances decided"
+msgstr "طلبات إغلاق تم البت فيها"
+
+msgid "Avg hours to decide"
+msgstr "متوسط ساعات البت"
+
+msgid "Decided after SLA"
+msgstr "تم البت بعد المهلة"
+
+msgid "Evidence packs issued"
+msgstr "ملفات الأدلة الصادرة"
+
+msgid "Analyst / MLRO"
+msgstr "المحلل / مسؤول الإبلاغ"
+
+msgid "No screening work in this period."
+msgstr "لا توجد أعمال فحص في هذه الفترة."
+
+msgid "A re-screen is a screening of a name that was screened before. The column Overridden (four eyes) counts the clearance proposals of this person that the MLRO rejected. Bulk-resolved hits are shown in brackets."
+msgstr "إعادة الفحص هي فحص اسم سبق فحصه. عمود \"رُفضت من المراجع (مبدأ الأربع أعين)\" يحسب مقترحات الإغلاق المقدمة من هذا الشخص والتي رفضها مسؤول الإبلاغ. النتائج التي تمت تسويتها بشكل جماعي موضحة بين قوسين."
+
+msgid "False-positive rate"
+msgstr "نسبة التطابقات غير الصحيحة"
+
+msgid "No hits in this period."
+msgstr "لا توجد نتائج في هذه الفترة."
+
+msgid "Hits raised in the period"
+msgstr "النتائج المسجلة في الفترة"
+
+msgid "False-positive rate = false positives / (true matches + false positives), decided hits only. A list or country with a very high rate is a candidate for tuning (thresholds, name rules, list scope); a rate alone never justifies switching a list off."
+msgstr "نسبة التطابقات غير الصحيحة = التطابقات غير الصحيحة ÷ (التطابقات الحقيقية + غير الصحيحة)، للنتائج التي تم البت فيها فقط. القائمة أو الدولة ذات النسبة المرتفعة جداً مرشحة للضبط (الحدود، قواعد الأسماء، نطاق القائمة)؛ والنسبة وحدها لا تبرر أبداً إيقاف قائمة."
+
+msgid "List category"
+msgstr "فئة القائمة"
+
+msgid "Customer country"
+msgstr "دولة العميل"
+
+msgid "Listed country"
+msgstr "دولة المدرج"
+
+msgid "Only the MLRO can see the team-wide breakdown by list and country."
+msgstr "التفصيل على مستوى الفريق حسب القائمة والدولة متاح لمسؤول الإبلاغ فقط."
+
+msgid "Override rate (%)"
+msgstr "نسبة الرفض من المراجع (%)"
+
+msgid "False-positive rate (%)"
+msgstr "نسبة التطابقات غير الصحيحة (%)"
