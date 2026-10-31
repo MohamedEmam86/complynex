@@ -78,7 +78,9 @@
       {% endif %}
       {% if v.grouped_hits %}
       <div class="small mt-1 text-muted">{{ _('Grouped hits of the same person') }}:
-        {% for g in v.grouped_hits %}<span class="me-2">{{ _(g.source_label) }} — {{ "%.0f"|format(g.score or 0) }}/100</span>{% endfor %}
+        {% for g in v.grouped_hits %}<div class="ms-3">{{ _(g.source_label) }}{% if g.dataset and g.dataset != g.source %} · {{ g.dataset }}{% endif %} — {{ "%.0f"|format(g.score or 0) }}/100
+          {% if g.tier_label %}<span class="badge tier-badge tier-{{ g.tier }}">{{ _(g.tier_label) }}</span>{% endif %}
+          {% if g.ref and ':' in g.ref %}<a class="no-print ms-1" href="{{ url_for('screening.match_profile', rid=result.id, src=g.ref.split(':', 1)[0], rec=g.ref.split(':', 1)[1]) }}">{{ _('Profile (BIO)') }}</a>{% endif %}</div>{% endfor %}
       </div>
       {% endif %}
     </div>
@@ -152,10 +154,12 @@
 </div>
 {% endmacro %}
 
-{% macro section(title, subtitle, icon, color, views, empty) %}
+{% macro hits_count(fc) %}{% if fc and fc[1] %}{{ _('%(n)s hits (%(m)s grouped)', n=fc[0], m=fc[1]) }}{% else %}{{ fc[0] if fc else 0 }}{% endif %}{% endmacro %}
+
+{% macro section(title, subtitle, icon, color, views, empty, fc=None) %}
 <div class="sr-section-h">
   <div class="dot" style="background: {{ color }};"><i class="fas {{ icon }}"></i></div>
-  <div><h5 class="mb-0 fw-bold">{{ title }} <span class="badge rounded-pill bg-secondary ms-1">{{ views|length }}</span></h5>
+  <div><h5 class="mb-0 fw-bold">{{ title }} <span class="badge rounded-pill bg-secondary ms-1">{{ hits_count(fc) if fc else views|length }}</span></h5>
     <div class="small text-muted">{{ subtitle }}</div></div>
 </div>
 {% if views %}
@@ -190,9 +194,9 @@
         <div>{{ _(verdict[2]) }}</div>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <div class="sr-stat"><div class="n text-danger">{{ s_views|length }}</div><div class="l">{{ _('Sanctions') }}</div></div>
-        <div class="sr-stat"><div class="n" style="color:#a86d00">{{ p_views|length }}</div><div class="l">PEP</div></div>
-        {% if o_views %}<div class="sr-stat"><div class="n">{{ o_views|length }}</div><div class="l">{{ _('Other') }}</div></div>{% endif %}
+        <div class="sr-stat"><div class="n text-danger">{{ fold_counts.S[0] if fold_counts else s_views|length }}</div><div class="l">{{ _('Sanctions') }}</div>{% if fold_counts and fold_counts.S[1] %}<div class="small text-muted">{{ hits_count(fold_counts.S) }}</div>{% endif %}</div>
+        <div class="sr-stat"><div class="n" style="color:#a86d00">{{ fold_counts.P[0] if fold_counts else p_views|length }}</div><div class="l">PEP</div>{% if fold_counts and fold_counts.P[1] %}<div class="small text-muted">{{ hits_count(fold_counts.P) }}</div>{% endif %}</div>
+        {% if o_views %}<div class="sr-stat"><div class="n">{{ fold_counts.O[0] if fold_counts else o_views|length }}</div><div class="l">{{ _('Other') }}</div>{% if fold_counts and fold_counts.O[1] %}<div class="small text-muted">{{ hits_count(fold_counts.O) }}</div>{% endif %}</div>{% endif %}
         <div class="sr-stat"><div class="n text-info" id="am-summary-count">{% if am.level == 'PENDING' %}<i class="fas fa-spinner fa-spin fs-6"></i>{% else %}{{ adverse_hits|length }}{% endif %}</div><div class="l">{{ _('Adverse media') }}</div></div>
         <div class="sr-stat"><div class="n">{{ "%.0f"|format(result.highest_match_score or 0) }}</div><div class="l">{{ _('Top score') }}</div></div>
       </div>
@@ -254,9 +258,9 @@
   </div>
 
   {# ---------------- HITS ---------------- #}
-  {{ section(_('Sanctions & restricted lists'), _('Asset-freeze orders, local and international terrorist and sanctions lists'), 'fa-ban', '#c62828', s_views, _('No match on any sanctions or restricted list.')) }}
-  {{ section(_('Politically exposed persons'), _('Internal PEP list and global PEP databases'), 'fa-user-tie', '#d98e04', p_views, _('No match on any PEP list.')) }}
-  {% if o_views %}{{ section(_('Other lists'), _('Other watchlists'), 'fa-list', '#5c6b7a', o_views, '') }}{% endif %}
+  {{ section(_('Sanctions & restricted lists'), _('Asset-freeze orders, local and international terrorist and sanctions lists'), 'fa-ban', '#c62828', s_views, _('No match on any sanctions or restricted list.'), fold_counts.S if fold_counts else None) }}
+  {{ section(_('Politically exposed persons'), _('Internal PEP list and global PEP databases'), 'fa-user-tie', '#d98e04', p_views, _('No match on any PEP list.'), fold_counts.P if fold_counts else None) }}
+  {% if o_views %}{{ section(_('Other lists'), _('Other watchlists'), 'fa-list', '#5c6b7a', o_views, '', fold_counts.O if fold_counts else None) }}{% endif %}
 
   {# ---------------- ADVERSE MEDIA ---------------- #}
   <div class="sr-section-h" id="adverse-media">

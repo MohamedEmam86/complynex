@@ -271,15 +271,45 @@ def build(conn, log=print):
         if ia and ib and not (ia & ib):
             return False
         return True
+    # records already grouped (earlier steps) that carry a birth year / nationality, per group root:
+    # a new member must agree with EVERY one of them (A 1970 - B no year - C 1990 never become one group)
+    known = collections.defaultdict(list)
+    for w in id_ctx:
+        if w in idx:
+            known[find(idx[w])].append(w)
+
+    def group_of(w):
+        i = idx.get(w)
+        return (find(i), known.get(find(i)) or [w]) if i is not None else (None, [w])
+
     for ws in by_id.values():
         if 1 < len(ws) <= MAX_ID_GROUP:
             ws = sorted(ws)
             for i, w in enumerate(ws[1:], 1):
-                to = next((x for x in ws[:i] if agree(x, w)), None)
+                rw, mw = group_of(w)
+                to = None
+                for x in ws[:i]:
+                    rx, mx = group_of(x)
+                    if rx is not None and rx == rw:
+                        to = False                      # already in one group
+                        break
+                    if all(agree(a, b) for a in mx for b in mw):
+                        to = x
+                        break
+                if to is False:
+                    continue
                 if to is None:
                     stats['official_id_refused_contradiction'] += 1
                     continue
+                rx, mx = group_of(to)
                 link(to, srcof[to], w, srcof[w], 'official_id')
+                if w not in idx or to not in idx or find(idx[w]) != find(idx[to]):
+                    continue                            # refused (unlinked by the MLRO, or group too big)
+                rn = find(idx[w])
+                for r in (rx, rw):
+                    if r is not None and r != rn:
+                        known.pop(r, None)
+                known[rn] = list(dict.fromkeys(mx + mw))
         elif len(ws) > MAX_ID_GROUP:
             stats['skipped_id_groups_too_big'] += 1
     for ws in by_pp.values():
@@ -426,9 +456,14 @@ def fingerprint(cur):
     cur.execute("""SELECT count(*) FILTER (WHERE is_active = 1), count(*), max(updated_at::timestamptz)
                    FROM screening_watchlist""")
     w = cur.fetchone()
-    cur.execute("""SELECT count(*), max(modified_date::text), md5(string_agg(coalesce(national_id, '') || coalesce(date_of_birth::text, ''), ',' ORDER BY id))
-                   FROM internal_blacklist WHERE coalesce(is_active, 1) <> 0""")
-    b = cur.fetchone()
+    b = ()
+    for table in ('internal_blacklist', 'internal_pep'):
+        # every column the links read: an edit of any of them triggers a rebuild
+        cur.execute(f"""SELECT count(*), max(modified_date::text),
+                              md5(string_agg(concat_ws('|', id, source_id, full_name, national_id, date_of_birth, nationality),
+                                             ',' ORDER BY id))
+                       FROM {table} WHERE coalesce(is_active, 1) <> 0""")
+        b = tuple(b) + tuple(cur.fetchone())
     cur.execute("SELECT to_regclass('screening_entity_unlinks') IS NOT NULL")
     u = None
     if cur.fetchone()[0]:

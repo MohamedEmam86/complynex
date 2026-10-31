@@ -855,12 +855,16 @@ def view_result(id):
     # P2-6, display only: a hit grouped under a better hit of the same person and kind is shown
     # inside that card (the stored matches, queue rows and counts keep every hit)
     from screening.entity_links import fold_views
+    _tot = (len(s_views), len(p_views), len(o_views))
     s_views, p_views, o_views = fold_views(s_views), fold_views(p_views), fold_views(o_views)
+    fold_counts = {'S': (_tot[0], _tot[0] - len(s_views)), 'P': (_tot[1], _tot[1] - len(p_views)),
+                   'O': (_tot[2], _tot[2] - len(o_views))}
     return render_template('screening/screening_result.html', result=result, matches=matches,
                            adverse_hits=adverse_hits, adverse_media_count=adverse_media_count,
                            sanction_matches=sanction_matches, pep_matches=pep_matches,
                            other_matches=other_matches,
                            s_views=s_views, p_views=p_views, o_views=o_views, verdict=verdict,
+                           fold_counts=fold_counts,
                            inputs=inputs, input_warnings=input_warnings,
                            am=rv.adverse_view(am_summary, adverse_hits),
                            coverage=rv.coverage(at=result.get('created_at')),

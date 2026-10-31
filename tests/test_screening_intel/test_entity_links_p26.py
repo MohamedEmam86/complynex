@@ -239,3 +239,63 @@ def test_unlink_audits_in_the_same_transaction():
     i_unl = next(i for i, q in enumerate(c.sql) if 'INSERT INTO screening_entity_unlinks' in q)
     assert i_unl < i_audit                              # both before the single commit
     assert any('lock_timeout' in q for q in c.sql)
+
+
+# ------------------------------------------------------------------ builder: no contradiction through a third record
+class _BConn:
+    """Fake DB for build(): three OFAC / UK / EU records share one official ID number."""
+    def __init__(self, rows):
+        self.rows_ids = rows
+
+    def cursor(self, name=None, **kw):
+        conn = self
+
+        class C:
+            itersize = 0
+            rows = []
+
+            def execute(self, sql, params=None):
+                if 'to_regclass' in sql:
+                    self.rows = [(False,)]
+                elif 'national_id_numbers, passport_numbers' in sql:
+                    self.rows = conn.rows_ids
+                elif 'date_of_birth ~' in sql:
+                    self.rows = []
+                elif 'SELECT id, date_of_birth, nationality, national_id_numbers' in sql:
+                    self.rows = [(r[0], r[7], r[5], r[3]) for r in conn.rows_ids]
+                else:
+                    self.rows = []
+
+            def __iter__(self):
+                return iter(self.rows)
+
+            def fetchone(self):
+                return self.rows[0] if self.rows else None
+
+            def fetchall(self):
+                return list(self.rows)
+
+            def close(self):
+                pass
+        return C()
+
+
+def _id_row(wid, src, dob, nat):
+    # id, source, entity_type, national_id_numbers, passport_numbers, nationality, countries, date_of_birth
+    return (wid, src, 'INDIVIDUAL', '["X12345678"]', None, nat, None, dob)
+
+
+def test_official_id_no_contradiction_through_a_third_record():
+    b = _builder()
+    rows = [_id_row(1, 'ofac', '1970-03-02', 'Iraq'), _id_row(2, 'hmt', None, None), _id_row(3, 'eu', '1990-07-07', 'Iraq')]
+    clusters, stats = b.build(_BConn(rows), log=lambda m: None)
+    groups = [sorted(c['members']) for c in clusters]
+    assert [1, 2] in groups and not any(1 in g and 3 in g for g in groups)
+    assert stats['official_id_refused_contradiction'] == 1
+
+
+def test_official_id_agreeing_records_are_linked():
+    b = _builder()
+    rows = [_id_row(1, 'ofac', '1970-03-02', 'Iraq'), _id_row(2, 'hmt', '1971', 'Iraqi'), _id_row(3, 'eu', None, 'Iraq')]
+    clusters, _ = b.build(_BConn(rows), log=lambda m: None)
+    assert [sorted(c['members']) for c in clusters] == [[1, 2, 3]]

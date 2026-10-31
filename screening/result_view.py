@@ -238,7 +238,8 @@ def match_view(m, kind, inputs):
         'ref': '%s:%s' % (str(m.get('source') or '').upper(),
                           m.get('entity_id') if str(m.get('source') or '').upper().startswith('INTERNAL') else m.get('id')),
         'grouped_under': m.get('grouped_under'),
-        'grouped_hits': [dict(g, source_label=SOURCE_LABEL.get(str(g.get('source') or '').lower(), g.get('source')))
+        'grouped_hits': [dict(g, source_label=SOURCE_LABEL.get(str(g.get('source') or '').lower(), g.get('source')),
+                              tier_label=TIER_LABEL.get(g.get('tier')))
                          for g in (m.get('grouped_hits') or []) if isinstance(g, dict)][:12],
         'entity_type': _first(m.get('entity_type')),
         'category': _first(m.get('category'), det.get('category'), p.get('topics')),

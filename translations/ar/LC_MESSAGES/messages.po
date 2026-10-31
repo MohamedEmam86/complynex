@@ -38986,3 +38986,7 @@ msgstr "هذا السجل غير مرتبط بأي سجل آخر."
 
 msgid "profile"
 msgstr "الملف"
+
+#, python-format
+msgid "%(n)s hits (%(m)s grouped)"
+msgstr "%(n)s نتيجة (%(m)s مجمّعة)"
