@@ -322,7 +322,7 @@ class EnhancedDataUpdater:
                 vid = LV.begin(self.db_conn, sname, sha, 'file' if raw_sha else 'content', n_ids,
                                user_id=None if trigger == 'scheduled' else user_id, trigger=trigger, content_sha=csha)
                 ev = LV.evaluate(self.db_conn, sname, [e.get('source_id') for e in entities], sha=sha,
-                                 content_sha=csha)
+                                 content_sha=csha, delist_skips_partial=True)
             except Exception as e:
                 # Versioning infrastructure must not stop the daily update (the older
                 # partial-download check in _sync_delistings still applies).

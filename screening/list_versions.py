@@ -374,7 +374,7 @@ def judge(baseline, fetched, active, projected, s, held_by=None):
     return reasons, drop_pct, delist_pct
 
 
-def evaluate(conn, source, fetched_ids, sha=None, settings=None, content_sha=None):
+def evaluate(conn, source, fetched_ids, sha=None, settings=None, content_sha=None, delist_skips_partial=False):
     """Compare the download with the last good version. Writes nothing (temp table only).
     The deactivations are counted exactly as _sync_delistings will apply them: every active
     record of the source that is not in the download, whatever its id format."""
@@ -395,6 +395,23 @@ def evaluate(conn, source, fetched_ids, sha=None, settings=None, content_sha=Non
                        AND NOT EXISTS (SELECT 1 FROM _lv_ids f WHERE f.source_id = w.source_id)""", (source,))
         projected = int(c.fetchone()['n'] or 0)
         c.execute("DROP TABLE IF EXISTS _lv_ids")
+    # _sync_delistings deactivates nothing when the download covers fewer than 80% of the
+    # active records it compares with (same prefix rule as there; it only changes when an
+    # MLRO approves a blocked download). Such an update only adds and updates records, so
+    # counting its "deactivations" or its smaller size would block a harmless update every
+    # day (EMLCU, 1 Nov 2026: 3,665 in the file, 7,349 active from earlier files).
+    delist_skipped = False
+    delist_if_approved = projected
+    if delist_skips_partial and ids and active_all:   # only the daily updater has that skip
+        import re as _re
+        prefixes = sorted({_re.match(r'^\D*', i).group(0) for i in ids})
+        c.execute("""SELECT count(*) AS n FROM screening_watchlist
+                     WHERE source = %s AND is_active = 1
+                       AND substring(source_id from '^\\D*') = ANY(%s)""", (source, prefixes))
+        active_same = int(c.fetchone()['n'] or 0)
+        if active_same and len(ids) < 0.8 * active_same:
+            delist_skipped = True
+            projected = 0
     prev = last_good(conn, source)
     if prev and prev.get('trigger') != 'baseline' and (prev.get('fetched_count') or 0) > 0:
         baseline, kind = int(prev['fetched_count']), f"version {prev['version_no']}"
@@ -402,7 +419,8 @@ def evaluate(conn, source, fetched_ids, sha=None, settings=None, content_sha=Non
         baseline, kind = active_all, 'records active today'
     held_by = prev['version_no'] if prev and prev.get('status') == 'RESTORED' else None
     fetched = len(ids)
-    reasons, drop_pct, delist_pct = judge(baseline, fetched, active_all, projected, s, held_by)
+    reasons, drop_pct, delist_pct = judge(fetched if delist_skipped else baseline, fetched,
+                                          active_all, projected, s, held_by)
     approved = None
     key = content_sha or sha
     if reasons and key:
@@ -416,14 +434,19 @@ def evaluate(conn, source, fetched_ids, sha=None, settings=None, content_sha=Non
             'active_before': active_all, 'active_same_format': active_all,
             'projected_delist': int(projected), 'drop_pct': drop_pct, 'delist_pct': delist_pct,
             'settings': s, 'reasons': reasons, 'approved_version': (approved or {}).get('id'),
-            'held_after_rollback': held_by, 'blocked': bool(reasons) and not approved}
+            'held_after_rollback': held_by, 'blocked': bool(reasons) and not approved,
+            'delist_skipped': delist_skipped, 'delist_if_approved': int(delist_if_approved),
+            'note': (f'download covers fewer than 80% of the active records: records are added and '
+                     f'updated only, nothing is deactivated - unless this download is approved, which '
+                     f'would deactivate {int(delist_if_approved):,} records') if delist_skipped else ''}
 
 
 def block(conn, vid, ev):
     c = _cur(conn)
     c.execute("""UPDATE screening_list_versions SET status = 'BLOCKED', finished_at = now(), reason = %s,
                     active_before = %s, guard = %s WHERE id = %s RETURNING source, version_no""",
-              ('; '.join(ev['reasons']), ev['active_before'], json.dumps(ev, default=str), vid))
+              ('; '.join(ev['reasons'] + ([ev['note']] if ev.get('note') else [])),
+               ev['active_before'], json.dumps(ev, default=str), vid))
     row = c.fetchone()
     conn.commit()
     alert(conn, row['source'], 'blocked',
