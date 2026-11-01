@@ -50,7 +50,7 @@ def portal_login():
 
         if user and guard.is_locked(user.id):
             AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'Portal Login: account locked', request.remote_addr)
-            flash(_('Invalid email or password. After 5 failed attempts the account is locked for 15 minutes.'), 'danger')
+            flash(_('Invalid email or password. Repeated failed attempts lock the account for a while.'), 'danger')
             return render_template('auth/login_portal.html')
 
         if user and user.check_password(password):
@@ -86,7 +86,7 @@ def portal_login():
             AuditLog.log(failed_user.id if failed_user else None, 'Failed Login', 'Auth', None, f'Invalid password for {email}' if failed_user else f'Invalid email: {email}', request.remote_addr)
             if failed_user and guard.register_failure(failed_user.id):
                 AuditLog.log(failed_user.id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed attempts', request.remote_addr)
-            flash(_('Invalid email or password. After 5 failed attempts the account is locked for 15 minutes.'), 'danger')
+            flash(_('Invalid email or password. Repeated failed attempts lock the account for a while.'), 'danger')
             
     return render_template('auth/login_portal.html')
 
@@ -111,7 +111,7 @@ def login():
 
         if user and guard.is_locked(user.id):
             AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'CMS Login: account locked', request.remote_addr)
-            flash(_('Invalid email or password. After 5 failed attempts the account is locked for 15 minutes.'), 'danger')
+            flash(_('Invalid email or password. Repeated failed attempts lock the account for a while.'), 'danger')
             return render_template('auth/login.html')
 
         if user and user.check_password(password):
@@ -150,7 +150,7 @@ def login():
             AuditLog.log(failed_user.id if failed_user else None, 'Failed Login', 'Auth', None, f'CMS Login: Invalid password for {email}' if failed_user else f'CMS Login: Invalid email: {email}', request.remote_addr)
             if failed_user and guard.register_failure(failed_user.id):
                 AuditLog.log(failed_user.id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed attempts', request.remote_addr)
-            flash(_('Invalid email or password. After 5 failed attempts the account is locked for 15 minutes.'), 'danger')
+            flash(_('Invalid email or password. Repeated failed attempts lock the account for a while.'), 'danger')
     
     return render_template('auth/login.html')
 
@@ -192,8 +192,30 @@ def mfa_setup():
         session.pop('mfa_setup_user_id', None)
         return redirect(url_for('auth.login'))
 
+    from auth import mfa_policy as _mp
+    prompted_at = _mp.mark_prompted(user_id)
+    defer_ok = _mp.can_defer(prompted_at, user.role)
+
     if request.method == 'POST':
         action = request.form.get('action')
+        if action == 'later':
+            if not defer_ok:
+                flash(_('Two-factor authentication is required for your account now.'), 'danger')
+                return redirect(url_for('auth.mfa_setup'))
+            session.pop('mfa_tmp_secret', None)
+            session.pop('mfa_setup_user_id', None)
+            remember = session.pop('mfa_remember', False)
+            next_endpoint = session.pop('mfa_next', 'dashboard')
+            guard.reset_failures(user.id)
+            login_user(user, remember=remember)
+            session.permanent = True
+            User.update_last_login(user_id)
+            left = _mp.days_left(prompted_at, user.role)
+            AuditLog.log(user_id, 'MFA Deferred', 'Auth', None,
+                         f'MFA enrolment postponed (grace period, {left} day(s) left)', request.remote_addr)
+            flash(_('Please set up two-factor authentication soon: %(d)s day(s) left before it becomes required.', d=left),
+                  'warning')
+            return redirect(url_for(next_endpoint))
         if action == 'verify':
             secret = session.get('mfa_tmp_secret')
             code   = request.form.get('code', '').strip()
@@ -228,7 +250,8 @@ def mfa_setup():
     buf = io.BytesIO()
     img.save(buf, format='PNG')
     qr_b64 = base64.b64encode(buf.getvalue()).decode()
-    return render_template('auth/mfa_setup.html', qr_b64=qr_b64, secret=secret, user=user)
+    return render_template('auth/mfa_setup.html', qr_b64=qr_b64, secret=secret, user=user,
+                           defer_ok=defer_ok, days_left=_mp.days_left(prompted_at, user.role))
 
 
 @auth_bp.route('/mfa/verify', methods=['GET', 'POST'])
@@ -246,7 +269,7 @@ def mfa_verify():
 
     if guard.is_locked(user.id):
         session.pop('mfa_pending_user_id', None)
-        flash(_('This account is temporarily locked after several failed attempts. Try again in %(m)s minutes.', m=guard.LOCK_MINUTES), 'danger')
+        flash(_('This account is temporarily locked after several failed attempts. Try again in %(m)s minutes.', m=guard.minutes_left(user.id) or guard.LOCK_MINUTES), 'danger')
         return redirect(url_for('auth.login'))
 
     if request.method == 'POST':
@@ -269,7 +292,7 @@ def mfa_verify():
             if guard.register_failure(user_id):
                 AuditLog.log(user_id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed MFA codes', request.remote_addr)
                 session.pop('mfa_pending_user_id', None)
-                flash(_('This account is temporarily locked after several failed attempts. Try again in %(m)s minutes.', m=guard.LOCK_MINUTES), 'danger')
+                flash(_('This account is temporarily locked after several failed attempts. Try again in %(m)s minutes.', m=guard.minutes_left(user.id) or guard.LOCK_MINUTES), 'danger')
                 return redirect(url_for('auth.login'))
             flash(_('Invalid code. Please try again.'), 'danger')
 

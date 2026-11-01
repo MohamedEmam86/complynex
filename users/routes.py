@@ -41,9 +41,22 @@ def _force_password_change():
     return redirect(url_for('users.password_change_required'))
 
 
+def _password_rules_problem(user, new_password):
+    """Reuse / identity rules (auth/password_policy.py); None when the password is acceptable."""
+    from auth import password_policy as _pp
+    if _pp.contains_identity(new_password, getattr(user, 'email', '')):
+        return _('The password must not contain your e-mail name.')
+    if _pp.reused(user.id, new_password, getattr(user, 'password_hash', None)):
+        return _('Choose a password you have not used recently (last %(n)s passwords).', n=_pp.HISTORY)
+    return None
+
+
 def _store_new_password(user_id, new_password):
     from database.db import get_db
+    from auth import password_policy as _pp
     db = get_db()
+    _old = db.execute('SELECT password_hash FROM users WHERE id = %s', (user_id,)).fetchone()
+    _pp.remember(user_id, _old['password_hash'] if _old else None)
     db.execute('UPDATE users SET password_hash = %s, auth_version = COALESCE(auth_version, 0) + 1, '
                'must_change_password = FALSE WHERE id = %s', (User.hash_password(new_password), user_id))
     db.commit()
@@ -68,8 +81,11 @@ def password_change_required():
             flash(_('Choose a password different from the temporary one.'), 'danger')
         else:
             ok, msg = User.validate_password_strength(new_password)
+            problem = None if not ok else _password_rules_problem(current_user, new_password)
             if not ok:
                 flash(_(msg), 'danger')
+            elif problem:
+                flash(problem, 'danger')
             else:
                 uid = current_user.id
                 _store_new_password(uid, new_password)
@@ -138,8 +154,14 @@ def change_password():
     if not ok:
         flash(_(msg), 'danger')
         return redirect(url_for('users.profile'))
+    problem = _password_rules_problem(current_user, new_password)
+    if problem:
+        flash(problem, 'danger')
+        return redirect(url_for('users.profile'))
 
     _store_new_password(current_user.id, new_password)
+    from models.audit import AuditLog
+    AuditLog.log(current_user.id, 'Password Changed', 'Auth', None, 'Password changed by the user', request.remote_addr)
 
     flash(_('Password updated successfully. Other devices have been signed out.'), 'success')
     return redirect(url_for('users.profile'))

@@ -626,24 +626,20 @@ class User(UserMixin):
         return totp.verify(str(code).strip(), valid_window=1)
 
     def verify_backup_code(self, code):
-        """Consume a backup code (one-time use). Returns True if valid."""
-        import json
+        """Consume a backup code (one-time use). Returns True if valid.
+        Codes are stored hashed (auth/mfa_policy.py); clear-text codes written by
+        older versions still work once and are re-stored hashed."""
         from database.db import get_db
+        from auth.mfa_policy import consume_backup_code
         if not self.mfa_backup_codes:
             return False
-        try:
-            codes = json.loads(self.mfa_backup_codes)
-        except Exception:
+        ok, rest = consume_backup_code(self.mfa_backup_codes, code)
+        if not ok:
             return False
-        code = code.strip().upper().replace('-', '')
-        if code not in codes:
-            return False
-        codes.remove(code)
         db = get_db()
-        db.execute('UPDATE users SET mfa_backup_codes=%s WHERE id=%s',
-                   (json.dumps(codes), self.id))
+        db.execute('UPDATE users SET mfa_backup_codes=%s WHERE id=%s', (rest, self.id))
         db.commit()
-        self.mfa_backup_codes = json.dumps(codes)
+        self.mfa_backup_codes = rest
         return True
 
     @staticmethod
@@ -653,16 +649,17 @@ class User(UserMixin):
 
     @staticmethod
     def generate_backup_codes(n=8):
-        import secrets, json
-        codes = [secrets.token_hex(4).upper() for _ in range(n)]
-        return codes, json.dumps(codes)
+        """(codes to show once, JSON of their hashes to store)."""
+        from auth.mfa_policy import new_backup_codes
+        return new_backup_codes(n)
 
     @staticmethod
     def enable_mfa(user_id, secret, backup_codes_json):
         from database.db import get_db
         db = get_db()
         db.execute(
-            'UPDATE users SET mfa_secret=%s, mfa_enabled=TRUE, mfa_backup_codes=%s WHERE id=%s',
+            'UPDATE users SET mfa_secret=%s, mfa_enabled=TRUE, mfa_backup_codes=%s, '
+            'mfa_enrolled_at=COALESCE(mfa_enrolled_at, NOW()) WHERE id=%s',
             (secret, backup_codes_json, user_id)
         )
         db.commit()

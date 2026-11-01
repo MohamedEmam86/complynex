@@ -19,3 +19,6 @@
 Authentication package for ComplyNex CMS
 """
 from .routes import auth_bp
+from . import session_policy as _session_policy
+
+_session_policy.register(auth_bp)   # absolute session length (P6-6)

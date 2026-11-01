@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Audit trail integrity') }}{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom d-flex justify-content-between align-items-start flex-wrap gap-2">
+  <div>
+    <h1 class="h2"><i class="bi bi-link-45deg me-2"></i>{{ _('Audit trail integrity') }}</h1>
+    <p class="text-muted small mb-0">{{ _('Every audit record carries the fingerprint of the record before it, and the database refuses changes and deletions. This page recomputes the whole chain and compares it with the saved checkpoints.') }}</p>
+  </div>
+  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.access_review') }}"><i class="bi bi-person-check me-1"></i>{{ _('User access review') }}</a>
+</div>
+
+{% if res.ok %}
+<div class="alert alert-success"><i class="bi bi-shield-check me-2"></i><strong>{{ _('Intact.') }}</strong>
+  {{ _('%(n)s audit records checked; every fingerprint and every checkpoint matches.', n=res.chain.checked) }}</div>
+{% else %}
+<div class="alert alert-danger"><i class="bi bi-exclamation-octagon me-2"></i><strong>{{ _('Problem found.') }}</strong>
+  {% if res.error %}{{ res.error }}{% endif %}
+  {% if res.chain.broken_id %}<div>{{ _('The chain breaks at audit record %(id)s: it or a record before it was changed outside the application.', id=res.chain.broken_id) }}</div>{% endif %}
+  {% if res.anchors.broken_id %}<div>{{ _('Checkpoint %(id)s does not match its own fingerprint.', id=res.anchors.broken_id) }}</div>{% endif %}
+  {% for m in res.mismatches %}<div>{{ _('Checkpoint %(a)s (record %(r)s): the trail no longer matches it (records then: %(e)s, now: %(n)s).', a=m.anchor_id, r=m.last_id, e=m.expected_count, n=m.now_count) }}</div>{% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-3 mb-3">
+  {% for label, val in [(_('Records checked'), res.chain.checked), (_('Last record'), res.chain.last_id or '—'), (_('Checkpoints checked'), res.anchors.checked if res.anchors else 0)] %}
+  <div class="col"><div class="card text-center h-100"><div class="card-body py-3">
+    <div class="h3 mb-0">{{ val }}</div><div class="small text-muted">{{ label }}</div>
+  </div></div></div>
+  {% endfor %}
+</div>
+
+<div class="card mb-3">
+  <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <strong>{{ _('Checkpoints') }}</strong>
+    <form method="POST" action="{{ url_for('admin.audit_chain_anchor') }}" class="d-flex gap-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="note" class="form-control form-control-sm" maxlength="500" placeholder="{{ _('Note (optional)') }}">
+      <button class="btn btn-sm btn-primary text-nowrap" type="submit"><i class="bi bi-bookmark-check me-1"></i>{{ _('Check now and save a checkpoint') }}</button>
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0 align-middle small">
+      <thead class="table-light"><tr><th>#</th><th>{{ _('Taken') }}</th><th>{{ _('Last record') }}</th><th>{{ _('Records') }}</th><th>{{ _('Result') }}</th><th>{{ _('By') }}</th><th>{{ _('Fingerprint') }}</th><th>{{ _('Note') }}</th></tr></thead>
+      <tbody>
+      {% for a in anchors %}
+        <tr><td>{{ a.id }}</td><td>{{ a.taken_at.strftime('%Y-%m-%d %H:%M') if a.taken_at else '' }}</td><td>{{ a.last_id }}</td><td>{{ a.row_count }}</td>
+          <td>{% if a.chain_ok %}<span class="badge bg-success">{{ _('intact') }}</span>{% else %}<span class="badge bg-danger">{{ _('problem') }}</span>{% endif %}</td>
+          <td>{{ a.taken_by_name or _('scheduled') }}</td><td class="font-monospace">{{ a.anchor_short }}…</td><td>{{ a.note or '' }}</td></tr>
+      {% else %}
+        <tr><td colspan="8" class="text-muted">{{ _('No checkpoint yet. The daily job saves one; you can also save one now.') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

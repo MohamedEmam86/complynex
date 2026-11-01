@@ -4,7 +4,8 @@
 {% set enrolled = users|selectattr('mfa_enabled')|list %}
 {% set required = users|selectattr('mfa_required_override')|list %}
 <div class="pt-3 pb-2 mb-3 border-bottom">
-  <h1 class="h2"><i class="bi bi-shield-lock me-2"></i>{{ _('Multi-Factor Authentication') }}</h1>
+  <h1 class="h2"><i class="bi bi-shield-lock me-2"></i>{{ _('Multi-Factor Authentication') }}
+    <a class="btn btn-sm btn-outline-secondary float-end" href="{{ url_for('admin.access_review') }}">{{ _('User access review') }}</a></h1>
   <p class="text-muted small mb-0">
     {{ _('Require, lift or reset a second factor for any user. Resetting clears the enrolment entirely so the person starts again — use it when a phone is lost or an account is suspect.') }}
   </p>
