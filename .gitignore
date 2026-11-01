@@ -4,6 +4,7 @@ venv_deploy/
 __pycache__/
 *.db
 .env*
+!.env.example
 uploads/
 logs/
 .cache/

@@ -2,6 +2,13 @@
 -- Call for action: Iran, DPRK, Myanmar (unchanged).
 -- Increased monitoring: Algeria and Namibia removed (June 2026); Kuwait and Papua New Guinea added
 -- (February 2026); Bosnia and Herzegovina and Iraq added (June 2026).
+-- columns production gained outside the migrations; a fresh install from database/baseline
+-- needs them before the statements below (P6-4 rebuild check, 1 Nov 2026)
+ALTER TABLE high_risk_countries ADD COLUMN IF NOT EXISTS name_ar TEXT;
+ALTER TABLE high_risk_countries ADD COLUMN IF NOT EXISTS aliases TEXT;
+ALTER TABLE high_risk_countries ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE high_risk_countries ADD COLUMN IF NOT EXISTS updated_by INTEGER;
+ALTER TABLE high_risk_countries ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;
 UPDATE high_risk_countries SET is_active = 0, updated_at = NOW(),
        notes = 'Removed from FATF increased monitoring on 19 June 2026'
  WHERE country_code IN ('DZ', 'NA') AND risk_category = 'INCREASED_MONITORING';

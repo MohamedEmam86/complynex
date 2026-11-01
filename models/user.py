@@ -492,6 +492,7 @@ class User(UserMixin):
         expires_at = row['expires_at'] if 'expires_at' in row.keys() else None
         is_temporary = row['is_temporary'] if 'is_temporary' in row.keys() else 0
         
+        _tenant_id = row['tenant_id'] if 'tenant_id' in row.keys() else 1
         _u = User(
             id=row['id'],
             email=row['email'],
@@ -552,6 +553,7 @@ class User(UserMixin):
             setattr(_u, _k, row[_k] if _k in row.keys() else None)
         # set by an administrator-issued (temporary) password; enforced in users/__init__.py
         _u.must_change_password = bool(row['must_change_password']) if 'must_change_password' in row.keys() else False
+        _u.tenant_id = _tenant_id
         return _u
     
     @staticmethod

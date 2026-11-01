@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Server status') }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-heart-pulse me-2"></i>{{ _('Server status') }}</h4>
+    {% if status %}
+    <span class="badge fs-6 {{ {'ok':'bg-success','warn':'bg-warning text-dark','crit':'bg-danger','unknown':'bg-secondary'}[status.overall] }}">
+      {{ {'ok': _('All checks OK'), 'warn': _('Warning'), 'crit': _('Critical'), 'unknown': _('Unknown')}[status.overall] }}
+    </span>
+    {% endif %}
+  </div>
+  {% if not status %}
+    <div class="alert alert-warning">{{ _('No measurement yet: the monitor (complynex-ops-monitor.timer) has not run.') }}</div>
+  {% else %}
+    <p class="text-muted small">{{ _('Last measurement') }}: {{ status.at }}
+      {% if age_min is not none %}({{ age_min }} {{ _('min ago') }}){% endif %}
+      {% if age_min is not none and age_min > 15 %}<span class="badge bg-danger ms-1">{{ _('the monitor itself is late') }}</span>{% endif %}
+    </p>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead><tr><th>{{ _('Check') }}</th><th>{{ _('Value') }}</th><th>{{ _('State') }}</th></tr></thead>
+        <tbody>
+        {% for c in status.checks|sort(attribute='level', reverse=True) %}
+          <tr>
+            <td>{{ c.label }}</td>
+            <td class="small">{{ c.value }}</td>
+            <td><span class="badge {{ {'ok':'bg-success','warn':'bg-warning text-dark','crit':'bg-danger','unknown':'bg-secondary'}[c.level] }}">{{ c.level }}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+  <h6 class="mt-4">{{ _('Problems in the last two days') }}</h6>
+  {% if changes %}
+    <ul class="small">
+    {% for h in changes %}
+      <li>{{ h.at }} — {{ h.overall }}: {% for k, v in h.bad.items() %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}</li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted small">{{ _('None.') }}</p>
+  {% endif %}
+</div>
+{% endblock %}

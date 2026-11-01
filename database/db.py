@@ -222,6 +222,11 @@ class PgConnectionWrapper:
         if not self._closed and self._pool and self._conn:
             try:
                 self._conn.rollback()  # Clean state before returning to pool
+                try:   # P6-1: a pooled connection never keeps the previous request's tenant
+                    from database import tenancy as _tenancy
+                    _tenancy.unbind(self._conn)
+                except Exception:
+                    pass
                 self._pool.putconn(self._conn)
             except Exception as e:
                 logger.warning(f"Error returning connection to pool: {e}")
@@ -275,6 +280,13 @@ def get_db():
                         logger.error("Failed to obtain a live DB connection after pre-ping retries")
                         raise
 
+            # P6-1: the tenant of this request (g.tenant_id is set by database.tenancy's
+            # before_request hook; '' until then, which under enforcement sees no tenant rows)
+            try:
+                from database import tenancy as _tenancy
+                _tenancy.bind(raw_conn, g.get('tenant_id'))
+            except Exception as _te:
+                logger.warning(f"tenant bind skipped: {_te}")
             g.db = PgConnectionWrapper(raw_conn, _connection_pool)
         else:
             g.db = sqlite3.connect(

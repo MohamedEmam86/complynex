@@ -64,21 +64,32 @@ def normalize_entity_type(v):
     return _n(v) or 'INDIVIDUAL'
 
 
+def _has_tenant_col(cur, table):
+    cur.execute("""SELECT 1 FROM information_schema.columns
+                   WHERE table_name = %s AND column_name = 'tenant_id'""", (table,))
+    return cur.fetchone() is not None
+
+
 def sync_table(cur, source_table, source_prefix, watchlist_source, now):
+    # P6-3: once scripts/tenancy_sql.py has added tenant_id, each private-list copy carries
+    # its tenant (and a tenant-specific source_id, so two tenants never share a row)
+    tenancy_on = _has_tenant_col(cur, source_table) and _has_tenant_col(cur, 'screening_watchlist')
     cur.execute(f"""
         SELECT id, full_name, original_name, risk_level, category,
                entity_type, is_active, added_date, modified_date,
-               date_of_birth, nationality, aliases, source_id
+               date_of_birth, nationality, aliases, source_id,
+               {'tenant_id' if tenancy_on else 'NULL'} AS tenant_id
         FROM {source_table}
         WHERE COALESCE(is_active, 1) != 0
     """)
     rows = cur.fetchall()
+    from database.tenancy import private_source_id
     count = 0
     live_ids = set()
     for row in rows:
         (rid, full_name, orig_name, risk_level, category, entity_type,
          is_active, added_date, modified_date, dob, nationality,
-         aliases, existing_sid) = row
+         aliases, existing_sid, row_tenant) = row
 
         if not full_name:
             continue
@@ -88,6 +99,7 @@ def sync_table(cur, source_table, source_prefix, watchlist_source, now):
             sid = existing_sid
         else:
             sid = gen_source_id(source_prefix, full_name)
+        sid = private_source_id(sid, row_tenant)
 
         name_norm = normalize_name(full_name)
         live_ids.add(sid)
@@ -117,6 +129,10 @@ def sync_table(cur, source_table, source_prefix, watchlist_source, now):
               normalize_entity_type(entity_type),
               str(added_date or now), str(modified_date or now),
               str(modified_date or now), dob, nationality, aliases, name_norm))
+        if tenancy_on:
+            cur.execute("UPDATE screening_watchlist SET tenant_id = %s WHERE source = %s AND source_id = %s "
+                        "AND tenant_id IS DISTINCT FROM %s",
+                        (row_tenant, watchlist_source, sid, row_tenant))
         count += 1
 
     # Mark inactive: watchlist copies that no longer have an active source row at all
