@@ -1,0 +1,12 @@
+[Unit]
+Description=ComplyNex server monitor (P6-7): health checks, status page data, alerts
+After=network-online.target postgresql.service elasticsearch.service
+
+[Service]
+Type=oneshot
+User=complynex
+WorkingDirectory=/var/www/complynex
+EnvironmentFile=/var/www/complynex/.env
+ExecStart=/var/www/complynex/venv/bin/python scripts/ops_monitor.py
+TimeoutStartSec=120
+Nice=10

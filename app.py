@@ -115,6 +115,10 @@ def create_app(config_name=None):
 
     # Initialize database
     db_init_app(app)
+    # P6-1 tenant isolation: app.tenant_id on the request's connection (inert until
+    # TENANCY_ENFORCED=1 and the schema phase of docs/TENANCY.md)
+    from database import tenancy as _tenancy
+    _tenancy.init_app(app)
     
     # Babel Configuration
     app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
@@ -467,6 +471,9 @@ def create_app(config_name=None):
     app.register_blueprint(demo_access_bp)
     from legal import legal_bp
     app.register_blueprint(legal_bp)
+    # P6-7: server status page for admins (data from scripts/ops_monitor.py)
+    from ops import ops_status_bp
+    app.register_blueprint(ops_status_bp)
 
     # Versioned REST API
     try:

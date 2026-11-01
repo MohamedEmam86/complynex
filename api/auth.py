@@ -137,6 +137,11 @@ def require_api_key(*required_scopes):
 
             # Attach key info to request context
             g.api_key = row
+            try:   # P6-1: the key's tenant (column added by scripts/tenancy_sql.py; default 1)
+                from database import tenancy as _tenancy
+                _tenancy.set_request_tenant(row.get('tenant_id') or _tenancy.DEFAULT_TENANT)
+            except Exception:
+                pass
 
             response = f(*args, **kwargs)
 

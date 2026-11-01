@@ -1178,10 +1178,19 @@ class ComplyNexScreeningEngine:
                 logger.warning("[NAME-LOGIC] internal gate failed: %s", e)
         return internal_matches
 
-    def screen_person(self: "ComplyNexScreeningEngine", name: str, date_of_birth=None, nationality=None, entity_type='INDIVIDUAL', address=None, user_id=1, include_media=True, is_internal_blacklist=False, national_id=None, employer=None, threshold=None, screening_type=None, include_regulatory=None, customer_id=None) -> dict:
+    def screen_person(self: "ComplyNexScreeningEngine", name: str, date_of_birth=None, nationality=None, entity_type='INDIVIDUAL', address=None, user_id=1, include_media=True, is_internal_blacklist=False, national_id=None, employer=None, threshold=None, screening_type=None, include_regulatory=None, customer_id=None, tenant_id=None) -> dict:
         """
         Screen a person/entity using ensemble algorithm
         """
+        # P6-1 / P6-3: this screening sees the shared lists plus its tenant's private lists.
+        # Web requests: the request's tenant; background jobs pass tenant_id explicitly.
+        try:
+            from database import tenancy as _tenancy
+            _tid = tenant_id if tenant_id is not None else _tenancy.current_tenant_id()
+            self._cx_tenant = _tid
+            _tenancy.bind(getattr(self.db_conn, '_conn', self.db_conn), _tid)
+        except Exception as _e:
+            logger.warning(f'tenant bind skipped: {_e}')
         # tier thresholds in force (screening_config, set by the MLRO; cached 60 s)
         try:
             from screening import thresholds as _thr
@@ -1930,6 +1939,14 @@ class ComplyNexScreeningEngine:
                     }
                 }
             }
+            # P6-3: shared documents + this tenant's private ones (only with TENANCY_ENFORCED=1)
+            try:
+                from database import tenancy as _tenancy
+                if _tenancy.enforced():
+                    query["query"]["bool"]["filter"].append(
+                        _tenancy.es_filter(getattr(self, '_cx_tenant', None)))
+            except Exception as _e:
+                logger.warning(f'tenant search filter skipped: {_e}')
 
             import os
             index_wl = os.getenv('ES_INDEX_WATCHLIST', 'aml_watchlist')
