@@ -42325,6 +42325,243 @@ msgstr ""
 msgid "Remind me later (%(d)s day(s) left before it becomes required)"
 msgstr "ذكّرني لاحقًا (باقي %(d)s يوم قبل ما يبقى إلزامي)"
 
+#: api/admin_ui.py:0
+msgid "A test event was queued; it is delivered within a minute."
+msgstr "اتحط حدث تجريبي في الطابور؛ هيتبعت خلال دقيقة."
+
+#: api/admin_ui.py:0
+msgid "AML read"
+msgstr "قراءة مكافحة غسل الأموال"
+
+#: api/admin_ui.py:0
+msgid "AML write"
+msgstr "كتابة مكافحة غسل الأموال"
+
+#: api/admin_ui.py:0
+msgid "API clients"
+msgstr "عملاء الـ API"
+
+#: api/admin_ui.py:0
+msgid "API reference"
+msgstr "مرجع الـ API"
+
+#: api/admin_ui.py:0
+msgid "Add webhook"
+msgstr "إضافة Webhook"
+
+#: api/admin_ui.py:0
+msgid "Authentication"
+msgstr "التوثيق"
+
+#: api/admin_ui.py:0
+msgid "Calls (24 h)"
+msgstr "الطلبات (24 ساعة)"
+
+#: api/admin_ui.py:0
+msgid "Client name"
+msgstr "اسم العميل"
+
+#: api/admin_ui.py:0
+msgid "Copy this key now: it will not be shown again."
+msgstr "انسخ المفتاح ده دلوقتي: مش هيظهر تاني."
+
+#: api/admin_ui.py:0
+msgid "Copy this webhook signing secret now: it will not be shown again."
+msgstr "انسخ سر توقيع الـ Webhook دلوقتي: مش هيظهر تاني."
+
+#: api/admin_ui.py:0
+msgid "Create key"
+msgstr "إنشاء مفتاح"
+
+#: api/admin_ui.py:0
+msgid "Created by"
+msgstr "أنشأه"
+
+#: api/admin_ui.py:0
+msgid "DEAD"
+msgstr "فشل نهائي"
+
+#: api/admin_ui.py:0
+msgid "DELIVERED"
+msgstr "اتسلّم"
+
+#: api/admin_ui.py:0
+msgid "Delivered / next try"
+msgstr "اتسلّم / المحاولة الجاية"
+
+#: api/admin_ui.py:0
+msgid "Deprecated"
+msgstr "متوقف تطويره"
+
+#: api/admin_ui.py:0
+msgid "Expires on (optional)"
+msgstr "ينتهي في (اختياري)"
+
+#: api/admin_ui.py:0
+msgid "Give the client a name."
+msgstr "اكتب اسم العميل."
+
+#: api/admin_ui.py:0
+msgid "Idempotency"
+msgstr "منع التكرار"
+
+#: api/admin_ui.py:0
+msgid "Incomplete screenings"
+msgstr "الفحوصات غير المكتملة"
+
+#: api/admin_ui.py:0
+msgid "Last answer"
+msgstr "آخر رد"
+
+#: api/admin_ui.py:0
+msgid "Last used"
+msgstr "آخر استخدام"
+
+#: api/admin_ui.py:0
+msgid "New client key"
+msgstr "مفتاح عميل جديد"
+
+#: api/admin_ui.py:0
+msgid "No API clients yet."
+msgstr "مفيش عملاء API لسه."
+
+#: api/admin_ui.py:0
+msgid "No deliveries yet."
+msgstr "مفيش إرسالات لسه."
+
+#: api/admin_ui.py:0
+msgid "Only an active key can be rotated."
+msgstr "المفتاح الفعّال بس هو اللي ينفع يتغيّر."
+
+#: api/admin_ui.py:0
+msgid "Only an active webhook can be tested."
+msgstr "الـ Webhook الفعّال بس هو اللي ينفع يتجرب."
+
+#: api/admin_ui.py:0
+msgid "Read screenings and list status"
+msgstr "قراءة الفحوصات وحالة القوايم"
+
+#: api/admin_ui.py:0
+msgid "Real-time payment screening"
+msgstr "فحص المدفوعات اللحظي"
+
+#: api/admin_ui.py:0
+msgid "Request id"
+msgstr "رقم الطلب"
+
+#: api/admin_ui.py:0
+msgid "Requests per minute"
+msgstr "طلبات في الدقيقة"
+
+#: api/admin_ui.py:0
+msgid "Rotate"
+msgstr "تغيير المفتاح"
+
+#: api/admin_ui.py:0
+msgid "Rotate and revoke now"
+msgstr "تغيير وإلغاء القديم فوراً"
+
+#: api/admin_ui.py:0
+msgid "Run screenings (single and batch)"
+msgstr "تشغيل الفحص (فردي وجماعي)"
+
+#: api/admin_ui.py:0
+msgid "Sandbox"
+msgstr "تجريبي"
+
+#: api/admin_ui.py:0
+msgid "Sandbox key (synthetic results, no lists)"
+msgstr "مفتاح تجريبي (نتايج صناعية، من غير قوايم)"
+
+#: api/admin_ui.py:0
+msgid "Sandbox keys"
+msgstr "المفاتيح التجريبية"
+
+#: api/admin_ui.py:0
+msgid "Send test event"
+msgstr "إرسال حدث تجريبي"
+
+#: api/admin_ui.py:0
+msgid "The expiry date is not valid."
+msgstr "تاريخ الانتهاء مش صحيح."
+
+#: api/admin_ui.py:0
+msgid "The key was revoked."
+msgstr "المفتاح اتلغى."
+
+#: api/admin_ui.py:0
+msgid "The webhook URL was refused: %(why)s"
+msgstr "عنوان الـ Webhook اترفض: %(why)s"
+
+#: api/admin_ui.py:0
+msgid "The webhook was disabled."
+msgstr "الـ Webhook اتوقف."
+
+#: api/admin_ui.py:0
+msgid "Unknown client."
+msgstr "عميل مش معروف."
+
+#: api/admin_ui.py:0
+msgid "Webhook deliveries (latest 50)"
+msgstr "إرسالات الـ Webhook (آخر 50)"
+
+#: api/admin_ui.py:0
+msgid "Webhooks"
+msgstr "الـ Webhooks"
+
+#: api/admin_ui.py:0
+msgid "eKYC read"
+msgstr "قراءة التحقق الإلكتروني"
+
+#: api/admin_ui.py:0
+msgid "eKYC write"
+msgstr "كتابة التحقق الإلكتروني"
+
+#: api/admin_ui.py:0
+msgid "is returned on every response (send your own to correlate)."
+msgstr "بيرجع مع كل رد (ابعت رقمك عشان تربط الطلبات)."
+
+#: api/admin_ui.py:0
+msgid ""
+"keys are issued on the API clients page; each key has scopes and a rate "
+"limit per minute."
+msgstr ""
+"المفاتيح بتتعمل من صفحة عملاء الـ API؛ كل مفتاح ليه صلاحيات وحد طلبات في "
+"الدقيقة."
+
+#: api/admin_ui.py:0
+msgid ""
+"on POST: the same key and body within 24 hours returns the first response."
+msgstr "في طلبات POST: نفس المفتاح ونفس البيانات خلال 24 ساعة بيرجّع أول رد."
+
+#: api/admin_ui.py:0
+msgid "retried with back-off for about two days."
+msgstr "بيتعاد إرسالها على فترات متزايدة لحوالي يومين."
+
+#: api/admin_ui.py:0
+msgid "rotated"
+msgstr "متغيّر"
+
+#: api/admin_ui.py:0
+msgid "scope"
+msgstr "الصلاحية"
+
+#: api/admin_ui.py:0
+msgid "signed with"
+msgstr "موقّعة بـ"
+
+#: api/admin_ui.py:0
+msgid "the previous key keeps working for %(h)s hours unless it was revoked."
+msgstr "المفتاح القديم هيفضل شغال %(h)s ساعة إلا لو اتلغى."
+
+#: api/admin_ui.py:0
+msgid ""
+"when a source was unavailable the status is INCOMPLETE with the reasons — "
+"never CLEAR."
+msgstr ""
+"لو مصدر ماكانش متاح الحالة بتبقى INCOMPLETE مع الأسباب — عمرها ما تطلع "
+"CLEAR."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

@@ -607,8 +607,13 @@ OPENAPI_SPEC = {
 
 @api_v1_bp.route('/openapi.json', methods=['GET'])
 def openapi_spec():
-    """Serve the OpenAPI 3.0 spec to signed-in users only (it maps the whole API surface)."""
+    """Serve the OpenAPI 3.0 spec to signed-in users and to holders of an active API key
+    (it maps the whole API surface, so it is not public)."""
     from flask_login import current_user as _cu
     if not _cu.is_authenticated:
-        return jsonify({'error': 'authentication required'}), 401
+        raw = request.headers.get('X-API-Key', '').strip()
+        row = get_db().execute("SELECT is_active, expires_at FROM api_keys WHERE key_hash = %s",
+                               (hashlib.sha256(raw.encode()).hexdigest(),)).fetchone() if raw else None
+        if not row or not row['is_active'] or (row['expires_at'] and row['expires_at'] < datetime.utcnow()):
+            return jsonify({'error': 'authentication required'}), 401
     return jsonify(OPENAPI_SPEC)

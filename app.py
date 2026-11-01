@@ -473,6 +473,8 @@ def create_app(config_name=None):
         from api import api_v1_bp
         app.register_blueprint(api_v1_bp)
         csrf.exempt(api_v1_bp)
+        from api.admin_ui import api_admin_bp   # API clients page (session + CSRF)
+        app.register_blueprint(api_admin_bp)
     except Exception as _api_err:
         import logging as _log
         _log.getLogger(__name__).warning('API v1 blueprint not loaded: %s', _api_err)
