@@ -42118,6 +42118,213 @@ msgstr "نسبة المشطوب %"
 msgid "end-to-end"
 msgstr "الاختبار الشامل"
 
+msgid "CMS access"
+msgstr "صلاحية الدخول للنظام"
+
+msgid "Temporary"
+msgstr "مؤقت"
+
+msgid "MFA required"
+msgstr "التحقق الثنائي مطلوب"
+
+msgid "Backup codes left"
+msgstr "الأكواد الاحتياطية المتبقية"
+
+msgid "Locked"
+msgstr "مقفول"
+
+msgid "Module rights"
+msgstr "صلاحيات الأقسام"
+
+msgid "Describe the review in at least 15 characters."
+msgstr "اكتب وصف المراجعة في 15 حرف على الأقل."
+
+msgid "Access review recorded."
+msgstr "تم تسجيل مراجعة الصلاحيات."
+
+msgid "Account unlocked."
+msgstr "تم فك قفل الحساب."
+
+msgid "The audit trail could not be checked: %(e)s"
+msgstr "تعذر فحص سجل التدقيق: %(e)s"
+
+msgid "The audit trail is intact. Checkpoint saved."
+msgstr "سجل التدقيق سليم، وتم حفظ نقطة مرجعية."
+
+msgid "The audit trail check found a problem. See the details below."
+msgstr "فحص سجل التدقيق وجد مشكلة. التفاصيل بالأسفل."
+
+msgid "Your session reached its maximum length. Please sign in again."
+msgstr "الجلسة وصلت لأقصى مدة مسموحة. من فضلك سجّل الدخول مرة أخرى."
+
+msgid ""
+"Invalid email or password. Repeated failed attempts lock the account for a "
+"while."
+msgstr ""
+"البريد الإلكتروني أو كلمة المرور غير صحيحة. تكرار المحاولات الفاشلة يقفل "
+"الحساب لفترة."
+
+msgid "Two-factor authentication is required for your account now."
+msgstr "التحقق الثنائي مطلوب لحسابك الآن."
+
+msgid ""
+"Please set up two-factor authentication soon: %(d)s day(s) left before it "
+"becomes required."
+msgstr ""
+"من فضلك فعّل التحقق الثنائي قريبًا: باقي %(d)s يوم قبل ما يبقى إلزامي."
+
+msgid "The password must not contain your e-mail name."
+msgstr "كلمة المرور لازم ماتحتويش على اسم بريدك الإلكتروني."
+
+msgid "Choose a password you have not used recently (last %(n)s passwords)."
+msgstr "اختار كلمة مرور ماستخدمتهاش مؤخرًا (آخر %(n)s كلمات مرور)."
+
+msgid "User access review"
+msgstr "مراجعة صلاحيات المستخدمين"
+
+msgid ""
+"Who can do what: role, back-office access, module rights, two-factor status,"
+" last login and account locks. Review it periodically and record the review."
+msgstr ""
+"مين يقدر يعمل إيه: الدور، صلاحية الدخول للنظام، صلاحيات الأقسام، حالة التحقق"
+" الثنائي، آخر دخول وقفل الحسابات. راجعها بشكل دوري وسجّل المراجعة."
+
+msgid "Audit trail integrity"
+msgstr "سلامة سجل التدقيق"
+
+msgid "Privileged (admin / compliance)"
+msgstr "صلاحيات عليا (مدير النظام / الالتزام)"
+
+msgid "MFA required but not enrolled"
+msgstr "التحقق الثنائي مطلوب ولم يُفعّل"
+
+msgid "Locked accounts"
+msgstr "حسابات مقفولة"
+
+msgid "Active, never signed in"
+msgstr "نشط ولم يسجل دخول أبدًا"
+
+msgid "Two-factor"
+msgstr "التحقق الثنائي"
+
+msgid "%(n)s backup codes left"
+msgstr "متبقي %(n)s أكواد احتياطية"
+
+msgid "required, not enrolled"
+msgstr "مطلوب، غير مفعّل"
+
+msgid "inactive"
+msgstr "غير نشط"
+
+msgid "temporary"
+msgstr "مؤقت"
+
+msgid "expires"
+msgstr "ينتهي"
+
+msgid "locked"
+msgstr "مقفول"
+
+msgid "until"
+msgstr "حتى"
+
+msgid "%(n)s lock(s) in a row"
+msgstr "%(n)s مرة قفل متتالية"
+
+msgid "Unlock"
+msgstr "فك القفل"
+
+msgid "Record this review"
+msgstr "تسجيل هذه المراجعة"
+
+msgid "What was checked and what was decided (at least 15 characters)"
+msgstr "إيه اللي اتراجع وإيه اللي اتقرر (15 حرف على الأقل)"
+
+msgid "Record review"
+msgstr "تسجيل المراجعة"
+
+msgid ""
+"The list as shown is fingerprinted (SHA-256) and stored with your name and "
+"the date."
+msgstr "القائمة المعروضة بتتحفظ ببصمة (SHA-256) مع اسمك والتاريخ."
+
+msgid "Previous reviews"
+msgstr "المراجعات السابقة"
+
+msgid "No review recorded yet."
+msgstr "لا توجد مراجعة مسجلة بعد."
+
+msgid ""
+"Every audit record carries the fingerprint of the record before it, and the "
+"database refuses changes and deletions. This page recomputes the whole chain"
+" and compares it with the saved checkpoints."
+msgstr ""
+"كل سجل تدقيق بيحمل بصمة السجل اللي قبله، وقاعدة البيانات بترفض أي تعديل أو "
+"حذف. الصفحة دي بتعيد حساب السلسلة كلها وتقارنها بالنقاط المرجعية المحفوظة."
+
+msgid "Intact."
+msgstr "سليم."
+
+msgid ""
+"%(n)s audit records checked; every fingerprint and every checkpoint matches."
+msgstr "تم فحص %(n)s سجل تدقيق؛ كل البصمات وكل النقاط المرجعية مطابقة."
+
+msgid "Problem found."
+msgstr "توجد مشكلة."
+
+msgid ""
+"The chain breaks at audit record %(id)s: it or a record before it was "
+"changed outside the application."
+msgstr ""
+"السلسلة مقطوعة عند سجل التدقيق %(id)s: هو أو سجل قبله اتعدل من خارج النظام."
+
+msgid "Checkpoint %(id)s does not match its own fingerprint."
+msgstr "النقطة المرجعية %(id)s لا تطابق بصمتها."
+
+msgid ""
+"Checkpoint %(a)s (record %(r)s): the trail no longer matches it (records "
+"then: %(e)s, now: %(n)s)."
+msgstr ""
+"النقطة المرجعية %(a)s (السجل %(r)s): السجل لم يعد مطابقًا لها (عدد السجلات "
+"وقتها: %(e)s، الآن: %(n)s)."
+
+msgid "Records checked"
+msgstr "السجلات المفحوصة"
+
+msgid "Last record"
+msgstr "آخر سجل"
+
+msgid "Checkpoints checked"
+msgstr "النقاط المرجعية المفحوصة"
+
+msgid "Checkpoints"
+msgstr "النقاط المرجعية"
+
+msgid "Check now and save a checkpoint"
+msgstr "افحص الآن واحفظ نقطة مرجعية"
+
+msgid "Taken"
+msgstr "وقت الحفظ"
+
+msgid "Fingerprint"
+msgstr "البصمة"
+
+msgid "intact"
+msgstr "سليم"
+
+msgid "problem"
+msgstr "مشكلة"
+
+msgid "scheduled"
+msgstr "مجدول"
+
+msgid "No checkpoint yet. The daily job saves one; you can also save one now."
+msgstr ""
+"لا توجد نقطة مرجعية بعد. المهمة اليومية بتحفظ واحدة، وتقدر تحفظ واحدة الآن."
+
+msgid "Remind me later (%(d)s day(s) left before it becomes required)"
+msgstr "ذكّرني لاحقًا (باقي %(d)s يوم قبل ما يبقى إلزامي)"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

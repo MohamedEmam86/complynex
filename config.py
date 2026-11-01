@@ -50,18 +50,18 @@ class Config:
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    PERMANENT_SESSION_LIFETIME = 3600  # 1 hour of inactivity logs the user out (must be >= WTF_CSRF_TIME_LIMIT, otherwise the session -- and its stored csrf_token -- expires before a long form's CSRF token does, causing "CSRF session token is missing" on submit)
+    PERMANENT_SESSION_LIFETIME = max(15, min(480, int(os.environ.get('SESSION_IDLE_MINUTES', 60) or 60))) * 60  # 1 hour of inactivity logs the user out (must be >= WTF_CSRF_TIME_LIMIT, otherwise the session -- and its stored csrf_token -- expires before a long form's CSRF token does, causing "CSRF session token is missing" on submit)
 
     # "Remember me" cookie (separate from the session cookie above) - bounded
     # so a checked box on a shared computer doesn't grant a year of persistent login
-    REMEMBER_COOKIE_DURATION = timedelta(days=14)
+    REMEMBER_COOKIE_DURATION = timedelta(days=max(0, min(30, int(os.environ.get('REMEMBER_DAYS', 14) or 14))))
     REMEMBER_COOKIE_SECURE = True
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SAMESITE = 'Lax'
 
     # CSRF Protection
     WTF_CSRF_ENABLED = True
-    WTF_CSRF_TIME_LIMIT = 3600  # tokens expire after 1 hour
+    WTF_CSRF_TIME_LIMIT = PERMANENT_SESSION_LIFETIME  # tokens expire with the idle session (never later than it)
     WTF_CSRF_HEADERS = ["X-CSRFToken", "X-CSRF-Token"]
 
     # Redis Configuration

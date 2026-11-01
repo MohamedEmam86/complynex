@@ -78,6 +78,15 @@
             <i class="bi bi-exclamation-triangle me-2"></i>
             {{ _('You will receive one-time backup codes on the next screen. Store them safely — they are shown') }} <strong>{{ _('once only') }}</strong>.
         </div>
+        {% if defer_ok %}
+        <form method="POST" class="text-center">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="later">
+            <button type="submit" class="btn btn-link btn-sm text-muted">
+                {{ _('Remind me later (%(d)s day(s) left before it becomes required)', d=days_left) }}
+            </button>
+        </form>
+        {% endif %}
     </div>
 </div>
 <script src="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.bundle.min.js') }}"></script>

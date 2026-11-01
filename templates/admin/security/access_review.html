@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('User access review') }}{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom d-flex justify-content-between align-items-start flex-wrap gap-2">
+  <div>
+    <h1 class="h2"><i class="bi bi-person-check me-2"></i>{{ _('User access review') }}</h1>
+    <p class="text-muted small mb-0">{{ _('Who can do what: role, back-office access, module rights, two-factor status, last login and account locks. Review it periodically and record the review.') }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.mfa_overview') }}"><i class="bi bi-shield-lock me-1"></i>{{ _('Multi-Factor Auth') }}</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.audit_chain') }}"><i class="bi bi-link-45deg me-1"></i>{{ _('Audit trail integrity') }}</a>
+    <a class="btn btn-sm btn-success" href="{{ url_for('admin.access_review', export='xlsx') }}"><i class="bi bi-file-earmark-excel me-1"></i>{{ _('Export to Excel') }}</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  {% for label, val, cls in [
+      (_('Active users'), stats.active, 'primary'),
+      (_('Privileged (admin / compliance)'), stats.privileged, 'info'),
+      (_('MFA required but not enrolled'), stats.no_mfa_required, 'warning' if stats.no_mfa_required else 'success'),
+      (_('Locked accounts'), stats.locked, 'danger' if stats.locked else 'success'),
+      (_('Active, never signed in'), stats.never_logged_in, 'secondary')] %}
+  <div class="col"><div class="card text-center h-100"><div class="card-body py-3">
+    <div class="h3 mb-0 text-{{ cls }}">{{ val }}</div>
+    <div class="small text-muted">{{ label }}</div>
+  </div></div></div>
+  {% endfor %}
+</div>
+
+<div class="card mb-3">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead class="table-light"><tr>
+        <th>{{ _('Name') }}</th><th>{{ _('Role') }}</th><th>{{ _('CMS access') }}</th>
+        <th>{{ _('Module rights') }}</th><th>{{ _('Two-factor') }}</th><th>{{ _('Last login') }}</th>
+        <th>{{ _('Status') }}</th><th></th>
+      </tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr class="{{ '' if r.active else 'text-muted' }}">
+          <td><a href="{{ url_for('admin.edit_user', id=r.id) }}">{{ r.name }}</a><div class="small text-muted">{{ r.email }}</div></td>
+          <td><span class="badge bg-{{ 'danger' if r.role == 'admin' else ('info' if r.role in ('compliance_officer','compliance_manager') else 'secondary') }}">{{ r.role }}</span></td>
+          <td>{{ r.cms_access_level or '—' }}</td>
+          <td class="small">
+            {% for k, v in r.perms|dictsort %}<span class="badge bg-light text-dark border me-1">{{ k }}: {{ v }}</span>{% else %}—{% endfor %}
+          </td>
+          <td>
+            {% if r.mfa_enabled %}<span class="badge bg-success">{{ _('enrolled') }}</span>
+              <div class="small text-muted">{{ _('%(n)s backup codes left', n=r.mfa_backup_left) }}</div>
+            {% elif r.mfa_required %}<span class="badge bg-warning text-dark">{{ _('required, not enrolled') }}</span>
+            {% else %}<span class="badge bg-light text-dark border">{{ _('optional') }}</span>{% endif %}
+          </td>
+          <td class="small">{{ r.last_login.strftime('%Y-%m-%d %H:%M') if r.last_login and r.last_login.strftime else (r.last_login or _('never')) }}</td>
+          <td class="small">
+            {% if not r.active %}<span class="badge bg-secondary">{{ _('inactive') }}</span>{% endif %}
+            {% if r.temporary %}<span class="badge bg-light text-dark border">{{ _('temporary') }}</span>{% endif %}
+            {% if r.expires_at %}<div>{{ _('expires') }} {{ r.expires_at.strftime('%Y-%m-%d') if r.expires_at.strftime else r.expires_at }}</div>{% endif %}
+            {% if r.locked %}<span class="badge bg-danger">{{ _('locked') }}</span>
+              <div>{{ _('until') }} {{ r.locked_until.strftime('%Y-%m-%d %H:%M') }}</div>{% endif %}
+            {% if r.lock_count %}<div class="text-muted">{{ _('%(n)s lock(s) in a row', n=r.lock_count) }}</div>{% endif %}
+          </td>
+          <td>
+            {% if r.locked and can_unlock %}
+            <form method="POST" action="{{ url_for('admin.unlock_user', user_id=r.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="back" value="{{ url_for('admin.access_review') }}">
+              <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-unlock me-1"></i>{{ _('Unlock') }}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-light"><strong>{{ _('Record this review') }}</strong></div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.access_review_record') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="form-label small">{{ _('What was checked and what was decided (at least 15 characters)') }}</label>
+          <textarea name="note" class="form-control mb-2" rows="3" minlength="15" required></textarea>
+          <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-check2-square me-1"></i>{{ _('Record review') }}</button>
+          <div class="small text-muted mt-2">{{ _('The list as shown is fingerprinted (SHA-256) and stored with your name and the date.') }}</div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-light"><strong>{{ _('Previous reviews') }}</strong></div>
+      <ul class="list-group list-group-flush small">
+        {% for v in reviews %}
+        <li class="list-group-item">
+          <strong>{{ v.reviewed_at.strftime('%Y-%m-%d %H:%M') if v.reviewed_at.strftime else v.reviewed_at }}</strong> — {{ v.reviewer or '—' }}
+          ({{ _('%(n)s users', n=v.users_count) }})<div class="text-muted">{{ v.note }}</div>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">{{ _('No review recorded yet.') }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
