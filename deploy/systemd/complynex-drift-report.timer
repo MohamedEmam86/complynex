@@ -1,0 +1,9 @@
+[Unit]
+Description=Monthly screening drift report (2nd of the month, after the daily list update)
+
+[Timer]
+OnCalendar=*-*-02 05:47:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

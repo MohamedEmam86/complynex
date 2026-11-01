@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Screening drift report') }}{% endblock %}
+{% macro delta(cur, old, unit='', invert=False) -%}
+  {%- if cur is not none and old is not none -%}
+    {%- set d = (cur - old)|round(2) -%}
+    {%- if d != 0 -%}<small class="ms-1 {{ ('text-danger' if (d > 0) != invert else 'text-success') }}">({{ '%+g'|format(d) }}{{ unit }})</small>{%- endif -%}
+  {%- endif -%}
+{%- endmacro %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h4 class="mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>{{ _('Screening drift report') }}{% if month %} — {{ month }}{% endif %}</h4>
+    <div class="d-flex gap-2">
+      {% if m %}<a href="{{ url_for('screening.drift_report', month=month, export='excel') }}" class="btn btn-sm btn-outline-success"><i class="fas fa-file-excel me-1"></i>{{ _('Export to Excel') }}</a>{% endif %}
+      <a href="{{ url_for('screening.reports_dashboard') }}" class="btn btn-sm btn-outline-secondary">{{ _('Reports') }}</a>
+    </div>
+  </div>
+  <p class="text-muted small">{{ _('Once a month the screening figures are compared with the month before: list updates, hits and false-positive rates per list, INCOMPLETE screenings, the Gold Set and the end-to-end quality runs. The MLRO is alerted when a figure moves beyond its limit.') }}</p>
+
+  <div class="row g-2 align-items-end mb-3">
+    <div class="col-auto">
+      <form method="get" class="d-flex gap-2 align-items-end">
+        <div><label class="form-label small mb-0">{{ _('Month') }}</label>
+          <select name="month" class="form-select form-select-sm js-autosubmit">
+            {% for r in months %}<option value="{{ r.month }}" {{ 'selected' if r.month == month }}>{{ r.month }}{% if r.alerts %} ({{ r.alerts }} {{ _('alerts') }}){% endif %}</option>{% endfor %}
+          </select></div>
+        <button class="btn btn-sm btn-outline-primary">{{ _('Show') }}</button>
+      </form>
+    </div>
+    <div class="col-auto">
+      <form method="post" action="{{ url_for('screening.drift_report_run') }}" class="d-flex gap-2 align-items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div><label class="form-label small mb-0">{{ _('Build / rebuild the report for') }}</label>
+          <input type="month" name="month" value="{{ month or default_month }}" class="form-control form-control-sm"></div>
+        <button class="btn btn-sm btn-primary">{{ _('Build now') }}</button>
+      </form>
+    </div>
+  </div>
+
+  {% if not m %}
+    <div class="alert alert-info">{{ _('No drift report yet. The report is built automatically on the 2nd of every month, or now with the button above.') }}</div>
+  {% else %}
+  {% if alerts %}
+  <div class="alert alert-warning">
+    <div class="fw-bold mb-1"><i class="fas fa-exclamation-triangle me-1"></i>{{ _('Alerts') }} ({{ alerts|length }})</div>
+    <ul class="mb-0 small">{% for a in alerts %}<li>{{ a.ar if get_locale() == 'ar' else a.en }}</li>{% endfor %}</ul>
+  </div>
+  {% else %}
+  <div class="alert alert-success small">{{ _('No figure moved beyond its limit this month.') }}</div>
+  {% endif %}
+
+  {% set s = m.screening or {} %}{% set ps = prev.screening or {} %}
+  {% set e = m.e2e or {} %}{% set pe = prev.e2e or {} %}
+  <div class="row g-3 mb-3">
+    <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
+      <div class="text-muted small">{{ _('Screenings') }}</div><div class="fs-4 fw-bold">{{ s.screenings }}</div>
+      <div class="small">{{ _('with hits') }}: {{ s.with_hits }} ({{ s.hit_rate if s.hit_rate is not none else '—' }}%)</div></div></div></div>
+    <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
+      <div class="text-muted small">{{ _('INCOMPLETE screenings') }}</div>
+      <div class="fs-4 fw-bold">{{ s.incomplete_rate if s.incomplete_rate is not none else '—' }}%{{ delta(s.incomplete_rate, ps.incomplete_rate, '') }}</div>
+      <div class="small">{{ s.incomplete }} {{ _('screenings') }}</div></div></div></div>
+    <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
+      <div class="text-muted small">{{ _('End-to-end recall (average)') }}</div>
+      <div class="fs-4 fw-bold">{{ e.avg_recall if e.avg_recall is not none else '—' }}%{{ delta(e.avg_recall, pe.avg_recall, '', True) }}</div>
+      <div class="small">{{ e.runs }} {{ _('runs') }} · {{ _('lowest') }} {{ e.min_recall if e.min_recall is not none else '—' }}%</div></div></div></div>
+    <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
+      <div class="text-muted small">{{ _('Average highest score') }}</div>
+      <div class="fs-4 fw-bold">{{ s.avg_highest_score if s.avg_highest_score is not none else '—' }}</div></div></div></div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-bold">{{ _('Hits by list') }}</div>
+    <div class="table-responsive"><table class="table table-sm align-middle mb-0 small">
+      <thead class="table-light"><tr><th>{{ _('List') }}</th><th class="text-end">{{ _('Hits') }}</th><th class="text-end">{{ _('True matches') }}</th><th class="text-end">{{ _('False positives') }}</th><th class="text-end">{{ _('Pending') }}</th><th class="text-end">{{ _('False-positive rate') }} (%)</th><th class="text-end">{{ _('Average score') }}</th></tr></thead>
+      <tbody>
+      {% for k, d in (m.hits_by_list or {})|dictsort %}{% set p = (prev.hits_by_list or {}).get(k, {}) %}
+        <tr><td class="fw-semibold">{{ k }}</td><td class="text-end">{{ d.hits }}{{ delta(d.hits, p.hits) }}</td><td class="text-end">{{ d.true_matches }}</td><td class="text-end">{{ d.false_positives }}</td><td class="text-end">{{ d.pending }}</td>
+          <td class="text-end">{{ d.fp_rate if d.fp_rate is not none else '—' }}{{ delta(d.fp_rate, p.fp_rate) }}</td><td class="text-end">{{ d.avg_score if d.avg_score is not none else '—' }}</td></tr>
+      {% else %}<tr><td colspan="7" class="text-center text-muted py-3">{{ _('No hits in this period.') }}</td></tr>{% endfor %}
+      </tbody></table></div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-6"><div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-bold">{{ _('Hits by list category') }}</div>
+      <div class="table-responsive"><table class="table table-sm mb-0 small">
+        <thead class="table-light"><tr><th>{{ _('List category') }}</th><th class="text-end">{{ _('Hits') }}</th><th class="text-end">{{ _('False-positive rate') }} (%)</th></tr></thead>
+        <tbody>{% for k, d in (m.hits_by_category or {})|dictsort %}{% set p = (prev.hits_by_category or {}).get(k, {}) %}
+          <tr><td>{{ k }}</td><td class="text-end">{{ d.hits }}{{ delta(d.hits, p.hits) }}</td><td class="text-end">{{ d.fp_rate if d.fp_rate is not none else '—' }}{{ delta(d.fp_rate, p.fp_rate) }}</td></tr>
+        {% endfor %}</tbody></table></div></div></div>
+    <div class="col-lg-6"><div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-bold">{{ _('Gold Set') }}</div>
+      <div class="table-responsive"><table class="table table-sm mb-0 small">
+        <thead class="table-light"><tr><th>{{ _('Version') }}</th><th class="text-end">{{ _('Runs') }}</th><th class="text-end">{{ _('Core misses') }} (%)</th><th class="text-end">{{ _('Core false alerts') }} (%)</th><th class="text-end">{{ _('Extended misses') }} (%)</th><th class="text-end">{{ _('Extended false alerts') }} (%)</th></tr></thead>
+        <tbody>{% for v, g in (m.gold or {})|dictsort %}{% set pg = (prev.gold or {}).get(v, {}) %}
+          <tr><td>{{ v }}</td><td class="text-end">{{ g.runs }}</td><td class="text-end">{{ g.core_miss_rate }}{{ delta(g.core_miss_rate, pg.core_miss_rate) }}</td><td class="text-end">{{ g.core_fp_rate }}{{ delta(g.core_fp_rate, pg.core_fp_rate) }}</td><td class="text-end">{{ g.extended_miss_rate if g.extended_miss_rate is defined and g.extended_miss_rate is not none else '—' }}</td><td class="text-end">{{ g.extended_fp_rate if g.extended_fp_rate is defined and g.extended_fp_rate is not none else '—' }}</td></tr>
+        {% else %}<tr><td colspan="6" class="text-center text-muted py-3">{{ _('No Gold Set run this month.') }}</td></tr>{% endfor %}</tbody></table></div></div></div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-bold">{{ _('List updates') }}</div>
+    <div class="table-responsive"><table class="table table-sm mb-0 small">
+      <thead class="table-light"><tr><th>{{ _('List') }}</th><th class="text-end">{{ _('Runs') }}</th><th class="text-end">{{ _('Failed') }}</th><th class="text-end">{{ _('Blocked') }}</th><th class="text-end">{{ _('Added') }}</th><th class="text-end">{{ _('Updated') }}</th><th class="text-end">{{ _('Delisted') }}</th><th class="text-end">{{ _('Relisted') }}</th><th class="text-end">{{ _('Active records') }}</th></tr></thead>
+      <tbody>{% for k, d in (m.lists or {})|dictsort %}
+        <tr><td class="fw-semibold">{{ k }}</td><td class="text-end">{{ d.runs }}</td><td class="text-end {{ 'text-danger fw-bold' if d.failures }}">{{ d.failures }}</td><td class="text-end {{ 'text-danger fw-bold' if d.blocked }}">{{ d.blocked }}</td><td class="text-end">{{ d.added }}</td><td class="text-end">{{ d.updated }}</td><td class="text-end">{{ d.delisted }}{% if d.delisted_pct %} <small class="text-muted">({{ d.delisted_pct }}%)</small>{% endif %}</td><td class="text-end">{{ d.relisted }}</td><td class="text-end">{{ d.active if d.active is not none else '—' }}</td></tr>
+      {% endfor %}</tbody></table></div>
+  </div>
+  <p class="text-muted small">{{ _('Generated at') }} {{ m.generated_at }}. {{ _('Figures in brackets are the change against the month before.') }}</p>
+  {% endif %}
+</div>
+<script nonce="{{ csp_nonce }}">document.querySelectorAll(".js-autosubmit").forEach(function(el){el.addEventListener("change",function(){el.form.submit();});});</script>
+{% endblock %}

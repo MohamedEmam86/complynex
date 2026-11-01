@@ -17,6 +17,7 @@ A retrieval check confirms that internal-list names are actually recalled by sea
     python scripts/gold_set_eval.py --write-baseline   # store the reference result (first time / new Gold Set)
     python scripts/gold_set_eval.py --gate             # exit 1 if any category is worse than the baseline
     python scripts/gold_set_eval.py --ratchet          # after a clean deploy: keep the best of baseline and now
+    python scripts/gold_set_eval.py --gold v2          # the larger v2 set (P5-1); the gate stays on v1 by default
 """
 import argparse
 import hashlib
@@ -88,7 +89,8 @@ def evaluate(version, retrieval=True):
         k = 'miss' if lab == 1 else 'fp'
         res['categories'][c] = {'type': 'positive' if lab == 1 else 'negative', 'tier': d['tier'], 'n': d['n'],
                                 'errors': d[k], 'rate': round(100.0 * d[k] / d['n'], 2) if d['n'] else None}
-    for tier in ('core', 'supplementary'):
+    tiers = ['core', 'supplementary'] + sorted({v['tier'] for v in res['categories'].values()} - {'core', 'supplementary'})
+    for tier in tiers:
         pos = [v for v in res['categories'].values() if v['type'] == 'positive' and v['tier'] == tier]
         neg = [v for v in res['categories'].values() if v['type'] == 'negative' and v['tier'] == tier]
         res[f'{tier}_miss_rate'] = round(100.0 * sum(v['errors'] for v in pos) / max(1, sum(v['n'] for v in pos)), 2)
@@ -194,11 +196,14 @@ def ratchet(res, base):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--version', type=int, default=1)
+    ap.add_argument('--gold', default=None, help="which Gold Set: v1 (default, the deploy gate) or v2")
     ap.add_argument('--write-baseline', action='store_true')
     ap.add_argument('--gate', action='store_true')
     ap.add_argument('--ratchet', action='store_true')
     ap.add_argument('--no-retrieval', action='store_true')
     a = ap.parse_args()
+    if a.gold:
+        a.version = int(str(a.gold).lower().lstrip('v'))
     res = evaluate(a.version, retrieval=not a.no_retrieval)
     try:
         os.makedirs(os.path.join(GOLD, 'results'), exist_ok=True)
@@ -206,8 +211,8 @@ def main():
     except OSError as ex:
         print(f'note: result file not saved ({ex})')
     bpath = os.path.join(GOLD, f'baseline_v{a.version}.json')
-    print(json.dumps({k: res[k] for k in ('commit', 'pairs', 'core_miss_rate', 'core_fp_rate',
-                                          'supplementary_miss_rate', 'supplementary_fp_rate', 'holdout')}, indent=1))
+    print(json.dumps({k: res[k] for k in res if k in ('commit', 'gold_version', 'pairs', 'holdout')
+                      or k.endswith('_miss_rate') or k.endswith('_fp_rate')}, indent=1))
     for c, v in res['categories'].items():
         print(f"  {c:32s} {v['tier'][:4]} {v['type']:8s} n={v['n']:5d} errors={v['errors']:5d} rate={v['rate']}%")
     if res.get('retrieval'):

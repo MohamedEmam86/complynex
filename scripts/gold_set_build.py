@@ -13,6 +13,9 @@ tier = 'core'          realistic for Egyptian customer / ID data -> headline rat
 tier = 'supplementary' hard or exotic forms (Franco-Arabic chat spelling, Maghrebi spelling,
                        Persian / Pashto script, very small categories) -> reported, gated, but
                        kept out of the headline rate
+tier = 'extended'      v2 only (scripts/gold_set_v2.py): Levantine, Gulf, Maghrebi, Persian and
+                       Turkish spellings, letter-level Franco-Arabic, companies, X-Allah, particles,
+                       long vowels -- each with a negative category so false alerts are measured
 
 Holdout: ~20 % of BASE NAMES (not pairs) are locked away, chosen with a secret salt
 stored next to the data (screening/data/gold/.holdout_salt, never in git), so every
@@ -36,6 +39,7 @@ import sys
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 os.chdir(BASE)
 
 from screening.match_intel import tokens, normalize, _LEGAL_FORMS  # noqa: E402
@@ -151,6 +155,11 @@ def eg_latin(us):
 
 def translit(n):
     return eg_latin(units(n))
+
+
+def _year(d):
+    m = re.search(r'(1[89]\d\d|20\d\d)', str(d or ''))
+    return int(m.group(1)) if m else None
 
 
 def pid(*parts):
@@ -516,7 +525,8 @@ def main():
         for i in range(len(v) - 1):
             (a1, d1), (b1, d2) = v[i], v[i + 1]
             ta, tb = set(tokens(a1)), set(tokens(b1))
-            if d1 and d2 and abs(int(str(d1)[:4]) - int(str(d2)[:4])) >= 3 and not (ta <= tb or tb <= ta):
+            y1, y2 = _year(d1), _year(d2)      # dates come in several formats (YYYY-MM-DD, 01 Jan 1970, a;b)
+            if y1 and y2 and abs(y1 - y2) >= 3 and not (ta <= tb or tb <= ta):
                 reall.append((a1, b1))
     B.fill('neg_real_distinct_lat', 0, reall, lambda p: (p[0], p[1], 'years of birth 3+ apart'), 'intl_lists',
            real_query=True)
@@ -536,9 +546,25 @@ def main():
                 oreal.append((v[i], v[i + 1]))
     B.fill('neg_company_similar', 0, oreal, lambda p: (p[0], p[1]), 'org_lists', real_query=True)
 
+    # ---- v2 (P5-1): regional spellings, Franco-Arabic, companies, X-Allah, particles, long vowels
+    #      (every category with a negative side); v1 is built exactly as before
+    org_x = []
+    if a.version >= 2:
+        cur.execute("""SELECT DISTINCT full_name_arabic a, full_name l FROM screening_watchlist WHERE is_active=1
+                       AND upper(entity_type) IN ('ENTITY','ORGANIZATION','COMPANY')
+                       AND full_name_arabic ~ '[ء-ي]' AND full_name ~ '^[A-Za-z0-9 .&''-]+$'""")
+        org_x = sorted({(strip_legal(r['a'].strip()), strip_legal(r['l'].strip())) for r in cur.fetchall()
+                        if len(tokens(r['a'])) >= 2 and len(tokens(r['l'])) >= 2})
+        import gold_set_v2
+        v2c = gold_set_v2.build(B, rnd, {
+            'units': units, 'translit': translit, 'eg_latin': eg_latin, 'tokens': tokens,
+            'four_lat': four_lat, 'xs': xs, 'lat': lat, 'org_ar': org_ar, 'org_lat': org_lat, 'org_x': org_x,
+            'ar_names': ar_names, 'common': AR_COMMON_FIRST, 'lookalike': AR_LOOKALIKE, 'EG_LATIN': EG_LATIN})
+        print(f'v2 categories: {v2c}', file=sys.stderr)
+
     # tie together the Arabic and Latin names of one international record, and names that are the same
     # name with one element more or less, before choosing the holdout
-    for a_, l_ in xs:
+    for a_, l_ in xs + org_x:
         B.union(a_, l_)
     full = {tuple(tokens(n)): n for n in ar_names}
     for t, n in full.items():

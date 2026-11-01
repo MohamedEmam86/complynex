@@ -6076,3 +6076,78 @@ def _http_only(url):
     """A link from list / media data is rendered only when it is http(s); otherwise '#'."""
     u = str(url or '').strip()
     return u if u.lower().startswith(('http://', 'https://')) else '#'
+
+
+# ==== P5-5 (p5-gold): monthly screening drift report ============================================
+def _drift_conn_q():
+    from screening import list_versions as LV
+    conn = LV.connect()
+
+    def q(sql, params):
+        c = conn.cursor()
+        c.execute(sql, params)
+        rows = c.fetchall()
+        conn.rollback()
+        return rows
+    return conn, q
+
+
+def _drift_month(v):
+    import re as _re
+    v = (v or '').strip()[:7]
+    return v if _re.match(r'^20\d\d-(0[1-9]|1[0-2])$', v) else None
+
+
+@screening_bp.route('/reports/drift')
+@login_required
+@permission_required('screening', level='view')
+def drift_report():
+    """P5-5: the monthly drift report (lists, hits, false-positive rates, INCOMPLETE rate,
+    Gold Set and end-to-end quality), month against month. MLRO / admin only."""
+    from screening import drift as D
+    if not _rep_team_view():
+        flash(gettext('Only the MLRO can see the drift report.'), 'warning')
+        return redirect(url_for('screening.team_report'))
+    months = query_db("""SELECT to_char(month, 'YYYY-MM') AS month, jsonb_array_length(alerts) AS alerts,
+                                created_at, created_by FROM screening_drift_reports ORDER BY month DESC LIMIT 36""") or []
+    month = _drift_month(request.args.get('month')) or (months[0]['month'] if months else None)
+    metrics, alerts, prev = None, [], None
+    if month:
+        conn, _q = _drift_conn_q()
+        try:
+            metrics, alerts = D.load(conn, month)
+            prev, _ = D.load(conn, D.month_before(month))
+        finally:
+            conn.close()
+    if metrics and request.args.get('export') == 'excel':
+        data = D.workbook(month, metrics, alerts or [], tr=gettext)
+        _audit('Screening drift report exported', None, f'month {month}; {len(alerts or [])} alert(s)')
+        return send_file(io.BytesIO(data), mimetype=_XLSX, as_attachment=True,
+                         download_name=f'screening_drift_{month}.xlsx')
+    return render_template('screening/drift_report.html', months=months, month=month, m=metrics,
+                           alerts=alerts or [], prev=prev or {}, default_month=D.previous_month())
+
+
+@screening_bp.route('/reports/drift/run', methods=['POST'])
+@login_required
+@permission_required('screening', level='view')
+def drift_report_run():
+    """Build (or rebuild) one month's drift report now. MLRO / admin only, audited."""
+    from screening import drift as D
+    if not _rep_team_view():
+        flash(gettext('Only the MLRO can see the drift report.'), 'warning')
+        return redirect(url_for('screening.team_report'))
+    month = _drift_month(request.form.get('month')) or D.previous_month()
+    conn, q = _drift_conn_q()
+    try:
+        _m, al = D.run(conn, q, month, created_by=current_user.get_full_name())
+    except Exception as e:
+        logger.error('drift report %s failed: %s', month, e)
+        flash(gettext('The drift report could not be built.'), 'error')
+        return redirect(url_for('screening.drift_report'))
+    finally:
+        conn.close()
+    _audit('Screening drift report built', None, f'month {month}; {len(al)} alert(s)')
+    flash(gettext('Drift report built for %(m)s: %(n)s alert(s).', m=month, n=len(al)), 'success')
+    return redirect(url_for('screening.drift_report', month=month))
+# ==== end P5-5 ==================================================================================
