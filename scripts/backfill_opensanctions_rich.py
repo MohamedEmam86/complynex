@@ -53,7 +53,8 @@ sys.path.insert(0, BASE)
 
 PROD_BASE = '/var/www/complynex'
 SOURCES = ('opensanctions', 'opensanctions_pep')
-STATE = '/var/backups/complynex/os_rich_backfill_state.json'
+# the backfill runs as the app user, which cannot write into /var/backups/complynex (root 755)
+STATE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs', 'os_rich_backfill_state.json')
 PROFILE_COLS = ('date_of_birth', 'year_of_birth', 'nationality', 'gender', 'place_of_birth', 'passport_numbers',
                 'national_id_numbers', 'addresses', 'properties', 'first_seen')
 OTHER_COLS = ('full_name', 'original_name', 'entity_type', 'dataset', 'topics', 'aliases', 'details',
