@@ -1,0 +1,11 @@
+[Unit]
+Description=ComplyNex monthly screening drift report (P5-5)
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+User=complynex
+WorkingDirectory=/var/www/complynex
+EnvironmentFile=/var/www/complynex/.env
+ExecStart=/var/www/complynex/venv/bin/python scripts/screening_drift_report.py
+TimeoutStartSec=30min

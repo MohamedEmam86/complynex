@@ -41986,6 +41986,138 @@ msgstr ""
 msgid "%(n)s failed rows will be screened again."
 msgstr "سيُعاد فحص %(n)s من الصفوف التي فشلت."
 
+msgid "Only the MLRO can see the drift report."
+msgstr "تقرير الانحراف متاح لمسؤول الإبلاغ عن غسل الأموال فقط."
+
+msgid "The drift report could not be built."
+msgstr "تعذر إعداد تقرير الانحراف."
+
+msgid "Drift report built for %(m)s: %(n)s alert(s)."
+msgstr "تم إعداد تقرير الانحراف لشهر %(m)s: %(n)s تنبيه."
+
+msgid "Screening drift report"
+msgstr "تقرير انحراف الفحص"
+
+msgid ""
+"Once a month the screening figures are compared with the month before: list "
+"updates, hits and false-positive rates per list, INCOMPLETE screenings, the "
+"Gold Set and the end-to-end quality runs. The MLRO is alerted when a figure "
+"moves beyond its limit."
+msgstr ""
+"مرة كل شهر تُقارن أرقام الفحص بالشهر السابق: تحديثات القوائم، والنتائج ونسبة"
+" التنبيهات الخاطئة لكل قائمة، والفحوصات غير المكتملة، والـ Gold Set، "
+"واختبارات الجودة الشاملة. يتم تنبيه مسؤول الإبلاغ إذا تجاوز أي رقم الحد "
+"المسموح."
+
+msgid "alerts"
+msgstr "تنبيهات"
+
+msgid "Build / rebuild the report for"
+msgstr "إعداد / إعادة إعداد التقرير لشهر"
+
+msgid "Build now"
+msgstr "إعداد الآن"
+
+msgid ""
+"No drift report yet. The report is built automatically on the 2nd of every "
+"month, or now with the button above."
+msgstr ""
+"لا يوجد تقرير انحراف بعد. يتم إعداد التقرير تلقائياً يوم 2 من كل شهر، أو "
+"الآن من الزر أعلاه."
+
+msgid "No figure moved beyond its limit this month."
+msgstr "لم يتجاوز أي رقم الحد المسموح هذا الشهر."
+
+msgid "Screenings"
+msgstr "الفحوصات"
+
+msgid "with hits"
+msgstr "بها نتائج"
+
+msgid "INCOMPLETE screenings"
+msgstr "فحوصات غير مكتملة"
+
+msgid "screenings"
+msgstr "فحص"
+
+msgid "End-to-end recall (average)"
+msgstr "نسبة الاكتشاف في الاختبار الشامل (متوسط)"
+
+msgid "runs"
+msgstr "مرات تشغيل"
+
+msgid "lowest"
+msgstr "الأدنى"
+
+msgid "Average highest score"
+msgstr "متوسط أعلى درجة"
+
+msgid "Hits by list"
+msgstr "النتائج حسب القائمة"
+
+msgid "Hits by list category"
+msgstr "النتائج حسب فئة القائمة"
+
+msgid "Average score"
+msgstr "متوسط الدرجة"
+
+msgid "Gold Set"
+msgstr "الـ Gold Set"
+
+msgid "Runs"
+msgstr "مرات التشغيل"
+
+msgid "Core misses"
+msgstr "الأسماء الفائتة (الأساسية)"
+
+msgid "Core false alerts"
+msgstr "التنبيهات الخاطئة (الأساسية)"
+
+msgid "Extended misses"
+msgstr "الأسماء الفائتة (الموسعة)"
+
+msgid "Extended false alerts"
+msgstr "التنبيهات الخاطئة (الموسعة)"
+
+msgid "No Gold Set run this month."
+msgstr "لم يتم تشغيل الـ Gold Set هذا الشهر."
+
+msgid "List updates"
+msgstr "تحديثات القوائم"
+
+msgid "Delisted"
+msgstr "مشطوب"
+
+msgid "Relisted"
+msgstr "أعيد إدراجه"
+
+msgid "Generated at"
+msgstr "تاريخ الإعداد"
+
+msgid "Figures in brackets are the change against the month before."
+msgstr "الأرقام بين الأقواس هي التغير مقارنة بالشهر السابق."
+
+msgid "Core miss %"
+msgstr "الأسماء الفائتة الأساسية %"
+
+msgid "Core false alerts %"
+msgstr "التنبيهات الخاطئة الأساسية %"
+
+msgid "Extended miss %"
+msgstr "الأسماء الفائتة الموسعة %"
+
+msgid "Extended false alerts %"
+msgstr "التنبيهات الخاطئة الموسعة %"
+
+msgid "Failures"
+msgstr "مرات الفشل"
+
+msgid "Delisted %"
+msgstr "نسبة المشطوب %"
+
+msgid "end-to-end"
+msgstr "الاختبار الشامل"
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 
