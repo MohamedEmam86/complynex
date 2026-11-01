@@ -1188,7 +1188,8 @@ class ComplyNexScreeningEngine:
             from database import tenancy as _tenancy
             _tid = tenant_id if tenant_id is not None else _tenancy.current_tenant_id()
             self._cx_tenant = _tid
-            _tenancy.bind(getattr(self.db_conn, '_conn', self.db_conn), _tid)
+            if _tenancy.enforced():   # flag off: no extra DB round trip per screening
+                _tenancy.bind(getattr(self.db_conn, '_conn', self.db_conn), _tid)
         except Exception as _e:
             logger.warning(f'tenant bind skipped: {_e}')
         # tier thresholds in force (screening_config, set by the MLRO; cached 60 s)

@@ -17,8 +17,9 @@ each screening). The screening lists stay SHARED: ``screening_watchlist`` rows w
 with a tenant_id are that tenant's private internal-list copies.
 
 Everything here is inert until ``TENANCY_ENFORCED=1``:
-  * with the flag off, bind() still sets the setting (harmless: no table has RLS enabled)
-    and the ES filter is not added, so behaviour is exactly as before;
+  * with the flag off, the request / pool / engine paths do not call bind() at all (no extra
+    DB round trip; bind() itself still works for scripts and tests) and the ES filter is not
+    added, so behaviour is exactly as before;
   * the schema changes are produced by ``scripts/tenancy_sql.py`` and applied by hand
     (see docs/TENANCY.md), never by deploy.sh.
 
@@ -115,7 +116,7 @@ def set_request_tenant(tenant_id):
     from flask import g
     g.tenant_id = _as_int(tenant_id)
     db = g.get('db')
-    if db is not None:
+    if db is not None and enforced():
         bind(getattr(db, '_conn', db), g.tenant_id)
 
 

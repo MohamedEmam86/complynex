@@ -224,7 +224,8 @@ class PgConnectionWrapper:
                 self._conn.rollback()  # Clean state before returning to pool
                 try:   # P6-1: a pooled connection never keeps the previous request's tenant
                     from database import tenancy as _tenancy
-                    _tenancy.unbind(self._conn)
+                    if _tenancy.enforced():      # flag off: no per-request DB round trip
+                        _tenancy.unbind(self._conn)
                 except Exception:
                     pass
                 self._pool.putconn(self._conn)
@@ -284,7 +285,8 @@ def get_db():
             # before_request hook; '' until then, which under enforcement sees no tenant rows)
             try:
                 from database import tenancy as _tenancy
-                _tenancy.bind(raw_conn, g.get('tenant_id'))
+                if _tenancy.enforced():          # flag off: no per-request DB round trip
+                    _tenancy.bind(raw_conn, g.get('tenant_id'))
             except Exception as _te:
                 logger.warning(f"tenant bind skipped: {_te}")
             g.db = PgConnectionWrapper(raw_conn, _connection_pool)

@@ -71,6 +71,24 @@ except ImportError:
     dashboard_service = None
 
 
+def release_screening_db_conn():
+    """Give the current greenlet's screening-engine DB connection back to its pool.
+    Cheap when the engine was never loaded or this greenlet holds no connection."""
+    try:
+        import sys as _sys
+        _sr = _sys.modules.get('screening.routes')
+        eng = getattr(_sr, '_engine_instance', None) if _sr is not None else None
+        if eng is None:
+            return False
+        inner = getattr(eng, 'local_engine', eng)
+        if getattr(inner, 'db_conn', None) is None:
+            return False
+        eng.close()
+        return True
+    except Exception:
+        return False
+
+
 def create_app(config_name=None):
     """
     Application factory pattern.
@@ -119,6 +137,14 @@ def create_app(config_name=None):
     # TENANCY_ENFORCED=1 and the schema phase of docs/TENANCY.md)
     from database import tenancy as _tenancy
     _tenancy.init_app(app)
+
+    # The screening engine keeps one pooled DB connection per greenlet (threading.local under
+    # gevent) and never gives it back when the request's greenlet ends: about 20 short-lived
+    # greenlets exhaust its pool. Return this request's connection when the request is done
+    # (UI, KYB, merchant / customer screening; the API paths already do it themselves).
+    @app.teardown_request
+    def _release_screening_db_conn(_exc=None):
+        release_screening_db_conn()
     
     # Babel Configuration
     app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
