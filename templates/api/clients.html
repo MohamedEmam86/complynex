@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('API clients') }} - {{ company_name }} CMS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <h1 class="h2">{{ _('API clients') }}</h1>
+  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('api_v1.v1_docs') }}">{{ _('API reference') }}</a>
+</div>
+
+{% if new_key %}
+<div class="alert alert-warning">
+  <strong>{{ _('Copy this key now: it will not be shown again.') }}</strong>
+  <div class="mt-2"><code class="fs-6 user-select-all">{{ new_key.key }}</code></div>
+  <div class="small mt-1">{{ new_key.name }}{% if new_key.rotated %} — {{ _('the previous key keeps working for %(h)s hours unless it was revoked.', h=grace) }}{% endif %}</div>
+</div>
+{% endif %}
+{% if new_secret %}
+<div class="alert alert-warning">
+  <strong>{{ _('Copy this webhook signing secret now: it will not be shown again.') }}</strong>
+  <div class="mt-2"><code class="fs-6 user-select-all">{{ new_secret.secret }}</code></div>
+  <div class="small mt-1">{{ new_secret.url }}</div>
+</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white fw-bold">{{ _('New client key') }}</div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('api_admin.key_create') }}" class="row g-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="col-md-4"><label class="form-label">{{ _('Client name') }}</label>
+        <input name="name" class="form-control" maxlength="120" required></div>
+      <div class="col-md-2"><label class="form-label">{{ _('Requests per minute') }}</label>
+        <input name="rate_limit" type="number" min="1" max="10000" value="100" class="form-control"></div>
+      <div class="col-md-3"><label class="form-label">{{ _('Expires on (optional)') }}</label>
+        <input name="expires_at" type="date" class="form-control"></div>
+      <div class="col-md-3 d-flex align-items-end">
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="sandbox" value="1" id="sbx">
+          <label class="form-check-label" for="sbx">{{ _('Sandbox key (synthetic results, no lists)') }}</label></div></div>
+      <div class="col-12"><label class="form-label">{{ _('Scopes') }}</label><div>
+        {% for s, label in scopes %}
+        <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="scopes"
+             value="{{ s }}" id="sc_{{ loop.index }}" {{ 'checked' if s in ('screening:read', 'screening:write') }}>
+          <label class="form-check-label" for="sc_{{ loop.index }}"><code>{{ s }}</code> {{ _(label) }}</label></div>
+        {% endfor %}</div></div>
+      <div class="col-md-9"><label class="form-label">{{ _('Notes') }}</label>
+        <input name="description" class="form-control" maxlength="500"></div>
+      <div class="col-md-3 d-flex align-items-end"><button class="btn btn-primary w-100">{{ _('Create key') }}</button></div>
+    </form>
+  </div>
+</div>
+
+{% for c in clients %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white fw-bold">{{ c.name }} <span class="text-muted small">#{{ c.id }}</span></div>
+  <div class="card-body p-0">
+    <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+      <thead class="bg-light"><tr><th class="ps-3">{{ _('Key') }}</th><th>{{ _('Scopes') }}</th><th>{{ _('Limit') }}</th>
+        <th>{{ _('State') }}</th><th>{{ _('Last used') }}</th><th>{{ _('Calls (24 h)') }}</th><th>{{ _('Created by') }}</th><th class="text-end pe-3">{{ _('Action') }}</th></tr></thead>
+      <tbody>
+      {% for k in c['keys'] %}
+      <tr>
+        <td class="ps-3"><code>{{ k.key_prefix }}…</code>{% if k.sandbox %} <span class="badge bg-info text-dark">{{ _('Sandbox') }}</span>{% endif %}
+          {% if k.rotated_from %}<div class="small text-muted">{{ _('rotated') }}</div>{% endif %}</td>
+        <td class="small">{{ k.scopes }}</td>
+        <td>{{ k.rate_limit }}/{{ _('min') }}</td>
+        <td>{% if not k.is_active %}<span class="badge bg-secondary">{{ _('Revoked') }}</span>
+            {% elif k.expires_at %}<span class="badge bg-warning text-dark">{{ _('Expires') }} {{ k.expires_at }}</span>
+            {% else %}<span class="badge bg-success">{{ _('Active') }}</span>{% endif %}</td>
+        <td class="small">{{ k.last_used_at or '—' }}</td>
+        <td>{{ k.calls_24h }}</td>
+        <td class="small">{{ k.created_by_name or '—' }}</td>
+        <td class="text-end pe-3">
+          {% if k.is_active %}
+          <form method="post" action="{{ url_for('api_admin.key_rotate', key_id=k.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-primary">{{ _('Rotate') }}</button></form>
+          <form method="post" action="{{ url_for('api_admin.key_rotate', key_id=k.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="revoke_now" value="1">
+            <button class="btn btn-sm btn-outline-warning">{{ _('Rotate and revoke now') }}</button></form>
+          <form method="post" action="{{ url_for('api_admin.key_revoke', key_id=k.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-danger">{{ _('Revoke') }}</button></form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody></table></div>
+    <div class="p-3 border-top">
+      <h6 class="mb-2">{{ _('Webhooks') }}</h6>
+      {% for h in c.get('hooks', []) %}
+      <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+        <div><code class="small">{{ h.url }}</code><div class="small text-muted">{{ h.events }}</div></div>
+        <div>{% if h.is_active %}
+          <form method="post" action="{{ url_for('api_admin.webhook_test', hook_id=h.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-secondary">{{ _('Send test event') }}</button></form>
+          <form method="post" action="{{ url_for('api_admin.webhook_disable', hook_id=h.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-danger">{{ _('Disable') }}</button></form>
+          {% else %}<span class="badge bg-secondary">{{ _('Disabled') }}</span>{% endif %}</div>
+      </div>
+      {% endfor %}
+      <form method="post" action="{{ url_for('api_admin.webhook_create') }}" class="row g-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="client_id" value="{{ c.id }}">
+        <div class="col-md-6"><input name="url" type="url" class="form-control form-control-sm" placeholder="https://…" required></div>
+        <div class="col-md-4">{% for e in events %}
+          <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="events" value="{{ e }}"
+               id="ev_{{ c.id }}_{{ loop.index }}" checked><label class="form-check-label small" for="ev_{{ c.id }}_{{ loop.index }}">{{ e }}</label></div>
+        {% endfor %}</div>
+        <div class="col-md-2"><button class="btn btn-sm btn-outline-primary w-100">{{ _('Add webhook') }}</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+{% else %}
+<p class="text-muted">{{ _('No API clients yet.') }}</p>
+{% endfor %}
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white fw-bold">{{ _('Webhook deliveries (latest 50)') }}</div>
+  <div class="card-body p-0"><div class="table-responsive"><table class="table table-sm mb-0">
+    <thead class="bg-light"><tr><th class="ps-3">#</th><th>{{ _('Client') }}</th><th>{{ _('Event') }}</th><th>{{ _('State') }}</th>
+      <th>{{ _('Attempts') }}</th><th>{{ _('Last answer') }}</th><th>{{ _('Created') }}</th><th>{{ _('Delivered / next try') }}</th></tr></thead>
+    <tbody>{% for d in deliveries %}
+      <tr><td class="ps-3">{{ d.id }}</td><td>#{{ d.client_id }}</td><td><code>{{ d.event }}</code></td>
+        <td><span class="badge {{ 'bg-success' if d.status == 'DELIVERED' else 'bg-danger' if d.status == 'DEAD' else 'bg-warning text-dark' }}">{{ _(d.status) }}</span></td>
+        <td>{{ d.attempts }}</td><td class="small">{{ d.last_status_code or '' }} {{ d.last_error or '' }}</td>
+        <td class="small">{{ d.created_at }}</td><td class="small">{{ d.delivered_at or d.next_attempt_at }}</td></tr>
+    {% else %}<tr><td colspan="8" class="text-muted ps-3">{{ _('No deliveries yet.') }}</td></tr>{% endfor %}</tbody>
+  </table></div></div>
+</div>
+{% endblock %}

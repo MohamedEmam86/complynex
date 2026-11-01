@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('API reference') }} - {{ company_name }} CMS{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom d-flex justify-content-between align-items-center">
+  <h1 class="h2">{{ _('API reference') }} <span class="text-muted fs-6">v1</span></h1>
+  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('api_v1.openapi_spec') }}">openapi.json</a>
+</div>
+<div class="card border-0 shadow-sm mb-3"><div class="card-body small">
+  <p class="mb-1"><strong>{{ _('Authentication') }}:</strong> <code>X-API-Key: &lt;key&gt;</code> — {{ _('keys are issued on the API clients page; each key has scopes and a rate limit per minute.') }}</p>
+  <p class="mb-1"><strong>{{ _('Idempotency') }}:</strong> <code>Idempotency-Key: &lt;unique value&gt;</code> {{ _('on POST: the same key and body within 24 hours returns the first response.') }}</p>
+  <p class="mb-1"><strong>{{ _('Request id') }}:</strong> <code>X-Request-Id</code> {{ _('is returned on every response (send your own to correlate).') }}</p>
+  <p class="mb-1"><strong>{{ _('Errors') }}:</strong> <code>{"success": false, "error": {"code", "message", "details"}, "request_id"}</code></p>
+  <p class="mb-1"><strong>{{ _('Incomplete screenings') }}:</strong> {{ _('when a source was unavailable the status is INCOMPLETE with the reasons — never CLEAR.') }}</p>
+  <p class="mb-1"><strong>{{ _('Webhooks') }}:</strong> {% for e in events %}<code>{{ e }}</code>{% if not loop.last %}, {% endif %}{% endfor %} —
+    {{ _('signed with') }} <code>X-ComplyNex-Signature: t=&lt;unix&gt;,v1=&lt;hex HMAC-SHA256 of "t.body"&gt;</code>; {{ _('retried with back-off for about two days.') }}</p>
+  <p class="mb-0"><strong>{{ _('Sandbox keys') }}:</strong> {% for k, v in sandbox_help.items() %}<code>{{ k }}</code> → {{ v }}{% if not loop.last %}; {% endif %}{% endfor %}.</p>
+</div></div>
+{% for path, ops in spec.paths.items() %}
+  {% for method, op in ops.items() %}
+  <div class="card border-0 shadow-sm mb-2"><div class="card-body py-2">
+    <span class="badge {{ 'bg-success' if method == 'get' else 'bg-primary' if method == 'post' else 'bg-danger' }} text-uppercase">{{ method }}</span>
+    <code class="ms-2">/api/v1{{ path }}</code> <span class="ms-2">{{ op.summary }}</span>
+    {% if op.deprecated %}<span class="badge bg-warning text-dark ms-2">{{ _('Deprecated') }}</span>{% endif %}
+    {% set sec = (op.security or [{}])[0] %}{% if sec.ApiKeyAuth %}<span class="text-muted small ms-2">{{ _('scope') }}: {{ sec.ApiKeyAuth|join(', ') }}</span>{% endif %}
+    {% if op.description %}<div class="small text-muted mt-1">{{ op.description }}</div>{% endif %}
+  </div></div>
+  {% endfor %}
+{% endfor %}
+{% endblock %}
