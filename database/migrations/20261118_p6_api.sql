@@ -2,6 +2,8 @@
 -- the client's own screenings, signed webhooks with a delivery log.
 BEGIN;
 
+-- never wait long for a lock on a busy table (a running request holds users / api_keys)
+SET lock_timeout = '5s';
 ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS client_id   INTEGER;
 ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS sandbox     BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS rotated_from INTEGER;

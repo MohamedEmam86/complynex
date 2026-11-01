@@ -59,6 +59,9 @@ def register(bp):
             pass
         logout_user()
         session.clear()
+        # logout_user() asked Flask-Login to delete the remember-me cookie, but clear() dropped
+        # that request; without it the cookie would sign the user straight back in
+        session['_remember'] = 'clear'
         try:
             from models.audit import AuditLog
             AuditLog.log(uid, 'Logout', 'Auth', None, 'Session ended: maximum session length reached',

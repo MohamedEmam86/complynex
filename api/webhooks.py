@@ -212,9 +212,33 @@ def emit_batch_completions(conn, store_factory=None):
 
 
 # --------------------------------------------------------------------------- delivering
+class _Resp:
+    def __init__(self, status_code):
+        self.status_code = status_code
+
+
 def _post(url, body_bytes, headers):
-    import requests
-    return requests.post(url, data=body_bytes, headers=headers, timeout=TIMEOUT, allow_redirects=False)
+    """POST pinned to the address that was checked: the name is resolved once, every address
+    must be public, and the TLS connection goes to that IP with the real host name for SNI,
+    certificate check and the Host header (no second lookup that DNS rebinding could change)."""
+    import certifi
+    import urllib3
+    from urllib.parse import urlparse
+    u = urlparse(url)
+    host, port = u.hostname, u.port or 443
+    ip = C.resolve_public_ip(host, port)
+    path = (u.path or '/') + (('?' + u.query) if u.query else '')
+    pool = urllib3.HTTPSConnectionPool(ip, port=port, server_hostname=host, assert_hostname=host,
+                                       cert_reqs='CERT_REQUIRED', ca_certs=certifi.where(),
+                                       timeout=urllib3.Timeout(total=TIMEOUT), retries=False, maxsize=1)
+    h = dict(headers)
+    h['Host'] = host if port == 443 else f'{host}:{port}'
+    try:
+        r = pool.urlopen('POST', path, body=body_bytes, headers=h, redirect=False,
+                         assert_same_host=False, preload_content=True)
+        return _Resp(r.status)
+    finally:
+        pool.close()
 
 
 def deliver_due(conn, limit=100, post=None, check_url=None):

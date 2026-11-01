@@ -116,9 +116,31 @@ def verify(secret, body_bytes, header, tolerance=300, now=None):
 
 
 def _ip_blocked(ip):
+    """Anything that is not a public internet address (private, loopback, link-local, CGNAT
+    100.64/10, documentation, multicast, reserved ...), also behind IPv4-mapped IPv6."""
     a = ipaddress.ip_address(ip)
-    return (a.is_private or a.is_loopback or a.is_link_local or a.is_multicast or a.is_reserved
-            or a.is_unspecified or (a.version == 6 and a.ipv4_mapped and _ip_blocked(str(a.ipv4_mapped))))
+    if a.version == 6 and a.ipv4_mapped:
+        return _ip_blocked(str(a.ipv4_mapped))
+    return (not a.is_global) or a.is_multicast
+
+
+def resolve_public_ip(host, port=443):
+    """Resolve once and return a public address to connect to; ValueError when the name
+    does not resolve or ANY of its addresses is internal."""
+    try:
+        ipaddress.ip_address(host)
+        ips = [host]
+    except ValueError:
+        try:
+            ips = [i[4][0] for i in socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)]
+        except Exception:
+            raise ValueError('the host name does not resolve')
+    if not ips:
+        raise ValueError('the host name does not resolve')
+    for ip in ips:
+        if _ip_blocked(ip):
+            raise ValueError('the host name points to an internal address')
+    return ips[0]
 
 
 def check_webhook_url(url, resolve=True):

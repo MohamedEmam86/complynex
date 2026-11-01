@@ -158,6 +158,14 @@ def idempotent(f):
                          (client, key, h)).fetchone()
         db.commit()
         if not ins:
+            # a request that died mid-way (worker killed) left an in-progress row: after 5 minutes
+            # the same request may take it over instead of getting 409 for 24 h
+            ins = db.execute("""UPDATE api_idempotency SET created_at = now(), request_hash = %s
+                                 WHERE client_id = %s AND idem_key = %s AND status_code IS NULL
+                                   AND request_hash = %s AND created_at < now() - interval '5 minutes'
+                                 RETURNING id""", (h, client, key, h)).fetchone()
+            db.commit()
+        if not ins:
             prev = dict(db.execute("""SELECT request_hash, status_code, response FROM api_idempotency
                                       WHERE client_id = %s AND idem_key = %s""", (client, key)).fetchone() or {})
             if prev.get('request_hash') != h:
@@ -552,6 +560,14 @@ def _persist_hits_in_background(sid, parties_to_save, user_id):
                     db.commit()
             except Exception:
                 logger.exception('[API] payment evidence save failed for %s', sid)
+            finally:
+                # this greenlet's engine connection goes back to the pool (else ~20 HOLD /
+                # BLOCK payments exhaust it)
+                try:
+                    from app import release_screening_db_conn
+                    release_screening_db_conn()
+                except Exception:
+                    pass
     try:
         import gevent
         gevent.spawn(run)

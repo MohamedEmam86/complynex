@@ -176,6 +176,24 @@ def unlock_user(user_id):
     return redirect(back if back.startswith('/admin/') else url_for('admin.access_review'))
 
 
+def _with_timeout(db, fn, seconds=15):
+    """Run a read-only integrity check with a statement timeout so a long audit trail can
+    never hold a web worker; the daily timer does the full check (scripts/audit_anchor.py)."""
+    try:
+        db.execute(f"SET statement_timeout = '{int(seconds)}s'")
+    except Exception:
+        pass
+    try:
+        return fn()
+    finally:
+        try:
+            db.rollback()
+            db.execute("RESET statement_timeout")
+            db.commit()
+        except Exception:
+            pass
+
+
 @admin_bp.route('/security/audit-chain')
 @login_required
 def audit_chain():
@@ -184,7 +202,7 @@ def audit_chain():
     from database.db import get_db
     from utils import audit_chain as AC
     db = get_db()
-    res = AC.check(db)
+    res = _with_timeout(db, lambda: AC.check(db))
     try:
         anchors = AC.recent_anchors(db)
     except Exception:
@@ -204,7 +222,8 @@ def audit_chain_anchor():
     from database.db import get_db
     from utils import audit_chain as AC
     note = (request.form.get('note') or '').strip()[:500] or 'manual check'
-    aid, res = AC.take_anchor(get_db(), current_user.id, note)
+    _db = get_db()
+    aid, res = _with_timeout(_db, lambda: AC.take_anchor(_db, current_user.id, note), seconds=30)
     AuditLog.log(current_user.id, 'Audit Chain Check', 'Security', aid,
                  f"Audit trail checked and anchored (anchor {aid}): {'intact' if res['ok'] else 'NOT INTACT'}", _ip())
     if aid is None:

@@ -37,34 +37,35 @@ def _int_env(name, default):
         return default
 
 
-def grace_days(role):
+def grace_days(role, override=None):
+    if override is True:      # MFA required for this user by an administrator: no grace
+        return 0
     if role in PRIVILEGED_ROLES:
         return _int_env('MFA_ENROLL_GRACE_DAYS_PRIVILEGED', 0)
     return _int_env('MFA_ENROLL_GRACE_DAYS', 7)
 
 
-def grace_deadline(prompted_at, role):
-    """When the grace period ends (None = no grace at all)."""
-    days = grace_days(role)
-    if days <= 0:
+def grace_deadline(prompted_at, role, override=None):
+    """When the grace period ends (None = no grace at all). No recorded prompt time (column
+    missing / not written) means no grace: enrol now, as before P6-6."""
+    days = grace_days(role, override)
+    if days <= 0 or prompted_at is None:
         return None
-    if prompted_at is None:
-        prompted_at = datetime.now(timezone.utc)
     if prompted_at.tzinfo is None:
         prompted_at = prompted_at.replace(tzinfo=timezone.utc)
     return prompted_at + timedelta(days=days)
 
 
-def can_defer(prompted_at, role, now=None):
-    deadline = grace_deadline(prompted_at, role)
+def can_defer(prompted_at, role, now=None, override=None):
+    deadline = grace_deadline(prompted_at, role, override)
     if deadline is None:
         return False
     now = now or datetime.now(timezone.utc)
     return now < deadline
 
 
-def days_left(prompted_at, role, now=None):
-    deadline = grace_deadline(prompted_at, role)
+def days_left(prompted_at, role, now=None, override=None):
+    deadline = grace_deadline(prompted_at, role, override)
     if deadline is None:
         return 0
     now = now or datetime.now(timezone.utc)

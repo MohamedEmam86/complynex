@@ -42562,6 +42562,16 @@ msgstr ""
 "لو مصدر ماكانش متاح الحالة بتبقى INCOMPLETE مع الأسباب — عمرها ما تطلع "
 "CLEAR."
 
+#, python-format
+msgid ""
+"The drift report for %(m)s is already being built; refresh in a minute."
+msgstr "تقرير الانحراف لشهر %(m)s جاري إعداده بالفعل؛ حدّث الصفحة بعد دقيقة."
+
+#, python-format
+msgid ""
+"The drift report for %(m)s is being built; refresh this page in a minute."
+msgstr "جاري إعداد تقرير الانحراف لشهر %(m)s؛ حدّث الصفحة بعد دقيقة."
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

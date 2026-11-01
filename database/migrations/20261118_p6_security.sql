@@ -6,6 +6,8 @@
 --  * access_reviews: record of periodic user-access reviews
 BEGIN;
 
+-- never wait long for a lock on a busy table (a running request holds users / api_keys)
+SET lock_timeout = '5s';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS lock_count INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_prompted_at TIMESTAMPTZ;
 

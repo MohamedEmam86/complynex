@@ -195,7 +195,7 @@ def init_app(app):
             tid = current_tenant_id()
             g.tenant_id = tid
             db = g.get('db')
-            if db is not None:
+            if db is not None and enforced():   # flag off: no DB round trip per request
                 bind(getattr(db, '_conn', db), tid)
         except Exception as e:
             logger.debug('tenant bind skipped: %s', e)

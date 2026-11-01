@@ -6079,9 +6079,15 @@ def _http_only(url):
 
 
 # ==== P5-5 (p5-gold): monthly screening drift report ============================================
-def _drift_conn_q():
+def _drift_conn_q(timeout_s=60):
     from screening import list_versions as LV
     conn = LV.connect()
+    try:
+        c0 = conn.cursor()
+        c0.execute(f"SET statement_timeout = '{int(timeout_s)}s'")
+        conn.commit()
+    except Exception:
+        conn.rollback()
 
     def q(sql, params):
         c = conn.cursor()
@@ -6138,16 +6144,31 @@ def drift_report_run():
         flash(gettext('Only the MLRO can see the drift report.'), 'warning')
         return redirect(url_for('screening.team_report'))
     month = _drift_month(request.form.get('month')) or D.previous_month()
-    conn, q = _drift_conn_q()
-    try:
-        _m, al = D.run(conn, q, month, created_by=current_user.get_full_name())
-    except Exception as e:
-        logger.error('drift report %s failed: %s', month, e)
-        flash(gettext('The drift report could not be built.'), 'error')
-        return redirect(url_for('screening.drift_report'))
-    finally:
-        conn.close()
-    _audit('Screening drift report built', None, f'month {month}; {len(al)} alert(s)')
-    flash(gettext('Drift report built for %(m)s: %(n)s alert(s).', m=month, n=len(al)), 'success')
+    if _DRIFT_RUNNING.get(month):
+        flash(gettext('The drift report for %(m)s is already being built; refresh in a minute.', m=month), 'info')
+        return redirect(url_for('screening.drift_report', month=month))
+    who = current_user.get_full_name()
+    _DRIFT_RUNNING[month] = True
+
+    def _build():
+        # in the background: the queries (a count over the 2.3M list records among them) must
+        # not hold a web worker; each statement is capped at 60 s
+        try:
+            conn, q = _drift_conn_q()
+            try:
+                D.run(conn, q, month, created_by=who)
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.error('drift report %s failed: %s', month, e)
+        finally:
+            _DRIFT_RUNNING.pop(month, None)
+    import threading as _th
+    _th.Thread(target=_build, daemon=True).start()
+    _audit('Screening drift report build started', None, f'month {month}')
+    flash(gettext('The drift report for %(m)s is being built; refresh this page in a minute.', m=month), 'success')
     return redirect(url_for('screening.drift_report', month=month))
+
+
+_DRIFT_RUNNING = {}   # month -> True while a build-now runs in this worker
 # ==== end P5-5 ==================================================================================

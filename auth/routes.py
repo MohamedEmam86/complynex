@@ -194,7 +194,8 @@ def mfa_setup():
 
     from auth import mfa_policy as _mp
     prompted_at = _mp.mark_prompted(user_id)
-    defer_ok = _mp.can_defer(prompted_at, user.role)
+    _mfa_ovr = getattr(user, 'mfa_required_override', None)
+    defer_ok = _mp.can_defer(prompted_at, user.role, override=_mfa_ovr)
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -210,7 +211,7 @@ def mfa_setup():
             login_user(user, remember=remember)
             session.permanent = True
             User.update_last_login(user_id)
-            left = _mp.days_left(prompted_at, user.role)
+            left = _mp.days_left(prompted_at, user.role, override=_mfa_ovr)
             AuditLog.log(user_id, 'MFA Deferred', 'Auth', None,
                          f'MFA enrolment postponed (grace period, {left} day(s) left)', request.remote_addr)
             flash(_('Please set up two-factor authentication soon: %(d)s day(s) left before it becomes required.', d=left),
@@ -251,7 +252,7 @@ def mfa_setup():
     img.save(buf, format='PNG')
     qr_b64 = base64.b64encode(buf.getvalue()).decode()
     return render_template('auth/mfa_setup.html', qr_b64=qr_b64, secret=secret, user=user,
-                           defer_ok=defer_ok, days_left=_mp.days_left(prompted_at, user.role))
+                           defer_ok=defer_ok, days_left=_mp.days_left(prompted_at, user.role, override=_mfa_ovr))
 
 
 @auth_bp.route('/mfa/verify', methods=['GET', 'POST'])

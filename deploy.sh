@@ -100,6 +100,11 @@ if restart; then
       git -C "$DEMO" -c safe.directory='*' ls-files -z | (cd "$DEMO" && xargs -0 chown complynex:complynex) || true
       for m in $MIGR; do
         sudo -u postgres psql -d complynex_demo -v ON_ERROR_STOP=1 -q < "$APP/$m" || echo "WARNING: demo migration failed: $m"
+        # the template the demo scratch slots are copied from (/usr/local/sbin/demo-scratch);
+        # slots made before this deploy are re-created from it when needed
+        if sudo -u postgres psql -Atc "SELECT 1 FROM pg_database WHERE datname = 'complynex_demo_base'" | grep -q 1; then
+          sudo -u postgres psql -d complynex_demo_base -v ON_ERROR_STOP=1 -q < "$APP/$m" || echo "WARNING: demo base migration failed: $m"
+        fi
       done
       systemctl restart complynex-demo || true
       systemctl is-enabled --quiet complynex-demo-ekyc-worker 2>/dev/null && systemctl restart complynex-demo-ekyc-worker || true
