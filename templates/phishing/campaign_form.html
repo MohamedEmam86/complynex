@@ -15,7 +15,7 @@
           <div class="card-body">
             <div class="mb-3">
               <label class="form-label fw-semibold">{{ _('Campaign Name') }} <span class="text-danger">*</span></label>
-              <input type="text" name="name" class="form-control" placeholder="{{ _('e.g. Carrefour Coupon Simulation — June 2026') }}" required>
+              <input type="text" name="name" class="form-control" placeholder="{{ _('e.g. Coupon simulation — June 2026') }}" required>
               <div class="form-text">{{ _('Internal name. Not shown to employees.') }}</div>
             </div>
             <div class="mb-3">
@@ -44,7 +44,7 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">{{ _('Company Name Being Impersonated') }}</label>
-                <input type="text" id="gen-company-name" class="form-control" placeholder="{{ _('e.g. Btech, Carrefour, Talabat') }}">
+                <input type="text" id="gen-company-name" class="form-control" placeholder="{{ _('e.g. a well-known local retailer') }}">
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">{{ _('Company Logo (optional)') }}</label>
@@ -106,7 +106,7 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label fw-semibold">{{ _('Sender Display Name') }}</label>
-                <input type="text" name="sender_display" class="form-control" value="Carrefour Egypt" required>
+                <input type="text" name="sender_display" class="form-control" value="" placeholder="{{ _('e.g. IT Service Desk') }}" required>
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">{{ _('Email Subject') }} <span class="text-danger">*</span></label>

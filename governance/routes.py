@@ -1256,3 +1256,12 @@ from governance.fp import routes as _fp_routes  # noqa: E402,F401  (fit & proper
 from governance import meetings as _meeting_routes  # noqa: E402,F401  (minutes, resolutions, actions)
 from governance import labels as _labels  # noqa: E402
 _labels.register(governance_bp)
+
+
+# Phase 7 (H3): composition checks of the board and every committee, from each committee's own requirements
+@governance_bp.route('/composition')
+@login_required
+@permission_required('governance')
+def composition():
+    from governance import composition as COMP
+    return render_template('governance/composition.html', data=COMP.build())
