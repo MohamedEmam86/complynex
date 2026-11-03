@@ -20,3 +20,10 @@ from flask import Blueprint
 phishing_bp = Blueprint('phishing', __name__, url_prefix='/phishing')
 
 from phishing import routes  # noqa: E402, F401
+
+# the signed authorisation of a campaign is stored with the generic attachment widget
+try:
+    from attachments.routes import register_module as _register_attachments
+    _register_attachments('phishing')
+except Exception:  # pragma: no cover - attachments module missing
+    pass

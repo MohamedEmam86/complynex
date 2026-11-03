@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Written authorisation') }} — {{ campaign.name }} — {{ super() }}{% endblock %}
+{% block content %}
+<div class="container-fluid" dir="{{ 'rtl' if get_locale()|string == 'ar' else 'ltr' }}">
+  <div class="d-flex align-items-center gap-3 mb-3">
+    <a href="{{ url_for('phishing.campaign_detail', campaign_id=campaign.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+    <div>
+      <h1 class="h4 mb-0"><i class="bi bi-file-earmark-lock2 me-2"></i>{{ _('Written authorisation') }}</h1>
+      <small class="text-muted">{{ campaign.name }}</small>
+    </div>
+  </div>
+
+  <div class="alert alert-info small">
+    {{ _('A phishing simulation targets real people. It can only be sent when the organisation has authorised it in writing: who authorised it, for which organisation, scope and dates, which email domains may be targeted, and the signed document. ComplyNex checks all of this when the campaign is sent.') }}
+  </div>
+
+  {% if problems %}
+  <div class="alert alert-danger">
+    <div class="fw-bold mb-1"><i class="bi bi-x-octagon me-1"></i>{{ _('This campaign cannot be sent yet:') }}</div>
+    <ul class="mb-0">{% for code, msg in problems %}<li>{{ _(msg) }}</li>{% endfor %}</ul>
+  </div>
+  {% else %}
+  <div class="alert alert-success"><i class="bi bi-check-circle me-1"></i>{{ _('Authorisation complete and valid today for all recipients.') }}</div>
+  {% endif %}
+
+  {% if auth and auth.revoked_at %}
+  <div class="alert alert-warning small">{{ _('Revoked on %(d)s: %(r)s', d=auth.revoked_at.strftime('%Y-%m-%d %H:%M'), r=auth.revoke_reason or '') }}</div>
+  {% endif %}
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+      {% set ro = campaign.status == 'sent' %}
+      <form method="POST" action="{{ url_for('phishing.campaign_authorisation', campaign_id=campaign.id) }}" class="row g-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-6"><label class="form-label">{{ _('Organisation') }}</label>
+          <input class="form-control" name="organisation" value="{{ auth.organisation if auth and auth.organisation }}" {{ 'disabled' if ro }} required></div>
+        <div class="col-md-3"><label class="form-label">{{ _('Authorised by (name)') }}</label>
+          <input class="form-control" name="authorised_by_name" value="{{ auth.authorised_by_name if auth and auth.authorised_by_name }}" {{ 'disabled' if ro }} required></div>
+        <div class="col-md-3"><label class="form-label">{{ _('Title / role') }}</label>
+          <input class="form-control" name="authorised_by_title" value="{{ auth.authorised_by_title if auth and auth.authorised_by_title }}" {{ 'disabled' if ro }} required></div>
+        <div class="col-md-12"><label class="form-label">{{ _('Scope (departments, scenarios, what may and may not be done)') }}</label>
+          <textarea class="form-control" name="scope" rows="3" {{ 'disabled' if ro }} required>{{ auth.scope if auth and auth.scope }}</textarea></div>
+        <div class="col-md-6"><label class="form-label">{{ _('Email domains that may be targeted (comma-separated)') }}</label>
+          <input class="form-control" name="allowed_domains" placeholder="example.com, branch.example.com" value="{{ auth.allowed_domains if auth and auth.allowed_domains }}" {{ 'disabled' if ro }} required></div>
+        <div class="col-md-2"><label class="form-label">{{ _('Signed on') }}</label>
+          <input type="date" class="form-control" name="authorised_on" value="{{ auth.authorised_on if auth and auth.authorised_on }}" {{ 'disabled' if ro }}></div>
+        <div class="col-md-2"><label class="form-label">{{ _('Valid from') }}</label>
+          <input type="date" class="form-control" name="valid_from" value="{{ auth.valid_from if auth and auth.valid_from }}" {{ 'disabled' if ro }} required></div>
+        <div class="col-md-2"><label class="form-label">{{ _('Valid to') }}</label>
+          <input type="date" class="form-control" name="valid_to" value="{{ auth.valid_to if auth and auth.valid_to }}" {{ 'disabled' if ro }} required></div>
+        <div class="col-md-12"><label class="form-label">{{ _('Notes') }}</label>
+          <textarea class="form-control" name="notes" rows="2" {{ 'disabled' if ro }}>{{ auth.notes if auth and auth.notes }}</textarea></div>
+        {% if not ro %}<div class="col-12"><button class="btn btn-primary"><i class="bi bi-save me-1"></i>{{ _('Save authorisation') }}</button></div>{% endif %}
+      </form>
+    </div>
+  </div>
+
+  {% if auth %}
+  <h2 class="h6">{{ _('Signed authorisation document (required)') }}</h2>
+  {% include 'partials/attachment_widget.html' %}
+  {% if not auth.revoked_at and campaign.status != 'sent' %}
+  <form method="POST" action="{{ url_for('phishing.revoke_authorisation', campaign_id=campaign.id) }}" class="d-flex gap-2 mt-3"
+        data-confirm="{{ _('Revoke this authorisation?') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input class="form-control form-control-sm" name="reason" placeholder="{{ _('Reason for revoking') }}" required>
+    <button class="btn btn-sm btn-outline-danger text-nowrap">{{ _('Revoke') }}</button>
+  </form>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

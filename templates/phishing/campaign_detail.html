@@ -18,15 +18,25 @@
     <div class="d-flex gap-2">
       {% if campaign.status != 'sent' and current_user.can_edit('phishing') %}
       <a href="{{ url_for('phishing.manage_recipients', campaign_id=campaign.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-person-plus me-1"></i> {{ _('Add Recipients') }}</a>
+      <a href="{{ url_for('phishing.campaign_authorisation', campaign_id=campaign.id) }}" class="btn btn-sm {{ 'btn-outline-success' if not auth_problems else 'btn-outline-warning' }}"><i class="bi bi-file-earmark-lock2 me-1"></i> {{ _('Written authorisation') }}</a>
       <form method="POST" action="{{ url_for('phishing.send_campaign', campaign_id=campaign.id) }}"
-            data-confirm="Send phishing simulation to {{ recipients|length }} recipients?">
+            data-confirm="{{ _('Send phishing simulation to %(n)s recipients?', n=recipients|length) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="btn btn-danger btn-sm" {% if not recipients %}disabled{% endif %}><i class="bi bi-send me-1"></i> {{ _('Send Campaign') }}</button>
+        <button class="btn btn-danger btn-sm" {% if not recipients or auth_problems %}disabled{% endif %}><i class="bi bi-send me-1"></i> {{ _('Send Campaign') }}</button>
       </form>
       {% endif %}
     </div>
   </div>
 
+  {% if campaign.status != 'sent' and auth_problems %}
+  <div class="alert alert-warning small">
+    <i class="bi bi-file-earmark-lock2 me-1"></i><strong>{{ _('Sending is blocked until a written authorisation is recorded:') }}</strong>
+    {% for code, msg in auth_problems[:4] %}{{ _(msg) }}{{ ' · ' if not loop.last }}{% endfor %}
+    <a href="{{ url_for('phishing.campaign_authorisation', campaign_id=campaign.id) }}">{{ _('Record it') }}</a>
+  </div>
+  {% elif auth %}
+  <div class="small text-muted mb-2"><i class="bi bi-file-earmark-check me-1"></i>{{ _('Authorised by %(n)s (%(t)s, %(o)s), valid %(f)s to %(to)s.', n=auth.authorised_by_name, t=auth.authorised_by_title, o=auth.organisation, f=auth.valid_from, to=auth.valid_to) }}</div>
+  {% endif %}
   {% set total = stats.total or 0 %}
   {% set clicked = stats.clicked or 0 %}
   {% set submitted = stats.submitted or 0 %}
@@ -107,9 +117,8 @@
                   {% else %}<span class="badge bg-warning text-dark me-1">{{ _('CLICKED') }}</span>{% endif %}
                   <span class="small fw-semibold">{{ e.recipient_name }}</span>
                   <div class="text-muted" style="font-size:0.7rem;">{{ e.recipient_email }}</div>
-                  {% if e.event_type == 'submit' and e.extra_data %}
-                  {% set data = e.extra_data | from_json %}
-                  <div class="text-danger" style="font-size:0.7rem;">Email: {{ data.get('email', '—') }}</div>
+                  {% if e.event_type == 'submit' %}
+                  <div class="text-danger small">{{ _('Entered data on the fake form (values are not stored).') }}</div>
                   {% endif %}
                 </div>
                 <div class="text-muted text-end" style="font-size:0.65rem;white-space:nowrap;">

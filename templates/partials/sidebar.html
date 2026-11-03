@@ -277,7 +277,7 @@
     {% endif %}
 
     {# ======== Customers & Merchants — 6 links ======== #}
-    {% if (current_user.can_view('screening') or current_user.can_view('aml')) or (current_user.can_view('merchant_kyc')) or (current_user.can_view('ekyc')) %}
+    {% if (current_user.can_view('screening') or current_user.can_view('aml')) or (current_user.can_view('merchant_kyc')) or ((current_user.can_view('ekyc') and (ekyc_enabled is not defined or ekyc_enabled()))) %}
     <li class="cnx-nav__item" data-area="customers">
       <button class="cnx-nav__toggle" type="button" aria-expanded="false">
         <i class="bi bi-people cnx-nav__icon"></i>
@@ -324,7 +324,7 @@
           </ul></div>
         </li>
         {% endif %}
-        {% if (current_user.can_view('merchant_kyc')) or (current_user.can_view('ekyc')) %}
+        {% if (current_user.can_view('merchant_kyc')) or ((current_user.can_view('ekyc') and (ekyc_enabled is not defined or ekyc_enabled()))) %}
         <li class="cnx-nav__item cnx-nav__item--module">
           <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
             <i class="bi bi-shop cnx-nav__icon"></i>
@@ -347,7 +347,7 @@
               </a>
             </li>
             {% endif %}
-            {% if current_user.can_view('ekyc') %}
+            {% if (current_user.can_view('ekyc') and (ekyc_enabled is not defined or ekyc_enabled())) %}
             <li class="cnx-nav__subitem">
               <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('ekyc.dashboard') }}">
                 <span class="cnx-nav__label">{{ _('eKYC') }}</span>

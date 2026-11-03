@@ -18,3 +18,32 @@
 from flask import Blueprint
 
 ekyc_bp = Blueprint('ekyc', __name__, url_prefix='/ekyc')
+
+
+def ekyc_enabled():
+    """Is the optional eKYC package switched on? (Content packs; no recorded state = on.)"""
+    try:
+        from flask import g, has_app_context
+        from regcontrols import packs as _packs
+        if has_app_context():
+            state = getattr(g, '_rc_pack_state', None)
+            if state is None:
+                state = g._rc_pack_state = _packs._state()
+        else:
+            state = _packs._state()
+        row = state.get('ekyc')
+        return True if row is None else bool(row.get('enabled'))
+    except Exception:
+        return True          # never lock people out of eKYC because the switch could not be read
+
+
+@ekyc_bp.before_request
+def _ekyc_package_guard():
+    if not ekyc_enabled():
+        from flask import abort
+        abort(404)
+
+
+@ekyc_bp.app_context_processor
+def _ekyc_package_flag():
+    return {'ekyc_enabled': ekyc_enabled}

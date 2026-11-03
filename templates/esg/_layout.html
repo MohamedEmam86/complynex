@@ -15,7 +15,7 @@
   <nav class="ecx-flow-nav ecx-esg no-print" aria-label="{{ _('ESG Management') }}">
     {% for ep, icon, label in [('esg.dashboard', 'bi-speedometer2', _('Dashboard')), ('esg.materiality', 'bi-bullseye', _('Materiality Assessment')),
                                ('esg.disclosures', 'bi-list-check', _('Disclosure Tracker')), ('esg.framework_view', 'bi-diagram-3', _('Framework & Weights')),
-                               ('esg.methodology', 'bi-info-circle', _('Methodology'))] %}
+                               ('esg.methodology', 'bi-info-circle', _('Methodology')), ('esg.report', 'bi-file-earmark-text', _('Period report'))] %}
     <a class="{{ 'active' if act == ep }}" href="{{ url_for(ep) }}"><i class="bi {{ icon }}"></i>{{ label }}</a>
     {% endfor %}
     {% if current_user.can_view('carbon') %}<span class="sep"></span><a href="{{ url_for('carbon.dashboard') }}"><i class="bi bi-cloud-haze2"></i>{{ _('Carbon reporting') }} <i class="bi bi-arrow-right"></i></a>{% endif %}

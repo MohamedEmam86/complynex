@@ -18,6 +18,8 @@ from flask_babel import gettext as _
 from database.db import get_db
 
 RULES = (
+    ('awareness', re.compile(r'phishing|security awareness|cyber(security)? awareness|social engineering|'
+                             r'التصيد|الوعي الأمني|التوعية الأمنية|الهندسة الاجتماعية', re.I)),
     ('training', re.compile(r'404-1|training hours|hours of training|training\s*&\s*development|employee development|'
                             r'ساعات التدريب|تدريب العاملين|تطوير العاملين', re.I)),
     ('data_protection', re.compile(r'418-1|privacy|data protection|خصوصية|حماية البيانات', re.I)),
@@ -28,7 +30,7 @@ RULES = (
     ('board', re.compile(r'\b2-9\b|board (composition|structure)|independence|تشكيل مجلس|استقلالية|هيكل مجلس', re.I)),
     ('policies', re.compile(r'policy governance|review cadence|حوكمة السياسات', re.I)),
 )
-MODULES = {'training': ('bi-mortarboard', 'Training'), 'data_protection': ('bi-shield-lock', 'Data protection'),
+MODULES = {'awareness': ('bi-envelope-exclamation', 'Security awareness'), 'training': ('bi-mortarboard', 'Training'), 'data_protection': ('bi-shield-lock', 'Data protection'),
            'whistleblowing': ('bi-megaphone', 'Whistleblowing'), 'complaints': ('bi-chat-left-text', 'Consumer protection'),
            'coi': ('bi-person-exclamation', 'Conflicts of interest'), 'ethics': ('bi-patch-check', 'Code of conduct'),
            'board': ('bi-people', 'Governance'), 'policies': ('bi-journal-text', 'Policies')}
@@ -74,6 +76,15 @@ def values(period):
         hours = round(float(t['minutes'] or 0) / 60.0 / staff, 1) if staff else None
         out['training'] = _('%(h)s training hours per employee · %(n)s courses completed · %(p)s%% of due courses on time',
                             h=hours if hours is not None else '-', n=t['done'], p=_pct(t['due_done'], t['due']) or 0)
+
+    ph = _one("""SELECT COUNT(DISTINCT r.campaign_id) AS campaigns, COUNT(*) AS sent,
+                        COUNT(*) FILTER (WHERE r.clicked_at IS NOT NULL) AS clicked,
+                        COUNT(*) FILTER (WHERE r.submitted_at IS NOT NULL) AS submitted
+                 FROM phishing_recipients r WHERE r.sent_at::date BETWEEN %s AND %s""", (s, e))
+    if ph and ph['sent']:
+        out['awareness'] = _('%(c)s phishing simulations · %(n)s emails · %(k)s%% clicked · %(f)s%% entered data',
+                             c=ph['campaigns'], n=ph['sent'], k=_pct(ph['clicked'], ph['sent']) or 0,
+                             f=_pct(ph['submitted'], ph['sent']) or 0)
 
     w = _one("""SELECT COUNT(*) AS n, COUNT(*) FILTER (WHERE status = 'RESOLVED') AS resolved
                 FROM whistleblowing_cases WHERE submitted_at::date BETWEEN %s AND %s""", (s, e))

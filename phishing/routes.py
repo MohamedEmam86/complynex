@@ -40,6 +40,8 @@ from flask import (
 from flask_login import login_required, current_user
 
 from phishing import phishing_bp
+from phishing import authz as AUTHZ
+from attachments.service import list_attachments
 from database.db import get_db, query_db, execute_db
 from utils.decorators import permission_required
 from utils.file_validator import validate_file, secure_filename_strict
@@ -67,7 +69,7 @@ def _build_email_html(name, tracking_url, campaign):
                 .replace('{{TRACKING_URL}}', tracking_url)
                 .replace('{{RECIPIENT_NAME}}', name))
 
-    sender_display = campaign.get('sender_display', 'Carrefour Egypt')
+    sender_display = (campaign.get('sender_display') or 'IT Service Desk')
     offer_title    = campaign.get('offer_title', 'عرض حصري لك')
     offer_body     = campaign.get('offer_body', 'بناءً على تعاونك معنا، اخترنا لك هذه الصفقات المميزة.')
     expiry_text    = campaign.get('expiry_text', 'حتى 30 يونيو 2026')
@@ -344,7 +346,7 @@ input:focus{{outline:none;border-color:{brand_color}}}
 
 
 def _send_one_email(recipient_name, recipient_email, tracking_url, campaign, gmail_user, gmail_pass):
-    sender_display = campaign.get('sender_display', 'Carrefour Egypt')
+    sender_display = (campaign.get('sender_display') or 'IT Service Desk')
     email_subject  = campaign.get('email_subject', '🎟️ عرض حصري لك!')
 
     msg = MIMEMultipart('alternative')
@@ -409,7 +411,7 @@ def create_campaign():
     if request.method == 'POST':
         name           = request.form.get('name', '').strip()
         description    = request.form.get('description', '').strip()
-        sender_display = request.form.get('sender_display', 'Carrefour Egypt').strip()
+        sender_display = (request.form.get('sender_display') or 'IT Service Desk').strip()
         email_subject  = request.form.get('email_subject', '').strip()
         offer_title    = request.form.get('offer_title', '').strip()
         offer_body     = request.form.get('offer_body', '').strip()
@@ -536,9 +538,11 @@ def campaign_detail(campaign_id):
            FROM phishing_recipients WHERE campaign_id = %s""",
         (campaign_id,), one=True
     )
+    auth = _authorisation(campaign_id)
     return render_template('phishing/campaign_detail.html',
                            campaign=campaign, recipients=recipients,
-                           events=events, stats=stats)
+                           events=events, stats=stats, auth=auth,
+                           auth_problems=_auth_problems(campaign_id, auth))
 
 
 # ── RECIPIENTS ─────────────────────────────────────────────────────────────────
@@ -623,6 +627,17 @@ def send_campaign(campaign_id):
     if not recipients:
         flash(gettext('No recipients to send to.'), 'warning')
         return redirect(url_for('phishing.campaign_detail', campaign_id=campaign_id))
+
+    auth = _authorisation(campaign_id)
+    blockers = _auth_problems(campaign_id, auth)
+    if blockers:
+        for _code, msg in blockers[:6]:
+            flash(gettext(msg), 'danger')
+        _log_audit('send_blocked', f'Campaign {campaign_id}: ' + '; '.join(c for c, _m in blockers))
+        return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
+    execute_db('UPDATE phishing_campaigns SET authorised_send_check = %s WHERE id = %s',
+               (json.dumps({'authorisation_id': auth['id'], 'checked_at': datetime.now().isoformat(timespec='seconds'),
+                            'checked_by': current_user.id, 'recipients': len(recipients)}), campaign_id))
 
     from flask import current_app as _app
     gmail_user = (_app.config.get('MAIL_USERNAME')
@@ -748,16 +763,17 @@ def track_submit():
     ) if token else None
 
     ip_addr       = request.headers.get('X-Forwarded-For', request.remote_addr)
-    entered_email = request.form.get('email', '')
-    entered_card  = request.form.get('card', '')
+    # Only THAT the person submitted, and which fields they filled, is recorded - never the values:
+    # a simulation must not collect real card numbers, passwords or emails.
+    entered = sorted(k for k, v in request.form.items() if k not in ('token', 'csrf_token') and str(v).strip())[:10]
 
     if recipient:
         if not recipient['submitted_at']:
             execute_db(
                 """UPDATE phishing_recipients
-                   SET submitted_at = %s, submitted_email = %s, submitted_card = %s
+                   SET submitted_at = %s, submitted_email = NULL, submitted_card = NULL
                    WHERE id = %s""",
-                (datetime.now(), entered_email, entered_card, recipient['id'])
+                (datetime.now(), recipient['id'])
             )
         execute_db(
             """INSERT INTO phishing_events
@@ -765,7 +781,7 @@ def track_submit():
                VALUES (%s, %s, 'submit', %s, %s, %s, %s)""",
             (recipient['campaign_id'], recipient['id'], ip_addr,
              request.headers.get('User-Agent', '')[:500],
-             json.dumps({'email': entered_email, 'card': entered_card}),
+             json.dumps({'fields_entered': entered}),
              datetime.now())
         )
 
@@ -795,7 +811,7 @@ def reports():
     )
     high_risk = query_db(
         """SELECT r.recipient_name, r.recipient_email,
-                  r.submitted_at, r.submitted_email, r.submitted_card,
+                  r.submitted_at,
                   c.name AS campaign_name
            FROM phishing_recipients r
            JOIN phishing_campaigns c ON c.id = r.campaign_id
@@ -813,7 +829,7 @@ def export_reports():
     """Export full campaign status and analytics (per-recipient detail) as CSV"""
     rows = query_db(
         """SELECT c.name AS campaign_name, c.status AS campaign_status, c.sent_at AS campaign_sent_at,
-                  r.recipient_name, r.recipient_email, r.sent_at, r.clicked_at, r.submitted_at, r.submitted_email
+                  r.recipient_name, r.recipient_email, r.sent_at, r.clicked_at, r.submitted_at
            FROM phishing_campaigns c
            LEFT JOIN phishing_recipients r ON r.campaign_id = c.id
            ORDER BY c.created_at DESC, r.recipient_name ASC"""
@@ -827,7 +843,7 @@ def export_reports():
         'Campaign', 'Campaign Status', 'Campaign Sent Date',
         'Recipient Name', 'Recipient Email',
         'Email Sent At', 'Link Clicked At', 'Form Submitted At',
-        'Email Entered on Fake Form', 'Clicked Link', 'Submitted Form'
+        'Clicked Link', 'Submitted Form'
     ])
 
     for r in rows:
@@ -840,7 +856,6 @@ def export_reports():
             r['sent_at'].strftime('%Y-%m-%d %H:%M') if r['sent_at'] else '',
             r['clicked_at'].strftime('%Y-%m-%d %H:%M') if r['clicked_at'] else '',
             r['submitted_at'].strftime('%Y-%m-%d %H:%M') if r['submitted_at'] else '',
-            r['submitted_email'] or '',
             'Yes' if r['clicked_at'] else 'No',
             'Yes' if r['submitted_at'] else 'No',
         ])
@@ -854,3 +869,82 @@ def export_reports():
         mimetype='text/csv',
         headers={'Content-Disposition': f'attachment;filename={filename}'}
     )
+
+
+# ── WRITTEN AUTHORISATION (Phase 7, H2) ───────────────────────────────────────
+
+def _authorisation(campaign_id):
+    return query_db('SELECT * FROM phishing_authorisations WHERE campaign_id = %s', (campaign_id,), one=True)
+
+
+def _auth_documents(auth):
+    if not auth:
+        return []
+    return list_attachments('phishing', AUTHZ.RECORD_TYPE, auth['id'])
+
+
+def _auth_problems(campaign_id, auth=None):
+    auth = auth if auth is not None else _authorisation(campaign_id)
+    emails = [r['recipient_email'] for r in (query_db(
+        'SELECT recipient_email FROM phishing_recipients WHERE campaign_id = %s', (campaign_id,)) or [])]
+    return AUTHZ.problems(auth, emails, len(_auth_documents(auth)))
+
+
+@phishing_bp.route('/campaign/<int:campaign_id>/authorisation', methods=['GET', 'POST'])
+@login_required
+@permission_required('phishing', level='edit')
+def campaign_authorisation(campaign_id):
+    campaign = query_db('SELECT * FROM phishing_campaigns WHERE id = %s', (campaign_id,), one=True)
+    if not campaign:
+        abort(404)
+    auth = _authorisation(campaign_id)
+    if request.method == 'POST':
+        if campaign['status'] == 'sent':
+            flash(gettext('The campaign was already sent; its authorisation can no longer be changed.'), 'warning')
+            return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
+        f = {k: (request.form.get(k) or '').strip() or None for k in (
+            'organisation', 'authorised_by_name', 'authorised_by_title', 'authorised_on', 'scope',
+            'allowed_domains', 'valid_from', 'valid_to', 'notes')}
+        for k in ('authorised_on', 'valid_from', 'valid_to'):
+            if f[k] and not AUTHZ._d(f[k]):
+                flash(gettext('Dates must be in the form YYYY-MM-DD. Nothing was saved.'), 'danger')
+                return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
+        if f['allowed_domains']:
+            f['allowed_domains'] = ', '.join(sorted(AUTHZ.domains(f['allowed_domains'])))
+        cols = list(f)
+        if auth:
+            execute_db('UPDATE phishing_authorisations SET ' + ', '.join(f'{c} = %s' for c in cols) +
+                       ', updated_by = %s, updated_at = %s, revoked_at = NULL, revoked_by = NULL, revoke_reason = NULL '
+                       'WHERE id = %s', tuple(f[c] for c in cols) + (current_user.id, datetime.now(), auth['id']))
+        else:
+            execute_db('INSERT INTO phishing_authorisations (campaign_id, ' + ', '.join(cols) +
+                       ', recorded_by, recorded_at) VALUES (%s, ' + ', '.join(['%s'] * len(cols)) + ', %s, %s)',
+                       (campaign_id,) + tuple(f[c] for c in cols) + (current_user.id, datetime.now()))
+        _log_audit('authorisation_saved', f'Campaign {campaign_id}: authorised by {f["authorised_by_name"]} '
+                                          f'({f["organisation"]}), {f["valid_from"]} to {f["valid_to"]}, '
+                                          f'domains {f["allowed_domains"]}')
+        flash(gettext('Authorisation saved. Attach the signed document below.'), 'success')
+        return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
+    return render_template('phishing/authorisation.html', campaign=campaign, auth=auth,
+                           problems=_auth_problems(campaign_id, auth) if auth else AUTHZ.problems(None, [], 0),
+                           attach_module='phishing', attach_record_type=AUTHZ.RECORD_TYPE,
+                           attach_record_id=auth['id'] if auth else None, attach_items=_auth_documents(auth),
+                           attach_can_edit=bool(auth) and campaign['status'] != 'sent')
+
+
+@phishing_bp.route('/campaign/<int:campaign_id>/authorisation/revoke', methods=['POST'])
+@login_required
+@permission_required('phishing', level='edit')
+def revoke_authorisation(campaign_id):
+    auth = _authorisation(campaign_id)
+    if not auth:
+        abort(404)
+    reason = (request.form.get('reason') or '').strip()
+    if len(reason) < 5:
+        flash(gettext('Please give the reason for revoking the authorisation.'), 'danger')
+        return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
+    execute_db('UPDATE phishing_authorisations SET revoked_at = %s, revoked_by = %s, revoke_reason = %s WHERE id = %s',
+               (datetime.now(), current_user.id, reason[:1000], auth['id']))
+    _log_audit('authorisation_revoked', f'Campaign {campaign_id}: {reason[:200]}')
+    flash(gettext('Authorisation revoked. The campaign cannot be sent until a new authorisation is recorded.'), 'warning')
+    return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))

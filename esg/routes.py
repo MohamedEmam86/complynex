@@ -472,3 +472,47 @@ def disclosure_update(item_id):
                  details=f"Updated disclosure {item['framework']} {item['ref_code']} -> status={status}")
     flash(_('Disclosure item updated.'), 'success')
     return redirect(url_for('esg.disclosures', framework=request.form.get('return_framework') or None))
+
+
+# ---------------------------------------------------------------------------
+# Period report (Phase 7, H1) - printable (Save as PDF) and Excel
+# ---------------------------------------------------------------------------
+
+def _report_period():
+    from esg import report as REP
+    pid = request.args.get('period_id', type=int)
+    period = query_db("SELECT * FROM esg_reporting_periods WHERE id = %s", (pid,), one=True) if pid else None
+    return (period or _current_period()), REP
+
+
+@esg_bp.route('/report')
+@login_required
+@permission_required('esg')
+def report():
+    period, REP = _report_period()
+    if not period:
+        flash(_('No reporting period found.'), 'warning')
+        return redirect(url_for('esg.dashboard'))
+    rep = REP.build(period['id'], include_carbon=current_user.can_view('carbon'))
+    return render_template('esg/report.html', rep=rep, periods=REP.periods())
+
+
+@esg_bp.route('/report/export.xlsx')
+@login_required
+@permission_required('esg')
+def report_export():
+    import io
+    from flask import send_file
+    period, REP = _report_period()
+    if not period:
+        flash(_('No reporting period found.'), 'warning')
+        return redirect(url_for('esg.dashboard'))
+    rep = REP.build(period['id'], include_carbon=current_user.can_view('carbon'))
+    buf = io.BytesIO()
+    REP.workbook(rep).save(buf)
+    buf.seek(0)
+    AuditLog.log(current_user.id, 'EXPORT', module='esg', item_id=period['id'],
+                 details=f"ESG period report exported (Excel): {period['label']}")
+    safe = ''.join(ch if ch.isalnum() or ch in '-_' else '_' for ch in str(period['label']))[:40]
+    return send_file(buf, as_attachment=True, download_name=f'ESG_report_{safe}.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
