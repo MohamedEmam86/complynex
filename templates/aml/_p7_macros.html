@@ -1,0 +1,5 @@
+{# Phase 7 AML pages: one text in English and Arabic; `ar` comes from the route. #}
+{% macro L(en, a) -%}{{ a if ar else en }}{%- endmacro %}
+{% macro risk_badge(cls) -%}
+<span class="badge {{ 'bg-danger' if cls == 'HIGH' else ('bg-warning text-dark' if cls == 'MEDIUM' else 'bg-success') }}">{{ cls or 'LOW' }}</span>
+{%- endmacro %}

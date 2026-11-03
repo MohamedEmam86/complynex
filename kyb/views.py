@@ -33,6 +33,15 @@ def _flash_all(messages, category):
         flash(tr(m), category)
 
 
+def _reg_scope():
+    """Where the regulatory-measures lists (e.g. PMA) are searched: kyb / all / off."""
+    try:
+        from screening import regulatory
+        return regulatory.scope()
+    except Exception:
+        return None
+
+
 def handle(subject, subject_id, *, self_endpoint, back_url, can_edit, title_prefix, after_change=None):
     """GET: render the KYB page. POST: one action, then redirect back (PRG).
 
@@ -101,4 +110,6 @@ def handle(subject, subject_id, *, self_endpoint, back_url, can_edit, title_pref
                            edit_ubo=edit_ubo, edit_sig=edit_sig, can_edit=can_edit, here=here, back_url=back_url,
                            title_prefix=title_prefix, legal_forms=logic.LEGAL_FORMS,
                            control_types=logic.CONTROL_TYPES, id_types=logic.ID_TYPES,
-                           signing_authorities=logic.SIGNING_AUTHORITIES, blocking_states=logic.BLOCKING_STATES)
+                           signing_authorities=logic.SIGNING_AUTHORITIES, blocking_states=logic.BLOCKING_STATES,
+                           sanctioned_ownership=logic.sanctioned_ownership(ubos, states),
+                           ps_parties=logic.palestinian_parties(ent, ubos + sigs), reg_scope=_reg_scope())

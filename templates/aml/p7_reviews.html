@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from 'aml/_p7_macros.html' import L, risk_badge with context %}
+{% block title %}{{ L('Periodic customer reviews', 'المراجعة الدورية للعملاء') }}{% endblock %}
+{% block content %}
+{% set st_label = {'overdue': L('Overdue', 'متأخرة'), 'due_soon': L('Due soon', 'مستحقة قريباً'), 'unknown': L('No date', 'بدون تاريخ'), 'ok': L('Not due', 'غير مستحقة')} %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div><h1 class="h3 mb-0"><i class="bi bi-calendar-check"></i> {{ L('Periodic customer reviews', 'المراجعة الدورية للعملاء') }}</h1>
+      <div class="small text-muted">{{ L('Review interval by rating', 'دورية المراجعة حسب التصنيف') }}: {% for k in classes %}{{ k }} {{ model.review_months[k] }} {{ L('months', 'شهر') }}{{ ' · ' if not loop.last }}{% endfor %}
+        — <a href="{{ url_for('aml.risk_scoring') }}">{{ L('change', 'تعديل') }}</a></div></div>
+    <a href="{{ url_for('aml.dashboard') }}" class="btn btn-sm btn-outline-secondary">{{ L('AML dashboard', 'لوحة مكافحة غسل الأموال') }}</a>
+  </div>
+  <div class="row g-2 mb-3">
+    {% for k, cls in (('overdue', 'danger'), ('due_soon', 'warning'), ('unknown', 'secondary'), ('ok', 'success')) %}
+    <div class="col-6 col-md-3"><a class="text-decoration-none" href="{{ url_for('aml.periodic_reviews', state=k) }}"><div class="card border-{{ cls }} {{ 'shadow' if state == k }}"><div class="card-body py-2">
+      <div class="small text-muted">{{ st_label[k] }}</div><div class="fs-4 fw-bold text-{{ cls }}">{{ summary[k] }}</div></div></div></a></div>
+    {% endfor %}
+  </div>
+  <form class="d-flex gap-2 mb-2" method="GET">
+    <select name="risk" class="form-select form-select-sm w-auto"><option value="">{{ L('All ratings', 'كل التصنيفات') }}</option>{% for k in classes %}<option value="{{ k }}" {{ 'selected' if risk == k }}>{{ k }}</option>{% endfor %}</select>
+    {% if state %}<input type="hidden" name="state" value="{{ state }}">{% endif %}
+    <button class="btn btn-sm btn-outline-primary">{{ L('Filter', 'تصفية') }}</button>
+    <a href="{{ url_for('aml.periodic_reviews') }}" class="btn btn-sm btn-link">{{ L('Clear', 'مسح') }}</a>
+  </form>
+  <div class="small text-muted mb-1">{{ total }} {{ L('customers', 'عميل') }}{% if total > rows|length %} — {{ L('first', 'أول') }} {{ rows|length }}{% endif %}</div>
+  <div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>{{ L('Customer', 'العميل') }}</th><th>{{ L('Rating', 'التصنيف') }}</th><th>{{ L('Last review', 'آخر مراجعة') }}</th><th>{{ L('Next review', 'المراجعة القادمة') }}</th><th>{{ L('State', 'الحالة') }}</th><th style="min-width: 360px">{{ L('Record the review', 'تسجيل المراجعة') }}</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><a href="{{ url_for('aml.view_customer', id=r.id) }}">{{ r.name }}</a><div class="small text-muted">{{ r.customer_reference }}</div></td>
+      <td>{{ risk_badge(r.risk_classification) }}</td>
+      <td class="small">{{ r.last_review_date or '—' }}</td>
+      <td class="small">{{ r.due or '—' }}{% if r.days is not none %}<div class="text-muted">{% if r.days < 0 %}{{ -r.days }} {{ L('days late', 'يوم تأخير') }}{% else %}{{ L('in', 'خلال') }} {{ r.days }} {{ L('days', 'يوم') }}{% endif %}</div>{% endif %}</td>
+      <td><span class="badge bg-{{ {'overdue': 'danger', 'due_soon': 'warning text-dark', 'unknown': 'secondary', 'ok': 'success'}[r.state] }}">{{ st_label[r.state] }}</span></td>
+      <td>{% if current_user.can_edit('aml') %}
+        <form method="POST" action="{{ url_for('aml.record_periodic_review', customer_id=r.id) }}" class="d-flex gap-1 flex-wrap">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path }}">
+          <select name="outcome" class="form-select form-select-sm w-auto" required><option value="">{{ L('Outcome...', 'النتيجة...') }}</option>{% for code, en, a in outcomes %}<option value="{{ code }}">{{ a if ar else en }}</option>{% endfor %}</select>
+          <input type="text" name="notes" class="form-control form-control-sm" style="max-width: 200px" minlength="10" required placeholder="{{ L('What was reviewed', 'ما تمت مراجعته') }}">
+          <button class="btn btn-sm btn-outline-primary">{{ L('Record', 'تسجيل') }}</button></form>{% endif %}</td>
+    </tr>
+    {% else %}<tr><td colspan="6" class="text-muted small">{{ L('No customer in this view.', 'لا يوجد عملاء في هذا العرض.') }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  <div class="small text-muted">{{ L('Recording a review re-rates the customer (model and regulatory floor), opens enhanced due diligence when the result is HIGH, and sets the next review date from the new rating.', 'تسجيل المراجعة يعيد تقييم العميل (النموذج والحد التنظيمي)، ويفتح العناية المشددة إذا كانت النتيجة عالية، ويحدد تاريخ المراجعة القادمة حسب التصنيف الجديد.') }}</div>
+</div>
+{% endblock %}
