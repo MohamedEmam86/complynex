@@ -21,6 +21,7 @@ aml_bp = Blueprint('aml', __name__, template_folder='templates', url_prefix='/am
 
 from . import routes
 from . import edd_routes  # noqa: E402,F401  EDD, activation gate, KYB page, high-risk countries
+from . import tm_routes  # noqa: E402,F401  TM tuning, backtest, data quality, rule versions
 
 from utils.kyc_labels import register as _register_kyc_labels  # noqa: E402
 _register_kyc_labels(aml_bp)

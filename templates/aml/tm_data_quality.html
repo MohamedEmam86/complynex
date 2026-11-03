@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% import "aml/_tm_macros.html" as M %}
+{% block title %}{{ L('Transaction data quality', 'جودة بيانات العمليات') }}{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4" style="max-width:1000px">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0"><i class="fas fa-clipboard-check text-secondary me-2"></i>{{ L('Transaction data quality', 'جودة بيانات العمليات') }}</h2>
+    <a href="{{ url_for('aml.tm_tuning', date_from=date_from, date_to=date_to) }}" class="btn btn-outline-secondary btn-sm">{{ L('Rule tuning', 'ضبط القواعد') }}</a>
+  </div>
+  <p class="text-muted small">{{ L('Problems in the transaction data that make monitoring miss or repeat alerts. Duplicates and unusable rows are left out of backtests; live monitoring skips rows with no usable date or amount.',
+      'مشاكل في بيانات العمليات ممكن تخلي المراقبة تفوّت أو تكرر تنبيهات. المكرر والصفوف غير الصالحة بتتشال من الاختبار، والمراقبة الفعلية بتتخطى أي عملية من غير تاريخ أو مبلغ صالح.') }}</p>
+  <form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-auto"><label class="form-label small fw-bold mb-0">{{ L('From', 'من') }}</label><input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}"></div>
+    <div class="col-auto"><label class="form-label small fw-bold mb-0">{{ L('To', 'إلى') }}</label><input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}"></div>
+    <div class="col-auto"><button class="btn btn-primary btn-sm">{{ L('Check', 'افحص') }}</button></div>
+  </form>
+  {{ M.quality(dq, L) }}
+  {% if dq.samples %}
+  <div class="card shadow-sm"><div class="card-header"><strong>{{ L('Examples', 'أمثلة') }}</strong></div>
+    <div class="card-body small">{% for code, ids in dq.samples.items() %}
+      <div class="mb-1"><code>{{ code }}</code>: {% for i in ids[:10] %}<a href="{{ url_for('aml.view_transaction', tx_id=i) }}">#{{ i }}</a>{{ ', ' if not loop.last }}{% endfor %}</div>
+    {% endfor %}</div></div>
+  {% endif %}
+</div>
+{% endblock %}

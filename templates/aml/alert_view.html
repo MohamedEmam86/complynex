@@ -26,7 +26,8 @@
         <div class="card-body">
           <div class="row">
             <div class="col-md-6">
-              <p><strong>{{ _('Rule:') }}</strong> {{ rule_label }} ({{ alert.rule_code }})</p>
+              <p><strong>{{ _('Rule:') }}</strong> {{ rule_label }} ({{ alert.rule_code }}{% if alert.rule_version %} v{{ alert.rule_version }}{% endif %})
+                <a href="{{ url_for('aml.tm_rule_history', code=alert.rule_code) }}" class="small ms-1">{{ 'النسخ' if get_locale()|string == 'ar' else 'versions' }}</a></p>
               <p><strong>{{ _('Severity:') }}</strong> <span class="severity-{{ alert.alert_severity }}">{{ severity_labels.get(alert.alert_severity, alert.alert_severity) }}</span> · <strong>{{ _('Score') }}:</strong> {{ alert.risk_score if alert.risk_score is not none else '-' }}</p>
               <p><strong>{{ _('Status:') }}</strong> <span class="badge bg-secondary fs-6">{{ status_labels.get(alert.status, alert.status) }}</span></p>
               <p><strong>{{ _('Assigned To') }}:</strong> {{ alert.assigned_name or _('Not assigned') }}</p>

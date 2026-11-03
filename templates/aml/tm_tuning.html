@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% import "aml/_tm_macros.html" as M %}
+{% block title %}{{ L('Rule tuning and backtest', 'ضبط القواعد واختبارها') }}{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0"><i class="fas fa-sliders-h text-secondary me-2"></i>{{ L('Rule tuning and backtest', 'ضبط القواعد واختبارها') }}</h2>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('aml.tm_data_quality', date_from=date_from, date_to=date_to) }}" class="btn btn-outline-secondary btn-sm">{{ L('Data quality', 'جودة البيانات') }}</a>
+      <a href="{{ url_for('aml.rules_list') }}" class="btn btn-outline-secondary btn-sm">{{ L('Rule management', 'إدارة القواعد') }}</a>
+    </div>
+  </div>
+  {{ M.data_note(L) }}
+  {{ M.period_form(url_for('aml.tm_tuning'), date_from, date_to, L) }}
+
+  {% if result %}
+  <p class="small text-muted">{{ L('Period', 'الفترة') }} {{ result.summary.date_from }} → {{ result.summary.date_to }} ·
+    {{ L('transactions evaluated', 'عمليات تم تقييمها') }}: {{ '{:,}'.format(result.summary.evaluated) }} ·
+    {{ L('excluded by data quality', 'مستبعدة بسبب جودة البيانات') }}: {{ '{:,}'.format(result.summary.excluded) }}</p>
+  {{ M.quality(result.summary.quality, L) }}
+  {% endif %}
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body p-0">
+      <table class="table table-sm table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr><th>{{ L('Rule', 'القاعدة') }}</th><th>{{ L('Parameters (unit)', 'المعايير (الوحدة)') }}</th><th>{{ L('Reference', 'المرجع') }}</th>
+            {% if result %}<th class="text-end">{{ L('Alerts', 'تنبيهات') }}</th><th class="text-end">{{ L('Customers', 'عملاء') }}</th><th class="text-end">{{ L('Hits', 'مرات الانطباق') }}</th>{% endif %}
+            <th></th></tr>
+        </thead>
+        <tbody>
+        {% for r in rules %}
+          {% set rows, op = specs[r.id] %}
+          {% set res = result.rules.get(r.id) if result else none %}
+          <tr>
+            <td><code>{{ r.rule_code }}</code> v{{ r.version or 1 }}<br><small>{{ r.rule_name_ar if (ar and r.rule_name_ar) else r.rule_name }}</small></td>
+            <td class="small">
+              {% for p in rows %}<div>{{ p.label }}{% if p.key == 'threshold' and op %} <span class="text-muted">({{ op }})</span>{% endif %}:
+                <strong>{{ M.value(p.value) }}</strong> <span class="text-muted">{{ M.unit_label(p.unit, L) }}{% if p.unit == 'amount' and r.threshold_currency %} {{ r.threshold_currency }}{% endif %}</span></div>{% else %}<span class="text-muted">—</span>{% endfor %}
+              {% if not supported(r.rule_code) %}<span class="badge bg-warning text-dark">{{ L('not supported by the engine', 'غير مدعومة في المحرك') }}</span>{% endif %}
+            </td>
+            <td class="small">{{ r.reference or '' }}{% if not r.reference %}<span class="text-muted">{{ L('not recorded', 'غير مسجل') }}</span>{% endif %}</td>
+            {% if result %}
+              {% if res and res.supported %}
+              <td class="text-end fw-bold">{{ '{:,}'.format(res.alerts) }}</td><td class="text-end">{{ '{:,}'.format(res.customers) }}</td><td class="text-end">{{ '{:,}'.format(res.hits) }}</td>
+              {% else %}<td colspan="3" class="text-muted small">—</td>{% endif %}
+            {% endif %}
+            <td class="text-nowrap">
+              {% if rows and rows[0].key == 'threshold' %}
+              <a class="btn btn-sm btn-outline-info" href="{{ url_for('aml.tm_tuning', sweep_rule=r.id, param='threshold', date_from=date_from, date_to=date_to) }}">{{ L('Threshold curve', 'منحنى الحد') }}</a>
+              {% endif %}
+              <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('aml.tm_rule_history', code=r.rule_code) }}">{{ L('Versions', 'النسخ') }}</a>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-muted text-center py-3">{{ L('No rule is in force.', 'لا توجد قاعدة مفعلة.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if sweep and chosen %}
+  <div class="card shadow-sm">
+    <div class="card-header"><strong>{{ L('Alert volume by threshold', 'عدد التنبيهات حسب الحد') }}</strong> — <code>{{ chosen.rule_code }}</code>
+      <span class="small text-muted">{{ sweep.summary.date_from }} → {{ sweep.summary.date_to }}</span></div>
+    <div class="card-body p-0">
+      {% if sweep.supported %}
+      <table class="table table-sm mb-0">
+        <thead><tr><th>{{ L('Threshold', 'الحد') }}</th><th class="text-end">{{ L('Alerts', 'تنبيهات') }}</th><th class="text-end">{{ L('Customers', 'عملاء') }}</th><th></th></tr></thead>
+        <tbody>
+        {% set top = (sweep.rows|map(attribute='alerts')|max) or 1 %}
+        {% for row in sweep.rows %}
+          <tr class="{{ 'table-info' if row.current else '' }}">
+            <td>{{ M.value(row.value) }}{% if row.current %} <span class="badge bg-info">{{ L('in force', 'الحالي') }}</span>{% endif %}</td>
+            <td class="text-end fw-bold">{{ '{:,}'.format(row.alerts) }}</td>
+            <td class="text-end">{{ '{:,}'.format(row.customers) }}</td>
+            <td style="width:40%"><div class="progress" style="height:8px"><div class="progress-bar" style="width: {{ (100 * row.alerts / top)|round(1) }}%"></div></div></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="small text-muted px-3 py-2 mb-0">{{ L('To change a threshold, edit the rule: the change becomes a new version that another person approves.', 'لتغيير الحد عدّل القاعدة: التعديل بيبقى نسخة جديدة يعتمدها شخص تاني.') }}</p>
+      {% else %}<p class="text-muted p-3 mb-0">{{ L('This rule is not supported by the engine.', 'القاعدة دي غير مدعومة في المحرك.') }}</p>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
