@@ -78,6 +78,7 @@ DECISIONS = ('FILE_SAR', 'NO_STR')
 LINK_TYPES = [  # code, EN, AR
     ('tm_alert', N_('TM alert'), 'تنبيه مراقبة المعاملات'),
     ('screening_alert', N_('Screening alert'), 'تنبيه فحص القوائم'),
+    ('screening_hit', N_('Screening hit'), 'نتيجة فحص القوائم'),
     ('transaction', N_('Transaction'), 'معاملة'),
 ]
 LINK_CODES = tuple(c for c, _e, _a in LINK_TYPES)
@@ -390,6 +391,7 @@ def _require_open(case):
 _TARGETS = {
     'tm_alert': ("SELECT id FROM tm_alerts WHERE alert_reference = %s", "SELECT id FROM tm_alerts WHERE id = %s"),
     'screening_alert': (None, "SELECT id FROM aml_alerts WHERE id = %s"),
+    'screening_hit': (None, "SELECT id FROM screening_queue WHERE id = %s"),
     'transaction': ("SELECT id FROM transactions WHERE transaction_reference = %s",
                     "SELECT id FROM transactions WHERE id = %s"),
 }
@@ -458,6 +460,9 @@ def _target_label(db, link_type, target_id):
     if link_type == 'transaction':
         r = db.execute("SELECT transaction_reference FROM transactions WHERE id = %s", (target_id,)).fetchone()
         return (r and r['transaction_reference']) or f'#{target_id}'
+    if link_type == 'screening_hit':
+        r = db.execute("SELECT match_name FROM screening_queue WHERE id = %s", (target_id,)).fetchone()
+        return f'#{target_id}' + (f" {r['match_name']}" if r and r['match_name'] else '')
     r = db.execute("SELECT matched_name FROM aml_alerts WHERE id = %s", (target_id,)).fetchone()
     return f'#{target_id}' + (f" {r['matched_name']}" if r and r['matched_name'] else '')
 
@@ -479,6 +484,11 @@ def case_links(db, sar_id, include_removed=True):
             t = db.execute("SELECT status, alert_severity FROM tm_alerts WHERE id = %s", (r['target_id'],)).fetchone()
             r['detail'] = (t['alert_severity'] or '') if t else ''
             r['alert_status'] = t['status'] if t else None
+        elif r['link_type'] == 'screening_hit':
+            t = db.execute("SELECT list_source, match_score, status, resolution FROM screening_queue WHERE id = %s",
+                           (r['target_id'],)).fetchone()
+            r['detail'] = (f"{t['list_source'] or ''} · {float(t['match_score'] or 0):.0f} · {t['status'] or ''} "
+                           f"{t['resolution'] or ''}").strip() if t else ''
         else:
             r['detail'] = ''
     return rows

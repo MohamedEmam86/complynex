@@ -99,6 +99,15 @@
                         {{ _('UBO Verification') }}
                         <i class="bi bi-people text-info"></i>
                     </a>
+                    {% set p7ar = get_locale() == 'ar' %}
+                    <a href="{{ url_for('aml.hits_to_act') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        {{ 'نتائج الفحص المطلوب التصرف فيها' if p7ar else 'Screening hits to act on' }} <i class="bi bi-exclamation-octagon text-danger"></i></a>
+                    <a href="{{ url_for('aml.freeze_log') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        {{ 'سجل التجميد' if p7ar else 'Freeze log' }} <i class="bi bi-snow text-danger"></i></a>
+                    <a href="{{ url_for('aml.periodic_reviews') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        {{ 'المراجعة الدورية للعملاء' if p7ar else 'Periodic customer reviews' }} <i class="bi bi-calendar-check text-primary"></i></a>
+                    <a href="{{ url_for('aml.risk_scoring') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        {{ 'نموذج تقييم مخاطر العملاء' if p7ar else 'Customer risk model' }} <i class="bi bi-sliders text-primary"></i></a>
                     <a href="{{ url_for('aml.create_sar') }}"
                         class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-danger fw-bold">
                         {{ _('File New SAR') }}

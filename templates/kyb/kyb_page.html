@@ -42,6 +42,21 @@
   <div class="alert alert-success py-2"><i class="bi bi-check-circle"></i> {{ _('The KYB file is complete and every owner and signatory is screened without an open hit.') }}</div>
   {% endif %}
 
+  {% if sanctioned_ownership and sanctioned_ownership.owners %}
+  <div class="alert {{ 'alert-danger' if sanctioned_ownership.deemed_sanctioned else 'alert-warning' }} py-2">
+    <i class="bi bi-diagram-3"></i> {{ 'مملوكة لأشخاص مطابقين مؤكدين على قوائم العقوبات' if get_locale() == 'ar' else 'Owned by confirmed sanctions matches' }}: {{ sanctioned_ownership.owners|join(', ') }}
+    — {{ sanctioned_ownership.pct }}% {{ 'إجمالاً' if get_locale() == 'ar' else 'in aggregate' }}
+    {% if sanctioned_ownership.deemed_sanctioned %}<strong>· {{ 'قاعدة الـ 50%: تُعامل الشركة نفسها كجهة معاقبة' if get_locale() == 'ar' else '50% rule: treat the entity as sanctioned' }}</strong>{% endif %}
+  </div>
+  {% endif %}
+  {% if ps_parties %}
+  <div class="alert {{ 'alert-warning' if reg_scope == 'off' else 'alert-info' }} py-2 small">
+    <i class="bi bi-flag"></i> {{ 'أطراف مرتبطة بفلسطين' if get_locale() == 'ar' else 'Parties tied to Palestine' }}: {{ ps_parties|join(', ') }}.
+    {% if reg_scope == 'off' %}{{ 'قوائم الإجراءات الرقابية (سلطة النقد الفلسطينية) مغلقة في إعدادات الفحص، لذلك لم يتم فحصها.' if get_locale() == 'ar' else 'Regulatory-measures lists (PMA) are switched off in the screening configuration, so they were not checked.' }}
+    {% else %}{{ 'فحصهم يشمل قوائم الإجراءات الرقابية (سلطة النقد الفلسطينية).' if get_locale() == 'ar' else 'Their screening includes the regulatory-measures lists (PMA).' }}{% endif %}
+  </div>
+  {% endif %}
+
   <!-- Entity -->
   <div class="card shadow-sm mb-4">
     <div class="card-header bg-light fw-bold"><i class="bi bi-building"></i> {{ _('Entity identification') }}</div>

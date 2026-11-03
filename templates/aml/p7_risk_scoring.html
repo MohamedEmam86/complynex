@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% from 'aml/_p7_macros.html' import L with context %}
+{% block title %}{{ L('Customer risk model', 'نموذج تقييم مخاطر العملاء') }}{% endblock %}
+{% block content %}
+{% set c = model.country %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-sliders"></i> {{ L('Customer risk model', 'نموذج تقييم مخاطر العملاء') }}</h1>
+      <div class="small text-muted">{{ L('Points per risk factor, the score bands, and how often each rating is reviewed. Only the MLRO changes the model, with a reason; every version is kept and audited.', 'النقاط لكل عامل خطر، وحدود الدرجات، ودورية مراجعة كل تصنيف. مسؤول الإبلاغ فقط يعدل النموذج مع ذكر السبب، وكل إصدار محفوظ ومسجل في سجل التدقيق.') }}</div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('aml.periodic_reviews') }}" class="btn btn-sm btn-outline-primary">{{ L('Periodic reviews', 'المراجعات الدورية') }}</a>
+      <a href="{{ url_for('aml.dashboard') }}" class="btn btn-sm btn-outline-secondary">{{ L('AML dashboard', 'لوحة مكافحة غسل الأموال') }}</a>
+    </div>
+  </div>
+  <div class="alert alert-light border small">
+    {{ L('This score is the model part of the rating. On top of it the regulatory floor always applies: a PEP, a screening link or a country in the high-risk countries table makes the customer HIGH and opens enhanced due diligence, whatever the score.', 'هذه الدرجة هي جزء النموذج من التقييم. فوقها يطبق دائماً الحد التنظيمي: الشخص السياسي ممثل المخاطر، أو ارتباط بنتيجة فحص، أو دولة في جدول الدول عالية المخاطر يجعل العميل عالي المخاطر ويفتح العناية المشددة مهما كانت الدرجة.') }}
+  </div>
+  {% if preview %}
+  <div class="alert alert-info">
+    <div class="fw-bold mb-1">{{ L('Preview on the current register (nothing was saved)', 'معاينة على السجل الحالي (لم يتم حفظ أي شيء)') }}</div>
+    <div>{{ L('Customers', 'العملاء') }}: {{ preview.customers }} · {{ L('rating would change for', 'سيتغير تصنيف') }} {{ preview.changed }}</div>
+    <table class="table table-sm mb-0 mt-2 w-auto"><thead><tr><th></th>{% for k in classes %}<th>{{ k }}</th>{% endfor %}</tr></thead>
+      <tbody><tr><td>{{ L('Current model', 'النموذج الحالي') }}</td>{% for k in classes %}<td>{{ preview.by_class[k][0] }}</td>{% endfor %}</tr>
+      <tr><td>{{ L('This model', 'هذا النموذج') }}</td>{% for k in classes %}<td>{{ preview.by_class[k][1] }}</td>{% endfor %}</tr></tbody></table>
+    <div class="small text-muted mt-1">{{ L('Model ratings only; the regulatory HIGH floor is applied on top.', 'تصنيفات النموذج فقط؛ الحد التنظيمي يطبق فوقها.') }}</div>
+  </div>
+  {% endif %}
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <fieldset {{ 'disabled' if not is_mlro }}>
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card mb-3"><div class="card-header fw-semibold">{{ L('Country', 'الدولة') }}</div><div class="card-body row g-2">
+          <div class="col-12"><label class="form-label small">{{ L('High-risk countries come from', 'مصدر الدول عالية المخاطر') }}</label>
+            <select name="country_source" class="form-select form-select-sm">
+              <option value="builtin" {{ 'selected' if c.source == 'builtin' }}>{{ L('The list below', 'القائمة أدناه') }}</option>
+              <option value="table" {{ 'selected' if c.source == 'table' }}>{{ L('The high-risk countries table (FATF)', 'جدول الدول عالية المخاطر (FATF)') }} ({{ hr_count }})</option>
+              <option value="both" {{ 'selected' if c.source == 'both' }}>{{ L('Either of them', 'أي منهما') }}</option>
+            </select></div>
+          <div class="col-12"><label class="form-label small">{{ L('Countries of the list (comma separated)', 'دول القائمة (مفصولة بفاصلة)') }}</label>
+            <textarea name="builtin_list" class="form-control form-control-sm" rows="2">{{ (c.builtin_list or [])|join(', ') }}</textarea></div>
+          <div class="col-4"><label class="form-label small">{{ L('High-risk country points', 'نقاط الدولة عالية المخاطر') }}</label><input type="number" min="0" max="100" name="high_risk_points" class="form-control form-control-sm" value="{{ c.high_risk_points }}" required></div>
+          <div class="col-4"><label class="form-label small">{{ L('Home country', 'دولة النشاط') }}</label><input type="text" name="home_country" class="form-control form-control-sm" value="{{ c.home_country }}"></div>
+          <div class="col-4"><label class="form-label small">{{ L('Other country points', 'نقاط الدول الأخرى') }}</label><input type="number" min="0" max="100" name="foreign_points" class="form-control form-control-sm" value="{{ c.foreign_points }}" required></div>
+        </div></div>
+        <div class="card mb-3"><div class="card-header fw-semibold">{{ L('Customer, activity and income', 'العميل والنشاط والدخل') }}</div><div class="card-body row g-2">
+          <div class="col-6"><label class="form-label small">{{ L('Corporate customer points', 'نقاط العميل الاعتباري') }}</label><input type="number" min="0" max="100" name="corporate_points" class="form-control form-control-sm" value="{{ model.customer_type_points.get('CORPORATE', 0) }}" required></div>
+          <div class="col-6"><label class="form-label small">{{ L('High-risk activity points', 'نقاط النشاط عالي المخاطر') }}</label><input type="number" min="0" max="100" name="activity_points" class="form-control form-control-sm" value="{{ model.activity.points }}" required></div>
+          <div class="col-12"><label class="form-label small">{{ L('High-risk activity words (comma separated)', 'كلمات النشاط عالي المخاطر (مفصولة بفاصلة)') }}</label>
+            <textarea name="activity_keywords" class="form-control form-control-sm" rows="2">{{ (model.activity.keywords or [])|join(', ') }}</textarea></div>
+          <div class="col-6"><label class="form-label small">{{ L('Income above 500K points', 'نقاط الدخل أكبر من 500 ألف') }}</label><input type="number" min="0" max="100" name="income_high_points" class="form-control form-control-sm" value="{{ model.income_points.get('>500K', 0) }}" required></div>
+          <div class="col-6"><label class="form-label small">{{ L('Undeclared income points', 'نقاط الدخل غير المعلن') }}</label><input type="number" min="0" max="100" name="income_undeclared_points" class="form-control form-control-sm" value="{{ model.income_points.get('UNDECLARED', 0) }}" required></div>
+        </div></div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card mb-3"><div class="card-header fw-semibold">{{ L('Bands', 'حدود التصنيف') }}</div><div class="card-body row g-2">
+          <div class="col-6"><label class="form-label small">{{ L('HIGH from score', 'عالي من درجة') }}</label><input type="number" min="1" name="band_high" class="form-control form-control-sm" value="{{ model.bands.HIGH }}" required></div>
+          <div class="col-6"><label class="form-label small">{{ L('MEDIUM from score', 'متوسط من درجة') }}</label><input type="number" min="1" name="band_medium" class="form-control form-control-sm" value="{{ model.bands.MEDIUM }}" required></div>
+        </div></div>
+        <div class="card mb-3"><div class="card-header fw-semibold">{{ L('Periodic review', 'المراجعة الدورية') }}</div><div class="card-body row g-2">
+          {% for k in classes %}<div class="col-4"><label class="form-label small">{{ k }} — {{ L('every (months)', 'كل (شهور)') }}</label><input type="number" min="1" max="120" name="review_{{ k|lower }}" class="form-control form-control-sm" value="{{ model.review_months[k] }}" required></div>{% endfor %}
+          <div class="col-8"><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="reminders_enabled" id="rem" {{ 'checked' if model.reminders.enabled }}><label class="form-check-label small" for="rem">{{ L('Send reminders to the AML team for reviews coming due', 'إرسال تذكيرات لفريق مكافحة غسل الأموال بالمراجعات المستحقة') }}</label></div></div>
+          <div class="col-4"><label class="form-label small">{{ L('Days before', 'قبلها بأيام') }}</label><input type="number" min="1" max="180" name="reminder_days" class="form-control form-control-sm" value="{{ model.reminders.days_before }}" required></div>
+          <div class="col-12 small text-muted">{{ L('Reminders are sent only by the reminders job, which is not scheduled on this server until the owner decides.', 'التذكيرات تُرسل فقط من مهمة التذكير، وهي غير مجدولة على هذا الخادم حتى يقرر المالك.') }}</div>
+        </div></div>
+        {% if is_mlro %}
+        <div class="card mb-3 border-primary"><div class="card-body">
+          <label class="form-label small">{{ L('Reason for the change (required to save)', 'سبب التعديل (مطلوب للحفظ)') }}</label>
+          <input type="text" name="reason" class="form-control form-control-sm mb-2" minlength="15">
+          <div class="d-flex gap-2"><button name="action" value="preview" class="btn btn-sm btn-outline-info">{{ L('Preview on the register', 'معاينة على السجل') }}</button>
+            <button name="action" value="save" class="btn btn-sm btn-primary">{{ L('Save as new version', 'حفظ كإصدار جديد') }}</button></div>
+        </div></div>
+        {% else %}<div class="alert alert-secondary small">{{ L('Read only: only the MLRO changes the model.', 'للعرض فقط: مسؤول الإبلاغ فقط يعدل النموذج.') }}</div>{% endif %}
+      </div>
+    </div>
+    </fieldset>
+  </form>
+  <div class="card"><div class="card-header fw-semibold">{{ L('Versions', 'الإصدارات') }}</div><div class="card-body p-0">
+    <table class="table table-sm mb-0"><thead><tr><th>#</th><th>{{ L('Saved', 'التاريخ') }}</th><th>{{ L('By', 'بواسطة') }}</th><th>{{ L('Reason', 'السبب') }}</th><th></th></tr></thead><tbody>
+    {% for h in history %}<tr><td>{{ h.id }}</td><td>{{ h.created_at.strftime('%Y-%m-%d %H:%M') if h.created_at }}</td><td>{{ h.by_name }}</td><td>{{ h.reason }}</td><td>{% if h.is_current %}<span class="badge bg-primary">{{ L('in force', 'سارٍ') }}</span>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="5" class="text-muted small p-2">{{ L('No version saved yet: the default model is in force.', 'لم يُحفظ أي إصدار بعد: النموذج الافتراضي سارٍ.') }}</td></tr>{% endfor %}
+    </tbody></table></div></div>
+</div>
+{% endblock %}

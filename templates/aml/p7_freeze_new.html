@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from 'aml/_p7_macros.html' import L with context %}
+{% block title %}{{ L('New freeze log entry', 'قيد تجميد جديد') }}{% endblock %}
+{% block content %}
+<div class="container py-3" style="max-width: 760px">
+  <h1 class="h4 mb-3"><i class="bi bi-snow"></i> {{ L('New freeze log entry', 'قيد تجميد جديد') }}</h1>
+  <form method="POST" class="card card-body">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="screening_queue_id" value="{{ pre.screening_queue_id or '' }}">
+    <input type="hidden" name="sar_id" value="{{ pre.sar_id or '' }}">
+    <div class="row g-2">
+      <div class="col-md-6"><label class="form-label small">{{ L('Customer / party name', 'اسم العميل / الطرف') }}</label><input type="text" name="subject_name" class="form-control form-control-sm" required minlength="2" value="{{ pre.subject_name or '' }}"></div>
+      <div class="col-md-6"><label class="form-label small">{{ L('Customer number in the system (if any)', 'رقم العميل في النظام (إن وجد)') }}</label><input type="number" name="customer_id" class="form-control form-control-sm" value="{{ pre.customer_id or '' }}"></div>
+      <div class="col-md-6"><label class="form-label small">{{ L('Name on the list', 'الاسم في القائمة') }}</label><input type="text" name="listed_name" class="form-control form-control-sm" value="{{ pre.listed_name or '' }}"></div>
+      <div class="col-md-6"><label class="form-label small">{{ L('List', 'القائمة') }}</label><input type="text" name="list_name" class="form-control form-control-sm" value="{{ pre.list_name or '' }}"></div>
+      <div class="col-md-6"><label class="form-label small">{{ L('Discovered at', 'وقت الاكتشاف') }}</label><input type="datetime-local" name="discovered_at" class="form-control form-control-sm" required max="{{ now }}" value="{{ disc }}"></div>
+      <div class="col-12"><label class="form-label small">{{ L('Notes', 'ملاحظات') }}</label><textarea name="notes" class="form-control form-control-sm" rows="2">{{ pre.notes or '' }}</textarea></div>
+    </div>
+    <div class="mt-3 d-flex gap-2"><button class="btn btn-sm btn-danger">{{ L('Open the entry', 'فتح القيد') }}</button>
+      <a href="{{ url_for('aml.freeze_log') }}" class="btn btn-sm btn-outline-secondary">{{ L('Cancel', 'إلغاء') }}</a></div>
+  </form>
+</div>
+{% endblock %}

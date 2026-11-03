@@ -178,6 +178,11 @@ def approval_blockers(entity, ubos, signatories, states):
         out.extend(errs)
     if not signatories:
         out.append(M('No authorised signatory recorded.'))
+    so = sanctioned_ownership(ubos, states)
+    if so['deemed_sanctioned']:
+        out.append(M('Sanctioned persons own %(pct)s%% of the entity in aggregate (threshold %(threshold)s%%): '
+                     'treat the entity itself as sanctioned (50%% rule).', pct=_fmt(so['pct']),
+                     threshold=_fmt(so['threshold'])))
     for kind, rows in (('ubo', ubos), ('signatory', signatories)):
         for r in rows:
             st = states.get((kind, r['id']), NOT_SCREENED)
@@ -194,6 +199,45 @@ def approval_blockers(entity, ubos, signatories, states):
                        ('signatory', INCOMPLETE): 'Screening of signatory %(name)s was incomplete (a source was unavailable); screen again.'}[(kind, st)]
                 out.append(M(msg, name=r.get('full_name')))
     return out
+
+
+# OFAC 50% rule: an entity owned 50% or more, directly and in aggregate, by sanctioned
+# persons is itself treated as sanctioned. TODO(compliance-review): indirect ownership
+# through intermediate companies is not modelled; record it as an owner with its stake.
+OFAC_AGGREGATE_THRESHOLD = Decimal('50')
+
+
+def sanctioned_ownership(ubos, states, threshold=OFAC_AGGREGATE_THRESHOLD):
+    """Aggregate direct ownership held by owners who are confirmed sanctions matches.
+    Returns {'pct', 'owners', 'deemed_sanctioned', 'threshold'}."""
+    total, owners = Decimal('0'), []
+    for u in ubos or []:
+        if states.get(('ubo', u['id'])) != CONFIRMED:
+            continue
+        if (u.get('control_type') or 'ownership') != 'ownership':
+            continue
+        try:
+            p = pct(u.get('ownership_pct')) or Decimal('0')
+        except ValueError:
+            p = Decimal('0')
+        total += p
+        owners.append(u.get('full_name'))
+    return {'pct': total, 'owners': owners, 'deemed_sanctioned': total >= threshold, 'threshold': threshold}
+
+
+PALESTINE_KEYS = ('PS', 'PSE', 'PALESTINE', 'PALESTINIAN', 'STATE OF PALESTINE', 'فلسطين', 'فلسطيني', 'فلسطينية')
+
+
+def palestinian_parties(entity, people):
+    """Names of the entity / owners / signatories tied to Palestine (incorporation or nationality),
+    for whom the supervisor's regulatory-measures list (PMA) is relevant."""
+    def tied(v):
+        return str(v or '').strip().upper() in PALESTINE_KEYS
+    out = []
+    if entity and tied(entity.get('incorporation_country')):
+        out.append(entity.get('name'))
+    out += [p.get('full_name') for p in people or [] if tied(p.get('nationality'))]
+    return [n for n in out if n]
 
 
 def main_owner(ubos):
