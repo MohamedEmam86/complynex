@@ -1272,7 +1272,7 @@ def view_alert(alert_id):
                a.alert_description, a.alert_severity, a.status, a.risk_score, a.sar_id,
                a.assigned_to, a.investigation_notes, a.disposition,
                a.triggered_transactions, a.rule_id, a.customer_id,
-               a.disposition_by, a.disposition_date,
+               a.disposition_by, a.disposition_date, COALESCE(a.rule_version, r.version) AS rule_version,
                r.rule_name, r.rule_name_ar, r.rule_code, r.rule_description,
                c.full_name, c.company_name, c.customer_reference, c.risk_classification,
                c.id as cust_id, u.first_name || ' ' || u.last_name AS assigned_name
@@ -1308,22 +1308,18 @@ def view_alert(alert_id):
 @login_required
 @permission_required('aml', level='view')
 def rule_list():
-    from database.db import get_db
-    db = get_db()
-    rules = db.execute("SELECT * FROM tm_rules ORDER BY rule_code").fetchall()
-    return render_template('aml/rule_list.html', rules=rules)
+    # One rule screen: every change goes through versions + approval (TM-G4).
+    return redirect(url_for('aml.rules_list'))
 
 
 @aml_bp.route('/tm-rules/<int:rule_id>/toggle', methods=['POST'])
 @login_required
 @permission_required('aml', level='edit')
 def toggle_rule(rule_id):
-    from database.db import get_db
-    db = get_db()
-    db.execute("UPDATE tm_rules SET is_active = NOT is_active WHERE id=%s", (rule_id,))
-    db.commit()
-    flash(gettext('Rule updated'), 'success')
-    return redirect(url_for('aml.rule_list'))
+    # Switching a rule on or off needs a reason and leaves an audit trail: use
+    # Disable / Enable on the rule management screen.
+    flash(gettext('Use Disable / Enable on the rule management screen; a reason is required.'), 'info')
+    return redirect(url_for('aml.rules_list'))
 
 
 @aml_bp.route('/tm-dashboard')
@@ -1630,95 +1626,35 @@ def download_tx_template():
 @login_required
 @permission_required('aml', level='edit')
 def create_rule():
-    from database.db import get_db
-    db = get_db()
-
-    if request.method == 'POST':
-        try:
-            code = request.form.get('rule_code','').strip().upper()
-            if db.execute("SELECT id FROM tm_rules WHERE rule_code=%s", (code,)).fetchone():
-                flash(gettext('Rule code %(code)s already exists', code=code), 'danger')
-                return render_template('aml/rule_form.html', rule=None, action='Create')
-
-            db.execute("""
-                INSERT INTO tm_rules 
-                (rule_code, rule_name, rule_name_ar, rule_description, rule_category, rule_type,
-                 threshold_value, threshold_currency, time_period_days, severity, is_active)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,1)
-            """, (
-                code,
-                request.form.get('rule_name','').strip(),
-                request.form.get('rule_name_ar','').strip() or None,
-                request.form.get('rule_description','').strip(),
-                request.form.get('rule_category','').strip(),
-                request.form.get('rule_type','THRESHOLD'),
-                float(request.form.get('threshold_value') or 0) or None,
-                request.form.get('threshold_currency','').strip() or None,
-                int(request.form.get('time_period_days') or 1),
-                request.form.get('severity','MEDIUM')
-            ))
-            db.commit()
-            flash(gettext('Rule %(code)s created successfully', code=code), 'success')
-            return redirect(url_for('aml.rule_list'))
-        except Exception as e:
-            flash(f'Error: {str(e)}', 'danger')
-
-    return render_template('aml/rule_form.html', rule=None, action='Create')
+    return redirect(url_for('aml.rule_create'))
 
 
 @aml_bp.route('/tm-rules/<int:rule_id>/edit', methods=['GET', 'POST'])
 @login_required
 @permission_required('aml', level='edit')
 def edit_rule(rule_id):
-    from database.db import get_db
-    db = get_db()
-    rule = db.execute("SELECT * FROM tm_rules WHERE id=%s", (rule_id,)).fetchone()
-    if not rule:
-        flash(gettext('Rule not found'), 'danger')
-        return redirect(url_for('aml.rule_list'))
-
-    if request.method == 'POST':
-        try:
-            db.execute("""
-                UPDATE tm_rules SET
-                    rule_name=%s, rule_name_ar=%s, rule_description=%s, rule_category=%s, rule_type=%s,
-                    threshold_value=%s, threshold_currency=%s, time_period_days=%s, severity=%s
-                WHERE id=%s
-            """, (
-                request.form.get('rule_name','').strip(),
-                request.form.get('rule_name_ar','').strip() or None,
-                request.form.get('rule_description','').strip(),
-                request.form.get('rule_category','').strip(),
-                request.form.get('rule_type','THRESHOLD'),
-                float(request.form.get('threshold_value') or 0) or None,
-                request.form.get('threshold_currency','').strip() or None,
-                int(request.form.get('time_period_days') or 1),
-                request.form.get('severity','MEDIUM'),
-                rule_id
-            ))
-            db.commit()
-            flash(gettext('Rule updated successfully'), 'success')
-            return redirect(url_for('aml.rule_list'))
-        except Exception as e:
-            flash(f'Error: {str(e)}', 'danger')
-
-    return render_template('aml/rule_form.html', rule=rule, action='Edit')
+    return redirect(url_for('aml.rule_edit', rule_id=rule_id))
 
 
 @aml_bp.route('/tm-rules/<int:rule_id>/delete', methods=['POST'])
 @login_required
 @permission_required('aml', level='edit')
 def delete_rule(rule_id):
-    from database.db import get_db
+    # Only a version that never ran (pending or rejected, no alert) can be deleted:
+    # alerts point at the version that raised them.
     db = get_db()
-    rule = db.execute("SELECT rule_code FROM tm_rules WHERE id=%s", (rule_id,)).fetchone()
-    if rule and rule['rule_code'].startswith('TM0'):
-        flash(gettext('Cannot delete built-in rules. Disable them instead.'), 'warning')
-        return redirect(url_for('aml.rule_list'))
+    rule = db.execute("SELECT rule_code, status FROM tm_rules WHERE id=%s", (rule_id,)).fetchone()
+    used = db.execute("SELECT 1 FROM tm_alerts WHERE rule_id=%s LIMIT 1", (rule_id,)).fetchone()
+    if not rule or rule['status'] not in ('PENDING', 'REJECTED') or used:
+        flash(gettext('Only a pending or rejected version that raised no alert can be deleted. Disable a rule instead.'),
+              'warning')
+        return redirect(url_for('aml.rules_list'))
     db.execute("DELETE FROM tm_rules WHERE id=%s", (rule_id,))
     db.commit()
+    AuditLog.log(current_user.id, 'Delete TM Rule Version', 'AML', rule_id,
+                 'Rule %s version deleted (status %s)' % (rule['rule_code'], rule['status']), request.remote_addr)
     flash(gettext('Rule deleted'), 'success')
-    return redirect(url_for('aml.rule_list'))
+    return redirect(url_for('aml.rules_list'))
 
 
 # ─────────────────────────────────────────────
@@ -1862,81 +1798,28 @@ def scenario_simulator():
             ORDER BY t.transaction_date DESC
         """, params).fetchall()
 
+        # Same engine as live monitoring and the backtest (aml/tm_engine.py): windows on each
+        # transaction's own date, the look-back loaded, nothing written.
+        from aml import tm_engine as _E
+        from aml import tm_backtest as _B
         rule_dict = dict(rule)
-        triggered = []
-        would_not_trigger = []
-
-        HIGH_RISK_COUNTRIES = {
-            'Iran', 'North Korea', 'Myanmar', 'Afghanistan', 'Syria',
-            'Yemen', 'Libya', 'Somalia', 'Sudan', 'Iraq', 'Mali',
-            'Burkina Faso', 'Haiti', 'Laos', 'South Sudan', 'Tanzania',
-            'Vietnam', 'Nigeria', 'Pakistan', 'Philippines'
-        }
-
+        _E.ensure_packs_loaded()
+        lookback = _B.load_transactions(db, date_from or None, date_to or None, _E.max_lookback_days([rule_dict]))
+        custs = _B.load_customers(db, {t.get('customer_id') for t in lookback})
+        dq = _B.data_quality(lookback, known_customers=set(custs))
+        hist = _E.History([t for t in lookback if t.get('id') not in dq['exclude']])
+        ctx = _E.Context(_E.load_high_risk(db))
+        params = _E.rule_params(rule_dict)
+        wanted = {t['id'] for t in transactions}
+        triggered, would_not_trigger = [], []
+        by_id = {t['id']: t for lst, _k, _s in hist.by_customer.values() for t in lst}
         for tx in transactions:
             tx = dict(tx)
-            hit = False
-            reason = ''
-            code = rule_dict['rule_code']
-
-            if code == 'TM001':
-                if tx['transaction_type'] in ('CASH_DEPOSIT','CASH_WITHDRAWAL') and \
-                   float(tx['amount']) >= float(rule_dict['threshold_value'] or 0):
-                    hit = True
-                    reason = f"Cash {tx['amount']} >= threshold {rule_dict['threshold_value']}"
-
-            elif code == 'TM002':
-                count = db.execute("""
-                    SELECT COUNT(*) as c FROM transactions
-                    WHERE customer_id=%s AND transaction_type IN ('CASH_DEPOSIT','CASH_WITHDRAWAL')
-                    AND amount < %s AND transaction_date::date >= (%s::date - (%s || ' days')::interval)
-                """, (tx['customer_id'], rule_dict['threshold_value'],
-                      tx['transaction_date'], rule_dict['time_period_days'])).fetchone()['c']
-                if count >= 3:
-                    hit = True
-                    reason = f"{count} cash txns below threshold in window"
-
-            elif code == 'TM003':
-                count = db.execute("""
-                    SELECT COUNT(*) as c FROM transactions
-                    WHERE customer_id=%s AND date(transaction_date)=date(%s)
-                """, (tx['customer_id'], tx['transaction_date'])).fetchone()['c']
-                if count > int(rule_dict['threshold_value'] or 5):
-                    hit = True
-                    reason = f"{count} transactions same day > {rule_dict['threshold_value']}"
-
-            elif code == 'TM004':
-                country = (tx.get('counterparty_country') or '').strip()
-                if country in HIGH_RISK_COUNTRIES:
-                    hit = True
-                    reason = f"High-risk country: {country}"
-
-            elif code == 'TM006':
-                if float(tx['amount']) >= float(rule_dict['threshold_value'] or 0):
-                    prev = db.execute("""
-                        SELECT COUNT(*) as c FROM transactions
-                        WHERE customer_id=%s AND id != %s
-                        AND transaction_date::date < (%s::date - (%s || ' days')::interval)
-                    """, (tx['customer_id'], tx['id'],
-                          tx['transaction_date'], rule_dict['time_period_days'])).fetchone()['c']
-                    if prev == 0:
-                        hit = True
-                        reason = f"No transactions in {rule_dict['time_period_days']} days before this"
-
-            elif code == 'TM010':
-                count = db.execute("""
-                    SELECT COUNT(*) as c FROM transactions
-                    WHERE customer_id=%s AND transaction_type IN ('TRANSFER_OUT','TRANSFER_IN')
-                    AND counterparty_country IS NOT NULL
-                    AND transaction_date::date >= (%s::date - (%s || ' days')::interval)
-                """, (tx['customer_id'], tx['transaction_date'],
-                      rule_dict['time_period_days'])).fetchone()['c']
-                if count > int(rule_dict['threshold_value'] or 5):
-                    hit = True
-                    reason = f"{count} intl transfers in {rule_dict['time_period_days']} days"
-
+            ht = by_id.get(tx['id'])
+            hit = _E.evaluate(rule_dict, ht, hist, custs.get(tx.get('customer_id')), ctx, params=params) \
+                if ht is not None and tx['id'] in wanted else None
             if hit:
-                tx['sim_reason'] = reason
+                tx['sim_reason'] = hit.description
                 tx['already_flagged'] = bool(tx.get('alert_raised'))
                 triggered.append(tx)
             else:
@@ -2128,46 +2011,63 @@ def rules_list():
     return render_template('aml/rules/list.html', rules=rules)
 
 
+def _rule_form_values(data):
+    return {
+        'rule_name': (data.get('rule_name') or '').strip(),
+        'rule_name_ar': (data.get('rule_name_ar') or '').strip() or None,
+        'rule_description': (data.get('rule_description') or '').strip(),
+        'rule_category': (data.get('rule_category') or 'General').strip(),
+        'rule_type': (data.get('rule_type') or 'THRESHOLD').strip(),
+        'threshold_value': float(data.get('threshold_value') or 0) if (data.get('threshold_value') or '').strip() else None,
+        'threshold_currency': (data.get('threshold_currency') or 'EGP').strip(),
+        'time_period_days': int(data.get('time_period_days') or 1),
+        'severity': (data.get('severity') or 'MEDIUM').strip(),
+        'reference': (data.get('reference') or '').strip() or None,
+    }
+
+
+def _rule_form_params(data):
+    return {k[2:]: v for k, v in data.items() if k.startswith('p_')}
+
+
+def _rule_form_context(rule):
+    from aml import tm_engine as _E
+    code = (rule or {}).get('rule_code')
+    spec = _E.RULE_SPECS.get(code, {}).get('params', {}) if code else {}
+    p = _E.rule_params(rule) if rule else {}
+    extra = [{'key': k, 'label_en': d['label_en'], 'label_ar': d['label_ar'], 'unit': d['unit'],
+              'value': (', '.join(map(str, p.get(k))) if isinstance(p.get(k), (list, tuple)) else p.get(k))}
+             for k, d in spec.items() if k not in ('threshold', 'days')]
+    return {'extra_params': extra, 'engine_codes': sorted(_E.RULE_SPECS)}
+
+
 @aml_bp.route('/rules/new', methods=['GET', 'POST'])
 @login_required
 @permission_required('aml', level='edit')
 def rule_create():
+    from aml import tm_versions as _V
     if request.method == 'POST':
         data = request.form
         db = get_db()
         try:
-            db.execute(
-                """INSERT INTO tm_rules
-                   (rule_code, rule_name, rule_name_ar, rule_description, rule_category, rule_type,
-                    threshold_value, threshold_currency, time_period_days,
-                    severity, is_active, status, created_by, created_at, version)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,0,'PENDING',%s,NOW(),1)""",
-                (
-                    data['rule_code'].strip().upper(),
-                    data['rule_name'].strip(),
-                    data.get('rule_name_ar', '').strip() or None,
-                    data.get('rule_description', '').strip(),
-                    data.get('rule_category', 'General').strip(),
-                    data.get('rule_type', 'THRESHOLD').strip(),
-                    float(data.get('threshold_value') or 0),
-                    data.get('threshold_currency', 'EGP').strip(),
-                    int(data.get('time_period_days') or 1),
-                    data.get('severity', 'MEDIUM').strip(),
-                    current_user.id,
-                )
-            )
-            db.commit()
+            new_id = _V.propose(db, None, _rule_form_values(data), _rule_form_params(data),
+                                data.get('change_reason'), current_user.id, code=data.get('rule_code'))
+            AuditLog.log(current_user.id, 'Propose TM Rule', 'AML', new_id,
+                         'New rule %s proposed: %s' % ((data.get('rule_code') or '').upper(), data.get('change_reason')),
+                         request.remote_addr)
             flash(gettext('Rule submitted for approval.'), 'success')
             return redirect(url_for('aml.rules_list'))
-        except Exception as e:
-            flash(gettext('Error: %(e)s', e=e), 'danger')
-    return render_template('aml/rules/form.html', rule=None, action='create')
+        except (_V.VersionError, ValueError) as e:
+            db.rollback()
+            flash(gettext(str(e)), 'danger')
+    return render_template('aml/rules/form.html', rule=None, action='create', **_rule_form_context(None))
 
 
 @aml_bp.route('/rules/<int:rule_id>/edit', methods=['GET', 'POST'])
 @login_required
 @permission_required('aml', level='edit')
 def rule_edit(rule_id):
+    from aml import tm_versions as _V
     db = get_db()
     rule = db.execute("SELECT * FROM tm_rules WHERE id = %s", (rule_id,)).fetchone()
     if not rule:
@@ -2177,62 +2077,37 @@ def rule_edit(rule_id):
     if request.method == 'POST':
         data = request.form
         try:
-            # Create a new version pending approval instead of overwriting
-            db.execute(
-                """INSERT INTO tm_rules
-                   (rule_code, rule_name, rule_name_ar, rule_description, rule_category, rule_type,
-                    threshold_value, threshold_currency, time_period_days,
-                    severity, is_active, status, created_by, created_at, version, previous_id)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,0,'PENDING',%s,NOW(),%s,%s)""",
-                (
-                    data['rule_code'].strip().upper(),
-                    data['rule_name'].strip(),
-                    data.get('rule_name_ar', '').strip() or None,
-                    data.get('rule_description', '').strip(),
-                    data.get('rule_category', 'General').strip(),
-                    data.get('rule_type', 'THRESHOLD').strip(),
-                    float(data.get('threshold_value') or 0),
-                    data.get('threshold_currency', 'EGP').strip(),
-                    int(data.get('time_period_days') or 1),
-                    data.get('severity', 'MEDIUM').strip(),
-                    current_user.id,
-                    rule['version'] + 1,
-                    rule_id,
-                )
-            )
-            db.commit()
-            flash(gettext('Edited rule submitted for approval (v%(old)s → v%(new)s).', old=rule['version'], new=rule['version'] + 1), 'info')
+            # A new version pending approval, never an overwrite (TM-G4)
+            new_id = _V.propose(db, rule_id, _rule_form_values(data), _rule_form_params(data),
+                                data.get('change_reason'), current_user.id)
+            AuditLog.log(current_user.id, 'Propose TM Rule Version', 'AML', new_id,
+                         'Rule %s new version from v%s: %s' % (rule['rule_code'], rule['version'], data.get('change_reason')),
+                         request.remote_addr)
+            flash(gettext('Edited rule submitted for approval (v%(old)s → v%(new)s).', old=rule['version'],
+                          new=(db.execute("SELECT version FROM tm_rules WHERE id=%s", (new_id,)).fetchone() or {}).get('version')),
+                  'info')
             return redirect(url_for('aml.rules_list'))
-        except Exception as e:
-            flash(gettext('Error: %(e)s', e=e), 'danger')
+        except (_V.VersionError, ValueError) as e:
+            db.rollback()
+            flash(gettext(str(e)), 'danger')
 
-    return render_template('aml/rules/form.html', rule=dict(rule), action='edit')
+    return render_template('aml/rules/form.html', rule=dict(rule), action='edit', **_rule_form_context(dict(rule)))
 
 
 @aml_bp.route('/rules/<int:rule_id>/approve', methods=['POST'])
 @login_required
 @permission_required('aml', level='edit')
 def rule_approve(rule_id):
+    """Put a pending version in force: four eyes, every other active version of the code retired."""
+    from aml import tm_versions as _V
     db = get_db()
-    rule = db.execute("SELECT * FROM tm_rules WHERE id = %s", (rule_id,)).fetchone()
-    if not rule:
-        return jsonify({'error': 'Not found'}), 404
-
-    # If this rule supersedes a previous one, disable the old version
-    if rule['previous_id']:
-        db.execute(
-            "UPDATE tm_rules SET is_active=0, status='DISABLED', updated_at=NOW() WHERE id=%s",
-            (rule['previous_id'],)
-        )
-
-    db.execute(
-        """UPDATE tm_rules SET status='ACTIVE', is_active=1,
-           approved_by=%s, approved_at=NOW(), updated_at=NOW()
-           WHERE id=%s""",
-        (current_user.id, rule_id)
-    )
-    db.commit()
-    flash(gettext('Rule approved and activated.'), 'success')
+    try:
+        rule = _V.approve(db, rule_id, current_user.id)
+        AuditLog.log(current_user.id, 'Approve TM Rule Version', 'AML', rule_id,
+                     'Rule %s v%s approved and in force' % (rule['rule_code'], rule.get('version')), request.remote_addr)
+        flash(gettext('Rule approved and activated.'), 'success')
+    except _V.VersionError as e:
+        flash(gettext(str(e)), 'danger')
     return redirect(url_for('aml.rules_list'))
 
 
@@ -2304,26 +2179,17 @@ def rule_enable(rule_id):
 @login_required
 @permission_required('aml', level='edit')
 def rule_rollback(rule_id):
-    """Re-activate the previous version of a rule and disable this one."""
+    """Re-activate the previous version of a rule and disable this one (reason required)."""
+    from aml import tm_versions as _V
     db = get_db()
-    rule = db.execute("SELECT * FROM tm_rules WHERE id = %s", (rule_id,)).fetchone()
-    if not rule or not rule['previous_id']:
-        flash(gettext('No previous version to roll back to.'), 'danger')
-        return redirect(url_for('aml.rules_list'))
-
-    # Disable current
-    db.execute(
-        "UPDATE tm_rules SET status='DISABLED', is_active=0, updated_at=NOW(), updated_by=%s WHERE id=%s",
-        (current_user.id, rule_id)
-    )
-    # Re-activate previous
-    db.execute(
-        """UPDATE tm_rules SET status='ACTIVE', is_active=1, updated_at=NOW(), updated_by=%s
-           WHERE id=%s""",
-        (current_user.id, rule['previous_id'])
-    )
-    db.commit()
-    flash(gettext('Rolled back to previous rule version.'), 'info')
+    try:
+        prev = _V.rollback(db, rule_id, current_user.id, request.form.get('reason'))
+        AuditLog.log(current_user.id, 'Rollback TM Rule', 'AML', rule_id,
+                     'Rule %s rolled back to v%s. Reason: %s' % (prev['rule_code'], prev.get('version'),
+                                                                request.form.get('reason')), request.remote_addr)
+        flash(gettext('Rolled back to previous rule version.'), 'info')
+    except _V.VersionError as e:
+        flash(gettext(str(e)), 'danger')
     return redirect(url_for('aml.rules_list'))
 
 

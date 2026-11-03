@@ -112,6 +112,31 @@
             <input type="number" name="time_period_days" class="form-control" min="1"
                    value="{{ rule.time_period_days if rule else 1 }}">
           </div>
+
+          {% set is_ar = get_locale()|string == 'ar' %}
+          {% for p in extra_params %}
+          <div class="col-md-4">
+            <label class="form-label fw-bold">{{ p.label_ar if is_ar else p.label_en }}</label>
+            <input type="text" name="p_{{ p.key }}" class="form-control" value="{{ p.value if p.value is not none else '' }}"
+                   aria-describedby="hint_{{ p.key }}">
+            <div class="form-text" id="hint_{{ p.key }}"><code>{{ p.key }}</code> · {{ p.unit }}</div>
+          </div>
+          {% endfor %}
+
+          <div class="col-12">
+            <label class="form-label fw-bold">{{ 'المرجع القانوني أو الداخلي' if is_ar else 'Legal or internal reference' }}</label>
+            <input type="text" name="reference" class="form-control" maxlength="500"
+                   value="{{ rule.reference or '' if rule else '' }}"
+                   placeholder="{{ 'مثال: سياسة مراقبة المعاملات، بند 4.2' if is_ar else 'e.g. Transaction monitoring policy, section 4.2' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold">{{ 'سبب التعديل' if is_ar else 'Reason for the change' }} <span class="text-danger">*</span></label>
+            <textarea name="change_reason" class="form-control" rows="2" required minlength="10"
+                      placeholder="{{ 'ليه الحد ده؟ على أي بيانات أو اختبار؟' if is_ar else 'Why this value? Based on which data or backtest?' }}"></textarea>
+          </div>
+          {% if rule and rule.rule_code not in engine_codes %}
+          <div class="col-12"><div class="alert alert-warning small mb-0">{{ 'الكود ده مش مدعوم في محرك المراقبة، فالقاعدة مش هتطلع تنبيهات.' if is_ar else 'This code is not supported by the monitoring engine, so the rule will not raise alerts.' }}</div></div>
+          {% endif %}
         </div>
 
         <div class="d-flex gap-2 mt-4">

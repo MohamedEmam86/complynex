@@ -1,0 +1,73 @@
+{# Shared bits of the TM tuning pages. L(en, ar) picks the user's language. #}
+{% macro period_form(action, date_from, date_to, L, extra={}) %}
+<form method="get" action="{{ action }}" class="row g-2 align-items-end mb-3">
+  {% for k, v in extra.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+  <div class="col-auto">
+    <label class="form-label small fw-bold mb-0">{{ L('From', 'من') }}</label>
+    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+  </div>
+  <div class="col-auto">
+    <label class="form-label small fw-bold mb-0">{{ L('To', 'إلى') }}</label>
+    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-primary btn-sm" name="run" value="1"><i class="fas fa-play me-1"></i>{{ L('Run backtest', 'تشغيل الاختبار') }}</button>
+  </div>
+</form>
+{% endmacro %}
+
+{% macro data_note(L) %}
+<div class="alert alert-secondary small">
+  <i class="fas fa-info-circle me-1"></i>
+  {{ L('A backtest replays the transactions stored in the system as live monitoring would, without creating alerts. Its numbers are only as representative as that data: calibrate thresholds on a representative period of real activity, and record the reason for every change.',
+       'الاختبار بيعيد تشغيل القواعد على العمليات المسجلة في النظام زي المراقبة الفعلية بالظبط، من غير ما يطلع تنبيهات. الأرقام بتعبر عن البيانات دي بس: اضبط الحدود على فترة حقيقية ممثلة للنشاط، واكتب سبب كل تعديل.') }}
+</div>
+{% endmacro %}
+
+{% macro unit_label(unit, L) -%}
+{%- set units = {'amount': L('amount', 'مبلغ'), 'count': L('count', 'عدد'), 'ratio': L('x', 'مرة'), 'days': L('days', 'يوم'),
+                 'hours': L('hours', 'ساعة'), 'minutes': L('minutes', 'دقيقة'), 'percent': '%', 'types': L('types', 'أنواع'),
+                 'bool': L('yes/no', 'نعم/لا')} -%}
+{{ units.get(unit, unit) }}
+{%- endmacro %}
+
+{% macro value(v) -%}
+{%- if v is sameas true -%}✓{%- elif v is sameas false -%}✗{%- elif v is iterable and v is not string -%}{{ v|join(', ') }}{%- elif v is number -%}{{ '{:,g}'.format(v) }}{%- else -%}{{ v if v is not none else '—' }}{%- endif -%}
+{%- endmacro %}
+
+{% macro quality(q, L) %}
+<div class="card shadow-sm mb-3">
+  <div class="card-header"><strong>{{ L('Data quality before rules run', 'جودة البيانات قبل تشغيل القواعد') }}</strong>
+    <span class="text-muted small ms-2">{{ L('transactions checked', 'عمليات تم فحصها') }}: {{ '{:,}'.format(q.total) }}</span></div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>{{ L('Issue', 'المشكلة') }}</th><th class="text-end">{{ L('Transactions', 'العمليات') }}</th><th>{{ L('Effect', 'الأثر') }}</th></tr></thead>
+      <tbody>
+      {% set names = {
+        'duplicate_reference': (L('Same transaction reference twice', 'نفس رقم العملية مكرر'), L('excluded', 'مستبعدة')),
+        'duplicate_likely': (L('Duplicate (same customer, type, amount and account at the same second)', 'مكرر (نفس العميل والنوع والمبلغ والحساب في نفس الثانية)'), L('excluded', 'مستبعدة')),
+        'repeat_within_2_minutes': (L('Same transaction repeated within 2 minutes', 'نفس العملية اتكررت خلال دقيقتين'), L('kept: check whether the source sends twice', 'محسوبة: اتأكد إن المصدر مش بيبعت مرتين')),
+        'date_unreadable': (L('Date cannot be read', 'التاريخ غير مقروء'), L('excluded', 'مستبعدة')),
+        'customer_missing': (L('No customer', 'بدون عميل'), L('excluded', 'مستبعدة')),
+        'customer_unknown': (L('Customer not in the system', 'العميل غير موجود'), L('excluded', 'مستبعدة')),
+        'amount_missing_or_not_positive': (L('Amount missing or not positive', 'المبلغ ناقص أو غير موجب'), L('excluded', 'مستبعدة')),
+        'date_in_future': (L('Date in the future', 'تاريخ في المستقبل'), L('check the source', 'راجع المصدر')),
+        'currency_missing': (L('Currency missing', 'العملة ناقصة'), L('check the source', 'راجع المصدر')),
+        'type_unknown': (L('Unknown transaction type', 'نوع عملية غير معروف'), L('rules for known types will not see it', 'القواعد مش هتشوفها')),
+        'transfer_without_country': (L('Transfer without counterparty country', 'تحويل بدون دولة الطرف الآخر'), L('country rules cannot judge it', 'قواعد الدول مش هتقدر تحكم عليها')),
+        'late_arrival': (L('Recorded more than 7 days after the transaction', 'اتسجلت بعد العملية بأكتر من 7 أيام'), L('alerts would be late', 'التنبيه هيتأخر')),
+        'reversal_or_refund': (L('Refund / reversal', 'مرتجع / عكس عملية'), L('information', 'للعلم')),
+      } %}
+      {% for code, n in q.issues|dictsort(by='value', reverse=true) %}
+      <tr><td>{{ names.get(code, (code, ''))[0] }}</td><td class="text-end">{{ '{:,}'.format(n) }}</td><td class="small text-muted">{{ names.get(code, ('', ''))[1] }}</td></tr>
+      {% else %}
+      <tr><td colspan="3" class="text-muted">{{ L('No issues found.', 'لا توجد مشاكل.') }}</td></tr>
+      {% endfor %}
+      {% if q.late_measurable == 0 %}
+      <tr><td colspan="3" class="small text-muted">{{ L('Late arrivals cannot be measured: the recording date (created_at) is empty.', 'التأخير مش ممكن يتقاس: تاريخ التسجيل (created_at) فاضي.') }}</td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endmacro %}

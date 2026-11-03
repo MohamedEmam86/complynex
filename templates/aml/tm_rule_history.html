@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% import "aml/_tm_macros.html" as M %}
+{% block title %}{{ L('Rule versions', 'نسخ القاعدة') }} {{ code }}{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4" style="max-width:1100px">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0"><i class="fas fa-history text-secondary me-2"></i>{{ L('Rule versions', 'نسخ القاعدة') }} <code>{{ code }}</code></h2>
+    <a href="{{ url_for('aml.rules_list') }}" class="btn btn-outline-secondary btn-sm">{{ L('Rule management', 'إدارة القواعد') }}</a>
+  </div>
+  <div class="card shadow-sm"><div class="card-body p-0">
+    <table class="table table-sm mb-0 align-middle small">
+      <thead class="table-light"><tr><th>{{ L('Version', 'النسخة') }}</th><th>{{ L('Status', 'الحالة') }}</th><th>{{ L('Proposed by / when', 'اقترحها / إمتى') }}</th>
+        <th>{{ L('Approved by / when', 'اعتمدها / إمتى') }}</th><th>{{ L('Why', 'السبب') }}</th><th>{{ L('Changes from the previous version', 'التغييرات عن النسخة السابقة') }}</th><th class="text-end">{{ L('Alerts', 'تنبيهات') }}</th><th></th></tr></thead>
+      <tbody>
+      {% for v in versions %}
+        <tr class="{{ 'table-success' if v.status == 'ACTIVE' else ('table-warning' if v.status == 'PENDING' else '') }}">
+          <td>v{{ v.version or 1 }}</td><td>{{ v.status }}</td>
+          <td>{{ v.created_by_email or '—' }}<br>{{ (v.created_at|string)[:16] if v.created_at else '' }}</td>
+          <td>{{ v.approved_by_email or '—' }}<br>{{ v.approved_at.strftime('%Y-%m-%d %H:%M') if v.approved_at else '' }}</td>
+          <td>{{ v.change_reason or '' }}</td>
+          <td>{% for k, a, b in diffs.get(v.id, []) %}<div><code>{{ k }}</code>: {{ M.value(a) }} → <strong>{{ M.value(b) }}</strong></div>{% endfor %}</td>
+          <td class="text-end">{{ v.alerts }}</td>
+          <td><a class="btn btn-sm btn-outline-info" href="{{ url_for('aml.tm_rule_backtest', rule_id=v.id) }}">{{ L('Backtest', 'اختبار') }}</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div></div>
+</div>
+{% endblock %}

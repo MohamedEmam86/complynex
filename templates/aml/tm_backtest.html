@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% import "aml/_tm_macros.html" as M %}
+{% block title %}{{ L('Backtest a rule version', 'اختبار نسخة قاعدة') }}{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4" style="max-width:1100px">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0"><i class="fas fa-vial text-info me-2"></i>{{ L('Backtest before activation', 'اختبار قبل التفعيل') }}
+      <small class="text-muted fs-6"><code>{{ rule.rule_code }}</code> v{{ rule.version or 1 }} ({{ rule.status }})</small></h2>
+    <a href="{{ url_for('aml.rules_list') }}" class="btn btn-outline-secondary btn-sm">{{ L('Rule management', 'إدارة القواعد') }}</a>
+  </div>
+  {{ M.data_note(L) }}
+
+  {% if current and current.id != rule.id %}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header"><strong>{{ L('What changes', 'التغييرات') }}</strong>: v{{ current.version or 1 }} ({{ L('in force', 'الحالية') }}) → v{{ rule.version or 1 }}</div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        <thead><tr><th>{{ L('Parameter', 'المعيار') }}</th><th>{{ L('In force', 'الحالي') }}</th><th>{{ L('Proposed', 'المقترح') }}</th></tr></thead>
+        <tbody>
+        {% for k, a, b in changes %}<tr><td><code>{{ k }}</code></td><td>{{ M.value(a) }}</td><td class="fw-bold">{{ M.value(b) }}</td></tr>
+        {% else %}<tr><td colspan="3" class="text-muted">{{ L('No parameter change.', 'لا يوجد تغيير في المعايير.') }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+      {% if rule.change_reason %}<p class="small px-3 py-2 mb-0"><strong>{{ L('Reason', 'السبب') }}:</strong> {{ rule.change_reason }}</p>{% endif %}
+    </div>
+  </div>
+  {% elif not current %}
+  <div class="alert alert-info small">{{ L('No version of this rule is in force: the backtest shows what it would raise on its own.', 'مافيش نسخة مفعلة من القاعدة دي: الاختبار بيوضح هتطلع إيه لوحدها.') }}</div>
+  {% endif %}
+
+  {{ M.period_form(url_for('aml.tm_rule_backtest', rule_id=rule.id), date_from, date_to, L) }}
+
+  {% if result %}
+    {% if not result.supported %}
+    <div class="alert alert-warning">{{ L('This rule is not supported by the engine, so it cannot be backtested.', 'القاعدة دي غير مدعومة في المحرك، فمش ممكن تتختبر.') }}</div>
+    {% else %}
+    <p class="small text-muted">{{ L('transactions evaluated', 'عمليات تم تقييمها') }}: {{ '{:,}'.format(result.summary.evaluated) }} ·
+      {{ L('excluded by data quality', 'مستبعدة بسبب جودة البيانات') }}: {{ '{:,}'.format(result.summary.excluded) }}</p>
+    <div class="row g-3 mb-3">
+      {% for label, r in [(L('In force', 'الحالية'), result.current), (L('Proposed', 'المقترحة'), result.candidate)] %}
+      <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-body">
+        <h6 class="text-muted">{{ label }}</h6>
+        <div class="fs-3 fw-bold">{{ '{:,}'.format(r.alerts) }} <small class="fs-6 text-muted">{{ L('alerts', 'تنبيه') }}</small></div>
+        <div class="small">{{ '{:,}'.format(r.customers) }} {{ L('customers', 'عميل') }} · {{ '{:,}'.format(r.hits) }} {{ L('hits', 'مرة انطباق') }}</div>
+        {% if r.by_month %}<table class="table table-sm small mt-2 mb-0">{% for m, n in r.by_month.items() %}<tr><td>{{ m }}</td><td class="text-end">{{ n }}</td></tr>{% endfor %}</table>{% endif %}
+      </div></div></div>
+      {% endfor %}
+    </div>
+    <div class="alert alert-light border small">
+      {{ L('Alerts raised by both', 'تنبيهات في الاتنين') }}: <strong>{{ result.both }}</strong> ·
+      {{ L('only by the version in force (would disappear)', 'في الحالية بس (هتختفي)') }}: <strong>{{ result.only_current }}</strong> ·
+      {{ L('only by the proposed version (new)', 'في المقترحة بس (جديدة)') }}: <strong>{{ result.only_candidate }}</strong>
+    </div>
+    {% if result.candidate.sample %}
+    <div class="card shadow-sm"><div class="card-header"><strong>{{ L('Sample of alerts the proposed version would raise', 'عينة من التنبيهات اللي هتطلعها النسخة المقترحة') }}</strong></div>
+      <div class="card-body p-0"><table class="table table-sm mb-0 small">
+        <thead><tr><th>{{ L('Date', 'التاريخ') }}</th><th>{{ L('Transaction', 'العملية') }}</th><th>{{ L('Customer', 'العميل') }}</th><th class="text-end">{{ L('Amount', 'المبلغ') }}</th><th>{{ L('Why', 'السبب') }}</th></tr></thead>
+        <tbody>{% for s in result.candidate.sample %}
+          <tr><td>{{ s.date }}</td><td><a href="{{ url_for('aml.view_transaction', tx_id=s.tx_id) }}">#{{ s.tx_id }}</a></td><td>{{ s.customer_id }}</td>
+            <td class="text-end">{{ '{:,.2f}'.format(s.amount) }}</td><td>{{ s.reason }}</td></tr>{% endfor %}</tbody>
+      </table></div></div>
+    {% endif %}
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
