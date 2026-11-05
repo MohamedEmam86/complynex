@@ -74,6 +74,23 @@ def test_workbook_has_every_section():
     assert wb['Indicators'].max_row == 3
 
 
+def test_workbook_neutralises_formula_injection_and_strips_control_chars():
+    from openpyxl import load_workbook
+    rep = _rep()
+    # an evidence note a user could control: a formula-injection payload with an
+    # illegal control character embedded.
+    rep['pillars'][0]['indicators'][0]['evidence_notes'] = '=HYPERLINK("http://evil")\x03 drop'
+    buf = io.BytesIO()
+    REP.workbook(rep).save(buf)
+    buf.seek(0)
+    ws = load_workbook(buf)['Indicators']
+    cell = [c for row in ws.iter_rows() for c in row
+            if isinstance(c.value, str) and 'HYPERLINK' in c.value][0]
+    assert cell.data_type == 's'                 # stored as literal text, not a formula
+    assert '\x03' not in cell.value              # illegal control char stripped
+    assert cell.value.startswith('=HYPERLINK')   # content otherwise preserved
+
+
 # ---------------------------------------------------------------- H2 phishing authorisation
 GOOD = {'organisation': 'Demo Co', 'authorised_by_name': 'A. Person', 'authorised_by_title': 'CEO',
         'scope': 'All staff, coupon scenario', 'valid_from': '2026-11-01', 'valid_to': '2026-11-30',
@@ -81,7 +98,7 @@ GOOD = {'organisation': 'Demo Co', 'authorised_by_name': 'A. Person', 'authorise
 
 
 def test_authorisation_required():
-    assert [c for c, _ in AUTHZ.problems(None, ['a@demo.example'], 0)] == ['missing']
+    assert [c for c, *_ in AUTHZ.problems(None, ['a@demo.example'], 0)] == ['missing']
 
 
 def test_authorisation_complete_is_ok():
@@ -89,8 +106,8 @@ def test_authorisation_complete_is_ok():
 
 
 def test_authorisation_rules():
-    codes = lambda **kw: [c for c, _ in AUTHZ.problems(dict(GOOD, **kw.pop('auth', {})), kw.pop('emails', ['a@demo.example']),
-                                                      kw.pop('docs', 1), kw.pop('today', date(2026, 11, 2)))]
+    codes = lambda **kw: [c for c, *_ in AUTHZ.problems(dict(GOOD, **kw.pop('auth', {})), kw.pop('emails', ['a@demo.example']),
+                                                        kw.pop('docs', 1), kw.pop('today', date(2026, 11, 2)))]
     assert codes(docs=0) == ['document']
     assert codes(today=date(2026, 12, 1)) == ['expired']
     assert codes(today=date(2026, 10, 1)) == ['not_yet']
@@ -100,6 +117,33 @@ def test_authorisation_rules():
     assert codes(auth={'allowed_domains': ''}) == ['domains']
     assert 'incomplete' in codes(auth={'authorised_by_title': ' '})
     assert codes(auth={'valid_to': '2026-10-01'}) == ['dates']
+
+
+def test_authorisation_messages_are_translatable_and_safe():
+    # runtime text (a date, an email list) is a parameter, never folded into the
+    # msgid — so the message carries no bare '%' and can be shown in Arabic.
+    probs = AUTHZ.problems(dict(GOOD, valid_to='2026-11-30'), ['x@other.example'], 1, date(2026, 12, 5))
+    codes = [c for c, *_ in probs]
+    assert 'expired' in codes and 'out_of_scope' in codes
+    for item in probs:
+        en, ar = AUTHZ.message(item, 'en'), AUTHZ.message(item, 'ar')
+        assert en and ar and en != ar          # both languages present, distinct
+        assert '%(' not in en and '%(' not in ar   # placeholders resolved, nothing left dangling
+    assert '2026-11-30' in AUTHZ.message(('expired', 'expired', {'d': '2026-11-30'}), 'ar')
+
+
+def test_allowed_domain_validation():
+    bad = AUTHZ.invalid_domains({'gmail.com', 'outlook.com', 'localhost', '*', 'demo.example'})
+    assert set(bad) == {'gmail.com', 'outlook.com', 'localhost', '*'}
+    assert AUTHZ.invalid_domains({'branch.demo.example'}) == []
+
+
+def test_recipient_email_validation():
+    for good in ('a@demo.example', 'first.last@branch.example.com'):
+        assert AUTHZ.valid_email(good)
+    for bad in ('', 'noatsign.example', 'a@@b.com', 'a@b', 'two@a@b.com',
+                'Name <a@b.com>', 'a;b@c.com', 'a b@c.com', 'a@b.com, c@d.com', 'x%y@c.com'):
+        assert not AUTHZ.valid_email(bad), bad
 
 
 def test_domains_parsing():

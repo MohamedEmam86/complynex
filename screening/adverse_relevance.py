@@ -159,40 +159,69 @@ def classify(text):
 
 
 _JOIN_NEXT = {'عبد', 'ابو', 'أبو', 'بن', 'abd', 'abdel', 'abdul', 'abu', 'abou', 'el', 'al', 'bin', 'ben'}
-_JOIN_PREV = {'الدين', 'الله', 'الاسلام', 'الإسلام', 'eldin', 'el-din', 'allah', 'uddin', 'eddin'}
+# elements that attach to the element BEFORE them (…al-Din, …ullah): the Arabic
+# compounds plus their bare Latin transliterations (Nour El Din -> one unit).
+_JOIN_PREV = {'الدين', 'الله', 'الاسلام', 'الإسلام', 'eldin', 'el-din', 'allah', 'uddin', 'eddin',
+              'din', 'deen', 'allah', 'ullah', 'ullha'}
+
+# weight (mi._weight scale: محمد 1.0, سعد 4.0, الشاطر 8.3, خيرت 8.7) at or above
+# which a single element is distinctive enough to anchor a short "known-as" form.
+_RARE_WEIGHT = 6.0
 
 
 def _units(name):
-    """Name elements as a reader writes them: compounds kept together (عبد اللطيف، سعد الدين، Abd El Aziz)."""
+    """Name elements as a reader writes them: compounds kept together
+    (عبد اللطيف، سعد الدين، Abd El Aziz، Nour El Din). A join-next connector
+    (abd/abu/el/al/bin) chains onto the following element, chaining through a
+    second connector too (Abd + El + Aziz -> 'Abd El Aziz'); a join-previous
+    element (-al-Din, -ullah) merges into the unit before it."""
     words = str(name or '').split()
-    units, i = [], 0
-    while i < len(words):
+    units, i, n = [], 0, len(words)
+    while i < n:
         w = words[i]
-        if w.lower() in _JOIN_NEXT and i + 1 < len(words):
-            w = w + ' ' + words[i + 1]
+        wl = w.lower()
+        if wl in _JOIN_NEXT and i + 1 < n:
+            parts = [w]
             i += 1
-        if units and words[i].lower() in _JOIN_PREV and w == words[i]:
+            while i + 1 < n and words[i].lower() in _JOIN_NEXT:   # abd EL aziz
+                parts.append(words[i])
+                i += 1
+            parts.append(words[i])
+            comp = ' '.join(parts)
+            if units and words[i].lower() in _JOIN_PREV:          # Nour + (El Din)
+                units[-1] = units[-1] + ' ' + comp
+            else:
+                units.append(comp)
+            i += 1
+            continue
+        if units and wl in _JOIN_PREV:                            # Saad + Din
             units[-1] = units[-1] + ' ' + w
-        else:
-            units.append(w)
+            i += 1
+            continue
+        units.append(w)
         i += 1
     return units
 
 
 def known_as_forms(name):
-    """The shorter forms the press uses for a long Egyptian name: the second name + family name
-    (خيرت الشاطر), first + second + family (محمد خيرت الشاطر), first + family. Only forms whose
-    elements together still identify someone (not محمد احمد)."""
+    """The shorter forms the press uses for a long Egyptian name: the second
+    name + family name (خيرت الشاطر) and first + second + family (محمد خيرت الشاطر).
+
+    Only generated for names with at least FOUR elements, and only when the
+    family element is distinctive on its own (weight >= 6). The first + family
+    form (محمد الشاطر) is deliberately NOT produced: a common first name plus a
+    family name matches far too many unrelated people to be a search lead."""
     u = _units(name)
-    if len(u) < 3:
+    if len(u) < 4:
+        return []
+    fam_toks = mi.tokens(u[-1])
+    if not fam_toks or max(mi._weight(t) for t in fam_toks) < _RARE_WEIGHT:
         return []
     out = []
-    for f in ([u[0], u[1], u[-1]], [u[1], u[-1]], [u[0], u[-1]]):
-        if len(f) == 3 and len(u) == 3:
-            continue                                   # that is the full name itself
+    for f in ([u[1], u[-1]], [u[0], u[1], u[-1]]):      # best (second+family) first, then 3-element
         s = ' '.join(f)
         toks = mi.tokens(s)
-        if len(toks) >= 2 and sum(mi._weight(t) for t in toks) >= 9.0 and s not in out:
+        if len(toks) >= 2 and s not in out:
             out.append(s)
     return out
 
@@ -220,7 +249,9 @@ def name_presence(name, text):
     stems = _stems(canon)
     flat = set().union(*stems) if stems else set()
     best = None
-    rank = {'exact': 3, 'strong': 2, 'partial': 1}
+    # 'known_as' is a short-form hit: it ranks like 'partial' and, like partial,
+    # can never on its own raise an assessment to HIGH (see assess()).
+    rank = {'exact': 3, 'strong': 2, 'known_as': 1, 'partial': 1}
     for q in _name_forms(name):
         present = [t in flat for t in q]
         n, m = len(q), sum(present)
@@ -230,18 +261,25 @@ def name_presence(name, text):
         elif n >= 2 and m == n:
             level = 'strong'
         elif n >= 3 and present[0] and m >= 2:
-            # a long Egyptian name reported by first + family name; a lead
-            # only if the elements found are not all common ones
-            if sum(mi._weight(t) for t, p in zip(q, present) if p) >= 7.0:
+            # a long Egyptian name reported by first name + one or more other
+            # elements. First + family name ALONE (no middle element) is too
+            # weak — too many unrelated people share a common first name and a
+            # family name (محمد الشاطر); require at least one matched element
+            # strictly between the first and the family name.
+            matched = [idx for idx, p in enumerate(present) if p]
+            has_middle = any(0 < idx < n - 1 for idx in matched)
+            if has_middle and sum(mi._weight(q[idx]) for idx in matched) >= 7.0:
                 level = 'partial'
         elif n == 1 and m == 1:
             level = 'partial'
         if level in (None, 'partial') and n >= 3:
-            # reported by a shorter form (خيرت الشاطر): the form's elements together, in order
+            # reported by a shorter form the press uses (خيرت الشاطر): the form's
+            # elements together, in order. A short form is never 'strong' — it
+            # identifies the person less firmly than the full name.
             for f in (known_as_forms(name) if q == mi.tokens(name) else []):
                 ft = mi.tokens(f)
                 if _phrase_in(stems, ft, latin_prefix=False):
-                    level = 'strong' if len(ft) >= 3 else 'partial'
+                    level = 'known_as'
                     break
         if level in ('exact', 'strong') and sum(mi._weight(t) for t in q) < 7.0:
             # a name made only of very common elements (محمد احمد) identifies
@@ -265,7 +303,7 @@ def assess(name, articles):
         a = dict(a)
         a['name_match'] = level
         if c['severity']:
-            bonus = {'exact': 25, 'strong': 15, 'partial': 0}[level]
+            bonus = {'exact': 25, 'strong': 15, 'known_as': 0, 'partial': 0}[level]
             a.update({'categories': c['categories'], 'matched_keywords': c['terms'],
                       'severity': c['severity'], 'risk_score': float(min(100, c['severity'] * 25 + bonus))})
             hits.append(a)
