@@ -152,8 +152,10 @@ def test_sweep_values():
     assert 10000 in B.default_sweep_values(rule('TM001', threshold_value=10000))
 
 
-def test_lookback_covers_dormant_prior_history():
-    assert E.max_lookback_days([rule('TM006', time_period_days=90)]) >= 455
+def test_lookback_no_longer_loads_a_year_for_the_dormant_rule():
+    # B3: the "activity before the quiet period" is one database question, not 455 days of rows
+    assert E.max_lookback_days([rule('TM006', time_period_days=90)]) == 90
+    assert E.max_lookback_days([rule('TM003', parameters='{"hours": 48}')]) == 2
 
 
 # ---------------------------------------------------------------- versions (pure helpers)

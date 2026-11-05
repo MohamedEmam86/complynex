@@ -38,17 +38,36 @@ evaluate(rule, tx, history, customer, ctx) -> Hit | None   (pure, no database)
 """
 import bisect
 import json
+import logging
+import os
 import re
+import time
+from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+
+log = logging.getLogger(__name__)
 
 CASH_TYPES = ('CASH_DEPOSIT', 'CASH_WITHDRAWAL')
 IN_TYPES = ('TRANSFER_IN', 'CREDIT')
 OUT_TYPES = ('TRANSFER_OUT', 'DEBIT')
 INCOME_MONTHLY = {'<50K': 50000, '50K-100K': 100000, '100K-500K': 500000, '>500K': 2000000, 'UNDECLARED': 50000}
 
-# Used only when the high_risk_countries table cannot be read.
-FALLBACK_HIGH_RISK = {'Iran', 'North Korea', 'Myanmar'}
+# Refunds / reversals may be stored signed (negative): their size is what the rules use.
+REVERSAL_TYPES = ('REFUND', 'REVERSAL', 'CHARGEBACK')
+
+
+def _fallback_high_risk():
+    """The built-in country list of the customer risk model (utils/aml_risk.py), used
+    only when the high_risk_countries table cannot be read."""
+    try:
+        from utils.aml_risk import DEFAULT_MODEL
+        return {str(c).strip() for c in DEFAULT_MODEL['country']['builtin_list'] if str(c).strip()}
+    except Exception:          # pragma: no cover - the module is part of the core
+        return {'IRAN', 'NORTH KOREA', 'SYRIA', 'RUSSIA', 'MYANMAR'}
+
+
+FALLBACK_HIGH_RISK = _fallback_high_risk()
 
 
 def N_(s):
@@ -64,18 +83,61 @@ class Hit:
 
 
 # --------------------------------------------------------------------------- dates
-_DATE_FORMATS = ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M', '%Y-%m-%d')
+# Day-first for the slash / dash forms (DD/MM/YYYY, DD-MM-YYYY), as written in Egypt and
+# most of the world; uploads are normalised to ISO by the upload screen, these cover
+# the API and other feeds that store the text they receive.
+_DATE_FORMATS = ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M', '%Y-%m-%d',
+                 '%Y/%m/%d %H:%M:%S', '%Y/%m/%d %H:%M', '%Y/%m/%d',
+                 '%d/%m/%Y %H:%M:%S', '%d/%m/%Y %H:%M', '%d/%m/%Y',
+                 '%d-%m-%Y %H:%M:%S', '%d-%m-%Y %H:%M', '%d-%m-%Y')
+_TZ_SUFFIX = re.compile(r'(?<=\d{2}:\d{2})(?::\d{2})?(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})$')
+_ISO_PREFIX = re.compile(r'^\d{4}-\d{2}-\d{2}')
+_LOCAL_TZ = None
+
+
+def _local_tz():
+    """Zone that naive transaction dates are in (TM_LOCAL_TZ, default Africa/Cairo).
+    A date sent with an offset is converted to it, so '10:00Z' and '12:00+02:00'
+    land on the same moment as a naive local '12:00'."""
+    global _LOCAL_TZ
+    if _LOCAL_TZ is None:
+        try:
+            from zoneinfo import ZoneInfo
+            _LOCAL_TZ = ZoneInfo(os.environ.get('TM_LOCAL_TZ') or 'Africa/Cairo')
+        except Exception:
+            from datetime import timezone as _tz
+            _LOCAL_TZ = _tz(timedelta(hours=2))
+    return _LOCAL_TZ
+
+
+def _to_local_naive(dt):
+    if dt.tzinfo is None:
+        return dt
+    return dt.astimezone(_local_tz()).replace(tzinfo=None)
 
 
 def parse_ts(v):
-    """transactions.transaction_date is TEXT in several shapes -> naive datetime (None if unreadable)."""
+    """transactions.transaction_date is TEXT in several shapes -> naive local datetime (None if unreadable)."""
     if v is None:
         return None
     if isinstance(v, datetime):
-        return v.replace(tzinfo=None)
-    s = str(v).strip().replace('Z', '')
-    s = re.sub(r'[+-]\d{2}:?\d{2}$', '', s) if len(s) > 19 else s
-    s = s.split('.')[0]
+        return _to_local_naive(v)
+    if isinstance(v, date):
+        return datetime(v.year, v.month, v.day)
+    s = str(v).strip()
+    if not s:
+        return None
+    m = _TZ_SUFFIX.search(s)
+    if m:
+        off = m.group(1)
+        base = s[:m.start(1)].split('.')[0]
+        try:
+            iso = base.replace(' ', 'T') + ('+00:00' if off == 'Z' else
+                                             (off if ':' in off else off[:3] + ':' + off[3:]))
+            return _to_local_naive(datetime.fromisoformat(iso))
+        except ValueError:
+            s = base
+    s = s.split('.')[0] if re.match(r'^\d{4}-', s) else s
     for f in _DATE_FORMATS:
         try:
             return datetime.strptime(s, f)
@@ -84,45 +146,67 @@ def parse_ts(v):
     return None
 
 
+def is_iso_date(v):
+    """Stored as YYYY-MM-DD...: the database date-range queries (look-back) can find it."""
+    return bool(v) and bool(_ISO_PREFIX.match(str(v).strip()))
+
+
 # --------------------------------------------------------------------------- history
 class History:
     """Transactions in memory, indexed by customer and by card / counterparty account,
     each list sorted by (time, id). Built once for a backtest, or for one customer's
     look-back in live monitoring. Windows end AT the evaluated transaction (its
-    position in the list), so later transactions are never seen."""
+    position in the list), so later transactions are never seen.
 
-    def __init__(self, txs):
+    first_seen {customer_id: datetime} = the customer's earliest transaction known to
+    the caller (the database), for "had activity before X" checks that reach further
+    back than the loaded look-back (the dormant-account rule).
+    prior {(customer_id, date): bool} = "any transaction on a day before `date`",
+    already asked of the database (live monitoring: one EXISTS query); the loaded
+    look-back covers that day itself."""
+
+    def __init__(self, txs, first_seen=None, prior=None, parent=None):
         by_customer, by_card = {}, {}
+        self.txs = []
         for t in txs:
             ts = t.get('_ts') or parse_ts(t.get('transaction_date'))
             if ts is None:
                 continue
             t['_ts'] = ts
+            self.txs.append(t)
             by_customer.setdefault(t.get('customer_id'), []).append(t)
             card = (t.get('counterparty_account') or '').strip()
             if len(card) >= 6:
                 by_card.setdefault(card, []).append(t)
-        self.by_customer = self._index(by_customer, '_ci')
-        self.by_card = self._index(by_card, '_ki')
+        self._pos = {}                       # (index name, id(tx)) -> position; never written on the tx
+        self.by_customer = self._index(by_customer, 'c')
+        self.by_card = self._index(by_card, 'k')
+        self.first_seen = dict(first_seen or {})
+        self.prior = dict(prior or {})
+        self.parent = parent                 # the all-currencies history of a currency view
+        self._views, self._sliding, self._sums = {}, {}, {}
 
-    @staticmethod
-    def _index(groups, pos_key):
+    @property
+    def all(self):
+        """The history with every currency (activity checks are not per currency)."""
+        return self.parent or self
+
+    def _index(self, groups, name):
         out = {}
         for k, lst in groups.items():
             lst.sort(key=lambda x: (x['_ts'], x.get('id') or 0))
             keys, sums, run = [], [0.0], 0.0
             for i, x in enumerate(lst):
-                x[pos_key] = i
+                self._pos[(name, id(x))] = i
                 keys.append(x['_ts'])
-                run += _num(x.get('amount'), 0.0) or 0.0
+                run += _amt(x)
                 sums.append(run)
             out[k] = (lst, keys, sums)
         return out
 
-    @staticmethod
-    def _bounds(entry, tx, pos_key, start):
+    def _bounds(self, entry, tx, name, start):
         lst, keys, _ = entry
-        hi = tx.get(pos_key)
+        hi = self._pos.get((name, id(tx)))
         if hi is None or hi >= len(lst) or lst[hi] is not tx:
             hi = bisect.bisect_right(keys, tx['_ts']) - 1
         return bisect.bisect_left(keys, start), hi
@@ -131,34 +215,100 @@ class History:
         entry = self.by_customer.get(tx.get('customer_id'))
         if not entry:
             return []
-        lo, hi = self._bounds(entry, tx, '_ci', start)
+        lo, hi = self._bounds(entry, tx, 'c', start)
         return entry[0][lo:hi + 1] if hi >= lo else []
 
     def customer_count(self, tx, start):
         entry = self.by_customer.get(tx.get('customer_id'))
         if not entry:
             return 0
-        lo, hi = self._bounds(entry, tx, '_ci', start)
+        lo, hi = self._bounds(entry, tx, 'c', start)
         return max(0, hi - lo + 1)
 
     def customer_sum(self, tx, start):
         entry = self.by_customer.get(tx.get('customer_id'))
         if not entry:
             return 0.0
-        lo, hi = self._bounds(entry, tx, '_ci', start)
+        lo, hi = self._bounds(entry, tx, 'c', start)
         return entry[2][hi + 1] - entry[2][lo] if hi >= lo else 0.0
 
     def customer_before(self, tx, before):
         """Any transaction of the customer strictly before `before`?"""
-        entry = self.by_customer.get(tx.get('customer_id'))
-        return bool(entry) and bisect.bisect_left(entry[1], before) > 0
+        cust = tx.get('customer_id')
+        entry = self.by_customer.get(cust)
+        if entry and bisect.bisect_left(entry[1], before) > 0:
+            return True
+        fs = self.first_seen.get(cust)
+        if fs is not None and fs < before:
+            return True
+        return bool(self.prior.get((cust, before.date())))
 
     def card_window(self, tx, start):
         entry = self.by_card.get((tx.get('counterparty_account') or '').strip())
         if not entry:
             return []
-        lo, hi = self._bounds(entry, tx, '_ki', start)
+        lo, hi = self._bounds(entry, tx, 'k', start)
         return entry[0][lo:hi + 1] if hi >= lo else []
+
+    # ---- running aggregates (no per-transaction copy of the window) -----------------
+    def filtered_sum(self, tx, start, key, pred):
+        """Sum of the amounts of the customer's window transactions matching pred.
+        Prefix sums are built once per (key, customer); `key` identifies pred."""
+        cust = tx.get('customer_id')
+        entry = self.by_customer.get(cust)
+        if not entry:
+            return 0.0
+        pre = self._sums.get((key, cust))
+        if pre is None:
+            pre, run = [0.0], 0.0
+            for x in entry[0]:
+                run += _amt(x) if pred(x) else 0.0
+                pre.append(run)
+            self._sums[(key, cust)] = pre
+        lo, hi = self._bounds(entry, tx, 'c', start)
+        return pre[hi + 1] - pre[lo] if hi >= lo else 0.0
+
+    def distinct_count(self, tx, start, key, item):
+        """Number of distinct item(t) (None = not counted) in the customer's window.
+        A sliding window per (key, customer): transactions evaluated in time order (a
+        backtest) cost O(1) each; any other order resets the window."""
+        cust = tx.get('customer_id')
+        entry = self.by_customer.get(cust)
+        if not entry:
+            return 0
+        lst = entry[0]
+        lo, hi = self._bounds(entry, tx, 'c', start)
+        st = self._sliding.get((key, cust))
+        if st is None or hi < st[1] or lo < st[0]:
+            st = [lo, lo - 1, Counter()]
+        a, b, cnt = st
+        for i in range(b + 1, hi + 1):
+            v = item(lst[i])
+            if v is not None:
+                cnt[v] += 1
+        for i in range(a, min(lo, hi + 1)):        # every index a..hi is counted at this point
+            v = item(lst[i])
+            if v is not None:
+                cnt[v] -= 1
+                if cnt[v] <= 0:
+                    del cnt[v]
+        st[0], st[1] = lo, max(hi, lo - 1)
+        self._sliding[(key, cust)] = st
+        return len(cnt)
+
+    # ---- currency views ------------------------------------------------------------
+    def for_currency(self, currency):
+        """The same history limited to one currency (rows without a currency are kept:
+        they are assumed to be in it, and reported by the data-quality check)."""
+        cur = (currency or '').strip().upper()
+        if not cur or self.parent is not None:
+            return self
+        v = self._views.get(cur)
+        if v is None:
+            v = History([t for t in self.txs if (t.get('currency') or '').strip().upper() in ('', cur)],
+                        first_seen=self.first_seen, prior=self.prior, parent=self)
+            self._views[cur] = v
+        return v
 
 
 # --------------------------------------------------------------------------- parameters
@@ -198,7 +348,20 @@ def _types(v, default):
 
 
 def _amt(t):
-    return _num(t.get('amount'), 0.0) or 0.0
+    """Amount the rules use: refunds / reversals stored signed (negative) count by size."""
+    a = _num(t.get('amount'), 0.0) or 0.0
+    if a < 0 and (t.get('transaction_type') or '').upper() in REVERSAL_TYPES:
+        return -a
+    return a
+
+
+def _fmt(v):
+    """A parameter for a message: 2000000 -> '2,000,000', 1.5 -> '1.5' (never 2e+06)."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return str(v)
+    return f'{f:,.0f}' if f == int(f) else f'{f:,.2f}'.rstrip('0').rstrip('.')
 
 
 def _cmp(value, op, threshold):
@@ -209,12 +372,21 @@ def _cmp(value, op, threshold):
 # Each spec: params {name: {default, unit, label_en, label_ar}}, op = comparison of
 # the measured value with `threshold`.  unit codes: amount (in the rule currency),
 # count, ratio, days, hours, percent.
+# Optional keys (defaults in brackets):
+#   needs    what the rule needs on the evaluated transaction: 'date' (a time window)
+#            and/or 'amount' [('date', 'amount')]. A rule that needs no date still runs
+#            on a transaction whose date cannot be read.
+#   scope    'card' when the windows follow the card / counterparty account ['customer']
+#   currency True when amounts are compared, so only transactions in the rule's
+#            threshold_currency count [True when a parameter is an amount, or the
+#            measure is an amount or a ratio of amounts]
+#   prior_history  True when the rule asks "any activity before the window" [False]
 def _p(default, unit, en, ar):
     return {'default': default, 'unit': unit, 'label_en': en, 'label_ar': ar}
 
 
 RULE_SPECS = {
-    'TM001': {'op': '>=', 'measure': 'amount', 'params': {
+    'TM001': {'op': '>=', 'measure': 'amount', 'needs': ('amount',), 'params': {
         'threshold': _p(10000, 'amount', 'Cash amount', 'مبلغ النقدية'),
         'cash_types': _p(list(CASH_TYPES), 'types', 'Cash transaction types', 'أنواع العمليات النقدية')}},
     'TM002': {'op': '>=', 'measure': 'count', 'params': {
@@ -227,9 +399,9 @@ RULE_SPECS = {
     'TM003': {'op': '>', 'measure': 'count', 'params': {
         'threshold': _p(5, 'count', 'Transactions in the window', 'عدد العمليات في الفترة'),
         'hours': _p(24, 'hours', 'Window', 'الفترة')}},
-    'TM004': {'op': 'in', 'measure': 'country', 'params': {}},
-    'TM005': {'op': 'flag', 'measure': 'flag', 'params': {}},
-    'TM006': {'op': '>=', 'measure': 'amount', 'params': {
+    'TM004': {'op': 'in', 'measure': 'country', 'needs': (), 'params': {}},
+    'TM005': {'op': 'flag', 'measure': 'flag', 'needs': (), 'params': {}},
+    'TM006': {'op': '>=', 'measure': 'amount', 'prior_history': True, 'params': {
         'threshold': _p(5000, 'amount', 'Amount after the quiet period', 'المبلغ بعد فترة الخمول'),
         'days': _p(90, 'days', 'Quiet period with no activity', 'فترة بدون أي حركة'),
         'require_prior_history': _p(True, 'bool', 'Customer had activity before the quiet period',
@@ -251,12 +423,12 @@ RULE_SPECS = {
         'home_countries': _p(['Egypt', 'EG', 'EGY', 'مصر'], 'types', 'Domestic country names (not counted)',
                              'أسماء الدولة المحلية (لا تُحسب)'),
         'transfer_types': _p(['TRANSFER_OUT', 'TRANSFER_IN', 'REMITTANCE'], 'types', 'Transfer types', 'أنواع التحويل')}},
-    'TM011': {'op': '>=', 'measure': 'count', 'params': {
+    'TM011': {'op': '>=', 'measure': 'count', 'scope': 'card', 'params': {
         'threshold': _p(3, 'count', 'Distinct merchants for one card', 'عدد التجار المختلفين للكارت'),
         'hours': _p(24, 'hours', 'Window', 'الفترة')}},
-    'TM012': {'op': '>=', 'measure': 'amount', 'params': {
+    'TM012': {'op': '>=', 'measure': 'amount', 'needs': ('amount',), 'params': {
         'threshold': _p(50000, 'amount', 'Payment amount', 'مبلغ الدفع')}},
-    'TM013': {'op': '>=', 'measure': 'amount', 'params': {
+    'TM013': {'op': '>=', 'measure': 'amount', 'needs': ('amount',), 'params': {
         'threshold': _p(100000, 'amount', 'Settlement amount', 'مبلغ التسوية')}},
     'TM014': {'op': '>=', 'measure': 'count', 'params': {
         'threshold': _p(3, 'count', 'Refunds in the window', 'عدد المرتجعات في الفترة'),
@@ -264,12 +436,42 @@ RULE_SPECS = {
     'TM015': {'op': '>=', 'measure': 'count', 'params': {
         'threshold': _p(3, 'count', 'Round-number payments the same day', 'عدد المدفوعات بأرقام صحيحة في اليوم'),
         'round_unit': _p(1000, 'amount', 'Round unit', 'وحدة الرقم الصحيح')}},
-    'TM016': {'op': '>=', 'measure': 'count', 'params': {
+    'TM016': {'op': '>=', 'measure': 'count', 'scope': 'card', 'params': {
         'threshold': _p(5, 'count', 'Payments with one card in the window', 'عدد مدفوعات الكارت في الفترة'),
         'minutes': _p(60, 'minutes', 'Window', 'الفترة')}},
 }
 
 _EVALUATORS = {}
+
+
+def spec_of(code):
+    return RULE_SPECS.get(code) or {}
+
+
+def needs(code):
+    """What the rule needs on the evaluated transaction: subset of {'date', 'amount'}."""
+    n = spec_of(code).get('needs')
+    return set(n) if n is not None else {'date', 'amount'}
+
+
+def is_card_rule(code):
+    return spec_of(code).get('scope') == 'card'
+
+
+def is_currency_rule(code):
+    """Amounts are compared: only transactions in the rule currency count."""
+    spec = spec_of(code)
+    if 'currency' in spec:
+        return bool(spec['currency'])
+    return (spec.get('measure') in ('amount', 'ratio') or
+            any(d.get('unit') == 'amount' for d in spec.get('params', {}).values()))
+
+
+def rule_currency(rule):
+    """Currency a rule's amounts are in (None = no filter)."""
+    if not is_currency_rule(rule.get('rule_code')):
+        return None
+    return (rule.get('threshold_currency') or '').strip().upper() or None
 
 
 def register_rule(code, spec, fn):
@@ -294,7 +496,7 @@ def _tm001(tx, h, cust, p, ctx):
     if (tx.get('transaction_type') or '').upper() in _types(p.get('cash_types'), CASH_TYPES) and \
             _cmp(_amt(tx), '>=', p['threshold']):
         return Hit('TM001', f"Cash transaction of {_amt(tx):,.2f} {_cur(tx)} at or above the threshold of "
-                            f"{p['threshold']:,.0f}", value=_amt(tx))
+                            f"{_fmt(p['threshold'])}", value=_amt(tx))
 
 
 @_rule('TM002')
@@ -317,8 +519,8 @@ def _tm003(tx, h, cust, p, ctx):
     n = h.customer_count(tx, tx['_ts'] - timedelta(hours=float(p['hours'])))
     if _cmp(n, '>', p['threshold']):
         win = h.customer_window(tx, tx['_ts'] - timedelta(hours=float(p['hours'])))
-        return Hit('TM003', f"High velocity: {n} transactions in {float(p['hours']):g} hours "
-                            f"(threshold: more than {p['threshold']:g})",
+        return Hit('TM003', f"High velocity: {n} transactions in {_fmt(p['hours'])} hours "
+                            f"(threshold: more than {_fmt(p['threshold'])})",
                    related_ids=[t.get('id') for t in win if t is not tx][-50:], value=n)
 
 
@@ -336,14 +538,20 @@ def _tm005(tx, h, cust, p, ctx):
                             f"Sanctions={tx.get('sanctions_list') or ''}")
 
 
+def quiet_start(ts, p):
+    """Start of the dormant rule's quiet period."""
+    return ts - timedelta(days=int(p['days']))
+
+
 @_rule('TM006')
 def _tm006(tx, h, cust, p, ctx):
     if not _cmp(_amt(tx), '>=', p['threshold']):
         return None
-    quiet_from = tx['_ts'] - timedelta(days=int(p['days']))
-    if h.customer_count(tx, quiet_from) > 1:      # anything besides this transaction in the quiet period
+    quiet_from = quiet_start(tx['_ts'], p)
+    act = h.all                                    # activity in any currency breaks the quiet period
+    if act.customer_count(tx, quiet_from) > 1:     # anything besides this transaction in the quiet period
         return None
-    if p.get('require_prior_history', True) and not h.customer_before(tx, quiet_from):
+    if p.get('require_prior_history', True) and not act.customer_before(tx, quiet_from):
         return None          # a new customer is not a dormant one
     return Hit('TM006', f"Dormant account: no activity for {int(p['days'])} days, then {_amt(tx):,.2f} {_cur(tx)}",
                value=_amt(tx))
@@ -364,7 +572,7 @@ def _tm007(tx, h, cust, p, ctx):
            if t is not tx and (t.get('transaction_type') or '').upper() in other and abs(_amt(t) - _amt(tx)) <= tol]
     if win and _amt(tx) > 0:
         return Hit('TM007', f"Rapid round trip: {_amt(tx):,.2f} {_cur(tx)} in and out within "
-                            f"{float(p['hours']):g} hours", related_ids=[t.get('id') for t in win])
+                            f"{_fmt(p['hours'])} hours", related_ids=[t.get('id') for t in win])
 
 
 @_rule('TM008')
@@ -375,13 +583,13 @@ def _tm008(tx, h, cust, p, ctx):
     ratio = total / expected if expected else 0
     if _cmp(ratio, '>', p['threshold']):
         return Hit('TM008', f"Volume of {total:,.2f} in {int(p['days'])} days is {ratio:.1f}x the expected "
-                            f"{expected:,.2f} (threshold: more than {p['threshold']:g}x)", value=round(ratio, 2))
+                            f"{expected:,.2f} (threshold: more than {_fmt(p['threshold'])}x)", value=round(ratio, 2))
 
 
 @_rule('TM009')
 def _tm009(tx, h, cust, p, ctx):
-    win = h.customer_window(tx, tx['_ts'] - timedelta(days=int(p['days'])))
-    n = len({(t.get('currency') or '').upper() for t in win if t.get('currency')})
+    n = h.distinct_count(tx, tx['_ts'] - timedelta(days=int(p['days'])), ('TM009', int(p['days'])),
+                         lambda t: (t.get('currency') or '').strip().upper() or None)
     if _cmp(n, '>', p['threshold']):
         return Hit('TM009', f"{n} different currencies in {int(p['days'])} days", value=n)
 
@@ -415,7 +623,7 @@ def _tm011(tx, h, cust, p, ctx):
     merchants = {(t.get('counterparty_name') or '').strip().lower() for t in win if (t.get('counterparty_name') or '').strip()}
     if _cmp(len(merchants), '>=', p['threshold']):
         return Hit('TM011', f"Card {_mask(pan)} used at {len(merchants)} different merchants within "
-                            f"{float(p['hours']):g} hours", related_ids=[t.get('id') for t in win if t is not tx][-50:],
+                            f"{_fmt(p['hours'])} hours", related_ids=[t.get('id') for t in win if t is not tx][-50:],
                    value=len(merchants))
 
 
@@ -439,7 +647,7 @@ def _tm014(tx, h, cust, p, ctx):
     win = [t for t in h.customer_window(tx, tx['_ts'] - timedelta(hours=float(p['hours'])))
            if (t.get('transaction_type') or '').upper() == 'REFUND']
     if _cmp(len(win), '>=', p['threshold']):
-        return Hit('TM014', f"{len(win)} refunds within {float(p['hours']):g} hours",
+        return Hit('TM014', f"{len(win)} refunds within {_fmt(p['hours'])} hours",
                    related_ids=[t.get('id') for t in win if t is not tx], value=len(win))
 
 
@@ -467,7 +675,7 @@ def _tm016(tx, h, cust, p, ctx):
     win = [t for t in h.card_window(tx, tx['_ts'] - timedelta(minutes=float(p['minutes'])))
            if (t.get('transaction_type') or '').upper() == 'PAYMENT']
     if _cmp(len(win), '>=', p['threshold']):
-        return Hit('TM016', f"Card {_mask(pan)} used {len(win)} times within {float(p['minutes']):g} minutes",
+        return Hit('TM016', f"Card {_mask(pan)} used {len(win)} times within {_fmt(p['minutes'])} minutes",
                    related_ids=[t.get('id') for t in win if t is not tx], value=len(win))
 
 
@@ -477,18 +685,39 @@ class Context:
 
     def __init__(self, high_risk=None):
         self.high_risk = {c.lower() for c in (high_risk if high_risk is not None else FALLBACK_HIGH_RISK)}
+        self.first_seen = None       # backtest: earliest transaction per customer (dormant rule)
+        self.deadline = None         # backtest: time.monotonic() after which a run stops
 
 
-def load_high_risk(db):
-    """Active countries of the high_risk_countries table, by name, code and alias."""
+_HR_CACHE = {'at': 0.0, 'value': None}
+HIGH_RISK_TTL = 300          # seconds a process keeps the list (one query per batch, not per transaction)
+
+
+def load_high_risk(db, fresh=False):
+    """Active countries of the high_risk_countries table, by name, code and alias.
+    Cached per process for HIGH_RISK_TTL seconds. Read inside a SAVEPOINT so a failure
+    never aborts the caller's transaction; on failure the built-in list of the risk
+    model is used and the failure is logged as an error (TM004 runs on less)."""
+    now = time.monotonic()
+    if not fresh and _HR_CACHE['value'] is not None and now - _HR_CACHE['at'] < HIGH_RISK_TTL:
+        return set(_HR_CACHE['value'])
+    try:
+        db.execute("SAVEPOINT tm_high_risk")
+    except Exception:
+        log.exception('TM: could not open a savepoint to read high_risk_countries')
+        return set(FALLBACK_HIGH_RISK)
     try:
         rows = db.execute("SELECT country_code, country_name, name_ar, aliases FROM high_risk_countries "
                           "WHERE COALESCE(is_active, 1) = 1").fetchall()
+        db.execute("RELEASE SAVEPOINT tm_high_risk")
     except Exception:
+        log.exception('TM: high_risk_countries cannot be read; the built-in list of %d countries is used',
+                      len(FALLBACK_HIGH_RISK))
         try:
-            db.rollback()
+            db.execute("ROLLBACK TO SAVEPOINT tm_high_risk")
+            db.execute("RELEASE SAVEPOINT tm_high_risk")
         except Exception:
-            pass
+            log.exception('TM: could not roll back to the savepoint')
         return set(FALLBACK_HIGH_RISK)
     out = set()
     for r in rows:
@@ -498,41 +727,108 @@ def load_high_risk(db):
         for a in str(r['aliases'] or '').split('|'):
             if a.strip():
                 out.add(a.strip())
-    return out or set(FALLBACK_HIGH_RISK)
+    if not out:
+        log.error('TM: high_risk_countries has no active country; the built-in list is used')
+        out = set(FALLBACK_HIGH_RISK)
+    _HR_CACHE.update(at=now, value=frozenset(out))
+    return set(out)
+
+
+PACK_LOAD_ERRORS = []        # names of content packs that failed to load (shown on the rule list)
+_PACKS = {'ok': False, 'tried': None}
+PACK_RETRY_SECONDS = 300
 
 
 def ensure_packs_loaded():
-    """Content packs register their rules on import; the core never names one."""
+    """Content packs register their rules on import; the core never names one.
+    A pack that fails to load is logged and listed in PACK_LOAD_ERRORS."""
+    now = time.monotonic()
+    if _PACKS['ok'] or (_PACKS['tried'] is not None and now - _PACKS['tried'] < PACK_RETRY_SECONDS):
+        return PACK_LOAD_ERRORS
+    _PACKS['tried'] = now
+    errors = []
     try:
         from regcontrols.packs import discover
         discover()
-    except Exception:
+    except Exception as e:
+        log.exception('TM: content packs could not be discovered')
+        errors.append(f'discovery: {e.__class__.__name__}')
+    try:
+        import pkgutil
+        import sys
+        import packs as packs_pkg
+        for mod in pkgutil.iter_modules(packs_pkg.__path__):
+            if mod.ispkg and f'packs.{mod.name}' not in sys.modules:
+                log.error('TM: content pack %s is not loaded (import failed); its rules will not run', mod.name)
+                errors.append(mod.name)
+    except ImportError:
         pass
+    except Exception:
+        log.exception('TM: could not list content packs')
+    PACK_LOAD_ERRORS[:] = errors
+    _PACKS['ok'] = not errors
+    return PACK_LOAD_ERRORS
 
 
 def supported(code):
     return code in _EVALUATORS
 
 
+class _Empty(History):
+    def __init__(self):
+        super().__init__([])
+
+
 def evaluate(rule, tx, history, customer, ctx, params=None):
-    """Evaluate one rule on one transaction. `tx` must be in `history`. Returns Hit or None."""
-    fn = _EVALUATORS.get(rule.get('rule_code'))
+    """Evaluate one rule on one transaction. `tx` must be in `history` (unless its date
+    cannot be read: then only rules that need no date run). Returns Hit or None.
+    Amount rules only see transactions in the rule currency (rule_currency)."""
+    code = rule.get('rule_code')
+    fn = _EVALUATORS.get(code)
     if fn is None:
         return None
+    need = needs(code)
     if tx.get('_ts') is None:
         tx['_ts'] = parse_ts(tx.get('transaction_date'))
-        if tx['_ts'] is None:
+    if tx['_ts'] is None:
+        if 'date' in need:
             return None
+        history = _Empty()
+    cur = rule_currency(rule)
+    if cur:
+        tc = (tx.get('currency') or '').strip().upper()
+        if tc and tc != cur:
+            return None                     # reported as excluded by currency, never compared
+        if history is not None:
+            history = history.for_currency(cur)
     return fn(tx, history, customer, params if params is not None else rule_params(rule), ctx)
 
 
+def excluded_by_currency(rule, tx):
+    cur = rule_currency(rule)
+    tc = (tx.get('currency') or '').strip().upper()
+    return bool(cur and tc and tc != cur)
+
+
+def _rule_days(r):
+    p = rule_params(r)
+    return max(float(p.get('days') or 0), float(p.get('hours') or 0) / 24.0, float(p.get('minutes') or 0) / 1440.0)
+
+
 def max_lookback_days(rules):
-    """Longest window any of these rules looks back (days), for loading history."""
+    """Longest window any of these rules looks back (days), for loading history.
+    The dormant rule's "activity before the quiet period" is NOT loaded: it is one
+    question to the database (History.first_seen / prior)."""
     days = 1.0
     for r in rules:
-        p = rule_params(r)
-        days = max(days, float(p.get('days') or 0), float(p.get('hours') or 0) / 24.0,
-                   float(p.get('minutes') or 0) / 1440.0)
-        if r.get('rule_code') == 'TM006':
-            days = max(days, float(p.get('days') or 90) + 365)   # prior history before the quiet period
+        days = max(days, _rule_days(r))
     return days
+
+
+def card_lookback_days(rules):
+    """Longest window of the card rules among these (0 = no card rule)."""
+    return max([_rule_days(r) for r in rules if is_card_rule(r.get('rule_code'))] or [0.0])
+
+
+def prior_history_rules(rules):
+    return [r for r in rules if spec_of(r.get('rule_code')).get('prior_history')]

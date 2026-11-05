@@ -24,7 +24,8 @@ Transaction-monitoring tuning pages (Phase 7, TM-G1..G4):
   /aml/tm-rules/<id>/reject            reject a pending version (POST, reason)
 
 Backtests never write alerts, cases or transaction flags; each run is kept in
-tm_backtest_runs as evidence.
+tm_backtest_runs as evidence, so running one is a POST (CSRF) and a GET only shows
+the page.
 """
 from datetime import datetime, timedelta
 
@@ -65,8 +66,7 @@ def _period(db):
         flash(_L('Dates must be YYYY-MM-DD.', 'التاريخ لازم يكون بالشكل YYYY-MM-DD.'), 'danger')
         df = dt = ''
     if not dt:
-        row = db.execute("SELECT MAX(substr(transaction_date, 1, 10)) AS d FROM transactions").fetchone()
-        dt = (row['d'] if row and row['d'] else datetime.now().strftime('%Y-%m-%d'))[:10]
+        dt = latest_data_day(db)
     if not df:
         df = (datetime.strptime(dt, '%Y-%m-%d') - timedelta(days=89)).strftime('%Y-%m-%d')
     if (datetime.strptime(dt, '%Y-%m-%d') - datetime.strptime(df, '%Y-%m-%d')).days > MAX_PERIOD_DAYS:
@@ -76,6 +76,34 @@ def _period(db):
     if df > dt:
         df, dt = dt, df
     return df, dt
+
+
+def latest_data_day(db):
+    """Day of the newest ISO-dated transaction (walks the transaction_date index backwards)."""
+    row = db.execute("SELECT transaction_date AS d FROM transactions "
+                     "WHERE transaction_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' "
+                     "ORDER BY transaction_date DESC LIMIT 1").fetchone()
+    d = (row['d'] if row and row['d'] else '')[:10]
+    try:
+        datetime.strptime(d, '%Y-%m-%d')
+        return d
+    except ValueError:
+        return datetime.now().strftime('%Y-%m-%d')
+
+
+def _too_large(e):
+    flash(_L(f'The period holds {e.rows:,} transactions with its look-back, more than one run can replay '
+             f'({B.MAX_ROWS:,}). Choose a shorter period.',
+             f'الفترة فيها {e.rows:,} عملية مع فترة الرجوع، أكتر من اللي ينفع يتعاد تشغيله مرة واحدة '
+             f'({B.MAX_ROWS:,}). اختار فترة أقصر.'), 'warning')
+
+
+def _truncated(res):
+    if res and (res.get('summary') or {}).get('truncated'):
+        flash(_L(f'The run stopped after {B.MAX_SECONDS} seconds: the numbers cover only part of the period. '
+                 'Choose a shorter period.',
+                 f'الاختبار وقف بعد {B.MAX_SECONDS} ثانية: الأرقام بتغطي جزء من الفترة بس. اختار فترة أقصر.'),
+              'warning')
 
 
 def _spec_rows(rule):
@@ -89,7 +117,7 @@ def _spec_rows(rule):
     return rows, spec.get('op')
 
 
-@aml_bp.route('/tm-tuning')
+@aml_bp.route('/tm-tuning', methods=['GET', 'POST'])
 @login_required
 @permission_required('aml', level='view')
 def tm_tuning():
@@ -98,25 +126,31 @@ def tm_tuning():
     E.ensure_packs_loaded()
     df, dt = _period(db)
     result, sweep, chosen = None, None, None
-    if request.args.get('run'):
-        result = B.backtest(db, rules, df, dt)
-        B.record_run(db, 'backtest_all', None, {}, df, dt, result, current_user.id)
-    rid = request.args.get('sweep_rule', type=int)
-    if rid:
-        chosen = next((r for r in rules if r['id'] == rid), None)
-        param = request.args.get('param') or 'threshold'
-        if chosen and param in E.RULE_SPECS.get(chosen['rule_code'], {}).get('params', {}):
-            values = B.default_sweep_values(chosen, param)
-            if values:
-                sweep = B.sweep(db, chosen, values, df, dt, param=param)
-                B.record_run(db, 'sweep', chosen, {param: values}, df, dt, sweep, current_user.id)
+    posted = request.method == 'POST'          # a run is recorded as evidence: POST + CSRF only
+    try:
+        if posted and request.form.get('run'):
+            result = B.backtest(db, rules, df, dt)
+            B.record_run(db, 'backtest_all', None, {}, df, dt, result, current_user.id)
+            _truncated(result)
+        rid = request.form.get('sweep_rule', type=int) if posted else None
+        if rid:
+            chosen = next((r for r in rules if r['id'] == rid), None)
+            param = request.form.get('param') or 'threshold'
+            if chosen and param in E.RULE_SPECS.get(chosen['rule_code'], {}).get('params', {}):
+                values = B.default_sweep_values(chosen, param)
+                if values:
+                    sweep = B.sweep(db, chosen, values, df, dt, param=param)
+                    B.record_run(db, 'sweep', chosen, {param: values}, df, dt, sweep, current_user.id)
+                    _truncated(sweep)
+    except B.BacktestTooLarge as e:
+        _too_large(e)
     specs = {r['id']: _spec_rows(r) for r in rules}
     return render_template('aml/tm_tuning.html', rules=rules, specs=specs, result=result, sweep=sweep,
                            chosen=chosen, date_from=df, date_to=dt, L=_L, ar=_is_ar(),
                            supported=E.supported)
 
 
-@aml_bp.route('/tm-rules/<int:rule_id>/backtest')
+@aml_bp.route('/tm-rules/<int:rule_id>/backtest', methods=['GET', 'POST'])
 @login_required
 @permission_required('aml', level='view')
 def tm_rule_backtest(rule_id):
@@ -129,10 +163,14 @@ def tm_rule_backtest(rule_id):
     current = next((r for r in V.active_rules(db) if r['rule_code'] == rule['rule_code']), None)
     df, dt = _period(db)
     result = None
-    if request.args.get('run'):
+    if request.method == 'POST' and request.form.get('run'):
         E.ensure_packs_loaded()
-        result = B.compare(db, rule, E.rule_params(rule), df, dt, current_rule=current or rule)
-        B.record_run(db, 'compare', rule, E.rule_params(rule), df, dt, result, current_user.id)
+        try:
+            result = B.compare(db, rule, E.rule_params(rule), df, dt, current_rule=current or rule)
+            B.record_run(db, 'compare', rule, E.rule_params(rule), df, dt, result, current_user.id)
+            _truncated(result)
+        except B.BacktestTooLarge as e:
+            _too_large(e)
     return render_template('aml/tm_backtest.html', rule=rule, current=current, result=result,
                            changes=V.diff(current, rule) if current and current['id'] != rule['id'] else [],
                            date_from=df, date_to=dt, L=_L, ar=_is_ar())
@@ -144,12 +182,38 @@ def tm_rule_backtest(rule_id):
 def tm_data_quality():
     db = get_db()
     df, dt = _period(db)
-    txs = B.load_transactions(db, df, dt)
+    try:
+        txs = B.load_transactions(db, df, dt, max_rows=B.MAX_ROWS)
+    except B.BacktestTooLarge as e:
+        _too_large(e)
+        txs = []
     known = {r['id'] for r in db.execute("SELECT id FROM customers WHERE id = ANY(%s)",
                                          (list({t['customer_id'] for t in txs if t.get('customer_id')}),)).fetchall()}
     dq = B.data_quality(txs, known_customers=known)
     dq.pop('exclude', None)
-    return render_template('aml/tm_data_quality.html', dq=dq, date_from=df, date_to=dt, L=_L, ar=_is_ar())
+    dq['not_iso_total'] = B.count_not_iso(db)
+    live = _live_issues(db)
+    return render_template('aml/tm_data_quality.html', dq=dq, date_from=df, date_to=dt, L=_L, ar=_is_ar(),
+                           live_issues=live)
+
+
+def _live_issues(db, days=30):
+    """What live monitoring could not judge in the last `days` days (tm_monitoring_issues)."""
+    try:
+        db.execute("SAVEPOINT tm_live_issues")
+        rows = db.execute("""SELECT issue, COUNT(*) AS n, MAX(created_at) AS last_at,
+                                    (ARRAY_AGG(transaction_id ORDER BY id DESC))[1:10] AS sample
+                               FROM tm_monitoring_issues WHERE created_at >= NOW() - (%s * INTERVAL '1 day')
+                              GROUP BY issue ORDER BY n DESC""", (days,)).fetchall()
+        db.execute("RELEASE SAVEPOINT tm_live_issues")
+        return [dict(r) for r in rows]
+    except Exception:
+        try:
+            db.execute("ROLLBACK TO SAVEPOINT tm_live_issues")
+            db.execute("RELEASE SAVEPOINT tm_live_issues")
+        except Exception:
+            pass
+        return None
 
 
 @aml_bp.route('/tm-rules/history/<code>')
@@ -182,5 +246,5 @@ def tm_rule_reject(rule_id):
                      request.remote_addr)
         flash(_L('Version rejected.', 'تم رفض النسخة.'), 'info')
     except V.VersionError as e:
-        flash(_(str(e)), 'danger')
+        flash(V.message(e, _is_ar()), 'danger')
     return redirect(url_for('aml.rules_list'))

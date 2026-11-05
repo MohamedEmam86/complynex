@@ -54,17 +54,25 @@ def psp02(tx, h, cust, p, ctx):
     if _t(tx) not in outs:
         return None
     ins = E._types(p.get('in_types'), tuple(FUNDS_IN))
-    win = h.customer_window(tx, tx['_ts'] - timedelta(hours=float(p['hours'])))
-    tin = sum(E._amt(t) for t in win if _t(t) in ins)
-    tout = sum(E._amt(t) for t in win if _t(t) in outs)
-    if tin >= p['threshold'] and tout >= tin * float(p['out_pct']) / 100.0:
-        return E.Hit('PSP02', f"{tin:,.2f} received and {tout:,.2f} sent out within {float(p['hours']):g} hours",
+    start = tx['_ts'] - timedelta(hours=float(p['hours']))
+    # running sums: no copy of the window per transaction
+    tin = h.filtered_sum(tx, start, ('PSP02in', ins), lambda t: _t(t) in ins)
+    tout = h.filtered_sum(tx, start, ('PSP02out', outs), lambda t: _t(t) in outs)
+    if tin > 0 and tin >= p['threshold'] and tout >= tin * float(p['out_pct']) / 100.0:
+        win = h.customer_window(tx, start)
+        return E.Hit('PSP02', f"{tin:,.2f} received and {tout:,.2f} sent out within {E._fmt(p['hours'])} hours",
                      related_ids=[t.get('id') for t in win if t is not tx][-50:], value=round(tout / tin * 100, 1))
 
 
-def _distinct(tx, h, p, types):
-    win = [t for t in h.customer_window(tx, tx['_ts'] - timedelta(days=int(p['days']))) if _t(t) in types]
-    return win, {_party(t) for t in win if _party(t)}
+def _distinct(tx, h, p, types, key):
+    """Distinct counterparties of these types in the window (running count)."""
+    start = tx['_ts'] - timedelta(days=int(p['days']))
+    return start, h.distinct_count(tx, start, (key, types, int(p['days'])),
+                                   lambda t: (_party(t) or None) if _t(t) in types else None)
+
+
+def _window(tx, h, start, types):
+    return [t for t in h.customer_window(tx, start) if _t(t) in types]
 
 
 def psp03(tx, h, cust, p, ctx):
@@ -72,10 +80,11 @@ def psp03(tx, h, cust, p, ctx):
     types = E._types(p.get('types'), tuple(FUNDS_IN))
     if _t(tx) not in types:
         return None
-    win, parties = _distinct(tx, h, p, types)
-    if len(parties) >= p['threshold']:
-        return E.Hit('PSP03', f"Funds from {len(parties)} different senders within {int(p['days'])} days",
-                     related_ids=[t.get('id') for t in win if t is not tx][-50:], value=len(parties))
+    start, n = _distinct(tx, h, p, types, 'PSP03')
+    if n >= p['threshold']:
+        win = _window(tx, h, start, types)
+        return E.Hit('PSP03', f"Funds from {n} different senders within {int(p['days'])} days",
+                     related_ids=[t.get('id') for t in win if t is not tx][-50:], value=n)
 
 
 def psp04(tx, h, cust, p, ctx):
@@ -83,20 +92,23 @@ def psp04(tx, h, cust, p, ctx):
     types = E._types(p.get('types'), tuple(FUNDS_OUT))
     if _t(tx) not in types:
         return None
-    win, parties = _distinct(tx, h, p, types)
-    if len(parties) >= p['threshold']:
-        return E.Hit('PSP04', f"Funds sent to {len(parties)} different beneficiaries within {int(p['days'])} days",
-                     related_ids=[t.get('id') for t in win if t is not tx][-50:], value=len(parties))
+    start, n = _distinct(tx, h, p, types, 'PSP04')
+    if n >= p['threshold']:
+        win = _window(tx, h, start, types)
+        return E.Hit('PSP04', f"Funds sent to {n} different beneficiaries within {int(p['days'])} days",
+                     related_ids=[t.get('id') for t in win if t is not tx][-50:], value=n)
 
 
 def psp05(tx, h, cust, p, ctx):
-    """Agent cash velocity: unusual number of cash operations at one agent / point in a day."""
+    """Cash velocity of one account: an unusual number of cash operations by the same
+    customer account (typically an agent or cash-in point onboarded as a customer)
+    within the window. It counts per customer account, not per physical location."""
     types = E._types(p.get('types'), tuple(CASH_IN + CASH_OUT))
     if _t(tx) not in types:
         return None
     win = [t for t in h.customer_window(tx, tx['_ts'] - timedelta(hours=float(p['hours']))) if _t(t) in types]
     if len(win) >= p['threshold']:
-        return E.Hit('PSP05', f"{len(win)} cash operations within {float(p['hours']):g} hours "
+        return E.Hit('PSP05', f"{len(win)} cash operations by this account within {E._fmt(p['hours'])} hours "
                               f"(total {sum(E._amt(t) for t in win):,.2f})",
                      related_ids=[t.get('id') for t in win if t is not tx][-50:], value=len(win))
 
@@ -123,7 +135,7 @@ SPECS = {
         'days': _p(7, 'days', 'Window', 'الفترة'),
         'types': _p(FUNDS_OUT, 'types', 'Outgoing types', 'أنواع الصادر')}}, psp04),
     'PSP05': ({'op': '>=', 'measure': 'count', 'params': {
-        'threshold': _p(50, 'count', 'Cash operations', 'عدد عمليات الكاش'),
+        'threshold': _p(50, 'count', 'Cash operations of the account', 'عدد عمليات الكاش للحساب'),
         'hours': _p(24, 'hours', 'Window', 'الفترة'),
         'types': _p(CASH_IN + CASH_OUT, 'types', 'Cash types', 'أنواع الكاش')}}, psp05),
 }
@@ -148,8 +160,10 @@ RULES = [
      'rule_description': 'Funds sent to many different beneficiaries within a week.',
      'rule_category': 'Transfer', 'rule_type': 'PATTERN', 'threshold_value': 10, 'time_period_days': 7,
      'severity': 'MEDIUM'},
-    {'rule_code': 'PSP05', 'rule_name': 'Agent cash velocity', 'rule_name_ar': 'سرعة عمليات الكاش عند الوكيل',
-     'rule_description': 'Unusual number of cash operations at one agent or point within a day.',
+    {'rule_code': 'PSP05', 'rule_name': 'Cash velocity of one account (agent / cash point)',
+     'rule_name_ar': 'سرعة عمليات الكاش لحساب واحد (وكيل / نقطة كاش)',
+     'rule_description': ('Unusual number of cash operations by one customer account (for example an agent or '
+                          'cash-in point registered as a customer) within a day. Counts per account, not per location.'),
      'rule_category': 'Cash', 'rule_type': 'VELOCITY', 'threshold_value': 50, 'time_period_days': 1,
      'severity': 'MEDIUM', 'parameters': {'hours': 24}},
 ]

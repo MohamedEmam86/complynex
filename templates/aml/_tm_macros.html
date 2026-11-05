@@ -1,6 +1,8 @@
 {# Shared bits of the TM tuning pages. L(en, ar) picks the user's language. #}
 {% macro period_form(action, date_from, date_to, L, extra={}) %}
-<form method="get" action="{{ action }}" class="row g-2 align-items-end mb-3">
+{# Running a backtest records it as evidence: POST with the CSRF token. #}
+<form method="post" action="{{ action }}" class="row g-2 align-items-end mb-3">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% for k, v in extra.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
   <div class="col-auto">
     <label class="form-label small fw-bold mb-0">{{ L('From', 'من') }}</label>
@@ -32,7 +34,7 @@
 {%- endmacro %}
 
 {% macro value(v) -%}
-{%- if v is sameas true -%}✓{%- elif v is sameas false -%}✗{%- elif v is iterable and v is not string -%}{{ v|join(', ') }}{%- elif v is number -%}{{ '{:,g}'.format(v) }}{%- else -%}{{ v if v is not none else '—' }}{%- endif -%}
+{%- if v is sameas true -%}✓{%- elif v is sameas false -%}✗{%- elif v is iterable and v is not string -%}{{ v|join(', ') }}{%- elif v is number -%}{{ ('{:,.0f}' if v == v|int else '{:,.2f}').format(v) }}{%- else -%}{{ v if v is not none else '—' }}{%- endif -%}
 {%- endmacro %}
 
 {% macro quality(q, L) %}
@@ -57,12 +59,17 @@
         'transfer_without_country': (L('Transfer without counterparty country', 'تحويل بدون دولة الطرف الآخر'), L('country rules cannot judge it', 'قواعد الدول مش هتقدر تحكم عليها')),
         'late_arrival': (L('Recorded more than 7 days after the transaction', 'اتسجلت بعد العملية بأكتر من 7 أيام'), L('alerts would be late', 'التنبيه هيتأخر')),
         'reversal_or_refund': (L('Refund / reversal', 'مرتجع / عكس عملية'), L('information', 'للعلم')),
+        'refund_stored_negative': (L('Refund / reversal stored as a negative amount', 'مرتجع متسجل بمبلغ سالب'), L('kept: the rules use its size', 'محسوبة: القواعد بتستخدم قيمته المطلقة')),
+        'date_not_iso': (L('Date not stored as YYYY-MM-DD', 'التاريخ مش متسجل بالشكل YYYY-MM-DD'), L('date ranges in the database (live look-back, backtest periods) cannot find it: fix the source format', 'البحث بالتاريخ في قاعدة البيانات (فترة الرجوع والاختبار) مش هيلاقيها: صحح شكل التاريخ في المصدر')),
       } %}
       {% for code, n in q.issues|dictsort(by='value', reverse=true) %}
       <tr><td>{{ names.get(code, (code, ''))[0] }}</td><td class="text-end">{{ '{:,}'.format(n) }}</td><td class="small text-muted">{{ names.get(code, ('', ''))[1] }}</td></tr>
       {% else %}
       <tr><td colspan="3" class="text-muted">{{ L('No issues found.', 'لا توجد مشاكل.') }}</td></tr>
       {% endfor %}
+      {% if q.not_iso_total %}
+      <tr><td colspan="3" class="small text-warning">{{ L('Transactions in the whole table whose date is not stored as YYYY-MM-DD (outside every period, so not monitored over time)', 'عمليات في الجدول كله تاريخها مش بالشكل YYYY-MM-DD (برة أي فترة، فمش بتتراقب على مدى زمني)') }}: {{ '{:,}'.format(q.not_iso_total) }}</td></tr>
+      {% endif %}
       {% if q.late_measurable == 0 %}
       <tr><td colspan="3" class="small text-muted">{{ L('Late arrivals cannot be measured: the recording date (created_at) is empty.', 'التأخير مش ممكن يتقاس: تاريخ التسجيل (created_at) فاضي.') }}</td></tr>
       {% endif %}
