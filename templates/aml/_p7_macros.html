@@ -1,5 +1,6 @@
 {# Phase 7 AML pages: one text in English and Arabic; `ar` comes from the route. #}
 {% macro L(en, a) -%}{{ a if ar else en }}{%- endmacro %}
 {% macro risk_badge(cls) -%}
-<span class="badge {{ 'bg-danger' if cls == 'HIGH' else ('bg-warning text-dark' if cls == 'MEDIUM' else 'bg-success') }}">{{ cls or 'LOW' }}</span>
+{% if (cls or '')|upper in ('HIGH', 'MEDIUM', 'LOW') %}{% set c = cls|upper %}<span class="badge {{ 'bg-danger' if c == 'HIGH' else ('bg-warning text-dark' if c == 'MEDIUM' else 'bg-success') }}">{{ c }}</span>
+{%- else %}<span class="badge bg-secondary">{{ 'غير مصنف' if ar else 'Not rated' }}</span>{% endif %}
 {%- endmacro %}

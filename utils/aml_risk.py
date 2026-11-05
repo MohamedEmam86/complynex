@@ -76,6 +76,8 @@ def validate(model):
         probs.append('country source must be builtin, table or both')
     pts(c.get('high_risk_points'), 'high-risk country points')
     pts(c.get('foreign_points'), 'foreign country points')
+    if not str(c.get('home_country') or '').strip():
+        probs.append('the home country is required')
     if not isinstance(c.get('builtin_list'), list):
         probs.append('the built-in country list must be a list')
     for k, v in (m.get('customer_type_points') or {}).items():
@@ -182,10 +184,10 @@ def calculate_risk_score(data, model=None, high_risk_rows=None):
 def _current(high_risk_rows=None):
     """(model, high-risk rows) in force; DEFAULT_MODEL when they cannot be read."""
     try:
-        from aml.risk_config import current_model, high_risk_rows as _rows
+        from aml.risk_config import current_model, high_risk_rows_cached as _rows
         model = current_model()
         if high_risk_rows is None and model['country'].get('source') in ('table', 'both'):
-            high_risk_rows = _rows()
+            high_risk_rows = _rows()         # cached with the model (one minute)
         return model, high_risk_rows
     except Exception:
         return copy.deepcopy(DEFAULT_MODEL), high_risk_rows

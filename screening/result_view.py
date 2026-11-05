@@ -209,8 +209,9 @@ def match_view(m, kind, inputs):
     nm = d.get('name') or {}
     matched = [{'listed': a, 'screened': b} for a, b in (nm.get('matched') or [])]
     if kind == 'SANCTIONS':
-        action = {'CONFIRMED': 'Do not onboard or process. Freeze funds without delay and report to EMLCU and the supervisory regulator.',
-                  'POTENTIAL': 'Hold the relationship/transaction. Verify identity with the national ID and date of birth, then decide.',
+        # ComplyNex alerts and escalates; it never freezes or blocks (owner decision)
+        action = {'CONFIRMED': ESCALATE_CONFIRMED,
+                  'POTENTIAL': ESCALATE_POTENTIAL,
                   'LOW': 'Review and record why it is or is not the same person. Not an alert on its own.'}
     elif kind == 'PEP':
         action = {'CONFIRMED': 'Enhanced due diligence: source of funds and wealth, senior-management approval, enhanced ongoing monitoring.',
@@ -304,6 +305,21 @@ def _profile_url(m):
     return None
 
 
+# Owner decision: ComplyNex only ALERTS and ESCALATES; it never freezes, blocks or implies that it
+# executes a freeze. Arabic in translations/ar (messages.po).
+ESCALATE_CONFIRMED = ('Listed on a sanctions / terrorist / asset-freeze / prohibition list: escalate to the MLRO '
+                      'immediately with the evidence; decisions and any action on the relationship are taken outside '
+                      'this system.')
+ESCALATE_POTENTIAL = ('Possibly listed on a sanctions / terrorist / asset-freeze / prohibition list: verify the identity '
+                      'with the national ID and date of birth first; if it is the same person, escalate to the MLRO '
+                      'immediately with the evidence; decisions and any action on the relationship are taken outside '
+                      'this system.')
+SERIOUS_STRICT = ('The match is on a criminal / wanted list or linked to a sanctioned party, which is not a sanctions / '
+                  'asset-freeze listing on its own. Confirm the identity, apply enhanced due diligence and escalate to '
+                  'the MLRO with the evidence; the MLRO decides outside this system, including on a suspicious '
+                  'transaction report.')
+
+
 def overall(sanctions, peps, others, am_summary, adverse_hits, incomplete=None):
     """The single verdict at the top of the page and what the analyst must do.
     incomplete: the reasons a source was unavailable during the screening (P4-1)."""
@@ -315,24 +331,20 @@ def overall(sanctions, peps, others, am_summary, adverse_hits, incomplete=None):
         return ('danger', 'Screening incomplete — not a clear result',
                 'One or more sources were unavailable during this screening (see the reasons below). '
                 'Do not rely on it: re-screen before deciding.')
-    # freeze wording only for real sanctions / terror listings; criminal / wanted lists and links to a
-    # sanctioned party stay on the strict side but are not freeze orders
-    _freeze = ('SANCTIONS', 'TERROR', 'UNCLASSIFIED')
-    strict = [v for v in sanctions if (v.get('nature') or {}).get('code') not in (None,) + _freeze]
+    # "listed" wording only for real sanctions / terror listings; criminal / wanted lists and links to a
+    # sanctioned party stay on the strict side but are not listings on their own
+    _listed = ('SANCTIONS', 'TERROR', 'UNCLASSIFIED')
+    strict = [v for v in sanctions if (v.get('nature') or {}).get('code') not in (None,) + _listed]
     sanctions = [v for v in sanctions if v not in strict]
     s, p, o = best(sanctions), best(peps), best(others)
     s2 = best(strict)
     am = (am_summary or {}).get('risk_level')
     if s == 3:
-        return ('danger', 'Confirmed sanctions match',
-                'Do not proceed. Freeze funds without delay, file the report to EMLCU and notify the supervisory regulator. Document the decision below.')
+        return ('danger', 'Confirmed sanctions match', ESCALATE_CONFIRMED)
     if s == 2:
-        return ('danger', 'Potential sanctions match — review required',
-                'Hold onboarding/transactions until the analyst confirms or clears the match with the national ID and date of birth.')
+        return ('danger', 'Potential sanctions match — review required', ESCALATE_POTENTIAL)
     if s2 >= 2:
-        return ('danger', 'Serious list match — MLRO decision required',
-                'The match is on a criminal / wanted list or linked to a sanctioned party, which is not a freeze order on its own. '
-                'Hold, confirm the identity, apply enhanced due diligence and let the MLRO decide; consider a suspicious transaction report.')
+        return ('danger', 'Serious list match — MLRO decision required', SERIOUS_STRICT)
     if p == 3:
         return ('warning', 'Politically exposed person',
                 'Enhanced due diligence and senior-management approval are required before the relationship continues.')

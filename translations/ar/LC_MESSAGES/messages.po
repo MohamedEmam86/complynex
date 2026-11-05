@@ -42572,6 +42572,40 @@ msgid ""
 "The drift report for %(m)s is being built; refresh this page in a minute."
 msgstr "جاري إعداد تقرير الانحراف لشهر %(m)s؛ حدّث الصفحة بعد دقيقة."
 
+#: Phase 8 AML — alert and escalate (no freeze)
+msgid "Listed on a sanctions / terrorist / asset-freeze / prohibition list: escalate to the MLRO immediately with the evidence; decisions and any action on the relationship are taken outside this system."
+msgstr "مدرج على قائمة عقوبات / إرهاب / تجميد أموال / منع من التصرف: صعّد لمسؤول الإبلاغ فوراً مع الأدلة؛ القرارات وأي إجراء على العلاقة تُتخذ خارج هذا النظام."
+
+#: Phase 8 AML — alert and escalate (no freeze)
+msgid "Possibly listed on a sanctions / terrorist / asset-freeze / prohibition list: verify the identity with the national ID and date of birth first; if it is the same person, escalate to the MLRO immediately with the evidence; decisions and any action on the relationship are taken outside this system."
+msgstr "احتمال إدراج على قائمة عقوبات / إرهاب / تجميد أموال / منع من التصرف: تحقق من الهوية بالرقم القومي وتاريخ الميلاد أولاً؛ وإذا كان نفس الشخص، صعّد لمسؤول الإبلاغ فوراً مع الأدلة؛ القرارات وأي إجراء على العلاقة تُتخذ خارج هذا النظام."
+
+#: Phase 8 AML — alert and escalate (no freeze)
+msgid "The match is on a criminal / wanted list or linked to a sanctioned party, which is not a sanctions / asset-freeze listing on its own. Confirm the identity, apply enhanced due diligence and escalate to the MLRO with the evidence; the MLRO decides outside this system, including on a suspicious transaction report."
+msgstr "التطابق على قائمة جنائية / مطلوبين أو مرتبط بجهة معاقبة، وهذا وحده ليس إدراجاً على قائمة عقوبات أو تجميد أموال. أكّد الهوية، وطبّق عناية واجبة مشددة، وصعّد لمسؤول الإبلاغ مع الأدلة؛ ومسؤول الإبلاغ يقرر خارج هذا النظام، بما في ذلك إخطار الاشتباه."
+
+#: Phase 8 AML — alert and escalate (no freeze)
+msgid "Linked to a sanctioned party: establish ownership and control (the 50 percent rule) and escalate to the MLRO with the evidence; decisions and any action on the relationship are taken outside this system."
+msgstr "مرتبط بجهة معاقبة: حدّد الملكية والسيطرة (قاعدة الخمسين في المائة) وصعّد لمسؤول الإبلاغ مع الأدلة؛ القرارات وأي إجراء على العلاقة تُتخذ خارج هذا النظام."
+
+#: Phase 8 AML — alert and escalate (no freeze)
+msgid "Criminal or wanted record, not a sanctions / asset-freeze listing: confirm identity, enhanced due diligence and escalate to the MLRO, who decides outside this system (including on a suspicious transaction report)."
+msgstr "سجل جنائي أو مطلوب، وليس إدراجاً على قائمة عقوبات أو تجميد أموال: أكّد الهوية، وطبّق عناية واجبة مشددة، وصعّد لمسؤول الإبلاغ الذي يقرر خارج هذا النظام (بما في ذلك إخطار الاشتباه)."
+
+#: Phase 8 AML — alert and escalate (no freeze)
+msgid "a hit with no national ID or date of birth on either side is shown as \"identity not verifiable\", with the next step (obtain the customer's ID documents, or compare other details when the listed record has no identifiers)."
+msgstr "النتيجة اللي مفيهاش رقم قومي أو تاريخ ميلاد عند أي طرف بتظهر \"الهوية مش قابلة للتحقق\" ومعاها الخطوة الجاية (هات مستندات هوية العميل، أو قارن بيانات تانية لو السجل المدرج مفيهوش معرّفات)."
+
+#: Phase 8 AML — alert and escalate (no freeze)
+#, python-format
+msgid "Aggregate sanctioned ownership is %(pct)s%% (threshold %(threshold)s%%, 50%% rule): escalate to the MLRO immediately with the evidence; decisions and any action on the relationship are taken outside this system."
+msgstr "الملكية الإجمالية لأشخاص مطابقين مؤكدين على قوائم العقوبات %(pct)s%% (الحد %(threshold)s%%، قاعدة الـ 50%%): صعّد لمسؤول الإبلاغ فوراً مع الأدلة؛ القرارات وأي إجراء على العلاقة تُتخذ خارج هذا النظام."
+
+#: Phase 8 AML — alert and escalate (no freeze)
+msgid "This screening hit is already linked to another case."
+msgstr "نتيجة الفحص هذه مرتبطة بحالة أخرى بالفعل."
+
+
 #~ msgid "100% Anonymous & Secure"
 #~ msgstr "مجهول وآمن 100%"
 

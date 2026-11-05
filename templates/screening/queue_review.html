@@ -173,8 +173,8 @@
                                     value="true_match">
                                 <label class="form-check-label" for="tm">
                                     <i class="bi bi-x-octagon text-danger"></i>
-                                    <strong>{{ _('True Match') }}</strong> {{ _('→ BLOCK Entity') }}
-                                    <br><small class="text-muted">{{ _('Add to internal blacklist, freeze accounts') }}</small>
+                                    <strong>{{ _('True Match') }}</strong> {{ '→ تصعيد لمسؤول الإبلاغ' if get_locale()|string == 'ar' else '→ escalate to the MLRO' }}
+                                    <br><small class="text-muted">{{ 'تطابق مؤكد: صعّد لمسؤول الإبلاغ فوراً مع الأدلة؛ القرارات وأي إجراء على العلاقة تُتخذ خارج هذا النظام.' if get_locale()|string == 'ar' else 'Confirmed match: escalate to the MLRO immediately with the evidence; decisions and any action on the relationship are taken outside this system.' }}</small>
                                 </label>
                             </div>
 

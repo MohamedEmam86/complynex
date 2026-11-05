@@ -5,12 +5,13 @@
 <div class="container-fluid py-3">
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div><h1 class="h3 mb-0"><i class="bi bi-exclamation-octagon"></i> {{ L('Screening hits to act on', 'نتائج الفحص المطلوب التصرف فيها') }}</h1>
-      <div class="small text-muted">{{ L('Open hits and confirmed matches. From here: record the freeze and open the STR case; the MLRO decides on the case page.', 'النتائج المفتوحة والتطابقات المؤكدة. من هنا: سجّل التجميد وافتح حالة الإخطار؛ ومسؤول الإبلاغ يقرر في صفحة الحالة.') }}</div></div>
-    <div class="d-flex gap-2"><a href="{{ url_for('aml.freeze_log') }}" class="btn btn-sm btn-outline-danger">{{ L('Freeze log', 'سجل التجميد') }}</a>
+      <div class="small text-muted">{{ L('Open hits and confirmed matches not yet decided, most urgent first (confirmed matches, then the oldest). From here: log the escalation to the MLRO and open the STR case. This system only alerts and escalates: decisions and any action on the relationship are taken outside it.', 'النتائج المفتوحة والتطابقات المؤكدة التي لم يصدر فيها قرار، الأكثر إلحاحاً أولاً (التطابقات المؤكدة ثم الأقدم). من هنا: سجّل التصعيد لمسؤول الإبلاغ وافتح حالة الإخطار. هذا النظام ينبّه ويصعّد فقط: القرارات وأي إجراء على العلاقة تُتخذ خارجه.') }}</div></div>
+    <div class="d-flex gap-2"><a href="{{ url_for('aml.escalation_log') }}" class="btn btn-sm btn-outline-danger">{{ L('Hit escalation log', 'سجل تصعيد النتائج') }}</a>
       <a href="{{ url_for('aml.sar_list') }}" class="btn btn-sm btn-outline-primary">{{ L('STR register', 'سجل الإخطارات') }}</a></div>
   </div>
+  <div class="small text-muted mb-1">{{ total }} {{ L('hits to act on', 'نتيجة مطلوب التصرف فيها') }}{% if total > rows|length %} — {{ L('the first', 'أول') }} {{ rows|length }} {{ L('shown', 'معروضة') }}{% endif %}</div>
   <div class="table-responsive"><table class="table table-sm align-middle">
-    <thead><tr><th>{{ L('Screened', 'المفحوص') }}</th><th>{{ L('Listed name', 'الاسم المدرج') }}</th><th>{{ L('List', 'القائمة') }}</th><th>{{ L('Score', 'الدرجة') }}</th><th>{{ L('Status', 'الحالة') }}</th><th>{{ L('Freeze', 'التجميد') }}</th><th>{{ L('STR case', 'حالة الإخطار') }}</th></tr></thead>
+    <thead><tr><th>{{ L('Screened', 'المفحوص') }}</th><th>{{ L('Listed name', 'الاسم المدرج') }}</th><th>{{ L('List', 'القائمة') }}</th><th>{{ L('Score', 'الدرجة') }}</th><th>{{ L('Status', 'الحالة') }}</th><th>{{ L('Escalation', 'التصعيد') }}</th><th>{{ L('STR case', 'حالة الإخطار') }}</th></tr></thead>
     <tbody>
     {% for r in rows %}
     <tr class="{{ 'table-danger' if r.confirmed }}">
@@ -19,12 +20,12 @@
       <td class="small">{{ r.list_source }}</td>
       <td>{{ '%.0f'|format(r.match_score or 0) }}</td>
       <td class="small">{{ r.status }}{% if r.resolution %}<div class="text-muted">{{ r.resolution }}</div>{% endif %}</td>
-      <td>{% if r.freeze %}<a href="{{ url_for('aml.freeze_view', entry_id=r.freeze.id) }}">{{ r.freeze.reference }}</a><div class="small text-muted">{{ r.freeze.status }}</div>
-        {% elif current_user.can_edit('aml') %}<a class="btn btn-sm btn-outline-danger" href="{{ url_for('aml.freeze_new', queue_id=r.id) }}">{{ L('Record freeze', 'تسجيل تجميد') }}</a>{% endif %}</td>
+      <td>{% if r.escalation %}<a href="{{ url_for('aml.escalation_view', entry_id=r.escalation.id) }}">{{ r.escalation.reference }}</a><div class="small text-muted">{{ esc_labels.get(r.escalation.status, r.escalation.status) }}</div>
+        {% elif current_user.can_edit('aml') %}<a class="btn btn-sm btn-outline-danger" href="{{ url_for('aml.escalation_new', queue_id=r.id) }}">{{ L('Log escalation', 'تسجيل تصعيد') }}</a>{% endif %}</td>
       <td>{% if r.case %}<a href="{{ url_for('aml.sar_detail', sar_id=r.case.id) }}">{{ r.case.sar_reference }}</a><div class="small text-muted">{{ r.case.investigation_status }}</div>
         {% elif current_user.can_edit('aml') %}<form method="POST" action="{{ url_for('aml.open_case_from_hit', queue_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-primary">{{ L('Open STR case', 'فتح حالة إخطار') }}</button></form>{% endif %}</td>
     </tr>
-    {% else %}<tr><td colspan="7" class="text-muted small">{{ L('No open or confirmed screening hit.', 'لا توجد نتائج فحص مفتوحة أو مؤكدة.') }}</td></tr>{% endfor %}
+    {% else %}<tr><td colspan="7" class="text-muted small">{{ L('No open or undecided confirmed screening hit.', 'لا توجد نتائج فحص مفتوحة أو مؤكدة بدون قرار.') }}</td></tr>{% endfor %}
     </tbody></table></div>
   <div class="small text-muted">{{ L('Clearing or confirming a hit stays on the screening queue page (four-eyes rules apply there).', 'استبعاد أو تأكيد النتيجة يظل في صفحة قائمة انتظار الفحص (تطبق هناك قاعدة العينين الأربع).') }}</div>
 </div>

@@ -19,7 +19,7 @@ STR / SAR draft for the financial intelligence unit (F5).
 
 Builds a draft report from one case of the STR register: the reporting
 subject, the relationship, the grounds of suspicion, the screening hits,
-alerts and transactions linked to the case, the freeze log and the
+alerts and transactions linked to the case, the hit escalation log and the
 investigation. The analyst completes the narrative (each save is a new
 version, kept); the draft never files anything: the MLRO decides on the case
 page (aml.sar_detail) whether the unit is notified, and the filing is
@@ -29,7 +29,7 @@ str_report_templates.
 import json
 
 from database.db import get_db
-from . import freeze_log as FL
+from . import escalation_log as EL
 from . import str_register as SR
 
 EDITABLE = ('grounds', 'actions_taken', 'narrative')
@@ -69,11 +69,11 @@ def facts(sar_id, db=None):
     tm_ids = [l['target_id'] for l in links if l['link_type'] == 'tm_alert']
     tms = _rows(db, """SELECT id, alert_reference, alert_severity, status, alert_date FROM tm_alerts
                         WHERE id = ANY(%s)""", (tm_ids,)) if tm_ids else []
-    freezes = FL.entries(db, sar_id=sar_id)
+    escalations = EL.entries(db, sar_id=sar_id)
     templates = _rows(db, """SELECT name_en, name_ar, template_url FROM str_report_templates
                               WHERE is_active ORDER BY sort_order""") if _has_templates(db) else []
     return {'case': case, 'customer': cust, 'transactions': txs, 'hits': hits, 'tm_alerts': tms,
-            'freezes': freezes, 'templates': templates,
+            'escalations': escalations, 'templates': templates,
             'total_amount': sum(float(t.get('amount') or 0) for t in txs)}
 
 
@@ -89,11 +89,24 @@ def default_text(f):
     if c.get('red_flags_identified'):
         grounds += '\n\n' + c['red_flags_identified'].strip()
     actions = []
-    for z in f['freezes']:
-        if z.get('frozen_at'):
-            actions.append(f"Funds / accounts frozen on {z['frozen_at']:%Y-%m-%d %H:%M} ({z.get('freeze_scope') or ''}).")
+    for z in f.get('escalations') or []:
+        esc, rep = EL.parse_dt(z.get('escalated_at')), EL.parse_dt(z.get('reported_at'))
+        if esc:
+            actions.append(f"Screening hit {z.get('reference') or ''} escalated to the MLRO on {esc:%Y-%m-%d %H:%M}.")
+        if rep:
+            actions.append(f"Reported to {z.get('reported_to') or 'the authority'} on {rep:%Y-%m-%d %H:%M}"
+                           + (f" (reference {z['report_reference']})." if z.get('report_reference') else '.'))
     return {'grounds': grounds, 'actions_taken': '\n'.join(actions),
             'narrative': (c.get('investigation_findings') or '').strip()}
+
+
+def can_see(case, user, is_mlro):
+    """The draft is confidential (tipping-off): the MLRO, the analyst assigned to
+    the case and the person who reported it."""
+    if is_mlro:
+        return True
+    uid = getattr(user, 'id', None)
+    return uid is not None and uid in (case.get('assigned_to'), case.get('reported_by'))
 
 
 def latest(sar_id, db=None):
@@ -131,8 +144,15 @@ def save(sar_id, form, user_id, db=None):
     if prev and prev['content'] == content:
         return prev['version']
     v = (prev['version'] if prev else 0) + 1
-    db.execute("INSERT INTO aml_sar_drafts (sar_id, version, content, created_by) VALUES (%s,%s,%s,%s)",
-               (sar_id, v, json.dumps(content, ensure_ascii=False), user_id))
-    db.commit()
+    try:
+        db.execute("INSERT INTO aml_sar_drafts (sar_id, version, content, created_by) VALUES (%s,%s,%s,%s)",
+                   (sar_id, v, json.dumps(content, ensure_ascii=False), user_id))
+        db.commit()
+    except Exception as ex:
+        import psycopg2
+        if not isinstance(ex, psycopg2.IntegrityError):
+            raise
+        db.rollback()          # two saves at the same moment: UNIQUE (sar_id, version)
+        raise DraftError('Someone saved the draft at the same time; reload the page and try again.')
     SR._audit(user_id, sar_id, f'SAR {case["sar_reference"]}: STR draft version {v} saved')
     return v

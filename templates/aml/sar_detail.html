@@ -14,8 +14,8 @@
       <span class="badge bg-light text-dark border">{{ _('Source') }}: {{ source_labels.get(sar.source, sar.source) }}</span>
       {% if due %}<span class="badge {{ 'bg-danger' if due.overdue else ('bg-warning text-dark' if due.days <= 3 else 'bg-info text-dark') }} fs-6">{{ due_text(due) }}</span>{% endif %}
       <span class="badge {{ 'bg-danger' if st in ('FILE_SAR', 'FILED') else ('bg-secondary' if st in ('NO_STR', 'CLOSED') else 'bg-primary') }} fs-6">{{ labels.get(st, st) }}</span>
-      <a href="{{ url_for('aml.sar_draft', sar_id=sar.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-text"></i> {{ 'مسودة الإخطار' if get_locale() == 'ar' else 'STR draft' }}</a>
-      {% if current_user.can_edit('aml') %}<a href="{{ url_for('aml.freeze_new', sar_id=sar.id) }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-snow"></i> {{ 'تسجيل تجميد' if get_locale() == 'ar' else 'Record a freeze' }}</a>{% endif %}
+      <a href="{{ url_for('aml.sar_draft', sar_id=sar.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-text"></i> {{ 'مسودة الإخطار' if get_locale()|string == 'ar' else 'STR draft' }}</a>
+      {% if current_user.can_edit('aml') %}<a href="{{ url_for('aml.escalation_new', sar_id=sar.id) }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-arrow-up-right-circle"></i> {{ 'تسجيل تصعيد نتيجة فحص' if get_locale()|string == 'ar' else 'Log a hit escalation' }}</a>{% endif %}
       <a href="{{ url_for('aml.sar_list') }}" class="btn btn-sm btn-outline-secondary">{{ _('Back to the register') }}</a></div>
   </div>
   <div class="row g-3">

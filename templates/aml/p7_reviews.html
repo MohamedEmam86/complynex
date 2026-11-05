@@ -7,7 +7,8 @@
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div><h1 class="h3 mb-0"><i class="bi bi-calendar-check"></i> {{ L('Periodic customer reviews', 'المراجعة الدورية للعملاء') }}</h1>
       <div class="small text-muted">{{ L('Review interval by rating', 'دورية المراجعة حسب التصنيف') }}: {% for k in classes %}{{ k }} {{ model.review_months[k] }} {{ L('months', 'شهر') }}{{ ' · ' if not loop.last }}{% endfor %}
-        — <a href="{{ url_for('aml.risk_scoring') }}">{{ L('change', 'تعديل') }}</a></div></div>
+        — <a href="{{ url_for('aml.risk_scoring') }}">{{ L('change', 'تعديل') }}</a>
+        <div>{{ L('A customer without a rating is reviewed on the HIGH interval. The due date is the earlier of the stored next review date and the last review plus the interval of the current rating.', 'العميل غير المصنف يُراجع وفق دورية التصنيف العالي. تاريخ الاستحقاق هو الأقرب بين تاريخ المراجعة القادمة المسجل وآخر مراجعة مضافاً إليها دورية التصنيف الحالي.') }}</div></div></div>
     <a href="{{ url_for('aml.dashboard') }}" class="btn btn-sm btn-outline-secondary">{{ L('AML dashboard', 'لوحة مكافحة غسل الأموال') }}</a>
   </div>
   <div class="row g-2 mb-3">

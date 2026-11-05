@@ -120,16 +120,23 @@ def test_action_text_follows_tier():
     conf = wf.action_for({'source': 'un', 'decision': {'tier': 'CONFIRMED'}}, t)
     pot = wf.action_for({'source': 'un', 'decision': {'tier': 'POTENTIAL'}}, t)
     low = wf.action_for({'source': 'un', 'decision': {'tier': 'LOW'}}, t)
-    assert 'Freeze funds without delay' in conf['step']['en']
-    assert pot['step']['en'].startswith('Hold')
+    # owner decision: ComplyNex only alerts and escalates — no freeze / hold action in any step
+    assert conf['step']['en'].startswith('Listed on Sanctions / asset-freeze list: escalate to the MLRO immediately')
+    assert 'outside this system' in conf['step']['en'] and '{list}' not in conf['step']['en']
+    assert pot['step']['en'].startswith('Possibly listed on') and 'national ID and date of birth first' in pot['step']['en']
     assert low['step']['en'].startswith('Low-confidence')
-    assert conf['step']['ar'] and conf['label']['ar']
+    assert conf['step']['ar'].startswith('مدرج على قائمة عقوبات') and conf['label']['ar']
+    for code, a in wf.ACTIONS.items():
+        for k in ('CONFIRMED', 'POTENTIAL'):
+            en, ar = a[k]
+            assert 'freeze funds' not in en.lower() and 'freeze without' not in en.lower() and 'جمّد' not in ar
+        assert 'freeze' not in a['label'][0].lower() and 'تجميد' not in a['label'][1]
 
 
 def test_lifted_listing_is_not_a_freeze():
     a = wf.action_for({'source': 'INTERNAL_BLACKLIST', 'legal_status': 'LIFTED', 'decision': {'tier': 'CONFIRMED'}},
                       wf.DEFAULT_TABLE)
-    assert 'lifted' in a['step']['en'].lower() and 'no freeze' in a['step']['en'].lower()
+    assert 'lifted' in a['step']['en'].lower() and 'no longer an active listing' in a['step']['en'].lower()
 
 
 def test_mlro_override_applies_and_invalid_rejected():

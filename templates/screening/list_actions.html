@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _('Action by list type') }}{% endblock %}
 {% block content %}
-{% set _ar = get_locale() == 'ar' %}
+{% set _ar = get_locale()|string == 'ar' %}
 <div class="container-fluid py-4">
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
@@ -52,7 +52,8 @@
   <div class="card shadow-sm border-0 mt-3">
     <div class="card-body small text-muted">
       <strong>{{ _('When identifiers are missing') }}:</strong>
-      {{ _('a hit with no national ID or date of birth on either side is shown as "identity not verifiable", with the next step (obtain the customer\'s ID documents, or compare other details when the listed record has no identifiers). A freeze action on a potential match means: hold and escalate, freeze once identity is confirmed.') }}
+      {{ _('a hit with no national ID or date of birth on either side is shown as "identity not verifiable", with the next step (obtain the customer\'s ID documents, or compare other details when the listed record has no identifiers).') }}
+      {{ 'على تطابق محتمل مع قايمة عقوبات / إرهاب / تجميد / منع من التصرف: اتحقق من الهوية أولاً ثم صعّد لمسؤول الإبلاغ. النظام ينبّه ويصعّد فقط؛ القرارات وأي إجراء على العلاقة تُتخذ خارجه.' if _ar else 'On a potential match with a sanctions / terrorist / asset-freeze / prohibition list: verify the identity first, then escalate to the MLRO. The system only alerts and escalates; decisions and any action on the relationship are taken outside it.' }}
     </div>
   </div>
 </div>

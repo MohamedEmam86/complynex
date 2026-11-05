@@ -180,9 +180,9 @@ def approval_blockers(entity, ubos, signatories, states):
         out.append(M('No authorised signatory recorded.'))
     so = sanctioned_ownership(ubos, states)
     if so['deemed_sanctioned']:
-        out.append(M('Sanctioned persons own %(pct)s%% of the entity in aggregate (threshold %(threshold)s%%): '
-                     'treat the entity itself as sanctioned (50%% rule).', pct=_fmt(so['pct']),
-                     threshold=_fmt(so['threshold'])))
+        out.append(M('Aggregate sanctioned ownership is %(pct)s%% (threshold %(threshold)s%%, 50%% rule): escalate to '
+                     'the MLRO immediately with the evidence; decisions and any action on the relationship are '
+                     'taken outside this system.', pct=_fmt(so['pct']), threshold=_fmt(so['threshold'])))
     for kind, rows in (('ubo', ubos), ('signatory', signatories)):
         for r in rows:
             st = states.get((kind, r['id']), NOT_SCREENED)
@@ -202,24 +202,29 @@ def approval_blockers(entity, ubos, signatories, states):
 
 
 # OFAC 50% rule: an entity owned 50% or more, directly and in aggregate, by sanctioned
-# persons is itself treated as sanctioned. TODO(compliance-review): indirect ownership
-# through intermediate companies is not modelled; record it as an owner with its stake.
+# persons is itself covered. ComplyNex only ALERTS: the page and the approval blockers tell
+# the user to escalate to the MLRO; nothing is frozen or blocked here.
+# TODO(compliance-review): indirect ownership through intermediate companies is not modelled;
+# the page tells the user to record the owning company as an owner with its stake.
 OFAC_AGGREGATE_THRESHOLD = Decimal('50')
 
 
 def sanctioned_ownership(ubos, states, threshold=OFAC_AGGREGATE_THRESHOLD):
-    """Aggregate direct ownership held by owners who are confirmed sanctions matches.
-    Returns {'pct', 'owners', 'deemed_sanctioned', 'threshold'}."""
+    """Aggregate sanctioned ownership: the recorded stakes of the owners who are
+    confirmed sanctions matches. Every recorded stake counts, whatever the control
+    type (a person recorded as 'control' or 'senior_manager' with a stake still
+    owns it; control types are CONTROL_TYPES, and an unexpected value is not a
+    reason to drop a stake). Returns {'pct', 'owners', 'deemed_sanctioned', 'threshold'}."""
     total, owners = Decimal('0'), []
     for u in ubos or []:
         if states.get(('ubo', u['id'])) != CONFIRMED:
-            continue
-        if (u.get('control_type') or 'ownership') != 'ownership':
             continue
         try:
             p = pct(u.get('ownership_pct')) or Decimal('0')
         except ValueError:
             p = Decimal('0')
+        if p <= 0:
+            continue                   # control without a recorded stake: not ownership
         total += p
         owners.append(u.get('full_name'))
     return {'pct': total, 'owners': owners, 'deemed_sanctioned': total >= threshold, 'threshold': threshold}

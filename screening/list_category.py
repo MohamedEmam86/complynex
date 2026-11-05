@@ -4,7 +4,7 @@ What kind of record an aggregated-database hit is (Phase 2, G1).
 OpenSanctions mixes real sanctions with PEPs, criminal / wanted lists, debarments, regulatory
 warnings, trade-risk research and plain background data (company registers, ship detentions,
 Wikidata). Before this, every OpenSanctions record without a PEP topic was shown as a sanctions
-hit with the instruction to freeze funds. Each record now gets a category from its topics (and,
+hit with the instruction to freeze funds (ComplyNex now only alerts and escalates). Each record now gets a category from its topics (and,
 when it has none, from its dataset), with a note in Arabic on what the record is and an action
 that fits it.
 
@@ -22,11 +22,11 @@ CATEGORY = {
     'TERROR': ('SANCTIONS', 'إرهاب',
                'مدرج كإرهابي أو منظمة إرهابية في قايمة رسمية.', None),
     'SANCTION_LINKED': ('SANCTIONS', 'مرتبط بجهة معاقبة',
-                        'مش مدرج بنفسه، لكنه مرتبط بجهة معاقبة (ملكية أو سيطرة أو علاقة). التجميد بيتطبق لو مملوك أو مسيطر عليه من الجهة المعاقبة.',
-                        'Linked to a sanctioned party: establish ownership and control (50% rule). Freeze only if owned or controlled by the sanctioned party; otherwise enhanced due diligence. MLRO decides.'),
+                        'مش مدرج بنفسه، لكنه مرتبط بجهة معاقبة (ملكية أو سيطرة أو علاقة). لو مملوك أو مسيطر عليه من الجهة المعاقبة (قاعدة الـ 50%) بيتعامل كمدرج: صعّد لمسؤول الإبلاغ.',
+                        'Linked to a sanctioned party: establish ownership and control (the 50 percent rule) and escalate to the MLRO with the evidence; decisions and any action on the relationship are taken outside this system.'),
     'CRIME': ('SANCTIONS', 'جرائم / مطلوب',
-              'مذكور في قايمة جنائية أو قايمة مطلوبين (شرطة / نيابة / إنتربول). ده مش أمر تجميد.',
-              'Criminal or wanted record, not a freeze order: confirm identity, enhanced due diligence, consider a suspicious transaction report. MLRO decides.'),
+              'مذكور في قايمة جنائية أو قايمة مطلوبين (شرطة / نيابة / إنتربول). ده مش إدراج على قايمة عقوبات أو تجميد.',
+              'Criminal or wanted record, not a sanctions / asset-freeze listing: confirm identity, enhanced due diligence and escalate to the MLRO, who decides outside this system (including on a suspicious transaction report).'),
     'PEP': ('PEP', 'شخص سياسي ممثل للمخاطر (PEP)',
             'شخص في منصب عام بارز أو من أقاربه / المقربين منه.', None),
     'EXPORT_CONTROL': ('OTHER', 'قيود تصدير',

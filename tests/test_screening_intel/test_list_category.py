@@ -87,4 +87,9 @@ def test_overall_no_freeze_for_crime():
     crime = {'tier': 'CONFIRMED', 'nature': {'code': 'CRIME'}}
     assert 'Freeze' not in rv.overall([crime], [], [], None, [])[2]
     real = {'tier': 'CONFIRMED', 'nature': None}
-    assert 'Freeze' in rv.overall([real], [], [], None, [])[2]
+    text = rv.overall([real], [], [], None, [])[2]
+    # owner decision: ComplyNex alerts and escalates, it never freezes
+    assert 'Freeze' not in text and 'freeze funds' not in text.lower()
+    assert 'escalate to the MLRO immediately' in text and 'outside this system' in text
+    pot = rv.overall([{'tier': 'POTENTIAL', 'nature': None}], [], [], None, [])[2]
+    assert 'national ID and date of birth first' in pot and 'escalate to the MLRO' in pot

@@ -24,15 +24,19 @@ scoring used before it became configurable.
 """
 import copy
 import json
+import logging
 import threading
 import time
 
 from database.db import get_db
 from utils import aml_risk
 
+logger = logging.getLogger(__name__)
+
 CACHE_SECONDS = 60
 _lock = threading.Lock()
 _cache = {'at': 0.0, 'model': None}
+_hr_cache = {'at': 0.0, 'rows': None}
 
 
 class RiskModelError(ValueError):
@@ -44,6 +48,30 @@ def _table_exists(db):
     return bool(r and r['t'])
 
 
+def safe_rows(db, sql, args=()):
+    """Run a read inside a SAVEPOINT on the request's own connection, so that a
+    failure rolls back only this read and never the caller's unsaved work.
+    (The connection wrapper rolls the whole transaction back on any error, so
+    the read goes to the raw connection.) Raises the original error."""
+    conn = getattr(db, '_conn', None)
+    if conn is None:
+        return [dict(r) for r in db.execute(sql, args).fetchall()]
+    cur = conn.cursor()
+    cur.execute('SAVEPOINT aml_safe_read')
+    try:
+        cur.execute(sql, args)
+        rows = [dict(r) for r in cur.fetchall()]
+    except Exception:
+        try:
+            cur.execute('ROLLBACK TO SAVEPOINT aml_safe_read')
+            cur.execute('RELEASE SAVEPOINT aml_safe_read')
+        except Exception:
+            pass
+        raise
+    cur.execute('RELEASE SAVEPOINT aml_safe_read')
+    return rows
+
+
 def current_model(db=None, force=False):
     """The model in force, merged over the defaults (cached for a minute)."""
     now = time.time()
@@ -53,15 +81,13 @@ def current_model(db=None, force=False):
         model = None
         try:
             db = db or get_db()
-            if _table_exists(db):
-                r = db.execute("SELECT model FROM aml_risk_models WHERE is_current ORDER BY id DESC LIMIT 1").fetchone()
-                if r:
-                    model = r['model'] if isinstance(r['model'], dict) else json.loads(r['model'])
-        except Exception:
-            try:
-                db.rollback()
-            except Exception:
-                pass
+            rows = safe_rows(db, "SELECT model FROM aml_risk_models WHERE is_current ORDER BY id DESC LIMIT 1") \
+                if _table_exists(db) else []
+            if rows:
+                r = rows[0]
+                model = r['model'] if isinstance(r['model'], dict) else json.loads(r['model'])
+        except Exception as ex:
+            logger.warning('customer risk model not readable (%s); keeping the last good model or the default', ex)
             model = _cache['model']          # keep the last good model
         model = aml_risk.merged(model)
         if aml_risk.validate(model):
@@ -73,6 +99,27 @@ def current_model(db=None, force=False):
 def high_risk_rows(db=None):
     db = db or get_db()
     return [dict(r) for r in db.execute("SELECT * FROM high_risk_countries WHERE is_active = 1").fetchall()]
+
+
+def high_risk_rows_cached(db=None):
+    """Active high-risk country rows, cached like the model (one minute); the
+    high-risk countries page clears the cache on every change."""
+    now = time.time()
+    if _hr_cache['rows'] is not None and now - _hr_cache['at'] < CACHE_SECONDS:
+        return [dict(r) for r in _hr_cache['rows']]
+    try:
+        rows = safe_rows(db or get_db(), "SELECT * FROM high_risk_countries WHERE is_active = 1")
+    except Exception as ex:
+        logger.warning('high-risk countries not readable (%s); keeping the last rows read', ex)
+        rows = _hr_cache['rows'] or []
+    _hr_cache['rows'], _hr_cache['at'] = rows, now
+    return [dict(r) for r in rows]
+
+
+def invalidate():
+    """Forget the cached model and high-risk rows (after a change)."""
+    _cache['model'] = None
+    _hr_cache['rows'] = None
 
 
 def history(db=None, limit=20):
@@ -129,11 +176,20 @@ def save_model(model, reason, user_id, db=None):
     if probs:
         raise RiskModelError('; '.join(probs))
     old = current_model(db, force=True)
-    db.execute("UPDATE aml_risk_models SET is_current = FALSE WHERE is_current")
-    vid = db.execute("""INSERT INTO aml_risk_models (model, reason, created_by, is_current)
-                        VALUES (%s, %s, %s, TRUE) RETURNING id""",
-                     (json.dumps(aml_risk.merged(model)), reason, user_id)).fetchone()['id']
-    db.commit()
+    try:
+        db.execute("UPDATE aml_risk_models SET is_current = FALSE WHERE is_current")
+        vid = db.execute("""INSERT INTO aml_risk_models (model, reason, created_by, is_current)
+                            VALUES (%s, %s, %s, TRUE) RETURNING id""",
+                         (json.dumps(aml_risk.merged(model)), reason, user_id)).fetchone()['id']
+        db.commit()
+    except Exception as ex:
+        if not _is_integrity_error(ex):
+            raise
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        raise RiskModelError('someone else saved the model at the same time; reload the page and try again')
     _cache['model'] = None
     try:
         from flask import request
@@ -144,6 +200,14 @@ def save_model(model, reason, user_id, db=None):
     AuditLog.log(user_id, 'Customer risk model changed', 'AML', vid,
                  f'version {vid}: {diff_text(old, aml_risk.merged(model))}; reason: {reason}', ip)
     return vid
+
+
+def _is_integrity_error(ex):
+    try:
+        import psycopg2
+        return isinstance(ex, psycopg2.IntegrityError)
+    except Exception:
+        return False
 
 
 def diff_text(old, new, prefix=''):
