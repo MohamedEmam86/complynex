@@ -582,6 +582,12 @@ class WaterfallAdverseMediaScraper:
             # an Egyptian customer is written in Arabic.
             queries = [name]
             try:
+                # the press often names a long Egyptian name by a shorter form (خيرت الشاطر)
+                from screening.adverse_relevance import known_as_forms as _kaf
+                queries += [f for f in _kaf(name) if f not in queries][:3]
+            except Exception:
+                pass
+            try:
                 from screening import match_intel as _mi
                 if not _mi.is_arabic(name):
                     ar = _mi.to_arabic_display(name)

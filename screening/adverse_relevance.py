@@ -158,6 +158,45 @@ def classify(text):
     return {'categories': cats, 'terms': list(dict.fromkeys(found))[:6], 'severity': sev}
 
 
+_JOIN_NEXT = {'عبد', 'ابو', 'أبو', 'بن', 'abd', 'abdel', 'abdul', 'abu', 'abou', 'el', 'al', 'bin', 'ben'}
+_JOIN_PREV = {'الدين', 'الله', 'الاسلام', 'الإسلام', 'eldin', 'el-din', 'allah', 'uddin', 'eddin'}
+
+
+def _units(name):
+    """Name elements as a reader writes them: compounds kept together (عبد اللطيف، سعد الدين، Abd El Aziz)."""
+    words = str(name or '').split()
+    units, i = [], 0
+    while i < len(words):
+        w = words[i]
+        if w.lower() in _JOIN_NEXT and i + 1 < len(words):
+            w = w + ' ' + words[i + 1]
+            i += 1
+        if units and words[i].lower() in _JOIN_PREV and w == words[i]:
+            units[-1] = units[-1] + ' ' + w
+        else:
+            units.append(w)
+        i += 1
+    return units
+
+
+def known_as_forms(name):
+    """The shorter forms the press uses for a long Egyptian name: the second name + family name
+    (خيرت الشاطر), first + second + family (محمد خيرت الشاطر), first + family. Only forms whose
+    elements together still identify someone (not محمد احمد)."""
+    u = _units(name)
+    if len(u) < 3:
+        return []
+    out = []
+    for f in ([u[0], u[1], u[-1]], [u[1], u[-1]], [u[0], u[-1]]):
+        if len(f) == 3 and len(u) == 3:
+            continue                                   # that is the full name itself
+        s = ' '.join(f)
+        toks = mi.tokens(s)
+        if len(toks) >= 2 and sum(mi._weight(t) for t in toks) >= 9.0 and s not in out:
+            out.append(s)
+    return out
+
+
 def _name_forms(name):
     forms = [mi.tokens(name)]
     if not mi.is_arabic(name):
@@ -197,6 +236,13 @@ def name_presence(name, text):
                 level = 'partial'
         elif n == 1 and m == 1:
             level = 'partial'
+        if level in (None, 'partial') and n >= 3:
+            # reported by a shorter form (خيرت الشاطر): the form's elements together, in order
+            for f in (known_as_forms(name) if q == mi.tokens(name) else []):
+                ft = mi.tokens(f)
+                if _phrase_in(stems, ft, latin_prefix=False):
+                    level = 'strong' if len(ft) >= 3 else 'partial'
+                    break
         if level in ('exact', 'strong') and sum(mi._weight(t) for t in q) < 7.0:
             # a name made only of very common elements (محمد احمد) identifies
             # no one in a news article: a lead, never a strong finding
