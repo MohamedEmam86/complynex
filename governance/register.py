@@ -29,7 +29,9 @@
   follow-up).
 Pure rules live in governance/register_logic.py.
 """
+import json
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 
 from flask import render_template, request, redirect, url_for, flash, abort
 from flask_babel import gettext as _, get_locale
@@ -84,9 +86,15 @@ def _event(db, meeting_id, subject, subject_id, event, note=None, frm=None, to=N
                (meeting_id, subject, subject_id, event, frm, to, note, current_user.id))
 
 
-def entities(db, active_only=True):
+def entities(db, active_only=True, include_sample=True):
+    """Boards for a choice list; sample boards are left out where a real record is being edited."""
+    where = ['TRUE']
+    if active_only:
+        where.append('is_active')
+    if not include_sample:
+        where.append('NOT is_sample')
     return [dict(r) for r in db.execute(
-        "SELECT * FROM gov_entities " + ("WHERE is_active " if active_only else "") + "ORDER BY sort_order, id").fetchall()]
+        f"SELECT * FROM gov_entities WHERE {' AND '.join(where)} ORDER BY sort_order, id").fetchall()]
 
 
 def default_entity_id(db):
@@ -143,7 +151,34 @@ def meeting_or_404(db, mid):
     return m
 
 
+RULE_FIELDS = ('id', 'code', 'name_en', 'name_ar', 'legal_ref', 'applies_to', 'quorum_basis', 'quorum_type',
+               'quorum_fraction', 'quorum_min', 'min_personal', 'second_call_type', 'second_call_fraction',
+               'second_call_min', 'count_proxies', 'count_remote', 'majority_rule', 'chair_casting_vote',
+               'circulation_requires_all', 'notice_days', 'filing_days', 'filing_authority')
+
+
+def rule_snapshot(rule):
+    """The rule values frozen on a meeting (JSON-safe)."""
+    return {k: (float(v) if isinstance(v, Decimal) else v) for k, v in (rule or {}).items() if k in RULE_FIELDS}
+
+
+def save_rule_snapshot(db, mid, rule):
+    db.execute("UPDATE board_meetings SET rule_snapshot = %s::jsonb WHERE id = %s",
+               (json.dumps(rule_snapshot(rule), ensure_ascii=False, default=str), mid))
+
+
 def rule_for(db, m):
+    """The meeting's rule: the values frozen on the meeting when it was recorded (a later change of the
+    rule in the settings does not rewrite past meetings); the configured rule only when nothing is frozen."""
+    snap = m.get('rule_snapshot')
+    if isinstance(snap, str):
+        snap = json.loads(snap)
+    if snap:
+        return dict(snap)
+    return live_rule(db, m)
+
+
+def live_rule(db, m):
     rid = m.get('meeting_rule_id') or m.get('committee_rule_id')
     if rid:
         r = db.execute("SELECT * FROM gov_meeting_rules WHERE id = %s", (rid,)).fetchone()
@@ -219,6 +254,7 @@ def sync_legacy_flags(db, member_id):
 def attendance_rows(db, mid):
     rows = [dict(r) for r in db.execute("""
         SELECT ma.*, bm.member_name, bm.member_name_arabic, bm.gender, bm.is_independent, bm.is_executive,
+               bm.appointment_date, bm.resignation_date, bm.is_sample AS member_sample,
                h.member_name AS holder_name, h.member_name_arabic AS holder_name_ar
         FROM meeting_attendance ma JOIN board_members bm ON bm.id = ma.member_id
         LEFT JOIN board_members h ON h.id = ma.proxy_holder_member_id
@@ -228,31 +264,80 @@ def attendance_rows(db, mid):
     return rows
 
 
-def attendance_counts(rows):
-    c = {k: 0 for k in RL.ATTENDANCE}
+def decorate_rows(db, m, rows):
+    """Capacities on the meeting date, and whether each member votes at this meeting: in office on that
+    date (appointed on or before it, not resigned by then) and holding a voting capacity."""
+    md = RL.as_date(m.get('meeting_date')) or date.today()
+    caps = member_caps(db, [r['member_id'] for r in rows], md)
     for r in rows:
-        if r.get('code') in c:
-            c[r['code']] += 1
-    return c
+        r['caps'] = caps.get(r['member_id'], [])
+        r['cap_label'] = cap_label(r['caps'])
+        r['flags'] = flags_of(r['caps'], r)
+        appointed, resigned = RL.as_date(r.get('appointment_date')), RL.as_date(r.get('resignation_date'))
+        r['in_office'] = (not appointed or appointed <= md) and (not resigned or resigned > md)
+        role_votes = all(c.get('is_voting', True) for c in r['caps'] if c.get('dim_code') == 'BOARD_ROLE')
+        r['voting'] = r['in_office'] and role_votes
+    return rows
 
 
-def quorum_for(db, m, rows=None, rule=None):
-    rows = rows if rows is not None else attendance_rows(db, m['id'])
+def committee_externals(db, m):
+    """(seats, present) of external (non-board) members of the committee: active committee seats
+    of key officials, present when recorded PRESENT among the meeting's external participants."""
+    if not m.get('committee_id'):
+        return 0, 0
+    seats = {(r['full_name'] or '').strip().lower() for r in db.execute(
+        """SELECT o.full_name FROM fp_official_committees oc JOIN fp_officials o ON o.id = oc.official_id
+           WHERE oc.committee_id = %s AND oc.is_active AND COALESCE(o.official_type, '') <> 'board'""",
+        (m['committee_id'],)).fetchall()}
+    present = {(r['full_name'] or '').strip().lower() for r in db.execute(
+        "SELECT full_name FROM meeting_external_attendees WHERE meeting_id = %s AND attendance_status = 'PRESENT'",
+        (m['id'],)).fetchall()}
+    return len(seats), len(seats & present)
+
+
+def compute_quorum(db, m, rows=None, rule=None):
+    """The one quorum calculation used by the page, the stored figures and the resolution checks."""
     rule = rule or rule_for(db, m)
-    voting = [r for r in rows if r.get('voting', True)]
-    return RL.quorum(rule, len(voting), attendance_counts(voting), m.get('call_no') or 1,
-                     m.get('capital_represented_pct'))
+    rows = rows if rows is not None else decorate_rows(db, m, attendance_rows(db, m['id']))
+    voters = [r for r in rows if r['voting']]
+    if derive_kind(m) == 'CIRCULATION':
+        return dict(valid=True, basis='CIRCULATION', required=len(voters), counted=len(voters), call_no=1,
+                    threshold=None, personal=None, min_personal=None), rows
+    counts = RL.quorum_counts(voters, rule)
+    ext_seats, ext_present = committee_externals(db, m)
+    counts['IN_PERSON'] += ext_present
+    q = RL.quorum(rule, len(voters) + ext_seats, counts, m.get('call_no') or 1, m.get('capital_represented_pct'))
+    q['members_total'] = len(voters) + ext_seats
+    return q, rows
 
 
 def store_quorum(db, m):
-    q = quorum_for(db, m)
+    if not m.get('rule_snapshot'):
+        rule = live_rule(db, m)
+        save_rule_snapshot(db, m['id'], rule)
+        m = dict(m, rule_snapshot=rule_snapshot(rule))
+    q, _rows = compute_quorum(db, m)
     db.execute("""UPDATE board_meetings SET quorum_required = %s, quorum_counted = %s, members_total = %s,
                   quorum_met = %s WHERE id = %s""",
                (int(q['required']) if q['required'] is not None else None,
                 int(q['counted']) if q['counted'] is not None else None,
-                db.execute("SELECT COUNT(*) AS n FROM meeting_attendance WHERE meeting_id = %s", (m['id'],)).fetchone()['n'],
-                1 if q['valid'] else 0, m['id']))
+                q.get('members_total'), 1 if q['valid'] else 0, m['id']))
     return q
+
+
+def meeting_locked(db, mid):
+    """True once the minutes are signed by the chair and the secretary: the record is then closed."""
+    row = db.execute("SELECT minutes_state, chair_signed_at, secretary_signed_at FROM board_meetings WHERE id = %s",
+                     (mid,)).fetchone()
+    return bool(row) and RL.minutes_state(dict(row)) == 'SIGNED'
+
+
+def guard_unlocked(db, mid, anchor=''):
+    """None when the meeting record may be changed, else the redirect that refuses the change."""
+    if meeting_locked(db, mid):
+        flash(_('The minutes are signed; the record can no longer be changed.'), 'danger')
+        return redirect(url_for('governance.meeting_record', id=mid) + (('#' + anchor) if anchor else ''))
+    return None
 
 
 def has_approved_version(db, mid):
@@ -279,6 +364,17 @@ def meeting_label(m):
     return (m.get('meeting_reference') or '') + (f" (#{seq})" if seq else '')
 
 
+def show_sample(db, entity_id=None):
+    """Sample records are left out of lists, searches and alerts unless asked for (sample=1)
+    or a sample board is selected."""
+    if request.args.get('sample') == '1':
+        return True
+    if entity_id:
+        e = db.execute("SELECT is_sample FROM gov_entities WHERE id = %s", (entity_id,)).fetchone()
+        return bool(e and e['is_sample'])
+    return False
+
+
 # ------------------------------------------------------------------ meetings register
 @governance_bp.route('/register/meetings')
 @login_required
@@ -287,7 +383,10 @@ def register_meetings():
     db = get_db()
     dflt = default_entity_id(db)
     ent = request.args.get('entity', type=int)
+    with_sample = show_sample(db, ent)
     clause, args = entity_clause('m', ent, dflt)
+    if not with_sample:
+        clause += ' AND NOT COALESCE(m.is_sample, FALSE)'
     rows = [dict(r) for r in db.execute(f"""
         SELECT m.*, c.committee_name, c.committee_name_arabic, e.name_en AS entity_en, e.name_ar AS entity_ar,
                (SELECT COUNT(*) FROM board_decisions d WHERE d.meeting_id = m.id) AS n_resolutions,
@@ -306,6 +405,7 @@ def register_meetings():
         "SELECT id, committee_name, committee_name_arabic, entity_id FROM board_committees WHERE COALESCE(is_active, 1) = 1 ORDER BY committee_name").fetchall()]
     rules = [dict(r) for r in db.execute("SELECT id, code, name_en, name_ar, applies_to FROM gov_meeting_rules WHERE is_active ORDER BY sort_order, id").fetchall()]
     return render_template('governance/register_meetings.html', rows=rows, entities=entities(db), entity=ent,
+                           with_sample=with_sample,
                            committees=committees, rules=rules, default_entity=dflt, today=today)
 
 
@@ -327,29 +427,41 @@ def register_meeting_new():
     committee_id = request.form.get('committee_id', type=int) if body == 'COMMITTEE' else None
     if body == 'COMMITTEE' and not committee_id:
         errors.append(_('Choose the committee.'))
-    if errors:
-        for e in errors:
-            flash(e, 'danger')
-        return redirect(url_for('governance.register_meetings'))
     dflt = default_entity_id(db)
     ent = request.form.get('entity_id', type=int) or dflt
     if committee_id:
         c = db.execute("SELECT entity_id FROM board_committees WHERE id = %s", (committee_id,)).fetchone()
+        if not c:
+            errors.append(_('Choose the committee.'))
         ent = (c and c['entity_id']) or ent
+    e = db.execute("SELECT * FROM gov_entities WHERE id = %s AND is_active", (ent,)).fetchone()
+    if not e:
+        errors.append(_('Choose the board.'))
+    elif not e['is_default'] and not (e['short_code'] or '').strip():
+        errors.append(_('Give this board a short code first (Settings > Boards): it starts its resolution numbers.'))
+    rule_id = request.form.get('meeting_rule_id', type=int)
+    if rule_id and not db.execute("SELECT 1 FROM gov_meeting_rules WHERE id = %s AND is_active", (rule_id,)).fetchone():
+        errors.append(_('Choose the quorum / majority rule from the list.'))
+    if errors:
+        for err in errors:
+            flash(err, 'danger')
+        return redirect(url_for('governance.register_meetings'))
+    db.execute("SELECT pg_advisory_xact_lock(hashtext('gov_meeting_sequence'))")
     seq = next_sequence(db, ent, body, committee_id, d.year, dflt)
     mtype = {'BOARD': 'EXTRAORDINARY' if kind == 'EXTRAORDINARY' else 'BOARD', 'COMMITTEE': 'COMMITTEE',
              'OGM': 'AGM', 'EGM': 'AGM'}[body]
     ref = _s('meeting_reference', 100) or f"{RL.BODY_PREFIX.get(body, 'BOD')}-{d.year}-{seq:02d}"
     mid = db.execute("""INSERT INTO board_meetings (meeting_type, committee_id, meeting_date, meeting_time, location, status,
                             meeting_reference, entity_id, body, meeting_kind, sequence_no, mode, meeting_rule_id, call_no,
-                            minutes_state)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,1,'DRAFT') RETURNING id""",
+                            minutes_state, is_sample)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,1,'DRAFT',%s) RETURNING id""",
                      (mtype, committee_id, d.isoformat(), _s('meeting_time', 5) or '10:00', _s('location', 300),
                       'COMPLETED' if d <= date.today() else 'SCHEDULED', ref,
                       None if ent == dflt else ent, body, kind, seq,
                       (request.form.get('mode') or 'IN_PERSON').upper() if (request.form.get('mode') or '').upper() in RL.MODES else 'IN_PERSON',
-                      request.form.get('meeting_rule_id', type=int))).fetchone()['id']
+                      rule_id, bool(e['is_sample']))).fetchone()['id']
     m = meeting_or_404(db, mid)
+    save_rule_snapshot(db, mid, live_rule(db, m))
     for member_id in body_members(db, m):
         db.execute("INSERT INTO meeting_attendance (meeting_id, member_id, attended) VALUES (%s,%s,0) "
                    "ON CONFLICT (meeting_id, member_id) DO NOTHING", (mid, member_id))
@@ -375,20 +487,10 @@ def next_sequence(db, entity_id, body, committee_id, year, dflt=None):
 def record_context(db, mid):
     m = meeting_or_404(db, mid)
     rule = rule_for(db, m)
-    rows = attendance_rows(db, mid)
-    md = RL.as_date(m.get('meeting_date')) or date.today()
-    caps = member_caps(db, [r['member_id'] for r in rows], md)
-    for r in rows:
-        r['caps'] = caps.get(r['member_id'], [])
-        r['cap_label'] = cap_label(r['caps'])
-        r['flags'] = flags_of(r['caps'], r)
-        r['voting'] = all(c.get('is_voting', True) for c in r['caps'] if c.get('dim_code') == 'BOARD_ROLE') if r['caps'] else True
-    q = RL.quorum(rule, len([r for r in rows if r['voting']]), attendance_counts([r for r in rows if r['voting']]),
-                  m.get('call_no') or 1, m.get('capital_represented_pct'))
+    q, rows = compute_quorum(db, m, rule=rule)
     first_call = None
     if (m.get('call_no') or 1) >= 2 and m.get('first_call_present') is not None:
-        first_call = RL.quorum(rule, len([r for r in rows if r['voting']]),
-                               {'IN_PERSON': m['first_call_present']}, 1, None)
+        first_call = RL.quorum(rule, q.get('members_total') or 0, {'IN_PERSON': m['first_call_present']}, 1, None)
     tellers = [dict(r) for r in db.execute("""
         SELECT t.*, o.full_name, o.full_name_ar, bm.member_name, bm.member_name_arabic FROM gov_meeting_officers t
         LEFT JOIN gov_officers o ON o.id = t.officer_id LEFT JOIN board_members bm ON bm.id = t.member_id
@@ -426,7 +528,9 @@ def record_context(db, mid):
     return dict(m=m, rule=rule, rules=rules, rows=rows, q=q, first_call=first_call, tellers=tellers, agenda=agenda,
                 conflicts=conflicts, resolutions=resolutions, officers=officers, prev_candidates=prev_candidates,
                 all_res=all_res, minutes_state=state, approved_version=approved, cats=cats, users=users,
-                entities=entities(db), chair_row=chair_row, flags=RL.meeting_flags(dict(m, _minutes_state=state)),
+                entities=entities(db, include_sample=bool(m.get('is_sample'))), chair_row=chair_row,
+                flags=RL.meeting_flags(dict(m, _minutes_state=state)), locked=state == 'SIGNED',
+                circulation=m['kind_code'] == 'CIRCULATION', has_resolutions=bool(resolutions),
                 proxy_errors=RL.proxy_errors([dict(member_id=r['member_id'], code=r['code'],
                                                    proxy_holder_member_id=r.get('proxy_holder_member_id'),
                                                    member_name=r['member_name']) for r in rows]),
@@ -492,6 +596,9 @@ def _back(mid, anchor=''):
 def meeting_formalities(id):
     db = get_db()
     m = meeting_or_404(db, id)
+    refused = guard_unlocked(db, id, 'formalities')
+    if refused:
+        return refused
     f = request.form
     body = (f.get('body') or m['body_code']).upper()
     kind = (f.get('meeting_kind') or m['kind_code']).upper()
@@ -521,18 +628,53 @@ def meeting_formalities(id):
     if chair_id and not db.execute("SELECT 1 FROM meeting_attendance WHERE meeting_id = %s AND member_id = %s",
                                    (id, chair_id)).fetchone():
         errors.append(_('The chair of the meeting must be one of the members on the attendance list.'))
-    seq = _int(f.get('sequence_no')) or m.get('sequence_no')
-    if errors:
-        for e in errors:
-            flash(e, 'danger')
-        return _back(id, 'formalities')
     dflt = default_entity_id(db)
     ent = f.get('entity_id', type=int) or m.get('entity_id') or dflt
+    e = db.execute("SELECT * FROM gov_entities WHERE id = %s", (ent,)).fetchone()
+    if not e:
+        errors.append(_('Choose the board.'))
+    elif not e['is_default'] and not (e['short_code'] or '').strip():
+        errors.append(_('Give this board a short code first (Settings > Boards): it starts its resolution numbers.'))
+    elif e['is_sample'] and not m.get('is_sample'):
+        errors.append(_('A real meeting cannot be moved to the sample board.'))
     rule_id = f.get('meeting_rule_id', type=int) or None
-    rule = dict(db.execute("SELECT * FROM gov_meeting_rules WHERE id = %s", (rule_id,)).fetchone() or {}) if rule_id \
-        else rule_for(db, dict(m, meeting_rule_id=None))
-    filing_due = _d('filing_due_date') or RL.filing_due(d, rule.get('filing_days'))
+    if rule_id and not db.execute("SELECT 1 FROM gov_meeting_rules WHERE id = %s", (rule_id,)).fetchone():
+        errors.append(_('Choose the quorum / majority rule from the list.'))
+    sec_id = f.get('secretary_officer_id', type=int) or None
+    if sec_id and not db.execute("SELECT 1 FROM gov_officers WHERE id = %s", (sec_id,)).fetchone():
+        errors.append(_('Choose the secretary from the list.'))
     prev_id = f.get('prev_minutes_meeting_id', type=int) or None
+    if prev_id and (prev_id == id or not db.execute("SELECT 1 FROM board_meetings WHERE id = %s", (prev_id,)).fetchone()):
+        errors.append(_('Choose the previous meeting from the list.'))
+    seq = _int(f.get('sequence_no')) or m.get('sequence_no')
+    new_ent = None if ent == dflt else ent
+    has_res = bool(db.execute("SELECT 1 FROM board_decisions WHERE meeting_id = %s", (id,)).fetchone())
+    if has_res:
+        # resolution numbers are made of the body, the year and the sequence number: they stay as issued
+        if body != m['body_code'] or kind != m['kind_code'] or (d and d.isoformat() != (m.get('meeting_date') or '')[:10]) \
+                or seq != m.get('sequence_no') or new_ent != m.get('entity_id') or (rule_id or None) != (m.get('meeting_rule_id') or None):
+            errors.append(_('Resolutions are recorded for this meeting: its board, body, kind, date, sequence number '
+                            'and rule can no longer change.'))
+    if seq and d and not errors:
+        clause, args = entity_clause('o', ent, dflt)
+        for o in db.execute(f"""SELECT o.id, o.body, o.committee_id, o.meeting_type FROM board_meetings o
+                                WHERE o.id <> %s AND o.sequence_no = %s AND left(o.meeting_date, 4) = %s AND {clause}""",
+                            (id, seq, str(d.year)) + args).fetchall():
+            if derive_body(dict(o)) == body and (o['committee_id'] or None) == (m.get('committee_id') or None):
+                errors.append(_('Sequence number %(n)s is already used by another meeting of this body in %(y)s.',
+                                n=seq, y=d.year))
+                break
+    if errors:
+        for err in errors:
+            flash(err, 'danger')
+        return _back(id, 'formalities')
+    if rule_id:
+        rule = dict(db.execute("SELECT * FROM gov_meeting_rules WHERE id = %s", (rule_id,)).fetchone())
+    else:
+        rule = live_rule(db, dict(m, meeting_rule_id=None))
+    rule_changed = (rule_id or None) != (m.get('meeting_rule_id') or None) or not m.get('rule_snapshot')
+    effective_rule = rule if rule_changed else rule_for(db, m)
+    filing_due = _d('filing_due_date') or RL.filing_due(d, effective_rule.get('filing_days'))
     prev_ok = 1 if f.get('prev_minutes_approved') else 0
     db.execute("""UPDATE board_meetings SET entity_id = %s, body = %s, meeting_kind = %s, sequence_no = %s,
                   meeting_date = %s, meeting_time = %s, end_time = %s, location = %s, mode = %s, notice_date = %s,
@@ -541,12 +683,14 @@ def meeting_formalities(id):
                   capital_represented_pct = %s, prev_minutes_meeting_id = %s, prev_minutes_approved = %s,
                   recording_ref = %s, filing_authority = %s, filing_due_date = %s, meeting_reference = COALESCE(%s, meeting_reference)
                   WHERE id = %s""",
-               (None if ent == dflt else ent, body, kind, seq, d.isoformat(), _s('meeting_time', 5), _s('end_time', 5),
+               (new_ent, body, kind, seq, d.isoformat(), _s('meeting_time', 5), _s('end_time', 5),
                 _s('location', 300), mode, notice, _s('notice_channel', 200), chair_id, _s('chair_name', 200),
-                f.get('secretary_officer_id', type=int) or None, rule_id, call_no, _s('first_call_at', 40),
+                sec_id, rule_id, call_no, _s('first_call_at', 40),
                 first_present if call_no >= 2 else None, _s('first_call_note') if call_no >= 2 else None, cap,
-                prev_id, prev_ok, _s('recording_ref', 300), _s('filing_authority', 100) or rule.get('filing_authority'),
+                prev_id, prev_ok, _s('recording_ref', 300), _s('filing_authority', 100) or effective_rule.get('filing_authority'),
                 filing_due, _s('meeting_reference', 100), id))
+    if rule_changed:
+        save_rule_snapshot(db, id, rule)
     if prev_id and prev_ok:
         db.execute("""UPDATE board_meetings SET minutes_state = CASE WHEN COALESCE(minutes_state, 'DRAFT') = 'DRAFT'
                       THEN 'APPROVED' ELSE minutes_state END, minutes_approved_on = COALESCE(minutes_approved_on, %s)
@@ -557,6 +701,8 @@ def meeting_formalities(id):
     db.commit()
     _audit('Board Meeting Formalities Saved', id, f'{body} {kind} seq {seq} call {call_no}')
     flash(_('Meeting details saved.'), 'success')
+    if not chair_id and not _s('chair_name', 200):
+        flash(_('No chair of the meeting is recorded: the chair\'s casting vote cannot be applied.'), 'warning')
     return _back(id, 'formalities')
 
 
@@ -566,12 +712,19 @@ def meeting_formalities(id):
 def meeting_record_attendance(id):
     db = get_db()
     m = meeting_or_404(db, id)
+    refused = guard_unlocked(db, id, 'attendance')
+    if refused:
+        return refused
     rows = attendance_rows(db, id)
     add = request.form.get('add_member_id', type=int)
     if add:
+        if not db.execute("SELECT 1 FROM board_members WHERE id = %s AND COALESCE(is_deleted, 0) = 0", (add,)).fetchone():
+            flash(_('Choose a board member.'), 'danger')
+            return _back(id, 'attendance')
         db.execute("INSERT INTO meeting_attendance (meeting_id, member_id, attended) VALUES (%s,%s,0) "
                    "ON CONFLICT (meeting_id, member_id) DO NOTHING", (id, add))
         _event(db, id, 'attendee', add, 'member_invited')
+        store_quorum(db, m)
         db.commit()
         return _back(id, 'attendance')
     planned = []
@@ -580,17 +733,20 @@ def meeting_record_attendance(id):
         if code not in RL.ATTENDANCE:
             code = r['code']
         holder = request.form.get(f'holder_{r["member_id"]}', type=int) if code == 'PROXY' else None
+        doc = _s(f'proxydoc_{r["member_id"]}', 300) or (r.get('proxy_document') if code == 'PROXY' else None)
         planned.append(dict(member_id=r['member_id'], code=code, proxy_holder_member_id=holder,
-                            member_name=r['member_name'], doc=_s(f'proxydoc_{r["member_id"]}', 300),
-                            note=_s(f'note_{r["member_id"]}', 500), old=r))
+                            member_name=r['member_name'], doc=doc, note=_s(f'note_{r["member_id"]}', 500), old=r))
     errs = RL.proxy_errors([p for p in planned if p['code']])
-    if errs:
-        msgs = {'proxy_holder_missing': _('%(n)s: choose the member who holds the proxy.'),
-                'proxy_self': _('%(n)s cannot hold their own proxy.'),
-                'proxy_holder_absent': _('%(n)s: the proxy holder must be a member who attends.'),
-                'proxy_one_only': _('%(n)s holds more than one proxy; a member may hold one proxy only.')}
-        for code, name in errs:
-            flash(msgs[code] % {'n': name}, 'danger')
+    msgs = {'proxy_holder_missing': _('%(n)s: choose the member who holds the proxy.'),
+            'proxy_self': _('%(n)s cannot hold their own proxy.'),
+            'proxy_holder_absent': _('%(n)s: the proxy holder must be a member who attends.'),
+            'proxy_one_only': _('%(n)s holds more than one proxy; a member may hold one proxy only.')}
+    errors = [msgs[code] % {'n': name} for code, name in errs]
+    errors += [_('%(n)s: give the reference of the written proxy.', n=p['member_name'])
+               for p in planned if p['code'] == 'PROXY' and not p['doc']]
+    if errors:
+        for err in errors:
+            flash(err, 'danger')
         return _back(id, 'attendance')
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     for p in planned:
@@ -625,12 +781,19 @@ def meeting_record_attendance(id):
 def meeting_teller_add(id):
     db = get_db()
     meeting_or_404(db, id)
+    refused = guard_unlocked(db, id, 'formalities')
+    if refused:
+        return refused
     officer = request.form.get('officer_id', type=int)
     member = request.form.get('member_id', type=int)
     name = _s('name', 200)
     role = (request.form.get('role') or 'TELLER').upper()
     if role not in ('TELLER', 'ASSISTANT_SECRETARY', 'OBSERVER', 'AUDITOR', 'GM'):
         role = 'TELLER'
+    if officer and not db.execute("SELECT 1 FROM gov_officers WHERE id = %s", (officer,)).fetchone():
+        officer = None
+    if member and not db.execute("SELECT 1 FROM board_members WHERE id = %s", (member,)).fetchone():
+        member = None
     if not (officer or member or name):
         flash(_('Choose an officer or a member, or type a name.'), 'danger')
         return _back(id, 'formalities')
@@ -649,9 +812,13 @@ def meeting_teller_add(id):
 @permission_required('governance', level='edit')
 def meeting_teller_remove(id, tid):
     db = get_db()
+    refused = guard_unlocked(db, id, 'formalities')
+    if refused:
+        return refused
     db.execute("DELETE FROM gov_meeting_officers WHERE id = %s AND meeting_id = %s", (tid, id))
     _event(db, id, 'officer', tid, 'officer_removed')
     db.commit()
+    _audit('Board Meeting Officer Removed', id, str(tid))
     flash(_('Removed.'), 'info')
     return _back(id, 'formalities')
 
@@ -662,6 +829,9 @@ def meeting_teller_remove(id, tid):
 def meeting_agenda_add(id):
     db = get_db()
     meeting_or_404(db, id)
+    refused = guard_unlocked(db, id, 'agenda')
+    if refused:
+        return refused
     title = _s('item_title', 500)
     if not title:
         flash(_('The agenda item title is required.'), 'danger')
@@ -683,6 +853,9 @@ def meeting_agenda_add(id):
 @permission_required('governance', level='edit')
 def meeting_agenda_objection(id, aid):
     db = get_db()
+    refused = guard_unlocked(db, id, 'agenda')
+    if refused:
+        return refused
     db.execute("UPDATE meeting_agenda_items SET objection_note = %s WHERE id = %s AND meeting_id = %s",
                (_s('objection_note'), aid, id))
     _event(db, id, 'agenda', aid, 'agenda_objection_recorded')
@@ -696,21 +869,40 @@ def meeting_agenda_objection(id, aid):
 @permission_required('governance', level='edit')
 def meeting_conflict_add(id):
     db = get_db()
-    meeting_or_404(db, id)
+    refused = guard_unlocked(db, id, 'conflicts')
+    if refused:
+        return refused
+    ctx = record_context(db, id)
     member = request.form.get('member_id', type=int)
     nature = _s('nature')
-    if not member or not nature:
+    agenda_id = request.form.get('agenda_item_id', type=int) or None
+    if not member or not nature or member not in {r['member_id'] for r in ctx['rows']}:
         flash(_('Choose the member and describe the interest declared.'), 'danger')
+        return _back(id, 'conflicts')
+    if agenda_id and agenda_id not in {a['id'] for a in ctx['agenda']}:
+        flash(_('Choose the agenda item from the list.'), 'danger')
         return _back(id, 'conflicts')
     cid = db.execute("""INSERT INTO gov_conflict_declarations (meeting_id, member_id, agenda_item_id, nature, left_room,
                         did_not_vote, ga_informed, created_by) VALUES (%s,%s,%s,%s,%s,TRUE,%s,%s) RETURNING id""",
-                     (id, member, request.form.get('agenda_item_id', type=int), nature,
-                      bool(request.form.get('left_room')), bool(request.form.get('ga_informed')),
-                      current_user.id)).fetchone()['id']
+                     (id, member, agenda_id, nature, bool(request.form.get('left_room')),
+                      bool(request.form.get('ga_informed')), current_user.id)).fetchone()['id']
+    # declared after the vote: the member's vote on the resolutions of that item becomes a recusal
+    changed = []
+    for r in ctx['resolutions']:
+        if agenda_id and r.get('agenda_item_id') == agenda_id:
+            db.execute("""INSERT INTO gov_resolution_votes (resolution_id, member_id, vote, created_by) VALUES (%s,%s,'RECUSED',%s)
+                          ON CONFLICT (resolution_id, member_id) DO UPDATE SET vote = 'RECUSED', via_proxy = FALSE""",
+                       (r['id'], member, current_user.id))
+            db.execute("UPDATE gov_conflict_declarations SET resolution_id = %s WHERE id = %s", (r['id'], cid))
+            recompute_resolution(db, ctx['m'], ctx['rule'], r['id'])
+            changed.append(r['number'])
     _event(db, id, 'conflict', cid, 'conflict_declared', nature[:200])
     db.commit()
     _audit('Board Conflict Declared', id, f'member {member}: {nature[:100]}')
     flash(_('Declaration recorded. The member is recorded as recused on resolutions of that agenda item.'), 'success')
+    if changed:
+        flash(_('The vote of this member on %(r)s is now a recusal and the majority was checked again.',
+                r=', '.join(changed)), 'warning')
     return _back(id, 'conflicts')
 
 
@@ -719,18 +911,15 @@ def meeting_conflict_add(id):
 @permission_required('governance', level='edit')
 def meeting_conflict_remove(id, cid):
     db = get_db()
-    if record_locked(db, meeting_or_404(db, id)):
-        flash(_('The minutes are signed; the record can no longer be changed.'), 'danger')
-        return _back(id, 'conflicts')
+    refused = guard_unlocked(db, id, 'conflicts')
+    if refused:
+        return refused
     db.execute("DELETE FROM gov_conflict_declarations WHERE id = %s AND meeting_id = %s", (cid, id))
     _event(db, id, 'conflict', cid, 'conflict_removed')
     db.commit()
+    _audit('Board Conflict Removed', id, str(cid))
     flash(_('Removed.'), 'info')
     return _back(id, 'conflicts')
-
-
-def record_locked(db, m):
-    return RL.minutes_state(m, has_approved_version(db, m['id'])) == 'SIGNED'
 
 
 @governance_bp.route('/register/meeting/<int:id>/minutes-state', methods=['POST'])
@@ -740,29 +929,42 @@ def meeting_minutes_state(id):
     db = get_db()
     m = meeting_or_404(db, id)
     action = request.form.get('action')
+    if action not in ('approve', 'sign_chair', 'sign_secretary', 'filed'):
+        abort(400)
+    if action != 'filed':
+        refused = guard_unlocked(db, id, 'minutes')
+        if refused:
+            return refused
     if action == 'approve':
         on = _d('approved_on') or date.today()
         db.execute("UPDATE board_meetings SET minutes_state = 'APPROVED', minutes_approved_on = %s WHERE id = %s", (on, id))
         _event(db, id, 'minutes', id, 'minutes_marked_approved', on.isoformat(), m.get('minutes_state'), 'APPROVED')
     elif action in ('sign_chair', 'sign_secretary'):
+        who = 'chair' if action == 'sign_chair' else 'secretary'
+        if m.get(f'{who}_signed_at'):
+            flash(_('The minutes are already signed in this capacity.'), 'danger')
+            return _back(id, 'minutes')
         if RL.minutes_state(m, has_approved_version(db, id)) == 'DRAFT':
             flash(_('Approve the minutes before they are signed.'), 'danger')
             return _back(id, 'minutes')
-        who = 'chair' if action == 'sign_chair' else 'secretary'
         default = (m.get('secretary_name') if who == 'secretary' else None)
         if who == 'chair' and m.get('chair_member_id'):
             r = db.execute("SELECT member_name FROM board_members WHERE id = %s", (m['chair_member_id'],)).fetchone()
             default = r['member_name'] if r else None
-        name = _s('name', 200) or default or m.get('chair_name')
+        name = _s('name', 200) or default or (m.get('chair_name') if who == 'chair' else None)
         if not name:
             flash(_('Type the name of the person signing.'), 'danger')
             return _back(id, 'minutes')
-        db.execute(f"UPDATE board_meetings SET {who}_signed_at = NOW(), {who}_signed_name = %s WHERE id = %s", (name, id))
+        db.execute(f"UPDATE board_meetings SET {who}_signed_at = NOW(), {who}_signed_name = %s WHERE id = %s "
+                   f"AND {who}_signed_at IS NULL", (name, id))
         m2 = meeting_or_404(db, id)
         if m2.get('chair_signed_at') and m2.get('secretary_signed_at'):
             db.execute("UPDATE board_meetings SET minutes_state = 'SIGNED' WHERE id = %s", (id,))
         _event(db, id, 'minutes', id, 'minutes_signed_' + who, name)
-    elif action == 'filed':
+    else:
+        if m.get('filed_on'):
+            flash(_('The filing is already recorded.'), 'danger')
+            return _back(id, 'minutes')
         on = _d('filed_on')
         if not on:
             flash(_('A valid filing date is required.'), 'danger')
@@ -770,8 +972,6 @@ def meeting_minutes_state(id):
         db.execute("UPDATE board_meetings SET filed_on = %s, filing_reference = %s WHERE id = %s",
                    (on, _s('filing_reference', 200), id))
         _event(db, id, 'minutes', id, 'minutes_filed', f"{on} {_s('filing_reference', 200) or ''}")
-    else:
-        abort(400)
     db.commit()
     _audit('Board Minutes ' + action, id, action)
     flash(_('Saved.'), 'success')
@@ -779,33 +979,81 @@ def meeting_minutes_state(id):
 
 
 # ------------------------------------------------------------------ resolutions
-def _vote_inputs(rows, conflicted):
-    votes = {}
+VALID_VOTES = ('FOR', 'AGAINST', 'ABSTAIN', 'RECUSED')
+
+
+def _vote_inputs(rows, conflicted, circulation):
+    """Votes from the form for every member with a vote at this meeting: (votes, missing names).
+    Absent members are recorded as absent; a conflicted member as recused; every other member present
+    (every member, for a resolution by circulation) must have a vote chosen - nothing is assumed."""
+    votes, missing = {}, []
     for r in rows:
+        if not r.get('voting', True):
+            continue
         mid_ = r['member_id']
         v = (request.form.get(f'vote_{mid_}') or '').upper()
+        present = circulation or r['code'] in ('IN_PERSON', 'REMOTE', 'PROXY')
         if mid_ in conflicted:
             v = 'RECUSED'
-        if v not in RL.VOTES:
-            v = 'FOR' if r['code'] in ('IN_PERSON', 'REMOTE', 'PROXY') else 'ABSENT'
-        if r['code'] in ('ABSENT_EXCUSED', 'ABSENT_UNEXCUSED', None) and v in ('FOR', 'AGAINST', 'ABSTAIN'):
+        elif not present:
             v = 'ABSENT'
-        votes[mid_] = dict(vote=v, via_proxy=(r['code'] == 'PROXY' and v in ('FOR', 'AGAINST', 'ABSTAIN')),
+        elif v not in VALID_VOTES:
+            missing.append(r['member_name'])
+            continue
+        votes[mid_] = dict(vote=v, via_proxy=(not circulation and r['code'] == 'PROXY' and v in ('FOR', 'AGAINST', 'ABSTAIN')),
                            dissent=_s(f'dissent_{mid_}'))
-    return votes
+    return votes, missing
+
+
+def decide(m, rule, codes, chair_vote, chosen=None):
+    """(achieved, need, note, outcome) of a resolution from its votes and the meeting's rule."""
+    eligible = sum(1 for c in codes if c in ('FOR', 'AGAINST', 'ABSTAIN'))
+    if m['body_code'] in ('OGM', 'EGM') and eligible == 0:
+        # a general assembly votes by shares: the tellers' count is recorded as text
+        achieved, need, note = chosen in ('APPROVED', 'GA_RATIFICATION', 'RECOMMENDATION', None), 0, \
+            'votes of the shares represented, counted by the tellers'
+    else:
+        achieved, need, note = RL.majority(rule.get('majority_rule'), codes, chair_vote,
+                                           casting=bool(rule.get('chair_casting_vote', True)), eligible=eligible)
+    return achieved, need, note, RL.suggested_outcome(achieved, chosen), eligible
+
+
+def recompute_resolution(db, m, rule, rid):
+    """Tally, majority and outcome again from the stored votes (after a late conflict declaration)."""
+    r = db.execute("SELECT outcome FROM board_decisions WHERE id = %s", (rid,)).fetchone()
+    votes = {v['member_id']: v['vote'] for v in db.execute(
+        "SELECT member_id, vote FROM gov_resolution_votes WHERE resolution_id = %s", (rid,)).fetchall()}
+    codes = list(votes.values())
+    kept = r['outcome'] if r and r['outcome'] not in ('APPROVED', 'REJECTED') else None
+    achieved, need, note, outcome, eligible = decide(m, rule, codes, votes.get(m.get('chair_member_id')), kept)
+    t = RL.tally(codes)
+    db.execute("""UPDATE board_decisions SET votes_for = %s, votes_against = %s, votes_abstain = %s, outcome = %s,
+                  vote_result = %s, majority_achieved = %s, majority_note = %s WHERE id = %s""",
+               (t['FOR'], t['AGAINST'], t['ABSTAIN'], outcome, RL.legacy_vote_result(outcome), 1 if achieved else 0,
+                f"{t['FOR']}/{eligible} for; {need} needed ({note})", rid))
+
+
+class NumberingError(ValueError):
+    pass
 
 
 def allocate_number(db, m, item_no):
+    """Next free resolution number; serialised so that two users never get the same one."""
+    db.execute("SELECT pg_advisory_xact_lock(hashtext('gov_resolution_numbers'))")
     c_prefix = None
     if m['body_code'] == 'COMMITTEE':
         c_prefix = m.get('committee_prefix')
         if not c_prefix and m.get('committee_type'):
             t = db.execute("SELECT res_prefix FROM gov_committee_types WHERE code = UPPER(%s)", (m['committee_type'],)).fetchone()
             c_prefix = t['res_prefix'] if t else None
-    prefix = RL.body_prefix(m['body_code'], c_prefix, None if m.get('entity_default') in (True, None) else m.get('entity_code'))
+    non_default = m.get('entity_default') is False
+    if non_default and not (m.get('entity_code') or '').strip():
+        raise NumberingError(_('Give this board a short code first (Settings > Boards): it starts its resolution numbers.'))
+    prefix = RL.body_prefix(m['body_code'], c_prefix, m.get('entity_code') if non_default else None)
     d = RL.as_date(m.get('meeting_date')) or date.today()
     seq = m.get('sequence_no')
     if not seq:
+        db.execute("SELECT pg_advisory_xact_lock(hashtext('gov_meeting_sequence'))")
         seq = next_sequence(db, m.get('entity_id') or default_entity_id(db), m['body_code'], m.get('committee_id'), d.year)
         db.execute("UPDATE board_meetings SET sequence_no = %s WHERE id = %s", (seq, m['id']))
     base = f'{prefix}-{d.year}-{int(seq):02d}-{int(item_no):02d}'
@@ -825,55 +1073,57 @@ def save_resolution(db, m, ctx, rid=None):
     if not text and not title:
         errors.append(_('The resolution title or text is required.'))
     agenda_id = f.get('agenda_item_id', type=int) or None
+    if agenda_id and agenda_id not in {a['id'] for a in ctx['agenda']}:
+        errors.append(_('Choose the agenda item from the list.'))
+    circulation = m['kind_code'] == 'CIRCULATION'
     conflicted = {c['member_id'] for c in ctx['conflicts'] if c.get('did_not_vote', True)
                   and (c.get('agenda_item_id') in (None, agenda_id) or (rid and c.get('resolution_id') == rid))}
-    votes = _vote_inputs(ctx['rows'], conflicted)
+    votes, missing = _vote_inputs(ctx['rows'], conflicted, circulation)
+    if missing:
+        errors.append(_('Choose the vote of: %(n)s.', n=', '.join(missing)))
     for mid_, v in votes.items():
         if v['vote'] == 'AGAINST' and not v['dissent']:
             name = next((r['member_name'] for r in ctx['rows'] if r['member_id'] == mid_), '')
             errors.append(_('%(n)s voted against: record the objection / reasons (needed to challenge a resolution).', n=name))
     codes = [v['vote'] for v in votes.values()]
-    if not ctx['q']['valid'] and (f.get('outcome') or '') not in ('DEFERRED',):
+    chosen = (f.get('outcome') or '').upper() or None
+    if chosen and chosen not in RL.OUTCOMES:
+        chosen = None
+    if not circulation and not ctx['q']['valid'] and chosen != 'DEFERRED':
         errors.append(_('The meeting has no quorum: a resolution cannot be adopted (record it as deferred).'))
-    err = RL.circulation_error(m['kind_code'], codes, ctx['rule'])
-    if err:
+    if circulation and RL.circulation_error('CIRCULATION', codes + ['ABSENT'] * len(missing), ctx['rule']):
         errors.append(_('Every member must vote on a resolution by circulation.'))
     category = (f.get('category_code') or '').upper() or None
     if category and category not in {c['code'] for c in ctx['cats']}:
         category = None
-    chosen = (f.get('outcome') or '').upper() or None
-    if chosen and chosen not in RL.OUTCOMES:
-        chosen = None
     link_type = (f.get('link_type') or '').upper() or None
     link_to = f.get('link_to', type=int)
-    if link_type and (link_type not in RL.LINK_TYPES or not link_to):
+    if link_type and (link_type not in RL.LINK_TYPES or not link_to or link_to == rid or not db.execute(
+            "SELECT 1 FROM board_decisions WHERE id = %s", (link_to,)).fetchone()):
         errors.append(_('Choose the type of link and the earlier resolution.'))
+    owner_uid = f.get('action_owner_user_id', type=int) or None
+    if owner_uid and not db.execute("SELECT 1 FROM users WHERE id = %s", (owner_uid,)).fetchone():
+        owner_uid = None
     if errors:
         return None, errors
-    eligible = sum(1 for c in codes if c in ('FOR', 'AGAINST', 'ABSTAIN'))
-    chair_vote = votes.get(m.get('chair_member_id'), {}).get('vote')
     rule = ctx['rule']
+    chair_vote = votes.get(m.get('chair_member_id'), {}).get('vote')
+    achieved, need, note, outcome, eligible = decide(m, rule, codes, chair_vote, chosen)
     if m['body_code'] in ('OGM', 'EGM') and eligible == 0:
-        # a general assembly votes by shares: the tellers' count is recorded as text
-        achieved, need = chosen in ('APPROVED', 'GA_RATIFICATION', 'RECOMMENDATION', None), 0
-        note = _s('majority_note', 300) or 'votes of the shares represented, counted by the tellers'
-    else:
-        achieved, need, note = RL.majority(rule.get('majority_rule'), codes, chair_vote,
-                                           casting=bool(rule.get('chair_casting_vote', True)), eligible=eligible)
-    outcome = RL.suggested_outcome(achieved, chosen)
+        note = _s('majority_note', 300) or note
     if chosen == 'APPROVED' and not achieved:
         flash(_('The required majority was not reached; the resolution is recorded as rejected.'), 'warning')
+    if not m.get('chair_member_id') and RL.tally(codes)['FOR'] == RL.tally(codes)['AGAINST'] and codes:
+        flash(_('No chair of the meeting is recorded: the chair\'s casting vote cannot be applied.'), 'warning')
     t = RL.tally(codes)
-    owner_uid = f.get('action_owner_user_id', type=int) or None
     owner = _s('action_owner', 200)
     if owner_uid and not owner:
         u = db.execute("SELECT first_name, last_name FROM users WHERE id = %s", (owner_uid,)).fetchone()
         owner = f"{u['first_name'] or ''} {u['last_name'] or ''}".strip() if u else None
     due = _d('due_date')
-    dissent_all = '; '.join(f"{next((r['member_name'] for r in ctx['rows'] if r['member_id'] == k), '')}: {v['dissent']}"
-                            for k, v in votes.items() if v['dissent']) or None
-    dissenters = ', '.join(next((r['member_name'] for r in ctx['rows'] if r['member_id'] == k), '')
-                           for k, v in votes.items() if v['vote'] == 'AGAINST') or None
+    names = {r['member_id']: r['member_name'] for r in ctx['rows']}
+    dissent_all = '; '.join(f"{names.get(k, '')}: {v['dissent']}" for k, v in votes.items() if v['dissent']) or None
+    dissenters = ', '.join(names.get(k, '') for k, v in votes.items() if v['vote'] == 'AGAINST') or None
     vals = dict(decision_title=title, decision_text=text or title, decision_description=text or title,
                 summary=_s('summary', 2000), category_code=category, tags=_s('tags', 500), agenda_item_id=agenda_id,
                 outcome=outcome, majority_rule=rule.get('majority_rule'), majority_achieved=1 if achieved else 0,
@@ -892,7 +1142,10 @@ def save_resolution(db, m, ctx, rid=None):
         vals['followup_status'] = None
     if rid is None:
         item_no = RL.next_item_no([r.get('item_no') for r in ctx['resolutions']])
-        res_no = allocate_number(db, m, item_no)
+        try:
+            res_no = allocate_number(db, m, item_no)
+        except NumberingError as e:
+            return None, [str(e)]
         vals.update(meeting_id=m['id'], res_no=res_no, item_no=item_no, decision_number=res_no, decision_reference=res_no,
                     decision_date=m.get('meeting_date'), status='PENDING', recorded_by=current_user.id,
                     recorded_at=datetime.now(), created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -927,10 +1180,10 @@ def save_resolution(db, m, ctx, rid=None):
 @permission_required('governance', level='edit')
 def meeting_resolution_add(id):
     db = get_db()
+    refused = guard_unlocked(db, id, 'resolutions')
+    if refused:
+        return refused
     ctx = record_context(db, id)
-    if record_locked(db, ctx['m']):
-        flash(_('The minutes are signed; the record can no longer be changed.'), 'danger')
-        return _back(id, 'resolutions')
     rid, errors = save_resolution(db, ctx['m'], ctx)
     if errors:
         db.rollback()
@@ -944,19 +1197,29 @@ def meeting_resolution_add(id):
     return _back(id, 'resolutions')
 
 
+def _resolution_meeting(db, rid):
+    row = db.execute("SELECT meeting_id FROM board_decisions WHERE id = %s", (rid,)).fetchone()
+    if not row:
+        abort(404)
+    return row['meeting_id']
+
+
+def _resolution_locked(db, rid):
+    if meeting_locked(db, _resolution_meeting(db, rid)):
+        flash(_('The minutes are signed; the record can no longer be changed.'), 'danger')
+        return redirect(url_for('governance.resolution_view', rid=rid))
+    return None
+
+
 @governance_bp.route('/register/resolution/<int:rid>')
 @login_required
 @permission_required('governance')
 def resolution_view(rid):
     db = get_db()
-    row = db.execute("SELECT meeting_id FROM board_decisions WHERE id = %s", (rid,)).fetchone()
-    if not row:
-        abort(404)
-    ctx = record_context(db, row['meeting_id'])
+    ctx = record_context(db, _resolution_meeting(db, rid))
     res = next((r for r in ctx['resolutions'] if r['id'] == rid), None)
     vote_of = {v['member_id']: v for v in res['votes']}
-    return render_template('governance/resolution_view.html', res=res, vote_of=vote_of,
-                           locked=record_locked(db, ctx['m']), **ctx)
+    return render_template('governance/resolution_view.html', res=res, vote_of=vote_of, **ctx)
 
 
 @governance_bp.route('/register/resolution/<int:rid>/update', methods=['POST'])
@@ -964,13 +1227,10 @@ def resolution_view(rid):
 @permission_required('governance', level='edit')
 def resolution_update(rid):
     db = get_db()
-    row = db.execute("SELECT meeting_id FROM board_decisions WHERE id = %s", (rid,)).fetchone()
-    if not row:
-        abort(404)
-    ctx = record_context(db, row['meeting_id'])
-    if record_locked(db, ctx['m']):
-        flash(_('The minutes are signed; the record can no longer be changed.'), 'danger')
-        return redirect(url_for('governance.resolution_view', rid=rid))
+    refused = _resolution_locked(db, rid)
+    if refused:
+        return refused
+    ctx = record_context(db, _resolution_meeting(db, rid))
     if not _s('reason'):
         flash(_('Give the reason for changing a recorded resolution.'), 'danger')
         return redirect(url_for('governance.resolution_view', rid=rid))
@@ -990,6 +1250,7 @@ def resolution_update(rid):
 @login_required
 @permission_required('governance', level='edit')
 def resolution_followup(rid):
+    """Implementation follow-up stays open after the minutes are signed (secretariat duty)."""
     db = get_db()
     row = db.execute("SELECT * FROM board_decisions WHERE id = %s", (rid,)).fetchone()
     if not row:
@@ -1022,6 +1283,9 @@ def resolution_followup(rid):
 @permission_required('governance', level='edit')
 def resolution_link_add(rid):
     db = get_db()
+    refused = _resolution_locked(db, rid)
+    if refused:
+        return refused
     lt = (request.form.get('link_type') or '').upper()
     to = request.form.get('link_to', type=int)
     if lt not in RL.LINK_TYPES or not to or to == rid or not db.execute(
@@ -1041,8 +1305,15 @@ def resolution_link_add(rid):
 @permission_required('governance', level='edit')
 def resolution_link_remove(rid, lid):
     db = get_db()
-    db.execute("DELETE FROM gov_resolution_links WHERE id = %s AND (from_resolution_id = %s OR to_resolution_id = %s)",
-               (lid, rid, rid))
+    link = db.execute("SELECT * FROM gov_resolution_links WHERE id = %s AND (from_resolution_id = %s OR to_resolution_id = %s)",
+                      (lid, rid, rid)).fetchone()
+    if not link:
+        abort(404)
+    # the link belongs to the record of the resolution it was recorded on
+    refused = _resolution_locked(db, link['from_resolution_id'])
+    if refused:
+        return refused
+    db.execute("DELETE FROM gov_resolution_links WHERE id = %s", (lid,))
     db.commit()
     _audit('Board Resolution Link Removed', rid, str(lid))
     flash(_('Removed.'), 'info')
@@ -1057,7 +1328,8 @@ def _search_filters(db):
                outcome=(a.get('outcome') or '').upper(), member=a.get('member', type=int),
                date_from=RL.as_date(a.get('date_from')), date_to=RL.as_date(a.get('date_to')),
                min=max(5, min(95, a.get('min', type=int) or 30)), page=max(1, a.get('page', type=int) or 1))
-    where, args = ['TRUE'], []
+    flt['sample'] = show_sample(db, flt['entity'])
+    where, args = ['TRUE' if flt['sample'] else 'NOT COALESCE(m.is_sample, FALSE)'], []
     dflt = default_entity_id(db)
     if flt['entity']:
         c, ca = entity_clause('m', flt['entity'], dflt)
@@ -1157,9 +1429,10 @@ def register_search():
             r['committee_name_arabic'] = r['meeting'].get('committee_name_arabic')
             r['attendees'] = present.get(r['meeting_id'], [])
             results.append(r)
-    members = [dict(r) for r in db.execute("""SELECT bm.id, bm.member_name, bm.member_name_arabic, e.name_en AS entity_en
-        FROM board_members bm LEFT JOIN gov_entities e ON e.id = bm.entity_id
-        WHERE COALESCE(bm.is_deleted, 0) = 0 ORDER BY bm.member_name""").fetchall()]
+    members = [dict(r) for r in db.execute("""SELECT bm.id, bm.member_name, bm.member_name_arabic, bm.is_sample,
+        e.name_en AS entity_en FROM board_members bm LEFT JOIN gov_entities e ON e.id = bm.entity_id
+        WHERE COALESCE(bm.is_deleted, 0) = 0 AND (%s OR NOT bm.is_sample) ORDER BY bm.member_name""",
+                                           (flt['sample'],)).fetchall()]
     cats = [dict(r) for r in db.execute("SELECT * FROM gov_resolution_categories WHERE is_active ORDER BY sort_order, id").fetchall()]
     return render_template('governance/resolution_search.html', flt=flt, results=results, total=total, page_size=PAGE,
                            entities=entities(db), members=members, cats=cats,
@@ -1223,7 +1496,7 @@ def member_profile(mid):
     return render_template('governance/member_profile.html', mem=mem, att=att, stats=stat_list, cnames=cnames, votes=votes,
                            dissents=[v for v in votes if v['vote'] == 'AGAINST' or v.get('dissent_text')],
                            recusals=[v for v in votes if v['vote'] == 'RECUSED'], conflicts=conflicts, history=history,
-                           options=options, entities=entities(db), rules=rules,
+                           options=options, entities=entities(db, include_sample=bool(mem.get('is_sample'))), rules=rules,
                            current=[h for h in history if h['current']])
 
 
@@ -1258,7 +1531,7 @@ def member_capacity_add(mid):
         db.execute("""UPDATE gov_member_capacities mc SET effective_to = %s, ended_at = NOW(), ended_by = %s
                       FROM gov_capacity_options o WHERE o.id = mc.option_id AND o.dimension_id = %s AND mc.member_id = %s
                       AND mc.option_id <> %s AND (mc.effective_to IS NULL OR mc.effective_to >= %s)
-                      AND (mc.effective_from IS NULL OR mc.effective_from < %s)""",
+                      AND (mc.effective_from IS NULL OR mc.effective_from <= %s)""",
                    (start - timedelta(days=1), current_user.id, opt['dimension_id'], mid, oid, start, start))
     db.execute("""INSERT INTO gov_member_capacities (member_id, option_id, effective_from, effective_to, represented_entity,
                   note, created_by) VALUES (%s,%s,%s,%s,%s,%s,%s)""",
@@ -1295,19 +1568,36 @@ def member_capacity_change(mid, cid, action):
 @login_required
 @permission_required('governance', level='edit')
 def member_facts(mid):
+    """Gender, nationality, board and other seats: only the fields submitted are changed."""
     db = get_db()
-    if not db.execute("SELECT 1 FROM board_members WHERE id = %s", (mid,)).fetchone():
+    mem = db.execute("SELECT * FROM board_members WHERE id = %s", (mid,)).fetchone()
+    if not mem:
         abort(404)
-    g = (request.form.get('gender') or '').upper() or None
-    if g not in (None, 'F', 'M'):
-        g = None
-    seats = _int(request.form.get('other_board_seats')) if (request.form.get('other_board_seats') or '').strip() else None
-    dflt = default_entity_id(db)
-    ent = request.form.get('entity_id', type=int)
-    db.execute("UPDATE board_members SET gender = %s, nationality = %s, other_board_seats = %s, entity_id = %s WHERE id = %s",
-               (g, _s('nationality', 100), seats, None if (not ent or ent == dflt) else ent, mid))
-    db.commit()
-    _audit('Board Member Details Changed', mid, 'gender / nationality / board / other seats')
+    f = request.form
+    sets, args = [], []
+    if 'gender' in f:
+        g = (f.get('gender') or '').upper() or None
+        sets.append('gender = %s')
+        args.append(g if g in ('F', 'M') else None)
+    if 'nationality' in f:
+        sets.append('nationality = %s')
+        args.append(_s('nationality', 100))
+    if 'other_board_seats' in f:
+        sets.append('other_board_seats = %s')
+        args.append(_int(f.get('other_board_seats')) if (f.get('other_board_seats') or '').strip() else None)
+    if 'entity_id' in f:
+        dflt = default_entity_id(db)
+        ent = f.get('entity_id', type=int) or dflt
+        e = db.execute("SELECT * FROM gov_entities WHERE id = %s AND is_active", (ent,)).fetchone()
+        if not e or (e['is_sample'] and not mem['is_sample']):
+            flash(_('Choose the board.'), 'danger')
+            return redirect(url_for('governance.member_profile', mid=mid))
+        sets.append('entity_id = %s')
+        args.append(None if ent == dflt else ent)
+    if sets:
+        db.execute(f"UPDATE board_members SET {', '.join(sets)} WHERE id = %s", tuple(args) + (mid,))
+        db.commit()
+        _audit('Board Member Details Changed', mid, ', '.join(x.split(' ')[0] for x in sets))
     flash(_('Saved.'), 'success')
     return redirect(url_for('governance.member_profile', mid=mid))
 
@@ -1323,7 +1613,9 @@ def secretary_view():
                (SELECT COUNT(*) FROM board_meetings m WHERE m.secretary_officer_id = o.id) AS n_meetings,
                (SELECT COUNT(*) FROM gov_meeting_officers t WHERE t.officer_id = o.id) AS n_roles
         FROM gov_officers o LEFT JOIN gov_capacity_options op ON op.id = o.role_option_id
-        ORDER BY (op.flag = 'secretary') DESC NULLS LAST, o.full_name""").fetchall()]
+        WHERE %s OR NOT o.is_sample OR o.id = %s
+        ORDER BY (op.flag = 'secretary') DESC NULLS LAST, o.full_name""",
+        (request.args.get('sample') == '1', request.args.get('officer', type=int) or 0)).fetchall()]
     sel = request.args.get('officer', type=int)
     if not sel:
         sel = next((o['id'] for o in officers if o['n_meetings']), None)
@@ -1447,6 +1739,9 @@ def report_followup():
     ent = request.args.get('entity', type=int)
     show = request.args.get('show', 'open')
     clause, args = entity_clause('m', ent, dflt)
+    with_sample = show_sample(db, ent)
+    if not with_sample:
+        clause += ' AND NOT COALESCE(m.is_sample, FALSE)'
     res = resolutions_with_votes(db, clause + " AND (d.action_owner IS NOT NULL OR d.due_date IS NOT NULL OR d.followup_status IS NOT NULL)", args)
     if show == 'overdue':
         res = [r for r in res if r['fu_state'] == 'overdue']
@@ -1457,4 +1752,5 @@ def report_followup():
                                    NOT IN ('COMPLETED', 'CANCELLED') AND due_date ~ '^[0-9]{4}-' AND left(due_date, 10) < %s""",
                                 (date.today().isoformat(),)).fetchone()['n']
     return render_template('governance/report_followup.html', res=res, show=show, entities=entities(db), entity=ent,
+                           with_sample=with_sample,
                            overdue=sum(1 for r in res if r['fu_state'] == 'overdue'), legacy_actions=legacy_actions)

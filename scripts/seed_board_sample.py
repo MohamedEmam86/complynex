@@ -30,12 +30,15 @@ Usage (from the application folder, as the application user, after the
     venv/bin/python scripts/seed_board_sample.py            # insert (does nothing if present)
     venv/bin/python scripts/seed_board_sample.py --reset    # remove, then insert again
     venv/bin/python scripts/seed_board_sample.py --remove   # delete the sample rows only
+    venv/bin/python scripts/seed_board_sample.py --remove --dry-run   # list what would be deleted
     add --db <name> to use another database than POSTGRES_DB
 """
 import argparse
+import json
 import os
 import sys
 from datetime import date, datetime
+from decimal import Decimal
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
@@ -49,6 +52,7 @@ import psycopg2.extras  # noqa: E402
 from config import Config  # noqa: E402
 from governance import register_logic as RL  # noqa: E402
 from governance import resolution_search as RS  # noqa: E402
+from governance.register import RULE_FIELDS  # noqa: E402
 
 ENTITY_EN = 'Nile Finance Company (sample)'
 ENTITY_AR = 'شركة النيل للتمويل (مثال)'
@@ -336,62 +340,103 @@ COMMITTEE_MEETINGS = [
 
 
 # ------------------------------------------------------------------ remove
-def remove(db):
+class LinkedRows(Exception):
+    pass
+
+
+def _ids(db, sql, args=()):
+    return [r['id'] for r in db.execute(sql, args).fetchall()]
+
+
+def linked_real_rows(db, ents, members, meetings, committees, res):
+    """Rows NOT marked as sample that belong to sample records: the sample cannot be removed
+    without deleting real data, so they are listed and nothing is deleted."""
+    checks = [
+        ('board_members of a sample board', "SELECT id FROM board_members WHERE NOT is_sample AND entity_id = ANY(%s)", (ents,)),
+        ('board_committees of a sample board', "SELECT id FROM board_committees WHERE NOT is_sample AND entity_id = ANY(%s)", (ents,)),
+        ('board_meetings of a sample board or committee',
+         "SELECT id FROM board_meetings WHERE NOT is_sample AND (entity_id = ANY(%s) OR committee_id = ANY(%s))", (ents, committees)),
+        ('board_decisions of a sample meeting', "SELECT id FROM board_decisions WHERE NOT is_sample AND meeting_id = ANY(%s)", (meetings,)),
+        ('gov_officers of a sample board', "SELECT id FROM gov_officers WHERE NOT is_sample AND entity_id = ANY(%s)", (ents,)),
+        ('gov_member_capacities of a sample member', "SELECT id FROM gov_member_capacities WHERE NOT is_sample AND member_id = ANY(%s)", (members,)),
+        ('meeting_attendance mixing real and sample',
+         "SELECT id FROM meeting_attendance WHERE (meeting_id = ANY(%s)) <> (member_id = ANY(%s))", (meetings, members)),
+        ('committee_memberships mixing real and sample',
+         "SELECT id FROM committee_memberships WHERE (committee_id = ANY(%s)) <> (member_id = ANY(%s))", (committees, members)),
+        ('gov_resolution_votes of real members on sample resolutions or the reverse',
+         "SELECT id FROM gov_resolution_votes WHERE (resolution_id = ANY(%s)) <> (member_id = ANY(%s))", (res, members)),
+        ('gov_conflict_declarations mixing real and sample',
+         "SELECT id FROM gov_conflict_declarations WHERE (meeting_id = ANY(%s)) <> (member_id = ANY(%s))", (meetings, members)),
+    ]
+    for t, col in (('fp_officials', 'board_member_id'), ('fit_proper_assessments', 'member_id'),
+                   ('independence_declarations', 'member_id'), ('board_skills_matrix', 'member_id'),
+                   ('board_training_attendance', 'member_id'), ('board_evaluations', 'member_id'),
+                   ('board_meeting_attendance', 'member_id'), ('committee_members', 'board_member_id')):
+        if db.has_table(t):
+            checks.append((f'{t} of a sample member', f"SELECT id FROM {t} WHERE {col} = ANY(%s)", (members,)))
+    found = []
+    for label, sql, args in checks:
+        ids = _ids(db, sql, args)
+        if ids:
+            found.append(f"{label}: {len(ids)} row(s), id {', '.join(map(str, ids[:20]))}")
+    return found
+
+
+def remove(db, dry_run=False):
+    """Delete exactly the rows marked as sample (and their own child rows), in foreign-key order.
+    References to them from real rows are cleared; real rows that belong to them stop the removal."""
     if not db.has_table('gov_entities'):
         print('The governance register migration is not applied; nothing to remove.')
-        return
-    ents = [r['id'] for r in db.execute("SELECT id FROM gov_entities WHERE is_sample").fetchall()]
-    # rows marked as sample, and rows recorded later on the sample board (its meetings, members, committees)
-    members = [r['id'] for r in db.execute("SELECT id FROM board_members WHERE is_sample OR entity_id = ANY(%s)",
-                                           (ents,)).fetchall()]
-    meetings = [r['id'] for r in db.execute("SELECT id FROM board_meetings WHERE is_sample OR entity_id = ANY(%s)",
-                                            (ents,)).fetchall()]
-    committees = [r['id'] for r in db.execute("SELECT id FROM board_committees WHERE is_sample OR entity_id = ANY(%s)",
-                                              (ents,)).fetchall()]
-    res = [r['id'] for r in db.execute("SELECT id FROM board_decisions WHERE is_sample OR meeting_id = ANY(%s)",
-                                       (meetings,)).fetchall()]
+        return {}
+    ents = _ids(db, "SELECT id FROM gov_entities WHERE is_sample")
+    members = _ids(db, "SELECT id FROM board_members WHERE is_sample")
+    meetings = _ids(db, "SELECT id FROM board_meetings WHERE is_sample")
+    committees = _ids(db, "SELECT id FROM board_committees WHERE is_sample")
+    res = _ids(db, "SELECT id FROM board_decisions WHERE is_sample")
+    officers = _ids(db, "SELECT id FROM gov_officers WHERE is_sample")
+    found = linked_real_rows(db, ents, members, meetings, committees, res)
+    if found:
+        raise LinkedRows('Not removed: rows that are not sample belong to the sample records:\n  ' + '\n  '.join(found))
     counts = {}
 
-    def run(label, sql, args):
+    def run(label, sql, args=()):
         cur = db.execute(sql, args)
         counts[label] = counts.get(label, 0) + (cur.rowcount or 0)
-    run('resolution links', "DELETE FROM gov_resolution_links WHERE from_resolution_id = ANY(%s) OR to_resolution_id = ANY(%s)", (res, res))
-    run('votes', "DELETE FROM gov_resolution_votes WHERE resolution_id = ANY(%s) OR member_id = ANY(%s)", (res, members))
-    run('conflicts', "DELETE FROM gov_conflict_declarations WHERE meeting_id = ANY(%s) OR member_id = ANY(%s)", (meetings, members))
+    # references from real rows are cleared (the real rows stay)
+    run('real meetings: previous-minutes link cleared',
+        "UPDATE board_meetings SET prev_minutes_meeting_id = NULL WHERE NOT is_sample AND prev_minutes_meeting_id = ANY(%s)", (meetings,))
+    run('real meetings: secretary cleared',
+        "UPDATE board_meetings SET secretary_officer_id = NULL WHERE NOT is_sample AND secretary_officer_id = ANY(%s)", (officers,))
+    run('meeting officer rows', "DELETE FROM gov_meeting_officers WHERE officer_id = ANY(%s) OR member_id = ANY(%s)",
+        (officers, members))
+    run('resolution links',
+        "DELETE FROM gov_resolution_links WHERE from_resolution_id = ANY(%s) OR to_resolution_id = ANY(%s)", (res, res))
+    if db.has_table('pr_key_functions'):
+        run('key functions unlinked', "UPDATE pr_key_functions SET board_member_id = NULL WHERE board_member_id = ANY(%s)", (members,))
+    # sample rows, children first
+    run('votes', "DELETE FROM gov_resolution_votes WHERE resolution_id = ANY(%s)", (res,))
+    run('conflicts', "DELETE FROM gov_conflict_declarations WHERE meeting_id = ANY(%s)", (meetings,))
     run('meeting officers', "DELETE FROM gov_meeting_officers WHERE meeting_id = ANY(%s)", (meetings,))
     run('action items', "DELETE FROM meeting_action_items WHERE meeting_id = ANY(%s)", (meetings,))
     run('resolutions', "DELETE FROM board_decisions WHERE id = ANY(%s)", (res,))
-    run('resolution numbers', "DELETE FROM gov_resolution_numbers WHERE is_sample OR resolution_id = ANY(%s)", (res,))
+    run('resolution numbers', "DELETE FROM gov_resolution_numbers WHERE is_sample", ())
     for t in ('meeting_attendance', 'meeting_agenda_items', 'meeting_minutes', 'meeting_events', 'meeting_external_attendees'):
         run(t, f"DELETE FROM {t} WHERE meeting_id = ANY(%s)", (meetings,))
     run('meetings', "DELETE FROM board_meetings WHERE id = ANY(%s)", (meetings,))
-    run('committee memberships', "DELETE FROM committee_memberships WHERE committee_id = ANY(%s) OR member_id = ANY(%s)",
-        (committees, members))
-    if db.has_table('fp_officials'):
-        offs = [r['id'] for r in db.execute("SELECT id FROM fp_officials WHERE board_member_id = ANY(%s)", (members,)).fetchall()]
-        if offs:
-            forms = [r['id'] for r in db.execute("SELECT id FROM fp_forms WHERE official_id = ANY(%s)", (offs,)).fetchall()]
-            run('f&p form events', "DELETE FROM fp_form_events WHERE form_id = ANY(%s)", (forms,))
-            run('f&p forms', "DELETE FROM fp_forms WHERE id = ANY(%s)", (forms,))
-            run('f&p committee seats', "DELETE FROM fp_official_committees WHERE official_id = ANY(%s) OR committee_id = ANY(%s)",
-                (offs, committees))
-            run('f&p officials', "DELETE FROM fp_officials WHERE id = ANY(%s)", (offs,))
-    for t in ('board_evaluations', 'board_meeting_attendance', 'board_skills_matrix', 'board_training_attendance',
-              'fit_proper_assessments', 'independence_declarations'):
-        if db.has_table(t):
-            run(t, f"DELETE FROM {t} WHERE member_id = ANY(%s)", (members,))
-    if db.has_table('pr_key_functions'):
-        run('key functions unlinked', "UPDATE pr_key_functions SET board_member_id = NULL WHERE board_member_id = ANY(%s)", (members,))
-    run('capacities', "DELETE FROM gov_member_capacities WHERE is_sample OR member_id = ANY(%s)", (members,))
+    run('committee memberships', "DELETE FROM committee_memberships WHERE committee_id = ANY(%s)", (committees,))
+    run('capacities', "DELETE FROM gov_member_capacities WHERE is_sample", ())
     run('committees', "DELETE FROM board_committees WHERE id = ANY(%s)", (committees,))
     run('members', "DELETE FROM board_members WHERE id = ANY(%s)", (members,))
-    run('meetings', "DELETE FROM board_meetings WHERE committee_id = ANY(%s)", (committees,))
-    run('officers', "UPDATE board_meetings SET secretary_officer_id = NULL WHERE secretary_officer_id IN (SELECT id FROM gov_officers WHERE is_sample)", ())
-    run('officers', "DELETE FROM gov_officers WHERE is_sample OR entity_id = ANY(%s)", (ents,))
+    run('officers', "DELETE FROM gov_officers WHERE id = ANY(%s)", (officers,))
     run('committee types', "DELETE FROM gov_committee_types WHERE is_sample", ())
     run('boards', "DELETE FROM gov_entities WHERE id = ANY(%s)", (ents,))
-    db.commit()
-    print('Removed sample rows: ' + ', '.join(f'{k} {v}' for k, v in counts.items() if v))
+    if dry_run:
+        db.rollback()
+        print('Dry run, nothing deleted. Would remove: ' + (', '.join(f'{k} {v}' for k, v in counts.items() if v) or 'nothing'))
+    else:
+        db.commit()
+        print('Removed sample rows: ' + (', '.join(f'{k} {v}' for k, v in counts.items() if v) or 'nothing'))
+    return counts
 
 
 # ------------------------------------------------------------------ insert
@@ -480,6 +525,8 @@ def seed(db):
                      secretary_signed_name=[o[1] for o in OFFICERS if o[0] == spec['sec']][0] if signed[1] else None,
                      filing_authority=None if is_com else rule.get('filing_authority'), filing_due_date=filing_due,
                      filed_on=spec.get('filed'), filing_reference=('FRA-SAMPLE-' + spec['date'].replace('-', '')) if spec.get('filed') else None,
+                     rule_snapshot=json.dumps({k: (float(v) if isinstance(v, Decimal) else v) for k, v in rule.items()
+                                               if k in RULE_FIELDS}, default=str),
                      is_sample=True)
         meeting_ids[spec['key']] = mid
         # attendance
@@ -589,14 +636,18 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--remove', action='store_true', help='delete the sample rows only')
     ap.add_argument('--reset', action='store_true', help='remove, then insert again')
+    ap.add_argument('--dry-run', action='store_true', help='with --remove: list what would be deleted, delete nothing')
     ap.add_argument('--db', help='database name (default POSTGRES_DB)')
     a = ap.parse_args()
     db = DB(a.db)
     try:
         if a.remove or a.reset:
-            remove(db)
-        if not a.remove:
+            remove(db, dry_run=a.dry_run)
+        if not a.remove and not a.dry_run:
             seed(db)
+    except LinkedRows as e:
+        db.rollback()
+        sys.exit(str(e))
     except Exception:
         db.rollback()
         raise

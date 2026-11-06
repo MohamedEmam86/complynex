@@ -131,15 +131,41 @@ def required_count(total, qtype, fraction, minimum=None):
     return need
 
 
+def _flag(rule, key, default=True):
+    v = (rule or {}).get(key)
+    return default if v is None else _yes(v)
+
+
+def quorum_counts(rows, rule=None):
+    """{'IN_PERSON', 'REMOTE', 'PROXY'} counted for the quorum from attendance rows
+    [{member_id, code, proxy_holder_member_id, voting}]: only members with a vote; a proxy
+    counts only when its holder is counted himself (present, or remote when remote counts)."""
+    voters = [r for r in rows if r.get('voting', True)]
+    by_id = {r['member_id']: r for r in voters}
+    remote_ok = _flag(rule, 'count_remote')
+    c = {'IN_PERSON': 0, 'REMOTE': 0, 'PROXY': 0}
+    for r in voters:
+        if r.get('code') in ('IN_PERSON', 'REMOTE'):
+            c[r['code']] += 1
+    for r in voters:
+        if r.get('code') == 'PROXY':
+            h = by_id.get(r.get('proxy_holder_member_id'))
+            if h and (h.get('code') == 'IN_PERSON' or (h.get('code') == 'REMOTE' and remote_ok)):
+                c['PROXY'] += 1
+    return c
+
+
 def quorum(rule, total_members, counts, call_no=1, capital_pct=None):
-    """rule: gov_meeting_rules row; counts: {'IN_PERSON': n, 'REMOTE': n, 'PROXY': n};
-    returns {valid, required, counted, basis, call_no, threshold}."""
+    """rule: gov_meeting_rules row (or the meeting's snapshot of it);
+    counts: {'IN_PERSON': n, 'REMOTE': n, 'PROXY': n} (see quorum_counts);
+    returns {valid, required, counted, basis, call_no, threshold, personal, min_personal}."""
     rule = rule or {}
     call_no = int(call_no or 1)
     qtype, frac, mn = rule.get('quorum_type') or 'MAJORITY', rule.get('quorum_fraction'), rule.get('quorum_min')
     if call_no >= 2 and rule.get('second_call_type'):
         qtype, frac = rule['second_call_type'], rule.get('second_call_fraction')
-        mn = rule.get('second_call_min')
+        if rule.get('second_call_min') not in (None, ''):
+            mn = rule.get('second_call_min')
     if frac in (None, ''):
         frac = 0.5
     if (rule.get('quorum_basis') or 'MEMBERS') == 'CAPITAL':
@@ -149,14 +175,15 @@ def quorum(rule, total_members, counts, call_no=1, capital_pct=None):
             return dict(valid=None, required=thr, counted=None, basis='CAPITAL', call_no=call_no, threshold=thr)
         ok = pct > thr if qtype == 'MAJORITY' else pct >= thr
         return dict(valid=ok, required=thr, counted=pct, basis='CAPITAL', call_no=call_no, threshold=thr)
-    counted = int(counts.get('IN_PERSON', 0))
-    if rule.get('count_remote', True) in (True, 1, None) or _yes(rule.get('count_remote')):
-        counted += int(counts.get('REMOTE', 0))
-    if rule.get('count_proxies', True) in (True, 1, None) or _yes(rule.get('count_proxies')):
-        counted += int(counts.get('PROXY', 0))
+    personal = int(counts.get('IN_PERSON', 0))
+    if _flag(rule, 'count_remote'):
+        personal += int(counts.get('REMOTE', 0))
+    counted = personal + (int(counts.get('PROXY', 0)) if _flag(rule, 'count_proxies') else 0)
     need = required_count(total_members, qtype, frac, mn)
-    return dict(valid=bool(total_members) and counted >= need, required=need, counted=counted, basis='MEMBERS',
-                call_no=call_no, threshold=None)
+    min_personal = int(rule['min_personal']) if rule.get('min_personal') not in (None, '') else None
+    valid = bool(total_members) and counted >= need and (min_personal is None or personal >= min_personal)
+    return dict(valid=valid, required=need, counted=counted, basis='MEMBERS', call_no=call_no, threshold=None,
+                personal=personal, min_personal=min_personal)
 
 
 # ------------------------------------------------------------------ majority
@@ -189,7 +216,7 @@ def majority(rule_code, votes, chair_vote=None, casting=True, eligible=None):
     if rule_code == 'SIMPLE_PRESENT':
         need = eligible // 2 + 1
         ok = f >= need
-        if not ok and casting and f * 2 == eligible and str(chair_vote or '').upper() == 'FOR':
+        if not ok and casting and f == a and f > 0 and str(chair_vote or '').upper() == 'FOR':
             return True, need, 'tie broken by the chair\'s casting vote'
         return ok, need, 'more than half of the members present and voting'
     if rule_code == 'TWO_THIRDS':

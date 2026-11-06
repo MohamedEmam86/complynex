@@ -45,6 +45,7 @@ from collections import defaultdict
 from markupsafe import Markup, escape
 
 ENGINE_VERSION = 1
+MAX_QUERY_WORDS = 10      # longer queries: the first 10 meaningful words
 FIELD_WEIGHTS = {'t': 1.0, 'g': 0.9, 's': 0.85, 'c': 0.8, 'x': 0.75, 'a': 0.6}
 W_SYNONYM, W_PREFIX, W_FUZZY = 0.9, 0.8, 0.85
 
@@ -268,13 +269,30 @@ class Corpus:
                 self.df[s] += 1
         self.n = len(self.docs)
         self.vocab = [t for t in self.df if not t.startswith('§')]
+        # candidates for typo / partial matching: by trigram and by the first two letters
+        self.tri = defaultdict(set)
+        self.pre = defaultdict(set)
+        for t in self.vocab:
+            for g in _trigrams(t):
+                self.tri[g].add(t)
+            self.pre[t[:2]].add(t)
+
+    def candidates(self, q):
+        """Vocabulary words that may be close to q: sharing two trigrams, or starting with its first two letters."""
+        seen = defaultdict(int)
+        for g in _trigrams(q):
+            for t in self.tri.get(g, ()):
+                seen[t] += 1
+        out = {t for t, n in seen.items() if n >= 2 and abs(len(t) - len(q)) <= 3}
+        out |= {t for t in self.pre.get(q[:2], ()) if t.startswith(q) or abs(len(t) - len(q)) <= 2}
+        return out
 
     def idf(self, term):
         return math.log(1.0 + (self.n + 1.0) / (1.0 + self.df.get(term, 0)))
 
     def concepts(self, query):
         """Query -> [{q, alts: {term: weight}, idf}]"""
-        qstems = analyse(query)
+        qstems = analyse(query)[:MAX_QUERY_WORDS]
         if not qstems:
             return []
         qgroups = defaultdict(dict)   # index -> {group: weight}
@@ -304,7 +322,7 @@ class Corpus:
             if a and a in self.df:
                 alts[a] = max(alts.get(a, 0), 0.95)
             fuzzy = []
-            for t in self.vocab:
+            for t in self.candidates(q):
                 if t == q:
                     continue
                 w = fuzzy_weight(q, t)
@@ -417,14 +435,11 @@ def reindex(db, rid=None):
 
 def corpus(db):
     reindex(db)
-    k = db.execute("""SELECT (SELECT COUNT(*) FROM board_decisions) AS n,
-                             (SELECT MAX(search_updated_at) FROM board_decisions) AS t,
-                             (SELECT COUNT(*) FROM gov_search_synonyms WHERE is_active) AS sn,
-                             (SELECT MAX(id) FROM gov_search_synonyms) AS sm,
-                             (SELECT MAX(created_at) FROM gov_search_synonyms) AS st""").fetchone()
-    key = (k['n'], str(k['t']), k['sn'], k['sm'], str(k['st']))
+    # version counter bumped by database triggers on resolutions, agenda items, categories and synonyms
+    k = db.execute("SELECT version FROM gov_search_state WHERE id = 1").fetchone()
+    key = k['version'] if k else None
     with _LOCK:
-        if _CACHE['key'] == key and _CACHE['corpus'] is not None:
+        if key is not None and _CACHE['key'] == key and _CACHE['corpus'] is not None:
             return _CACHE['corpus']
     docs = {}
     for r in db.execute("SELECT id, search_index FROM board_decisions WHERE search_index IS NOT NULL").fetchall():
@@ -444,7 +459,7 @@ def rank(corp, query, ids=None, min_score=0.25, limit=200):
     concepts = corp.concepts(query)
     if not concepts:
         return []
-    qstems = analyse(query)
+    qstems = analyse(query)[:MAX_QUERY_WORDS]
     pool = ids if ids is not None else corp.docs.keys()
     out = []
     for rid in pool:

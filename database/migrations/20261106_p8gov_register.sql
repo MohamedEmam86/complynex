@@ -5,6 +5,14 @@
 -- Additive only: new tables, new nullable columns, reference rows inserted when missing.
 BEGIN;
 
+-- A text column that may hold anything -> a date, or NULL (never an error on '2023-02-30').
+CREATE OR REPLACE FUNCTION gov_safe_date(t TEXT) RETURNS DATE AS $$
+BEGIN
+  IF t IS NULL OR t !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN RETURN NULL; END IF;
+  RETURN left(t, 10)::date;
+EXCEPTION WHEN others THEN RETURN NULL;
+END $$ LANGUAGE plpgsql IMMUTABLE;
+
 -- ------------------------------------------------------------------ boards / entities
 CREATE TABLE IF NOT EXISTS gov_entities (
     id SERIAL PRIMARY KEY,
@@ -55,6 +63,7 @@ CREATE TABLE IF NOT EXISTS gov_meeting_rules (
     created_at TIMESTAMP DEFAULT NOW(), created_by INTEGER,
     updated_at TIMESTAMP, updated_by INTEGER
 );
+ALTER TABLE gov_meeting_rules ADD COLUMN IF NOT EXISTS min_personal INTEGER;  -- minimum present in person / remotely (proxies excluded)
 INSERT INTO gov_meeting_rules (code, name_en, name_ar, applies_to, quorum_basis, quorum_type, quorum_fraction, quorum_min,
         majority_rule, chair_casting_vote, notice_days, filing_days, filing_authority, legal_ref, sort_order) VALUES
  ('BOARD_DEFAULT', 'Board - majority of members, never fewer than 3', 'مجلس الإدارة - أغلبية الأعضاء وبحد أدنى 3',
@@ -226,8 +235,7 @@ ALTER TABLE board_members ADD COLUMN IF NOT EXISTS is_sample BOOLEAN NOT NULL DE
 -- independent / executive flags mean (only when it has none in that dimension yet).
 INSERT INTO gov_member_capacities (member_id, option_id, effective_from, source, note)
 SELECT bm.id, o.id,
-       CASE WHEN COALESCE(bm.term_start_date, bm.appointment_date) ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
-            THEN left(COALESCE(bm.term_start_date, bm.appointment_date), 10)::date END,
+       gov_safe_date(COALESCE(bm.term_start_date, bm.appointment_date)),
        'legacy', 'Derived from the independent flag'
 FROM board_members bm
 JOIN gov_capacity_dimensions d ON d.code = 'INDEPENDENCE'
@@ -237,8 +245,7 @@ WHERE NOT EXISTS (SELECT 1 FROM gov_member_capacities mc JOIN gov_capacity_optio
                   WHERE mc.member_id = bm.id AND o2.dimension_id = d.id);
 INSERT INTO gov_member_capacities (member_id, option_id, effective_from, source, note)
 SELECT bm.id, o.id,
-       CASE WHEN COALESCE(bm.term_start_date, bm.appointment_date) ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
-            THEN left(COALESCE(bm.term_start_date, bm.appointment_date), 10)::date END,
+       gov_safe_date(COALESCE(bm.term_start_date, bm.appointment_date)),
        'legacy', 'Derived from the executive flag'
 FROM board_members bm
 JOIN gov_capacity_dimensions d ON d.code = 'EXEC_STATUS'
@@ -299,6 +306,7 @@ ALTER TABLE board_meetings ADD COLUMN IF NOT EXISTS filing_reference TEXT;
 ALTER TABLE board_meetings ADD COLUMN IF NOT EXISTS recording_ref TEXT;
 ALTER TABLE board_meetings ADD COLUMN IF NOT EXISTS is_sample BOOLEAN NOT NULL DEFAULT FALSE;
 
+ALTER TABLE board_meetings ADD COLUMN IF NOT EXISTS rule_snapshot JSONB;   -- the rule values in force when the meeting was recorded
 ALTER TABLE meeting_attendance ADD COLUMN IF NOT EXISTS proxy_holder_member_id INTEGER;
 ALTER TABLE meeting_attendance ADD COLUMN IF NOT EXISTS proxy_document TEXT;
 ALTER TABLE meeting_agenda_items ADD COLUMN IF NOT EXISTS objection_note TEXT;
@@ -318,9 +326,9 @@ CREATE INDEX IF NOT EXISTS ix_gov_meeting_officers_meeting ON gov_meeting_office
 CREATE TABLE IF NOT EXISTS gov_conflict_declarations (
     id SERIAL PRIMARY KEY,
     meeting_id INTEGER NOT NULL REFERENCES board_meetings(id) ON DELETE CASCADE,
-    member_id INTEGER NOT NULL REFERENCES board_members(id) ON DELETE CASCADE,
+    member_id INTEGER NOT NULL REFERENCES board_members(id) ON DELETE RESTRICT,
     agenda_item_id INTEGER,
-    resolution_id INTEGER REFERENCES board_decisions(id) ON DELETE CASCADE,
+    resolution_id INTEGER REFERENCES board_decisions(id) ON DELETE SET NULL,
     nature TEXT NOT NULL,
     left_room BOOLEAN NOT NULL DEFAULT FALSE,
     did_not_vote BOOLEAN NOT NULL DEFAULT TRUE,
@@ -398,7 +406,7 @@ CREATE TABLE IF NOT EXISTS gov_resolution_numbers (
 CREATE TABLE IF NOT EXISTS gov_resolution_votes (
     id SERIAL PRIMARY KEY,
     resolution_id INTEGER NOT NULL REFERENCES board_decisions(id) ON DELETE CASCADE,
-    member_id INTEGER NOT NULL REFERENCES board_members(id) ON DELETE CASCADE,
+    member_id INTEGER NOT NULL REFERENCES board_members(id) ON DELETE RESTRICT,
     vote VARCHAR(10) NOT NULL,       -- FOR / AGAINST / ABSTAIN / RECUSED / ABSENT
     via_proxy BOOLEAN NOT NULL DEFAULT FALSE,
     dissent_text TEXT,
@@ -416,6 +424,59 @@ CREATE TABLE IF NOT EXISTS gov_resolution_links (
     created_at TIMESTAMP DEFAULT NOW(), created_by INTEGER,
     UNIQUE (from_resolution_id, to_resolution_id, link_type)
 );
+
+-- votes / declarations keep the member (no silent deletion); a removed resolution leaves the declaration
+ALTER TABLE gov_conflict_declarations DROP CONSTRAINT IF EXISTS gov_conflict_declarations_resolution_id_fkey;
+ALTER TABLE gov_conflict_declarations ADD CONSTRAINT gov_conflict_declarations_resolution_id_fkey
+    FOREIGN KEY (resolution_id) REFERENCES board_decisions(id) ON DELETE SET NULL;
+ALTER TABLE gov_conflict_declarations DROP CONSTRAINT IF EXISTS gov_conflict_declarations_member_id_fkey;
+ALTER TABLE gov_conflict_declarations ADD CONSTRAINT gov_conflict_declarations_member_id_fkey
+    FOREIGN KEY (member_id) REFERENCES board_members(id) ON DELETE RESTRICT;
+ALTER TABLE gov_resolution_votes DROP CONSTRAINT IF EXISTS gov_resolution_votes_member_id_fkey;
+ALTER TABLE gov_resolution_votes ADD CONSTRAINT gov_resolution_votes_member_id_fkey
+    FOREIGN KEY (member_id) REFERENCES board_members(id) ON DELETE RESTRICT;
+
+-- one attendance row per member and meeting (already on current databases; added when missing and possible)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE tablename = 'meeting_attendance' AND indexname = 'uq_meeting_member') THEN
+    IF EXISTS (SELECT 1 FROM meeting_attendance GROUP BY meeting_id, member_id HAVING COUNT(*) > 1) THEN
+      RAISE NOTICE 'meeting_attendance has duplicate (meeting_id, member_id) rows: uq_meeting_member not created';
+    ELSE
+      CREATE UNIQUE INDEX uq_meeting_member ON meeting_attendance (meeting_id, member_id);
+    END IF;
+  END IF;
+END $$;
+
+-- sequence number of every existing meeting: per board, body, committee and year, in date order
+WITH k AS (
+  SELECT id, sequence_no, meeting_date, COALESCE(entity_id, 0) AS e, COALESCE(committee_id, 0) AS c, left(meeting_date, 4) AS y,
+         COALESCE(body, CASE WHEN committee_id IS NOT NULL THEN 'COMMITTEE'
+                             WHEN UPPER(COALESCE(meeting_type, '')) IN ('AGM', 'OGM') THEN 'OGM'
+                             WHEN UPPER(COALESCE(meeting_type, '')) = 'EGM' THEN 'EGM' ELSE 'BOARD' END) AS b
+  FROM board_meetings WHERE meeting_date ~ '^[0-9]{4}-'),
+mx AS (SELECT e, b, c, y, COALESCE(MAX(sequence_no), 0) AS m FROM k GROUP BY e, b, c, y),
+n AS (SELECT k.id, mx.m + ROW_NUMBER() OVER (PARTITION BY k.e, k.b, k.c, k.y ORDER BY k.meeting_date, k.id) AS s
+      FROM k JOIN mx USING (e, b, c, y) WHERE k.sequence_no IS NULL)
+UPDATE board_meetings bm SET sequence_no = n.s FROM n WHERE bm.id = n.id;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'ux_board_meetings_sequence') THEN
+    IF EXISTS (SELECT 1 FROM board_meetings WHERE sequence_no IS NOT NULL
+               GROUP BY COALESCE(entity_id, 0), COALESCE(body, CASE WHEN committee_id IS NOT NULL THEN 'COMMITTEE'
+                             WHEN UPPER(COALESCE(meeting_type, '')) IN ('AGM', 'OGM') THEN 'OGM'
+                             WHEN UPPER(COALESCE(meeting_type, '')) = 'EGM' THEN 'EGM' ELSE 'BOARD' END),
+                        COALESCE(committee_id, 0), left(meeting_date, 4), sequence_no HAVING COUNT(*) > 1) THEN
+      RAISE NOTICE 'duplicate meeting sequence numbers: ux_board_meetings_sequence not created';
+    ELSE
+      CREATE UNIQUE INDEX ux_board_meetings_sequence ON board_meetings (COALESCE(entity_id, 0),
+          (COALESCE(body, CASE WHEN committee_id IS NOT NULL THEN 'COMMITTEE'
+                               WHEN UPPER(COALESCE(meeting_type, '')) IN ('AGM', 'OGM') THEN 'OGM'
+                               WHEN UPPER(COALESCE(meeting_type, '')) = 'EGM' THEN 'EGM' ELSE 'BOARD' END)),
+          COALESCE(committee_id, 0), left(meeting_date, 4), sequence_no) WHERE sequence_no IS NOT NULL;
+    END IF;
+  END IF;
+END $$;
 
 -- ------------------------------------------------------------------ search synonyms (configurable)
 CREATE TABLE IF NOT EXISTS gov_search_synonyms (
@@ -511,6 +572,63 @@ VALUES ('COMPANIES_LAW', 'Companies Law 159/1981', 'قانون الشركات 15
         'Companies Law 159/1981 Art 77', 60)
 ON CONFLICT (code) DO NOTHING;
 
+-- rule values of existing meetings, frozen now so that a later change of a rule does not rewrite them
+UPDATE board_meetings m SET rule_snapshot = (
+    SELECT to_jsonb(r) FROM gov_meeting_rules r WHERE r.code = CASE
+        WHEN m.committee_id IS NOT NULL THEN 'COMMITTEE_HALF'
+        WHEN UPPER(COALESCE(m.meeting_type, '')) IN ('AGM', 'OGM') THEN 'OGM_DEFAULT'
+        WHEN UPPER(COALESCE(m.meeting_type, '')) = 'EGM' THEN 'EGM_DEFAULT' ELSE 'BOARD_DEFAULT' END)
+WHERE m.rule_snapshot IS NULL AND m.meeting_rule_id IS NULL;
+UPDATE board_meetings m SET rule_snapshot = (SELECT to_jsonb(r) FROM gov_meeting_rules r WHERE r.id = m.meeting_rule_id)
+WHERE m.rule_snapshot IS NULL AND m.meeting_rule_id IS NOT NULL;
+
+-- search cache version: bumped by any change that affects the resolutions search; a changed resolution,
+-- agenda item or category name is marked for re-indexing whatever screen changed it
+CREATE TABLE IF NOT EXISTS gov_search_state (id INTEGER PRIMARY KEY, version BIGINT NOT NULL DEFAULT 0, changed_at TIMESTAMPTZ);
+INSERT INTO gov_search_state (id, version, changed_at) VALUES (1, 0, clock_timestamp()) ON CONFLICT (id) DO NOTHING;
+CREATE OR REPLACE FUNCTION gov_search_bump() RETURNS trigger AS $$
+BEGIN
+  UPDATE gov_search_state SET version = version + 1, changed_at = clock_timestamp() WHERE id = 1;
+  RETURN NULL;
+END $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION gov_decision_stale() RETURNS trigger AS $$
+BEGIN
+  IF (NEW.decision_title, NEW.decision_text, NEW.decision_description, NEW.summary, NEW.tags, NEW.category_code, NEW.agenda_item_id)
+     IS DISTINCT FROM (OLD.decision_title, OLD.decision_text, OLD.decision_description, OLD.summary, OLD.tags, OLD.category_code, OLD.agenda_item_id)
+     AND NEW.search_index IS NOT DISTINCT FROM OLD.search_index THEN
+    NEW.search_version := 0;
+  END IF;
+  RETURN NEW;
+END $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION gov_agenda_stale() RETURNS trigger AS $$
+BEGIN
+  IF (NEW.item_title, NEW.item_description) IS DISTINCT FROM (OLD.item_title, OLD.item_description) THEN
+    UPDATE board_decisions SET search_version = 0 WHERE agenda_item_id = NEW.id;
+  END IF;
+  RETURN NULL;
+END $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION gov_category_stale() RETURNS trigger AS $$
+BEGIN
+  IF (NEW.code, NEW.name_en, NEW.name_ar) IS DISTINCT FROM (OLD.code, OLD.name_en, OLD.name_ar) THEN
+    UPDATE board_decisions SET search_version = 0 WHERE category_code IN (OLD.code, NEW.code);
+  END IF;
+  RETURN NULL;
+END $$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS trg_gov_decision_stale ON board_decisions;
+CREATE TRIGGER trg_gov_decision_stale BEFORE UPDATE ON board_decisions FOR EACH ROW EXECUTE FUNCTION gov_decision_stale();
+DROP TRIGGER IF EXISTS trg_gov_agenda_stale ON meeting_agenda_items;
+CREATE TRIGGER trg_gov_agenda_stale AFTER UPDATE ON meeting_agenda_items FOR EACH ROW EXECUTE FUNCTION gov_agenda_stale();
+DROP TRIGGER IF EXISTS trg_gov_category_stale ON gov_resolution_categories;
+CREATE TRIGGER trg_gov_category_stale AFTER UPDATE ON gov_resolution_categories FOR EACH ROW EXECUTE FUNCTION gov_category_stale();
+DROP TRIGGER IF EXISTS trg_gov_search_bump_d ON board_decisions;
+CREATE TRIGGER trg_gov_search_bump_d AFTER INSERT OR UPDATE OR DELETE ON board_decisions FOR EACH STATEMENT EXECUTE FUNCTION gov_search_bump();
+DROP TRIGGER IF EXISTS trg_gov_search_bump_s ON gov_search_synonyms;
+CREATE TRIGGER trg_gov_search_bump_s AFTER INSERT OR UPDATE OR DELETE ON gov_search_synonyms FOR EACH STATEMENT EXECUTE FUNCTION gov_search_bump();
+DROP TRIGGER IF EXISTS trg_gov_search_bump_a ON meeting_agenda_items;
+CREATE TRIGGER trg_gov_search_bump_a AFTER INSERT OR UPDATE OR DELETE ON meeting_agenda_items FOR EACH STATEMENT EXECUTE FUNCTION gov_search_bump();
+DROP TRIGGER IF EXISTS trg_gov_search_bump_c ON gov_resolution_categories;
+CREATE TRIGGER trg_gov_search_bump_c AFTER INSERT OR UPDATE OR DELETE ON gov_resolution_categories FOR EACH STATEMENT EXECUTE FUNCTION gov_search_bump();
+
 -- trigram index for the resolutions search (pg_trgm when installed)
 DO $$
 BEGIN
@@ -519,13 +637,11 @@ BEGIN
   END IF;
 END $$;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON gov_entities, gov_meeting_rules, gov_committee_types, gov_capacity_dimensions,
-    gov_capacity_options, gov_member_capacities, gov_officers, gov_meeting_officers, gov_conflict_declarations,
-    gov_resolution_categories, gov_resolution_numbers, gov_resolution_votes, gov_resolution_links,
-    gov_search_synonyms, gov_composition_rules TO complynex;
-GRANT USAGE, SELECT ON SEQUENCE gov_entities_id_seq, gov_meeting_rules_id_seq, gov_committee_types_id_seq,
-    gov_capacity_dimensions_id_seq, gov_capacity_options_id_seq, gov_member_capacities_id_seq, gov_officers_id_seq,
-    gov_meeting_officers_id_seq, gov_conflict_declarations_id_seq, gov_resolution_categories_id_seq,
-    gov_resolution_votes_id_seq, gov_resolution_links_id_seq, gov_search_synonyms_id_seq,
-    gov_composition_rules_id_seq TO complynex;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'complynex') THEN
+    EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON gov_entities, gov_meeting_rules, gov_committee_types, gov_capacity_dimensions, gov_capacity_options, gov_member_capacities, gov_officers, gov_meeting_officers, gov_conflict_declarations, gov_resolution_categories, gov_resolution_numbers, gov_resolution_votes, gov_resolution_links, gov_search_synonyms, gov_composition_rules, gov_search_state TO complynex';
+    EXECUTE 'GRANT USAGE, SELECT ON SEQUENCE gov_entities_id_seq, gov_meeting_rules_id_seq, gov_committee_types_id_seq, gov_capacity_dimensions_id_seq, gov_capacity_options_id_seq, gov_member_capacities_id_seq, gov_officers_id_seq, gov_meeting_officers_id_seq, gov_conflict_declarations_id_seq, gov_resolution_categories_id_seq, gov_resolution_votes_id_seq, gov_resolution_links_id_seq, gov_search_synonyms_id_seq, gov_composition_rules_id_seq TO complynex';
+  END IF;
+END $$;
 COMMIT;

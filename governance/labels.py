@@ -229,20 +229,13 @@ def code_label(code, kind=None):
 
 def _committee_type_name(code):
     """Name of a committee type from the configurable list (gov_committee_types), or None."""
-    try:
-        from database.db import get_db
-        from flask_babel import get_locale
-        row = get_db().execute("SELECT name_en, name_ar FROM gov_committee_types WHERE code = %s",
-                               (str(code).upper(),)).fetchone()
-        if row:
-            ar = str(get_locale() or '').startswith('ar')
-            return (row['name_ar'] if ar else row['name_en']) or row['name_en']
-    except Exception:
-        try:
-            from database.db import get_db
-            get_db().rollback()
-        except Exception:
-            pass
+    from database.db import get_db
+    from flask_babel import get_locale
+    row = get_db().execute("SELECT name_en, name_ar FROM gov_committee_types WHERE code = %s",
+                           (str(code).upper(),)).fetchone()
+    if row:
+        ar = str(get_locale() or '').startswith('ar')
+        return (row['name_ar'] if ar else row['name_en']) or row['name_en']
     return None
 
 

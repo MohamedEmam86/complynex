@@ -2,7 +2,7 @@
 {%- set votes0 = vote_of if vote_of is defined and vote_of else {} -%}
 <div class="row g-2 small">
   <div class="col-md-6"><label class="form-label mb-0">{{ _('Agenda item') }}</label>
-    <select name="agenda_item_id" class="form-select form-select-sm"><option value="">—</option>{% for a in agenda %}<option value="{{ a.id }}" {{ 'selected' if r0.agenda_item_id == a.id }}>{{ a.item_number }}. {{ a.item_title[:80] }}</option>{% endfor %}</select>
+    <select name="agenda_item_id" class="form-select form-select-sm"><option value="">—</option>{% for a in agenda %}<option value="{{ a.id }}" {{ 'selected' if r0.agenda_item_id == a.id }}>{{ a.item_number }}. {{ (a.item_title or '')[:80] }}</option>{% endfor %}</select>
     <div class="form-text">{{ _('Members who declared a conflict on this item are recorded as recused.') }}</div></div>
   <div class="col-md-6"><label class="form-label mb-0">{{ _('Category') }}</label>
     <select name="category_code" class="form-select form-select-sm"><option value="">—</option>{% for c in cats %}<option value="{{ c.code }}" {{ 'selected' if r0.category_code == c.code }}>{{ gov_pick(c.name_en, c.name_ar) }}</option>{% endfor %}</select></div>
@@ -33,13 +33,18 @@
 <div class="table-responsive mt-2">
 <table class="table table-sm small align-middle mb-0">
   <thead class="table-light"><tr><th>{{ _('Member') }}</th><th>{{ _('Attendance') }}</th><th>{{ _('Vote') }}</th><th>{{ _('Objection / reservation (recorded in the minutes)') }}</th></tr></thead>
+  <caption class="small">{{ _('Every member present must have a vote chosen; members who declared a conflict on the agenda item are recorded as recused.') }}</caption>
   <tbody>
-  {% for a in rows %}
+  {% for a in rows if a.voting %}
     {%- set cur = votes0.get(a.member_id) -%}
-    {%- set dflt = cur.vote if cur else ('FOR' if a.code in ('IN_PERSON', 'REMOTE', 'PROXY') else 'ABSENT') -%}
+    {%- set present = circulation or a.code in ('IN_PERSON', 'REMOTE', 'PROXY') -%}
     <tr><td>{{ gov_pick(a.member_name, a.member_name_arabic) }}</td>
-      <td>{{ code_label(a.code, 'gov_attendance') or _('Not recorded') }}</td>
-      <td><select name="vote_{{ a.member_id }}" class="form-select form-select-sm">{% for k, v in code_choices('gov_vote') %}<option value="{{ k }}" {{ 'selected' if dflt == k }}>{{ v }}</option>{% endfor %}</select></td>
+      <td>{{ _('Written vote') if circulation else (code_label(a.code, 'gov_attendance') or _('Not recorded')) }}</td>
+      <td>{% if present %}
+        <select name="vote_{{ a.member_id }}" class="form-select form-select-sm" required>
+          <option value="">{{ _('Choose…') }}</option>
+          {% for k, v in code_choices('gov_vote') if k != 'ABSENT' %}<option value="{{ k }}" {{ 'selected' if cur and cur.vote == k }}>{{ v }}</option>{% endfor %}</select>
+        {% else %}<span class="text-muted">{{ _('Absent') }}</span>{% endif %}</td>
       <td><input name="dissent_{{ a.member_id }}" class="form-control form-control-sm" dir="auto" value="{{ cur.dissent_text if cur and cur.dissent_text else '' }}"></td></tr>
   {% endfor %}
   </tbody>

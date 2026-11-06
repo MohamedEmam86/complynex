@@ -264,7 +264,8 @@ def build():
     from database.db import query_db
     from models.governance import SAFE_MEETING_DATE
     committees = query_db("SELECT * FROM board_committees WHERE COALESCE(is_active, 1) = 1 ORDER BY committee_name") or []
-    members = query_db("SELECT * FROM board_members WHERE COALESCE(is_deleted, 0) = 0 ORDER BY member_name") or []
+    # sample members are checked with their own (sample) board below, not with the real board
+    members = query_db("SELECT * FROM board_members WHERE COALESCE(is_deleted, 0) = 0 AND NOT is_sample ORDER BY member_name") or []
     out = []
     for c in committees:
         mem = query_db("""SELECT cm.member_id, cm.role, cm.has_required_expertise, bm.member_name, bm.is_independent,
@@ -281,11 +282,6 @@ def build():
         out.append({'committee': c, 'members': mem, 'meetings_12m': n_held,
                     'independent': len([m for m in mem if _yes(m.get('is_independent'))]),
                     'findings': check_committee(dict(c), mem, n_held)})
-    try:
-        boards = build_boards()
-    except Exception:   # the board tables of this release are not migrated yet
-        from database.db import get_db
-        get_db().rollback()
-        boards = []
+    boards = build_boards()
     return {'committees': out, 'board': check_members([dict(m) for m in members]), 'boards': boards,
             'active_members': len([m for m in members if str(m.get('status') or '').upper() == 'ACTIVE'])}

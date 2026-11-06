@@ -22,13 +22,14 @@
   <div class="col-6 col-lg-3"><label class="form-label small mb-0">{{ _('Category') }}</label>
     <select name="category" class="form-select form-select-sm"><option value="">{{ _('All') }}</option>{% for c in cats %}<option value="{{ c.code }}" {{ 'selected' if flt.category == c.code }}>{{ gov_pick(c.name_en, c.name_ar) }}</option>{% endfor %}</select></div>
   <div class="col-6 col-lg-3"><label class="form-label small mb-0">{{ _('Member attended or voted') }}</label>
-    <select name="member" class="form-select form-select-sm"><option value="">{{ _('Any member') }}</option>{% for mb in members %}<option value="{{ mb.id }}" {{ 'selected' if flt.member == mb.id }}>{{ gov_pick(mb.member_name, mb.member_name_arabic) }}</option>{% endfor %}</select></div>
+    <select name="member" class="form-select form-select-sm"><option value="">{{ _('Any member') }}</option>{% for mb in members %}<option value="{{ mb.id }}" {{ 'selected' if flt.member == mb.id }}>{{ gov_pick(mb.member_name, mb.member_name_arabic) }}{% if mb.is_sample %} ({{ _('sample') }}){% endif %}</option>{% endfor %}</select></div>
   <div class="col-6 col-lg-2"><label class="form-label small mb-0">{{ _('Outcome') }}</label>
     <select name="outcome" class="form-select form-select-sm"><option value="">{{ _('All') }}</option>{% for k, v in code_choices('gov_outcome') %}<option value="{{ k }}" {{ 'selected' if flt.outcome == k }}>{{ v }}</option>{% endfor %}</select></div>
   <div class="col-6 col-lg-1"><label class="form-label small mb-0">{{ _('From') }}</label><input type="date" name="date_from" value="{{ flt.date_from or '' }}" class="form-control form-control-sm"></div>
   <div class="col-6 col-lg-1"><label class="form-label small mb-0">{{ _('To') }}</label><input type="date" name="date_to" value="{{ flt.date_to or '' }}" class="form-control form-control-sm"></div>
   <div class="col-6 col-lg-1"><label class="form-label small mb-0">{{ _('Min. score') }}</label><input name="min" value="{{ flt.min }}" inputmode="numeric" class="form-control form-control-sm"></div>
   <div class="col-6 col-lg-1"><button class="btn btn-primary btn-sm w-100"><i class="bi bi-search"></i> {{ _('Search') }}</button></div>
+  <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="sample" value="1" id="smp" {{ 'checked' if flt.sample }} data-auto-submit><label class="form-check-label small" for="smp">{{ _('Include sample records') }}</label></div></div>
 </div></form>
 
 <p class="small text-muted">{% if flt.q %}{{ _('%(n)s resolutions match "%(q)s"', n=total, q=flt.q) }}{% else %}{{ _('%(n)s resolutions', n=total) }}{% endif %} · {{ elapsed_ms }} ms</p>
@@ -42,7 +43,7 @@
       {% endif %}
       <div class="flex-grow-1">
         <div class="d-flex flex-wrap justify-content-between gap-2">
-          <div><a href="{{ url_for('governance.resolution_view', rid=r.id) }}" class="fw-bold">{{ r.number }}</a> {{ outcome_badge(r.outcome_code) }}
+          <div><a href="{{ url_for('governance.resolution_view', rid=r.id) }}" class="fw-bold">{{ r.number }}</a> {{ outcome_badge(r.outcome_code) }}{% if r.is_sample %} <span class="badge bg-warning text-dark">{{ _('sample') }}</span>{% endif %}
             <span class="fw-semibold" dir="auto">{{ r.h_title }}</span></div>
           <div class="small text-muted text-nowrap">{{ tally(r.tally) }}</div>
         </div>
@@ -67,6 +68,6 @@
 {% if total > page_size %}
 {% set pages = ((total - 1) // page_size) + 1 %}
 <nav><ul class="pagination pagination-sm">{% for p in range(1, pages + 1) %}
-  <li class="page-item {{ 'active' if p == flt.page }}"><a class="page-link" href="{{ url_for('governance.register_search', q=flt.q, entity=flt.entity, body=flt.body, kind=flt.kind, category=flt.category, member=flt.member, outcome=flt.outcome, date_from=flt.date_from, date_to=flt.date_to, min=flt.min, page=p) }}">{{ p }}</a></li>{% endfor %}</ul></nav>
+  <li class="page-item {{ 'active' if p == flt.page }}"><a class="page-link" href="{{ url_for('governance.register_search', q=flt.q, entity=flt.entity, body=flt.body, kind=flt.kind, category=flt.category, member=flt.member, outcome=flt.outcome, date_from=flt.date_from, date_to=flt.date_to, min=flt.min, sample=1 if flt.sample else none, page=p) }}">{{ p }}</a></li>{% endfor %}</ul></nav>
 {% endif %}
 {% endblock %}

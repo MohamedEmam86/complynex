@@ -152,14 +152,19 @@ LISTS = {
                 F('second_call_fraction', _l('Second-call fraction'), 'fraction', width=2),
                 F('second_call_min', _l('Second-call minimum'), 'int', width=2),
                 F('count_proxies', _l('Proxies count'), 'bool', width=1), F('count_remote', _l('Remote counts'), 'bool', width=1),
+                F('min_personal', _l('Minimum present in person or remotely'), 'int', width=2),
                 F('majority_rule', _l('Majority'), 'select', choices=MAJORITY_CHOICES),
                 F('chair_casting_vote', _l('Chair casting vote'), 'bool', width=2),
                 F('circulation_requires_all', _l('Circulation: all must vote'), 'bool', width=2),
                 F('notice_days', _l('Notice days'), 'int', width=2), F('filing_days', _l('Filing days'), 'int', width=2),
                 F('filing_authority', _l('Filed with'), width=2), F('legal_ref', _l('Legal reference'), width=6),
                 F('sort_order', _l('Order'), 'int', width=1), F('is_active', _l('Active'), 'bool', width=1)],
-        usage="""SELECT (SELECT COUNT(*) FROM board_meetings WHERE meeting_rule_id = %s)
-                      + (SELECT COUNT(*) FROM board_committees WHERE meeting_rule_id = %s) AS n""", usage_args=2),
+        usage="""SELECT (SELECT COUNT(*) FROM board_meetings WHERE meeting_rule_id = %s OR rule_snapshot->>'id' = %s::text)
+                      + (SELECT COUNT(*) FROM board_committees WHERE meeting_rule_id = %s) AS n""", usage_args=3,
+        # once meetings use a rule, the values that decide quorum and majority are kept: make a new rule instead
+        frozen_when_used=('applies_to', 'quorum_basis', 'quorum_type', 'quorum_fraction', 'quorum_min', 'min_personal',
+                          'second_call_type', 'second_call_fraction', 'second_call_min', 'count_proxies', 'count_remote',
+                          'majority_rule', 'chair_casting_vote', 'circulation_requires_all')),
     'resolution-categories': dict(
         table='gov_resolution_categories', title=_l('Resolution categories'), order='sort_order, id', label='name_en',
         intro=_l('Categories group resolutions in the register and the search filters.'),
@@ -284,6 +289,19 @@ def _audit(action, rid, details):
         pass
 
 
+def _entity_errors(db, spec, data, rid, row):
+    """A board other than the default one needs a short code (it starts its resolution numbers); codes are unique."""
+    if spec['table'] != 'gov_entities':
+        return []
+    code = (data.get('short_code') or '').strip().upper()
+    if not code:
+        return [] if row.get('is_default') else [_('A board other than the default one needs a short code.')]
+    data['short_code'] = code
+    if db.execute("SELECT 1 FROM gov_entities WHERE UPPER(short_code) = %s AND id <> %s", (code, rid or 0)).fetchone():
+        return [_('The code %(c)s is already used.', c=code)]
+    return []
+
+
 def usage_count(db, spec, rid):
     if not spec.get('usage'):
         return 0
@@ -344,6 +362,7 @@ def gov_config_add(name):
         if db.execute("SELECT 1 FROM gov_search_synonyms WHERE group_code = %s AND term = %s",
                       (data['group_code'], data['term'])).fetchone():
             errors.append(_('This term is already in the group.'))
+    errors += _entity_errors(db, spec, data, None, {})
     if errors:
         for e in errors:
             flash(e, 'danger')
@@ -370,6 +389,16 @@ def gov_config_update(name, rid):
     data, errors = _collect(spec, editing=True, row=row)
     if spec['table'] == 'gov_entities' and row.get('is_default') and data.get('is_active') is False:
         errors.append(_('The default board cannot be deactivated.'))
+    errors += _entity_errors(db, spec, data, rid, row)
+    frozen = spec.get('frozen_when_used')
+    if frozen and usage_count(db, spec, rid):
+        changed = [c for c in frozen if c in data and str(row.get(c)) != str(data[c])
+                   and not (row.get(c) in (None, '') and data[c] in (None, ''))]
+        for c in frozen:
+            data.pop(c, None)
+        if changed:
+            flash(_('Meetings already use this rule, so its quorum and majority values were kept; '
+                    'add a new rule for different values.'), 'warning')
     if errors:
         for e in errors:
             flash(e, 'danger')
@@ -378,9 +407,6 @@ def gov_config_update(name, rid):
     sets = ', '.join(f'{c} = %s' for c in data) + (', updated_at = NOW(), updated_by = %s' if has_updated else '')
     args = tuple(data.values()) + ((current_user.id,) if has_updated else ()) + (rid,)
     db.execute(f"UPDATE {spec['table']} SET {sets} WHERE id = %s", args)
-    if spec['table'] == 'gov_resolution_categories':
-        # category names are part of the search index: re-index the resolutions of this category
-        db.execute("UPDATE board_decisions SET search_version = 0 WHERE category_code = %s", (row['code'],))
     db.commit()
     changed = [c for c in data if str(row.get(c)) != str(data[c])]
     _audit('Governance Setting Changed', rid, f"{spec['table']} #{rid}: {', '.join(changed) or 'no change'}")
@@ -397,6 +423,9 @@ def gov_config_delete(name, rid):
     row = db.execute(f"SELECT * FROM {spec['table']} WHERE id = %s", (rid,)).fetchone()
     if not row:
         abort(404)
+    if spec['table'] == 'gov_entities' and row.get('is_default'):
+        flash(_('The default board cannot be removed or deactivated.'), 'danger')
+        return redirect(url_for('governance.gov_config_list', name=name))
     used = usage_count(db, spec, rid)
     label = row.get(spec['label'])
     if used or row.get('is_system'):

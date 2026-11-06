@@ -111,31 +111,24 @@ def _committee_errors(data):
     return errors
 
 def _committee_types(include_code=None):
-    db = get_db()
-    try:
-        rows = [dict(r) for r in db.execute(
-            "SELECT * FROM gov_committee_types WHERE is_active OR code = %s ORDER BY sort_order, id",
-            ((include_code or '').upper(),)).fetchall()]
-    except Exception:   # configurable committee types not migrated yet
-        db.rollback()
-        return []
-    return rows
+    return [dict(r) for r in get_db().execute(
+        "SELECT * FROM gov_committee_types WHERE is_active OR code = %s ORDER BY sort_order, id",
+        ((include_code or '').upper(),)).fetchall()]
 
 
 def _committee_form_ctx(committee_id=None):
     db = get_db()
-    ctx = {'members': BoardMember.get_all(), 'ctypes': [], 'rules': [], 'gov_entities': [], 'crow': {}}
-    try:
-        ctx['rules'] = [dict(r) for r in db.execute(
-            "SELECT id, code, name_en, name_ar FROM gov_meeting_rules WHERE is_active ORDER BY sort_order, id").fetchall()]
-        ctx['gov_entities'] = [dict(r) for r in db.execute(
-            "SELECT id, name_en, name_ar FROM gov_entities WHERE is_active ORDER BY sort_order, id").fetchall()]
-        if committee_id:
-            row = db.execute("SELECT * FROM board_committees WHERE id = %s", (committee_id,)).fetchone()
-            ctx['crow'] = dict(row) if row else {}
-        ctx['ctypes'] = _committee_types(ctx['crow'].get('committee_type'))
-    except Exception:
-        db.rollback()
+    ctx = {'members': BoardMember.get_all(), 'crow': {}}
+    ctx['rules'] = [dict(r) for r in db.execute(
+        "SELECT id, code, name_en, name_ar FROM gov_meeting_rules WHERE is_active ORDER BY sort_order, id").fetchall()]
+    if committee_id:
+        row = db.execute("SELECT * FROM board_committees WHERE id = %s", (committee_id,)).fetchone()
+        ctx['crow'] = dict(row) if row else {}
+    # a real committee is not offered the sample board
+    ctx['gov_entities'] = [dict(r) for r in db.execute(
+        "SELECT id, name_en, name_ar FROM gov_entities WHERE is_active AND (NOT is_sample OR %s) ORDER BY sort_order, id",
+        (bool(ctx['crow'].get('is_sample')),)).fetchall()]
+    ctx['ctypes'] = _committee_types(ctx['crow'].get('committee_type'))
     return ctx
 
 
@@ -170,12 +163,8 @@ def _save_committee_rules(cid, creating=False):
     def num(k):
         v = (f.get(k) or '').strip()
         return int(v) if v.isdigit() else None
-    try:
-        t = db.execute("SELECT * FROM gov_committee_types WHERE code = (SELECT UPPER(committee_type) FROM board_committees WHERE id = %s)",
-                       (cid,)).fetchone()
-    except Exception:
-        db.rollback()
-        return
+    t = db.execute("SELECT * FROM gov_committee_types WHERE code = (SELECT UPPER(committee_type) FROM board_committees WHERE id = %s)",
+                   (cid,)).fetchone()
     t = dict(t) if t else {}
     vals = {k: num(k) for k in ('min_members', 'max_members', 'min_independent_members', 'min_meetings_per_year', 'quorum_number')}
     flags = {k: (1 if f.get(k) else 0) for k in ('independent_majority', 'independent_chair', 'non_executive_chair',
@@ -187,12 +176,16 @@ def _save_committee_rules(cid, creating=False):
         if not f.get('rules_submitted'):
             flags = {k: (1 if (flags[k] or t.get(k)) else 0) for k in flags}
     rule_id = f.get('meeting_rule_id', type=int)
+    if rule_id and not db.execute("SELECT 1 FROM gov_meeting_rules WHERE id = %s", (rule_id,)).fetchone():
+        rule_id = None
     if not rule_id and t.get('meeting_rule_code'):
         r = db.execute("SELECT id FROM gov_meeting_rules WHERE code = %s", (t['meeting_rule_code'],)).fetchone()
         rule_id = r['id'] if r else None
     ent = f.get('entity_id', type=int)
     dflt = db.execute("SELECT id FROM gov_entities WHERE is_default LIMIT 1").fetchone()
-    if ent and dflt and ent == dflt['id']:
+    e = db.execute("SELECT is_sample FROM gov_entities WHERE id = %s", (ent,)).fetchone() if ent else None
+    is_sample = db.execute("SELECT is_sample FROM board_committees WHERE id = %s", (cid,)).fetchone()['is_sample']
+    if not e or (e['is_sample'] and not is_sample) or (dflt and ent == dflt['id']):
         ent = None
     db.execute("""UPDATE board_committees SET min_members = %s, max_members = %s, min_independent_members = %s,
                   min_meetings_per_year = %s, quorum_number = %s, independent_majority = %s, independent_chair = %s,
@@ -211,41 +204,37 @@ def _entity_member_ids(entity_id):
     if not entity_id:
         return None
     db = get_db()
-    try:
-        d = db.execute("SELECT id FROM gov_entities WHERE is_default LIMIT 1").fetchone()
-        if d and d['id'] == entity_id:
-            rows = db.execute("SELECT id FROM board_members WHERE entity_id IS NULL OR entity_id = %s", (entity_id,)).fetchall()
-        else:
-            rows = db.execute("SELECT id FROM board_members WHERE entity_id = %s", (entity_id,)).fetchall()
-        return {r['id'] for r in rows}
-    except Exception:
-        db.rollback()
-        return None
+    d = db.execute("SELECT id FROM gov_entities WHERE is_default LIMIT 1").fetchone()
+    if d and d['id'] == entity_id:
+        rows = db.execute("SELECT id FROM board_members WHERE entity_id IS NULL OR entity_id = %s", (entity_id,)).fetchall()
+    else:
+        rows = db.execute("SELECT id FROM board_members WHERE entity_id = %s", (entity_id,)).fetchall()
+    return {r['id'] for r in rows}
 
 
 def _entity_meeting_ids(entity_id):
     if not entity_id:
         return None
     db = get_db()
-    try:
-        d = db.execute("SELECT id FROM gov_entities WHERE is_default LIMIT 1").fetchone()
-        if d and d['id'] == entity_id:
-            rows = db.execute("SELECT id FROM board_meetings WHERE entity_id IS NULL OR entity_id = %s", (entity_id,)).fetchall()
-        else:
-            rows = db.execute("SELECT id FROM board_meetings WHERE entity_id = %s", (entity_id,)).fetchall()
-        return {r['id'] for r in rows}
-    except Exception:
-        db.rollback()
-        return None
+    d = db.execute("SELECT id FROM gov_entities WHERE is_default LIMIT 1").fetchone()
+    if d and d['id'] == entity_id:
+        rows = db.execute("SELECT id FROM board_meetings WHERE entity_id IS NULL OR entity_id = %s", (entity_id,)).fetchall()
+    else:
+        rows = db.execute("SELECT id FROM board_meetings WHERE entity_id = %s", (entity_id,)).fetchall()
+    return {r['id'] for r in rows}
 
 
 def _gov_entities():
-    db = get_db()
-    try:
-        return [dict(r) for r in db.execute("SELECT * FROM gov_entities WHERE is_active ORDER BY sort_order, id").fetchall()]
-    except Exception:
-        db.rollback()
-        return []
+    return [dict(r) for r in get_db().execute("SELECT * FROM gov_entities WHERE is_active ORDER BY sort_order, id").fetchall()]
+
+
+def _signed_meeting_refused(meeting_id):
+    """Redirect refusing a change to a meeting whose minutes are signed (see governance/register.py)."""
+    from governance.register import meeting_locked
+    if meeting_locked(get_db(), meeting_id):
+        flash(_('The minutes are signed; the record can no longer be changed.'), 'danger')
+        return redirect(url_for('governance.meeting_summary', id=meeting_id))
+    return None
 
 
 @governance_bp.route('/')
@@ -654,7 +643,11 @@ def schedule_meeting():
             _flash_errors(errors)
             return redirect(url_for('governance.schedule_meeting'))
         attendee_ids = request.form.getlist('attendees')
-        BoardMeeting.create(data, attendee_ids=attendee_ids)
+        mid = BoardMeeting.create(data, attendee_ids=attendee_ids)
+        from governance.register import meeting_or_404, live_rule, save_rule_snapshot
+        db = get_db()
+        save_rule_snapshot(db, mid, live_rule(db, meeting_or_404(db, mid)))   # rule values frozen on the meeting
+        db.commit()
         flash(_('Meeting scheduled successfully.'), 'success')
         return redirect(url_for('governance.list_meetings'))
     
@@ -672,6 +665,9 @@ def edit_meeting(id):
         return redirect(url_for('governance.list_meetings'))
 
     if request.method == 'POST':
+        refused = _signed_meeting_refused(id)
+        if refused:
+            return refused
         data = {
             'meeting_type': request.form.get('meeting_type'),
             'meeting_date': request.form.get('meeting_date'),
@@ -710,6 +706,9 @@ def edit_meeting(id):
 @permission_required('governance', level='edit')
 def delete_meeting(id):
     # For now, just a simple delete or status change
+    refused = _signed_meeting_refused(id)
+    if refused:
+        return refused
     db = get_db()
     db.execute('DELETE FROM board_meetings WHERE id = %s', (id,))
     db.commit()
@@ -725,6 +724,9 @@ def record_attendance(id):
         flash(_('Meeting not found.'), 'danger')
         return redirect(url_for('governance.list_meetings'))
     if request.method == 'POST':
+        refused = _signed_meeting_refused(id)
+        if refused:
+            return refused
         # Processing attendance dictionary from form
         # Every listed member posts a hidden member_id_<id>; unchecked boxes are
         # simply absent from the form, so read them per member.
@@ -753,12 +755,9 @@ def record_attendance(id):
                    for r in CommitteeMembership.get_by_committee(meeting.committee_id)]
     else:
         members = [{'id': m.id, 'member_name': m.member_name} for m in BoardMember.get_all()]
-        try:
-            from governance.register import body_members, meeting_or_404
-            keep = set(body_members(get_db(), meeting_or_404(get_db(), id)))
-            members = [m for m in members if m['id'] in keep]
-        except Exception:   # board tables of this release not migrated yet
-            get_db().rollback()
+        from governance.register import body_members, meeting_or_404
+        keep = set(body_members(get_db(), meeting_or_404(get_db(), id)))
+        members = [m for m in members if m['id'] in keep]
     existing = MeetingAttendance.get_for_meeting(id)
     # Members invited when scheduling (or added later) who are not on the
     # committee/board list any more still need their attendance recorded.

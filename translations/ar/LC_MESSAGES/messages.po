@@ -44944,3 +44944,128 @@ msgstr "الصفات والحضور والأصوات"
 #: governance (p8-gov)
 msgid "Resolutions register"
 msgstr "سجل القرارات"
+
+#: governance (p8-gov)
+msgid "Minimum present in person or remotely"
+msgstr "الحد الأدنى للحاضرين بأنفسهم أو عن بُعد"
+
+#: governance (p8-gov)
+msgid "A board other than the default one needs a short code."
+msgstr "المجلس غير الافتراضي يحتاج إلى رمز مختصر."
+
+#: governance (p8-gov)
+msgid "Meetings already use this rule, so its quorum and majority values were kept; add a new rule for different values."
+msgstr "توجد اجتماعات تستخدم هذه القاعدة، لذا احتُفظ بقيم النصاب والأغلبية؛ أضف قاعدة جديدة لقيم مختلفة."
+
+#: governance (p8-gov)
+msgid "The default board cannot be removed or deactivated."
+msgstr "لا يمكن حذف المجلس الافتراضي أو إيقافه."
+
+#: governance (p8-gov)
+msgid "Choose the board."
+msgstr "اختر المجلس."
+
+#: governance (p8-gov)
+msgid "Give this board a short code first (Settings > Boards): it starts its resolution numbers."
+msgstr "حدد أولاً رمزاً مختصراً لهذا المجلس (الإعدادات > المجالس): تبدأ به أرقام قراراته."
+
+#: governance (p8-gov)
+msgid "Choose the quorum / majority rule from the list."
+msgstr "اختر قاعدة النصاب / الأغلبية من القائمة."
+
+#: governance (p8-gov)
+msgid "A real meeting cannot be moved to the sample board."
+msgstr "لا يمكن نقل اجتماع حقيقي إلى مجلس المثال."
+
+#: governance (p8-gov)
+msgid "Choose the secretary from the list."
+msgstr "اختر أمين السر من القائمة."
+
+#: governance (p8-gov)
+msgid "Choose the previous meeting from the list."
+msgstr "اختر الاجتماع السابق من القائمة."
+
+#: governance (p8-gov)
+msgid "Resolutions are recorded for this meeting: its board, body, kind, date, sequence number and rule can no longer change."
+msgstr "سُجلت قرارات لهذا الاجتماع: لم يعد من الممكن تغيير المجلس أو الجهة أو النوع أو التاريخ أو الرقم التسلسلي أو القاعدة."
+
+#: governance (p8-gov)
+#, python-format
+msgid "Sequence number %(n)s is already used by another meeting of this body in %(y)s."
+msgstr "الرقم التسلسلي %(n)s مستخدم لاجتماع آخر لهذه الجهة في %(y)s."
+
+#: governance (p8-gov)
+msgid "No chair of the meeting is recorded: the chair's casting vote cannot be applied."
+msgstr "لم يُسجل رئيس الجلسة: لا يمكن تطبيق الصوت المرجح للرئيس."
+
+#: governance (p8-gov)
+msgid "Choose a board member."
+msgstr "اختر عضواً في المجلس."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s: give the reference of the written proxy."
+msgstr "%(n)s: اذكر مرجع الإنابة المكتوبة."
+
+#: governance (p8-gov)
+msgid "Choose the agenda item from the list."
+msgstr "اختر بند جدول الأعمال من القائمة."
+
+#: governance (p8-gov)
+#, python-format
+msgid "The vote of this member on %(r)s is now a recusal and the majority was checked again."
+msgstr "أصبح تصويت هذا العضو على %(r)s امتناعاً لتعارض المصالح، وأُعيد فحص الأغلبية."
+
+#: governance (p8-gov)
+msgid "The minutes are already signed in this capacity."
+msgstr "المحضر موقّع بالفعل بهذه الصفة."
+
+#: governance (p8-gov)
+msgid "The filing is already recorded."
+msgstr "الإيداع مسجل بالفعل."
+
+#: governance (p8-gov)
+#, python-format
+msgid "Choose the vote of: %(n)s."
+msgstr "اختر تصويت: %(n)s."
+
+#: governance (p8-gov)
+msgid "Every member present must have a vote chosen; members who declared a conflict on the agenda item are recorded as recused."
+msgstr "يجب اختيار تصويت لكل عضو حاضر؛ ويُسجل الأعضاء الذين أفصحوا عن تعارض في البند ممتنعين."
+
+#: governance (p8-gov)
+msgid "Written vote"
+msgstr "تصويت كتابي"
+
+#: governance (p8-gov)
+msgid "Choose…"
+msgstr "اختر…"
+
+#: governance (p8-gov)
+msgid "Resolutions by circulation"
+msgstr "قرارات بالتمرير"
+
+#: governance (p8-gov)
+msgid "No attendance quorum: every member votes in writing and all must vote."
+msgstr "لا يوجد نصاب حضور: يصوت كل عضو كتابةً ويجب أن يصوت الجميع."
+
+#: governance (p8-gov)
+#, python-format
+msgid "Present in person or remotely: %(n)s (at least %(m)s needed)"
+msgstr "الحاضرون بأنفسهم أو عن بُعد: %(n)s (المطلوب %(m)s على الأقل)"
+
+#: governance (p8-gov)
+msgid "Resolutions are recorded: the board, body, kind, date, sequence number and rule of this meeting are fixed."
+msgstr "سُجلت قرارات: المجلس والجهة والنوع والتاريخ والرقم التسلسلي والقاعدة لهذا الاجتماع ثابتة."
+
+#: governance (p8-gov)
+msgid "not in office on this date"
+msgstr "ليس عضواً في هذا التاريخ"
+
+#: governance (p8-gov)
+msgid "no vote"
+msgstr "بدون صوت"
+
+#: governance (p8-gov)
+msgid "Include sample records"
+msgstr "تضمين سجلات المثال"

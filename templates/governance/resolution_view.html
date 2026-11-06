@@ -70,9 +70,9 @@
         {% for l in res.links %}
           <div class="mb-1">{% if l.direction == 'out' %}{{ _('This resolution') }} <strong>{{ code_label(l.link_type, 'gov_link')|lower }}</strong> <a href="{{ url_for('governance.resolution_view', rid=l.to_resolution_id) }}">{{ l.to_no or l.to_number }}</a> <span class="text-muted" dir="auto">{{ (l.to_title or '')[:70] }}</span>
             {% else %}<a href="{{ url_for('governance.resolution_view', rid=l.from_resolution_id) }}">{{ l.from_no or l.from_number }}</a> <strong>{{ code_label(l.link_type, 'gov_link')|lower }}</strong> {{ _('this resolution') }} <span class="text-muted" dir="auto">{{ (l.from_title or '')[:70] }}</span>{% endif %}
-            {% if can_edit %}<form method="post" action="{{ url_for('governance.resolution_link_remove', rid=res.id, lid=l.id) }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-link btn-sm p-0 text-danger">{{ _('Remove') }}</button></form>{% endif %}</div>
+            {% if can_edit and not locked %}<form method="post" action="{{ url_for('governance.resolution_link_remove', rid=res.id, lid=l.id) }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-link btn-sm p-0 text-danger">{{ _('Remove') }}</button></form>{% endif %}</div>
         {% else %}<p class="text-muted mb-2">{{ _('No links recorded.') }}</p>{% endfor %}
-        {% if can_edit %}
+        {% if can_edit and not locked %}
         <form method="post" action="{{ url_for('governance.resolution_link_add', rid=res.id) }}" class="row g-1">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="col-4"><select name="link_type" class="form-select form-select-sm" required>{% for k, v in code_choices('gov_link') %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>

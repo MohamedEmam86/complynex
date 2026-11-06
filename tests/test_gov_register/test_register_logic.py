@@ -60,6 +60,9 @@ def test_majority_rules_and_casting_vote():
     assert not RL.majority('SIMPLE_CAST', tie, chair_vote='FOR', casting=False)[0]
     assert not RL.majority('SIMPLE_CAST', tie, chair_vote='AGAINST')[0]
     assert RL.majority('SIMPLE_PRESENT', tie, chair_vote='FOR')[0]
+    # the casting vote breaks a tie between for and against only
+    assert not RL.majority('SIMPLE_PRESENT', ['FOR', 'FOR', 'AGAINST', 'ABSTAIN'], chair_vote='FOR')[0]
+    assert not RL.majority('SIMPLE_CAST', ['FOR', 'AGAINST', 'AGAINST'], chair_vote='FOR')[0]
     assert RL.majority('TWO_THIRDS', ['FOR'] * 4 + ['AGAINST'] * 2)[0]
     assert not RL.majority('TWO_THIRDS', ['FOR'] * 3 + ['AGAINST'] * 2)[0]
     assert not RL.majority('THREE_QUARTERS', ['FOR'] * 5 + ['AGAINST'] * 2)[0]
@@ -171,3 +174,21 @@ def test_committee_independence_rules():
            dict(member_id=3, is_independent=0)]
     codes = {f['code'] for f in C.check_committee(c, mem, 4)}
     assert {'independent_majority', 'independent_chair', 'non_executive_chair'} <= codes
+
+
+def test_quorum_counts_proxy_only_through_a_counted_holder():
+    rows = [dict(member_id=1, code='IN_PERSON'), dict(member_id=2, code='PROXY', proxy_holder_member_id=1),
+            dict(member_id=3, code='REMOTE'), dict(member_id=4, code='PROXY', proxy_holder_member_id=3),
+            dict(member_id=5, code='PROXY', proxy_holder_member_id=6), dict(member_id=6, code='ABSENT_EXCUSED'),
+            dict(member_id=7, code='IN_PERSON', voting=False)]
+    assert RL.quorum_counts(rows, BOARD) == {'IN_PERSON': 1, 'REMOTE': 1, 'PROXY': 2}
+    assert RL.quorum_counts(rows, dict(BOARD, count_remote=False))['PROXY'] == 1   # holder remote, remote not counted
+
+
+def test_min_personal_and_second_call_minimum_fallback():
+    r = dict(BOARD, min_personal=3)
+    q = RL.quorum(r, 7, {'IN_PERSON': 2, 'REMOTE': 0, 'PROXY': 2})
+    assert q['counted'] == 4 and not q['valid'] and q['personal'] == 2
+    assert RL.quorum(r, 7, {'IN_PERSON': 3, 'PROXY': 1})['valid']
+    second = dict(BOARD, second_call_type='AT_LEAST', second_call_fraction=0.25)       # no second-call minimum
+    assert RL.quorum(second, 7, {'IN_PERSON': 2}, 2)['required'] == 3                # falls back to quorum_min 3

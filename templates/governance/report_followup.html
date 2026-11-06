@@ -9,6 +9,7 @@
     <select name="entity" class="form-select form-select-sm" data-auto-submit><option value="">{{ _('All boards') }}</option>{% for x in entities %}<option value="{{ x.id }}" {{ 'selected' if entity == x.id }}>{{ gov_pick(x.name_en, x.name_ar) }}</option>{% endfor %}</select>
     <select name="show" class="form-select form-select-sm" data-auto-submit>
       <option value="open" {{ 'selected' if show == 'open' }}>{{ _('Open') }}</option><option value="overdue" {{ 'selected' if show == 'overdue' }}>{{ _('Overdue') }}</option><option value="all" {{ 'selected' if show == 'all' }}>{{ _('All') }}</option></select>
+    <div class="form-check"><input class="form-check-input" type="checkbox" name="sample" value="1" id="smp" {{ 'checked' if with_sample }} data-auto-submit><label class="form-check-label small" for="smp">{{ _('Include sample records') }}</label></div>
     <button type="button" class="btn btn-sm btn-outline-success text-nowrap" data-action="print"><i class="bi bi-printer"></i> {{ _('Print') }}</button>
   </form>
 </div>
