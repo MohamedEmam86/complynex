@@ -29,6 +29,7 @@ text folded in — so the message can be translated (English/Arabic) and
 formatted safely by `message()` (a bare ``%`` or an email address in the text
 can neither crash gettext nor be mistaken for a format placeholder).
 """
+import ipaddress
 from datetime import date, datetime
 from email.utils import parseaddr
 
@@ -38,12 +39,41 @@ RECORD_TYPE = 'phishing_authorisation'
 # domain for a simulation: they belong to the public, not to the authorising
 # organisation. (Not exhaustive — a representative set of the common ones.)
 FREEMAIL = {
-    'gmail.com', 'googlemail.com', 'outlook.com', 'outlook.sa', 'hotmail.com', 'hotmail.co.uk',
-    'live.com', 'msn.com', 'yahoo.com', 'yahoo.co.uk', 'ymail.com', 'rocketmail.com',
-    'icloud.com', 'me.com', 'mac.com', 'aol.com', 'aim.com', 'protonmail.com', 'proton.me',
-    'gmx.com', 'gmx.net', 'mail.com', 'zoho.com', 'yandex.com', 'yandex.ru', 'tutanota.com',
-    'qq.com', '163.com', '126.com', 'sina.com', 'fastmail.com', 'hushmail.com',
+    'gmail.com', 'googlemail.com', 'outlook.com', 'outlook.sa', 'outlook.fr', 'outlook.com.eg',
+    'hotmail.com', 'hotmail.co.uk', 'hotmail.fr', 'live.com', 'live.co.uk', 'live.fr',
+    'msn.com', 'windowslive.com', 'yahoo.com', 'yahoo.co.uk', 'yahoo.fr', 'yahoo.com.eg',
+    'ymail.com', 'rocketmail.com', 'icloud.com', 'me.com', 'mac.com', 'aol.com', 'aim.com',
+    'protonmail.com', 'proton.me', 'gmx.com', 'gmx.net', 'mail.com', 'zoho.com',
+    'yandex.com', 'yandex.ru', 'tutanota.com', 'qq.com', '163.com', '126.com', 'sina.com',
+    'fastmail.com', 'hushmail.com', 'link.net', 'tedata.net.eg', 'vodafone.com.eg',
 }
+
+# Snapshot of common PUBLIC SUFFIXES (registry-level names under which anyone
+# may register). A target domain must not BE one of these: 'com.eg' would put
+# every Egyptian company in scope. Single-label suffixes (com, eg, uk …) are
+# already rejected by the "needs a dot" rule. This is not the full Public
+# Suffix List — the common second-level registries for the region and the main
+# markets. (publicsuffix2 / tldextract are not installed; this is the bundled
+# fallback the review asked for.)
+PUBLIC_SUFFIXES = frozenset('''
+com.eg gov.eg edu.eg org.eg net.eg sci.eg info.eg name.eg tv.eg mil.eg eun.eg
+com.sa gov.sa edu.sa org.sa net.sa med.sa sch.sa pub.sa
+co.ae gov.ae ac.ae net.ae org.ae sch.ae mil.ae
+com.kw gov.kw edu.kw net.kw org.kw com.qa gov.qa edu.qa net.qa org.qa
+com.bh gov.bh edu.bh net.bh org.bh com.om gov.om edu.om net.om org.om co.om
+com.jo gov.jo edu.jo net.jo org.jo com.lb gov.lb edu.lb net.lb org.lb
+co.ma gov.ma ac.ma net.ma org.ma com.tn gov.tn ens.tn com.dz gov.dz edu.dz
+com.ly gov.ly edu.ly com.iq gov.iq edu.iq com.sy com.ye com.sd com.ps
+co.uk org.uk gov.uk ac.uk me.uk ltd.uk plc.uk net.uk sch.uk nhs.uk
+com.au net.au org.au gov.au edu.au co.nz org.nz govt.nz ac.nz
+co.jp ne.jp or.jp go.jp ac.jp co.kr go.kr or.kr ac.kr
+com.cn net.cn org.cn gov.cn edu.cn com.hk gov.hk edu.hk com.sg gov.sg edu.sg
+co.in net.in org.in gov.in ac.in edu.in com.pk gov.pk edu.pk
+com.tr gov.tr edu.tr org.tr com.br gov.br org.br net.br com.mx gob.mx
+com.ar gob.ar co.za gov.za ac.za org.za co.ke go.ke ac.ke
+com.ng gov.ng edu.ng com.gh gov.gh com.ru gov.ru com.ua gov.ua co.il gov.il ac.il
+github.io herokuapp.com azurewebsites.net cloudfront.net blogspot.com appspot.com
+'''.split())
 
 # Message catalogue: key -> (English, Arabic). Placeholders are named (%(d)s,
 # %(emails)s) so a value folded in at render time is data, never a format
@@ -76,6 +106,12 @@ MESSAGES = {
                 'لا يحدد التفويض نطاقات البريد الإلكتروني المسموح استهدافها.'),
     'out_of_scope': ('Recipients outside the authorised domains: %(emails)s',
                      'مستلمون خارج النطاقات المصرَّح بها: %(emails)s'),
+    'bad_domains': ('The authorisation lists domains that may not be targeted '
+                    '(free webmail, public suffixes, IP addresses or wildcards): %(domains)s',
+                    'يتضمن التفويض نطاقات لا يجوز استهدافها '
+                    '(بريد مجاني أو لاحقات عامة أو عناوين IP أو رموز عامة): %(domains)s'),
+    'bad_recipients': ('These recipient addresses are not valid single email addresses: %(emails)s',
+                       'عناوين المستلمين التالية ليست عناوين بريد إلكتروني صحيحة: %(emails)s'),
 }
 
 
@@ -118,28 +154,45 @@ def domains(text):
     return out
 
 
+def _is_ip_like(dl):
+    # a literal IPv4/IPv6, or an all-numeric-and-dots string (1.2.3.4, 1.2.3)
+    try:
+        ipaddress.ip_address(dl)
+        return True
+    except ValueError:
+        pass
+    bare = dl.strip('[]')
+    return bool(bare) and all(c.isdigit() or c == '.' for c in bare) and '.' in bare
+
+
 def invalid_domains(allowed):
     """Return the entries of `allowed` that may NOT be used as a target domain:
-    free webmail, a wildcard '*', a single-label / public-suffix-like domain, or
-    anything without a dot. An allowed target domain must identify the
-    organisation, so it needs at least one dot and must not be public webmail."""
+    free webmail, a wildcard, a leading dot, a single-label domain, an IP
+    address, or a public suffix (com.eg, co.uk …). An allowed target domain
+    must identify the organisation — at least one dot, not public, not an IP."""
     bad = []
     for d in sorted(allowed):
         dl = str(d).strip().lower().lstrip('@')
-        if (not dl or dl == '*' or '*' in dl or ' ' in dl
-                or '.' not in dl or dl in FREEMAIL):
+        if (not dl or '*' in dl or ' ' in dl
+                or dl.startswith('.') or dl.endswith('.') or '..' in dl
+                or '.' not in dl
+                or dl in FREEMAIL
+                or dl in PUBLIC_SUFFIXES
+                or _is_ip_like(dl)):
             bad.append(dl or str(d))
     return bad
 
 
 def valid_email(email):
     """A single, plain recipient address: exactly one '@', no display name, no
-    separators or control-ish characters, a dotted domain. parseaddr must return
-    the address unchanged (rejects 'Name <a@b>', '<a@b>', comment forms …)."""
+    separators or control-ish characters, no '..', a dotted domain. parseaddr
+    must return the address unchanged (rejects 'Name <a@b>', '<a@b>', comments)."""
     e = str(email or '').strip()
     if not e or e.count('@') != 1:
         return False
     if any(c.isspace() for c in e) or any(c in e for c in '%;,<>!"()[]\\'):
+        return False
+    if '..' in e:
         return False
     _name, addr = parseaddr(e)
     if addr != e:
@@ -157,7 +210,11 @@ def email_domain(email):
 
 def in_scope(email, allowed):
     d = email_domain(email)
-    return bool(d) and any(d == a or d.endswith('.' + a) for a in allowed)
+    if not d:
+        return False
+    # exact domain, or a sub-domain under an allowed domain (a dot boundary, so
+    # 'notdemo.example' is NOT under 'demo.example')
+    return any(d == a or d.endswith('.' + a) for a in allowed)
 
 
 def problems(auth, recipient_emails, documents_count, today=None):
@@ -165,7 +222,9 @@ def problems(auth, recipient_emails, documents_count, today=None):
 
     `today` should be the local (Africa/Cairo) date, passed by the caller, so a
     validity window is judged by the organisation's calendar day, not the
-    server's UTC day.
+    server's UTC day. Stored domains and every recipient address are re-checked
+    here (not only when first entered) so a record that was edited around the
+    UI validation, or recipients added later, are still caught at send time.
     """
     today = today or date.today()
     if not auth:
@@ -192,9 +251,23 @@ def problems(auth, recipient_emails, documents_count, today=None):
     if not allowed:
         out.append(('domains', 'domains', {}))
     else:
+        # re-validate the STORED domains, not just the ones typed in the form
+        bad = invalid_domains(allowed)
+        if bad:
+            extra = bad[3:]
+            shown = ', '.join(bad[:3]) + (f' (+{len(extra)} more)' if extra else '')
+            out.append(('bad_domains', 'bad_domains', {'domains': shown}))
+        allowed = {a for a in allowed if a not in bad}
         outside = sorted({e for e in recipient_emails if not in_scope(e, allowed)})
         if outside:
             extra = outside[3:]
             shown = ', '.join(outside[:3]) + (f' (+{len(extra)} more)' if extra else '')
             out.append(('out_of_scope', 'out_of_scope', {'emails': shown}))
+    # every recipient address must be a valid single address (import validates
+    # too, but re-check here so nothing malformed is ever sent)
+    bad_rcpt = sorted({str(e) for e in recipient_emails if not valid_email(e)})
+    if bad_rcpt:
+        extra = bad_rcpt[3:]
+        shown = ', '.join(bad_rcpt[:3]) + (f' (+{len(extra)} more)' if extra else '')
+        out.append(('bad_recipients', 'bad_recipients', {'emails': shown}))
     return out

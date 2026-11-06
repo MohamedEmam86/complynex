@@ -197,6 +197,15 @@ def workbook(rep):
             v = ILLEGAL_CHARACTERS_RE.sub('', v)
         return '' if v is None else v
 
+    def _protect(cell):
+        # literal text, never a formula, and quote-prefixed so Excel shows it as
+        # text (belt and braces against formula injection).
+        cell.data_type = 's'
+        try:
+            cell.quotePrefix = True
+        except Exception:
+            pass
+
     def sheet(wb, title, header, rows):
         ws = wb.create_sheet(title)
         ws.append([_clean(h) for h in header])
@@ -206,7 +215,7 @@ def workbook(rep):
             ws.append([_clean(v) for v in r])
             for cell in ws[ws.max_row]:
                 if isinstance(cell.value, str) and cell.value[:1] in _FORMULA_LEAD:
-                    cell.data_type = 's'   # force literal text, never a formula
+                    _protect(cell)
         for col in ws.columns:
             ws.column_dimensions[col[0].column_letter].width = max(
                 12, min(60, max(len(str(c.value or '')) for c in col) + 2))

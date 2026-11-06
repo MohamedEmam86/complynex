@@ -50,10 +50,12 @@ _EKYC_PUBLIC_PREFIXES = ('/ekyc/verify', '/ekyc/webhook', '/ekyc/webhooks',
 @ekyc_bp.before_request
 def _ekyc_package_guard():
     if not ekyc_enabled():
-        from flask import abort, request
+        from flask import abort, request, Response
         path = (request.path or '').rstrip('/')
         if any(path == p or path.startswith(p + '/') for p in _EKYC_PUBLIC_PREFIXES):
-            abort(503)
+            # temporarily unavailable, not gone: tell the caller to retry later
+            return Response('eKYC is temporarily unavailable.', status=503,
+                            headers={'Retry-After': '3600'}, mimetype='text/plain')
         abort(404)
 
 

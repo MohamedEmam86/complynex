@@ -162,19 +162,28 @@ _JOIN_NEXT = {'عبد', 'ابو', 'أبو', 'بن', 'abd', 'abdel', 'abdul', 'ab
 # elements that attach to the element BEFORE them (…al-Din, …ullah): the Arabic
 # compounds plus their bare Latin transliterations (Nour El Din -> one unit).
 _JOIN_PREV = {'الدين', 'الله', 'الاسلام', 'الإسلام', 'eldin', 'el-din', 'allah', 'uddin', 'eddin',
-              'din', 'deen', 'allah', 'ullah', 'ullha'}
+              'din', 'deen', 'ullah'}
+# a join-next chain merges BACKWARD (Nour + El Din) only when it STARTS WITH AN
+# ARTICLE (el/al/ad/ed). 'عبد الله' / 'Abd Allah' / 'Abdel Allah' is itself a
+# name element (Abdullah) and must NOT be glued onto the preceding name.
+_ARTICLES = {'el', 'al', 'ad', 'ed'}
 
-# weight (mi._weight scale: محمد 1.0, سعد 4.0, الشاطر 8.3, خيرت 8.7) at or above
-# which a single element is distinctive enough to anchor a short "known-as" form.
+# weight thresholds on mi._weight scale (محمد 1.0, سعد 4.0, الشاطر 8.3, خيرت 8.7):
+# a distinctive family element for a 4+ element short form, and the higher bar a
+# 3-element name's family must clear to justify a first+family short form.
 _RARE_WEIGHT = 6.0
+_RARE_FAMILY_3 = 8.0
+_SHORT_FORM_MIN_TOTAL = 9.0
 
 
 def _units(name):
     """Name elements as a reader writes them: compounds kept together
-    (عبد اللطيف، سعد الدين، Abd El Aziz، Nour El Din). A join-next connector
-    (abd/abu/el/al/bin) chains onto the following element, chaining through a
-    second connector too (Abd + El + Aziz -> 'Abd El Aziz'); a join-previous
-    element (-al-Din, -ullah) merges into the unit before it."""
+    (عبد اللطيف، سعد الدين، Abd El Aziz، Nour El Din، عبد الله). A join-next
+    connector (abd/abu/el/al/bin) chains onto the following element, chaining
+    through a second connector too (Abd + El + Aziz -> 'Abd El Aziz'); a bare
+    join-previous element (سعد + الدين) merges into the unit before it. A
+    connector chain only merges backward when it begins with an article
+    (Nour + El Din), so 'عبد الله' stays its own unit."""
     words = str(name or '').split()
     units, i, n = [], 0, len(words)
     while i < n:
@@ -188,10 +197,10 @@ def _units(name):
                 i += 1
             parts.append(words[i])
             comp = ' '.join(parts)
-            if units and words[i].lower() in _JOIN_PREV:          # Nour + (El Din)
-                units[-1] = units[-1] + ' ' + comp
+            if units and parts[0].lower() in _ARTICLES and words[i].lower() in _JOIN_PREV:
+                units[-1] = units[-1] + ' ' + comp               # Nour + (El Din)
             else:
-                units.append(comp)
+                units.append(comp)                                # 'عبد الله', 'Abd El Aziz'
             i += 1
             continue
         if units and wl in _JOIN_PREV:                            # Saad + Din
@@ -203,26 +212,46 @@ def _units(name):
     return units
 
 
-def known_as_forms(name):
-    """The shorter forms the press uses for a long Egyptian name: the second
-    name + family name (خيرت الشاطر) and first + second + family (محمد خيرت الشاطر).
+def _fam_weight(unit):
+    toks = mi.tokens(unit)
+    return max((mi._weight(t) for t in toks), default=0.0)
 
-    Only generated for names with at least FOUR elements, and only when the
-    family element is distinctive on its own (weight >= 6). The first + family
-    form (محمد الشاطر) is deliberately NOT produced: a common first name plus a
-    family name matches far too many unrelated people to be a search lead."""
+
+def known_as_forms(name):
+    """The shorter forms the press uses for a long Egyptian name.
+
+    4+ elements: second+family (خيرت الشاطر, the best lead) and
+    first+second+family (محمد خيرت الشاطر), when the family element is
+    distinctive on its own (weight >= 6). The first+family form is NOT produced
+    for a long name — a common first name plus a family name matches far too
+    many unrelated people (محمد الشاطر).
+
+    Exactly 3 elements: second+family AND first+family, but only when the family
+    element is highly distinctive (weight >= 8) — a 3-element name has no middle
+    to drop, so first+family is often the only form the press uses, yet it is
+    still only ever a weak lead (name_presence returns 'partial', never HIGH).
+
+    Every form must also carry enough total identifying weight (>= 9)."""
     u = _units(name)
-    if len(u) < 4:
-        return []
-    fam_toks = mi.tokens(u[-1])
-    if not fam_toks or max(mi._weight(t) for t in fam_toks) < _RARE_WEIGHT:
+    n = len(u)
+    if n < 3:
         return []
     out = []
-    for f in ([u[1], u[-1]], [u[0], u[1], u[-1]]):      # best (second+family) first, then 3-element
-        s = ' '.join(f)
+
+    def add(parts):
+        s = ' '.join(parts)
         toks = mi.tokens(s)
-        if len(toks) >= 2 and s not in out:
+        if len(toks) >= 2 and s not in out and sum(mi._weight(t) for t in toks) >= _SHORT_FORM_MIN_TOTAL:
             out.append(s)
+
+    if n >= 4:
+        if _fam_weight(u[-1]) >= _RARE_WEIGHT:
+            add([u[1], u[-1]])              # second + family (best)
+            add([u[0], u[1], u[-1]])        # first + second + family
+    else:                                    # exactly three elements
+        if _fam_weight(u[-1]) >= _RARE_FAMILY_3:
+            add([u[1], u[-1]])              # second + family
+            add([u[0], u[-1]])              # first + family (allowed only here)
     return out
 
 
@@ -238,8 +267,24 @@ def _name_forms(name):
     return [f for f in forms if f]
 
 
+def _middle_tokens(name):
+    """Canonical tokens that belong to a MIDDLE unit of the name (not the first
+    and not the family unit). Computed on _units() positions, so a compound like
+    'عبد اللطيف' counts as a single middle element, not two."""
+    u = _units(name)
+    if len(u) < 3:
+        return set()
+    mid = set()
+    for unit in u[1:-1]:
+        mid.update(mi.tokens(unit))
+    first_fam = set(mi.tokens(u[0])) | set(mi.tokens(u[-1]))
+    return mid - first_fam
+
+
 def name_presence(name, text):
-    """How strongly the article names the person: exact / strong / partial / None."""
+    """How strongly the article names the person: exact / strong / partial / None.
+    A short-form ('known-as') hit is reported as 'partial' — it is a lead, never
+    a strong finding, and (see assess()) can never on its own reach HIGH."""
     art = _words(text)
     # name elements are compared after the same canonicalisation as names
     canon = []
@@ -249,9 +294,8 @@ def name_presence(name, text):
     stems = _stems(canon)
     flat = set().union(*stems) if stems else set()
     best = None
-    # 'known_as' is a short-form hit: it ranks like 'partial' and, like partial,
-    # can never on its own raise an assessment to HIGH (see assess()).
-    rank = {'exact': 3, 'strong': 2, 'known_as': 1, 'partial': 1}
+    rank = {'exact': 3, 'strong': 2, 'partial': 1}
+    mid_toks = _middle_tokens(name)
     for q in _name_forms(name):
         present = [t in flat for t in q]
         n, m = len(q), sum(present)
@@ -265,21 +309,22 @@ def name_presence(name, text):
             # elements. First + family name ALONE (no middle element) is too
             # weak — too many unrelated people share a common first name and a
             # family name (محمد الشاطر); require at least one matched element
-            # strictly between the first and the family name.
+            # that belongs to a MIDDLE unit of the name (unit-based, so a
+            # compound middle name counts once).
             matched = [idx for idx, p in enumerate(present) if p]
-            has_middle = any(0 < idx < n - 1 for idx in matched)
+            has_middle = any(q[idx] in mid_toks for idx in matched)
             if has_middle and sum(mi._weight(q[idx]) for idx in matched) >= 7.0:
                 level = 'partial'
         elif n == 1 and m == 1:
             level = 'partial'
         if level in (None, 'partial') and n >= 3:
             # reported by a shorter form the press uses (خيرت الشاطر): the form's
-            # elements together, in order. A short form is never 'strong' — it
+            # elements together, in order. Always only 'partial' — a short form
             # identifies the person less firmly than the full name.
             for f in (known_as_forms(name) if q == mi.tokens(name) else []):
                 ft = mi.tokens(f)
                 if _phrase_in(stems, ft, latin_prefix=False):
-                    level = 'known_as'
+                    level = 'partial'
                     break
         if level in ('exact', 'strong') and sum(mi._weight(t) for t in q) < 7.0:
             # a name made only of very common elements (محمد احمد) identifies
@@ -303,7 +348,7 @@ def assess(name, articles):
         a = dict(a)
         a['name_match'] = level
         if c['severity']:
-            bonus = {'exact': 25, 'strong': 15, 'known_as': 0, 'partial': 0}[level]
+            bonus = {'exact': 25, 'strong': 15}.get(level, 0)   # partial / anything else: no bonus
             a.update({'categories': c['categories'], 'matched_keywords': c['terms'],
                       'severity': c['severity'], 'risk_score': float(min(100, c['severity'] * 25 + bonus))})
             hits.append(a)
@@ -311,14 +356,20 @@ def assess(name, articles):
             a.update({'categories': [], 'matched_keywords': [], 'severity': 0, 'risk_score': 0.0})
             mentions.append(a)
     hits.sort(key=lambda x: (x['risk_score'], str(x.get('published_at') or '')), reverse=True)
-    strong = [h for h in hits if h['name_match'] in ('exact', 'strong')]
-    if any(h['severity'] >= 3 for h in strong):
+    # only an exact / strong full-name match is "firm"; a partial / short-form
+    # hit is a lead and can never, on its own, drive the assessment to HIGH.
+    firm = [h for h in hits if h['name_match'] in ('exact', 'strong')]
+    if any(h['severity'] >= 3 for h in firm):
         level = 'HIGH'
-    elif any(h['severity'] >= 2 for h in strong) or any(h['severity'] >= 3 for h in hits):
+    elif any(h['severity'] >= 2 for h in firm) or any(h['severity'] >= 3 for h in hits):
         level = 'MEDIUM'
     elif hits:
         level = 'LOW'
     else:
         level = 'CLEAR'
+    # explicit safety cap (independent of the logic above): HIGH requires at
+    # least one firm match. A set of only partial/short-form hits is MEDIUM.
+    if level == 'HIGH' and not firm:
+        level = 'MEDIUM'
     return {'hits': hits, 'mentions': mentions, 'unrelated': unrelated, 'risk_level': level,
             'risk_score': max([h['risk_score'] for h in hits] or [0.0])}

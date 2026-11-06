@@ -87,6 +87,7 @@ def test_workbook_neutralises_formula_injection_and_strips_control_chars():
     cell = [c for row in ws.iter_rows() for c in row
             if isinstance(c.value, str) and 'HYPERLINK' in c.value][0]
     assert cell.data_type == 's'                 # stored as literal text, not a formula
+    assert cell.quotePrefix is True              # and quote-prefixed (shown as text in Excel)
     assert '\x03' not in cell.value              # illegal control char stripped
     assert cell.value.startswith('=HYPERLINK')   # content otherwise preserved
 
@@ -133,17 +134,28 @@ def test_authorisation_messages_are_translatable_and_safe():
 
 
 def test_allowed_domain_validation():
-    bad = AUTHZ.invalid_domains({'gmail.com', 'outlook.com', 'localhost', '*', 'demo.example'})
-    assert set(bad) == {'gmail.com', 'outlook.com', 'localhost', '*'}
-    assert AUTHZ.invalid_domains({'branch.demo.example'}) == []
+    bad = AUTHZ.invalid_domains({'gmail.com', 'outlook.com', 'localhost', '*', 'demo.example',
+                                 'com.eg', 'co.uk', '192.168.1.10', '.leading.com', 'a*b.com'})
+    assert set(bad) == {'gmail.com', 'outlook.com', 'localhost', '*',
+                        'com.eg', 'co.uk', '192.168.1.10', '.leading.com', 'a*b.com'}
+    assert AUTHZ.invalid_domains({'branch.demo.example', 'acme.com.eg'}) == []
 
 
 def test_recipient_email_validation():
     for good in ('a@demo.example', 'first.last@branch.example.com'):
         assert AUTHZ.valid_email(good)
     for bad in ('', 'noatsign.example', 'a@@b.com', 'a@b', 'two@a@b.com',
-                'Name <a@b.com>', 'a;b@c.com', 'a b@c.com', 'a@b.com, c@d.com', 'x%y@c.com'):
+                'Name <a@b.com>', 'a;b@c.com', 'a b@c.com', 'a@b.com, c@d.com', 'x%y@c.com',
+                'a..b@c.com', 'a@b..com'):
         assert not AUTHZ.valid_email(bad), bad
+
+
+def test_problems_rechecks_stored_domains_and_recipients_at_send():
+    # a record whose stored domain is public and with a malformed recipient:
+    # both are caught at send time even though the UI should have blocked them.
+    auth = dict(GOOD, allowed_domains='com.eg, demo.example')
+    codes = [c for c, *_ in AUTHZ.problems(auth, ['a@demo.example', 'bad addr@x'], 1, date(2026, 11, 2))]
+    assert 'bad_domains' in codes and 'bad_recipients' in codes
 
 
 def test_domains_parsing():
