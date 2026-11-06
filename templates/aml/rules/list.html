@@ -26,6 +26,21 @@
     {% endfor %}
   {% endwith %}
 
+  {% if pack_errors %}
+  <div class="alert alert-danger small">
+    <i class="fas fa-exclamation-triangle me-1"></i>
+    {{ 'حزم محتوى ماتحمّلتش، وقواعدها مش هتشتغل لحد ما المشكلة تتحل (راجع سجل الأخطاء):' if get_locale()|string == 'ar' else 'Content packs failed to load; their rules will not run until this is fixed (see the error log):' }}
+    <strong>{{ pack_errors|join(', ') }}</strong>
+  </div>
+  {% endif %}
+  {% if unsupported %}
+  <div class="alert alert-warning small">
+    <i class="fas fa-exclamation-triangle me-1"></i>
+    {{ 'قواعد مفعلة مالهاش منطق مسجل في محرك المراقبة، فمش بتطلع تنبيهات:' if get_locale()|string == 'ar' else 'Rules in force with no logic registered in the monitoring engine, so they raise no alerts:' }}
+    <strong>{{ unsupported|join(', ') }}</strong>
+  </div>
+  {% endif %}
+
   <!-- Simulate panel -->
   <div class="card mb-3 border-info">
     <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between">
@@ -59,7 +74,7 @@
               <i class="fas fa-play me-1"></i>{{ _('Simulate') }}
             </button>
           </div>
-          <div class="col-12" id="simResult" style="display:none"></div>
+          <div class="col-12 d-none" id="simResult"></div>
         </div>
       </div>
     </div>
@@ -124,7 +139,7 @@
               <form method="post" action="{{ url_for('aml.tm_rule_reject', rule_id=r.id) }}" class="d-inline-flex align-items-center me-1"
                     data-confirm="{{ 'رفض النسخة دي؟' if is_ar else 'Reject this version?' }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="text" name="reason" class="form-control form-control-sm me-1" style="width: 140px;" minlength="10"
+                <input type="text" name="reason" class="form-control form-control-sm me-1" size="16" minlength="10"
                        placeholder="{{ _('Reason (required)') }}" aria-label="{{ 'سبب الرفض' if is_ar else 'Reason for rejecting' }}" required>
                 <button class="btn btn-sm btn-outline-danger" title="{{ 'رفض' if is_ar else 'Reject' }}"><i class="fas fa-times"></i></button>
               </form>
@@ -133,15 +148,15 @@
               <form method="post" action="{{ url_for('aml.rule_disable', rule_id=r.id) }}" class="d-inline-flex align-items-center me-1"
                     data-confirm="{{ _('Disable this rule?') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="text" name="reason" class="form-control form-control-sm me-1" style="width: 140px;"
+                <input type="text" name="reason" class="form-control form-control-sm me-1" size="16" minlength="15"
                        placeholder="{{ _('Reason (required)') }}" aria-label="{{ _('Reason for disabling') }}" required>
                 <button class="btn btn-sm btn-warning" title="{{ _('Disable') }}"><i class="fas fa-pause"></i></button>
               </form>
-              {% elif r.status == 'DISABLED' %}
+              {% elif r.status == 'DISABLED' and (r.approved_at or r.legacy_baseline) %}
               <form method="post" action="{{ url_for('aml.rule_enable', rule_id=r.id) }}" class="d-inline-flex align-items-center me-1"
                     data-confirm="{{ _('Enable this rule?') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="text" name="reason" class="form-control form-control-sm me-1" style="width: 140px;"
+                <input type="text" name="reason" class="form-control form-control-sm me-1" size="16" minlength="15"
                        placeholder="{{ _('Reason (required)') }}" aria-label="{{ _('Reason for enabling') }}" required>
                 <button class="btn btn-sm btn-success" title="{{ _('Enable') }}"><i class="fas fa-play"></i></button>
               </form>
@@ -150,7 +165,7 @@
               <form method="post" action="{{ url_for('aml.rule_rollback', rule_id=r.id) }}" class="d-inline-flex align-items-center"
                     data-confirm="{{ _('Roll back to the previous version?') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="text" name="reason" class="form-control form-control-sm me-1" style="width: 140px;" minlength="10"
+                <input type="text" name="reason" class="form-control form-control-sm me-1" size="16" minlength="10"
                        placeholder="{{ _('Reason (required)') }}" aria-label="{{ 'سبب الرجوع' if get_locale()|string == 'ar' else 'Reason for rollback' }}" required>
                 <button class="btn btn-sm btn-outline-secondary" title="{{ _('Roll back') }}"><i class="fas fa-undo"></i></button>
               </form>
@@ -175,7 +190,7 @@ async function runSimulate() {
 
   if (!ruleId) { alert({{ _('Select a rule first.') | tojson }}); return; }
 
-  res.style.display = 'none';
+  res.classList.add('d-none');
   const resp = await fetch('{{ url_for("aml.rule_simulate") }}', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
@@ -183,14 +198,26 @@ async function runSimulate() {
   });
   const data = await resp.json();
 
+  // Built with textContent: the rule name and reason are data, never HTML.
   const cls = data.would_trigger ? 'danger' : 'success';
-  const icon = data.would_trigger ? '⚠️ ' + {{ _('TRIGGERED') | tojson }} : '✅ ' + {{ _('NOT TRIGGERED') | tojson }};
-  res.innerHTML = `<div class="alert alert-${cls} mt-2 mb-0">
-    <strong>${icon}</strong> — ${data.rule_name}<br>
-    <small>${data.reason || ''}</small>
-    ${data.severity ? `<span class="badge bg-danger ms-2">${data.severity}</span>` : ''}
-  </div>`;
-  res.style.display = 'block';
+  const box = document.createElement('div');
+  box.className = 'alert alert-' + cls + ' mt-2 mb-0';
+  const head = document.createElement('strong');
+  head.textContent = data.would_trigger ? {{ _('TRIGGERED') | tojson }} : {{ _('NOT TRIGGERED') | tojson }};
+  box.appendChild(head);
+  box.appendChild(document.createTextNode(' — ' + (data.rule_name || data.error || '')));
+  box.appendChild(document.createElement('br'));
+  const small = document.createElement('small');
+  small.textContent = data.reason || '';
+  box.appendChild(small);
+  if (data.severity) {
+    const b = document.createElement('span');
+    b.className = 'badge bg-danger ms-2';
+    b.textContent = data.severity;
+    box.appendChild(b);
+  }
+  res.replaceChildren(box);
+  res.classList.remove('d-none');
 }
 </script>
 {% endblock %}

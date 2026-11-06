@@ -1274,7 +1274,7 @@ def view_alert(alert_id):
                a.assigned_to, a.investigation_notes, a.disposition,
                a.triggered_transactions, a.rule_id, a.customer_id,
                a.disposition_by, a.disposition_date, COALESCE(a.rule_version, r.version) AS rule_version,
-               r.rule_name, r.rule_name_ar, r.rule_code, r.rule_description,
+               r.rule_name, r.rule_name_ar, COALESCE(a.rule_code, r.rule_code) AS rule_code, r.rule_description,
                c.full_name, c.company_name, c.customer_reference, c.risk_classification,
                c.id as cust_id, u.first_name || ' ' || u.last_name AS assigned_name
         FROM tm_alerts a
@@ -1764,79 +1764,100 @@ def scenario_simulator():
     simulation_results = None
 
     if request.method == 'POST':
-        rule_id = int(request.form.get('rule_id', 0))
-        date_from = request.form.get('date_from', '')
-        date_to = request.form.get('date_to', '')
-        customer_risk = request.form.get('customer_risk', '')
+        from aml import tm_engine as _E
+        from aml import tm_backtest as _B
+        from aml.tm_routes import latest_data_day
+        from datetime import timedelta as _td
+        rule_id = request.form.get('rule_id', type=int) or 0
+        date_from = (request.form.get('date_from') or '').strip()
+        date_to = (request.form.get('date_to') or '').strip()
+        customer_risk = (request.form.get('customer_risk') or '').strip()
+        ar = _ar()
 
         rule = db.execute("SELECT * FROM tm_rules WHERE id=%s", (rule_id,)).fetchone()
         if not rule:
             flash(gettext('Select a valid rule'), 'danger')
             return render_template('aml/scenario_simulator.html',
                                    rules=rules, results=None)
-
-        # Build transaction filter
-        filters = []
-        params = []
-        if date_from:
-            filters.append("t.transaction_date::timestamp >= %s")
-            params.append(date_from)
-        if date_to:
-            filters.append("t.transaction_date::timestamp <= %s")
-            params.append(date_to + ' 23:59:59')
-        if customer_risk:
-            filters.append("c.risk_classification = %s")
-            params.append(customer_risk)
-
-        where = "WHERE " + " AND ".join(filters) if filters else ""
-
-        transactions = db.execute(f"""
-            SELECT t.*, c.full_name, c.company_name, c.customer_reference,
-                   c.risk_classification, c.annual_income_range
-            FROM transactions t
-            LEFT JOIN customers c ON t.customer_id = c.id
-            {where}
-            ORDER BY t.transaction_date DESC
-        """, params).fetchall()
+        try:
+            for d in (date_from, date_to):
+                if d:
+                    datetime.strptime(d, '%Y-%m-%d')
+        except ValueError:
+            flash('التاريخ لازم يكون بالشكل YYYY-MM-DD.' if ar else 'Dates must be YYYY-MM-DD.', 'danger')
+            return render_template('aml/scenario_simulator.html', rules=rules, results=None)
+        # No period given: the last 90 days of data (never the whole table).
+        if not date_to:
+            date_to = latest_data_day(db)
+        if not date_from:
+            date_from = (datetime.strptime(date_to, '%Y-%m-%d') - _td(days=89)).strftime('%Y-%m-%d')
+        if date_from > date_to:
+            date_from, date_to = date_to, date_from
 
         # Same engine as live monitoring and the backtest (aml/tm_engine.py): windows on each
         # transaction's own date, the look-back loaded, nothing written.
-        from aml import tm_engine as _E
-        from aml import tm_backtest as _B
         rule_dict = dict(rule)
         _E.ensure_packs_loaded()
-        lookback = _B.load_transactions(db, date_from or None, date_to or None, _E.max_lookback_days([rule_dict]))
+        try:
+            lookback = _B.load_transactions(db, date_from, date_to, _E.max_lookback_days([rule_dict]),
+                                            max_rows=_B.MAX_ROWS)
+        except _B.BacktestTooLarge as e:
+            flash((f'الفترة فيها {e.rows:,} عملية، أكتر من الحد ({_B.MAX_ROWS:,}). اختار فترة أقصر.' if ar else
+                   f'The period holds {e.rows:,} transactions, more than one run can replay ({_B.MAX_ROWS:,}). '
+                   'Choose a shorter period.'), 'warning')
+            return render_template('aml/scenario_simulator.html', rules=rules, results=None)
         custs = _B.load_customers(db, {t.get('customer_id') for t in lookback})
         dq = _B.data_quality(lookback, known_customers=set(custs))
-        hist = _E.History([t for t in lookback if t.get('id') not in dq['exclude']])
+        first_seen = _B.load_first_seen(db, set(custs)) if _E.prior_history_rules([rule_dict]) else {}
+        hist = _E.History([t for t in lookback if t.get('id') not in dq['exclude']], first_seen=first_seen)
         ctx = _E.Context(_E.load_high_risk(db))
-        params = _E.rule_params(rule_dict)
-        wanted = {t['id'] for t in transactions}
-        triggered, would_not_trigger = [], []
-        by_id = {t['id']: t for lst, _k, _s in hist.by_customer.values() for t in lst}
-        for tx in transactions:
-            tx = dict(tx)
-            ht = by_id.get(tx['id'])
-            hit = _E.evaluate(rule_dict, ht, hist, custs.get(tx.get('customer_id')), ctx, params=params) \
-                if ht is not None and tx['id'] in wanted else None
-            if hit:
-                tx['sim_reason'] = hit.description
-                tx['already_flagged'] = bool(tx.get('alert_raised'))
-                triggered.append(tx)
-            else:
-                would_not_trigger.append(tx)
+        rule_params = _E.rule_params(rule_dict)
 
+        # The transactions of the period (and customer risk class), in time order.
+        candidates = [t for t in lookback if t.get('_ts') and _B._in_period(t, date_from, date_to)]
+        if customer_risk:
+            candidates = [t for t in candidates
+                          if (custs.get(t.get('customer_id')) or {}).get('risk_classification') == customer_risk]
+        candidates.sort(key=lambda t: (t['_ts'], t.get('id') or 0))
+        triggered, passed, excluded, unconverted = [], 0, 0, 0
+        for t in candidates:                  # period rows only
+            if t.get('id') in dq['exclude']:
+                excluded += 1                 # not judged: data quality
+                continue
+            if _E.other_currency(rule_dict, t):
+                unconverted += 1              # compared unconverted (no exchange-rate table)
+            hit = _E.evaluate(rule_dict, t, hist, custs.get(t.get('customer_id')), ctx, params=rule_params)
+            if hit:
+                row = {k: v for k, v in t.items() if not k.startswith('_')}
+                row['sim_reason'] = hit.description
+                row['already_flagged'] = bool(t.get('alert_raised'))
+                triggered.append(row)
+            else:
+                passed += 1
+        # names for the rows shown
+        shown = triggered[:50]
+        ids = list({t.get('customer_id') for t in shown if t.get('customer_id') is not None})
+        if ids:
+            names = {r['id']: dict(r) for r in db.execute(
+                "SELECT id, full_name, company_name, customer_reference FROM customers WHERE id = ANY(%s)",
+                (ids,)).fetchall()}
+            for t in shown:
+                t.update({k: v for k, v in (names.get(t.get('customer_id')) or {}).items() if k != 'id'})
+        judged = len(triggered) + passed
         simulation_results = {
             'rule': rule_dict,
-            'total_evaluated': len(transactions),
+            'total_evaluated': judged,
             'would_trigger': len(triggered),
-            'would_not_trigger': len(would_not_trigger),
+            'would_not_trigger': passed,
+            'excluded': excluded,
+            'unconverted': unconverted,
             'new_alerts': sum(1 for t in triggered if not t['already_flagged']),
             'already_flagged': sum(1 for t in triggered if t['already_flagged']),
-            'trigger_rate': round(len(triggered) / max(len(transactions), 1) * 100, 1),
-            'triggered_transactions': triggered[:50],
+            'trigger_rate': round(len(triggered) / max(judged, 1) * 100, 1),
+            'triggered_transactions': shown,
             'date_from': date_from,
             'date_to': date_to,
+            'customer_risk': customer_risk,
         }
 
     return render_template('aml/scenario_simulator.html',
@@ -2007,13 +2028,19 @@ def rules_list():
            FROM tm_rules r
            LEFT JOIN users u ON r.created_by = u.id
            LEFT JOIN users a ON r.approved_by = a.id
-           ORDER BY r.rule_code"""
+           ORDER BY r.rule_code, r.version DESC NULLS LAST, r.id DESC"""
     ).fetchall()
-    return render_template('aml/rules/list.html', rules=rules)
+    from aml import tm_engine as _E
+    pack_errors = list(_E.ensure_packs_loaded())
+    # rules in force whose code has no registered engine logic (unknown code, pack not loaded)
+    unsupported = sorted({r['rule_code'] for r in rules
+                          if r['is_active'] == 1 and (r['status'] or 'ACTIVE') == 'ACTIVE'
+                          and not _E.supported(r['rule_code'])})
+    return render_template('aml/rules/list.html', rules=rules, pack_errors=pack_errors, unsupported=unsupported)
 
 
 def _rule_form_values(data):
-    return {
+    out = {
         'rule_name': (data.get('rule_name') or '').strip(),
         'rule_name_ar': (data.get('rule_name_ar') or '').strip() or None,
         'rule_description': (data.get('rule_description') or '').strip(),
@@ -2021,10 +2048,13 @@ def _rule_form_values(data):
         'rule_type': (data.get('rule_type') or 'THRESHOLD').strip(),
         'threshold_value': float(data.get('threshold_value') or 0) if (data.get('threshold_value') or '').strip() else None,
         'threshold_currency': (data.get('threshold_currency') or 'EGP').strip(),
-        'time_period_days': int(data.get('time_period_days') or 1),
         'severity': (data.get('severity') or 'MEDIUM').strip(),
         'reference': (data.get('reference') or '').strip() or None,
     }
+    # Hidden for rules whose windows are in hours / minutes: then the base version's value is kept.
+    if 'time_period_days' in data:
+        out['time_period_days'] = int(data.get('time_period_days') or 1)
+    return out
 
 
 def _rule_form_params(data):
@@ -2033,13 +2063,16 @@ def _rule_form_params(data):
 
 def _rule_form_context(rule):
     from aml import tm_engine as _E
+    _E.ensure_packs_loaded()          # pack rules' parameters are known only once their pack is loaded
     code = (rule or {}).get('rule_code')
     spec = _E.RULE_SPECS.get(code, {}).get('params', {}) if code else {}
     p = _E.rule_params(rule) if rule else {}
     extra = [{'key': k, 'label_en': d['label_en'], 'label_ar': d['label_ar'], 'unit': d['unit'],
               'value': (', '.join(map(str, p.get(k))) if isinstance(p.get(k), (list, tuple)) else p.get(k))}
              for k, d in spec.items() if k not in ('threshold', 'days')]
-    return {'extra_params': extra, 'engine_codes': sorted(_E.RULE_SPECS)}
+    # The "Time Period (days)" column only drives rules with a day window (or unknown codes).
+    show_days = (not code) or (code not in _E.RULE_SPECS) or ('days' in spec)
+    return {'extra_params': extra, 'engine_codes': sorted(_E.RULE_SPECS), 'show_days': show_days}
 
 
 @aml_bp.route('/rules/new', methods=['GET', 'POST'])
@@ -2060,7 +2093,7 @@ def rule_create():
             return redirect(url_for('aml.rules_list'))
         except (_V.VersionError, ValueError) as e:
             db.rollback()
-            flash(gettext(str(e)), 'danger')
+            flash(_V.message(e, _ar()), 'danger')
     return render_template('aml/rules/form.html', rule=None, action='create', **_rule_form_context(None))
 
 
@@ -2090,7 +2123,7 @@ def rule_edit(rule_id):
             return redirect(url_for('aml.rules_list'))
         except (_V.VersionError, ValueError) as e:
             db.rollback()
-            flash(gettext(str(e)), 'danger')
+            flash(_V.message(e, _ar()), 'danger')
 
     return render_template('aml/rules/form.html', rule=dict(rule), action='edit', **_rule_form_context(dict(rule)))
 
@@ -2108,7 +2141,7 @@ def rule_approve(rule_id):
                      'Rule %s v%s approved and in force' % (rule['rule_code'], rule.get('version')), request.remote_addr)
         flash(gettext('Rule approved and activated.'), 'success')
     except _V.VersionError as e:
-        flash(gettext(str(e)), 'danger')
+        flash(_V.message(e, _ar()), 'danger')
     return redirect(url_for('aml.rules_list'))
 
 
@@ -2116,25 +2149,17 @@ def rule_approve(rule_id):
 @login_required
 @permission_required('aml', level='edit')
 def rule_disable(rule_id):
+    from aml import tm_versions as _V
     db = get_db()
-    rule = db.execute("SELECT id, rule_code, status FROM tm_rules WHERE id = %s", (rule_id,)).fetchone()
-    if not rule:
-        flash(gettext('Rule not found.'), 'danger')
-        return redirect(url_for('aml.rules_list'))
     reason = (request.form.get('reason') or '').strip()
-    if not reason:
-        flash(gettext('A reason is required to disable a rule.'), 'danger')
+    try:
+        rule = _V.disable(db, rule_id, current_user.id, reason)
+    except _V.VersionError as e:
+        flash(_V.message(e, _ar()), 'warning')
         return redirect(url_for('aml.rules_list'))
-    if rule['status'] != 'ACTIVE':
-        flash(gettext('Only an active rule can be disabled.'), 'warning')
-        return redirect(url_for('aml.rules_list'))
-    db.execute(
-        "UPDATE tm_rules SET status='DISABLED', is_active=0, updated_at=NOW(), updated_by=%s WHERE id=%s",
-        (current_user.id, rule_id)
-    )
-    db.commit()
     AuditLog.log(current_user.id, 'Disable TM Rule', 'AML', rule_id,
-                 'Rule %s disabled. Reason: %s' % (rule['rule_code'], reason), request.remote_addr)
+                 'Rule %s v%s disabled. Reason: %s' % (rule['rule_code'], rule.get('version'), reason),
+                 request.remote_addr)
     flash(gettext('Rule disabled.'), 'warning')
     return redirect(url_for('aml.rules_list'))
 
@@ -2143,35 +2168,20 @@ def rule_disable(rule_id):
 @login_required
 @permission_required('aml', level='edit')
 def rule_enable(rule_id):
-    """Re-activate a disabled rule. Same permission
-    level as disable; the reason goes to the audit log."""
+    """Put a disabled version back in force: only one that was approved once (four eyes) or
+    was in force before versioning; every other version of the rule is retired. The
+    reason goes to the audit log."""
+    from aml import tm_versions as _V
     db = get_db()
-    rule = db.execute("SELECT id, rule_code, status FROM tm_rules WHERE id = %s",
-                      (rule_id,)).fetchone()
-    if not rule:
-        flash(gettext('Rule not found.'), 'danger')
-        return redirect(url_for('aml.rules_list'))
     reason = (request.form.get('reason') or '').strip()
-    if not reason:
-        flash(gettext('A reason is required to enable a rule.'), 'danger')
+    try:
+        rule = _V.enable(db, rule_id, current_user.id, reason)
+    except _V.VersionError as e:
+        flash(_V.message(e, _ar()), 'warning')
         return redirect(url_for('aml.rules_list'))
-    if rule['status'] != 'DISABLED':
-        flash(gettext('Only a disabled rule can be enabled.'), 'warning')
-        return redirect(url_for('aml.rules_list'))
-    other = db.execute(
-        "SELECT id, version FROM tm_rules WHERE rule_code = %s AND status = 'ACTIVE' AND id <> %s",
-        (rule['rule_code'], rule_id)).fetchone()
-    if other:
-        flash(gettext('Another version of this rule (v%(version)s) is already active. Disable it first.',
-                      version=other['version']), 'warning')
-        return redirect(url_for('aml.rules_list'))
-    db.execute(
-        "UPDATE tm_rules SET status='ACTIVE', is_active=1, updated_at=NOW(), updated_by=%s WHERE id=%s",
-        (current_user.id, rule_id)
-    )
-    db.commit()
     AuditLog.log(current_user.id, 'Enable TM Rule', 'AML', rule_id,
-                 'Rule %s enabled. Reason: %s' % (rule['rule_code'], reason), request.remote_addr)
+                 'Rule %s v%s enabled (other versions retired). Reason: %s' % (rule['rule_code'], rule.get('version'),
+                                                                              reason), request.remote_addr)
     flash(gettext('Rule enabled.'), 'success')
     return redirect(url_for('aml.rules_list'))
 
@@ -2190,7 +2200,7 @@ def rule_rollback(rule_id):
                                                                 request.form.get('reason')), request.remote_addr)
         flash(gettext('Rolled back to previous rule version.'), 'info')
     except _V.VersionError as e:
-        flash(gettext(str(e)), 'danger')
+        flash(_V.message(e, _ar()), 'danger')
     return redirect(url_for('aml.rules_list'))
 
 

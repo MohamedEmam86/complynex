@@ -36,8 +36,22 @@ from . import rules as R
 PACK_CODE = 'psp_tm'
 
 
-def install(db):
-    """Idempotent: adds each pack rule once, as a pending version; never touches existing rules."""
+def _installer_id():
+    """The signed-in user who enables the pack (recorded as the proposer of its rules,
+    so a different person must approve them). None outside a request."""
+    try:
+        from flask_login import current_user
+        if current_user and current_user.is_authenticated:
+            return int(current_user.id)
+    except Exception:
+        pass
+    return None
+
+
+def install(db, user_id=None):
+    """Idempotent: adds each pack rule once, as a pending version proposed by the person
+    who enables the pack; never touches existing rules."""
+    user_id = user_id if user_id is not None else _installer_id()
     added = 0
     for r in R.RULES:
         if db.execute("SELECT 1 FROM tm_rules WHERE rule_code = %s", (r['rule_code'],)).fetchone():
@@ -45,12 +59,13 @@ def install(db):
         db.execute("""
             INSERT INTO tm_rules (rule_code, rule_name, rule_name_ar, rule_description, rule_category, rule_type,
                                   threshold_value, threshold_currency, time_period_days, severity, parameters,
-                                  reference, pack_code, change_reason, is_active, status, created_at, version)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,0,'PENDING',NOW(),1)""",
+                                  reference, pack_code, change_reason, is_active, status, created_by, created_at,
+                                  version)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,0,'PENDING',%s,NOW(),1)""",
             (r['rule_code'], r['rule_name'], r['rule_name_ar'], r['rule_description'], r['rule_category'],
              r['rule_type'], r['threshold_value'], r.get('threshold_currency'), r.get('time_period_days') or 1,
              r['severity'], json.dumps(r.get('parameters') or {}), r.get('reference'), PACK_CODE,
-             'Added by the PSP transaction-monitoring pack: review, backtest and approve before use'))
+             'Added by the PSP transaction-monitoring pack: review, backtest and approve before use', user_id))
         added += 1
     db.commit()
     return {'rules_added': added, 'rules_in_pack': len(R.RULES)}
@@ -61,10 +76,10 @@ PACK = register_pack(Pack(
     name_en='PSP transaction-monitoring rules',
     name_ar='قواعد مراقبة المعاملات لمقدمي خدمات الدفع',
     description_en=('Monitoring typologies for payment service providers: cash-in structuring, pass-through '
-                    'wallets, many-to-one and one-to-many transfers, agent cash velocity. Rules are added as '
+                    'wallets, many-to-one and one-to-many transfers, cash velocity of one account (agent / cash point). Rules are added as '
                     'pending versions to be backtested and approved; defaults are starting points.'),
     description_ar=('أنماط مراقبة لمقدمي خدمات الدفع: تجزئة الإيداع النقدي، المحافظ اللي بتمرر الفلوس، '
-                    'تحويلات من كتير لواحد ومن واحد لكتير، وسرعة عمليات الكاش عند الوكيل. القواعد بتتضاف كنسخ '
+                    'تحويلات من كتير لواحد ومن واحد لكتير، وسرعة عمليات الكاش لحساب واحد (وكيل / نقطة كاش). القواعد بتتضاف كنسخ '
                     'معلقة لازم تتختبر وتتعتمد، والقيم الافتراضية نقطة بداية بس.'),
     version='1',
     install=install,

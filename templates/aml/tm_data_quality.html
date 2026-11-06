@@ -2,19 +2,40 @@
 {% import "aml/_tm_macros.html" as M %}
 {% block title %}{{ L('Transaction data quality', 'جودة بيانات العمليات') }}{% endblock %}
 {% block content %}
-<div class="container-fluid mt-4" style="max-width:1000px">
+<div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="mb-0"><i class="fas fa-clipboard-check text-secondary me-2"></i>{{ L('Transaction data quality', 'جودة بيانات العمليات') }}</h2>
     <a href="{{ url_for('aml.tm_tuning', date_from=date_from, date_to=date_to) }}" class="btn btn-outline-secondary btn-sm">{{ L('Rule tuning', 'ضبط القواعد') }}</a>
   </div>
   <p class="text-muted small">{{ L('Problems in the transaction data that make monitoring miss or repeat alerts. Duplicates and unusable rows are left out of backtests; live monitoring skips rows with no usable date or amount.',
       'مشاكل في بيانات العمليات ممكن تخلي المراقبة تفوّت أو تكرر تنبيهات. المكرر والصفوف غير الصالحة بتتشال من الاختبار، والمراقبة الفعلية بتتخطى أي عملية من غير تاريخ أو مبلغ صالح.') }}</p>
+  {% if live_issues %}
+  <div class="card shadow-sm mb-3 border-warning">
+    <div class="card-header"><strong>{{ L('Live monitoring: transactions it could not fully judge (last 30 days)', 'المراقبة الفعلية: عمليات ماقدرتش تحكم عليها بالكامل (آخر 30 يوم)') }}</strong></div>
+    <div class="card-body p-0"><table class="table table-sm mb-0 small">
+      <thead><tr><th>{{ L('Issue', 'المشكلة') }}</th><th class="text-end">{{ L('Transactions', 'العمليات') }}</th><th>{{ L('Examples', 'أمثلة') }}</th></tr></thead>
+      <tbody>
+      {% set live_names = {
+        'date_unreadable': L('Date cannot be read: only the rules that need no date ran (PEP / sanctions flag, high-risk country, single-amount thresholds)', 'التاريخ غير مقروء: اشتغلت بس القواعد اللي مش محتاجة تاريخ (علامة PEP / عقوبات، دولة عالية المخاطر، حدود المبلغ الواحد)'),
+        'amount_unusable': L('Amount missing or not positive: only the rules that need no amount ran', 'المبلغ ناقص أو غير موجب: اشتغلت بس القواعد اللي مش محتاجة مبلغ'),
+        'currency_unconverted': L('Currency other than the currency of the amount rules: compared unconverted (no exchange-rate table)', 'عملة غير عملة قواعد المبالغ: اتقارنت من غير تحويل (مافيش جدول أسعار صرف)'),
+      } %}
+      {% for r in live_issues %}
+      <tr><td>{{ live_names.get(r.issue, r.issue) }}</td><td class="text-end">{{ '{:,}'.format(r.n or 0) }}</td>
+        <td>{% for i in (r.sample or []) if i %}<a href="{{ url_for('aml.view_transaction', tx_id=i) }}">#{{ i }}</a>{{ ', ' if not loop.last }}{% endfor %}</td></tr>
+      {% endfor %}
+      </tbody></table></div></div>
+  {% endif %}
   <form method="get" class="row g-2 align-items-end mb-3">
     <div class="col-auto"><label class="form-label small fw-bold mb-0">{{ L('From', 'من') }}</label><input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}"></div>
     <div class="col-auto"><label class="form-label small fw-bold mb-0">{{ L('To', 'إلى') }}</label><input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}"></div>
     <div class="col-auto"><button class="btn btn-primary btn-sm">{{ L('Check', 'افحص') }}</button></div>
   </form>
+  {% if too_large %}
+  <div class="alert alert-warning">{{ L('Not analysed: the period holds more transactions than one check can read', 'ماتحللتش: الفترة فيها عمليات أكتر من اللي ينفع فحص واحد يقراه') }} ({{ '{:,}'.format(too_large) }}). {{ L('Choose a shorter period.', 'اختار فترة أقصر.') }}</div>
+  {% else %}
   {{ M.quality(dq, L) }}
+  {% endif %}
   {% if dq.samples %}
   <div class="card shadow-sm"><div class="card-header"><strong>{{ L('Examples', 'أمثلة') }}</strong></div>
     <div class="card-body small">{% for code, ids in dq.samples.items() %}

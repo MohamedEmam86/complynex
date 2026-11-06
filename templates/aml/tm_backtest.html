@@ -2,7 +2,7 @@
 {% import "aml/_tm_macros.html" as M %}
 {% block title %}{{ L('Backtest a rule version', 'اختبار نسخة قاعدة') }}{% endblock %}
 {% block content %}
-<div class="container-fluid mt-4" style="max-width:1100px">
+<div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="mb-0"><i class="fas fa-vial text-info me-2"></i>{{ L('Backtest before activation', 'اختبار قبل التفعيل') }}
       <small class="text-muted fs-6"><code>{{ rule.rule_code }}</code> v{{ rule.version or 1 }} ({{ rule.status }})</small></h2>
@@ -35,7 +35,9 @@
     <div class="alert alert-warning">{{ L('This rule is not supported by the engine, so it cannot be backtested.', 'القاعدة دي غير مدعومة في المحرك، فمش ممكن تتختبر.') }}</div>
     {% else %}
     <p class="small text-muted">{{ L('transactions evaluated', 'عمليات تم تقييمها') }}: {{ '{:,}'.format(result.summary.evaluated) }} ·
-      {{ L('excluded by data quality', 'مستبعدة بسبب جودة البيانات') }}: {{ '{:,}'.format(result.summary.excluded) }}</p>
+      {{ L('excluded by data quality', 'مستبعدة بسبب جودة البيانات') }}: {{ '{:,}'.format(result.summary.excluded) }}
+      {% if result.summary.other_currency %} · {{ L('other currency, compared unconverted', 'عملة تانية، متقارنة من غير تحويل') }}:
+        {% for c, n in result.summary.other_currency.items() %}{{ c or '—' }} {{ '{:,}'.format(n) }}{{ ', ' if not loop.last }}{% endfor %}{% endif %}</p>
     <div class="row g-3 mb-3">
       {% for label, r in [(L('In force', 'الحالية'), result.current), (L('Proposed', 'المقترحة'), result.candidate)] %}
       <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-body">
@@ -46,11 +48,15 @@
       </div></div></div>
       {% endfor %}
     </div>
+    {% if result.current.truncated or result.candidate.truncated %}
+    <div class="alert alert-warning small">{{ L('Not finished within the time limit: the numbers cover part of the period, so the comparison of alerts is not shown. Choose a shorter period.', 'الاختبار ماخلصش في الوقت المسموح: الأرقام بتغطي جزء من الفترة، فمقارنة التنبيهات مش معروضة. اختار فترة أقصر.') }}</div>
+    {% else %}
     <div class="alert alert-light border small">
       {{ L('Alerts raised by both', 'تنبيهات في الاتنين') }}: <strong>{{ result.both }}</strong> ·
       {{ L('only by the version in force (would disappear)', 'في الحالية بس (هتختفي)') }}: <strong>{{ result.only_current }}</strong> ·
       {{ L('only by the proposed version (new)', 'في المقترحة بس (جديدة)') }}: <strong>{{ result.only_candidate }}</strong>
     </div>
+    {% endif %}
     {% if result.candidate.sample %}
     <div class="card shadow-sm"><div class="card-header"><strong>{{ L('Sample of alerts the proposed version would raise', 'عينة من التنبيهات اللي هتطلعها النسخة المقترحة') }}</strong></div>
       <div class="card-body p-0"><table class="table table-sm mb-0 small">

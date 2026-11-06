@@ -24,8 +24,16 @@ retires every other active version of that code, so exactly one version is in
 force. Alerts record the version that raised them (tm_alerts.rule_id points at
 that row, rule_version / rule_code copy it). Rollback re-activates the previous
 version, with a written reason.
+
+Four eyes holds on every path that puts a version in force:
+- approve(): only a PENDING version with a recorded proposer, by someone else;
+- rollback() / enable(): only a DISABLED version that was approved once (approved_at)
+  or was in force before versioning existed (legacy_baseline);
+- propose(): previous_id is always the version in force when the change was
+  proposed (never a rejected or never-approved row), whatever row seeded the form.
 """
 import json
+import re
 
 from aml import tm_engine as E
 
@@ -35,38 +43,70 @@ def N_(s):
 
 
 class VersionError(ValueError):
-    pass
+    """A refused change; carries the message in English and Arabic."""
+
+    def __init__(self, en, ar=None):
+        super().__init__(en)
+        self.ar = ar
+
+
+def message(e, ar=False):
+    """The message of a VersionError in the user's language."""
+    return (getattr(e, 'ar', None) if ar else None) or str(e)
 
 
 MIN_REASON = 10
+MIN_SWITCH_REASON = 15     # disabling / re-enabling a rule in force: one person, so a fuller reason
+CODE_RE = re.compile(r'^[A-Z0-9_]{2,20}$')
+# The version in force (legacy rows may still have status NULL with is_active = 1).
+IN_FORCE = "is_active = 1 AND COALESCE(status, 'ACTIVE') = 'ACTIVE'"
+# Rows to retire when another version goes in force (also inconsistent ones).
+RETIRE = "(is_active = 1 OR status = 'ACTIVE')"
 FIELDS = ('rule_name', 'rule_name_ar', 'rule_description', 'rule_category', 'rule_type', 'threshold_value',
           'threshold_currency', 'time_period_days', 'severity', 'reference', 'threshold_unit')
 
 
 def active_rules(db):
     """The version in force of each rule code (newest active one when data is inconsistent)."""
-    rows = db.execute("""SELECT DISTINCT ON (rule_code) * FROM tm_rules
-                         WHERE is_active = 1 AND COALESCE(status, 'ACTIVE') = 'ACTIVE'
+    rows = db.execute(f"""SELECT DISTINCT ON (rule_code) * FROM tm_rules
+                         WHERE {IN_FORCE}
                          ORDER BY rule_code, version DESC NULLS LAST, id DESC""").fetchall()
     return [dict(r) for r in rows]
+
+
+def in_force(db, rule_code):
+    row = db.execute(f"""SELECT * FROM tm_rules WHERE rule_code = %s AND {IN_FORCE}
+                         ORDER BY version DESC NULLS LAST, id DESC LIMIT 1""", (rule_code,)).fetchone()
+    return dict(row) if row else None
+
+
+def was_approved(rule):
+    """Approved once by four eyes, or in force before versioning existed."""
+    return bool(rule.get('approved_at')) or bool(rule.get('legacy_baseline'))
+
+
+def _retire_others(db, rule_code, keep_id, user_id):
+    db.execute(f"""UPDATE tm_rules SET is_active = 0, status = 'DISABLED', updated_at = NOW(), updated_by = %s
+                   WHERE rule_code = %s AND id <> %s AND {RETIRE}""", (user_id, rule_code, keep_id))
 
 
 def _get(db, rule_id):
     row = db.execute("SELECT * FROM tm_rules WHERE id = %s", (rule_id,)).fetchone()
     if not row:
-        raise VersionError(N_('Rule not found.'))
+        raise VersionError(N_('Rule not found.'), 'القاعدة مش موجودة.')
     return dict(row)
 
 
 def _reason(reason):
     reason = (reason or '').strip()
     if len(reason) < MIN_REASON:
-        raise VersionError(N_('Write the reason for the change (at least 10 characters).'))
+        raise VersionError(N_('Write the reason for the change (at least 10 characters).'), 'اكتب سبب التعديل (10 حروف على الأقل).')
     return reason
 
 
 def clean_parameters(code, raw):
     """Keep only the extra parameters the rule defines, typed as the spec says."""
+    E.ensure_packs_loaded()            # a pack rule's parameters are known only once the pack is loaded
     spec = E.RULE_SPECS.get(code, {}).get('params', {})
     out = {}
     for k, v in (raw or {}).items():
@@ -85,31 +125,45 @@ def clean_parameters(code, raw):
             else:
                 out[k] = float(v)
         except (TypeError, ValueError):
-            raise VersionError(N_('A rule parameter has an invalid value.'))
+            raise VersionError(N_('A rule parameter has an invalid value.'), 'في معيار من معايير القاعدة قيمته غير صحيحة.')
         if unit in ('count', 'amount', 'ratio', 'hours', 'minutes', 'percent') and out[k] < 0:
-            raise VersionError(N_('A rule parameter has an invalid value.'))
+            raise VersionError(N_('A rule parameter has an invalid value.'), 'في معيار من معايير القاعدة قيمته غير صحيحة.')
     return out
 
 
 def propose(db, base_id, values, parameters, reason, user_id, code=None):
     """New pending version of an existing rule (base_id) or a brand-new rule (base_id None, code given)."""
     reason = _reason(reason)
+    E.ensure_packs_loaded()
     if base_id:
         base = _get(db, base_id)
         code = base['rule_code']
         latest = db.execute("SELECT MAX(version) AS v FROM tm_rules WHERE rule_code = %s", (code,)).fetchone()['v'] or 0
-        version, previous = latest + 1, base_id
         if db.execute("SELECT 1 FROM tm_rules WHERE rule_code = %s AND status = 'PENDING'", (code,)).fetchone():
-            raise VersionError(N_('This rule already has a version waiting for approval; approve or reject it first.'))
+            raise VersionError(N_('This rule already has a version waiting for approval; approve or reject it first.'), 'القاعدة دي عندها نسخة مستنية اعتماد؛ اعتمدها أو ارفضها الأول.')
+        # The new version replaces the version IN FORCE (what a rollback returns to), not the
+        # row the form was opened from: that row only seeds the values.
+        current = in_force(db, code)
+        version, previous = latest + 1, (current['id'] if current else None)
     else:
         code = (code or '').strip().upper()
-        if not code:
-            raise VersionError(N_('Rule code is required.'))
+        if not CODE_RE.match(code):
+            raise VersionError(N_('Rule code: 2 to 20 capital letters, digits or underscores.'), 'كود القاعدة: من 2 لـ 20 حرف إنجليزي كبير أو رقم أو _.')
         if db.execute("SELECT 1 FROM tm_rules WHERE rule_code = %s", (code,)).fetchone():
-            raise VersionError(N_('This rule code already exists; edit it to make a new version.'))
+            raise VersionError(N_('This rule code already exists; edit it to make a new version.'), 'كود القاعدة ده موجود؛ عدّل القاعدة عشان تعمل نسخة جديدة.')
         version, previous, base = 1, None, {}
     row = {f: values.get(f, base.get(f)) for f in FIELDS}
-    params = clean_parameters(code, parameters if parameters is not None else _json(base.get('parameters')))
+    if row.get('time_period_days') is None:
+        row['time_period_days'] = 1
+    # Parameters not on the form keep the base version's values; a field cleared on the form
+    # goes back to the rule's default (that is how a list parameter is emptied).
+    merged = dict(_json(base.get('parameters')))
+    for k, v in (parameters or {}).items():
+        if v in (None, ''):
+            merged.pop(k, None)
+        else:
+            merged[k] = v
+    params = clean_parameters(code, merged)
     new_id = db.execute("""
         INSERT INTO tm_rules (rule_code, rule_name, rule_name_ar, rule_description, rule_category, rule_type,
                               threshold_value, threshold_currency, time_period_days, severity, reference,
@@ -137,11 +191,15 @@ def approve(db, rule_id, user_id, can_self_approve=False):
     """Put a pending version in force. Four eyes: not by the person who proposed it."""
     rule = _get(db, rule_id)
     if rule.get('status') != 'PENDING':
-        raise VersionError(N_('Only a version waiting for approval can be approved.'))
-    if rule.get('created_by') and int(rule['created_by']) == int(user_id) and not can_self_approve:
-        raise VersionError(N_('Another person must approve a rule change (four eyes).'))
-    db.execute("""UPDATE tm_rules SET is_active = 0, status = 'DISABLED', updated_at = NOW(), updated_by = %s
-                  WHERE rule_code = %s AND id <> %s AND status = 'ACTIVE'""", (user_id, rule['rule_code'], rule_id))
+        raise VersionError(N_('Only a version waiting for approval can be approved.'), 'ممكن تعتمد بس نسخة مستنية اعتماد.')
+    if rule.get('created_by') is None:
+        # Four eyes cannot be checked without a proposer: reject it and propose it again
+        # (the new version records who proposed it).
+        raise VersionError(N_('This version has no recorded proposer, so four eyes cannot be checked. '
+                              'Reject it and propose it again, then have another person approve it.'), 'النسخة دي مش متسجل مين اقترحها، فمش ممكن نتأكد من مبدأ الأربع عيون. ارفضها واقترحها تاني، وبعدين شخص تاني يعتمدها.')
+    if int(rule['created_by']) == int(user_id) and not can_self_approve:
+        raise VersionError(N_('Another person must approve a rule change (four eyes).'), 'لازم شخص تاني يعتمد تعديل القاعدة (مبدأ الأربع عيون).')
+    _retire_others(db, rule['rule_code'], rule_id, user_id)
     db.execute("""UPDATE tm_rules SET status = 'ACTIVE', is_active = 1, approved_by = %s, approved_at = NOW(),
                   updated_at = NOW() WHERE id = %s""", (user_id, rule_id))
     db.commit()
@@ -152,7 +210,7 @@ def reject(db, rule_id, user_id, reason):
     reason = _reason(reason)
     rule = _get(db, rule_id)
     if rule.get('status') != 'PENDING':
-        raise VersionError(N_('Only a version waiting for approval can be rejected.'))
+        raise VersionError(N_('Only a version waiting for approval can be rejected.'), 'ممكن ترفض بس نسخة مستنية اعتماد.')
     db.execute("""UPDATE tm_rules SET status = 'REJECTED', is_active = 0, updated_at = NOW(), updated_by = %s,
                   change_reason = COALESCE(change_reason, '') || ' | rejected: ' || %s WHERE id = %s""",
                (user_id, reason, rule_id))
@@ -165,17 +223,56 @@ def rollback(db, rule_id, user_id, reason):
     reason = _reason(reason)
     rule = _get(db, rule_id)
     if not rule.get('previous_id'):
-        raise VersionError(N_('No previous version to roll back to.'))
-    if rule.get('status') != 'ACTIVE':
-        raise VersionError(N_('Only the version in force can be rolled back.'))
+        raise VersionError(N_('No previous version to roll back to.'), 'مافيش نسخة سابقة ترجع لها.')
+    if not (rule.get('is_active') == 1 and (rule.get('status') or 'ACTIVE') == 'ACTIVE'):
+        raise VersionError(N_('Only the version in force can be rolled back.'), 'ممكن ترجع بس من النسخة المفعلة حاليًا.')
     prev = _get(db, rule['previous_id'])
-    db.execute("""UPDATE tm_rules SET status = 'DISABLED', is_active = 0, updated_at = NOW(), updated_by = %s
-                  WHERE rule_code = %s AND status = 'ACTIVE'""", (user_id, rule['rule_code']))
+    if prev.get('rule_code') != rule.get('rule_code') or prev.get('status') != 'DISABLED' or not was_approved(prev):
+        raise VersionError(N_('The previous version was never approved (or is not a retired version of this rule), '
+                              'so it cannot be put back in force. Propose a new version instead.'), 'النسخة السابقة عمرها ما اتعتمدت (أو مش نسخة موقوفة من نفس القاعدة)، فمش ممكن ترجع للتفعيل. اقترح نسخة جديدة.')
+    _retire_others(db, rule['rule_code'], prev['id'], user_id)
     db.execute("""UPDATE tm_rules SET status = 'ACTIVE', is_active = 1, updated_at = NOW(), updated_by = %s,
                   change_reason = COALESCE(change_reason, '') || ' | restored by rollback: ' || %s WHERE id = %s""",
                (user_id, reason, prev['id']))
     db.commit()
     return prev
+
+
+def disable(db, rule_id, user_id, reason):
+    """Take the version in force out of force (reason of at least 15 characters, kept in the
+    audit log). One person may do it: stopping a rule is reversible and visible on the rule
+    list and in the audit trail; a second approval for disabling would need a pending
+    'disable' state and is left to the owner (documented, not built)."""
+    if len((reason or '').strip()) < MIN_SWITCH_REASON:
+        raise VersionError(N_('Write the reason for disabling the rule (at least 15 characters).'),
+                           'اكتب سبب إيقاف القاعدة (15 حرف على الأقل).')
+    rule = _get(db, rule_id)
+    if (rule.get('status') or ('ACTIVE' if rule.get('is_active') == 1 else 'DISABLED')) != 'ACTIVE':
+        raise VersionError(N_('Only an active rule can be disabled.'), 'ممكن توقف بس قاعدة مفعلة.')
+    db.execute("UPDATE tm_rules SET status='DISABLED', is_active=0, updated_at=NOW(), updated_by=%s WHERE id=%s",
+               (user_id, rule_id))
+    db.commit()
+    return rule
+
+
+def enable(db, rule_id, user_id, reason):
+    """Put a disabled version back in force. Only one that was approved once (or was in
+    force before versioning); every other version of the code is retired, so exactly
+    one version is in force."""
+    if len((reason or '').strip()) < MIN_SWITCH_REASON:
+        raise VersionError(N_('Write the reason for enabling the rule (at least 15 characters).'),
+                           'اكتب سبب تفعيل القاعدة (15 حرف على الأقل).')
+    rule = _get(db, rule_id)
+    if rule.get('status') != 'DISABLED':
+        raise VersionError(N_('Only a disabled rule can be enabled.'), 'ممكن تفعّل بس قاعدة موقوفة.')
+    if not was_approved(rule):
+        raise VersionError(N_('This version was never approved, so it cannot be enabled. '
+                              'Propose a new version and have another person approve it.'), 'النسخة دي عمرها ما اتعتمدت، فمش ممكن تتفعل. اقترح نسخة جديدة وخلي شخص تاني يعتمدها.')
+    _retire_others(db, rule['rule_code'], rule_id, user_id)
+    db.execute("UPDATE tm_rules SET status='ACTIVE', is_active=1, updated_at=NOW(), updated_by=%s WHERE id=%s",
+               (user_id, rule_id))
+    db.commit()
+    return rule
 
 
 def history(db, rule_code):

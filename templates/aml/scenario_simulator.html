@@ -83,6 +83,11 @@
         <div class="col-md-2"><div class="card text-center border-info"><div class="card-body py-2"><h3 class="text-info">{{ results.trigger_rate }}%</h3><small class="text-muted">{{ _('Trigger Rate') }}</small></div></div></div>
       </div>
 
+      <p class="small text-muted mb-2">{{ results.date_from }} → {{ results.date_to }}{% if results.excluded %} ·
+        {{ 'عمليات ماتحكمش عليها (جودة البيانات أو عملة غير عملة القاعدة)' if get_locale()|string == 'ar' else 'Not judged (data quality, or a currency other than the rule currency)' }}:
+        <strong>{{ results.excluded }}</strong>{% endif %}{% if results.unconverted %} ·
+        <span class="text-warning">{{ 'في عملة غير عملة القاعدة واتقارنت من غير تحويل' if get_locale()|string == 'ar' else 'In another currency than the rule, compared unconverted' }}:
+        <strong>{{ results.unconverted }}</strong></span>{% endif %}</p>
       {% if results.triggered_transactions %}
       <h6 class="fw-bold mt-3 mb-2">{{ _('Transactions That Would Trigger (showing up to 50)') }}</h6>
       <div class="table-responsive">
