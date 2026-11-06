@@ -16,6 +16,7 @@
         <a href="{{ url_for('governance.record_attendance', id=meeting.id) }}" class="btn btn-sm btn-outline-info"><i class="bi bi-person-check"></i> {{ _('Record attendance') }}</a>
         <a href="{{ url_for('governance.edit_meeting', id=meeting.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> {{ _('Edit meeting / attendees') }}</a>
         {% endif %}
+        <a href="{{ url_for('governance.meeting_record', id=meeting.id) }}" class="btn btn-sm btn-success"><i class="bi bi-journal-check"></i> {{ _('Formal record: quorum, votes, signatures') }}</a>
         <a href="{{ url_for('governance.action_tracker') }}" class="btn btn-sm btn-outline-warning"><i class="bi bi-list-check"></i> {{ _('Action tracker') }}</a>
         <a href="{{ url_for('governance.list_meetings') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> {{ _('Back to Meetings') }}</a>
     </div>

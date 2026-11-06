@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% from 'governance/_register_macros.html' import outcome_badge, tally, fu_badge, att_badge, vote_badge, body_label, register_nav with context %}
+{% block title %}{{ _('Meeting record') }} - {{ m.meeting_reference or m.meeting_date }}{% endblock %}
+{% block content %}
+{% set can_edit = current_user.can_edit('governance') or current_user.is_admin() %}
+{% set locked = minutes_state == 'SIGNED' %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-2 border-bottom gap-2">
+  <div>
+    <h1 class="h3 mb-0">{{ body_label(m) }} — {{ code_label(m.kind_code, 'gov_kind') }}{% if m.sequence_no %} #{{ m.sequence_no }}{% endif %}
+      {% if m.is_sample %}<span class="badge bg-warning text-dark align-middle fs-6">{{ _('sample') }}</span>{% endif %}</h1>
+    <div class="text-muted small">{{ gov_pick(m.entity_en, m.entity_ar) }} · {{ m.meeting_reference or '' }} · {{ m.meeting_date or '-' }} {{ m.meeting_time or '' }}{% if m.end_time %}–{{ m.end_time }}{% endif %}
+      {% if m.mode %} · {{ code_label(m.mode, 'gov_mode') }}{% endif %}{% if m.location %} · {{ m.location }}{% endif %}</div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('governance.meeting_summary', id=m.id) }}" class="btn btn-sm btn-outline-primary">{{ _('Minutes text, actions & files') }}</a>
+    <a href="{{ url_for('governance.register_meetings') }}" class="btn btn-sm btn-outline-secondary">{{ _('Meetings register') }}</a>
+  </div>
+</div>
+{{ register_nav('meetings') }}
+
+{# ---------------------------------------------------------------- status strip #}
+<div class="row g-2 mb-3">
+  <div class="col-md-4">
+    <div class="p-3 rounded border {{ 'border-success bg-success-subtle' if q.valid else ('border-danger bg-danger-subtle' if q.valid is sameas false else 'bg-light') }}">
+      <div class="small text-muted">{{ _('Legal quorum') }}{% if get_locale()|string != 'ar' %} (النصاب القانوني){% endif %}{% if (m.call_no or 1) >= 2 %} · {{ _('call') }} {{ m.call_no }}{% endif %}</div>
+      {% if q.basis == 'CAPITAL' %}
+        <div class="fs-5 fw-bold">{{ q.counted if q.counted is not none else '—' }}% / {{ q.required }}% {{ _('of capital') }}</div>
+      {% else %}
+        <div class="fs-5 fw-bold">{{ q.counted }} {{ _('of') }} {{ rows|selectattr('voting')|list|length }} {{ _('members counted') }} · {{ _('needed') }} {{ q.required }}</div>
+      {% endif %}
+      <div class="fw-semibold">{% if q.valid %}<i class="bi bi-check-circle-fill text-success"></i> {{ _('Quorum present: the meeting is validly held.') }}
+        {% elif q.valid is sameas false %}<i class="bi bi-x-octagon-fill text-danger"></i> {{ _('No quorum: the meeting cannot validly adopt resolutions.') }}
+        {% else %}{{ _('Record the capital represented to check the quorum.') }}{% endif %}</div>
+      <div class="small text-muted">{{ gov_pick(rule.name_en, rule.name_ar) }}{% if rule.legal_ref %} — {{ rule.legal_ref }}{% endif %}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="p-3 rounded border bg-light h-100">
+      <div class="small text-muted">{{ _('Minutes') }}</div>
+      <div class="fs-5 fw-bold">{{ code_label(minutes_state, 'gov_minutes') }}</div>
+      <div class="small">{{ _('Chair') }}: {% if m.chair_signed_at %}<i class="bi bi-pen text-success"></i> {{ m.chair_signed_name }} ({{ m.chair_signed_at.strftime('%Y-%m-%d') }}){% else %}<span class="text-danger">{{ _('not signed') }}</span>{% endif %}</div>
+      <div class="small">{{ _('Secretary') }}: {% if m.secretary_signed_at %}<i class="bi bi-pen text-success"></i> {{ m.secretary_signed_name }} ({{ m.secretary_signed_at.strftime('%Y-%m-%d') }}){% else %}<span class="text-danger">{{ _('not signed') }}</span>{% endif %}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="p-3 rounded border h-100 {{ 'border-danger bg-danger-subtle' if 'filing_overdue' in flags else 'bg-light' }}">
+      <div class="small text-muted">{{ _('Filing with the regulator') }}</div>
+      {% if m.filed_on %}<div class="fw-bold text-success">{{ _('Filed on %(d)s', d=m.filed_on) }}</div><div class="small">{{ m.filing_authority or '' }} {{ m.filing_reference or '' }}</div>
+      {% elif m.filing_due_date %}<div class="fw-bold">{{ _('Due %(d)s', d=m.filing_due_date) }}</div><div class="small">{{ m.filing_authority or '' }}</div>
+        {% if 'filing_overdue' in flags %}<div class="small text-danger fw-semibold">{{ _('Overdue') }}</div>{% endif %}
+      {% else %}<div class="text-muted small">{{ _('No filing deadline for this meeting (set filing days on the meeting rule).') }}</div>{% endif %}
+      {% if 'signature_overdue' in flags %}<div class="small text-danger fw-semibold">{{ _('Signatures overdue') }}</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if first_call %}
+<div class="alert alert-warning small"><strong>{{ _('First call') }}{% if m.first_call_at %} ({{ m.first_call_at }}){% endif %}:</strong>
+  {{ _('%(n)s members present, %(r)s needed: quorum not reached, so the meeting was called again.', n=m.first_call_present, r=first_call.required) }}
+  {% if m.first_call_note %}<div>{{ m.first_call_note }}</div>{% endif %}</div>
+{% endif %}
+{% for code, name in proxy_errors %}<div class="alert alert-danger small py-2">{{ name }}: {{ {'proxy_holder_missing': _('the proxy holder is not recorded.'), 'proxy_self': _('a member cannot hold their own proxy.'), 'proxy_holder_absent': _('the proxy holder does not attend.'), 'proxy_one_only': _('holds more than one proxy (one member, one proxy).')}[code] }}</div>{% endfor %}
+{% if locked %}<div class="alert alert-secondary small">{{ _('The minutes are signed by the chair and the secretary: the record is locked. Follow-up of resolutions can still be updated.') }}</div>{% endif %}
+
+<div class="row">
+<div class="col-xl-5">
+{# ---------------------------------------------------------------- formalities #}
+<div class="card border-0 shadow-sm mb-3" id="formalities">
+  <div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Meeting details') }}</h2></div>
+  <div class="card-body small">
+    <dl class="row mb-2">
+      <dt class="col-5">{{ _('Board') }}</dt><dd class="col-7">{{ gov_pick(m.entity_en, m.entity_ar) }}</dd>
+      <dt class="col-5">{{ _('Body / kind') }}</dt><dd class="col-7">{{ body_label(m) }} · {{ code_label(m.kind_code, 'gov_kind') }}</dd>
+      <dt class="col-5">{{ _('Sequence number') }}</dt><dd class="col-7">{{ m.sequence_no or '—' }}</dd>
+      <dt class="col-5">{{ _('Notice') }}</dt><dd class="col-7">{{ m.notice_date or '—' }}{% if m.notice_channel %} · {{ m.notice_channel }}{% endif %}</dd>
+      <dt class="col-5">{{ _('Chair of the meeting') }}</dt><dd class="col-7">{% if chair_row %}{{ gov_pick(chair_row.member_name, chair_row.member_name_arabic) }}{% else %}{{ m.chair_name or '—' }}{% endif %}</dd>
+      <dt class="col-5">{{ _('Secretary') }}{% if get_locale()|string != 'ar' %} (أمين السر){% endif %}</dt><dd class="col-7">{% if m.secretary_officer_id %}<a href="{{ url_for('governance.secretary_view', officer=m.secretary_officer_id) }}">{{ gov_pick(m.secretary_name, m.secretary_name_ar) }}</a>{% else %}—{% endif %}</dd>
+      <dt class="col-5">{{ _('Vote tellers') }}{% if get_locale()|string != 'ar' %} (فارزو الأصوات){% endif %}</dt>
+      <dd class="col-7">{% for t in tellers %}<div>{{ gov_pick(t.full_name or t.member_name or t.name, t.full_name_ar or t.member_name_arabic) }} <span class="text-muted">({{ code_label(t.role) }})</span>
+        {% if can_edit and not locked %}<form method="post" action="{{ url_for('governance.meeting_teller_remove', id=m.id, tid=t.id) }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-link btn-sm p-0 text-danger">{{ _('Remove') }}</button></form>{% endif %}</div>{% else %}—{% endfor %}</dd>
+      <dt class="col-5">{{ _('Previous minutes') }}</dt><dd class="col-7">{% if m.prev_minutes_meeting_id %}{% for p in prev_candidates if p.id == m.prev_minutes_meeting_id %}<a href="{{ url_for('governance.meeting_record', id=p.id) }}">{{ p.meeting_reference or p.meeting_date }}</a>{% endfor %} — {{ _('approved') if m.prev_minutes_approved else _('not approved') }}{% else %}—{% endif %}</dd>
+      {% if m.recording_ref %}<dt class="col-5">{{ _('Recording') }}</dt><dd class="col-7">{{ m.recording_ref }}</dd>{% endif %}
+    </dl>
+    {% if can_edit and not locked %}
+    <details>
+      <summary class="btn btn-sm btn-outline-primary">{{ _('Edit meeting details') }}</summary>
+      <form method="post" action="{{ url_for('governance.meeting_formalities', id=m.id) }}" class="row g-2 mt-2 border rounded p-2 bg-light">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-6"><label class="form-label mb-0">{{ _('Board') }}</label>
+          <select name="entity_id" class="form-select form-select-sm">{% for e in entities %}<option value="{{ e.id }}" {{ 'selected' if (m.entity_id or 0) == e.id or (not m.entity_id and e.is_default) }}>{{ gov_pick(e.name_en, e.name_ar) }}</option>{% endfor %}</select></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Reference') }}</label><input name="meeting_reference" class="form-control form-control-sm" value="{{ m.meeting_reference or '' }}"></div>
+        <div class="col-4"><label class="form-label mb-0">{{ _('Body') }}</label>
+          <select name="body" class="form-select form-select-sm">{% for k, v in code_choices('gov_body') %}<option value="{{ k }}" {{ 'selected' if m.body_code == k }}>{{ v }}</option>{% endfor %}</select></div>
+        <div class="col-4"><label class="form-label mb-0">{{ _('Kind') }}</label>
+          <select name="meeting_kind" class="form-select form-select-sm">{% for k, v in code_choices('gov_kind') %}<option value="{{ k }}" {{ 'selected' if m.kind_code == k }}>{{ v }}</option>{% endfor %}</select></div>
+        <div class="col-4"><label class="form-label mb-0">{{ _('Sequence number') }}</label><input name="sequence_no" class="form-control form-control-sm" inputmode="numeric" value="{{ m.sequence_no or '' }}"></div>
+        <div class="col-4"><label class="form-label mb-0">{{ _('Date') }}</label><input type="date" name="meeting_date" class="form-control form-control-sm" value="{{ (m.meeting_date or '')[:10] }}" required></div>
+        <div class="col-4"><label class="form-label mb-0">{{ _('Start') }}</label><input type="time" name="meeting_time" class="form-control form-control-sm" value="{{ m.meeting_time or '' }}"></div>
+        <div class="col-4"><label class="form-label mb-0">{{ _('End') }}</label><input type="time" name="end_time" class="form-control form-control-sm" value="{{ m.end_time or '' }}"></div>
+        <div class="col-8"><label class="form-label mb-0">{{ _('Venue') }}</label><input name="location" class="form-control form-control-sm" value="{{ m.location or '' }}"></div>
+        <div class="col-4"><label class="form-label mb-0">{{ _('Mode') }}</label>
+          <select name="mode" class="form-select form-select-sm"><option value="">—</option>{% for k, v in code_choices('gov_mode') %}<option value="{{ k }}" {{ 'selected' if m.mode == k }}>{{ v }}</option>{% endfor %}</select></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Notice date') }}</label><input type="date" name="notice_date" class="form-control form-control-sm" value="{{ m.notice_date or '' }}"></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Notice channel') }}</label><input name="notice_channel" class="form-control form-control-sm" value="{{ m.notice_channel or '' }}" placeholder="{{ _('e.g. registered email with papers') }}"></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Chair of the meeting') }}</label>
+          <select name="chair_member_id" class="form-select form-select-sm"><option value="">—</option>{% for r in rows %}<option value="{{ r.member_id }}" {{ 'selected' if m.chair_member_id == r.member_id }}>{{ gov_pick(r.member_name, r.member_name_arabic) }}</option>{% endfor %}</select></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Chair (if not a member)') }}</label><input name="chair_name" class="form-control form-control-sm" value="{{ m.chair_name or '' }}"></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Secretary') }}</label>
+          <select name="secretary_officer_id" class="form-select form-select-sm"><option value="">—</option>{% for o in officers %}<option value="{{ o.id }}" {{ 'selected' if m.secretary_officer_id == o.id }}>{{ gov_pick(o.full_name, o.full_name_ar) }}{% if o.role_en %} ({{ gov_pick(o.role_en, o.role_ar) }}){% endif %}</option>{% endfor %}</select></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Quorum / majority rule') }}</label>
+          <select name="meeting_rule_id" class="form-select form-select-sm"><option value="">{{ _('Default for this body') }}</option>{% for r in rules %}<option value="{{ r.id }}" {{ 'selected' if m.meeting_rule_id == r.id }}>{{ gov_pick(r.name_en, r.name_ar) }}</option>{% endfor %}</select></div>
+        <div class="col-3"><label class="form-label mb-0">{{ _('Call') }}</label>
+          <select name="call_no" class="form-select form-select-sm">{% for n in (1, 2, 3) %}<option value="{{ n }}" {{ 'selected' if (m.call_no or 1) == n }}>{{ n }}</option>{% endfor %}</select></div>
+        <div class="col-5"><label class="form-label mb-0">{{ _('First call held at') }}</label><input name="first_call_at" class="form-control form-control-sm" value="{{ m.first_call_at or '' }}" placeholder="2026-03-10 10:00"></div>
+        <div class="col-4"><label class="form-label mb-0">{{ _('Present at first call') }}</label><input name="first_call_present" class="form-control form-control-sm" inputmode="numeric" value="{{ m.first_call_present if m.first_call_present is not none else '' }}"></div>
+        <div class="col-12"><label class="form-label mb-0">{{ _('What happened at the first call') }}</label><input name="first_call_note" class="form-control form-control-sm" value="{{ m.first_call_note or '' }}"></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Capital represented (general assembly)') }} %</label><input name="capital_represented_pct" class="form-control form-control-sm" inputmode="decimal" value="{{ m.capital_represented_pct if m.capital_represented_pct is not none else '' }}"></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Recording of the meeting') }}</label><input name="recording_ref" class="form-control form-control-sm" value="{{ m.recording_ref or '' }}"></div>
+        <div class="col-8"><label class="form-label mb-0">{{ _('Minutes of the previous meeting') }}</label>
+          <select name="prev_minutes_meeting_id" class="form-select form-select-sm"><option value="">—</option>{% for p in prev_candidates %}<option value="{{ p.id }}" {{ 'selected' if m.prev_minutes_meeting_id == p.id }}>{{ p.meeting_date }} {{ p.meeting_reference or '' }}</option>{% endfor %}</select></div>
+        <div class="col-4"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="prev_minutes_approved" value="1" id="pma" {{ 'checked' if m.prev_minutes_approved }}><label class="form-check-label" for="pma">{{ _('approved at this meeting') }}</label></div></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Minutes filed with') }}</label><input name="filing_authority" class="form-control form-control-sm" value="{{ m.filing_authority or '' }}"></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Filing due') }}</label><input type="date" name="filing_due_date" class="form-control form-control-sm" value="{{ m.filing_due_date or '' }}"><div class="form-text">{{ _('Blank: meeting date + the rule\'s filing days.') }}</div></div>
+        <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div>
+      </form>
+    </details>
+    <details class="mt-2">
+      <summary class="btn btn-sm btn-outline-secondary">{{ _('Add a vote teller / officer') }}</summary>
+      <form method="post" action="{{ url_for('governance.meeting_teller_add', id=m.id) }}" class="row g-2 mt-2 border rounded p-2 bg-light">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-4"><select name="role" class="form-select form-select-sm">
+          <option value="TELLER">{{ _('Vote teller') }}</option><option value="ASSISTANT_SECRETARY">{{ _('Assistant secretary') }}</option>
+          <option value="OBSERVER">{{ _('Observer') }}</option><option value="AUDITOR">{{ _('Auditor') }}</option><option value="GM">{{ _('General manager') }}</option></select></div>
+        <div class="col-8"><select name="officer_id" class="form-select form-select-sm"><option value="">{{ _('Officer…') }}</option>{% for o in officers %}<option value="{{ o.id }}">{{ gov_pick(o.full_name, o.full_name_ar) }}</option>{% endfor %}</select></div>
+        <div class="col-6"><select name="member_id" class="form-select form-select-sm"><option value="">{{ _('…or a member') }}</option>{% for r in rows %}<option value="{{ r.member_id }}">{{ gov_pick(r.member_name, r.member_name_arabic) }}</option>{% endfor %}</select></div>
+        <div class="col-6"><input name="name" class="form-control form-control-sm" placeholder="{{ _('…or type a name') }}"></div>
+        <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Add') }}</button> <a class="small" href="{{ url_for('governance.gov_config_list', name='officers') }}">{{ _('Manage officers') }}</a></div>
+      </form>
+    </details>
+    {% endif %}
+  </div>
+</div>
+
+{# ---------------------------------------------------------------- agenda #}
+<div class="card border-0 shadow-sm mb-3" id="agenda">
+  <div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Agenda') }}</h2></div>
+  <div class="card-body small">
+    <ol class="mb-2">{% for a in agenda %}
+      <li class="mb-1"><span dir="auto">{{ a.item_title }}</span>{% if a.presenter_name %} <span class="text-muted">— {{ a.presenter_name }}</span>{% endif %}
+        {% if a.objection_note %}<div class="text-danger">{{ _('Objection') }}: <span dir="auto">{{ a.objection_note }}</span></div>{% endif %}
+        {% if can_edit and not locked %}<details class="d-inline"><summary class="text-muted">{{ _('objection') }}</summary>
+          <form method="post" action="{{ url_for('governance.meeting_agenda_objection', id=m.id, aid=a.id) }}" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input name="objection_note" class="form-control form-control-sm" value="{{ a.objection_note or '' }}" placeholder="{{ _('Member and reasons') }}"><button class="btn btn-sm btn-outline-primary">{{ _('Save') }}</button></form></details>{% endif %}
+      </li>{% else %}<li class="list-unstyled text-muted">{{ _('No agenda items recorded.') }}</li>{% endfor %}</ol>
+    {% if can_edit and not locked %}
+    <form method="post" action="{{ url_for('governance.meeting_agenda_add', id=m.id) }}" class="row g-1">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="col-8"><input name="item_title" class="form-control form-control-sm" placeholder="{{ _('Agenda item') }}" required dir="auto"></div>
+      <div class="col-4"><input name="presenter_name" class="form-control form-control-sm" placeholder="{{ _('Presenter') }}"></div>
+      <div class="col-12"><button class="btn btn-sm btn-outline-primary">{{ _('Add item') }}</button></div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{# ---------------------------------------------------------------- conflicts #}
+<div class="card border-0 shadow-sm mb-3" id="conflicts">
+  <div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Conflict-of-interest declarations') }}</h2></div>
+  <div class="card-body small">
+    {% for c in conflicts %}
+      <div class="border-bottom pb-1 mb-1"><strong>{{ gov_pick(c.member_name, c.member_name_arabic) }}</strong>{% if c.item_number %} — {{ _('item') }} {{ c.item_number }}{% endif %}{% if c.res_no %} · {{ c.res_no }}{% endif %}
+        <div dir="auto">{{ c.nature }}</div>
+        <div class="text-muted">{{ _('Did not vote') if c.did_not_vote }}{% if c.left_room %} · {{ _('left the room for the discussion') }}{% endif %}{% if c.ga_informed %} · {{ _('general assembly informed') }}{% endif %}</div>
+        {% if can_edit and not locked %}<form method="post" action="{{ url_for('governance.meeting_conflict_remove', id=m.id, cid=c.id) }}" class="d-inline" data-confirm="{{ _('Remove this declaration?') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-link btn-sm p-0 text-danger">{{ _('Remove') }}</button></form>{% endif %}
+      </div>
+    {% else %}<p class="text-muted mb-2">{{ _('No declarations recorded.') }}</p>{% endfor %}
+    {% if can_edit and not locked %}
+    <form method="post" action="{{ url_for('governance.meeting_conflict_add', id=m.id) }}" class="row g-1">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="col-6"><select name="member_id" class="form-select form-select-sm" required><option value="">{{ _('Member…') }}</option>{% for r in rows %}<option value="{{ r.member_id }}">{{ gov_pick(r.member_name, r.member_name_arabic) }}</option>{% endfor %}</select></div>
+      <div class="col-6"><select name="agenda_item_id" class="form-select form-select-sm"><option value="">{{ _('Agenda item…') }}</option>{% for a in agenda %}<option value="{{ a.id }}">{{ a.item_number }}. {{ a.item_title[:60] }}</option>{% endfor %}</select></div>
+      <div class="col-12"><input name="nature" class="form-control form-control-sm" placeholder="{{ _('Nature of the interest declared') }}" required dir="auto"></div>
+      <div class="col-12 d-flex gap-3"><label><input type="checkbox" name="left_room" value="1"> {{ _('left the room') }}</label><label><input type="checkbox" name="ga_informed" value="1"> {{ _('general assembly informed') }}</label></div>
+      <div class="col-12"><button class="btn btn-sm btn-outline-primary">{{ _('Record declaration') }}</button></div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{# ---------------------------------------------------------------- minutes & signatures #}
+<div class="card border-0 shadow-sm mb-3" id="minutes">
+  <div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Minutes approval, signatures and filing') }}</h2></div>
+  <div class="card-body small">
+    <p class="mb-2">{{ _('Minutes are recorded in the board register and signed by the chair and the secretary.') }}
+      {% if approved_version %}<span class="badge bg-success">{{ _('Minutes text approved') }}</span>{% endif %}
+      {% if m.minutes_approved_on %}<span class="text-muted">{{ _('Approved on %(d)s', d=m.minutes_approved_on) }}</span>{% endif %}</p>
+    {% if can_edit %}
+    <div class="d-flex flex-wrap gap-2">
+      {% if minutes_state == 'DRAFT' %}
+      <form method="post" action="{{ url_for('governance.meeting_minutes_state', id=m.id) }}" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="approve"><input type="date" name="approved_on" class="form-control form-control-sm"><button class="btn btn-sm btn-outline-success text-nowrap">{{ _('Mark approved') }}</button></form>
+      {% endif %}
+      {% if minutes_state != 'DRAFT' and not m.chair_signed_at %}
+      <form method="post" action="{{ url_for('governance.meeting_minutes_state', id=m.id) }}" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="sign_chair"><input name="name" class="form-control form-control-sm" placeholder="{{ _('Chair') }}"><button class="btn btn-sm btn-outline-primary text-nowrap">{{ _('Chair signed') }}</button></form>
+      {% endif %}
+      {% if minutes_state != 'DRAFT' and not m.secretary_signed_at %}
+      <form method="post" action="{{ url_for('governance.meeting_minutes_state', id=m.id) }}" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="sign_secretary"><input name="name" class="form-control form-control-sm" placeholder="{{ _('Secretary') }}"><button class="btn btn-sm btn-outline-primary text-nowrap">{{ _('Secretary signed') }}</button></form>
+      {% endif %}
+      {% if not m.filed_on %}
+      <form method="post" action="{{ url_for('governance.meeting_minutes_state', id=m.id) }}" class="d-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="filed"><input type="date" name="filed_on" class="form-control form-control-sm" required><input name="filing_reference" class="form-control form-control-sm" placeholder="{{ _('Reference') }}"><button class="btn btn-sm btn-outline-secondary text-nowrap">{{ _('Record filing') }}</button></form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+</div>
+
+<div class="col-xl-7">
+{# ---------------------------------------------------------------- attendance #}
+<div class="card border-0 shadow-sm mb-3" id="attendance">
+  <div class="card-header bg-transparent d-flex justify-content-between"><h2 class="h6 mb-0">{{ _('Attendance') }}</h2>
+    <span class="small text-muted">{{ _('A proxy is given in writing to another member who attends; one member may hold one proxy.') }}</span></div>
+  <div class="card-body p-0">
+    <form method="post" action="{{ url_for('governance.meeting_record_attendance', id=m.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0 small">
+        <thead class="table-light"><tr><th>{{ _('Member') }}</th><th>{{ _('Capacity') }}</th><th>{{ _('Attendance') }}</th><th>{{ _('Proxy held by / document') }}</th><th>{{ _('Note') }}</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+          <tr>
+            <td><a href="{{ url_for('governance.member_profile', mid=r.member_id) }}">{{ gov_pick(r.member_name, r.member_name_arabic) }}</a>{% if m.chair_member_id == r.member_id %} <span class="badge bg-dark">{{ _('chair') }}</span>{% endif %}</td>
+            <td class="text-muted">{{ r.cap_label }}</td>
+            <td>{% if can_edit and not locked %}
+              <select name="att_{{ r.member_id }}" class="form-select form-select-sm"><option value="">{{ _('Not recorded') }}</option>
+                {% for k, v in code_choices('gov_attendance') %}<option value="{{ k }}" {{ 'selected' if r.code == k }}>{{ v }}</option>{% endfor %}</select>
+              {% else %}{{ att_badge(r.code) }}{% endif %}</td>
+            <td>{% if can_edit and not locked %}
+              <select name="holder_{{ r.member_id }}" class="form-select form-select-sm"><option value="">—</option>{% for h in rows if h.member_id != r.member_id %}<option value="{{ h.member_id }}" {{ 'selected' if r.proxy_holder_member_id == h.member_id }}>{{ gov_pick(h.member_name, h.member_name_arabic) }}</option>{% endfor %}</select>
+              <input name="proxydoc_{{ r.member_id }}" class="form-control form-control-sm mt-1" value="{{ r.proxy_document or '' }}" placeholder="{{ _('Proxy document') }}">
+              {% elif r.code == 'PROXY' %}{{ gov_pick(r.holder_name, r.holder_name_ar) }}{% if r.proxy_document %}<div class="text-muted">{{ r.proxy_document }}</div>{% endif %}{% endif %}</td>
+            <td>{% if can_edit and not locked %}<input name="note_{{ r.member_id }}" class="form-control form-control-sm" value="{{ r.attendance_notes or '' }}">{% else %}{{ r.attendance_notes or '' }}{% endif %}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="text-muted text-center py-3">{{ _('No members on the attendance list.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% if can_edit and not locked and rows %}<div class="p-2"><button class="btn btn-sm btn-primary">{{ _('Save attendance and check the quorum') }}</button></div>{% endif %}
+    </form>
+  </div>
+</div>
+
+{# ---------------------------------------------------------------- resolutions #}
+<div class="card border-0 shadow-sm mb-3" id="resolutions">
+  <div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Resolutions') }}</h2></div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0 small">
+      <thead class="table-light"><tr><th>{{ _('No.') }}</th><th>{{ _('Resolution') }}</th><th>{{ _('Votes') }}</th><th>{{ _('Outcome') }}</th><th>{{ _('Follow-up') }}</th></tr></thead>
+      <tbody>
+      {% for r in resolutions %}
+        <tr>
+          <td class="text-nowrap"><a href="{{ url_for('governance.resolution_view', rid=r.id) }}">{{ r.number }}</a></td>
+          <td><div dir="auto" class="fw-semibold">{{ r.decision_title or (r.decision_text or '')[:120] }}</div>
+            <div class="text-muted">{{ gov_pick(r.cat_en, r.cat_ar) }}{% for l in r.links if l.direction == 'out' %} · {{ code_label(l.link_type, 'gov_link') }} {{ l.to_no or l.to_number }}{% endfor %}</div></td>
+          <td>{{ tally(r.tally) }}{% if r.majority_achieved is not none %}<div class="text-muted">{{ _('majority reached') if r.majority_achieved else _('majority not reached') }}</div>{% endif %}</td>
+          <td>{{ outcome_badge(r.outcome_code) }}</td>
+          <td>{{ fu_badge(r.fu_state, r.followup_status) }}{% if r.due_date %}<div class="text-muted">{{ r.due_date }}</div>{% endif %}</td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="text-muted text-center py-3">{{ _('No resolutions recorded.') }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% if can_edit and not locked %}
+    <details class="p-2">
+      <summary class="btn btn-sm btn-primary">{{ _('Record a resolution') }}</summary>
+      <form method="post" action="{{ url_for('governance.meeting_resolution_add', id=m.id) }}" class="mt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% include 'governance/_resolution_form.html' %}
+        <button class="btn btn-sm btn-primary mt-2">{{ _('Record resolution') }}</button>
+      </form>
+    </details>
+    {% endif %}
+  </div>
+</div>
+</div>
+</div>
+{% endblock %}

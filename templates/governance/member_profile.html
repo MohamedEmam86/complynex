@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% from 'governance/_register_macros.html' import outcome_badge, att_badge, vote_badge, register_nav with context %}
+{% block title %}{{ gov_pick(mem.member_name, mem.member_name_arabic) }} - {{ _('Member record') }}{% endblock %}
+{% block content %}
+{% set can_edit = current_user.can_edit('governance') or current_user.is_admin() %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-2 border-bottom gap-2">
+  <div><h1 class="h3 mb-0">{{ gov_pick(mem.member_name, mem.member_name_arabic) }} {% if mem.is_sample %}<span class="badge bg-warning text-dark fs-6">{{ _('sample') }}</span>{% endif %}</h1>
+    <div class="small text-muted">{{ gov_pick(mem.entity_en, mem.entity_ar) }} · {% for c in current %}{{ gov_pick(c.name_en, c.name_ar) }}{{ ' · ' if not loop.last }}{% else %}{{ _('No capacity recorded') }}{% endfor %}</div></div>
+  <div class="d-flex gap-2"><a href="{{ url_for('governance.view_member', id=mem.id) }}" class="btn btn-sm btn-outline-secondary">{{ _('Profile & documents') }}</a>
+    <a href="{{ url_for('governance.register_search', member=mem.id) }}" class="btn btn-sm btn-outline-primary">{{ _('Resolutions of meetings attended') }}</a></div>
+</div>
+{{ register_nav('') }}
+
+<div class="row">
+<div class="col-lg-7">
+  <div class="card border-0 shadow-sm mb-3"><div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Attendance by year') }}</h2></div>
+    <div class="card-body p-0"><div class="table-responsive"><table class="table table-sm small mb-0 align-middle">
+      <thead class="table-light"><tr><th>{{ _('Year') }}</th><th>{{ _('Body') }}</th><th>{{ _('Meetings') }}</th><th>{{ _('Attended') }}</th><th>{{ _('Remote') }}</th><th>{{ _('Proxy') }}</th><th>{{ _('Absent') }}</th><th>{{ _('Attendance rate') }}</th><th>{{ _('Alerts') }}</th></tr></thead>
+      <tbody>{% for s in stats %}
+        <tr><td>{{ s.year }}</td><td>{{ cnames.get(s.committee_id) if s.committee_id else code_label(s.body, 'gov_body') }}</td><td>{{ s.meetings }}</td><td>{{ s.present }}</td><td>{{ s.remote }}</td><td>{{ s.proxy }}</td>
+          <td>{{ s.excused + s.unexcused }}{% if s.unexcused %} <span class="text-danger">({{ s.unexcused }} {{ _('unexcused') }})</span>{% endif %}</td>
+          <td class="fw-semibold">{{ s.rate if s.rate is not none else '—' }}{{ '%' if s.rate is not none }}</td>
+          <td>{% for a in s.alerts %}<div class="text-danger">{% if a.code == 'absence_pct' %}{{ _('Absent from %(p)s of the meetings; the limit is %(l)s', p=(s.absence_pct|string) ~ '%', l=(a.limit|string) ~ '%') }}{% else %}{{ _('%(n)s meetings missed; the limit is fewer than %(l)s', n=s.absent, l=a.limit) }}{% endif %} <span class="text-muted">({{ gov_pick(a.rule, a.rule_ar) }})</span></div>{% endfor %}</td></tr>
+      {% else %}<tr><td colspan="9" class="text-muted text-center py-3">{{ _('No meetings recorded for this member.') }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    <p class="small text-muted px-3 py-2 mb-0">{{ _('Attendance by proxy is not personal attendance. Alerts use the rule sets chosen for the board.') }}{% if not rules %} {{ _('No rule set is chosen for this board yet.') }}{% endif %}</p></div></div>
+
+  <div class="card border-0 shadow-sm mb-3"><div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Meetings') }}</h2></div>
+    <div class="card-body p-0"><div class="table-responsive"><table class="table table-sm small mb-0">
+      <thead class="table-light"><tr><th>{{ _('Date') }}</th><th>{{ _('Meeting') }}</th><th>{{ _('Attendance') }}</th></tr></thead>
+      <tbody>{% for a in att %}<tr><td class="text-nowrap">{{ a.meeting_date }}</td>
+        <td><a href="{{ url_for('governance.meeting_record', id=a.mid) }}">{% if a.committee_id %}{{ gov_pick(a.committee_name, a.committee_name_arabic) }}{% else %}{{ code_label(a.body_code, 'gov_body') }}{% endif %} · {{ code_label(a.kind_code, 'gov_kind') }}{% if a.sequence_no %} #{{ a.sequence_no }}{% endif %}</a></td>
+        <td>{{ att_badge(a.code) }}{% if a.code == 'PROXY' and a.proxy_name %} <span class="text-muted">→ {{ a.proxy_name }}</span>{% endif %}</td></tr>{% endfor %}</tbody>
+    </table></div></div></div>
+
+  <div class="card border-0 shadow-sm mb-3"><div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Votes cast') }} <span class="text-muted small">({{ votes|length }})</span></h2></div>
+    <div class="card-body p-0"><div class="table-responsive"><table class="table table-sm small mb-0">
+      <thead class="table-light"><tr><th>{{ _('Resolution') }}</th><th>{{ _('Date') }}</th><th>{{ _('Vote') }}</th><th>{{ _('Outcome') }}</th></tr></thead>
+      <tbody>{% for v in votes %}<tr><td><a href="{{ url_for('governance.resolution_view', rid=v.resolution_id) }}">{{ v.res_no or v.decision_number }}</a> <span dir="auto">{{ (v.decision_title or '')[:70] }}</span>
+          {% if v.dissent_text %}<div class="text-danger" dir="auto">{{ v.dissent_text }}</div>{% endif %}</td>
+        <td class="text-nowrap">{{ v.meeting_date }}</td><td>{{ vote_badge(v.vote) }}{% if v.via_proxy %} <span class="text-muted">({{ _('by proxy') }})</span>{% endif %}</td><td>{{ outcome_badge(v.outcome) }}</td></tr>
+      {% else %}<tr><td colspan="4" class="text-muted text-center py-3">{{ _('No votes recorded.') }}</td></tr>{% endfor %}</tbody>
+    </table></div></div></div>
+</div>
+
+<div class="col-lg-5">
+  <div class="row g-2 mb-3">
+    <div class="col-4"><div class="p-2 border rounded text-center bg-light"><div class="fs-4 fw-bold">{{ votes|length }}</div><div class="small text-muted">{{ _('votes') }}</div></div></div>
+    <div class="col-4"><div class="p-2 border rounded text-center bg-light"><div class="fs-4 fw-bold text-danger">{{ dissents|length }}</div><div class="small text-muted">{{ _('dissents') }}</div></div></div>
+    <div class="col-4"><div class="p-2 border rounded text-center bg-light"><div class="fs-4 fw-bold text-warning">{{ recusals|length }}</div><div class="small text-muted">{{ _('recusals') }}</div></div></div>
+  </div>
+  {% if conflicts %}
+  <div class="card border-0 shadow-sm mb-3"><div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Conflicts declared and recusals') }}</h2></div>
+    <div class="card-body small">{% for c in conflicts %}<div class="border-bottom mb-1 pb-1"><a href="{{ url_for('governance.meeting_record', id=c.meeting_id) }}#conflicts">{{ c.meeting_date }}</a>{% if c.res_no %} · {{ c.res_no }}{% endif %}<div dir="auto">{{ c.nature }}</div></div>{% endfor %}</div></div>
+  {% endif %}
+
+  <div class="card border-0 shadow-sm mb-3" id="capacities"><div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Capacities (صفة العضو) and history') }}</h2></div>
+    <div class="card-body p-0">
+      <table class="table table-sm small mb-0 align-middle"><thead class="table-light"><tr><th>{{ _('Dimension') }}</th><th>{{ _('Capacity') }}</th><th>{{ _('From') }}</th><th>{{ _('To') }}</th><th></th></tr></thead>
+      <tbody>{% for h in history %}<tr class="{{ '' if h.current else 'text-muted' }}"><td>{{ gov_pick(h.dim_en, h.dim_ar) }}</td>
+        <td>{{ gov_pick(h.name_en, h.name_ar) }}{% if h.represented_entity %}<div class="text-muted">{{ h.represented_entity }}</div>{% endif %}{% if h.source == 'legacy' %} <span class="badge bg-light text-muted border">{{ _('from the old fields') }}</span>{% endif %}</td>
+        <td>{{ h.effective_from or '—' }}</td><td>{{ h.effective_to or '' }}</td>
+        <td class="text-nowrap">{% if can_edit %}
+          {% if h.current %}<form method="post" action="{{ url_for('governance.member_capacity_change', mid=mem.id, cid=h.id, action='end') }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-link btn-sm p-0">{{ _('End today') }}</button></form>{% endif %}
+          <form method="post" action="{{ url_for('governance.member_capacity_change', mid=mem.id, cid=h.id, action='remove') }}" class="d-inline" data-confirm="{{ _('Delete this entry? Use it only to correct a mistake; end a capacity to keep its history.') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-link btn-sm p-0 text-danger">{{ _('Delete') }}</button></form>
+          {% endif %}</td></tr>
+      {% else %}<tr><td colspan="5" class="text-muted text-center py-2">{{ _('No capacity recorded.') }}</td></tr>{% endfor %}</tbody></table>
+      {% if can_edit %}
+      <form method="post" action="{{ url_for('governance.member_capacity_add', mid=mem.id) }}" class="row g-1 p-2 small">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-12"><select name="option_id" class="form-select form-select-sm" required><option value="">{{ _('Capacity…') }}</option>
+          {% for o in options %}<option value="{{ o.id }}">{{ gov_pick(o.dim_en, o.dim_ar) }}: {{ gov_pick(o.name_en, o.name_ar) }}</option>{% endfor %}</select></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('From') }}</label><input type="date" name="effective_from" class="form-control form-control-sm"></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('To') }}</label><input type="date" name="effective_to" class="form-control form-control-sm"></div>
+        <div class="col-12"><input name="represented_entity" class="form-control form-control-sm" placeholder="{{ _('Legal person / shareholders represented (if any)') }}"></div>
+        <div class="col-12"><input name="note" class="form-control form-control-sm" placeholder="{{ _('Note (e.g. decision reference)') }}"></div>
+        <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Add capacity') }}</button> <span class="text-muted">{{ _('A new capacity in a single-choice dimension ends the previous one.') }}</span> <a href="{{ url_for('governance.gov_config_list', name='capacity-options') }}">{{ _('Manage the list') }}</a></div>
+      </form>
+      {% endif %}
+    </div></div>
+
+  <div class="card border-0 shadow-sm mb-3"><div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Details for the annual board list') }}</h2></div>
+    <div class="card-body small">
+      <form method="post" action="{{ url_for('governance.member_facts', mid=mem.id) }}" class="row g-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-6"><label class="form-label mb-0">{{ _('Board') }}</label><select name="entity_id" class="form-select form-select-sm" {{ 'disabled' if not can_edit }}>{% for e in entities %}<option value="{{ e.id }}" {{ 'selected' if (mem.entity_id or 0) == e.id or (not mem.entity_id and e.is_default) }}>{{ gov_pick(e.name_en, e.name_ar) }}</option>{% endfor %}</select></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Nationality') }}</label><input name="nationality" class="form-control form-control-sm" value="{{ mem.nationality or '' }}" {{ 'disabled' if not can_edit }}></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Gender') }}</label><select name="gender" class="form-select form-select-sm" {{ 'disabled' if not can_edit }}><option value="">—</option><option value="F" {{ 'selected' if mem.gender == 'F' }}>{{ _('Female') }}</option><option value="M" {{ 'selected' if mem.gender == 'M' }}>{{ _('Male') }}</option></select></div>
+        <div class="col-6"><label class="form-label mb-0">{{ _('Seats on other boards') }}</label><input name="other_board_seats" class="form-control form-control-sm" inputmode="numeric" value="{{ mem.other_board_seats if mem.other_board_seats is not none else '' }}" {{ 'disabled' if not can_edit }}></div>
+        {% if can_edit %}<div class="col-12"><button class="btn btn-sm btn-outline-primary">{{ _('Save') }}</button></div>{% endif %}
+      </form>
+    </div></div>
+</div>
+</div>
+{% endblock %}

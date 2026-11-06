@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% from 'governance/_register_macros.html' import body_label, register_nav with context %}
+{% block title %}{{ _('Meetings register') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+{% set can_edit = current_user.can_edit('governance') or current_user.is_admin() %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-2 border-bottom gap-2">
+  <div><h1 class="h3 mb-0">{{ _('Meetings register') }}</h1>
+    <small class="text-muted">{{ _('Board, committee and general assembly meetings with their sequence number, quorum, minutes, signatures and filing.') }}</small></div>
+  <form method="get" class="d-flex gap-2"><select name="entity" class="form-select form-select-sm" data-auto-submit>
+    <option value="">{{ _('All boards') }}</option>{% for e in entities %}<option value="{{ e.id }}" {{ 'selected' if entity == e.id }}>{{ gov_pick(e.name_en, e.name_ar) }}</option>{% endfor %}</select></form>
+</div>
+{{ register_nav('meetings') }}
+{% if can_edit %}
+<details class="card border-0 shadow-sm mb-3 p-2">
+  <summary class="btn btn-sm btn-primary">{{ _('Record a new meeting') }}</summary>
+  <form method="post" action="{{ url_for('governance.register_meeting_new') }}" class="row g-2 mt-2 small">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Board') }}</label><select name="entity_id" class="form-select form-select-sm">{% for e in entities %}<option value="{{ e.id }}" {{ 'selected' if (entity or default_entity) == e.id }}>{{ gov_pick(e.name_en, e.name_ar) }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Body') }}</label><select name="body" class="form-select form-select-sm">{% for k, v in code_choices('gov_body') %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Committee (if a committee meets)') }}</label><select name="committee_id" class="form-select form-select-sm"><option value="">—</option>{% for c in committees %}<option value="{{ c.id }}">{{ gov_pick(c.committee_name, c.committee_name_arabic) }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Kind') }}</label><select name="meeting_kind" class="form-select form-select-sm">{% for k, v in code_choices('gov_kind') %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Mode') }}</label><select name="mode" class="form-select form-select-sm">{% for k, v in code_choices('gov_mode') %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Date') }}</label><input type="date" name="meeting_date" class="form-control form-control-sm" required></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Time') }}</label><input type="time" name="meeting_time" class="form-control form-control-sm" value="10:00"></div>
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Venue') }}</label><input name="location" class="form-control form-control-sm"></div>
+    <div class="col-md-3"><label class="form-label mb-0">{{ _('Quorum / majority rule') }}</label><select name="meeting_rule_id" class="form-select form-select-sm"><option value="">{{ _('Default for this body') }}</option>{% for r in rules %}<option value="{{ r.id }}">{{ gov_pick(r.name_en, r.name_ar) }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label mb-0">{{ _('Reference') }}</label><input name="meeting_reference" class="form-control form-control-sm" placeholder="{{ _('automatic') }}"></div>
+    <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Create and open the record') }}</button>
+      <span class="small text-muted">{{ _('The members of the board or committee are put on the attendance list; the sequence number is the next one of that body in the year.') }}</span></div>
+  </form>
+</details>
+{% endif %}
+<div class="card border-0 shadow-sm"><div class="card-body p-0"><div class="table-responsive">
+<table class="table table-sm table-hover align-middle mb-0 small">
+  <thead class="table-light"><tr><th>{{ _('Date') }}</th><th>{{ _('Board') }}</th><th>{{ _('Body') }}</th><th>#</th><th>{{ _('Kind') }}</th><th>{{ _('Quorum') }}</th><th>{{ _('Resolutions') }}</th><th>{{ _('Minutes') }}</th><th>{{ _('Filing') }}</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td class="text-nowrap"><a href="{{ url_for('governance.meeting_record', id=r.id) }}">{{ r.meeting_date or '—' }}</a>{% if r.is_sample %} <span class="badge bg-warning text-dark">{{ _('sample') }}</span>{% endif %}</td>
+      <td>{{ gov_pick(r.entity_en, r.entity_ar) }}</td>
+      <td>{{ body_label(r) }}</td>
+      <td>{{ r.sequence_no or '' }}</td>
+      <td>{{ code_label(r.kind_code, 'gov_kind') }}{% if (r.call_no or 1) >= 2 %} <span class="badge bg-light text-dark border">{{ _('call') }} {{ r.call_no }}</span>{% endif %}</td>
+      <td>{% if r.quorum_required is not none %}{% if r.quorum_met %}<span class="text-success">{{ r.quorum_counted }}/{{ r.quorum_required }}</span>{% else %}<span class="text-danger fw-semibold">{{ r.quorum_counted }}/{{ r.quorum_required }}</span>{% endif %}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+      <td>{{ r.n_resolutions }}</td>
+      <td>{{ code_label(r._minutes_state, 'gov_minutes') }}{% if 'signature_overdue' in r.flags %} <span class="badge bg-danger">{{ _('overdue') }}</span>{% endif %}</td>
+      <td>{% if r.filed_on %}<span class="text-success">{{ r.filed_on }}</span>{% elif r.filing_due_date %}{{ r.filing_due_date }}{% if 'filing_overdue' in r.flags %} <span class="badge bg-danger">{{ _('overdue') }}</span>{% endif %}{% else %}—{% endif %}</td>
+    </tr>
+  {% else %}<tr><td colspan="9" class="text-muted text-center py-3">{{ _('No meetings recorded.') }}</td></tr>{% endfor %}
+  </tbody>
+</table></div></div></div>
+{% endblock %}

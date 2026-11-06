@@ -110,14 +110,162 @@ def _committee_errors(data):
             errors.append(_('The chairman must be an active board member.'))
     return errors
 
+def _committee_types(include_code=None):
+    db = get_db()
+    try:
+        rows = [dict(r) for r in db.execute(
+            "SELECT * FROM gov_committee_types WHERE is_active OR code = %s ORDER BY sort_order, id",
+            ((include_code or '').upper(),)).fetchall()]
+    except Exception:   # configurable committee types not migrated yet
+        db.rollback()
+        return []
+    return rows
+
+
+def _committee_form_ctx(committee_id=None):
+    db = get_db()
+    ctx = {'members': BoardMember.get_all(), 'ctypes': [], 'rules': [], 'gov_entities': [], 'crow': {}}
+    try:
+        ctx['rules'] = [dict(r) for r in db.execute(
+            "SELECT id, code, name_en, name_ar FROM gov_meeting_rules WHERE is_active ORDER BY sort_order, id").fetchall()]
+        ctx['gov_entities'] = [dict(r) for r in db.execute(
+            "SELECT id, name_en, name_ar FROM gov_entities WHERE is_active ORDER BY sort_order, id").fetchall()]
+        if committee_id:
+            row = db.execute("SELECT * FROM board_committees WHERE id = %s", (committee_id,)).fetchone()
+            ctx['crow'] = dict(row) if row else {}
+        ctx['ctypes'] = _committee_types(ctx['crow'].get('committee_type'))
+    except Exception:
+        db.rollback()
+    return ctx
+
+
+def _committee_type_from_form():
+    """A new committee type typed on the committee form is added to the configurable list."""
+    name_en = (request.form.get('new_type_name_en') or '').strip()
+    if not name_en:
+        return None
+    name_ar = (request.form.get('new_type_name_ar') or '').strip() or None
+    db = get_db()
+    code = re.sub(r'[^A-Z0-9]+', '_', name_en.upper()).strip('_')[:36] or 'CUSTOM'
+    base, n = code, 1
+    while db.execute("SELECT 1 FROM gov_committee_types WHERE code = %s", (code,)).fetchone():
+        existing = db.execute("SELECT name_en FROM gov_committee_types WHERE code = %s", (code,)).fetchone()
+        if existing and existing['name_en'].strip().lower() == name_en.lower():
+            return code
+        n += 1
+        code = f'{base[:34]}_{n}'
+    db.execute("""INSERT INTO gov_committee_types (code, name_en, name_ar, res_prefix, created_by)
+                  VALUES (%s,%s,%s,%s,%s)""", (code, name_en[:200], name_ar, code[:3], current_user.id))
+    db.commit()
+    AuditLog.log(current_user.id, 'Governance Setting Added', 'Governance', None, f'gov_committee_types: {name_en}',
+                 request.remote_addr)
+    return code
+
+
+def _save_committee_rules(cid, creating=False):
+    """Composition rules of one committee; a blank value on a new committee takes the type's default."""
+    db = get_db()
+    f = request.form
+
+    def num(k):
+        v = (f.get(k) or '').strip()
+        return int(v) if v.isdigit() else None
+    try:
+        t = db.execute("SELECT * FROM gov_committee_types WHERE code = (SELECT UPPER(committee_type) FROM board_committees WHERE id = %s)",
+                       (cid,)).fetchone()
+    except Exception:
+        db.rollback()
+        return
+    t = dict(t) if t else {}
+    vals = {k: num(k) for k in ('min_members', 'max_members', 'min_independent_members', 'min_meetings_per_year', 'quorum_number')}
+    flags = {k: (1 if f.get(k) else 0) for k in ('independent_majority', 'independent_chair', 'non_executive_chair',
+                                                  'requires_financial_expert')}
+    if creating:
+        for k in ('min_members', 'max_members', 'min_independent_members', 'min_meetings_per_year'):
+            if vals[k] is None and t.get(k) is not None:
+                vals[k] = t[k]
+        if not f.get('rules_submitted'):
+            flags = {k: (1 if (flags[k] or t.get(k)) else 0) for k in flags}
+    rule_id = f.get('meeting_rule_id', type=int)
+    if not rule_id and t.get('meeting_rule_code'):
+        r = db.execute("SELECT id FROM gov_meeting_rules WHERE code = %s", (t['meeting_rule_code'],)).fetchone()
+        rule_id = r['id'] if r else None
+    ent = f.get('entity_id', type=int)
+    dflt = db.execute("SELECT id FROM gov_entities WHERE is_default LIMIT 1").fetchone()
+    if ent and dflt and ent == dflt['id']:
+        ent = None
+    db.execute("""UPDATE board_committees SET min_members = %s, max_members = %s, min_independent_members = %s,
+                  min_meetings_per_year = %s, quorum_number = %s, independent_majority = %s, independent_chair = %s,
+                  non_executive_chair = %s, requires_financial_expert = %s, meeting_rule_id = %s,
+                  res_prefix = %s, entity_id = %s, description = %s WHERE id = %s""",
+               (vals['min_members'], vals['max_members'], vals['min_independent_members'], vals['min_meetings_per_year'],
+                vals['quorum_number'], flags['independent_majority'], flags['independent_chair'],
+                flags['non_executive_chair'], flags['requires_financial_expert'], rule_id,
+                ((f.get('res_prefix') or '').strip().upper()[:12] or t.get('res_prefix')),
+                ent, (f.get('description') or '').strip() or None, cid))
+    db.commit()
+
+
+def _entity_member_ids(entity_id):
+    """Ids of the members of one board (None = no filter)."""
+    if not entity_id:
+        return None
+    db = get_db()
+    try:
+        d = db.execute("SELECT id FROM gov_entities WHERE is_default LIMIT 1").fetchone()
+        if d and d['id'] == entity_id:
+            rows = db.execute("SELECT id FROM board_members WHERE entity_id IS NULL OR entity_id = %s", (entity_id,)).fetchall()
+        else:
+            rows = db.execute("SELECT id FROM board_members WHERE entity_id = %s", (entity_id,)).fetchall()
+        return {r['id'] for r in rows}
+    except Exception:
+        db.rollback()
+        return None
+
+
+def _entity_meeting_ids(entity_id):
+    if not entity_id:
+        return None
+    db = get_db()
+    try:
+        d = db.execute("SELECT id FROM gov_entities WHERE is_default LIMIT 1").fetchone()
+        if d and d['id'] == entity_id:
+            rows = db.execute("SELECT id FROM board_meetings WHERE entity_id IS NULL OR entity_id = %s", (entity_id,)).fetchall()
+        else:
+            rows = db.execute("SELECT id FROM board_meetings WHERE entity_id = %s", (entity_id,)).fetchall()
+        return {r['id'] for r in rows}
+    except Exception:
+        db.rollback()
+        return None
+
+
+def _gov_entities():
+    db = get_db()
+    try:
+        return [dict(r) for r in db.execute("SELECT * FROM gov_entities WHERE is_active ORDER BY sort_order, id").fetchall()]
+    except Exception:
+        db.rollback()
+        return []
+
+
 @governance_bp.route('/')
 @governance_bp.route('/dashboard')
 @login_required
 @permission_required('governance')
 def dashboard():
+    gov_entities = _gov_entities()
+    entity_id = request.args.get('entity', type=int)
+    if entity_id is None and len(gov_entities) > 1:
+        entity_id = next((e['id'] for e in gov_entities if e.get('is_default')), None)
     members = BoardMember.get_all()
     upcoming_meetings = BoardMeeting.get_upcoming()
     past_meetings = BoardMeeting.get_past()
+    keep = _entity_member_ids(entity_id)
+    if keep is not None:
+        members = [m for m in members if m.id in keep]
+        mkeep = _entity_meeting_ids(entity_id) or set()
+        upcoming_meetings = [m for m in upcoming_meetings if m.id in mkeep]
+        past_meetings = [m for m in past_meetings if m.id in mkeep]
 
     independent_count = len([m for m in members if m.is_independent])
     independent_pct = round(independent_count / len(members) * 100) if members else 0
@@ -134,7 +282,7 @@ def dashboard():
                          past_meetings=past_meetings,
                          independent_pct=independent_pct,
                          compliance_pct=compliance_pct,
-                         fit_proper_due=fit_proper_due)
+                         fit_proper_due=fit_proper_due, gov_entities=gov_entities, entity_id=entity_id)
 
 @governance_bp.route('/members/add', methods=['GET', 'POST'])
 @login_required
@@ -278,7 +426,8 @@ def member_document(id):
 @permission_required('governance')
 def list_committees():
     committees = BoardCommittee.get_all()
-    return render_template('governance/committee_list.html', committees=committees)
+    ctypes = {t['code']: t for t in _committee_types()}
+    return render_template('governance/committee_list.html', committees=committees, ctypes=ctypes)
 
 @governance_bp.route('/committee/add', methods=['GET', 'POST'])
 @login_required
@@ -294,10 +443,13 @@ def add_committee():
             'meeting_frequency': request.form.get('meeting_frequency')
         }
         data['chairman_id'] = data['chairman_id'] or None
+        new_code = _committee_type_from_form()
+        if new_code:
+            data['committee_type'] = new_code
         errors = _committee_errors(data)
         if errors:
             _flash_errors(errors)
-            return render_template('governance/committee_form.html', members=BoardMember.get_all())
+            return render_template('governance/committee_form.html', **_committee_form_ctx())
         
         # Handle Committee Charter Upload
         file = request.files.get('charter_file')
@@ -308,12 +460,13 @@ def add_committee():
             file.save(upload_path)
             data['charter_file'] = f"uploads/governance/committees/{filename}"
             
-        BoardCommittee.create(data)
+        cid = BoardCommittee.create(data)
+        _save_committee_rules(cid, creating=True)
+        AuditLog.log(current_user.id, 'Committee Created', 'Governance', cid, data['committee_name'], request.remote_addr)
         flash(_('Committee created successfully.'), 'success')
         return redirect(url_for('governance.list_committees'))
-    
-    members = BoardMember.get_all()
-    return render_template('governance/committee_form.html', members=members)
+
+    return render_template('governance/committee_form.html', **_committee_form_ctx())
 
 @governance_bp.route('/committee/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -335,11 +488,13 @@ def edit_committee(id):
             'is_active': 'is_active' in request.form
         }
         data['chairman_id'] = data['chairman_id'] or None
+        new_code = _committee_type_from_form()
+        if new_code:
+            data['committee_type'] = new_code
         errors = _committee_errors(data)
         if errors:
             _flash_errors(errors)
-            return render_template('governance/committee_form.html', committee=committee,
-                                   members=BoardMember.get_all())
+            return render_template('governance/committee_form.html', committee=committee, **_committee_form_ctx(id))
         
         # Handle Committee Charter Upload
         file = request.files.get('charter_file')
@@ -351,11 +506,12 @@ def edit_committee(id):
             data['charter_file'] = f"uploads/governance/committees/{filename}"
             
         committee.update(data)
+        _save_committee_rules(id)
+        AuditLog.log(current_user.id, 'Committee Changed', 'Governance', id, data['committee_name'], request.remote_addr)
         flash(_('Committee updated successfully.'), 'success')
         return redirect(url_for('governance.list_committees'))
-    
-    members = BoardMember.get_all()
-    return render_template('governance/committee_form.html', committee=committee, members=members)
+
+    return render_template('governance/committee_form.html', committee=committee, **_committee_form_ctx(id))
 
 @governance_bp.route('/committee/delete/<int:id>', methods=['POST'])
 @login_required
@@ -468,7 +624,16 @@ def manage_committee_members(id):
 def list_meetings():
     upcoming = BoardMeeting.get_upcoming()
     past = BoardMeeting.get_past()
-    return render_template('governance/meeting_list.html', upcoming=upcoming, past=past)
+    gov_entities = _gov_entities()
+    entity_id = request.args.get('entity', type=int)
+    if entity_id is None and len(gov_entities) > 1:
+        entity_id = next((e['id'] for e in gov_entities if e.get('is_default')), None)
+    keep = _entity_meeting_ids(entity_id)
+    if keep is not None:
+        upcoming = [m for m in upcoming if m.id in keep]
+        past = [m for m in past if m.id in keep]
+    return render_template('governance/meeting_list.html', upcoming=upcoming, past=past,
+                           gov_entities=gov_entities, entity_id=entity_id)
 
 @governance_bp.route('/meeting/schedule', methods=['GET', 'POST'])
 @login_required
@@ -588,6 +753,12 @@ def record_attendance(id):
                    for r in CommitteeMembership.get_by_committee(meeting.committee_id)]
     else:
         members = [{'id': m.id, 'member_name': m.member_name} for m in BoardMember.get_all()]
+        try:
+            from governance.register import body_members, meeting_or_404
+            keep = set(body_members(get_db(), meeting_or_404(get_db(), id)))
+            members = [m for m in members if m['id'] in keep]
+        except Exception:   # board tables of this release not migrated yet
+            get_db().rollback()
     existing = MeetingAttendance.get_for_meeting(id)
     # Members invited when scheduling (or added later) who are not on the
     # committee/board list any more still need their attendance recorded.
@@ -1265,3 +1436,7 @@ _labels.register(governance_bp)
 def composition():
     from governance import composition as COMP
     return render_template('governance/composition.html', data=COMP.build())
+
+
+from governance import config_lists as _config_lists  # noqa: E402,F401  (configurable governance lists)
+from governance import register as _register_routes  # noqa: E402,F401  (meeting record, resolutions register, search)

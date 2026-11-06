@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}{{ spec.title }} - ComplyNex CMS{% endblock %}
+{% macro input(f, value, editing=False, rid='new') -%}
+  {%- set fid = 'f_' ~ rid ~ '_' ~ f.name -%}
+  {%- if f.kind == 'bool' -%}
+    <div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="{{ f.name }}" value="1" id="{{ fid }}" {{ 'checked' if value }}>
+    <label class="form-check-label small" for="{{ fid }}">{{ f.label }}</label></div>
+  {%- else -%}
+    <label class="form-label small mb-0" for="{{ fid }}">{{ f.label }}{% if f.required %} *{% endif %}</label>
+    {%- if editing and f.readonly_on_edit -%}
+      <input class="form-control form-control-sm" id="{{ fid }}" value="{{ value if value is not none else '' }}" disabled>
+    {%- elif f.kind in ('select', 'select_int') -%}
+      <select class="form-select form-select-sm" name="{{ f.name }}" id="{{ fid }}" {{ 'required' if f.required }}>
+        {% if f.kind == 'select_int' and not f.required %}<option value="">—</option>{% endif %}
+        {% for k, v in choices[f.name] %}<option value="{{ k }}" {{ 'selected' if (value|string) == k }}>{{ v }}</option>{% endfor %}
+      </select>
+    {%- elif f.kind == 'multi' -%}
+      {% set chosen = (value or '').split(',') %}
+      <select class="form-select form-select-sm" name="{{ f.name }}" id="{{ fid }}" multiple size="3">
+        {% for k, v in choices[f.name] %}<option value="{{ k }}" {{ 'selected' if k in chosen }}>{{ v }}</option>{% endfor %}
+      </select>
+    {%- else -%}
+      <input class="form-control form-control-sm" name="{{ f.name }}" id="{{ fid }}" value="{{ value if value is not none else '' }}"
+             {{ 'required' if f.required }} {{ 'dir=rtl' if f.kind == 'text_ar' }}
+             {% if f.kind in ('int',) %}inputmode="numeric"{% elif f.kind in ('fraction', 'pct') %}inputmode="decimal"{% endif %}>
+    {%- endif -%}
+  {%- endif -%}
+{%- endmacro %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <div>
+    <h1 class="h3 mb-0">{{ spec.title }}</h1>
+    <small class="text-muted">{{ spec.intro }}</small>
+  </div>
+  <a href="{{ url_for('governance.gov_settings') }}" class="btn btn-sm btn-outline-secondary">{{ _('All settings') }}</a>
+</div>
+
+{% if can_edit %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Add') }}</h2></div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('governance.gov_config_add', name=name) }}" class="row g-2 align-items-end">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% for f in spec.fields %}<div class="col-md-{{ f.width }}">{{ input(f, f.default) }}</div>{% endfor %}
+      <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead class="table-light"><tr>
+        {% for f in spec.fields[:6] %}<th class="small">{{ f.label }}</th>{% endfor %}
+        <th></th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr class="{{ '' if r.is_active is not defined or r.is_active else 'text-muted' }}">
+          {% for f in spec.fields[:6] %}
+          <td class="small" {{ 'dir=rtl' if f.kind == 'text_ar' }}>
+            {%- set v = r[f.name] -%}
+            {%- if f.kind == 'bool' -%}{{ _('Yes') if v else _('No') }}
+            {%- elif f.kind in ('select', 'select_int') -%}{% for k, lab in choices[f.name] if k == (v|string) %}{{ lab }}{% else %}{{ v if v is not none else '' }}{% endfor %}
+            {%- else -%}{{ v if v is not none else '' }}{%- endif -%}
+            {% if loop.first %}{% if r.is_system %} <span class="badge bg-light text-muted border">{{ _('system') }}</span>{% endif %}{% if r.is_sample %} <span class="badge bg-warning text-dark">{{ _('sample') }}</span>{% endif %}{% if r.is_default %} <span class="badge bg-info text-dark">{{ _('default') }}</span>{% endif %}{% endif %}
+          </td>
+          {% endfor %}
+          <td class="text-end text-nowrap">
+            {% if can_edit %}
+            <details class="d-inline-block text-start">
+              <summary class="btn btn-sm btn-outline-secondary">{{ _('Edit') }}</summary>
+              <form method="post" action="{{ url_for('governance.gov_config_update', name=name, rid=r.id) }}" class="row g-2 align-items-end border rounded p-2 mt-1 bg-light">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% for f in spec.fields %}<div class="col-md-{{ [f.width * 2, 12]|min }}">{{ input(f, r[f.name], True, r.id) }}</div>{% endfor %}
+                <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Save') }}</button></div>
+              </form>
+            </details>
+            <form method="post" action="{{ url_for('governance.gov_config_delete', name=name, rid=r.id) }}" class="d-inline" data-confirm="{{ _('Remove this entry? If it is in use it will be deactivated instead.') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-sm btn-outline-danger">{{ _('Remove') }}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="text-muted text-center py-3">{{ _('Nothing recorded yet.') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

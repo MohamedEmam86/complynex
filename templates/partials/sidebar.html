@@ -388,6 +388,13 @@
             {% endif %}
             {% if current_user.can_view('governance') %}
             <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.register_search') }}">
+                <span class="cnx-nav__label">{{ _('Resolutions register') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('governance') %}
+            <li class="cnx-nav__subitem">
               <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('governance.fit_proper_dashboard') }}">
                 <span class="cnx-nav__label">{{ _('Fit & Proper') }}</span>
               </a>

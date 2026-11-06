@@ -43263,3 +43263,1684 @@ msgstr "جاري إعداد تقرير الانحراف لشهر %(m)s؛ حدّ�
 
 #~ msgid "Charter document not found."
 #~ msgstr "لم يتم العثور على مستند النظام الأساسي."
+
+#: governance (p8-gov)
+msgid "Any body"
+msgstr "أي جهة"
+
+#: governance (p8-gov)
+msgid "Ordinary general assembly"
+msgstr "الجمعية العامة العادية"
+
+#: governance (p8-gov)
+msgid "Extraordinary general assembly"
+msgstr "الجمعية العامة غير العادية"
+
+#: governance (p8-gov)
+msgid "More than the fraction"
+msgstr "أكثر من النسبة"
+
+#: governance (p8-gov)
+msgid "The fraction or more"
+msgstr "النسبة أو أكثر"
+
+#: governance (p8-gov)
+msgid "Same as the first call"
+msgstr "مثل الدعوة الأولى"
+
+#: governance (p8-gov)
+msgid "More than half of the members present"
+msgstr "أكثر من نصف الأعضاء الحاضرين"
+
+#: governance (p8-gov)
+msgid "More votes for than against"
+msgstr "أصوات موافقة أكثر من المعارضة"
+
+#: governance (p8-gov)
+msgid "Two thirds of the members present"
+msgstr "ثلثا الأعضاء الحاضرين"
+
+#: governance (p8-gov)
+msgid "Three quarters of the members present"
+msgstr "ثلاثة أرباع الأعضاء الحاضرين"
+
+#: governance (p8-gov)
+msgid "Unanimous"
+msgstr "بالإجماع"
+
+#: governance (p8-gov)
+msgid "Committee types"
+msgstr "أنواع اللجان"
+
+#: governance (p8-gov)
+msgid "Any committee name can be used. Each type carries default composition rules that a new committee of that type starts with; each committee can then change them."
+msgstr "يمكن استخدام أي اسم للجنة. لكل نوع قواعد تشكيل افتراضية تبدأ بها اللجنة الجديدة من هذا النوع، ثم يمكن تعديلها لكل لجنة."
+
+#: governance (p8-gov)
+msgid "Resolution prefix"
+msgstr "بادئة رقم القرار"
+
+#: governance (p8-gov)
+msgid "Min members"
+msgstr "الحد الأدنى للأعضاء"
+
+#: governance (p8-gov)
+msgid "Max members"
+msgstr "الحد الأقصى للأعضاء"
+
+#: governance (p8-gov)
+msgid "Min independent members"
+msgstr "الحد الأدنى للأعضاء المستقلين"
+
+#: governance (p8-gov)
+msgid "Independent majority"
+msgstr "أغلبية مستقلة"
+
+#: governance (p8-gov)
+msgid "Independent chair"
+msgstr "رئيس مستقل"
+
+#: governance (p8-gov)
+msgid "Non-executive chair"
+msgstr "رئيس غير تنفيذي"
+
+#: governance (p8-gov)
+msgid "Financial expert"
+msgstr "خبير مالي"
+
+#: governance (p8-gov)
+msgid "Meetings per year"
+msgstr "الاجتماعات في السنة"
+
+#: governance (p8-gov)
+msgid "Quorum / majority rule"
+msgstr "قاعدة النصاب / الأغلبية"
+
+#: governance (p8-gov)
+msgid "Capacity dimensions"
+msgstr "أبعاد صفة العضو"
+
+#: governance (p8-gov)
+msgid "A member's capacity (صفة العضو) is recorded along separate dimensions: board role, executive status, independence, whom the member represents, how the seat was filled, plus any additional capacities. Add dimensions or options freely."
+msgstr "تُسجل صفة العضو على أبعاد منفصلة: المنصب في المجلس، والصفة التنفيذية، والاستقلالية، ومن يمثله العضو، وطريقة شغل المقعد، إضافة إلى أي صفات أخرى. يمكن إضافة أبعاد أو خيارات بحرية."
+
+#: governance (p8-gov)
+msgid "Several at once"
+msgstr "أكثر من صفة معاً"
+
+#: governance (p8-gov)
+msgid "Board members"
+msgstr "أعضاء مجلس الإدارة"
+
+#: governance (p8-gov)
+msgid "Non-members"
+msgstr "غير الأعضاء"
+
+#: governance (p8-gov)
+msgid "Capacities"
+msgstr "الصفات"
+
+#: governance (p8-gov)
+msgid "Each capacity belongs to a dimension. The meaning flag tells the checks what the capacity counts as (e.g. a capacity flagged \"independent\" counts towards the independent ratio)."
+msgstr "تنتمي كل صفة إلى بُعد. يحدد معنى الصفة كيف تُحتسب في الفحوصات (مثلاً الصفة المعلَّمة \"مستقل\" تُحتسب ضمن نسبة المستقلين)."
+
+#: governance (p8-gov)
+msgid "Dimension"
+msgstr "البُعد"
+
+#: governance (p8-gov)
+msgid "Counts as"
+msgstr "تُحتسب كـ"
+
+#: governance (p8-gov)
+msgid "Votes"
+msgstr "الأصوات"
+
+#: governance (p8-gov)
+msgid "Quorum, majority and filing rules"
+msgstr "قواعد النصاب والأغلبية والإيداع"
+
+#: governance (p8-gov)
+msgid "Each meeting uses one rule: the quorum (share of members, or of capital for a general assembly, with a minimum head count and an optional second-call threshold), how a resolution passes, whether the chair has a casting vote, and the filing deadline after the meeting. Set them to match the articles of association and the regulator."
+msgstr "يتبع كل اجتماع قاعدة واحدة: النصاب (نسبة من الأعضاء، أو من رأس المال للجمعية العامة، مع حد أدنى للحضور ونصاب اختياري للدعوة الثانية)، وكيفية صدور القرار، وما إذا كان لرئيس الجلسة صوت مرجح، وموعد إيداع المحضر بعد الاجتماع. اضبطها وفقاً للنظام الأساسي والجهة الرقابية."
+
+#: governance (p8-gov)
+msgid "Body"
+msgstr "الجهة"
+
+#: governance (p8-gov)
+msgid "Quorum basis"
+msgstr "أساس النصاب"
+
+#: governance (p8-gov)
+msgid "Capital represented"
+msgstr "رأس المال الممثل"
+
+#: governance (p8-gov)
+msgid "Quorum"
+msgstr "النصاب"
+
+#: governance (p8-gov)
+msgid "Fraction (0-1)"
+msgstr "النسبة (0-1)"
+
+#: governance (p8-gov)
+msgid "Minimum present"
+msgstr "الحد الأدنى للحضور"
+
+#: governance (p8-gov)
+msgid "Second call"
+msgstr "الدعوة الثانية"
+
+#: governance (p8-gov)
+msgid "Second-call fraction"
+msgstr "نسبة الدعوة الثانية"
+
+#: governance (p8-gov)
+msgid "Second-call minimum"
+msgstr "الحد الأدنى في الدعوة الثانية"
+
+#: governance (p8-gov)
+msgid "Proxies count"
+msgstr "تُحتسب الإنابات"
+
+#: governance (p8-gov)
+msgid "Remote counts"
+msgstr "يُحتسب الحضور عن بُعد"
+
+#: governance (p8-gov)
+msgid "Majority"
+msgstr "الأغلبية"
+
+#: governance (p8-gov)
+msgid "Chair casting vote"
+msgstr "صوت مرجح لرئيس الجلسة"
+
+#: governance (p8-gov)
+msgid "Circulation: all must vote"
+msgstr "بالتمرير: يجب أن يصوت الجميع"
+
+#: governance (p8-gov)
+msgid "Notice days"
+msgstr "أيام الإخطار"
+
+#: governance (p8-gov)
+msgid "Filing days"
+msgstr "أيام الإيداع"
+
+#: governance (p8-gov)
+msgid "Filed with"
+msgstr "يودع لدى"
+
+#: governance (p8-gov)
+msgid "Resolution categories"
+msgstr "تصنيفات القرارات"
+
+#: governance (p8-gov)
+msgid "Categories group resolutions in the register and the search filters."
+msgstr "تجمع التصنيفات القرارات في السجل وفي مرشحات البحث."
+
+#: governance (p8-gov)
+msgid "Search synonyms"
+msgstr "مرادفات البحث"
+
+#: governance (p8-gov)
+msgid "Words or phrases in the same group are treated as the same thing by the resolutions search, in either language (e.g. اعتماد / موافقة / approve). Add a term to an existing group code or start a new group."
+msgstr "الكلمات أو العبارات في المجموعة نفسها يعاملها بحث القرارات كشيء واحد، بأي من اللغتين (مثل اعتماد / موافقة / approve). أضف مصطلحاً إلى رمز مجموعة قائمة أو ابدأ مجموعة جديدة."
+
+#: governance (p8-gov)
+msgid "Group"
+msgstr "المجموعة"
+
+#: governance (p8-gov)
+msgid "Word or phrase"
+msgstr "كلمة أو عبارة"
+
+#: governance (p8-gov)
+msgid "Board composition rule sets"
+msgstr "مجموعات قواعد تشكيل المجلس"
+
+#: governance (p8-gov)
+msgid "Each board applies one or more rule sets (chosen on the board). An empty value is not checked. Shares are percentages."
+msgstr "يطبق كل مجلس مجموعة قواعد أو أكثر (تُختار في إعدادات المجلس). القيمة الفارغة لا تُفحص. النسب مئوية."
+
+#: governance (p8-gov)
+msgid "Min board size"
+msgstr "الحد الأدنى لحجم المجلس"
+
+#: governance (p8-gov)
+msgid "Max board size"
+msgstr "الحد الأقصى لحجم المجلس"
+
+#: governance (p8-gov)
+msgid "Non-executive majority"
+msgstr "أغلبية غير تنفيذية"
+
+#: governance (p8-gov)
+msgid "Independent share of non-executives"
+msgstr "نسبة المستقلين من غير التنفيذيين"
+
+#: governance (p8-gov)
+msgid "Independent share of the board"
+msgstr "نسبة المستقلين من المجلس"
+
+#: governance (p8-gov)
+msgid "Min executives"
+msgstr "الحد الأدنى للتنفيذيين"
+
+#: governance (p8-gov)
+msgid "Max executives"
+msgstr "الحد الأقصى للتنفيذيين"
+
+#: governance (p8-gov)
+msgid "Women share"
+msgstr "نسبة السيدات"
+
+#: governance (p8-gov)
+msgid "Min women"
+msgstr "الحد الأدنى للسيدات"
+
+#: governance (p8-gov)
+msgid "Chair and CEO separate"
+msgstr "الفصل بين رئيس المجلس والرئيس التنفيذي"
+
+#: governance (p8-gov)
+msgid "Independence lapses after (years)"
+msgstr "تسقط الاستقلالية بعد (سنوات)"
+
+#: governance (p8-gov)
+msgid "Max absence share of meetings"
+msgstr "أقصى نسبة غياب من الاجتماعات"
+
+#: governance (p8-gov)
+msgid "Max missed meetings a year"
+msgstr "أقصى عدد اجتماعات فائتة في السنة"
+
+#: governance (p8-gov)
+msgid "Board meetings per year"
+msgstr "اجتماعات المجلس في السنة"
+
+#: governance (p8-gov)
+msgid "Boards (companies)"
+msgstr "المجالس (الشركات)"
+
+#: governance (p8-gov)
+msgid "Each company whose board is managed here. Records created before boards existed belong to the default one. The short code is put in front of its resolution numbers."
+msgstr "كل شركة يُدار مجلس إدارتها هنا. السجلات التي أنشئت قبل وجود المجالس تتبع المجلس الافتراضي. يوضع الرمز المختصر في بداية أرقام قراراتها."
+
+#: governance (p8-gov)
+msgid "Short code"
+msgstr "الرمز المختصر"
+
+#: governance (p8-gov)
+msgid "Composition rule sets"
+msgstr "مجموعات قواعد التشكيل"
+
+#: governance (p8-gov)
+msgid "Secretaries, tellers and other officers"
+msgstr "أمناء السر وفارزو الأصوات وغيرهم"
+
+#: governance (p8-gov)
+msgid "People who take part in meetings without being board members: the board secretary (أمين السر), vote tellers (فارزو الأصوات), the general manager, the external auditor, observers."
+msgstr "أشخاص يشاركون في الاجتماعات دون أن يكونوا أعضاء في المجلس: أمين سر المجلس، وفارزو الأصوات، والمدير العام، ومراقب الحسابات، والمراقبون."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(f)s is required."
+msgstr "%(f)s مطلوب."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(f)s: use 2-40 letters, digits or underscores."
+msgstr "%(f)s: استخدم من 2 إلى 40 حرفاً أو رقماً أو شرطة سفلية."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(f)s must be a whole number."
+msgstr "%(f)s يجب أن يكون عدداً صحيحاً."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(f)s cannot be negative."
+msgstr "%(f)s لا يمكن أن يكون سالباً."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(f)s: choose a value from the list."
+msgstr "%(f)s: اختر قيمة من القائمة."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(f)s must be a number."
+msgstr "%(f)s يجب أن يكون رقماً."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(f)s must be between 0 and %(hi)s."
+msgstr "%(f)s يجب أن يكون بين 0 و%(hi)s."
+
+#: governance (p8-gov)
+#, python-format
+msgid "The code %(c)s is already used."
+msgstr "الرمز %(c)s مستخدم بالفعل."
+
+#: governance (p8-gov)
+msgid "This term is already in the group."
+msgstr "هذا المصطلح موجود بالفعل في المجموعة."
+
+#: governance (p8-gov)
+msgid "Added."
+msgstr "تمت الإضافة."
+
+#: governance (p8-gov)
+msgid "The default board cannot be deactivated."
+msgstr "لا يمكن إيقاف المجلس الافتراضي."
+
+#: governance (p8-gov)
+msgid "It is in use (or part of the system), so it was deactivated instead of deleted."
+msgstr "العنصر مستخدم (أو من عناصر النظام)، لذا تم إيقافه بدلاً من حذفه."
+
+#: governance (p8-gov)
+msgid "It is in use and cannot be removed."
+msgstr "العنصر مستخدم ولا يمكن إزالته."
+
+#: governance (p8-gov)
+msgid "Choose the body that meets."
+msgstr "اختر الجهة المنعقدة."
+
+#: governance (p8-gov)
+msgid "Choose the kind of meeting."
+msgstr "اختر نوع الاجتماع."
+
+#: governance (p8-gov)
+msgid "Choose the committee."
+msgstr "اختر اللجنة."
+
+#: governance (p8-gov)
+#, python-format
+msgid "Meeting %(ref)s created. Record the formalities, attendance and resolutions below."
+msgstr "تم إنشاء الاجتماع %(ref)s. سجّل الإجراءات والحضور والقرارات أدناه."
+
+#: governance (p8-gov)
+msgid "Choose the body, kind and mode from the lists."
+msgstr "اختر الجهة والنوع وطريقة الانعقاد من القوائم."
+
+#: governance (p8-gov)
+msgid "The notice date cannot be after the meeting date."
+msgstr "لا يمكن أن يكون تاريخ الإخطار بعد تاريخ الاجتماع."
+
+#: governance (p8-gov)
+msgid "The call number must be 1, 2 or 3."
+msgstr "رقم الدعوة يجب أن يكون 1 أو 2 أو 3."
+
+#: governance (p8-gov)
+msgid "The capital represented must be a percentage between 0 and 100."
+msgstr "رأس المال الممثل يجب أن يكون نسبة بين 0 و100."
+
+#: governance (p8-gov)
+msgid "The chair of the meeting must be one of the members on the attendance list."
+msgstr "رئيس الجلسة يجب أن يكون أحد الأعضاء في كشف الحضور."
+
+#: governance (p8-gov)
+msgid "Meeting details saved."
+msgstr "تم حفظ بيانات الاجتماع."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s: choose the member who holds the proxy."
+msgstr "%(n)s: اختر العضو الذي يحمل الإنابة."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s cannot hold their own proxy."
+msgstr "%(n)s لا يمكنه أن يحمل إنابة عن نفسه."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s: the proxy holder must be a member who attends."
+msgstr "%(n)s: يجب أن يكون حامل الإنابة عضواً حاضراً."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s holds more than one proxy; a member may hold one proxy only."
+msgstr "%(n)s يحمل أكثر من إنابة؛ لا يجوز للعضو أن يحمل أكثر من إنابة واحدة."
+
+#: governance (p8-gov)
+msgid "Attendance saved."
+msgstr "تم حفظ الحضور."
+
+#: governance (p8-gov)
+msgid "Quorum present."
+msgstr "النصاب متوفر."
+
+#: governance (p8-gov)
+msgid "Quorum NOT present."
+msgstr "النصاب غير متوفر."
+
+#: governance (p8-gov)
+msgid "Choose an officer or a member, or type a name."
+msgstr "اختر موظفاً أو عضواً، أو اكتب اسماً."
+
+#: governance (p8-gov)
+msgid "The agenda item title is required."
+msgstr "عنوان بند جدول الأعمال مطلوب."
+
+#: governance (p8-gov)
+msgid "Agenda item added."
+msgstr "تمت إضافة بند جدول الأعمال."
+
+#: governance (p8-gov)
+msgid "Choose the member and describe the interest declared."
+msgstr "اختر العضو واذكر المصلحة المُفصح عنها."
+
+#: governance (p8-gov)
+msgid "Declaration recorded. The member is recorded as recused on resolutions of that agenda item."
+msgstr "تم تسجيل الإفصاح. يُسجل العضو ممتنعاً بسبب التعارض في قرارات هذا البند."
+
+#: governance (p8-gov)
+msgid "The minutes are signed; the record can no longer be changed."
+msgstr "المحضر موقّع؛ لم يعد من الممكن تعديل السجل."
+
+#: governance (p8-gov)
+msgid "Approve the minutes before they are signed."
+msgstr "اعتمد المحضر قبل توقيعه."
+
+#: governance (p8-gov)
+msgid "Type the name of the person signing."
+msgstr "اكتب اسم الموقّع."
+
+#: governance (p8-gov)
+msgid "A valid filing date is required."
+msgstr "تاريخ إيداع صحيح مطلوب."
+
+#: governance (p8-gov)
+msgid "The resolution title or text is required."
+msgstr "عنوان القرار أو نصه مطلوب."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s voted against: record the objection / reasons (needed to challenge a resolution)."
+msgstr "%(n)s صوّت بالرفض: سجّل الاعتراض / الأسباب (لازم للطعن على القرار)."
+
+#: governance (p8-gov)
+msgid "The meeting has no quorum: a resolution cannot be adopted (record it as deferred)."
+msgstr "الاجتماع بدون نصاب: لا يمكن إصدار قرار (سجّله كمؤجل)."
+
+#: governance (p8-gov)
+msgid "Every member must vote on a resolution by circulation."
+msgstr "يجب أن يصوت جميع الأعضاء على القرار الصادر بالتمرير."
+
+#: governance (p8-gov)
+msgid "Choose the type of link and the earlier resolution."
+msgstr "اختر نوع الربط والقرار السابق."
+
+#: governance (p8-gov)
+msgid "The required majority was not reached; the resolution is recorded as rejected."
+msgstr "لم تتحقق الأغلبية المطلوبة؛ سُجل القرار كمرفوض."
+
+#: governance (p8-gov)
+msgid "Choose the follow-up status."
+msgstr "اختر حالة المتابعة."
+
+#: governance (p8-gov)
+msgid "Describe the evidence that the resolution was implemented."
+msgstr "اذكر الدليل على تنفيذ القرار."
+
+#: governance (p8-gov)
+msgid "Follow-up updated."
+msgstr "تم تحديث المتابعة."
+
+#: governance (p8-gov)
+msgid "Link added."
+msgstr "تمت إضافة الربط."
+
+#: governance (p8-gov)
+msgid "Choose the capacity."
+msgstr "اختر الصفة."
+
+#: governance (p8-gov)
+msgid "The end date cannot be before the start date."
+msgstr "لا يمكن أن يكون تاريخ الانتهاء قبل تاريخ البداية."
+
+#: governance (p8-gov)
+msgid "Capacity recorded."
+msgstr "تم تسجيل الصفة."
+
+#: governance (p8-gov)
+msgid "Board of directors"
+msgstr "مجلس الإدارة"
+
+#: governance (p8-gov)
+msgid "Ordinary"
+msgstr "عادي"
+
+#: governance (p8-gov)
+msgid "Extraordinary"
+msgstr "غير عادي"
+
+#: governance (p8-gov)
+msgid "By circulation"
+msgstr "بالتمرير"
+
+#: governance (p8-gov)
+msgid "Remote"
+msgstr "عن بُعد"
+
+#: governance (p8-gov)
+msgid "Hybrid"
+msgstr "مختلط"
+
+#: governance (p8-gov)
+msgid "Present in person"
+msgstr "حاضر بشخصه"
+
+#: governance (p8-gov)
+msgid "Present remotely"
+msgstr "حاضر عن بُعد"
+
+#: governance (p8-gov)
+msgid "By proxy"
+msgstr "بالإنابة"
+
+#: governance (p8-gov)
+msgid "Absent - excused"
+msgstr "غائب بعذر"
+
+#: governance (p8-gov)
+msgid "Absent - unexcused"
+msgstr "غائب بدون عذر"
+
+#: governance (p8-gov)
+msgid "Recused"
+msgstr "ممتنع لتعارض المصالح"
+
+#: governance (p8-gov)
+msgid "For general assembly ratification"
+msgstr "للعرض على الجمعية العامة للتصديق"
+
+#: governance (p8-gov)
+msgid "Amends"
+msgstr "يعدّل"
+
+#: governance (p8-gov)
+msgid "Supersedes"
+msgstr "يحل محل"
+
+#: governance (p8-gov)
+msgid "Revokes"
+msgstr "يلغي"
+
+#: governance (p8-gov)
+msgid "Implements"
+msgstr "ينفّذ"
+
+#: governance (p8-gov)
+msgid "Ratifies"
+msgstr "يصادق على"
+
+#: governance (p8-gov)
+msgid "Approved, not signed"
+msgstr "معتمد وغير موقّع"
+
+#: governance (p8-gov)
+msgid "Not recorded"
+msgstr "غير مسجل"
+
+#: governance (p8-gov)
+msgid "Resolutions search"
+msgstr "بحث القرارات"
+
+#: governance (p8-gov)
+msgid "Meetings register"
+msgstr "سجل الاجتماعات"
+
+#: governance (p8-gov)
+msgid "Follow-up"
+msgstr "المتابعة"
+
+#: governance (p8-gov)
+msgid "Attendance report"
+msgstr "تقرير الحضور"
+
+#: governance (p8-gov)
+msgid "Annual board list"
+msgstr "الكشف السنوي لأعضاء المجلس"
+
+#: governance (p8-gov)
+msgid "Secretariat"
+msgstr "أمانة السر"
+
+#: governance (p8-gov)
+msgid "Composition checks"
+msgstr "فحوصات التشكيل"
+
+#: governance (p8-gov)
+msgid "Agenda item"
+msgstr "بند جدول الأعمال"
+
+#: governance (p8-gov)
+msgid "Members who declared a conflict on this item are recorded as recused."
+msgstr "يُسجل الأعضاء الذين أفصحوا عن تعارض في هذا البند ممتنعين."
+
+#: governance (p8-gov)
+msgid "Full text of the resolution"
+msgstr "النص الكامل للقرار"
+
+#: governance (p8-gov)
+msgid "Short summary"
+msgstr "ملخص قصير"
+
+#: governance (p8-gov)
+msgid "Keywords / tags"
+msgstr "كلمات مفتاحية / وسوم"
+
+#: governance (p8-gov)
+msgid "comma separated"
+msgstr "مفصولة بفواصل"
+
+#: governance (p8-gov)
+msgid "Conditions"
+msgstr "الشروط"
+
+#: governance (p8-gov)
+msgid "Automatic from the votes and the majority rule"
+msgstr "تلقائي من الأصوات وقاعدة الأغلبية"
+
+#: governance (p8-gov)
+msgid "Action owner"
+msgstr "المسؤول عن التنفيذ"
+
+#: governance (p8-gov)
+msgid "…or a user"
+msgstr "…أو مستخدم"
+
+#: governance (p8-gov)
+msgid "Votes of the shares represented (as counted by the tellers)"
+msgstr "أصوات الأسهم الممثلة (كما أحصاها فارزو الأصوات)"
+
+#: governance (p8-gov)
+msgid "Link to an earlier resolution"
+msgstr "ربط بقرار سابق"
+
+#: governance (p8-gov)
+msgid "Vote"
+msgstr "التصويت"
+
+#: governance (p8-gov)
+msgid "Objection / reservation (recorded in the minutes)"
+msgstr "الاعتراض / التحفظ (يُسجل في المحضر)"
+
+#: governance (p8-gov)
+msgid "All settings"
+msgstr "كل الإعدادات"
+
+#: governance (p8-gov)
+msgid "system"
+msgstr "نظام"
+
+#: governance (p8-gov)
+msgid "sample"
+msgstr "مثال"
+
+#: governance (p8-gov)
+msgid "default"
+msgstr "افتراضي"
+
+#: governance (p8-gov)
+msgid "Remove this entry? If it is in use it will be deactivated instead."
+msgstr "إزالة هذا العنصر؟ إذا كان مستخدماً فسيتم إيقافه بدلاً من ذلك."
+
+#: governance (p8-gov)
+msgid "Nothing recorded yet."
+msgstr "لا يوجد شيء مسجل بعد."
+
+#: governance (p8-gov)
+msgid "Governance settings"
+msgstr "إعدادات الحوكمة"
+
+#: governance (p8-gov)
+msgid "Lists used by committees, member capacities, meetings, resolutions and the search. Everything here can be added, renamed or deactivated."
+msgstr "القوائم المستخدمة في اللجان وصفات الأعضاء والاجتماعات والقرارات والبحث. يمكن إضافة أي عنصر أو إعادة تسميته أو إيقافه."
+
+#: governance (p8-gov)
+msgid "Meeting record"
+msgstr "سجل الاجتماع"
+
+#: governance (p8-gov)
+msgid "Minutes text, actions & files"
+msgstr "نص المحضر والإجراءات والملفات"
+
+#: governance (p8-gov)
+msgid "Legal quorum"
+msgstr "النصاب القانوني"
+
+#: governance (p8-gov)
+msgid "call"
+msgstr "الدعوة"
+
+#: governance (p8-gov)
+msgid "of capital"
+msgstr "من رأس المال"
+
+#: governance (p8-gov)
+msgid "members counted"
+msgstr "عضواً محتسباً"
+
+#: governance (p8-gov)
+msgid "needed"
+msgstr "المطلوب"
+
+#: governance (p8-gov)
+msgid "Quorum present: the meeting is validly held."
+msgstr "النصاب متوفر: الاجتماع منعقد صحيحاً."
+
+#: governance (p8-gov)
+msgid "No quorum: the meeting cannot validly adopt resolutions."
+msgstr "لا يوجد نصاب: لا يمكن للاجتماع إصدار قرارات صحيحة."
+
+#: governance (p8-gov)
+msgid "Record the capital represented to check the quorum."
+msgstr "سجّل رأس المال الممثل لفحص النصاب."
+
+#: governance (p8-gov)
+msgid "not signed"
+msgstr "غير موقّع"
+
+#: governance (p8-gov)
+msgid "Filing with the regulator"
+msgstr "الإيداع لدى الجهة الرقابية"
+
+#: governance (p8-gov)
+#, python-format
+msgid "Filed on %(d)s"
+msgstr "أودع في %(d)s"
+
+#: governance (p8-gov)
+#, python-format
+msgid "Due %(d)s"
+msgstr "مستحق في %(d)s"
+
+#: governance (p8-gov)
+msgid "No filing deadline for this meeting (set filing days on the meeting rule)."
+msgstr "لا يوجد موعد إيداع لهذا الاجتماع (حدد أيام الإيداع في قاعدة الاجتماع)."
+
+#: governance (p8-gov)
+msgid "Signatures overdue"
+msgstr "التوقيعات متأخرة"
+
+#: governance (p8-gov)
+msgid "First call"
+msgstr "الدعوة الأولى"
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s members present, %(r)s needed: quorum not reached, so the meeting was called again."
+msgstr "حضر %(n)s أعضاء والمطلوب %(r)s: لم يكتمل النصاب، فدُعي الاجتماع مرة أخرى."
+
+#: governance (p8-gov)
+msgid "the proxy holder is not recorded."
+msgstr "حامل الإنابة غير مسجل."
+
+#: governance (p8-gov)
+msgid "a member cannot hold their own proxy."
+msgstr "لا يجوز للعضو أن يحمل إنابة عن نفسه."
+
+#: governance (p8-gov)
+msgid "the proxy holder does not attend."
+msgstr "حامل الإنابة غير حاضر."
+
+#: governance (p8-gov)
+msgid "holds more than one proxy (one member, one proxy)."
+msgstr "يحمل أكثر من إنابة (عضو واحد، إنابة واحدة)."
+
+#: governance (p8-gov)
+msgid "The minutes are signed by the chair and the secretary: the record is locked. Follow-up of resolutions can still be updated."
+msgstr "المحضر موقّع من رئيس الجلسة وأمين السر: السجل مغلق. لا يزال من الممكن تحديث متابعة القرارات."
+
+#: governance (p8-gov)
+msgid "Meeting details"
+msgstr "بيانات الاجتماع"
+
+#: governance (p8-gov)
+msgid "Body / kind"
+msgstr "الجهة / النوع"
+
+#: governance (p8-gov)
+msgid "Sequence number"
+msgstr "الرقم التسلسلي"
+
+#: governance (p8-gov)
+msgid "Notice"
+msgstr "الإخطار"
+
+#: governance (p8-gov)
+msgid "Chair of the meeting"
+msgstr "رئيس الجلسة"
+
+#: governance (p8-gov)
+msgid "Vote tellers"
+msgstr "فارزو الأصوات"
+
+#: governance (p8-gov)
+msgid "Previous minutes"
+msgstr "المحضر السابق"
+
+#: governance (p8-gov)
+msgid "Recording"
+msgstr "التسجيل"
+
+#: governance (p8-gov)
+msgid "Edit meeting details"
+msgstr "تعديل بيانات الاجتماع"
+
+#: governance (p8-gov)
+msgid "Kind"
+msgstr "النوع"
+
+#: governance (p8-gov)
+msgid "End"
+msgstr "النهاية"
+
+#: governance (p8-gov)
+msgid "Venue"
+msgstr "مكان الانعقاد"
+
+#: governance (p8-gov)
+msgid "Mode"
+msgstr "طريقة الانعقاد"
+
+#: governance (p8-gov)
+msgid "Notice date"
+msgstr "تاريخ الإخطار"
+
+#: governance (p8-gov)
+msgid "Notice channel"
+msgstr "وسيلة الإخطار"
+
+#: governance (p8-gov)
+msgid "e.g. registered email with papers"
+msgstr "مثل البريد الإلكتروني المسجل مع المستندات"
+
+#: governance (p8-gov)
+msgid "Chair (if not a member)"
+msgstr "رئيس الجلسة (إن لم يكن عضواً)"
+
+#: governance (p8-gov)
+msgid "Default for this body"
+msgstr "الافتراضي لهذه الجهة"
+
+#: governance (p8-gov)
+msgid "Call"
+msgstr "الدعوة"
+
+#: governance (p8-gov)
+msgid "First call held at"
+msgstr "موعد انعقاد الدعوة الأولى"
+
+#: governance (p8-gov)
+msgid "Present at first call"
+msgstr "الحاضرون في الدعوة الأولى"
+
+#: governance (p8-gov)
+msgid "What happened at the first call"
+msgstr "ما حدث في الدعوة الأولى"
+
+#: governance (p8-gov)
+msgid "Capital represented (general assembly)"
+msgstr "رأس المال الممثل (الجمعية العامة)"
+
+#: governance (p8-gov)
+msgid "Recording of the meeting"
+msgstr "تسجيل الاجتماع"
+
+#: governance (p8-gov)
+msgid "Minutes of the previous meeting"
+msgstr "محضر الاجتماع السابق"
+
+#: governance (p8-gov)
+msgid "approved at this meeting"
+msgstr "تم التصديق عليه في هذا الاجتماع"
+
+#: governance (p8-gov)
+msgid "Minutes filed with"
+msgstr "يودع المحضر لدى"
+
+#: governance (p8-gov)
+msgid "Filing due"
+msgstr "موعد الإيداع"
+
+#: governance (p8-gov)
+msgid "Blank: meeting date + the rule's filing days."
+msgstr "فارغ: تاريخ الاجتماع + أيام الإيداع في القاعدة."
+
+#: governance (p8-gov)
+msgid "Add a vote teller / officer"
+msgstr "إضافة فارز أصوات / موظف"
+
+#: governance (p8-gov)
+msgid "Vote teller"
+msgstr "فارز أصوات"
+
+#: governance (p8-gov)
+msgid "Assistant secretary"
+msgstr "أمين سر مساعد"
+
+#: governance (p8-gov)
+msgid "Observer"
+msgstr "مراقب"
+
+#: governance (p8-gov)
+msgid "General manager"
+msgstr "المدير العام"
+
+#: governance (p8-gov)
+msgid "Officer…"
+msgstr "موظف…"
+
+#: governance (p8-gov)
+msgid "…or a member"
+msgstr "…أو عضو"
+
+#: governance (p8-gov)
+msgid "…or type a name"
+msgstr "…أو اكتب اسماً"
+
+#: governance (p8-gov)
+msgid "Manage officers"
+msgstr "إدارة الموظفين"
+
+#: governance (p8-gov)
+msgid "objection"
+msgstr "اعتراض"
+
+#: governance (p8-gov)
+msgid "Member and reasons"
+msgstr "العضو والأسباب"
+
+#: governance (p8-gov)
+msgid "No agenda items recorded."
+msgstr "لا توجد بنود مسجلة في جدول الأعمال."
+
+#: governance (p8-gov)
+msgid "Presenter"
+msgstr "مقدم البند"
+
+#: governance (p8-gov)
+msgid "Add item"
+msgstr "إضافة بند"
+
+#: governance (p8-gov)
+msgid "Conflict-of-interest declarations"
+msgstr "إفصاحات تعارض المصالح"
+
+#: governance (p8-gov)
+msgid "item"
+msgstr "بند"
+
+#: governance (p8-gov)
+msgid "Did not vote"
+msgstr "لم يصوّت"
+
+#: governance (p8-gov)
+msgid "left the room for the discussion"
+msgstr "غادر القاعة أثناء المناقشة"
+
+#: governance (p8-gov)
+msgid "general assembly informed"
+msgstr "تم إخطار الجمعية العامة"
+
+#: governance (p8-gov)
+msgid "Remove this declaration?"
+msgstr "إزالة هذا الإفصاح؟"
+
+#: governance (p8-gov)
+msgid "No declarations recorded."
+msgstr "لا توجد إفصاحات مسجلة."
+
+#: governance (p8-gov)
+msgid "Member…"
+msgstr "العضو…"
+
+#: governance (p8-gov)
+msgid "Agenda item…"
+msgstr "بند جدول الأعمال…"
+
+#: governance (p8-gov)
+msgid "Nature of the interest declared"
+msgstr "طبيعة المصلحة المُفصح عنها"
+
+#: governance (p8-gov)
+msgid "left the room"
+msgstr "غادر القاعة"
+
+#: governance (p8-gov)
+msgid "Record declaration"
+msgstr "تسجيل الإفصاح"
+
+#: governance (p8-gov)
+msgid "Minutes approval, signatures and filing"
+msgstr "اعتماد المحضر وتوقيعه وإيداعه"
+
+#: governance (p8-gov)
+msgid "Minutes are recorded in the board register and signed by the chair and the secretary."
+msgstr "تُثبت المحاضر في سجل المجلس ويوقعها رئيس الجلسة وأمين السر."
+
+#: governance (p8-gov)
+msgid "Minutes text approved"
+msgstr "تم اعتماد نص المحضر"
+
+#: governance (p8-gov)
+#, python-format
+msgid "Approved on %(d)s"
+msgstr "اعتُمد في %(d)s"
+
+#: governance (p8-gov)
+msgid "Mark approved"
+msgstr "تمييز كمعتمد"
+
+#: governance (p8-gov)
+msgid "Chair signed"
+msgstr "وقّع رئيس الجلسة"
+
+#: governance (p8-gov)
+msgid "Secretary signed"
+msgstr "وقّع أمين السر"
+
+#: governance (p8-gov)
+msgid "Record filing"
+msgstr "تسجيل الإيداع"
+
+#: governance (p8-gov)
+msgid "A proxy is given in writing to another member who attends; one member may hold one proxy."
+msgstr "تكون الإنابة كتابةً لعضو آخر حاضر؛ ولا يحمل العضو أكثر من إنابة واحدة."
+
+#: governance (p8-gov)
+msgid "Proxy held by / document"
+msgstr "حامل الإنابة / المستند"
+
+#: governance (p8-gov)
+msgid "Proxy document"
+msgstr "مستند الإنابة"
+
+#: governance (p8-gov)
+msgid "No members on the attendance list."
+msgstr "لا يوجد أعضاء في كشف الحضور."
+
+#: governance (p8-gov)
+msgid "Save attendance and check the quorum"
+msgstr "حفظ الحضور وفحص النصاب"
+
+#: governance (p8-gov)
+msgid "majority reached"
+msgstr "تحققت الأغلبية"
+
+#: governance (p8-gov)
+msgid "majority not reached"
+msgstr "لم تتحقق الأغلبية"
+
+#: governance (p8-gov)
+msgid "Member record"
+msgstr "سجل العضو"
+
+#: governance (p8-gov)
+msgid "No capacity recorded"
+msgstr "لا توجد صفة مسجلة"
+
+#: governance (p8-gov)
+msgid "Profile & documents"
+msgstr "الملف والمستندات"
+
+#: governance (p8-gov)
+msgid "Resolutions of meetings attended"
+msgstr "قرارات الاجتماعات التي حضرها"
+
+#: governance (p8-gov)
+msgid "Attendance by year"
+msgstr "الحضور حسب السنة"
+
+#: governance (p8-gov)
+msgid "Meetings"
+msgstr "الاجتماعات"
+
+#: governance (p8-gov)
+msgid "Proxy"
+msgstr "إنابة"
+
+#: governance (p8-gov)
+msgid "Attendance rate"
+msgstr "نسبة الحضور"
+
+#: governance (p8-gov)
+msgid "unexcused"
+msgstr "بدون عذر"
+
+#: governance (p8-gov)
+#, python-format
+msgid "Absent from %(p)s of the meetings; the limit is %(l)s"
+msgstr "غاب عن %(p)s من الاجتماعات؛ والحد الأقصى %(l)s"
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s meetings missed; the limit is fewer than %(l)s"
+msgstr "فاته %(n)s اجتماعات؛ والحد أقل من %(l)s"
+
+#: governance (p8-gov)
+msgid "No meetings recorded for this member."
+msgstr "لا توجد اجتماعات مسجلة لهذا العضو."
+
+#: governance (p8-gov)
+msgid "Attendance by proxy is not personal attendance. Alerts use the rule sets chosen for the board."
+msgstr "الحضور بالإنابة ليس حضوراً شخصياً. تستخدم التنبيهات مجموعات القواعد المختارة للمجلس."
+
+#: governance (p8-gov)
+msgid "No rule set is chosen for this board yet."
+msgstr "لم تُختر مجموعة قواعد لهذا المجلس بعد."
+
+#: governance (p8-gov)
+msgid "Votes cast"
+msgstr "الأصوات"
+
+#: governance (p8-gov)
+msgid "by proxy"
+msgstr "بالإنابة"
+
+#: governance (p8-gov)
+msgid "No votes recorded."
+msgstr "لا توجد أصوات مسجلة."
+
+#: governance (p8-gov)
+msgid "votes"
+msgstr "أصوات"
+
+#: governance (p8-gov)
+msgid "dissents"
+msgstr "اعتراضات"
+
+#: governance (p8-gov)
+msgid "recusals"
+msgstr "امتناعات لتعارض المصالح"
+
+#: governance (p8-gov)
+msgid "Conflicts declared and recusals"
+msgstr "التعارضات المُفصح عنها والامتناع عن التصويت"
+
+#: governance (p8-gov)
+msgid "Capacities (صفة العضو) and history"
+msgstr "صفة العضو وتاريخها"
+
+#: governance (p8-gov)
+msgid "from the old fields"
+msgstr "من الحقول القديمة"
+
+#: governance (p8-gov)
+msgid "End today"
+msgstr "إنهاء اليوم"
+
+#: governance (p8-gov)
+msgid "Delete this entry? Use it only to correct a mistake; end a capacity to keep its history."
+msgstr "حذف هذا السجل؟ استخدمه فقط لتصحيح خطأ؛ أنهِ الصفة للاحتفاظ بتاريخها."
+
+#: governance (p8-gov)
+msgid "No capacity recorded."
+msgstr "لا توجد صفة مسجلة."
+
+#: governance (p8-gov)
+msgid "Capacity…"
+msgstr "الصفة…"
+
+#: governance (p8-gov)
+msgid "Legal person / shareholders represented (if any)"
+msgstr "الشخص الاعتباري / المساهمون الممثَّلون (إن وجد)"
+
+#: governance (p8-gov)
+msgid "Note (e.g. decision reference)"
+msgstr "ملاحظة (مثل مرجع القرار)"
+
+#: governance (p8-gov)
+msgid "Add capacity"
+msgstr "إضافة صفة"
+
+#: governance (p8-gov)
+msgid "A new capacity in a single-choice dimension ends the previous one."
+msgstr "الصفة الجديدة في بُعد ذي اختيار واحد تنهي الصفة السابقة."
+
+#: governance (p8-gov)
+msgid "Manage the list"
+msgstr "إدارة القائمة"
+
+#: governance (p8-gov)
+msgid "Details for the annual board list"
+msgstr "بيانات الكشف السنوي للمجلس"
+
+#: governance (p8-gov)
+msgid "Seats on other boards"
+msgstr "عضويات في مجالس أخرى"
+
+#: governance (p8-gov)
+msgid "Board, committee and general assembly meetings with their sequence number, quorum, minutes, signatures and filing."
+msgstr "اجتماعات المجلس واللجان والجمعيات العامة برقمها التسلسلي ونصابها ومحضرها وتوقيعاتها وإيداعها."
+
+#: governance (p8-gov)
+msgid "All boards"
+msgstr "كل المجالس"
+
+#: governance (p8-gov)
+msgid "Record a new meeting"
+msgstr "تسجيل اجتماع جديد"
+
+#: governance (p8-gov)
+msgid "Committee (if a committee meets)"
+msgstr "اللجنة (إذا كان الاجتماع للجنة)"
+
+#: governance (p8-gov)
+msgid "automatic"
+msgstr "تلقائي"
+
+#: governance (p8-gov)
+msgid "Create and open the record"
+msgstr "إنشاء وفتح السجل"
+
+#: governance (p8-gov)
+msgid "The members of the board or committee are put on the attendance list; the sequence number is the next one of that body in the year."
+msgstr "يُدرج أعضاء المجلس أو اللجنة في كشف الحضور؛ والرقم التسلسلي هو التالي لهذه الجهة في السنة."
+
+#: governance (p8-gov)
+msgid "Filing"
+msgstr "الإيداع"
+
+#: governance (p8-gov)
+msgid "No meetings recorded."
+msgstr "لا توجد اجتماعات مسجلة."
+
+#: governance (p8-gov)
+msgid "meetings held up to today; each member's attendance rate (for the annual report) and absence alerts from the board's rule sets."
+msgstr "الاجتماعات المنعقدة حتى اليوم؛ ونسبة حضور كل عضو (للتقرير السنوي) وتنبيهات الغياب وفق مجموعات قواعد المجلس."
+
+#: governance (p8-gov)
+msgid "Rule sets"
+msgstr "مجموعات القواعد"
+
+#: governance (p8-gov)
+msgid "No rule set is chosen for this board: choose them under Settings > Boards to get absence alerts."
+msgstr "لم تُختر مجموعة قواعد لهذا المجلس: اخترها من الإعدادات > المجالس للحصول على تنبيهات الغياب."
+
+#: governance (p8-gov)
+msgid "meetings"
+msgstr "اجتماعات"
+
+#: governance (p8-gov)
+msgid "Excused"
+msgstr "بعذر"
+
+#: governance (p8-gov)
+msgid "Unexcused"
+msgstr "بدون عذر"
+
+#: governance (p8-gov)
+msgid "No meetings held in this year."
+msgstr "لم تنعقد اجتماعات في هذه السنة."
+
+#: governance (p8-gov)
+msgid "Attendance by proxy is not counted as personal attendance."
+msgstr "لا يُحتسب الحضور بالإنابة حضوراً شخصياً."
+
+#: governance (p8-gov)
+msgid "Annual list of board members"
+msgstr "الكشف السنوي لأعضاء مجلس الإدارة"
+
+#: governance (p8-gov)
+msgid "List of board members, their capacities and nationalities"
+msgstr "بيان أعضاء مجلس الإدارة وصفاتهم وجنسياتهم"
+
+#: governance (p8-gov)
+#, python-format
+msgid "as at %(d)s"
+msgstr "في %(d)s"
+
+#: governance (p8-gov)
+msgid "Annual statement of the members with their capacities and nationalities (Companies Law 159/1981 Art 87); changes are notified when they occur."
+msgstr "البيان السنوي بأعضاء المجلس وصفاتهم وجنسياتهم (المادة 87 من قانون الشركات 159 لسنة 1981)؛ ويُخطر بالتغييرات عند حدوثها."
+
+#: governance (p8-gov)
+msgid "Represents"
+msgstr "يمثل"
+
+#: governance (p8-gov)
+msgid "Term ends"
+msgstr "تنتهي العضوية في"
+
+#: governance (p8-gov)
+msgid "Non-independent"
+msgstr "غير مستقل"
+
+#: governance (p8-gov)
+msgid "Non-executive"
+msgstr "غير تنفيذي"
+
+#: governance (p8-gov)
+msgid "No members on this board at that date."
+msgstr "لا يوجد أعضاء في هذا المجلس في هذا التاريخ."
+
+#: governance (p8-gov)
+msgid "Board secretary"
+msgstr "أمين سر المجلس"
+
+#: governance (p8-gov)
+msgid "Chair of the board"
+msgstr "رئيس مجلس الإدارة"
+
+#: governance (p8-gov)
+msgid "Follow-up of resolutions"
+msgstr "متابعة تنفيذ القرارات"
+
+#: governance (p8-gov)
+msgid "Implementation of board and committee resolutions: owner, due date, status and evidence (a duty of the board secretariat)."
+msgstr "تنفيذ قرارات المجلس واللجان: المسؤول وموعد التنفيذ والحالة والدليل (من مهام أمانة سر المجلس)."
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s overdue meeting action items in the action tracker"
+msgstr "%(n)s من بنود إجراءات الاجتماعات متأخرة في متابعة الإجراءات"
+
+#: governance (p8-gov)
+msgid "Nothing to follow up."
+msgstr "لا يوجد ما يتطلب المتابعة."
+
+#: governance (p8-gov)
+msgid "Resolutions register & search"
+msgstr "سجل القرارات والبحث"
+
+#: governance (p8-gov)
+msgid "Type what a resolution was about or a few words, in Arabic or English; spelling mistakes and different word forms are tolerated. Results are ranked by closeness."
+msgstr "اكتب موضوع القرار أو بعض الكلمات، بالعربية أو الإنجليزية؛ تُقبل الأخطاء الإملائية واختلاف صيغ الكلمات. تُرتب النتائج حسب درجة التطابق."
+
+#: governance (p8-gov)
+msgid "What was the resolution about?"
+msgstr "ما موضوع القرار؟"
+
+#: governance (p8-gov)
+msgid "e.g. تعيين مراقب حسابات / loan limit / سياسة غسل الاموال"
+msgstr "مثال: تعيين مراقب حسابات / حد قرض / سياسة غسل الأموال"
+
+#: governance (p8-gov)
+msgid "Meeting kind"
+msgstr "نوع الاجتماع"
+
+#: governance (p8-gov)
+msgid "Member attended or voted"
+msgstr "عضو حضر أو صوّت"
+
+#: governance (p8-gov)
+msgid "Any member"
+msgstr "أي عضو"
+
+#: governance (p8-gov)
+msgid "Min. score"
+msgstr "أدنى درجة"
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s resolutions match \"%(q)s\""
+msgstr "%(n)s قرار يطابق \"%(q)s\""
+
+#: governance (p8-gov)
+#, python-format
+msgid "%(n)s resolutions"
+msgstr "%(n)s قرار"
+
+#: governance (p8-gov)
+msgid "match"
+msgstr "تطابق"
+
+#: governance (p8-gov)
+msgid "remote"
+msgstr "عن بُعد"
+
+#: governance (p8-gov)
+msgid "No resolution matches. Try fewer or different words, or lower the minimum score."
+msgstr "لا يوجد قرار مطابق. جرّب كلمات أقل أو مختلفة، أو خفّض أدنى درجة."
+
+#: governance (p8-gov)
+msgid "Full text"
+msgstr "النص الكامل"
+
+#: governance (p8-gov)
+msgid "Effective / expires"
+msgstr "السريان / الانتهاء"
+
+#: governance (p8-gov)
+msgid "reached"
+msgstr "تحققت"
+
+#: governance (p8-gov)
+msgid "not reached"
+msgstr "لم تتحقق"
+
+#: governance (p8-gov)
+msgid "valid"
+msgstr "صحيح"
+
+#: governance (p8-gov)
+msgid "not valid"
+msgstr "غير صحيح"
+
+#: governance (p8-gov)
+msgid "Votes of each member"
+msgstr "تصويت كل عضو"
+
+#: governance (p8-gov)
+msgid "Objection / reservation"
+msgstr "الاعتراض / التحفظ"
+
+#: governance (p8-gov)
+msgid "Implementation follow-up"
+msgstr "متابعة التنفيذ"
+
+#: governance (p8-gov)
+msgid "What was done, evidence (document, reference)…"
+msgstr "ما تم تنفيذه والدليل (مستند، مرجع)…"
+
+#: governance (p8-gov)
+msgid "Update follow-up"
+msgstr "تحديث المتابعة"
+
+#: governance (p8-gov)
+msgid "Related resolutions"
+msgstr "القرارات المرتبطة"
+
+#: governance (p8-gov)
+msgid "This resolution"
+msgstr "هذا القرار"
+
+#: governance (p8-gov)
+msgid "this resolution"
+msgstr "هذا القرار"
+
+#: governance (p8-gov)
+msgid "No links recorded."
+msgstr "لا توجد روابط مسجلة."
+
+#: governance (p8-gov)
+msgid "Reason for the correction (kept in the history)"
+msgstr "سبب التصحيح (يُحفظ في السجل)"
+
+#: governance (p8-gov)
+msgid "Save correction"
+msgstr "حفظ التصحيح"
+
+#: governance (p8-gov)
+msgid "The minutes are signed: the resolution can no longer be corrected; record a new resolution that amends it."
+msgstr "المحضر موقّع: لم يعد من الممكن تصحيح القرار؛ سجّل قراراً جديداً يعدّله."
+
+#: governance (p8-gov)
+msgid "Board secretariat"
+msgstr "أمانة سر المجلس"
+
+#: governance (p8-gov)
+msgid "Meetings served by each secretary, minutes and signatures outstanding, filings due and the follow-up of resolutions."
+msgstr "الاجتماعات التي خدمها كل أمين سر، والمحاضر والتوقيعات المعلقة، والإيداعات المستحقة، ومتابعة القرارات."
+
+#: governance (p8-gov)
+msgid "other roles"
+msgstr "أدوار أخرى"
+
+#: governance (p8-gov)
+msgid "No officers recorded yet."
+msgstr "لا يوجد موظفون مسجلون بعد."
+
+#: governance (p8-gov)
+msgid "meetings served"
+msgstr "اجتماعات خدمها"
+
+#: governance (p8-gov)
+msgid "minutes awaiting signature (overdue)"
+msgstr "محاضر بانتظار التوقيع (متأخرة)"
+
+#: governance (p8-gov)
+msgid "filings overdue"
+msgstr "إيداعات متأخرة"
+
+#: governance (p8-gov)
+msgid "resolution follow-ups overdue"
+msgstr "متابعات قرارات متأخرة"
+
+#: governance (p8-gov)
+#, python-format
+msgid "Meetings served by %(n)s"
+msgstr "الاجتماعات التي خدمها %(n)s"
+
+#: governance (p8-gov)
+msgid "No meeting recorded with this secretary."
+msgstr "لا يوجد اجتماع مسجل مع أمين السر هذا."
+
+#: governance (p8-gov)
+msgid "Follow-up of resolutions of these meetings"
+msgstr "متابعة قرارات هذه الاجتماعات"
+
+#: governance (p8-gov)
+msgid "Nothing open."
+msgstr "لا يوجد شيء مفتوح."
+
+#: governance (p8-gov)
+msgid "Other roles"
+msgstr "أدوار أخرى"
+
+#: governance (p8-gov)
+msgid "Choose a secretary on the left."
+msgstr "اختر أمين سر من القائمة."
+
+#: governance (p8-gov)
+msgid "Board & committee composition"
+msgstr "تشكيل المجلس واللجان"
+
+#: governance (p8-gov)
+msgid "Checked against the requirements recorded on each committee (members, independence, financial expertise, meetings, quorum, charter) and each member (term, fit & proper, independence declaration)."
+msgstr "فُحصت مقابل المتطلبات المسجلة لكل لجنة (الأعضاء، الاستقلالية، الخبرة المالية، الاجتماعات، النصاب، الميثاق) ولكل عضو (مدة العضوية، الصلاحية والملاءمة، إقرار الاستقلالية)."
+
+#: governance (p8-gov)
+msgid "Board composition"
+msgstr "تشكيل المجلس"
+
+#: governance (p8-gov)
+msgid "members"
+msgstr "أعضاء"
+
+#: governance (p8-gov)
+msgid "non-executive"
+msgstr "غير تنفيذي"
+
+#: governance (p8-gov)
+msgid "independent"
+msgstr "مستقل"
+
+#: governance (p8-gov)
+msgid "women"
+msgstr "سيدات"
+
+#: governance (p8-gov)
+msgid "board meetings in 12 months"
+msgstr "اجتماعات مجلس في 12 شهراً"
+
+#: governance (p8-gov)
+msgid "No composition rule set is chosen for this board."
+msgstr "لم تُختر مجموعة قواعد تشكيل لهذا المجلس."
+
+#: governance (p8-gov)
+msgid "Choose them"
+msgstr "اخترها"
+
+#: governance (p8-gov)
+msgid "Meets every rule chosen for this board."
+msgstr "يستوفي كل القواعد المختارة لهذا المجلس."
+
+#: governance (p8-gov)
+msgid "No findings on active board members."
+msgstr "لا توجد ملاحظات على أعضاء المجلس النشطين."
+
+#: governance (p8-gov)
+msgid "meetings in 12 months"
+msgstr "اجتماعات في 12 شهراً"
+
+#: governance (p8-gov)
+msgid "Meets every requirement recorded for this committee."
+msgstr "يستوفي كل المتطلبات المسجلة لهذه اللجنة."
+
+#: governance (p8-gov)
+msgid "No active committees."
+msgstr "لا توجد لجان نشطة."
+
+#: governance (p8-gov)
+msgid "A requirement left empty on a committee is not checked. Edit the committee to record its minimum members, independent members, financial expert, meetings per year and quorum."
+msgstr "المتطلب المتروك فارغاً في اللجنة لا يُفحص. عدّل اللجنة لتسجيل الحد الأدنى للأعضاء والأعضاء المستقلين والخبير المالي والاجتماعات في السنة والنصاب."
+
+#: governance (p8-gov)
+msgid "Another type (any name)…"
+msgstr "نوع آخر (أي اسم)…"
+
+#: governance (p8-gov)
+msgid "Type name (English)"
+msgstr "اسم النوع (بالإنجليزية)"
+
+#: governance (p8-gov)
+msgid "Type name (Arabic)"
+msgstr "اسم النوع (بالعربية)"
+
+#: governance (p8-gov)
+msgid "It is added to the committee types list, where its default rules can be set."
+msgstr "يُضاف إلى قائمة أنواع اللجان، حيث يمكن ضبط قواعده الافتراضية."
+
+#: governance (p8-gov)
+msgid "Composition and meeting rules"
+msgstr "قواعد التشكيل والاجتماعات"
+
+#: governance (p8-gov)
+msgid "Left empty on a new committee, the values of its type are used. An empty value is not checked."
+msgstr "إذا تُركت فارغة في لجنة جديدة تُستخدم قيم نوعها. القيمة الفارغة لا تُفحص."
+
+#: governance (p8-gov)
+msgid "Min independent"
+msgstr "الحد الأدنى للمستقلين"
+
+#: governance (p8-gov)
+msgid "Quorum (members)"
+msgstr "النصاب (أعضاء)"
+
+#: governance (p8-gov)
+msgid "From the committee type"
+msgstr "من نوع اللجنة"
+
+#: governance (p8-gov)
+msgid "Purpose / terms of reference (short)"
+msgstr "الغرض / الاختصاصات (مختصر)"
+
+#: governance (p8-gov)
+msgid "Formal record: quorum, votes, signatures"
+msgstr "السجل الرسمي: النصاب والأصوات والتوقيعات"
+
+#: governance (p8-gov)
+msgid "Capacities, attendance & votes"
+msgstr "الصفات والحضور والأصوات"
+
+#: governance (p8-gov)
+msgid "Resolutions register"
+msgstr "سجل القرارات"

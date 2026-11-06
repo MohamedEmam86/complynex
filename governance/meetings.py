@@ -247,6 +247,15 @@ def _resolution_data():
     return data
 
 
+def _reindex(db, rid):
+    """Keep the resolutions search index in step (governance/resolution_search.py)."""
+    try:
+        from governance import resolution_search
+        resolution_search.reindex(db, rid)
+    except Exception:
+        db.rollback()
+
+
 def _minutes_locked(db, mid):
     return bool(db.execute("SELECT 1 FROM meeting_minutes WHERE meeting_id = %s AND status = 'approved'",
                            (mid,)).fetchone())
@@ -282,6 +291,7 @@ def resolution_add(id):
     _event(db, id, 'resolution', rid, 'resolution_recorded', None, data['vote_result'],
            f"{data['decision_number']}: {vf}/{va}/{vb}")
     db.commit()
+    _reindex(db, rid)
     _audit('Meeting Resolution Recorded', id, f"{data['decision_number']} ({data['vote_result']})")
     flash(_('Resolution %(ref)s recorded.', ref=data['decision_number']), 'success')
     return redirect(url_for('governance.meeting_summary', id=id) + '#resolutions')
@@ -316,6 +326,7 @@ def resolution_edit(id, rid):
                 data['vote_result'], data['dissent_notes'] or None, data['dissent_notes'] or None, rid))
     _event(db, id, 'resolution', rid, 'resolution_changed', row['vote_result'], data['vote_result'], reason)
     db.commit()
+    _reindex(db, rid)
     _audit('Meeting Resolution Changed', id, f"{row['decision_number']}: {reason}")
     flash(_('Resolution updated.'), 'success')
     return redirect(url_for('governance.meeting_summary', id=id) + '#resolutions')

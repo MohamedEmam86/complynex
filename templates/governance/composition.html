@@ -16,6 +16,27 @@
   </div>
 </div>
 
+{% for b in data.boards or [] %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-transparent d-flex justify-content-between flex-wrap gap-2">
+    <h2 class="h6 mb-0">{{ _('Board composition') }}: {{ gov_pick(b.entity.name_en, b.entity.name_ar) }}</h2>
+    <span class="small text-muted">{{ b.stats.n }} {{ _('members') }} · {{ b.stats.non_executives }} {{ _('non-executive') }} ({{ b.stats.non_exec_pct }}%) · {{ b.stats.independent }} {{ _('independent') }} ({{ b.stats.independent_pct }}%) · {{ b.stats.women }} {{ _('women') }} ({{ b.stats.women_pct }}%) · {{ b.meetings_12m }} {{ _('board meetings in 12 months') }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if not b.rules %}<p class="small text-muted p-3 mb-0">{{ _('No composition rule set is chosen for this board.') }} <a href="{{ url_for('governance.gov_config_list', name='entities') }}">{{ _('Choose them') }}</a></p>
+    {% elif b.findings %}
+    <table class="table table-sm align-middle mb-0">
+      <tbody>{% for f in b.findings %}
+        <tr><td class="w-auto"><span class="badge bg-{{ badge[f.severity] }}">{{ sev[f.severity] }}</span></td>
+          <td>{% if f.params.member_id %}<a href="{{ url_for('governance.member_profile', mid=f.params.member_id) }}">{{ f.params.member }}</a>: {% endif %}{{ msg(f) }}</td>
+          <td class="small text-muted">{{ gov_pick(f.params.rule, f.params.rule_ar) }}{% if f.params.legal_ref %} — {{ f.params.legal_ref }}{% endif %}</td></tr>
+      {% endfor %}</tbody>
+    </table>
+    {% else %}<p class="text-success p-3 mb-0"><i class="bi bi-check-circle me-1"></i>{{ _('Meets every rule chosen for this board.') }}</p>{% endif %}
+  </div>
+</div>
+{% endfor %}
+
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Board members') }} <span class="text-muted small">({{ data.active_members }} {{ _('active') }})</span></h2></div>
   <div class="card-body p-0">

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% from 'governance/_register_macros.html' import outcome_badge, fu_badge, body_label, register_nav with context %}
+{% block title %}{{ _('Follow-up of resolutions') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-2 border-bottom gap-2">
+  <div><h1 class="h3 mb-0">{{ _('Follow-up of resolutions') }}</h1>
+    <small class="text-muted">{{ _('Implementation of board and committee resolutions: owner, due date, status and evidence (a duty of the board secretariat).') }}</small></div>
+  <form method="get" class="d-flex gap-2 no-print">
+    <select name="entity" class="form-select form-select-sm" data-auto-submit><option value="">{{ _('All boards') }}</option>{% for x in entities %}<option value="{{ x.id }}" {{ 'selected' if entity == x.id }}>{{ gov_pick(x.name_en, x.name_ar) }}</option>{% endfor %}</select>
+    <select name="show" class="form-select form-select-sm" data-auto-submit>
+      <option value="open" {{ 'selected' if show == 'open' }}>{{ _('Open') }}</option><option value="overdue" {{ 'selected' if show == 'overdue' }}>{{ _('Overdue') }}</option><option value="all" {{ 'selected' if show == 'all' }}>{{ _('All') }}</option></select>
+    <button type="button" class="btn btn-sm btn-outline-success text-nowrap" data-action="print"><i class="bi bi-printer"></i> {{ _('Print') }}</button>
+  </form>
+</div>
+<div class="no-print">{{ register_nav('followup') }}</div>
+<p class="small"><span class="badge bg-danger">{{ overdue }}</span> {{ _('overdue') }}{% if legacy_actions %} · <a href="{{ url_for('governance.action_tracker', show='overdue') }}">{{ _('%(n)s overdue meeting action items in the action tracker', n=legacy_actions) }}</a>{% endif %}</p>
+<div class="card border-0 shadow-sm"><div class="card-body p-0"><div class="table-responsive"><table class="table table-sm small mb-0 align-middle">
+  <thead class="table-light"><tr><th>{{ _('Resolution') }}</th><th>{{ _('Meeting') }}</th><th>{{ _('Outcome') }}</th><th>{{ _('Owner') }}</th><th>{{ _('Due') }}</th><th>{{ _('Status') }}</th><th>{{ _('Evidence') }}</th></tr></thead>
+  <tbody>{% for r in res %}<tr class="{{ 'table-danger' if r.fu_state == 'overdue' }}">
+    <td><a href="{{ url_for('governance.resolution_view', rid=r.id) }}">{{ r.number }}</a> <span dir="auto">{{ (r.decision_title or '')[:80] }}</span></td>
+    <td class="text-nowrap"><a href="{{ url_for('governance.meeting_record', id=r.meeting_id) }}">{{ r.meeting_date }}</a> · {{ code_label(r.body_code, 'gov_body') }}</td>
+    <td>{{ outcome_badge(r.outcome_code) }}</td><td>{{ r.action_owner or '—' }}</td><td class="text-nowrap">{{ r.due_date or '—' }}</td>
+    <td>{{ fu_badge(r.fu_state, r.followup_status) }}</td><td dir="auto">{{ (r.followup_evidence or '')[:120] }}</td></tr>
+  {% else %}<tr><td colspan="7" class="text-muted text-center py-3">{{ _('Nothing to follow up.') }}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

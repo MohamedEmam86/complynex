@@ -4,9 +4,14 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">{{ _('Board Committees') }}</h1>
+        <div class="d-flex gap-2">
+        <a href="{{ url_for('governance.gov_config_list', name='committee-types') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-sliders"></i> {{ _('Committee types') }}
+        </a>
         <a href="{{ url_for('governance.add_committee') }}" class="btn btn-primary">
             <i class="fas fa-plus"></i> {{ _('Create Committee') }}
         </a>
+        </div>
     </div>
 
     <div class="card shadow mb-4">
@@ -25,8 +30,9 @@
                     <tbody>
                         {% for committee in committees %}
                         <tr>
-                            <td>{{ committee.committee_name }}</td>
-                            <td><span class="badge bg-info text-dark">{{ code_label(committee.committee_type, 'committee_type') }}</span></td>
+                            <td>{{ gov_pick(committee.committee_name, committee.committee_name_arabic) }}</td>
+                            {% set ct = ctypes.get((committee.committee_type or '')|upper) if ctypes else none %}
+                            <td><span class="badge bg-info text-dark">{{ gov_pick(ct.name_en, ct.name_ar) if ct else code_label(committee.committee_type, 'committee_type') }}</span></td>
                             <td>{{ committee.meeting_frequency }}</td>
                             <td>
                                 {% if committee.is_active %}
@@ -40,9 +46,9 @@
                                     class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-users"></i> {{ _('Members') }}
                                 </a>
-                                <button class="btn btn-sm btn-outline-info">
-                                    <i class="fas fa-edit"></i>
-                                </button>
+                                <a href="{{ url_for('governance.edit_committee', id=committee.id) }}" class="btn btn-sm btn-outline-info" title="{{ _('Edit') }}">
+                                    <i class="fas fa-edit"></i> {{ _('Edit') }}
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
