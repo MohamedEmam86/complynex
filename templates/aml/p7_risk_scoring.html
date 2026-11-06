@@ -38,11 +38,14 @@
               <option value="builtin" {{ 'selected' if c.source == 'builtin' }}>{{ L('The list below', 'القائمة أدناه') }}</option>
               <option value="table" {{ 'selected' if c.source == 'table' }}>{{ L('The high-risk countries table (FATF)', 'جدول الدول عالية المخاطر (FATF)') }} ({{ hr_count }})</option>
               <option value="both" {{ 'selected' if c.source == 'both' }}>{{ L('Either of them', 'أي منهما') }}</option>
-            </select></div>
+            </select>
+            <div class="small text-muted mt-1">{{ L('In force now', 'السارية الآن') }}: <strong>{% if current.country.source == 'table' %}{{ L('the high-risk countries table', 'جدول الدول عالية المخاطر') }}{% elif current.country.source == 'both' %}{{ L('the table and the list below', 'الجدول والقائمة أدناه') }}{% else %}{{ L('the list below (the table is not used for the score)', 'القائمة أدناه (الجدول لا يُستخدم في الدرجة)') }}{% endif %}</strong>.
+              {{ L('To use the FATF table: choose it here, write the reason, preview, then save.', 'لاستخدام جدول فاتف: اختره هنا، واكتب السبب، واعرض المعاينة، ثم احفظ.') }}
+              <a href="{{ url_for('aml.high_risk_countries') }}">{{ L('See and maintain the table', 'عرض الجدول وتعديله') }}</a></div></div>
           <div class="col-12"><label class="form-label small">{{ L('Countries of the list (comma separated)', 'دول القائمة (مفصولة بفاصلة)') }}</label>
             <textarea name="builtin_list" class="form-control form-control-sm" rows="2">{{ (c.builtin_list or [])|join(', ') }}</textarea></div>
           <div class="col-4"><label class="form-label small">{{ L('High-risk country points', 'نقاط الدولة عالية المخاطر') }}</label><input type="number" min="0" max="100" name="high_risk_points" class="form-control form-control-sm" value="{{ c.high_risk_points }}" required></div>
-          <div class="col-4"><label class="form-label small">{{ L('Home country', 'دولة النشاط') }}</label><input type="text" name="home_country" class="form-control form-control-sm" value="{{ c.home_country }}"></div>
+          <div class="col-4"><label class="form-label small">{{ L('Home country', 'دولة النشاط') }}</label><input type="text" name="home_country" class="form-control form-control-sm" value="{{ c.home_country }}" required></div>
           <div class="col-4"><label class="form-label small">{{ L('Other country points', 'نقاط الدول الأخرى') }}</label><input type="number" min="0" max="100" name="foreign_points" class="form-control form-control-sm" value="{{ c.foreign_points }}" required></div>
         </div></div>
         <div class="card mb-3"><div class="card-header fw-semibold">{{ L('Customer, activity and income', 'العميل والنشاط والدخل') }}</div><div class="card-body row g-2">

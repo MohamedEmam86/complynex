@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% from 'aml/_p7_macros.html' import L with context %}
-{% block title %}{{ L('New freeze log entry', 'قيد تجميد جديد') }}{% endblock %}
+{% block title %}{{ L('New escalation log entry', 'قيد تصعيد جديد') }}{% endblock %}
 {% block content %}
 <div class="container py-3" style="max-width: 760px">
-  <h1 class="h4 mb-3"><i class="bi bi-snow"></i> {{ L('New freeze log entry', 'قيد تجميد جديد') }}</h1>
+  <h1 class="h4 mb-3"><i class="bi bi-arrow-up-right-circle"></i> {{ L('New escalation log entry', 'قيد تصعيد جديد') }}</h1>
+  <p class="small text-muted">{{ L('Record a listed-person hit so its escalation to the MLRO and its report to the authority are timed. Decisions and any action on the relationship are taken outside this system.', 'سجّل تطابقاً مع شخص مدرج ليُحسب وقت تصعيده لمسؤول الإبلاغ وإخطار الجهة المختصة. القرارات وأي إجراء على العلاقة تُتخذ خارج هذا النظام.') }}</p>
   <form method="POST" class="card card-body">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="screening_queue_id" value="{{ pre.screening_queue_id or '' }}">
@@ -17,7 +18,7 @@
       <div class="col-12"><label class="form-label small">{{ L('Notes', 'ملاحظات') }}</label><textarea name="notes" class="form-control form-control-sm" rows="2">{{ pre.notes or '' }}</textarea></div>
     </div>
     <div class="mt-3 d-flex gap-2"><button class="btn btn-sm btn-danger">{{ L('Open the entry', 'فتح القيد') }}</button>
-      <a href="{{ url_for('aml.freeze_log') }}" class="btn btn-sm btn-outline-secondary">{{ L('Cancel', 'إلغاء') }}</a></div>
+      <a href="{{ url_for('aml.escalation_log') }}" class="btn btn-sm btn-outline-secondary">{{ L('Cancel', 'إلغاء') }}</a></div>
   </form>
 </div>
 {% endblock %}

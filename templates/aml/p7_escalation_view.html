@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from 'aml/_p7_macros.html' import L with context %}
+{% block title %}{{ e.reference }}{% endblock %}
+{% block content %}
+{% set sl = statuses.get(e.status, (e.status, e.status)) %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div><h1 class="h3 mb-0"><i class="bi bi-arrow-up-right-circle"></i> {{ L('Hit escalation', 'تصعيد نتيجة فحص') }} <code>{{ e.reference }}</code></h1>
+      <div class="small text-muted">{{ L('Confidential — tipping-off rules apply. This system only alerts and escalates: decisions and any action on the relationship are taken outside it.', 'سري — تطبق قواعد عدم التنبيه. هذا النظام ينبّه ويصعّد فقط: القرارات وأي إجراء على العلاقة تُتخذ خارجه.') }}</div></div>
+    <div class="d-flex gap-2 align-items-center"><span class="badge {{ 'bg-success' if e.status == 'REPORTED' else ('bg-warning text-dark' if e.status == 'ESCALATED' else 'bg-danger') }} fs-6">{{ sl[1] if ar else sl[0] }}</span>
+      <a href="{{ url_for('aml.escalation_log') }}" class="btn btn-sm btn-outline-secondary">{{ L('Back to the log', 'العودة للسجل') }}</a></div>
+  </div>
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card mb-3"><div class="card-header fw-semibold">{{ L('Match', 'التطابق') }}</div><div class="card-body small">
+        <p><strong>{{ L('Party', 'الطرف') }}:</strong> {{ e.subject_name }}{% if cust %} — <a href="{{ url_for('aml.view_customer', id=cust.id) }}">{{ cust.customer_reference }}</a>{% endif %}</p>
+        <p><strong>{{ L('Name on the list', 'الاسم في القائمة') }}:</strong> {{ e.listed_name or '—' }} · <strong>{{ L('List', 'القائمة') }}:</strong> {{ e.list_name or '—' }}</p>
+        <p><strong>{{ L('STR case', 'حالة الإخطار') }}:</strong> {% if sar %}<a href="{{ url_for('aml.sar_detail', sar_id=sar.id) }}">{{ sar.sar_reference }}</a> ({{ sar.investigation_status }}){% else %}—{% endif %}</p>
+        {% if e.notes %}<p style="white-space: pre-wrap;">{{ e.notes }}</p>{% endif %}
+        <p class="text-muted mb-0">{{ L('Opened by', 'فتحه') }} {{ names.get('created_by', '—') }}</p>
+      </div></div>
+      <div class="card mb-3"><div class="card-header fw-semibold">{{ L('Timeline', 'التسلسل الزمني') }}</div><div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tr><td>{{ L('Discovered', 'الاكتشاف') }}</td><td>{{ e.discovered_at.strftime('%Y-%m-%d %H:%M') if e.discovered_at }}</td><td></td></tr>
+          <tr class="{{ 'table-danger' if tl.escalate_check and not tl.escalate_check.met }}"><td>{{ L('Escalated to the MLRO', 'التصعيد لمسؤول الإبلاغ') }}</td>
+            <td>{% if e.escalated_at %}{{ e.escalated_at.strftime('%Y-%m-%d %H:%M') }} — {{ names.get('escalated_by', '') }}{% else %}<span class="text-danger">{{ L('not yet', 'لم يتم بعد') }}</span>{% endif %}</td>
+            <td>{{ dur(tl.to_escalate_h) }} {{ L('after discovery', 'بعد الاكتشاف') }}{% if targets.escalate %} ({{ L('target', 'المستهدف') }} {{ targets.escalate }} h){% endif %}</td></tr>
+          <tr class="{{ 'table-danger' if tl.report_check and not tl.report_check.met }}"><td>{{ L('Reported to the authority', 'الإخطار للجهة المختصة') }}</td>
+            <td>{% if e.reported_at %}{{ e.reported_at.strftime('%Y-%m-%d %H:%M') }} — {{ e.reported_to }}{% if e.report_reference %} · {{ e.report_reference }}{% endif %}{% else %}<span class="text-danger">{{ L('not yet', 'لم يتم بعد') }}</span>{% endif %}</td>
+            <td>{% if e.escalated_at %}{{ dur(tl.to_report_h) }} {{ L('after the escalation', 'بعد التصعيد') }}{% if targets.report %} ({{ L('target', 'المستهدف') }} {{ targets.report }} h){% endif %}{% endif %}</td></tr>
+        </table></div></div>
+      {% if e.frozen_at or e.released_at or e.freeze_scope %}
+      <div class="card mb-3 border-secondary"><div class="card-header small text-muted">{{ L('Legacy data (recorded before the escalation log; read only)', 'بيانات قديمة (سُجلت قبل سجل التصعيد؛ للعرض فقط)') }}</div><div class="card-body small text-muted">
+        {% if e.frozen_at %}<div>frozen_at: {{ e.frozen_at }}{% if e.freeze_scope %} · {{ e.freeze_scope }}{% endif %}{% if e.amount_frozen is not none %} · {{ e.amount_frozen }} {{ e.currency or '' }}{% endif %}</div>{% endif %}
+        {% if e.released_at %}<div>released_at: {{ e.released_at }} · {{ e.release_reason or '' }}</div>{% endif %}
+      </div></div>
+      {% endif %}
+    </div>
+    <div class="col-lg-6">
+      {% if current_user.can_edit('aml') %}
+      {% if not e.escalated_at %}
+      <div class="card mb-3 border-danger"><div class="card-header fw-semibold">{{ L('1. Record the escalation to the MLRO', '1. تسجيل التصعيد لمسؤول الإبلاغ') }}</div><div class="card-body">
+        <form method="POST" class="row g-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="escalate">
+          <div class="col-6"><label class="form-label small">{{ L('Escalated at', 'وقت التصعيد') }}</label><input type="datetime-local" name="when" class="form-control form-control-sm" required max="{{ now }}"></div>
+          <div class="col-12"><button class="btn btn-sm btn-danger">{{ L('Record the escalation', 'تسجيل التصعيد') }}</button></div></form></div></div>
+      {% elif not e.reported_at %}
+      <div class="card mb-3 border-danger"><div class="card-header fw-semibold">{{ L('2. Record the report to the authority', '2. تسجيل الإخطار للجهة المختصة') }}</div><div class="card-body">
+        <form method="POST" class="row g-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="report">
+          <div class="col-6"><label class="form-label small">{{ L('Reported at', 'وقت الإخطار') }}</label><input type="datetime-local" name="when" class="form-control form-control-sm" required max="{{ now }}"></div>
+          <div class="col-6"><label class="form-label small">{{ L('Reported to', 'الجهة') }}</label><input type="text" name="reported_to" class="form-control form-control-sm" required minlength="2" placeholder="{{ L('e.g. EMLCU / supervisor', 'مثلاً: الوحدة / الجهة الرقابية') }}"></div>
+          <div class="col-12"><label class="form-label small">{{ L('Reference of the notice', 'مرجع الإخطار') }}</label><input type="text" name="reference" class="form-control form-control-sm"></div>
+          <div class="col-12"><button class="btn btn-sm btn-danger">{{ L('Record the report', 'تسجيل الإخطار') }}</button></div></form></div></div>
+      {% endif %}
+      {% if not e.sar_id %}
+      <div class="card mb-3"><div class="card-header fw-semibold">{{ L('Link to an STR case', 'ربط بحالة إخطار') }}</div><div class="card-body">
+        <form method="POST" class="d-flex gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="link">
+          <input type="number" name="sar_id" class="form-control form-control-sm" required placeholder="{{ L('Case number', 'رقم الحالة') }}"><button class="btn btn-sm btn-outline-primary">{{ L('Link', 'ربط') }}</button></form></div></div>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

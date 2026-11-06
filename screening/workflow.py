@@ -113,8 +113,8 @@ LIST_TYPES = ['SANCTIONS', 'TERROR', 'UNCLASSIFIED', 'SANCTION_LINKED', 'CRIME',
               'INTERNAL', 'EMLCU', 'PMA', 'REGULATORY']
 
 LIST_TYPE_LABEL = {
-    'SANCTIONS': ('Sanctions / asset freeze', 'عقوبات / تجميد أموال'),
-    'TERROR': ('Terrorism listing', 'إدراج إرهاب'),
+    'SANCTIONS': ('Sanctions / asset-freeze list', 'قائمة عقوبات / تجميد أموال'),
+    'TERROR': ('Terrorist list', 'قايمة إرهاب'),
     'UNCLASSIFIED': ('Unclassified (treated as sanctions)', 'غير مصنف (يعامل كعقوبات)'),
     'SANCTION_LINKED': ('Linked to a sanctioned party', 'مرتبط بجهة معاقبة'),
     'CRIME': ('Criminal / wanted list', 'قايمة جنائية / مطلوبين'),
@@ -126,26 +126,35 @@ LIST_TYPE_LABEL = {
     'TRADE_RISK': ('Trade risk research', 'مخاطر تجارية'),
     'POI': ('Person of interest', 'شخص محل اهتمام'),
     'CONTEXT': ('Background data, not a list', 'بيانات خلفية - مش قايمة'),
-    'INTERNAL': ('Internal list (local orders / lists)', 'قايمة داخلية (أوامر وقوايم محلية)'),
+    'INTERNAL': ('Internal list (asset-freeze / prohibition (منع من التصرف) orders, local lists)',
+                 'قايمة داخلية (أوامر تجميد / منع من التصرف وقوايم محلية)'),
     'EMLCU': ('EMLCU terrorist lists (Egypt)', 'قوايم الإرهاب - وحدة مكافحة غسل الأموال'),
     'PMA': ('Palestine national list (UNSCR 1373)', 'القايمة الوطنية الفلسطينية (1373)'),
     'REGULATORY': ('Regulatory measures (KYB)', 'إجراءات رقابية (KYB)'),
 }
 
+# ComplyNex only ALERTS and ESCALATES: it never freezes, blocks or implies that it executes a
+# freeze. The codes FREEZE_ESCALATE / FREEZE_REPORT are kept (stored MLRO tables, API clients);
+# they mean "listed on a sanctions / terrorist / asset-freeze / prohibition list: escalate".
+# '{list}' in a step is replaced by the list type label.
 ACTIONS = {
     'FREEZE_ESCALATE': {
-        'label': ('Freeze and escalate', 'تجميد وتصعيد'),
-        'CONFIRMED': ('Do not onboard or process. Freeze funds without delay, escalate to the MLRO and report as the law requires.',
-                      'ماتكملش التعامل. جمّد الأموال فوراً، صعّد لمسؤول الإبلاغ، وبلّغ حسب القانون.'),
-        'POTENTIAL': ('Hold the relationship / transaction and escalate to the MLRO. Verify identity; freeze without delay once it is confirmed.',
-                      'أوقف العلاقة / العملية وصعّد لمسؤول الإبلاغ. اتحقق من الهوية، ولو اتأكدت جمّد فوراً.'),
+        'label': ('Escalate to the MLRO', 'تصعيد لمسؤول الإبلاغ'),
+        'CONFIRMED': ('Listed on {list}: escalate to the MLRO immediately with the evidence; decisions and any action on the relationship are taken outside this system.',
+                      'مدرج على {list}: صعّد لمسؤول الإبلاغ فوراً مع الأدلة؛ القرارات وأي إجراء على العلاقة تُتخذ خارج هذا النظام.'),
+        'POTENTIAL': ('Possibly listed on {list}: verify the identity with the national ID and date of birth first; '
+                      'if it is the same person, escalate to the MLRO immediately with the evidence; decisions and any action on the relationship are taken outside this system.',
+                      'احتمال إدراج على {list}: اتحقق من الهوية بالرقم القومي وتاريخ الميلاد أولاً؛ '
+                      'لو هو نفس الشخص، صعّد لمسؤول الإبلاغ فوراً مع الأدلة؛ القرارات وأي إجراء على العلاقة تُتخذ خارج هذا النظام.'),
     },
     'FREEZE_REPORT': {
-        'label': ('Freeze and report (local law)', 'تجميد وإبلاغ (القانون المحلي)'),
-        'CONFIRMED': ('Freeze without delay and report to the competent authority (EMLCU / supervisor) as the local order requires.',
-                      'جمّد فوراً وبلّغ الجهة المختصة (الوحدة / الجهة الرقابية) حسب الأمر المحلي.'),
-        'POTENTIAL': ('Hold and escalate to the MLRO. Verify identity against the order (national ID, date of birth); freeze and report once confirmed.',
-                      'أوقف وصعّد لمسؤول الإبلاغ. اتحقق من الهوية مقابل الأمر (رقم قومي، تاريخ ميلاد)؛ ولو اتأكدت جمّد وبلّغ.'),
+        'label': ('Escalate to the MLRO (local order)', 'تصعيد لمسؤول الإبلاغ (أمر محلي)'),
+        'CONFIRMED': ('Listed on {list}: escalate to the MLRO immediately with the evidence; decisions and any action on the relationship are taken outside this system. The MLRO reports to the competent authority as the order requires.',
+                      'مدرج على {list}: صعّد لمسؤول الإبلاغ فوراً مع الأدلة؛ القرارات وأي إجراء على العلاقة تُتخذ خارج هذا النظام. ومسؤول الإبلاغ يُخطر الجهة المختصة حسب الأمر.'),
+        'POTENTIAL': ('Possibly listed on {list}: verify the identity against the order (national ID, date of birth) first; '
+                      'if it is the same person, escalate to the MLRO immediately with the evidence; decisions and any action on the relationship are taken outside this system.',
+                      'احتمال إدراج على {list}: اتحقق من الهوية مقابل الأمر (رقم قومي، تاريخ ميلاد) أولاً؛ '
+                      'لو هو نفس الشخص، صعّد لمسؤول الإبلاغ فوراً مع الأدلة؛ القرارات وأي إجراء على العلاقة تُتخذ خارج هذا النظام.'),
     },
     'EDD': {
         'label': ('Enhanced due diligence (not a rejection)', 'عناية واجبة مشددة (مش رفض)'),
@@ -156,9 +165,10 @@ ACTIONS = {
     },
     'MLRO_DECISION': {
         'label': ('MLRO decision', 'قرار مسؤول الإبلاغ'),
-        'CONFIRMED': ('Not a freeze order on its own. Hold, confirm the identity, apply enhanced due diligence and let the MLRO decide; consider a suspicious transaction report.',
-                      'مش أمر تجميد لوحده. أوقف، أكّد الهوية، طبّق عناية مشددة، والقرار لمسؤول الإبلاغ؛ وفكّر في إخطار اشتباه.'),
-        'POTENTIAL': ('Hold and confirm the identity; the MLRO decides.', 'أوقف وأكّد الهوية؛ والقرار لمسؤول الإبلاغ.'),
+        'CONFIRMED': ('Not a sanctions / asset-freeze listing on its own. Confirm the identity, apply enhanced due diligence and escalate to the MLRO with the evidence; the MLRO decides outside this system, including on a suspicious transaction report.',
+                      'مش إدراج على قايمة عقوبات / تجميد لوحده. أكّد الهوية، طبّق عناية مشددة، وصعّد لمسؤول الإبلاغ مع الأدلة؛ والقرار لمسؤول الإبلاغ خارج النظام، بما فيه إخطار الاشتباه.'),
+        'POTENTIAL': ('Confirm the identity and escalate to the MLRO; the MLRO decides outside this system.',
+                      'أكّد الهوية وصعّد لمسؤول الإبلاغ؛ والقرار لمسؤول الإبلاغ خارج النظام.'),
     },
     'REVIEW': {
         'label': ('Review and record', 'مراجعة وتسجيل'),
@@ -294,8 +304,8 @@ def action_for(m, table=None):
     a = ACTIONS.get(code) or ACTIONS['REVIEW']
     tier = _tier(m)
     if (m or {}).get('legal_status') == 'LIFTED' or str((m or {}).get('legal_status') or '').upper() == 'LIFTED':
-        step = ('The listing was lifted (إنهاء أثر): no freeze on this record; record the review and check for other active listings.',
-                'الإدراج ده اتنهى أثره: مفيش تجميد على السجل ده؛ سجّل المراجعة واتأكد مفيش إدراج تاني ساري.')
+        step = ('The listing was lifted (إنهاء أثر): this record is no longer an active listing; record the review and check for other active listings.',
+                'الإدراج ده اتنهى أثره: السجل ده مبقاش إدراج ساري؛ سجّل المراجعة واتأكد مفيش إدراج تاني ساري.')
     elif tier == 'CONFIRMED':
         step = a['CONFIRMED']
     elif tier == 'POTENTIAL':
@@ -303,6 +313,7 @@ def action_for(m, table=None):
     else:
         step = LOW_STEP
     lab = LIST_TYPE_LABEL.get(ltype, (ltype, ltype))
+    step = (step[0].replace('{list}', lab[0]), step[1].replace('{list}', lab[1]))
     return {'list_type': ltype, 'list_label': {'en': lab[0], 'ar': lab[1]}, 'code': code,
             'label': {'en': a['label'][0], 'ar': a['label'][1]}, 'step': {'en': step[0], 'ar': step[1]},
             'tier': tier}

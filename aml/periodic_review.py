@@ -60,18 +60,29 @@ def parse_date(v):
         return None
 
 
+def rating_class(classification):
+    """The rating whose review interval applies. A missing or unknown rating is
+    not assumed to be low risk: it is reviewed on the HIGH interval."""
+    cls = str(classification or '').strip().upper()
+    return cls if cls in aml_risk.CLASSES else 'HIGH'
+
+
 def due_date(customer, model):
-    """When the customer's next review is due (None when nothing to count from)."""
-    explicit = parse_date(customer.get('next_review_date'))
-    if explicit:
-        return explicit
+    """When the customer's next review is due (None when nothing to count from).
+
+    The earlier of the stored next review date and the last review (else the
+    rating / onboarding date) plus the interval of the CURRENT rating: a
+    customer re-rated HIGH after the date was stored is not left on the old,
+    longer interval."""
+    stored = parse_date(customer.get('next_review_date'))
     base = (parse_date(customer.get('last_review_date')) or parse_date(customer.get('risk_classification_date'))
             or parse_date(customer.get('onboarding_date')) or parse_date(customer.get('created_at')))
-    if not base:
-        return None
-    cls = (customer.get('risk_classification') or 'LOW').upper()
-    months = (aml_risk.merged(model)['review_months'] or {}).get(cls if cls in aml_risk.CLASSES else 'HIGH')
-    return base + relativedelta(months=int(months)) if months else None
+    computed = None
+    if base:
+        months = (aml_risk.merged(model)['review_months'] or {}).get(rating_class(customer.get('risk_classification')))
+        computed = base + relativedelta(months=int(months)) if months else None
+    dates = [d for d in (stored, computed) if d]
+    return min(dates) if dates else None
 
 
 def review_state(due, today, days_before):
@@ -85,20 +96,85 @@ def review_state(due, today, days_before):
 
 
 def next_after(review_day, classification, model):
-    months = aml_risk.merged(model)['review_months'].get((classification or 'LOW').upper(), 12)
+    months = aml_risk.merged(model)['review_months'].get(rating_class(classification), 12)
     return review_day + relativedelta(months=int(months))
 
 
 # ----------------------------------------------------------------------------- database side
 
-def portfolio(db=None, model=None, today=None, state=None, risk=None):
-    """Active customers with their review due date and state, most urgent first."""
+STATE_ORDER = {'overdue': 0, 'due_soon': 1, 'unknown': 2, 'ok': 3}
+
+# Due date and state computed in SQL (filters and LIMIT applied there, not on the whole register).
+# aml_safe_date() (migration 20261105_p8aml) reads the text date columns and returns NULL on bad text.
+_PORTFOLIO_CTE = """
+WITH c AS (
+    SELECT id, customer_reference, full_name, company_name, risk_classification, risk_classification_date,
+           last_review_date, next_review_date, onboarding_date, created_at, status,
+           CASE WHEN upper(COALESCE(risk_classification, '')) IN ('HIGH', 'MEDIUM', 'LOW')
+                THEN upper(risk_classification) ELSE 'HIGH' END AS rating_class,
+           aml_safe_date(next_review_date::text) AS stored_due,
+           COALESCE(aml_safe_date(last_review_date::text), aml_safe_date(risk_classification_date::text),
+                    aml_safe_date(onboarding_date::text), aml_safe_date(created_at::text)) AS base
+      FROM customers
+     WHERE upper(COALESCE(status, 'ACTIVE')) NOT IN %(closed)s
+), d AS (
+    SELECT c.*, LEAST(stored_due, (base + make_interval(months => CASE rating_class WHEN 'HIGH' THEN %(m_high)s
+                                                               WHEN 'MEDIUM' THEN %(m_medium)s ELSE %(m_low)s END))::date) AS due
+      FROM c
+), s AS (
+    SELECT d.*, CASE WHEN due IS NULL THEN 'unknown' WHEN due < %(today)s THEN 'overdue'
+                     WHEN due - %(today)s <= %(days)s THEN 'due_soon' ELSE 'ok' END AS state
+      FROM d
+)
+"""
+_FILTER = "WHERE (%(state)s::text IS NULL OR state = %(state)s) AND (%(risk)s::text IS NULL OR rating_class = %(risk)s)"
+
+
+def _has_sql_dates(db):
+    try:
+        r = db.execute("SELECT to_regprocedure('aml_safe_date(text)') AS f").fetchone()
+        return bool(r and r['f'])
+    except Exception:
+        return False
+
+
+def _decorate(c, today):
+    c['days'] = (c['due'] - today).days if c.get('due') else None
+    c['name'] = c.get('full_name') or c.get('company_name') or c.get('customer_reference')
+    return c
+
+
+def portfolio_page(db=None, model=None, today=None, state=None, risk=None, limit=500):
+    """{'rows': most urgent first (at most `limit`), 'total': rows matching the filters,
+    'summary': {state: count} over all active customers}."""
     from .risk_config import current_model
     db = db or get_db()
     model = model or current_model(db)
     today = today or date.today()
-    days = model['reminders']['days_before']
-    out = []
+    m = aml_risk.merged(model)
+    days = int(m['reminders']['days_before'])
+    state = state if state in STATE_ORDER else None
+    risk = risk if risk in aml_risk.CLASSES else None
+    if not _has_sql_dates(db):
+        return _portfolio_page_py(db, m, today, days, state, risk, limit)
+    args = {'closed': CLOSED_STATUSES, 'today': today, 'days': days, 'state': state, 'risk': risk,
+            'm_high': int(m['review_months']['HIGH']), 'm_medium': int(m['review_months']['MEDIUM']),
+            'm_low': int(m['review_months']['LOW']), 'limit': int(limit) if limit else None}
+    summary = {k: 0 for k in STATE_ORDER}
+    for r in db.execute(_PORTFOLIO_CTE + "SELECT state, count(*) AS n FROM s GROUP BY state", args).fetchall():
+        summary[r['state']] = int(r['n'])
+    total = int(db.execute(_PORTFOLIO_CTE + "SELECT count(*) AS n FROM s " + _FILTER, args).fetchone()['n'])
+    rows = [_decorate(dict(r), today) for r in db.execute(
+        _PORTFOLIO_CTE + "SELECT * FROM s " + _FILTER + """
+         ORDER BY CASE state WHEN 'overdue' THEN 0 WHEN 'due_soon' THEN 1 WHEN 'unknown' THEN 2 ELSE 3 END,
+                  due NULLS LAST, id
+         LIMIT %(limit)s""", args).fetchall()]
+    return {'rows': rows, 'total': total, 'summary': summary}
+
+
+def _portfolio_page_py(db, model, today, days, state, risk, limit):
+    """Same result computed in Python (before the migration adds aml_safe_date)."""
+    every = []
     for r in db.execute("""SELECT id, customer_reference, full_name, company_name, risk_classification,
                                   risk_classification_date, last_review_date, next_review_date, onboarding_date,
                                   created_at, status
@@ -106,18 +182,22 @@ def portfolio(db=None, model=None, today=None, state=None, risk=None):
         c = dict(r)
         if (c.get('status') or 'ACTIVE').upper() in CLOSED_STATUSES:
             continue
-        due = due_date(c, model)
-        st = review_state(due, today, days)
-        if state and st != state:
-            continue
-        if risk and (c.get('risk_classification') or 'LOW').upper() != risk:
-            continue
-        c.update(due=due, state=st, days=(due - today).days if due else None,
-                 name=c.get('full_name') or c.get('company_name') or c.get('customer_reference'))
-        out.append(c)
-    order = {'overdue': 0, 'due_soon': 1, 'unknown': 2, 'ok': 3}
-    out.sort(key=lambda c: (order[c['state']], c['due'] or date.max))
-    return out
+        c['due'] = due_date(c, model)
+        c['state'] = review_state(c['due'], today, days)
+        c['rating_class'] = rating_class(c.get('risk_classification'))
+        every.append(c)
+    summary = {k: 0 for k in STATE_ORDER}
+    for c in every:
+        summary[c['state']] += 1
+    rows = [c for c in every if (not state or c['state'] == state) and (not risk or c['rating_class'] == risk)]
+    rows.sort(key=lambda c: (STATE_ORDER[c['state']], c['due'] or date.max, c['id']))
+    return {'rows': [_decorate(c, today) for c in (rows[:limit] if limit else rows)], 'total': len(rows),
+            'summary': summary}
+
+
+def portfolio(db=None, model=None, today=None, state=None, risk=None, limit=500):
+    """Active customers with their review due date and state, most urgent first."""
+    return portfolio_page(db, model, today, state, risk, limit)['rows']
 
 
 def summary(rows):
@@ -179,11 +259,11 @@ def send_reminders(db=None, today=None, dry_run=False):
     model = current_model(db, force=True)
     if not model['reminders']['enabled']:
         return False, 0
-    rows = [r for r in portfolio(db, model, today) if r['state'] in ('overdue', 'due_soon')]
-    if rows and not dry_run:
+    summ = portfolio_page(db, model, today, limit=1)['summary']
+    overdue, soon = summ['overdue'], summ['due_soon']
+    if overdue + soon and not dry_run:
         from services.notification_service import notify
-        overdue = sum(1 for r in rows if r['state'] == 'overdue')
         notify([u['id'] for u in aml_staff(db)], 'Customer reviews due',
-               f'{overdue} customer review(s) overdue and {len(rows) - overdue} due within '
+               f'{overdue} customer review(s) overdue and {soon} due within '
                f'{model["reminders"]["days_before"]} days.', link='/aml/periodic-reviews', category='warning')
-    return True, len(rows)
+    return True, overdue + soon

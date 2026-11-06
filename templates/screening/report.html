@@ -147,7 +147,7 @@
 
         {# P4-1: incomplete screening #}
         {% if incomplete_reasons %}
-        {% set _inc_ar = get_locale() == 'ar' %}
+        {% set _inc_ar = get_locale()|string == 'ar' %}
         <div class="alert alert-danger py-2">
             <strong>{{ _('Screening incomplete — a source was unavailable') }}</strong>
             <ul class="mb-0 small">{% for w in incomplete_reasons %}<li>{{ w.ar if _inc_ar else w.en }}</li>{% endfor %}</ul>
@@ -167,7 +167,7 @@
         </div>
 
         {% if input_warnings %}
-        {% set _iq_ar = get_locale() == 'ar' %}
+        {% set _iq_ar = get_locale()|string == 'ar' %}
         <div class="section-title">{{ 'ملاحظات على جودة البيانات المُدخلة' if _iq_ar else 'Input quality notes' }}</div>
         <ul class="small mb-4">
             {% for w in input_warnings %}<li>{{ w.ar if _iq_ar else w.en }}</li>{% endfor %}
@@ -209,7 +209,7 @@
             {# P4-2 / P4-3 / G9 #}
             {% set _w = match.workflow %}
             {% if _w %}
-            {% set _war = get_locale() == 'ar' %}
+            {% set _war = get_locale()|string == 'ar' %}
             <div class="small mb-2"{% if _war %} dir="rtl"{% endif %}>
                 {% if _w.action %}<div><strong>{{ _('Required action') }}:</strong> {{ _w.action.label.ar if _war else _w.action.label.en }} — {{ _w.action.step.ar if _war else _w.action.step.en }}</div>{% endif %}
                 {% if _w.identity_status %}<div>{{ _w.identity_status.ar if _war else _w.identity_status.en }}</div>{% endif %}

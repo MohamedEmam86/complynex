@@ -146,73 +146,96 @@ def customer_kyb(id):
                         after_change=lambda cid: edd.reassess(cid, current_user.id))
 
 
+HR_MSG_AR = {
+    'Enter the ISO country code: 2 or 3 letters (e.g. YE or YEM).': 'أدخل رمز الدولة (ISO): حرفان أو ثلاثة (مثل YE أو YEM).',
+    'Enter the country name in English.': 'أدخل اسم الدولة بالإنجليزية.',
+    'Choose the category.': 'اختر التصنيف.',
+    'Enter the source (e.g. FATF public statement, October 2026, or the internal decision).':
+        'أدخل المصدر (مثل بيان مجموعة العمل المالي، أكتوبر 2026، أو القرار الداخلي).',
+    'The date must be a valid date (YYYY-MM-DD).': 'التاريخ يجب أن يكون تاريخاً صحيحاً (YYYY-MM-DD).',
+    'Give the reason for the change (at least 5 characters).': 'اذكر سبب التعديل (5 أحرف على الأقل).',
+    'Country not found.': 'الدولة غير موجودة.',
+    'This country is already on the list: edit or reactivate it instead.': 'الدولة موجودة بالفعل في القائمة: عدّلها أو أعد تفعيلها.',
+    'Another row already has this code or name.': 'يوجد صف آخر بنفس الرمز أو الاسم.',
+    'Deactivate the country before deleting it.': 'أوقف الدولة أولاً قبل حذفها.',
+    'The country is still referenced and cannot be deleted; keep it deactivated.':
+        'الدولة ما زالت مرتبطة ببيانات أخرى ولا يمكن حذفها؛ اتركها موقوفة.',
+}
+
+
+def _hr_ar():
+    from flask_babel import get_locale
+    return str(get_locale()) == 'ar'
+
+
 @aml_bp.route('/high-risk-countries', methods=['GET', 'POST'])
 @login_required
 @permission_required('aml')
 def high_risk_countries():
+    """The high-risk countries list (FATF black / grey lists, internal and other lists):
+    view for AML users; add / edit / deactivate / delete for the MLRO only, with a reason, audited."""
+    from . import high_risk_countries as HR
+    from . import str_register as SR
     db = get_db()
+    ar = _hr_ar()
+    can_edit = SR.is_mlro(current_user)
+    here = url_for('aml.high_risk_countries')
+
+    def L(en, a):
+        return a if ar else en
+
     if request.method == 'POST':
-        if not current_user.can_edit('aml'):
-            flash(tr('You do not have permission to change the high-risk country list.'), 'danger')
-            return redirect(url_for('aml.high_risk_countries'))
+        if not can_edit:
+            flash(L('Only the MLRO (compliance manager) changes the high-risk country list.',
+                    'مسؤول الإبلاغ (مدير الامتثال) فقط يعدّل قائمة الدول عالية المخاطر.'), 'danger')
+            return redirect(here)
         action = request.form.get('action')
-        now = datetime.now()
-        if action == 'add':
-            code = (request.form.get('country_code') or '').strip().upper()[:3]
-            name = (request.form.get('country_name') or '').strip()[:100]
-            cat = request.form.get('risk_category') or 'INTERNAL'
-            if not code or not name or cat not in ('CALL_FOR_ACTION', 'INCREASED_MONITORING', 'INTERNAL'):
-                flash(tr('Enter the country code, name and category.'), 'danger')
-                return redirect(url_for('aml.high_risk_countries'))
-            if db.execute("SELECT 1 FROM high_risk_countries WHERE upper(country_code) = %s OR upper(country_name) = upper(%s)",
-                          (code, name)).fetchone():
-                flash(tr('This country is already on the list; reactivate it instead.'), 'warning')
-                return redirect(url_for('aml.high_risk_countries'))
-            db.execute("""INSERT INTO high_risk_countries (country_code, country_name, name_ar, aliases, risk_category,
-                          source, effective_date, is_active, notes, updated_by, updated_at)
-                          VALUES (%s,%s,%s,%s,%s,%s,%s,1,%s,%s,%s)""",
-                       (code, name, (request.form.get('name_ar') or '').strip() or None,
-                        (request.form.get('aliases') or '').strip() or None, cat,
-                        (request.form.get('source') or '').strip() or 'Internal decision',
-                        now.strftime('%Y-%m-%d'), (request.form.get('notes') or '').strip() or None,
-                        current_user.id, now))
-            detail = f'added {code} {name} ({cat})'
-        elif action in ('activate', 'deactivate', 'update'):
-            rid = request.form.get('id', type=int)
-            row = db.execute("SELECT * FROM high_risk_countries WHERE id = %s", (rid,)).fetchone()
-            if not row:
-                flash(tr('Country not found.'), 'danger')
-                return redirect(url_for('aml.high_risk_countries'))
-            reason = (request.form.get('notes') or '').strip()
-            if action == 'deactivate' and len(reason) < 5:
-                flash(tr('Give the reason for removing the country from the active list.'), 'danger')
-                return redirect(url_for('aml.high_risk_countries'))
-            if action == 'update':
-                db.execute("UPDATE high_risk_countries SET aliases = %s, name_ar = %s, updated_by = %s, updated_at = %s "
-                           "WHERE id = %s", ((request.form.get('aliases') or '').strip() or None,
-                                             (request.form.get('name_ar') or '').strip() or None,
-                                             current_user.id, now, rid))
+        rid = request.form.get('id', type=int)
+        left = None
+        try:
+            if action == 'add':
+                HR.add(request.form, current_user.id, db)
+            elif action == 'update' and rid:
+                HR.update(rid, request.form, current_user.id, db)
+            elif action in ('activate', 'deactivate') and rid:
+                left = HR.set_active(rid, action == 'activate', request.form, current_user.id, db)
+            elif action == 'delete' and rid:
+                left = HR.delete(rid, request.form, current_user.id, db)
+            elif action == 'reassess':
+                n = 0
+                for r in db.execute("SELECT id FROM customers WHERE COALESCE(status, '') NOT IN ('CLOSED')").fetchall():
+                    edd.reassess(r['id'], current_user.id, db=db)
+                    n += 1
+                db.commit()
+                AuditLog.log(current_user.id, 'High-risk Countries', 'AML', None,
+                             f're-assessed {n} customers against the list', request.remote_addr)
+                flash(L(f'{n} customers re-assessed against the list.', f'تمت إعادة تقييم {n} عميل مقابل القائمة.'), 'info')
+                return redirect(here)
             else:
-                db.execute("UPDATE high_risk_countries SET is_active = %s, notes = COALESCE(NULLIF(%s, ''), notes), "
-                           "updated_by = %s, updated_at = %s WHERE id = %s",
-                           (1 if action == 'activate' else 0, reason, current_user.id, now, rid))
-            detail = f'{action} {row["country_code"]} {row["country_name"]}' + (f': {reason}' if reason else '')
-        elif action == 'reassess':
-            n = 0
-            for r in db.execute("SELECT id FROM customers WHERE COALESCE(status, '') NOT IN ('CLOSED')").fetchall():
-                edd.reassess(r['id'], current_user.id, db=db)
-                n += 1
-            detail = f're-assessed {n} customers against the list'
-            flash(tr(('%(n)s customers re-assessed.', {'n': n})), 'info')
-        else:
-            flash(tr('Unknown action.'), 'danger')
-            return redirect(url_for('aml.high_risk_countries'))
-        db.commit()
-        AuditLog.log(current_user.id, 'High-risk Countries', 'AML', None, detail, request.remote_addr)
-        if action != 'reassess':
-            flash(tr('High-risk country list updated.'), 'success')
-        return redirect(url_for('aml.high_risk_countries'))
-    rows = db.execute("""SELECT h.*, TRIM(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')) AS updated_by_name
-                         FROM high_risk_countries h LEFT JOIN users u ON u.id = h.updated_by
-                         ORDER BY h.is_active DESC, h.risk_category, h.country_name""").fetchall()
-    return render_template('aml/high_risk_countries.html', rows=rows, can_edit=current_user.can_edit('aml'))
+                raise HR.CountryError('Country not found.')
+        except HR.CountryError as e:
+            msg = str(e)
+            flash(HR_MSG_AR.get(msg, msg) if ar else msg, 'danger')
+            if action == 'update' and rid:
+                return redirect(url_for('aml.high_risk_countries', edit=rid))
+            return redirect(here)
+        if left == 0:
+            flash(L('No country is active on the list any more: the customer HIGH floor and rule TM004 now use no '
+                    'country at all.', 'لم تعد أي دولة نشطة في القائمة: الحد الأدنى للتصنيف العالي وقاعدة TM004 لا '
+                    'يستخدمان أي دولة الآن.'), 'warning')
+        flash(L('High-risk country list updated. Customer ratings change when customers are re-assessed (button '
+                'above) or next edited; monitoring uses the new list on its next run.',
+                'تم تحديث قائمة الدول عالية المخاطر. تتغير تصنيفات العملاء عند إعادة تقييمهم (الزر أعلاه) أو عند تعديلهم؛ '
+                'والمراقبة تستخدم القائمة الجديدة في تشغيلها التالي.'), 'success')
+        return redirect(here)
+
+    edit_row = None
+    if request.args.get('edit', type=int):
+        try:
+            edit_row = HR.get(request.args.get('edit', type=int), db)
+        except HR.CountryError:
+            edit_row = None
+    return render_template('aml/high_risk_countries.html', ar=ar, rows=HR.rows(db), can_edit=can_edit,
+                           edit_row=edit_row, categories=HR.CATEGORIES, cat_label=HR.category_label,
+                           impact=HR.IMPACT, not_used=HR.NOT_USED, status=HR.impact_status(db),
+                           today=datetime.now().strftime('%Y-%m-%d'))

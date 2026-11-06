@@ -28,6 +28,9 @@ The regulatory HIGH floor (PEP, screening link, high-risk country from the
 table) is applied afterwards in aml/edd.py and is not part of this score.
 """
 import copy
+import logging
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = {
     'country': {
@@ -59,13 +62,19 @@ def merged(model=None):
             out[k].update(v)
         else:
             out[k] = copy.deepcopy(v)
+    if not str(out['country'].get('home_country') or '').strip():
+        out['country']['home_country'] = DEFAULT_MODEL['country']['home_country']
     return out
 
 
-def validate(model):
-    """Problems with a model (empty list = valid)."""
+def validate(model, for_save=False):
+    """Problems with a model (empty list = valid). for_save: also the rules that apply only to a
+    new version (a blank home country is refused on save; a stored model with one is read with
+    the default home country, never thrown away)."""
     m = merged(model)
     probs = []
+    if for_save and not str((((model or {}).get('country')) or {}).get('home_country') or '').strip():
+        probs.append('the home country is required')
 
     def pts(v, label):
         if not isinstance(v, (int, float)) or isinstance(v, bool) or not (0 <= v <= 100):
@@ -180,12 +189,16 @@ def calculate_risk_score(data, model=None, high_risk_rows=None):
 
 
 def _current(high_risk_rows=None):
-    """(model, high-risk rows) in force; DEFAULT_MODEL when they cannot be read."""
+    """(model, high-risk rows) in force; DEFAULT_MODEL when the model cannot be read."""
     try:
-        from aml.risk_config import current_model, high_risk_rows as _rows
+        from aml.risk_config import current_model, high_risk_rows_cached as _rows
         model = current_model()
-        if high_risk_rows is None and model['country'].get('source') in ('table', 'both'):
-            high_risk_rows = _rows()
-        return model, high_risk_rows
-    except Exception:
+    except Exception as ex:
+        logger.warning('customer risk model not readable (%s); the default model is used', ex)
         return copy.deepcopy(DEFAULT_MODEL), high_risk_rows
+    if high_risk_rows is None and model['country'].get('source') in ('table', 'both'):
+        try:
+            high_risk_rows = _rows()         # cached, refreshed when the table changes
+        except Exception as ex:
+            logger.warning('high-risk countries not readable (%s); the table adds no points this time', ex)
+    return model, high_risk_rows

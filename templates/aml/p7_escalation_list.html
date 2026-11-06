@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from 'aml/_p7_macros.html' import L with context %}
+{% block title %}{{ L('Hit escalation log', 'سجل تصعيد نتائج الفحص') }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div><h1 class="h3 mb-0"><i class="bi bi-arrow-up-right-circle"></i> {{ L('Hit escalation log', 'سجل تصعيد نتائج الفحص') }}</h1>
+      <div class="small text-muted">{{ L('When each listed-person hit was discovered, escalated to the MLRO and reported to the authority. This system only alerts and escalates: decisions and any action on the relationship are taken outside it.', 'متى اكتُشف كل تطابق مع شخص مدرج، ومتى صُعّد لمسؤول الإبلاغ، ومتى أُخطرت الجهة المختصة. هذا النظام ينبّه ويصعّد فقط: القرارات وأي إجراء على العلاقة تُتخذ خارجه.') }}
+        {{ L('Targets', 'المستهدف') }}: {{ L('escalate within', 'التصعيد خلال') }} {{ (targets.escalate|string ~ ' h') if targets.escalate else L('not set', 'غير محدد') }} · {{ L('report within', 'الإخطار خلال') }} {{ (targets.report|string ~ ' h') if targets.report else L('not set', 'غير محدد') }}</div></div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('aml.hits_to_act') }}" class="btn btn-sm btn-outline-primary">{{ L('Hits to act on', 'النتائج المطلوب التصرف فيها') }}</a>
+      {% if current_user.can_edit('aml') %}<a href="{{ url_for('aml.escalation_new') }}" class="btn btn-sm btn-danger">{{ L('New entry', 'قيد جديد') }}</a>{% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-1 flex-wrap mb-2">
+    <a href="{{ url_for('aml.escalation_log') }}" class="btn btn-sm {{ 'btn-dark' if not status else 'btn-outline-dark' }}">{{ L('All', 'الكل') }}</a>
+    {% for code, en, a in statuses %}<a href="{{ url_for('aml.escalation_log', status=code) }}" class="btn btn-sm {{ 'btn-dark' if status == code else 'btn-outline-dark' }}">{{ a if ar else en }}</a>{% endfor %}
+  </div>
+  <div class="table-responsive"><table class="table table-sm align-middle">
+    <thead><tr><th>{{ L('Reference', 'المرجع') }}</th><th>{{ L('Subject', 'الطرف') }}</th><th>{{ L('List', 'القائمة') }}</th><th>{{ L('Discovered', 'الاكتشاف') }}</th><th>{{ L('To escalation', 'حتى التصعيد') }}</th><th>{{ L('To report', 'حتى الإخطار') }}</th><th>{{ L('STR case', 'حالة الإخطار') }}</th></tr></thead>
+    <tbody>
+    {% for r in rows %}{% set t = r.tl %}
+    <tr>
+      <td><a href="{{ url_for('aml.escalation_view', entry_id=r.id) }}">{{ r.reference }}</a><div class="small text-muted">{{ status_labels.get(r.status, r.status) }}</div></td>
+      <td>{{ r.subject_name }}{% if r.customer_reference %}<div class="small text-muted">{{ r.customer_reference }}</div>{% endif %}</td>
+      <td class="small">{{ r.list_name or '—' }}</td>
+      <td class="small">{{ r.discovered_at.strftime('%Y-%m-%d %H:%M') if r.discovered_at }}</td>
+      <td class="{{ 'text-danger fw-bold' if t.escalate_check and not t.escalate_check.met }}">{{ dur(t.to_escalate_h) }}{% if not t.escalate_done %} <span class="badge bg-warning text-dark">{{ L('running', 'جارٍ') }}</span>{% endif %}</td>
+      <td class="{{ 'text-danger fw-bold' if t.report_check and not t.report_check.met }}">{% if t.escalate_done %}{{ dur(t.to_report_h) }}{% if not t.report_done %} <span class="badge bg-warning text-dark">{{ L('running', 'جارٍ') }}</span>{% endif %}{% else %}—{% endif %}</td>
+      <td>{% if r.sar_id %}<a href="{{ url_for('aml.sar_detail', sar_id=r.sar_id) }}">{{ r.sar_reference }}</a>{% else %}—{% endif %}</td>
+    </tr>
+    {% else %}<tr><td colspan="7" class="text-muted small">{{ L('No entry.', 'لا توجد قيود.') }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  <div class="small text-muted">{{ L('Targets are regulator or policy values: set the parameters aml.escalation_target_hours and aml.report_target_hours for your licence type (or the settings aml_escalation_target_hours / aml_report_target_hours).', 'المستهدفات قيم تنظيمية أو داخلية: اضبط المعاملين aml.escalation_target_hours و aml.report_target_hours لنوع ترخيصك (أو الإعدادين aml_escalation_target_hours / aml_report_target_hours).') }}</div>
+</div>
+{% endblock %}

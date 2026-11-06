@@ -1,61 +1,104 @@
 {% extends "base.html" %}
-{% block title %}{{ _('High-risk countries') }}{% endblock %}
+{% from 'aml/_p7_macros.html' import L with context %}
+{% block title %}{{ L('High-risk countries (FATF)', 'الدول عالية المخاطر (فاتف)') }}{% endblock %}
 {% block content %}
+{% set er = edit_row or {} %}
 <div class="container-fluid py-3">
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-    <h1 class="h3 mb-0"><i class="bi bi-globe2"></i> {{ _('High-risk countries') }}</h1>
-    {% if can_edit %}
-    <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="reassess">
-      <button class="btn btn-sm btn-outline-danger"><i class="bi bi-arrow-repeat"></i> {{ _('Re-assess all customers against the list') }}</button></form>
-    {% endif %}
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-globe2"></i> {{ L('High-risk countries (FATF black and grey lists)', 'الدول عالية المخاطر (القائمتان السوداء والرمادية لمجموعة العمل المالي)') }}</h1>
+      <div class="small text-muted">{{ L('One list used across AML. Every active country counts the same, whatever its category. Keep it in line with the latest FATF public statements (February, June and October each year) and your regulator.', 'قائمة واحدة تُستخدم في كل وحدات مكافحة غسل الأموال. كل دولة نشطة لها نفس الأثر أياً كان تصنيفها. حدّثها وفق أحدث بيانات مجموعة العمل المالي (فبراير ويونيو وأكتوبر من كل عام) وتعليمات جهتك الرقابية.') }}</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('aml.dashboard') }}" class="btn btn-sm btn-outline-secondary">{{ L('AML dashboard', 'لوحة مكافحة غسل الأموال') }}</a>
+      <a href="{{ url_for('aml.risk_scoring') }}" class="btn btn-sm btn-outline-primary">{{ L('Customer risk model', 'نموذج تقييم مخاطر العملاء') }}</a>
+      {% if can_edit %}
+      <form method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="reassess">
+        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-arrow-repeat"></i> {{ L('Re-assess all customers against the list', 'إعادة تقييم كل العملاء مقابل القائمة') }}</button></form>
+      {% endif %}
+    </div>
   </div>
-  <p class="text-muted small">{{ _('A customer whose nationality, residence or registration country — or a beneficial owner’s nationality — matches an active country here is rated HIGH risk and needs approved EDD. The default list follows the FATF public statements; review it against the latest publication.') }}</p>
+
+  <div class="card mb-3 border-warning"><div class="card-header fw-semibold"><i class="bi bi-diagram-3"></i> {{ L('Impact: what this list changes', 'الأثر: ما الذي تغيّره هذه القائمة') }}</div>
+    <div class="card-body small">
+      <ol class="mb-2">
+      {% for key, t_en, t_ar, d_en, d_ar, where in impact %}
+        <li class="mb-2"><strong>{{ t_ar if ar else t_en }}</strong>
+          {% if key == 'floor' and status.flagged_customers is not none %}<span class="badge bg-secondary ms-1">{{ status.flagged_customers }} {{ L('customers flagged now', 'عميل معلَّم حالياً') }}</span>{% endif %}
+          {% if key == 'tm004' and status.tm004_active is not none %}<span class="badge {{ 'bg-success' if status.tm004_active else 'bg-secondary' }} ms-1">{{ L('rule active', 'القاعدة مفعّلة') if status.tm004_active else L('rule inactive', 'القاعدة غير مفعّلة') }}</span>{% endif %}
+          {% if key == 'model' %}<span class="badge {{ 'bg-success' if status.model_source != 'builtin' else 'bg-secondary' }} ms-1">{% if status.model_source == 'table' %}{{ L('uses this list', 'يستخدم هذه القائمة') }}{% elif status.model_source == 'both' %}{{ L('uses this list and its built-in list', 'يستخدم هذه القائمة وقائمته المدمجة') }}{% else %}{{ L('NOT switched on: uses its built-in list', 'غير مفعّل: يستخدم قائمته المدمجة') }}{% endif %}</span>{% endif %}
+          <div>{{ d_ar if ar else d_en }}</div>
+          {% if key == 'model' %}
+          <div class="mt-1">{% if status.model_source == 'builtin' %}{{ L('Built-in list now in force', 'القائمة المدمجة السارية الآن') }}: <code>{{ status.builtin_list|join(', ') or '—' }}</code>.{% endif %}
+            {{ L('To switch: open the customer risk model, set "High-risk countries come from" to "The high-risk countries table (FATF)" (or "Either of them"), write the reason, press "Preview on the register" to see how many ratings change, then "Save as new version" (MLRO only).', 'للتفعيل: افتح نموذج تقييم مخاطر العملاء، واضبط "مصدر الدول عالية المخاطر" على "جدول الدول عالية المخاطر (FATF)" (أو "أي منهما")، واكتب السبب، واضغط "معاينة على السجل" لترى عدد التصنيفات التي ستتغير، ثم "حفظ كإصدار جديد" (مسؤول الإبلاغ فقط).') }}
+            <a href="{{ url_for('aml.risk_scoring') }}">{{ L('Open the risk model', 'فتح نموذج المخاطر') }}</a></div>
+          {% endif %}
+          <div class="text-muted"><code>{{ where }}</code></div>
+        </li>
+      {% endfor %}
+      </ol>
+      <div class="text-muted">{{ not_used[1] if ar else not_used[0] }} {{ L('Changes take effect: monitoring on its next run; the risk model within a minute; customer ratings when customers are re-assessed or next edited.', 'متى يسري التغيير: المراقبة في تشغيلها التالي؛ ونموذج المخاطر خلال دقيقة؛ وتصنيفات العملاء عند إعادة تقييمهم أو تعديلهم.') }}</div>
+    </div></div>
 
   {% if can_edit %}
-  <form method="POST" class="card card-body shadow-sm mb-3 row g-2 flex-row">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="add">
-    <div class="col-md-1"><input class="form-control form-control-sm" name="country_code" maxlength="3" placeholder="{{ _('Code') }}" required></div>
-    <div class="col-md-2"><input class="form-control form-control-sm" name="country_name" placeholder="{{ _('Country (English)') }}" required></div>
-    <div class="col-md-2"><input class="form-control form-control-sm" name="name_ar" placeholder="{{ _('Country (Arabic)') }}"></div>
-    <div class="col-md-2"><input class="form-control form-control-sm" name="aliases" placeholder="{{ _('Other spellings, separated by |') }}"></div>
-    <div class="col-md-2"><select class="form-select form-select-sm" name="risk_category">
-      {% for k in ('CALL_FOR_ACTION', 'INCREASED_MONITORING', 'INTERNAL') %}<option value="{{ k }}">{{ k|kyc_label('hr_category') }}</option>{% endfor %}</select></div>
-    <div class="col-md-2"><input class="form-control form-control-sm" name="source" placeholder="{{ _('Source / decision reference') }}"></div>
-    <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">{{ _('Add') }}</button></div>
+  <form method="POST" class="card card-body shadow-sm mb-3 {{ 'border-primary' if edit_row }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="{{ 'update' if edit_row else 'add' }}">
+    {% if edit_row %}<input type="hidden" name="id" value="{{ er.id }}">{% endif %}
+    <div class="fw-semibold mb-2">{% if edit_row %}{{ L('Edit', 'تعديل') }} <code>{{ er.country_code }}</code> {{ er.country_name }}{% else %}{{ L('Add a country', 'إضافة دولة') }}{% endif %}</div>
+    <div class="row g-2">
+      <div class="col-6 col-md-1"><label class="form-label small">{{ L('ISO code', 'رمز ISO') }}</label><input class="form-control form-control-sm" name="country_code" maxlength="3" minlength="2" required value="{{ er.country_code or '' }}"></div>
+      <div class="col-6 col-md-2"><label class="form-label small">{{ L('Country (English)', 'الدولة (إنجليزي)') }}</label><input class="form-control form-control-sm" name="country_name" required value="{{ er.country_name or '' }}"></div>
+      <div class="col-6 col-md-2"><label class="form-label small">{{ L('Country (Arabic)', 'الدولة (عربي)') }}</label><input class="form-control form-control-sm" name="name_ar" dir="rtl" value="{{ er.name_ar or '' }}"></div>
+      <div class="col-6 col-md-3"><label class="form-label small">{{ L('Category', 'التصنيف') }}</label><select class="form-select form-select-sm" name="risk_category" required>
+        {% for c, en, a in categories %}<option value="{{ c }}" {{ 'selected' if er.risk_category == c }}>{{ a if ar else en }}</option>{% endfor %}</select></div>
+      <div class="col-md-2"><label class="form-label small">{{ L('Source', 'المصدر') }}</label><input class="form-control form-control-sm" name="source" required minlength="3" placeholder="{{ L('e.g. FATF public statement, October 2026', 'مثلاً: بيان مجموعة العمل المالي، أكتوبر 2026') }}" value="{{ er.source or '' }}"></div>
+      <div class="col-6 col-md-2"><label class="form-label small">{{ L('Date of the source', 'تاريخ المصدر') }}</label><input type="date" class="form-control form-control-sm" name="effective_date" max="{{ today }}" value="{{ (er.effective_date|string)[:10] if er.effective_date else '' }}"></div>
+      <div class="col-md-4"><label class="form-label small">{{ L('Other spellings (separated by |)', 'تهجئات أخرى (مفصولة بـ |)') }}</label><input class="form-control form-control-sm" name="aliases" value="{{ er.aliases or '' }}"></div>
+      <div class="col-md-4"><label class="form-label small">{{ L('Notes', 'ملاحظات') }}</label><input class="form-control form-control-sm" name="notes" value="{{ er.notes or '' }}"></div>
+      {% if edit_row %}<div class="col-6 col-md-1 d-flex align-items-end"><div class="form-check"><input class="form-check-input" type="checkbox" name="is_active" value="1" id="hr-active" {{ 'checked' if er.is_active }}><label class="form-check-label small" for="hr-active">{{ L('Active', 'نشطة') }}</label></div></div>{% endif %}
+      <div class="col-md-3"><label class="form-label small">{{ L('Reason for the change (required)', 'سبب التعديل (مطلوب)') }}</label><input class="form-control form-control-sm" name="reason" required minlength="5"></div>
+      <div class="col-6 col-md-2 d-flex align-items-end gap-1"><button class="btn btn-sm btn-primary w-100">{{ L('Save', 'حفظ') if edit_row else L('Add', 'إضافة') }}</button>
+        {% if edit_row %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('aml.high_risk_countries') }}">{{ L('Cancel', 'إلغاء') }}</a>{% endif %}</div>
+    </div>
   </form>
+  {% else %}
+  <div class="alert alert-secondary small py-2">{{ L('Read only: only the MLRO (compliance manager) adds, edits, deactivates or deletes countries; every change needs a reason and is audited.', 'للعرض فقط: مسؤول الإبلاغ (مدير الامتثال) فقط يضيف الدول أو يعدلها أو يوقفها أو يحذفها؛ وكل تعديل يتطلب سبباً ويُسجل في سجل التدقيق.') }}</div>
   {% endif %}
 
   <div class="card shadow-sm"><div class="table-responsive">
   <table class="table table-sm table-hover mb-0 align-middle">
-    <thead class="table-light"><tr><th>{{ _('Code') }}</th><th>{{ _('Country') }}</th><th>{{ _('Category') }}</th><th>{{ _('Other spellings') }}</th>
-      <th>{{ _('Source') }}</th><th>{{ _('Status') }}</th><th>{{ _('Last change') }}</th><th></th></tr></thead>
+    <thead class="table-light"><tr><th>{{ L('Code', 'الرمز') }}</th><th>{{ L('Country', 'الدولة') }}</th><th>{{ L('Category', 'التصنيف') }}</th><th>{{ L('Source and date', 'المصدر والتاريخ') }}</th>
+      <th>{{ L('Other spellings', 'تهجئات أخرى') }}</th><th>{{ L('Status', 'الحالة') }}</th><th>{{ L('Last change', 'آخر تعديل') }}</th>{% if can_edit %}<th></th>{% endif %}</tr></thead>
     <tbody>
     {% for r in rows %}
     <tr class="{% if not r.is_active %}text-muted{% endif %}">
       <td><code>{{ r.country_code }}</code></td>
-      <td>{{ r.name_ar if (get_locale()|string) == 'ar' and r.name_ar else r.country_name }}</td>
-      <td>{{ r.risk_category|kyc_label('hr_category') }}</td>
+      <td>{{ r.country_name }}{% if r.name_ar %}<div class="small" dir="rtl">{{ r.name_ar }}</div>{% endif %}</td>
+      <td class="small"><span class="badge {{ 'bg-dark' if r.risk_category == 'CALL_FOR_ACTION' else ('bg-secondary' if r.risk_category == 'INCREASED_MONITORING' else 'bg-info text-dark') }}">{{ cat_label(r.risk_category, ar) }}</span></td>
+      <td class="small">{{ r.source or '—' }}{% if r.effective_date %}<div class="text-muted">{{ r.effective_date }}</div>{% endif %}</td>
       <td class="small">{{ (r.aliases or '')|replace('|', ', ') }}</td>
-      <td class="small">{{ r.source or '' }}</td>
-      <td>{% if r.is_active %}<span class="badge bg-danger">{{ _('Active') }}</span>{% else %}<span class="badge bg-secondary">{{ _('Inactive') }}</span>{% endif %}
+      <td>{% if r.is_active %}<span class="badge bg-danger">{{ L('Active', 'نشطة') }}</span>{% else %}<span class="badge bg-secondary">{{ L('Inactive', 'غير نشطة') }}</span>{% endif %}
         {% if r.notes %}<div class="small text-muted">{{ r.notes }}</div>{% endif %}</td>
       <td class="small">{{ r.updated_by_name or '' }} {{ r.updated_at.strftime('%Y-%m-%d') if r.updated_at else '' }}</td>
-      <td class="text-nowrap">
-        {% if can_edit %}
-        <form method="POST" class="d-flex gap-1">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="id" value="{{ r.id }}">
-          {% if r.is_active %}
-          <input class="form-control form-control-sm" name="notes" placeholder="{{ _('Reason') }}" required minlength="5">
-          <button name="action" value="deactivate" class="btn btn-sm btn-outline-secondary">{{ _('Deactivate') }}</button>
-          {% else %}
-          <button name="action" value="activate" class="btn btn-sm btn-outline-danger">{{ _('Reactivate') }}</button>
-          {% endif %}
-        </form>
-        {% endif %}
+      {% if can_edit %}
+      <td>
+        <div class="d-flex flex-column gap-1">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('aml.high_risk_countries', edit=r.id) }}">{{ L('Edit', 'تعديل') }}</a>
+          <form method="POST" class="d-flex gap-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="id" value="{{ r.id }}">
+            <input class="form-control form-control-sm" name="reason" placeholder="{{ L('Reason', 'السبب') }}" required minlength="5">
+            {% if r.is_active %}<button name="action" value="deactivate" class="btn btn-sm btn-outline-secondary">{{ L('Deactivate', 'إيقاف') }}</button>
+            {% else %}<button name="action" value="activate" class="btn btn-sm btn-outline-danger">{{ L('Reactivate', 'إعادة تفعيل') }}</button>{% endif %}
+            {% if not r.is_active %}<button name="action" value="delete" class="btn btn-sm btn-outline-danger" data-confirm="{{ L('Delete this country from the list? Deactivating keeps its history.', 'حذف هذه الدولة من القائمة؟ الإيقاف يحتفظ بسجلها.') }}">{{ L('Delete', 'حذف') }}</button>{% endif %}
+          </form>
+        </div>
       </td>
+      {% endif %}
     </tr>
-    {% else %}<tr><td colspan="8" class="text-center text-muted py-3">{{ _('The list is empty.') }}</td></tr>{% endfor %}
+    {% else %}<tr><td colspan="{{ 8 if can_edit else 7 }}" class="text-center text-muted py-3">{{ L('The list is empty.', 'القائمة فارغة.') }}</td></tr>{% endfor %}
     </tbody>
   </table></div></div>
+  <div class="small text-muted mt-2">{{ L('Deactivate keeps the row and its history (e.g. a country removed from the grey list); delete removes an inactive row (e.g. one entered by mistake) — deactivate it first. Both are recorded in the audit log with the reason.', 'الإيقاف يحتفظ بالصف وتاريخه (مثل دولة خرجت من القائمة الرمادية)؛ والحذف يزيل صفاً موقوفاً (مثل صف أُدخل بالخطأ) — أوقفه أولاً. وكلاهما يُسجل في سجل التدقيق مع السبب.') }}</div>
 </div>
 {% endblock %}

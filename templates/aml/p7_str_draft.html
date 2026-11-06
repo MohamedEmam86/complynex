@@ -37,15 +37,15 @@
     {% if f.hits %}<div class="fw-semibold">{{ L('Screening matches', 'تطابقات الفحص') }}</div>
     <table class="table table-sm"><thead><tr><th>{{ L('Listed name', 'الاسم المدرج') }}</th><th>{{ L('List', 'القائمة') }}</th><th>{{ L('Score', 'الدرجة') }}</th><th>{{ L('Screened on', 'تاريخ الفحص') }}</th><th>{{ L('Outcome', 'النتيجة') }}</th></tr></thead><tbody>
       {% for h in f.hits %}<tr><td>{{ h.match_name }}</td><td>{{ h.list_source }}</td><td>{{ '%.0f'|format(h.match_score or 0) }}</td><td>{{ h.screening_date }}</td><td>{{ h.status }} {{ h.resolution or '' }}</td></tr>{% endfor %}</tbody></table>{% endif %}
-    {% if f.freezes %}<div class="fw-semibold">{{ L('Freeze measures', 'إجراءات التجميد') }}</div>
-    <table class="table table-sm"><tbody>{% for z in f.freezes %}<tr><td>{{ z.reference }}</td><td>{{ L('discovered', 'الاكتشاف') }} {{ z.discovered_at.strftime('%Y-%m-%d %H:%M') if z.discovered_at }}</td>
-      <td>{{ L('frozen', 'التجميد') }} {{ z.frozen_at.strftime('%Y-%m-%d %H:%M') if z.frozen_at else '—' }}</td><td>{{ L('reported', 'الإخطار') }} {{ z.reported_at.strftime('%Y-%m-%d %H:%M') if z.reported_at else '—' }} {{ z.reported_to or '' }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+    {% if f.escalations %}<div class="fw-semibold">{{ L('Escalation and reporting of the hits', 'تصعيد النتائج والإخطار عنها') }}</div>
+    <table class="table table-sm"><tbody>{% for z in f.escalations %}<tr><td>{{ z.reference }}</td><td>{{ L('discovered', 'الاكتشاف') }} {{ z.discovered_at.strftime('%Y-%m-%d %H:%M') if z.discovered_at }}</td>
+      <td>{{ L('escalated to the MLRO', 'التصعيد لمسؤول الإبلاغ') }} {{ z.escalated_at.strftime('%Y-%m-%d %H:%M') if z.escalated_at else '—' }}</td><td>{{ L('reported', 'الإخطار') }} {{ z.reported_at.strftime('%Y-%m-%d %H:%M') if z.reported_at else '—' }} {{ z.reported_to or '' }}</td></tr>{% endfor %}</tbody></table>{% endif %}
     {% if f.tm_alerts %}<div class="fw-semibold">{{ L('Monitoring alerts', 'تنبيهات المراقبة') }}</div>
     <ul>{% for a in f.tm_alerts %}<li>{{ a.alert_reference }} — {{ a.alert_severity }} ({{ a.alert_date }})</li>{% endfor %}</ul>{% endif %}
     {% if f.transactions %}<div class="fw-semibold">{{ L('Transactions', 'المعاملات') }} — {{ L('total', 'الإجمالي') }} {{ "{:,.2f}".format(f.total_amount) }}</div>
     <table class="table table-sm"><thead><tr><th>{{ L('Date', 'التاريخ') }}</th><th>{{ L('Reference', 'المرجع') }}</th><th>{{ L('Type', 'النوع') }}</th><th>{{ L('Amount', 'المبلغ') }}</th><th>{{ L('Counterparty', 'الطرف المقابل') }}</th></tr></thead><tbody>
-      {% for t in f.transactions %}<tr><td>{{ (t.transaction_date or '')[:10] }}</td><td>{{ t.transaction_reference }}</td><td>{{ t.transaction_type }}</td><td>{{ "{:,.2f}".format(t.amount or 0) }} {{ t.currency }}</td><td>{{ t.counterparty_name or '' }} {{ t.counterparty_country or '' }}</td></tr>{% endfor %}</tbody></table>{% endif %}
-    {% if not (f.hits or f.freezes or f.tm_alerts or f.transactions) %}<div class="text-muted">{{ L('Nothing linked to the case yet: link alerts, hits and transactions on the case page.', 'لا يوجد شيء مرتبط بالحالة بعد: اربط التنبيهات والنتائج والمعاملات من صفحة الحالة.') }}</div>{% endif %}
+      {% for t in f.transactions %}<tr><td>{{ (t.transaction_date|string)[:10] if t.transaction_date else '' }}</td><td>{{ t.transaction_reference }}</td><td>{{ t.transaction_type }}</td><td>{{ "{:,.2f}".format(t.amount or 0) }} {{ t.currency }}</td><td>{{ t.counterparty_name or '' }} {{ t.counterparty_country or '' }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+    {% if not (f.hits or f.escalations or f.tm_alerts or f.transactions) %}<div class="text-muted">{{ L('Nothing linked to the case yet: link alerts, hits and transactions on the case page.', 'لا يوجد شيء مرتبط بالحالة بعد: اربط التنبيهات والنتائج والمعاملات من صفحة الحالة.') }}</div>{% endif %}
   </div></div>
 
   {% if editable and not printing %}
@@ -54,6 +54,7 @@
     <div class="card mb-3"><div class="card-header fw-semibold">{{ L('3. Grounds of suspicion', '3. أسباب الاشتباه') }}</div><div class="card-body">
       <textarea name="grounds" class="form-control" rows="6" required minlength="30">{{ text.grounds }}</textarea></div></div>
     <div class="card mb-3"><div class="card-header fw-semibold">{{ L('4. Actions taken by the institution', '4. الإجراءات التي اتخذتها المؤسسة') }}</div><div class="card-body">
+      <div class="small text-muted mb-1">{{ L('Built from the escalation log. Actions on the relationship are decided and taken outside this system; describe them here as the institution took them.', 'مأخوذة من سجل التصعيد. الإجراءات على العلاقة تُقرر وتُنفذ خارج هذا النظام؛ صفها هنا كما اتخذتها المؤسسة.') }}</div>
       <textarea name="actions_taken" class="form-control" rows="3">{{ text.actions_taken }}</textarea></div></div>
     <div class="card mb-3"><div class="card-header fw-semibold">{{ L('5. Analysis and narrative', '5. التحليل والسرد') }}</div><div class="card-body">
       <textarea name="narrative" class="form-control" rows="8">{{ text.narrative }}</textarea></div></div>

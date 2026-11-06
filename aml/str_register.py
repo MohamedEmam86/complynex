@@ -221,6 +221,32 @@ def aml_staff(db=None):
          ORDER BY first_name, last_name""").fetchall()]
 
 
+def mark_opened_in_error(sar_id, why, actor_id, db=None):
+    """A case opened twice for the same hit (a race): its description says so and it is
+    audited, so nobody works it; nothing is deleted."""
+    db = db or get_db()
+    case = get_case(db, sar_id)
+    db.execute("""UPDATE suspicious_activities SET activity_description =
+                  '[OPENED IN ERROR — do not work this case: ' || %s || '] ' || COALESCE(activity_description, ''),
+                  updated_at = %s WHERE id = %s""", (why, _now(), sar_id))
+    db.commit()
+    _audit(actor_id, sar_id, f'SAR {case["sar_reference"]}: opened in error ({why})')
+
+
+def is_mlro(user):
+    """The MLRO designation used by the screening clearance four-eyes rule
+    (screening.clearance.approver_ids): the active compliance managers, or the
+    administrators only when the organisation has no compliance manager. An
+    administrator is NOT the MLRO where a compliance manager exists."""
+    if user is None or not getattr(user, 'is_authenticated', True):
+        return False
+    try:
+        from screening.clearance import approver_ids
+        return getattr(user, 'id', None) in approver_ids()
+    except Exception:
+        return getattr(user, 'role', None) == 'compliance_manager'
+
+
 def is_aml_staff(db, uid):
     return any(str(u['id']) == str(uid) for u in aml_staff(db))
 
@@ -426,8 +452,20 @@ def add_link(sar_id, link_type, target_id, actor_id, note=None, db=None):
     if db.execute("""SELECT 1 FROM aml_sar_links WHERE sar_id = %s AND link_type = %s AND target_id = %s
                      AND unlinked_at IS NULL""", (sar_id, link_type, target_id)).fetchone():
         raise StrError(N_('Already linked to this case.'))
-    db.execute("""INSERT INTO aml_sar_links (sar_id, link_type, target_id, note, linked_by)
-                  VALUES (%s,%s,%s,%s,%s)""", (sar_id, link_type, target_id, note, actor_id))
+    if link_type == 'screening_hit' and db.execute(
+            """SELECT 1 FROM aml_sar_links WHERE link_type = 'screening_hit' AND target_id = %s
+               AND unlinked_at IS NULL""", (target_id,)).fetchone():
+        raise StrError(N_('This screening hit is already linked to another case.'))
+    try:
+        db.execute("""INSERT INTO aml_sar_links (sar_id, link_type, target_id, note, linked_by)
+                      VALUES (%s,%s,%s,%s,%s)""", (sar_id, link_type, target_id, note, actor_id))
+    except Exception as ex:
+        import psycopg2
+        if not isinstance(ex, psycopg2.IntegrityError):
+            raise
+        db.rollback()      # a concurrent request linked it first (unique indexes on aml_sar_links)
+        raise StrError(N_('This screening hit is already linked to another case.') if link_type == 'screening_hit'
+                       else N_('Already linked to this case.'))
     if link_type == 'tm_alert':
         db.execute("UPDATE tm_alerts SET sar_id = COALESCE(sar_id, %s) WHERE id = %s", (sar_id, target_id))
     elif link_type == 'transaction':

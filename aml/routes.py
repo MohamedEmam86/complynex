@@ -252,13 +252,12 @@ def view_customer(id):
     import json as _json
     from datetime import datetime as _dt
     try:
-        HIGH_RISK_COUNTRIES = {
-            'Iran','North Korea','Myanmar','Afghanistan','Syria','Yemen',
-            'Libya','Somalia','Sudan','Iraq','Mali','Burkina Faso',
-            'Haiti','Laos','South Sudan','Nigeria','Pakistan'
-        }
-        nationality = customer['nationality'] or customer['country'] or ''
-        geo_score = 80 if nationality in HIGH_RISK_COUNTRIES else 20
+        # geography axis: the high-risk countries list (aml/high_risk_countries.py), not a list in code
+        from aml.edd_logic import match_country as _match_country
+        from aml.risk_config import high_risk_rows_cached as _hr_rows
+        _hr = _hr_rows(db)
+        geo_score = 80 if any(_match_country(customer[k], _hr) for k in ('nationality', 'country')
+                              if customer[k]) else 20
 
         cust_vol = db.execute("SELECT COALESCE(SUM(amount),0) as v FROM transactions WHERE customer_id=%s",(id,)).fetchone()['v'] or 0
         avg_vol = db.execute("SELECT COALESCE(AVG(total),0) as v FROM (SELECT SUM(amount) as total FROM transactions GROUP BY customer_id) t").fetchone()['v'] or 1
@@ -416,7 +415,9 @@ def _csv_response(header, rows, filename):
 
 
 def _is_mlro(user):
-    return getattr(user, 'role', None) in ('compliance_manager', 'admin')
+    # the MLRO designation of the screening clearance rule (compliance managers; administrators
+    # only when there is no compliance manager) — see aml/str_register.is_mlro
+    return strreg.is_mlro(user)
 
 
 def _due_text(due):

@@ -17,6 +17,8 @@
 
 """One KYB page handler, mounted by each module that holds legal entities."""
 
+import logging
+
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user
 
@@ -26,6 +28,7 @@ from . import logic, service
 from .service import KybError
 
 AUDIT_MODULE = {'merchant': 'Merchant KYC', 'aml_customer': 'AML'}
+logger = logging.getLogger(__name__)
 
 
 def _flash_all(messages, category):
@@ -34,12 +37,14 @@ def _flash_all(messages, category):
 
 
 def _reg_scope():
-    """Where the regulatory-measures lists (e.g. PMA) are searched: kyb / all / off."""
+    """Where the regulatory-measures lists (e.g. PMA) are searched: kyb / all / off,
+    or 'unknown' when the setting cannot be read (the page then says so, neutrally)."""
     try:
         from screening import regulatory
-        return regulatory.scope()
+        return regulatory.scope() or 'unknown'
     except Exception:
-        return None
+        logger.warning('regulatory-lists scope not readable', exc_info=True)
+        return 'unknown'
 
 
 def handle(subject, subject_id, *, self_endpoint, back_url, can_edit, title_prefix, after_change=None):

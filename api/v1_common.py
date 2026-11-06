@@ -254,7 +254,9 @@ PASSIVE_CODES = ('INFORMATION',)
 def payment_decision(parties):
     """PASS / HOLD / BLOCK for a payment from the screened parties.
     parties: [{'role', 'incomplete': bool, 'hits': [hit_view, ...]}]
-      BLOCK: a CONFIRMED hit whose list action is a freeze (sanctions, terror, local orders);
+      BLOCK: a CONFIRMED hit on a sanctions / terrorist / asset-freeze / prohibition list
+             (actions FREEZE_ESCALATE / FREEZE_REPORT). It is advice to the client's own system:
+             ComplyNex itself never freezes or blocks anything; it alerts and escalates;
       HOLD:  any other CONFIRMED / POTENTIAL hit that is not information-only (PEP -> EDD,
              crime, review lists), or a party whose screening was incomplete (never PASS);
       PASS:  otherwise (no hits, low-tier hits, information-only lists, lifted orders)."""
@@ -272,9 +274,12 @@ def payment_decision(parties):
                 continue
             if tier == 'CONFIRMED' and code in FREEZE_CODES:
                 decision = 'BLOCK'
-                reasons.append({'party': p.get('role'), 'code': 'confirmed_freeze', 'list_type': h.get('list_type'),
-                                'en': 'Confirmed hit on a list that requires a freeze.',
-                                'ar': 'تطابق مؤكد على قايمة بتستوجب التجميد.'})
+                # code renamed from 'confirmed_freeze' (deprecated alias, same meaning); decision stays BLOCK
+                reasons.append({'party': p.get('role'), 'code': 'confirmed_listed_escalate', 'list_type': h.get('list_type'),
+                                'en': 'Confirmed hit on a sanctions / terrorist / asset-freeze / prohibition list: '
+                                      'escalate to the MLRO; any action on the relationship is decided outside ComplyNex.',
+                                'ar': 'تطابق مؤكد على قايمة عقوبات / إرهاب / تجميد / منع من التصرف: صعّد لمسؤول '
+                                      'الإبلاغ؛ وأي إجراء على العلاقة يتقرر خارج ComplyNex.'})
             elif tier in ('CONFIRMED', 'POTENTIAL') and code not in PASSIVE_CODES:
                 if decision == 'PASS':
                     decision = 'HOLD'
@@ -307,10 +312,10 @@ def sandbox_result(name):
                 'incomplete_reasons': [{'code': 'search_index', 'en': 'Sandbox: a source was unavailable.',
                                         'ar': 'Sandbox: مصدر ماكانش متاح.'}]}
     if 'TEST HIT' in n:
-        return {'screening_result': 'CONFIRMED_HIT', 'matches': [hit('SANCTIONS', 'CONFIRMED', 100, 'FREEZE_ESCALATE', 'Freeze and escalate')],
+        return {'screening_result': 'CONFIRMED_HIT', 'matches': [hit('SANCTIONS', 'CONFIRMED', 100, 'FREEZE_ESCALATE', 'Escalate to the MLRO')],
                 'processing_time_ms': 1}
     if 'TEST POTENTIAL' in n:
-        return {'screening_result': 'POTENTIAL_MATCH', 'matches': [hit('SANCTIONS', 'POTENTIAL', 86, 'FREEZE_ESCALATE', 'Freeze and escalate')],
+        return {'screening_result': 'POTENTIAL_MATCH', 'matches': [hit('SANCTIONS', 'POTENTIAL', 86, 'FREEZE_ESCALATE', 'Escalate to the MLRO')],
                 'processing_time_ms': 1}
     if 'TEST PEP' in n:
         return {'screening_result': 'POTENTIAL_MATCH', 'matches': [hit('PEP', 'POTENTIAL', 88, 'EDD', 'Enhanced due diligence')],
