@@ -1,0 +1,35 @@
+{% macro outcome_badge(code) -%}
+{%- set cls = {'APPROVED': 'bg-success', 'REJECTED': 'bg-danger', 'DEFERRED': 'bg-secondary', 'GA_RATIFICATION': 'bg-info text-dark', 'RECOMMENDATION': 'bg-primary'} -%}
+{%- if code -%}<span class="badge {{ cls.get(code, 'bg-light text-dark') }}">{{ code_label(code, 'gov_outcome') }}</span>{%- endif -%}
+{%- endmacro %}
+{% macro tally(t) -%}
+<span class="text-nowrap small"><span class="text-success" title="{{ _('For') }}">{{ t.FOR }}</span> / <span class="text-danger" title="{{ _('Against') }}">{{ t.AGAINST }}</span> / <span class="text-muted" title="{{ _('Abstain') }}">{{ t.ABSTAIN }}</span>{% if t.RECUSED %} / <span class="text-warning" title="{{ _('Recused') }}">{{ t.RECUSED }}R</span>{% endif %}</span>
+{%- endmacro %}
+{% macro fu_badge(state, status) -%}
+{%- if state == 'overdue' -%}<span class="badge bg-danger">{{ _('Overdue') }}</span>
+{%- elif state == 'open' -%}<span class="badge bg-warning text-dark">{{ code_label(status or 'NOT_STARTED', 'gov_followup') }}</span>
+{%- elif state == 'closed' -%}<span class="badge bg-success">{{ code_label(status, 'gov_followup') }}</span>{%- endif -%}
+{%- endmacro %}
+{% macro att_badge(code) -%}
+{%- set cls = {'IN_PERSON': 'bg-success', 'REMOTE': 'bg-info text-dark', 'PROXY': 'bg-primary', 'ABSENT_EXCUSED': 'bg-warning text-dark', 'ABSENT_UNEXCUSED': 'bg-danger'} -%}
+{%- if code -%}<span class="badge {{ cls.get(code) }}">{{ code_label(code, 'gov_attendance') }}</span>{%- else -%}<span class="badge bg-light text-muted border">{{ _('Not recorded') }}</span>{%- endif -%}
+{%- endmacro %}
+{% macro vote_badge(v) -%}
+{%- set cls = {'FOR': 'text-success', 'AGAINST': 'text-danger fw-bold', 'ABSTAIN': 'text-muted', 'RECUSED': 'text-warning fw-bold', 'ABSENT': 'text-muted fst-italic'} -%}
+<span class="{{ cls.get(v) }}">{{ code_label(v, 'gov_vote') }}</span>
+{%- endmacro %}
+{% macro body_label(r) -%}
+{%- if r.body_code == 'COMMITTEE' and (r.committee_name or r.committee_name_arabic) -%}{{ gov_pick(r.committee_name, r.committee_name_arabic) }}{%- else -%}{{ code_label(r.body_code, 'gov_body') }}{%- endif -%}
+{%- endmacro %}
+{% macro register_nav(active) -%}
+<ul class="nav nav-pills small mb-3 flex-wrap">
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'search' }}" href="{{ url_for('governance.register_search') }}">{{ _('Resolutions search') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'meetings' }}" href="{{ url_for('governance.register_meetings') }}">{{ _('Meetings register') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'followup' }}" href="{{ url_for('governance.report_followup') }}">{{ _('Follow-up') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'attendance' }}" href="{{ url_for('governance.report_attendance') }}">{{ _('Attendance report') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'boardlist' }}" href="{{ url_for('governance.report_board_list') }}">{{ _('Annual board list') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'secretary' }}" href="{{ url_for('governance.secretary_view') }}">{{ _('Secretariat') }}</a></li>
+  <li class="nav-item"><a class="nav-link" href="{{ url_for('governance.composition') }}">{{ _('Composition checks') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'settings' }}" href="{{ url_for('governance.gov_settings') }}">{{ _('Settings') }}</a></li>
+</ul>
+{%- endmacro %}

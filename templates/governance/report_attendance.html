@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% from 'governance/_register_macros.html' import register_nav with context %}
+{% block title %}{{ _('Attendance report') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-2 border-bottom gap-2">
+  <div><h1 class="h3 mb-0">{{ _('Attendance report') }} {{ year }}</h1>
+    <small class="text-muted">{{ gov_pick(e.name_en, e.name_ar) }} — {{ _('meetings held up to today; each member\'s attendance rate (for the annual report) and absence alerts from the board\'s rule sets.') }}</small></div>
+  <form method="get" class="d-flex gap-2 no-print">
+    <select name="entity" class="form-select form-select-sm" data-auto-submit>{% for x in entities %}<option value="{{ x.id }}" {{ 'selected' if entity == x.id }}>{{ gov_pick(x.name_en, x.name_ar) }}</option>{% endfor %}</select>
+    <select name="year" class="form-select form-select-sm" data-auto-submit>{% for y in years %}<option value="{{ y }}" {{ 'selected' if y == year }}>{{ y }}</option>{% else %}<option>{{ year }}</option>{% endfor %}</select>
+    <button type="button" class="btn btn-sm btn-outline-success text-nowrap" data-action="print"><i class="bi bi-printer"></i> {{ _('Print') }}</button>
+  </form>
+</div>
+<div class="no-print">{{ register_nav('attendance') }}</div>
+{% if rules %}<p class="small">{{ _('Rule sets') }}: {% for r in rules %}<span class="badge bg-light text-dark border">{{ gov_pick(r.name_en, r.name_ar) }}</span> {% endfor %}</p>
+{% else %}<p class="small text-muted">{{ _('No rule set is chosen for this board: choose them under Settings > Boards to get absence alerts.') }}</p>{% endif %}
+{% for t in tables %}
+<div class="card border-0 shadow-sm mb-3"><div class="card-header bg-transparent d-flex justify-content-between">
+  <h2 class="h6 mb-0">{{ t.title or code_label(t.key[0], 'gov_body') }}</h2><span class="small text-muted">{{ t.n_meetings }} {{ _('meetings') }}</span></div>
+  <div class="card-body p-0"><div class="table-responsive"><table class="table table-sm small mb-0 align-middle">
+    <thead class="table-light"><tr><th>{{ _('Member') }}</th><th>{{ _('Meetings') }}</th><th>{{ _('In person') }}</th><th>{{ _('Remote') }}</th><th>{{ _('Proxy') }}</th><th>{{ _('Excused') }}</th><th>{{ _('Unexcused') }}</th><th>{{ _('Attendance rate') }}</th><th>{{ _('Alerts') }}</th></tr></thead>
+    <tbody>{% for r in t.rows %}<tr class="{{ 'table-danger' if r.alerts }}">
+      <td><a href="{{ url_for('governance.member_profile', mid=r.member_id) }}">{{ r.name }}</a></td><td>{{ r.meetings }}</td><td>{{ r.present - r.remote }}</td><td>{{ r.remote }}</td><td>{{ r.proxy }}</td><td>{{ r.excused }}</td><td>{{ r.unexcused }}</td>
+      <td class="fw-semibold">{{ r.rate if r.rate is not none else '—' }}{{ '%' if r.rate is not none }}</td>
+      <td>{% for a in r.alerts %}<div class="text-danger">{% if a.code == 'absence_pct' %}{{ _('Absent from %(p)s of the meetings; the limit is %(l)s', p=(r.absence_pct|string) ~ '%', l=(a.limit|string) ~ '%') }}{% else %}{{ _('%(n)s meetings missed; the limit is fewer than %(l)s', n=r.absent, l=a.limit) }}{% endif %} <span class="text-muted">({{ gov_pick(a.rule, a.rule_ar) }})</span></div>{% endfor %}</td></tr>{% endfor %}</tbody>
+  </table></div></div></div>
+{% else %}<p class="text-muted">{{ _('No meetings held in this year.') }}</p>{% endfor %}
+<p class="small text-muted">{{ _('Attendance by proxy is not counted as personal attendance.') }}</p>
+{% endblock %}

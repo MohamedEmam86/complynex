@@ -1,0 +1,52 @@
+{%- set r0 = res if res is defined and res else {} -%}
+{%- set votes0 = vote_of if vote_of is defined and vote_of else {} -%}
+<div class="row g-2 small">
+  <div class="col-md-6"><label class="form-label mb-0">{{ _('Agenda item') }}</label>
+    <select name="agenda_item_id" class="form-select form-select-sm"><option value="">—</option>{% for a in agenda %}<option value="{{ a.id }}" {{ 'selected' if r0.agenda_item_id == a.id }}>{{ a.item_number }}. {{ (a.item_title or '')[:80] }}</option>{% endfor %}</select>
+    <div class="form-text">{{ _('Members who declared a conflict on this item are recorded as recused.') }}</div></div>
+  <div class="col-md-6"><label class="form-label mb-0">{{ _('Category') }}</label>
+    <select name="category_code" class="form-select form-select-sm"><option value="">—</option>{% for c in cats %}<option value="{{ c.code }}" {{ 'selected' if r0.category_code == c.code }}>{{ gov_pick(c.name_en, c.name_ar) }}</option>{% endfor %}</select></div>
+  <div class="col-12"><label class="form-label mb-0">{{ _('Title') }}</label><input name="decision_title" class="form-control form-control-sm" dir="auto" value="{{ r0.decision_title or '' }}"></div>
+  <div class="col-12"><label class="form-label mb-0">{{ _('Full text of the resolution') }}</label><textarea name="decision_text" class="form-control form-control-sm" rows="4" dir="auto">{{ r0.decision_text or '' }}</textarea></div>
+  <div class="col-md-8"><label class="form-label mb-0">{{ _('Short summary') }}</label><input name="summary" class="form-control form-control-sm" dir="auto" value="{{ r0.summary or '' }}"></div>
+  <div class="col-md-4"><label class="form-label mb-0">{{ _('Keywords / tags') }}</label><input name="tags" class="form-control form-control-sm" dir="auto" value="{{ r0.tags or '' }}" placeholder="{{ _('comma separated') }}"></div>
+  <div class="col-12"><label class="form-label mb-0">{{ _('Conditions') }}</label><input name="conditions" class="form-control form-control-sm" dir="auto" value="{{ r0.conditions or '' }}"></div>
+  <div class="col-md-3"><label class="form-label mb-0">{{ _('Effective from') }}</label><input type="date" name="effective_date" class="form-control form-control-sm" value="{{ r0.effective_date or '' }}"></div>
+  <div class="col-md-3"><label class="form-label mb-0">{{ _('Expires') }}</label><input type="date" name="expiry_date" class="form-control form-control-sm" value="{{ r0.expiry_date or '' }}"></div>
+  <div class="col-md-6"><label class="form-label mb-0">{{ _('Outcome') }}</label>
+    <select name="outcome" class="form-select form-select-sm"><option value="">{{ _('Automatic from the votes and the majority rule') }}</option>
+      {% for k, v in code_choices('gov_outcome') %}<option value="{{ k }}" {{ 'selected' if r0.outcome == k and k not in ('APPROVED', 'REJECTED') }}>{{ v }}</option>{% endfor %}</select></div>
+  <div class="col-md-4"><label class="form-label mb-0">{{ _('Action owner') }}</label><input name="action_owner" class="form-control form-control-sm" value="{{ r0.action_owner or '' }}"></div>
+  <div class="col-md-3"><label class="form-label mb-0">{{ _('…or a user') }}</label>
+    <select name="action_owner_user_id" class="form-select form-select-sm"><option value="">—</option>{% for u in users %}<option value="{{ u.id }}" {{ 'selected' if r0.action_owner_user_id == u.id }}>{{ u.name or u.id }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><label class="form-label mb-0">{{ _('Due') }}</label><input type="date" name="due_date" class="form-control form-control-sm" value="{{ r0.due_date or '' }}"></div>
+  <div class="col-md-3"><label class="form-label mb-0">{{ _('Follow-up') }}</label>
+    <select name="followup_status" class="form-select form-select-sm"><option value="">—</option>{% for k, v in code_choices('gov_followup') %}<option value="{{ k }}" {{ 'selected' if r0.followup_status == k }}>{{ v }}</option>{% endfor %}</select></div>
+  {% if m.body_code in ('OGM', 'EGM') %}
+  <div class="col-12"><label class="form-label mb-0">{{ _('Votes of the shares represented (as counted by the tellers)') }}</label><input name="majority_note" class="form-control form-control-sm" value="{{ r0.majority_note or '' }}"></div>
+  {% endif %}
+  <div class="col-md-4"><label class="form-label mb-0">{{ _('Link to an earlier resolution') }}</label>
+    <select name="link_type" class="form-select form-select-sm"><option value="">—</option>{% for k, v in code_choices('gov_link') %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+  <div class="col-md-8"><label class="form-label mb-0">&nbsp;</label>
+    <select name="link_to" class="form-select form-select-sm"><option value="">—</option>{% for x in all_res %}<option value="{{ x.id }}">{{ x.res_no or x.decision_number or ('#' ~ x.id) }} — {{ (x.decision_title or '')[:70] }} ({{ x.meeting_date }})</option>{% endfor %}</select></div>
+</div>
+<div class="table-responsive mt-2">
+<table class="table table-sm small align-middle mb-0">
+  <thead class="table-light"><tr><th>{{ _('Member') }}</th><th>{{ _('Attendance') }}</th><th>{{ _('Vote') }}</th><th>{{ _('Objection / reservation (recorded in the minutes)') }}</th></tr></thead>
+  <caption class="small">{{ _('Every member present must have a vote chosen; members who declared a conflict on the agenda item are recorded as recused.') }}</caption>
+  <tbody>
+  {% for a in rows if a.voting %}
+    {%- set cur = votes0.get(a.member_id) -%}
+    {%- set present = circulation or a.code in ('IN_PERSON', 'REMOTE', 'PROXY') -%}
+    <tr><td>{{ gov_pick(a.member_name, a.member_name_arabic) }}</td>
+      <td>{{ _('Written vote') if circulation else (code_label(a.code, 'gov_attendance') or _('Not recorded')) }}</td>
+      <td>{% if present %}
+        <select name="vote_{{ a.member_id }}" class="form-select form-select-sm" required>
+          <option value="">{{ _('Choose…') }}</option>
+          {% for k, v in code_choices('gov_vote') if k != 'ABSENT' %}<option value="{{ k }}" {{ 'selected' if cur and cur.vote == k }}>{{ v }}</option>{% endfor %}</select>
+        {% else %}<span class="text-muted">{{ _('Absent') }}</span>{% endif %}</td>
+      <td><input name="dissent_{{ a.member_id }}" class="form-control form-control-sm" dir="auto" value="{{ cur.dissent_text if cur and cur.dissent_text else '' }}"></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>

@@ -5,6 +5,14 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">{{ _('Board & Committee Meetings') }}</h1>
         <div class="d-flex gap-2">
+        {% if gov_entities and gov_entities|length > 1 %}
+        <form method="get"><select name="entity" class="form-select" data-auto-submit aria-label="{{ _('Board') }}">
+            {% for e in gov_entities %}<option value="{{ e.id }}" {{ 'selected' if entity_id == e.id }}>{{ gov_pick(e.name_en, e.name_ar) }}</option>{% endfor %}
+        </select></form>
+        {% endif %}
+        <a href="{{ url_for('governance.register_meetings', entity=entity_id) }}" class="btn btn-outline-success">
+            <i class="bi bi-journal-text"></i> {{ _('Meetings register') }}
+        </a>
         <a href="{{ url_for('governance.action_tracker') }}" class="btn btn-outline-warning">
             <i class="fas fa-tasks"></i> {{ _('Action tracker') }}
         </a>

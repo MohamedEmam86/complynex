@@ -145,6 +145,9 @@ def meeting_context(mid, db=None):
 def minutes_save(id):
     _meeting_or_404(id)
     db = get_db()
+    refused = _signed_guard(db, id, 'minutes')
+    if refused:
+        return refused
     body = (request.form.get('body') or '').strip()
     note = (request.form.get('change_note') or '').strip() or None
     if not body:
@@ -179,6 +182,9 @@ def minutes_save(id):
 def minutes_transition(id, vid, action):
     _meeting_or_404(id)
     db = get_db()
+    refused = _signed_guard(db, id, 'minutes')
+    if refused:
+        return refused
     v = db.execute("SELECT * FROM meeting_minutes WHERE id = %s AND meeting_id = %s", (vid, id)).fetchone()
     if not v or action not in L.MINUTES_FLOW:
         abort(404)
@@ -247,6 +253,16 @@ def _resolution_data():
     return data
 
 
+def _signed_guard(db, mid, anchor):
+    """Once the minutes are signed by the chair and the secretary (meeting record), nothing of the
+    meeting can be changed here either."""
+    from governance.register import meeting_locked
+    if meeting_locked(db, mid):
+        flash(_('The minutes are signed; the record can no longer be changed.'), 'danger')
+        return redirect(url_for('governance.meeting_summary', id=mid) + '#' + anchor)
+    return None
+
+
 def _minutes_locked(db, mid):
     return bool(db.execute("SELECT 1 FROM meeting_minutes WHERE meeting_id = %s AND status = 'approved'",
                            (mid,)).fetchone())
@@ -258,6 +274,9 @@ def _minutes_locked(db, mid):
 def resolution_add(id):
     meeting = _meeting_or_404(id)
     db = get_db()
+    refused = _signed_guard(db, id, 'resolutions')
+    if refused:
+        return refused
     data = _resolution_data()
     errors = L.resolution_errors(data)
     if errors:
@@ -293,6 +312,9 @@ def resolution_add(id):
 def resolution_edit(id, rid):
     _meeting_or_404(id)
     db = get_db()
+    refused = _signed_guard(db, id, 'resolutions')
+    if refused:
+        return refused
     row = db.execute("SELECT * FROM board_decisions WHERE id = %s AND meeting_id = %s", (rid, id)).fetchone()
     if not row:
         abort(404)
@@ -465,6 +487,9 @@ def action_tracker():
 def external_add(id):
     _meeting_or_404(id)
     db = get_db()
+    refused = _signed_guard(db, id, 'attendees')
+    if refused:
+        return refused
     data = {k: (request.form.get(k) or '').strip() for k in ('full_name', 'email', 'role', 'organisation')}
     errors = L.external_errors(data)
     if errors:
@@ -486,6 +511,9 @@ def external_add(id):
 @permission_required('governance', level='edit')
 def external_remove(id, eid):
     db = get_db()
+    refused = _signed_guard(db, id, 'attendees')
+    if refused:
+        return refused
     row = db.execute("SELECT * FROM meeting_external_attendees WHERE id = %s AND meeting_id = %s", (eid, id)).fetchone()
     if not row:
         abort(404)

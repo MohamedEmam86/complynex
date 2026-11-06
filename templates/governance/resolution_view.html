@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% from 'governance/_register_macros.html' import outcome_badge, tally, fu_badge, att_badge, vote_badge, body_label, register_nav with context %}
+{% block title %}{{ res.number }} - {{ _('Resolution') }}{% endblock %}
+{% block extra_css %}<style nonce="{{ csp_nonce }}">.text-pre-wrap{white-space:pre-wrap}</style>{% endblock %}
+{% block content %}
+{% set can_edit = current_user.can_edit('governance') or current_user.is_admin() %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-2 border-bottom gap-2">
+  <div>
+    <h1 class="h3 mb-0">{{ res.number }} {{ outcome_badge(res.outcome_code) }} {% if res.is_sample %}<span class="badge bg-warning text-dark">{{ _('sample') }}</span>{% endif %}</h1>
+    <div class="fs-6" dir="auto">{{ res.decision_title or '' }}</div>
+  </div>
+  <div class="d-flex gap-2"><a href="{{ url_for('governance.meeting_record', id=m.id) }}#resolutions" class="btn btn-sm btn-outline-secondary">{{ _('Meeting record') }}</a>
+    <a href="{{ url_for('governance.register_search') }}" class="btn btn-sm btn-outline-secondary">{{ _('Resolutions search') }}</a></div>
+</div>
+{{ register_nav('search') }}
+<div class="row">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm mb-3"><div class="card-body small">
+      <dl class="row mb-0">
+        <dt class="col-4">{{ _('Meeting') }}</dt><dd class="col-8"><a href="{{ url_for('governance.meeting_record', id=m.id) }}">{{ body_label(m) }} · {{ code_label(m.kind_code, 'gov_kind') }}{% if m.sequence_no %} #{{ m.sequence_no }}{% endif %} · {{ m.meeting_date }}</a> <span class="text-muted">{{ gov_pick(m.entity_en, m.entity_ar) }}</span></dd>
+        {% if res.agenda_title %}<dt class="col-4">{{ _('Agenda item') }}</dt><dd class="col-8" dir="auto">{{ res.item_number }}. {{ res.agenda_title }}</dd>{% endif %}
+        <dt class="col-4">{{ _('Category') }}</dt><dd class="col-8">{{ gov_pick(res.cat_en, res.cat_ar) or '—' }}{% if res.tags %} · <span class="text-muted" dir="auto">{{ res.tags }}</span>{% endif %}</dd>
+        {% if res.summary %}<dt class="col-4">{{ _('Summary') }}</dt><dd class="col-8" dir="auto">{{ res.summary }}</dd>{% endif %}
+        <dt class="col-4">{{ _('Full text') }}</dt><dd class="col-8"><div class="border rounded p-2 bg-light text-pre-wrap" dir="auto">{{ res.decision_text or res.decision_description or '' }}</div></dd>
+        {% if res.conditions %}<dt class="col-4">{{ _('Conditions') }}</dt><dd class="col-8" dir="auto">{{ res.conditions }}</dd>{% endif %}
+        <dt class="col-4">{{ _('Effective / expires') }}</dt><dd class="col-8">{{ res.effective_date or '—' }} / {{ res.expiry_date or '—' }}</dd>
+        <dt class="col-4">{{ _('Majority') }}</dt><dd class="col-8">{{ tally(res.tally) }} {% if res.majority_achieved is not none %}— {{ _('reached') if res.majority_achieved else _('not reached') }}{% endif %}<div class="text-muted">{{ res.majority_note or '' }}</div></dd>
+        <dt class="col-4">{{ _('Secretary') }}</dt><dd class="col-8">{{ gov_pick(m.secretary_name, m.secretary_name_ar) or '—' }}</dd>
+        <dt class="col-4">{{ _('Quorum') }}</dt><dd class="col-8">{{ q.counted }}/{{ q.required }} — {{ _('valid') if q.valid else _('not valid') }}</dd>
+      </dl>
+    </div></div>
+
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Votes of each member') }}</h2></div>
+      <div class="card-body p-0">
+        <table class="table table-sm small mb-0">
+          <thead class="table-light"><tr><th>{{ _('Member') }}</th><th>{{ _('Attendance') }}</th><th>{{ _('Vote') }}</th><th>{{ _('Objection / reservation') }}</th></tr></thead>
+          <tbody>{% for a in rows %}{% set v = vote_of.get(a.member_id) %}
+            <tr><td><a href="{{ url_for('governance.member_profile', mid=a.member_id) }}">{{ gov_pick(a.member_name, a.member_name_arabic) }}</a> <span class="text-muted">{{ a.cap_label }}</span></td>
+              <td>{{ att_badge(a.code) }}</td>
+              <td>{% if v %}{{ vote_badge(v.vote) }}{% if v.via_proxy %} <span class="text-muted">({{ _('by proxy') }})</span>{% endif %}{% else %}—{% endif %}</td>
+              <td dir="auto">{{ v.dissent_text if v and v.dissent_text else '' }}</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm mb-3" id="followup">
+      <div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Implementation follow-up') }}</h2></div>
+      <div class="card-body small">
+        <p class="mb-1">{{ _('Owner') }}: <strong>{{ res.action_owner or '—' }}</strong> · {{ _('Due') }}: <strong>{{ res.due_date or '—' }}</strong> {{ fu_badge(res.fu_state, res.followup_status) }}</p>
+        {% if res.followup_evidence %}<div class="border rounded p-2 mb-2 text-pre-wrap" dir="auto">{{ res.followup_evidence }}</div>{% endif %}
+        {% if can_edit %}
+        <form method="post" action="{{ url_for('governance.resolution_followup', rid=res.id) }}" class="row g-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="col-6"><select name="followup_status" class="form-select form-select-sm">{% for k, v in code_choices('gov_followup') %}<option value="{{ k }}" {{ 'selected' if res.followup_status == k }}>{{ v }}</option>{% endfor %}</select></div>
+          <div class="col-6"><input type="date" name="due_date" class="form-control form-control-sm" value="{{ res.due_date or '' }}"></div>
+          <div class="col-12"><textarea name="followup_evidence" rows="2" class="form-control form-control-sm" dir="auto" placeholder="{{ _('What was done, evidence (document, reference)…') }}"></textarea></div>
+          <div class="col-12"><button class="btn btn-sm btn-primary">{{ _('Update follow-up') }}</button></div>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3" id="links">
+      <div class="card-header bg-transparent"><h2 class="h6 mb-0">{{ _('Related resolutions') }}</h2></div>
+      <div class="card-body small">
+        {% for l in res.links %}
+          <div class="mb-1">{% if l.direction == 'out' %}{{ _('This resolution') }} <strong>{{ code_label(l.link_type, 'gov_link')|lower }}</strong> <a href="{{ url_for('governance.resolution_view', rid=l.to_resolution_id) }}">{{ l.to_no or l.to_number }}</a> <span class="text-muted" dir="auto">{{ (l.to_title or '')[:70] }}</span>
+            {% else %}<a href="{{ url_for('governance.resolution_view', rid=l.from_resolution_id) }}">{{ l.from_no or l.from_number }}</a> <strong>{{ code_label(l.link_type, 'gov_link')|lower }}</strong> {{ _('this resolution') }} <span class="text-muted" dir="auto">{{ (l.from_title or '')[:70] }}</span>{% endif %}
+            {% if can_edit and not locked %}<form method="post" action="{{ url_for('governance.resolution_link_remove', rid=res.id, lid=l.id) }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-link btn-sm p-0 text-danger">{{ _('Remove') }}</button></form>{% endif %}</div>
+        {% else %}<p class="text-muted mb-2">{{ _('No links recorded.') }}</p>{% endfor %}
+        {% if can_edit and not locked %}
+        <form method="post" action="{{ url_for('governance.resolution_link_add', rid=res.id) }}" class="row g-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="col-4"><select name="link_type" class="form-select form-select-sm" required>{% for k, v in code_choices('gov_link') %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+          <div class="col-8"><select name="link_to" class="form-select form-select-sm" required><option value="">—</option>{% for x in all_res %}<option value="{{ x.id }}">{{ x.res_no or x.decision_number or ('#' ~ x.id) }} — {{ (x.decision_title or '')[:60] }}</option>{% endfor %}</select></div>
+          <div class="col-12"><button class="btn btn-sm btn-outline-primary">{{ _('Add link') }}</button></div>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if can_edit and not locked %}
+    <details class="card border-0 shadow-sm mb-3 p-2">
+      <summary class="btn btn-sm btn-outline-secondary">{{ _('Correct this resolution') }}</summary>
+      <form method="post" action="{{ url_for('governance.resolution_update', rid=res.id) }}" class="mt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% include 'governance/_resolution_form.html' %}
+        <input name="reason" class="form-control form-control-sm mt-2" required placeholder="{{ _('Reason for the correction (kept in the history)') }}">
+        <button class="btn btn-sm btn-primary mt-2">{{ _('Save correction') }}</button>
+      </form>
+    </details>
+    {% elif locked %}<p class="small text-muted">{{ _('The minutes are signed: the resolution can no longer be corrected; record a new resolution that amends it.') }}</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

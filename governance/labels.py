@@ -39,6 +39,22 @@ MEETING_TYPES = {
     'AGM': _l('General assembly'),
 }
 
+GOV_BODIES = {'BOARD': _l('Board of directors'), 'COMMITTEE': _l('Committee'),
+              'OGM': _l('Ordinary general assembly'), 'EGM': _l('Extraordinary general assembly')}
+GOV_KINDS = {'ORDINARY': _l('Ordinary'), 'EXTRAORDINARY': _l('Extraordinary'), 'CIRCULATION': _l('By circulation')}
+GOV_MODES = {'IN_PERSON': _l('In person'), 'REMOTE': _l('Remote'), 'HYBRID': _l('Hybrid')}
+GOV_ATTENDANCE = {'IN_PERSON': _l('Present in person'), 'REMOTE': _l('Present remotely'), 'PROXY': _l('By proxy'),
+                  'ABSENT_EXCUSED': _l('Absent - excused'), 'ABSENT_UNEXCUSED': _l('Absent - unexcused')}
+GOV_VOTES = {'FOR': _l('For'), 'AGAINST': _l('Against'), 'ABSTAIN': _l('Abstain'), 'RECUSED': _l('Recused'),
+             'ABSENT': _l('Absent')}
+GOV_OUTCOMES = {'APPROVED': _l('Approved'), 'REJECTED': _l('Rejected'), 'DEFERRED': _l('Deferred'),
+                'GA_RATIFICATION': _l('For general assembly ratification'), 'RECOMMENDATION': _l('Recommendation')}
+GOV_LINKS = {'AMENDS': _l('Amends'), 'SUPERSEDES': _l('Supersedes'), 'REVOKES': _l('Revokes'),
+             'IMPLEMENTS': _l('Implements'), 'RATIFIES': _l('Ratifies')}
+GOV_FOLLOWUP = {'NOT_STARTED': _l('Not started'), 'IN_PROGRESS': _l('In progress'), 'DONE': _l('Done'),
+                'NOT_REQUIRED': _l('Not required'), 'CANCELLED': _l('Cancelled')}
+GOV_MINUTES = {'DRAFT': _l('Draft'), 'APPROVED': _l('Approved, not signed'), 'SIGNED': _l('Signed')}
+
 MEETING_STATUSES = {
     'SCHEDULED': _l('Scheduled'),
     'IN_PROGRESS': _l('In progress'),
@@ -174,6 +190,15 @@ KINDS = {
     'policy_status': POLICY_STATUSES,
     'coi_status': COI_STATUSES,
     'sector': SECTORS,
+    'gov_body': GOV_BODIES,
+    'gov_kind': GOV_KINDS,
+    'gov_mode': GOV_MODES,
+    'gov_attendance': GOV_ATTENDANCE,
+    'gov_vote': GOV_VOTES,
+    'gov_outcome': GOV_OUTCOMES,
+    'gov_link': GOV_LINKS,
+    'gov_followup': GOV_FOLLOWUP,
+    'gov_minutes': GOV_MINUTES,
 }
 
 
@@ -195,7 +220,23 @@ def code_label(code, kind=None):
                 return str(table[key])
     if kind == 'sector':
         return sector_label(raw)
+    if kind == 'committee_type':
+        name = _committee_type_name(raw)
+        if name:
+            return name
     return gettext(humanize(raw)) if humanize(raw) else raw
+
+
+def _committee_type_name(code):
+    """Name of a committee type from the configurable list (gov_committee_types), or None."""
+    from database.db import get_db
+    from flask_babel import get_locale
+    row = get_db().execute("SELECT name_en, name_ar FROM gov_committee_types WHERE code = %s",
+                           (str(code).upper(),)).fetchone()
+    if row:
+        ar = str(get_locale() or '').startswith('ar')
+        return (row['name_ar'] if ar else row['name_en']) or row['name_en']
+    return None
 
 
 def sector_label(code):

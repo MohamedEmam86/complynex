@@ -34,22 +34,23 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">{{ _('Committee Type') }}</label>
-                                <input type="text" name="committee_type" list="committee_types" class="form-control"
-                                    value="{{ committee.committee_type if committee else '' }}" required>
-                                <datalist id="committee_types">
-                                    <option value="AUDIT">
-                                    <option value="RISK">
-                                    <option value="COMPLIANCE">
-                                    <option value="NOMREM">
-                                    <option value="GOVERNANCE">
-                                    <option value="EXECUTIVE">
-                                    <option value="INVESTMENT">
-                                    <option value="IT">
-                                    <option value="CREDIT">
-                                    <option value="OTHER">
-                                </datalist>
-                                <div class="form-text small">{{ _('You can type a custom type or select from common
-                                    ones.') }}</div>
+                                {% set cur_type = ((committee.committee_type if committee else '') or '')|upper %}
+                                {% if ctypes %}
+                                <select name="committee_type" class="form-select">
+                                    <option value="">--</option>
+                                    {% for t in ctypes %}<option value="{{ t.code }}" {{ 'selected' if cur_type == t.code }}>{{ gov_pick(t.name_en, t.name_ar) }}</option>{% endfor %}
+                                    {% if cur_type and cur_type not in ctypes|map(attribute='code')|list %}<option value="{{ cur_type }}" selected>{{ code_label(cur_type, 'committee_type') }}</option>{% endif %}
+                                </select>
+                                <details class="mt-1"><summary class="small">{{ _('Another type (any name)…') }}</summary>
+                                    <div class="row g-1 mt-1">
+                                        <div class="col-6"><input name="new_type_name_en" class="form-control form-control-sm" placeholder="{{ _('Type name (English)') }}"></div>
+                                        <div class="col-6"><input name="new_type_name_ar" class="form-control form-control-sm" dir="rtl" placeholder="{{ _('Type name (Arabic)') }}"></div>
+                                    </div>
+                                    <div class="form-text small">{{ _('It is added to the committee types list, where its default rules can be set.') }}</div>
+                                </details>
+                                {% else %}
+                                <input type="text" name="committee_type" class="form-control" value="{{ committee.committee_type if committee else '' }}" required>
+                                {% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">{{ _('Meeting Frequency') }}</label>
@@ -73,6 +74,33 @@
                                 </select>
                             </div>
                         </div>
+
+                        {% if ctypes %}
+                        {% set c = crow or {} %}
+                        <input type="hidden" name="rules_submitted" value="{{ '1' if committee else '' }}">
+                        <fieldset class="border rounded p-3 mb-3">
+                            <legend class="fs-6 w-auto px-2">{{ _('Composition and meeting rules') }}</legend>
+                            <p class="small text-muted">{{ _('Left empty on a new committee, the values of its type are used. An empty value is not checked.') }}</p>
+                            <div class="row g-2">
+                                <div class="col-md-4"><label class="form-label small mb-0">{{ _('Board') }}</label>
+                                    <select name="entity_id" class="form-select form-select-sm">{% for e in gov_entities %}<option value="{{ e.id }}" {{ 'selected' if (c.entity_id or 0) == e.id }}>{{ gov_pick(e.name_en, e.name_ar) }}</option>{% endfor %}</select></div>
+                                <div class="col-md-2"><label class="form-label small mb-0">{{ _('Min members') }}</label><input name="min_members" inputmode="numeric" class="form-control form-control-sm" value="{{ c.min_members if c.min_members is not none else '' }}"></div>
+                                <div class="col-md-2"><label class="form-label small mb-0">{{ _('Max members') }}</label><input name="max_members" inputmode="numeric" class="form-control form-control-sm" value="{{ c.max_members if c.max_members is not none else '' }}"></div>
+                                <div class="col-md-2"><label class="form-label small mb-0">{{ _('Min independent') }}</label><input name="min_independent_members" inputmode="numeric" class="form-control form-control-sm" value="{{ c.min_independent_members if c.min_independent_members is not none else '' }}"></div>
+                                <div class="col-md-2"><label class="form-label small mb-0">{{ _('Meetings per year') }}</label><input name="min_meetings_per_year" inputmode="numeric" class="form-control form-control-sm" value="{{ c.min_meetings_per_year if c.min_meetings_per_year is not none else '' }}"></div>
+                                <div class="col-md-2"><label class="form-label small mb-0">{{ _('Quorum (members)') }}</label><input name="quorum_number" inputmode="numeric" class="form-control form-control-sm" value="{{ c.quorum_number if c.quorum_number is not none else '' }}"></div>
+                                <div class="col-md-4"><label class="form-label small mb-0">{{ _('Quorum / majority rule') }}</label>
+                                    <select name="meeting_rule_id" class="form-select form-select-sm"><option value="">{{ _('From the committee type') }}</option>{% for r in rules %}<option value="{{ r.id }}" {{ 'selected' if c.meeting_rule_id == r.id }}>{{ gov_pick(r.name_en, r.name_ar) }}</option>{% endfor %}</select></div>
+                                <div class="col-md-2"><label class="form-label small mb-0">{{ _('Resolution prefix') }}</label><input name="res_prefix" class="form-control form-control-sm" value="{{ c.res_prefix or '' }}" placeholder="AUD"></div>
+                                <div class="col-md-4 d-flex flex-wrap gap-3 align-items-end small">
+                                    {% for k, lab in [('independent_majority', _('Independent majority')), ('independent_chair', _('Independent chair')), ('non_executive_chair', _('Non-executive chair')), ('requires_financial_expert', _('Financial expert'))] %}
+                                    <label><input type="checkbox" name="{{ k }}" value="1" {{ 'checked' if c[k] }}> {{ lab }}</label>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-12"><label class="form-label small mb-0">{{ _('Purpose / terms of reference (short)') }}</label><input name="description" class="form-control form-control-sm" dir="auto" value="{{ c.description or '' }}"></div>
+                            </div>
+                        </fieldset>
+                        {% endif %}
 
                         <div class="row">
                             <div class="col-md-12 mb-3">

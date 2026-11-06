@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% from 'governance/_register_macros.html' import register_nav with context %}
+{% block title %}{{ _('Annual list of board members') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-3 pb-2 mb-2 border-bottom gap-2">
+  <div><h1 class="h3 mb-0">{{ _('List of board members, their capacities and nationalities') }}</h1>
+    <div>{{ gov_pick(e.name_en, e.name_ar) }} — {{ _('as at %(d)s', d=on.isoformat()) }}</div>
+    <small class="text-muted">{{ _('Annual statement of the members with their capacities and nationalities (Companies Law 159/1981 Art 87); changes are notified when they occur.') }}</small></div>
+  <form method="get" class="d-flex gap-2 no-print">
+    <select name="entity" class="form-select form-select-sm" data-auto-submit>{% for x in entities %}<option value="{{ x.id }}" {{ 'selected' if entity == x.id }}>{{ gov_pick(x.name_en, x.name_ar) }}</option>{% endfor %}</select>
+    <input type="date" name="on" value="{{ on.isoformat() }}" class="form-control form-control-sm" data-auto-submit>
+    <button type="button" class="btn btn-sm btn-outline-success text-nowrap" data-action="print"><i class="bi bi-printer"></i> {{ _('Print') }}</button>
+  </form>
+</div>
+<div class="no-print">{{ register_nav('boardlist') }}</div>
+<div class="table-responsive"><table class="table table-bordered table-sm small align-middle">
+  <thead class="table-light"><tr><th>#</th><th>{{ _('Name') }}</th><th>{{ _('Nationality') }}</th>
+    {% for d in dims %}<th>{{ gov_pick(d.name_en, d.name_ar) }}</th>{% endfor %}
+    <th>{{ _('Represents') }}</th><th>{{ _('Appointed') }}</th><th>{{ _('Term ends') }}</th></tr></thead>
+  <tbody>{% for mb in members %}<tr>
+    <td>{{ loop.index }}</td>
+    <td><div class="fw-semibold">{{ mb.member_name }}</div><div dir="rtl">{{ mb.member_name_arabic or '' }}</div></td>
+    <td>{{ mb.nationality or '—' }}</td>
+    {% for d in dims %}<td>{% for c in mb.by_dim.get(d.code, []) %}{{ gov_pick(c.name_en, c.name_ar) }}{{ ', ' if not loop.last }}{% else %}{% if d.code == 'INDEPENDENCE' %}{{ _('Independent') if mb.is_independent else _('Non-independent') }}{% elif d.code == 'EXEC_STATUS' %}{{ _('Executive') if mb.is_executive else _('Non-executive') }}{% else %}—{% endif %}{% endfor %}</td>{% endfor %}
+    <td>{{ mb.represents or '—' }}</td>
+    <td class="text-nowrap">{{ mb.appointment_date or '—' }}</td><td class="text-nowrap">{{ mb.term_end_date or '—' }}</td>
+  </tr>{% else %}<tr><td colspan="{{ 6 + dims|length }}" class="text-muted text-center py-3">{{ _('No members on this board at that date.') }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% if officers %}<p class="small">{{ _('Board secretary') }}: {% for o in officers %}{{ gov_pick(o.full_name, o.full_name_ar) }}{{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+<div class="row mt-5 small"><div class="col-6">{{ _('Chair of the board') }}: ____________________</div><div class="col-6">{{ _('Board secretary') }}: ____________________</div></div>
+{% endblock %}
