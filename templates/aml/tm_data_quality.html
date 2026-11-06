@@ -18,10 +18,10 @@
       {% set live_names = {
         'date_unreadable': L('Date cannot be read: only the rules that need no date ran (PEP / sanctions flag, high-risk country, single-amount thresholds)', 'التاريخ غير مقروء: اشتغلت بس القواعد اللي مش محتاجة تاريخ (علامة PEP / عقوبات، دولة عالية المخاطر، حدود المبلغ الواحد)'),
         'amount_unusable': L('Amount missing or not positive: only the rules that need no amount ran', 'المبلغ ناقص أو غير موجب: اشتغلت بس القواعد اللي مش محتاجة مبلغ'),
-        'currency_excluded': L('Currency other than the currency of the amount rules: those rules did not compare it', 'عملة غير عملة قواعد المبالغ: القواعد دي ماقارنتهاش'),
+        'currency_unconverted': L('Currency other than the currency of the amount rules: compared unconverted (no exchange-rate table)', 'عملة غير عملة قواعد المبالغ: اتقارنت من غير تحويل (مافيش جدول أسعار صرف)'),
       } %}
       {% for r in live_issues %}
-      <tr><td>{{ live_names.get(r.issue, r.issue) }}</td><td class="text-end">{{ '{:,}'.format(r.n) }}</td>
+      <tr><td>{{ live_names.get(r.issue, r.issue) }}</td><td class="text-end">{{ '{:,}'.format(r.n or 0) }}</td>
         <td>{% for i in (r.sample or []) if i %}<a href="{{ url_for('aml.view_transaction', tx_id=i) }}">#{{ i }}</a>{{ ', ' if not loop.last }}{% endfor %}</td></tr>
       {% endfor %}
       </tbody></table></div></div>
@@ -31,7 +31,11 @@
     <div class="col-auto"><label class="form-label small fw-bold mb-0">{{ L('To', 'إلى') }}</label><input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}"></div>
     <div class="col-auto"><button class="btn btn-primary btn-sm">{{ L('Check', 'افحص') }}</button></div>
   </form>
+  {% if too_large %}
+  <div class="alert alert-warning">{{ L('Not analysed: the period holds more transactions than one check can read', 'ماتحللتش: الفترة فيها عمليات أكتر من اللي ينفع فحص واحد يقراه') }} ({{ '{:,}'.format(too_large) }}). {{ L('Choose a shorter period.', 'اختار فترة أقصر.') }}</div>
+  {% else %}
   {{ M.quality(dq, L) }}
+  {% endif %}
   {% if dq.samples %}
   <div class="card shadow-sm"><div class="card-header"><strong>{{ L('Examples', 'أمثلة') }}</strong></div>
     <div class="card-body small">{% for code, ids in dq.samples.items() %}

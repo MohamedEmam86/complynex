@@ -90,7 +90,7 @@ _DATE_FORMATS = ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M', '%Y
                  '%Y/%m/%d %H:%M:%S', '%Y/%m/%d %H:%M', '%Y/%m/%d',
                  '%d/%m/%Y %H:%M:%S', '%d/%m/%Y %H:%M', '%d/%m/%Y',
                  '%d-%m-%Y %H:%M:%S', '%d-%m-%Y %H:%M', '%d-%m-%Y')
-_TZ_SUFFIX = re.compile(r'(?<=\d{2}:\d{2})(?::\d{2})?(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})$')
+_TZ_SUFFIX = re.compile(r'(?<=\d{2}:\d{2})(?::\d{2})?(?:\.\d+)?(Z|[+-]\d{2}(?::?\d{2})?)$')
 _ISO_PREFIX = re.compile(r'^\d{4}-\d{2}-\d{2}')
 _LOCAL_TZ = None
 
@@ -132,8 +132,13 @@ def parse_ts(v):
         off = m.group(1)
         base = s[:m.start(1)].split('.')[0]
         try:
-            iso = base.replace(' ', 'T') + ('+00:00' if off == 'Z' else
-                                             (off if ':' in off else off[:3] + ':' + off[3:]))
+            if off == 'Z':
+                off = '+00:00'
+            elif len(off) == 3:
+                off += ':00'                                     # +HH
+            elif ':' not in off:
+                off = off[:3] + ':' + off[3:]                    # +HHMM
+            iso = base.replace(' ', 'T') + off
             return _to_local_naive(datetime.fromisoformat(iso))
         except ValueError:
             s = base
@@ -165,7 +170,7 @@ class History:
     already asked of the database (live monitoring: one EXISTS query); the loaded
     look-back covers that day itself."""
 
-    def __init__(self, txs, first_seen=None, prior=None, parent=None):
+    def __init__(self, txs, first_seen=None, prior=None):
         by_customer, by_card = {}, {}
         self.txs = []
         for t in txs:
@@ -183,13 +188,7 @@ class History:
         self.by_card = self._index(by_card, 'k')
         self.first_seen = dict(first_seen or {})
         self.prior = dict(prior or {})
-        self.parent = parent                 # the all-currencies history of a currency view
-        self._views, self._sliding, self._sums = {}, {}, {}
-
-    @property
-    def all(self):
-        """The history with every currency (activity checks are not per currency)."""
-        return self.parent or self
+        self._sliding, self._sums = {}, {}
 
     def _index(self, groups, name):
         out = {}
@@ -296,20 +295,6 @@ class History:
         self._sliding[(key, cust)] = st
         return len(cnt)
 
-    # ---- currency views ------------------------------------------------------------
-    def for_currency(self, currency):
-        """The same history limited to one currency (rows without a currency are kept:
-        they are assumed to be in it, and reported by the data-quality check)."""
-        cur = (currency or '').strip().upper()
-        if not cur or self.parent is not None:
-            return self
-        v = self._views.get(cur)
-        if v is None:
-            v = History([t for t in self.txs if (t.get('currency') or '').strip().upper() in ('', cur)],
-                        first_seen=self.first_seen, prior=self.prior, parent=self)
-            self._views[cur] = v
-        return v
-
 
 # --------------------------------------------------------------------------- parameters
 def _num(v, default=None):
@@ -340,11 +325,12 @@ def rule_params(rule):
 
 
 def _types(v, default):
-    if isinstance(v, (list, tuple, set)):
+    """A list parameter as a tuple (hashable: used in running-count cache keys)."""
+    if isinstance(v, (list, tuple, set, frozenset)):
         return tuple(str(x).upper() for x in v)
     if isinstance(v, str) and v.strip():
         return tuple(x.strip().upper() for x in v.split(',') if x.strip())
-    return default
+    return tuple(default)
 
 
 def _amt(t):
@@ -361,7 +347,7 @@ def _fmt(v):
         f = float(v)
     except (TypeError, ValueError):
         return str(v)
-    return f'{f:,.0f}' if f == int(f) else f'{f:,.2f}'.rstrip('0').rstrip('.')
+    return f'{f:,.0f}' if f == int(f) else f'{f:,.2f}'      # same as the value macro of the TM pages
 
 
 def _cmp(value, op, threshold):
@@ -396,7 +382,7 @@ RULE_SPECS = {
         'band_low': _p(0.7, 'ratio', 'Lower edge of the band (x threshold)', 'بداية النطاق (× الحد)'),
         'band_high': _p(1.0, 'ratio', 'Upper edge of the band (x threshold, excluded)', 'نهاية النطاق (× الحد، غير شاملة)'),
         'cash_types': _p(list(CASH_TYPES), 'types', 'Cash transaction types', 'أنواع العمليات النقدية')}},
-    'TM003': {'op': '>', 'measure': 'count', 'params': {
+    'TM003': {'op': '>', 'measure': 'count', 'needs': ('date',), 'params': {
         'threshold': _p(5, 'count', 'Transactions in the window', 'عدد العمليات في الفترة'),
         'hours': _p(24, 'hours', 'Window', 'الفترة')}},
     'TM004': {'op': 'in', 'measure': 'country', 'needs': (), 'params': {}},
@@ -414,29 +400,29 @@ RULE_SPECS = {
     'TM008': {'op': '>', 'measure': 'ratio', 'params': {
         'threshold': _p(3, 'ratio', 'Multiple of the expected monthly volume', 'مضاعف الحجم الشهري المتوقع'),
         'days': _p(30, 'days', 'Window', 'الفترة')}},
-    'TM009': {'op': '>', 'measure': 'count', 'params': {
+    'TM009': {'op': '>', 'measure': 'count', 'needs': ('date',), 'params': {
         'threshold': _p(3, 'count', 'Distinct currencies', 'عدد العملات المختلفة'),
         'days': _p(7, 'days', 'Window', 'الفترة')}},
-    'TM010': {'op': '>', 'measure': 'count', 'params': {
+    'TM010': {'op': '>', 'measure': 'count', 'needs': ('date',), 'params': {
         'threshold': _p(5, 'count', 'International transfers', 'عدد التحويلات الدولية'),
         'days': _p(7, 'days', 'Window', 'الفترة'),
         'home_countries': _p(['Egypt', 'EG', 'EGY', 'مصر'], 'types', 'Domestic country names (not counted)',
                              'أسماء الدولة المحلية (لا تُحسب)'),
         'transfer_types': _p(['TRANSFER_OUT', 'TRANSFER_IN', 'REMITTANCE'], 'types', 'Transfer types', 'أنواع التحويل')}},
-    'TM011': {'op': '>=', 'measure': 'count', 'scope': 'card', 'params': {
+    'TM011': {'op': '>=', 'measure': 'count', 'scope': 'card', 'needs': ('date',), 'params': {
         'threshold': _p(3, 'count', 'Distinct merchants for one card', 'عدد التجار المختلفين للكارت'),
         'hours': _p(24, 'hours', 'Window', 'الفترة')}},
     'TM012': {'op': '>=', 'measure': 'amount', 'needs': ('amount',), 'params': {
         'threshold': _p(50000, 'amount', 'Payment amount', 'مبلغ الدفع')}},
     'TM013': {'op': '>=', 'measure': 'amount', 'needs': ('amount',), 'params': {
         'threshold': _p(100000, 'amount', 'Settlement amount', 'مبلغ التسوية')}},
-    'TM014': {'op': '>=', 'measure': 'count', 'params': {
+    'TM014': {'op': '>=', 'measure': 'count', 'needs': ('date',), 'params': {
         'threshold': _p(3, 'count', 'Refunds in the window', 'عدد المرتجعات في الفترة'),
         'hours': _p(24, 'hours', 'Window', 'الفترة')}},
     'TM015': {'op': '>=', 'measure': 'count', 'params': {
         'threshold': _p(3, 'count', 'Round-number payments the same day', 'عدد المدفوعات بأرقام صحيحة في اليوم'),
         'round_unit': _p(1000, 'amount', 'Round unit', 'وحدة الرقم الصحيح')}},
-    'TM016': {'op': '>=', 'measure': 'count', 'scope': 'card', 'params': {
+    'TM016': {'op': '>=', 'measure': 'count', 'scope': 'card', 'needs': ('date',), 'params': {
         'threshold': _p(5, 'count', 'Payments with one card in the window', 'عدد مدفوعات الكارت في الفترة'),
         'minutes': _p(60, 'minutes', 'Window', 'الفترة')}},
 }
@@ -548,7 +534,7 @@ def _tm006(tx, h, cust, p, ctx):
     if not _cmp(_amt(tx), '>=', p['threshold']):
         return None
     quiet_from = quiet_start(tx['_ts'], p)
-    act = h.all                                    # activity in any currency breaks the quiet period
+    act = h
     if act.customer_count(tx, quiet_from) > 1:     # anything besides this transaction in the quiet period
         return None
     if p.get('require_prior_history', True) and not act.customer_before(tx, quiet_from):
@@ -689,35 +675,92 @@ class Context:
         self.deadline = None         # backtest: time.monotonic() after which a run stops
 
 
-_HR_CACHE = {'at': 0.0, 'value': None}
+_HR_CACHE = {}               # (database, tenant) -> (time, frozenset)
 HIGH_RISK_TTL = 300          # seconds a process keeps the list (one query per batch, not per transaction)
+
+
+def _raw(db):
+    for attr in ('_conn', 'raw', 'connection'):
+        c = getattr(db, attr, None)
+        if c is not None and hasattr(c, 'autocommit'):
+            return c
+    return db if hasattr(db, 'autocommit') else None
+
+
+class savepoint:
+    """`with savepoint(db, name):` - a failing statement inside rolls back to the savepoint
+    and re-raises, leaving the caller's transaction usable. On an autocommit connection
+    (no transaction to protect) it does nothing."""
+
+    def __init__(self, db, name):
+        self.db, self.name = db, name
+        raw = _raw(db)
+        self.active = not (raw is not None and getattr(raw, 'autocommit', False) is True)
+
+    def __enter__(self):
+        if self.active:
+            self.db.execute(f"SAVEPOINT {self.name}")
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if not self.active:
+            return False
+        if exc_type is not None:
+            raw = _raw(self.db)
+            try:
+                # database/db.py's pooled wrapper rolls the whole transaction back on any SQL
+                # error (its dead-connection check): then there is no savepoint left to use.
+                if raw is not None and raw.info.transaction_status == 0:     # idle: rolled back
+                    log.warning('TM: the connection rolled back the transaction after an error in %s', self.name)
+                    return False
+            except Exception:
+                pass
+        try:
+            if exc_type is None:
+                self.db.execute(f"RELEASE SAVEPOINT {self.name}")
+            else:
+                self.db.execute(f"ROLLBACK TO SAVEPOINT {self.name}")
+                self.db.execute(f"RELEASE SAVEPOINT {self.name}")
+        except Exception:
+            log.warning('TM: savepoint %s could not be closed', self.name)
+        return False
+
+
+def cache_key(db):
+    """Per-process caches are kept per database and tenant."""
+    raw = _raw(db)
+    dbname = ''
+    try:
+        dbname = raw.info.dbname if raw is not None else ''
+    except Exception:
+        dbname = ''
+    tenant = ''
+    try:
+        from flask import g, has_request_context
+        if has_request_context():
+            tenant = str(g.get('tenant_id') or '')
+    except Exception:
+        pass
+    return (dbname, tenant)
 
 
 def load_high_risk(db, fresh=False):
     """Active countries of the high_risk_countries table, by name, code and alias.
-    Cached per process for HIGH_RISK_TTL seconds. Read inside a SAVEPOINT so a failure
+    Cached per process, database and tenant for HIGH_RISK_TTL seconds. Read inside a SAVEPOINT so a failure
     never aborts the caller's transaction; on failure the built-in list of the risk
     model is used and the failure is logged as an error (TM004 runs on less)."""
     now = time.monotonic()
-    if not fresh and _HR_CACHE['value'] is not None and now - _HR_CACHE['at'] < HIGH_RISK_TTL:
-        return set(_HR_CACHE['value'])
+    key = cache_key(db)
+    hit = _HR_CACHE.get(key)
+    if not fresh and hit is not None and now - hit[0] < HIGH_RISK_TTL:
+        return set(hit[1])
     try:
-        db.execute("SAVEPOINT tm_high_risk")
-    except Exception:
-        log.exception('TM: could not open a savepoint to read high_risk_countries')
-        return set(FALLBACK_HIGH_RISK)
-    try:
-        rows = db.execute("SELECT country_code, country_name, name_ar, aliases FROM high_risk_countries "
-                          "WHERE COALESCE(is_active, 1) = 1").fetchall()
-        db.execute("RELEASE SAVEPOINT tm_high_risk")
+        with savepoint(db, 'tm_high_risk'):
+            rows = db.execute("SELECT country_code, country_name, name_ar, aliases FROM high_risk_countries "
+                              "WHERE COALESCE(is_active, 1) = 1").fetchall()
     except Exception:
         log.exception('TM: high_risk_countries cannot be read; the built-in list of %d countries is used',
                       len(FALLBACK_HIGH_RISK))
-        try:
-            db.execute("ROLLBACK TO SAVEPOINT tm_high_risk")
-            db.execute("RELEASE SAVEPOINT tm_high_risk")
-        except Exception:
-            log.exception('TM: could not roll back to the savepoint')
         return set(FALLBACK_HIGH_RISK)
     out = set()
     for r in rows:
@@ -730,7 +773,7 @@ def load_high_risk(db, fresh=False):
     if not out:
         log.error('TM: high_risk_countries has no active country; the built-in list is used')
         out = set(FALLBACK_HIGH_RISK)
-    _HR_CACHE.update(at=now, value=frozenset(out))
+    _HR_CACHE[key] = (now, frozenset(out))
     return set(out)
 
 
@@ -774,6 +817,20 @@ def supported(code):
     return code in _EVALUATORS
 
 
+_WARNED_UNSUPPORTED = set()
+
+
+def warn_unsupported(rules):
+    """Rules in force that the engine cannot run (unknown code, or their pack did not load):
+    logged once per process and code. Returns their codes."""
+    codes = sorted({r.get('rule_code') for r in rules if not supported(r.get('rule_code'))})
+    for c in codes:
+        if c not in _WARNED_UNSUPPORTED:
+            _WARNED_UNSUPPORTED.add(c)
+            log.error('TM: rule %s is in force but no engine logic is registered for it: it raises no alert', c)
+    return codes
+
+
 class _Empty(History):
     def __init__(self):
         super().__init__([])
@@ -782,7 +839,9 @@ class _Empty(History):
 def evaluate(rule, tx, history, customer, ctx, params=None):
     """Evaluate one rule on one transaction. `tx` must be in `history` (unless its date
     cannot be read: then only rules that need no date run). Returns Hit or None.
-    Amount rules only see transactions in the rule currency (rule_currency)."""
+    Amounts are compared as stored: with no exchange-rate table, a transaction in another
+    currency than the rule's is still compared (unconverted) - never skipped - and the
+    caller reports it (other_currency)."""
     code = rule.get('rule_code')
     fn = _EVALUATORS.get(code)
     if fn is None:
@@ -794,17 +853,11 @@ def evaluate(rule, tx, history, customer, ctx, params=None):
         if 'date' in need:
             return None
         history = _Empty()
-    cur = rule_currency(rule)
-    if cur:
-        tc = (tx.get('currency') or '').strip().upper()
-        if tc and tc != cur:
-            return None                     # reported as excluded by currency, never compared
-        if history is not None:
-            history = history.for_currency(cur)
     return fn(tx, history, customer, params if params is not None else rule_params(rule), ctx)
 
 
-def excluded_by_currency(rule, tx):
+def other_currency(rule, tx):
+    """An amount rule judging a transaction in another currency (compared unconverted)."""
     cur = rule_currency(rule)
     tc = (tx.get('currency') or '').strip().upper()
     return bool(cur and tc and tc != cur)

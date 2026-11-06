@@ -1818,12 +1818,13 @@ def scenario_simulator():
             candidates = [t for t in candidates
                           if (custs.get(t.get('customer_id')) or {}).get('risk_classification') == customer_risk]
         candidates.sort(key=lambda t: (t['_ts'], t.get('id') or 0))
-        unreadable = sum(1 for t in lookback if not t.get('_ts'))
-        triggered, passed, excluded = [], 0, 0
-        for t in candidates:
-            if t.get('id') in dq['exclude'] or _E.excluded_by_currency(rule_dict, t):
-                excluded += 1                 # not judged: data quality or another currency
+        triggered, passed, excluded, unconverted = [], 0, 0, 0
+        for t in candidates:                  # period rows only
+            if t.get('id') in dq['exclude']:
+                excluded += 1                 # not judged: data quality
                 continue
+            if _E.other_currency(rule_dict, t):
+                unconverted += 1              # compared unconverted (no exchange-rate table)
             hit = _E.evaluate(rule_dict, t, hist, custs.get(t.get('customer_id')), ctx, params=rule_params)
             if hit:
                 row = {k: v for k, v in t.items() if not k.startswith('_')}
@@ -1847,7 +1848,8 @@ def scenario_simulator():
             'total_evaluated': judged,
             'would_trigger': len(triggered),
             'would_not_trigger': passed,
-            'excluded': excluded + unreadable,
+            'excluded': excluded,
+            'unconverted': unconverted,
             'new_alerts': sum(1 for t in triggered if not t['already_flagged']),
             'already_flagged': sum(1 for t in triggered if t['already_flagged']),
             'trigger_rate': round(len(triggered) / max(judged, 1) * 100, 1),
@@ -2029,7 +2031,11 @@ def rules_list():
     ).fetchall()
     from aml import tm_engine as _E
     pack_errors = list(_E.ensure_packs_loaded())
-    return render_template('aml/rules/list.html', rules=rules, pack_errors=pack_errors)
+    # rules in force whose code has no registered engine logic (unknown code, pack not loaded)
+    unsupported = sorted({r['rule_code'] for r in rules
+                          if r['is_active'] == 1 and (r['status'] or 'ACTIVE') == 'ACTIVE'
+                          and not _E.supported(r['rule_code'])})
+    return render_template('aml/rules/list.html', rules=rules, pack_errors=pack_errors, unsupported=unsupported)
 
 
 def _rule_form_values(data):

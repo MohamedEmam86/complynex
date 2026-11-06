@@ -126,15 +126,15 @@ SPECS = {
         'out_pct': _p(80, 'percent', 'Share sent out again', 'نسبة اللي خرج تاني'),
         'in_types': _p(FUNDS_IN, 'types', 'Incoming types', 'أنواع الوارد'),
         'out_types': _p(FUNDS_OUT, 'types', 'Outgoing types', 'أنواع الصادر')}}, psp02),
-    'PSP03': ({'op': '>=', 'measure': 'count', 'params': {
+    'PSP03': ({'op': '>=', 'measure': 'count', 'needs': ('date',), 'params': {
         'threshold': _p(10, 'count', 'Different senders', 'عدد المرسلين المختلفين'),
         'days': _p(7, 'days', 'Window', 'الفترة'),
         'types': _p(FUNDS_IN, 'types', 'Incoming types', 'أنواع الوارد')}}, psp03),
-    'PSP04': ({'op': '>=', 'measure': 'count', 'params': {
+    'PSP04': ({'op': '>=', 'measure': 'count', 'needs': ('date',), 'params': {
         'threshold': _p(10, 'count', 'Different beneficiaries', 'عدد المستفيدين المختلفين'),
         'days': _p(7, 'days', 'Window', 'الفترة'),
         'types': _p(FUNDS_OUT, 'types', 'Outgoing types', 'أنواع الصادر')}}, psp04),
-    'PSP05': ({'op': '>=', 'measure': 'count', 'params': {
+    'PSP05': ({'op': '>=', 'measure': 'count', 'needs': ('date',), 'params': {
         'threshold': _p(50, 'count', 'Cash operations of the account', 'عدد عمليات الكاش للحساب'),
         'hours': _p(24, 'hours', 'Window', 'الفترة'),
         'types': _p(CASH_IN + CASH_OUT, 'types', 'Cash types', 'أنواع الكاش')}}, psp05),

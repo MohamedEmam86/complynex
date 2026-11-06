@@ -88,6 +88,7 @@ class FakeDB:
     ('2025/06/01', datetime(2025, 6, 1)),               # YYYY/MM/DD
     ('01-06-2025', datetime(2025, 6, 1)),               # DD-MM-YYYY
     ('2025-06-01T10:00:00.123', datetime(2025, 6, 1, 10)),
+    ('2025-06-01T07:00:00+03', datetime(2025, 6, 1, 7)),   # +HH (Cairo is UTC+3 in June)
 ])
 def test_parse_ts_formats(raw, expected):
     assert E.parse_ts(raw) == expected
@@ -110,7 +111,7 @@ def test_rules_without_a_window_still_run_when_the_date_is_unreadable():
     assert E.evaluate(rule('TM004'), dict(bad), E.History([]), {}, ctx)            # high-risk country
     assert E.evaluate(rule('TM001', threshold_value=10000), dict(bad), E.History([]), {}, ctx)
     assert E.evaluate(rule('TM003', threshold_value=0), dict(bad), E.History([]), {}, ctx) is None
-    assert E.needs('TM005') == set() and E.needs('TM003') == {'date', 'amount'}
+    assert E.needs('TM005') == set() and E.needs('TM002') == {'date', 'amount'}
 
 
 def test_live_monitoring_runs_dateless_rules_and_records_the_issue(monkeypatch):
@@ -151,10 +152,12 @@ def test_load_history_uses_iso_ranges_and_one_exists_query_for_dormancy():
     q = [x for x, _ in db.sql]
     assert not any('substr' in x for x in q)
     cust = next(a for x, a in db.sql if 'customer_id = %s AND transaction_date >= %s' in x)
-    assert cust[1] == '2025-03-03' and cust[2] == '2025-06-02'            # 90 days, not 455
+    assert cust[1] == '2025-03-02' and cust[2] == '2025-06-03'            # 90 days (+1 spare each side), not 455
     card = next(a for x, a in db.sql if 'counterparty_account = %s' in x)
-    assert card[1] == '2025-06-01'                                       # TM016: 60 minutes, not 2 days
+    assert card[1] == '2025-05-31'                                       # TM016: 60 minutes (+1 spare day), not 2 days
     assert sum('EXISTS' in x for x in q) == 1
+    ex = next(a for x, a in db.sql if 'EXISTS' in x)
+    assert ex[1] == (T0 - timedelta(days=91)).strftime('%Y-%m-%d')        # the spare day is in memory
     assert prior == {(4, (T0 - timedelta(days=90)).date()): True}
 
 
@@ -202,14 +205,14 @@ def test_card_lookback_from_rule_windows():
     assert E.card_lookback_days([rule('TM001')]) == 0
 
 
-def test_amount_rules_only_compare_their_currency():
-    usd = tx(60, amount=20000, ttype='CASH_DEPOSIT', currency='USD')
-    assert not run('TM001', [usd], usd, threshold_value=10000, threshold_currency='EGP')
-    assert run('TM001', [usd], usd, threshold_value=10000, threshold_currency='USD')
-    assert E.excluded_by_currency(rule('TM001', threshold_currency='EGP'), usd)
-    # windows: USD deposits are not summed into an EGP structuring pattern
+def test_other_currency_is_compared_unconverted_never_skipped():
+    # fail safe: with no exchange-rate table a USD 100k cash deposit still alerts on an EGP rule
+    usd = tx(60, amount=100000, ttype='CASH_DEPOSIT', currency='USD')
+    assert run('TM001', [usd], usd, threshold_value=10000, threshold_currency='EGP')
+    assert E.other_currency(rule('TM001', threshold_currency='EGP'), usd)
+    assert not E.other_currency(rule('TM003', threshold_currency='EGP'), usd)
     a = [tx(61, hours=i, amount=8000, ttype='CASH_DEPOSIT', currency='USD' if i else 'EGP') for i in range(3)]
-    assert not run('TM002', a, a[0], threshold_value=9000, threshold_currency='EGP', time_period_days=3)
+    assert run('TM002', a, a[-1], threshold_value=9000, threshold_currency='EGP', time_period_days=3)
     # count rules are not currency rules
     assert not E.is_currency_rule('TM009') and not E.is_currency_rule('TM003') and E.is_currency_rule('TM008')
 
@@ -218,7 +221,7 @@ def test_backtest_reports_excluded_currencies():
     txs = [tx(62, amount=60000, currency='USD'), tx(62, days=2, amount=60000)]
     r = rule('TM012', threshold_value=50000, threshold_currency='EGP')
     res = B.replay([r], txs, {}, E.Context())[r['id']]
-    assert res['alerts'] == 1 and res['excluded_currency'] == {'USD': 1}
+    assert res['alerts'] == 2 and res['other_currency'] == {'USD': 1}
 
 
 # ---------------------------------------------------------------- should-fix 8: running counts
@@ -281,7 +284,7 @@ def test_negative_refunds_count_by_size_and_are_kept():
 
 
 def test_message_number_format_never_scientific():
-    assert E._fmt(2000000) == '2,000,000' and E._fmt(1.5) == '1.5' and E._fmt(24.0) == '24'
+    assert E._fmt(2000000) == '2,000,000' and E._fmt(1.5) == '1.50' and E._fmt(24.0) == '24'
     t = tx(81, amount=3000000, ttype='CASH_DEPOSIT')
     assert 'e+' not in run('TM001', [t], t, threshold_value=2000000).description
 
@@ -303,3 +306,86 @@ def test_version_errors_carry_arabic():
 def test_packs_load_and_failures_are_reported(monkeypatch):
     E._PACKS.update(ok=False, tried=None)
     assert E.ensure_packs_loaded() == [] and 'PSP01' in E.RULE_SPECS
+
+
+# ---------------------------------------------------------------- second review
+def test_list_parameters_are_hashable_tuples():
+    assert E._types(['a', 'b'], ()) == ('A', 'B')
+    assert E._types(None, ['X']) == ('X',) and isinstance(E._types('', ['X']), tuple)
+    from packs.psp_tm import rules as P  # noqa: F401
+    many = [tx(90, hours=i, ttype='TRANSFER_IN', counterparty_account=f'ACC{i:06d}') for i in range(10)]
+    assert run('PSP03', many, many[-1], threshold_value=10, time_period_days=7,
+               parameters={'types': ['TRANSFER_IN']})
+
+
+def test_count_rules_count_zero_amount_transactions():
+    assert E.needs('TM003') == {'date'} and E.needs('TM016') == {'date'} and E.needs('TM001') == {'amount'}
+    from packs.psp_tm import rules as P  # noqa: F401
+    assert E.needs('PSP05') == {'date'}
+    zeros = [tx(91, minutes=i, amount=0) for i in range(7)]
+    assert run('TM003', zeros, zeros[-1], threshold_value=5)
+    dq = B.data_quality(zeros, known_customers={91})
+    assert not dq['exclude'] and dq['issues']['amount_zero'] == 7
+
+
+def test_savepoint_is_skipped_on_autocommit_connections():
+    class Raw:
+        autocommit = True
+    db = FakeDB()
+    db._conn = Raw()
+    with E.savepoint(db, 'x'):
+        db.execute('SELECT 1')
+    assert [q for q, _ in db.sql] == ['SELECT 1']
+    db2 = FakeDB()
+    with pytest.raises(RuntimeError):
+        with E.savepoint(db2, 'y'):
+            raise RuntimeError('boom')
+    assert [q for q, _ in db2.sql] == ['SAVEPOINT y', 'ROLLBACK TO SAVEPOINT y', 'RELEASE SAVEPOINT y']
+
+
+def test_unsupported_rules_in_force_are_reported():
+    assert E.warn_unsupported([rule('NOPE01'), rule('TM001')]) == ['NOPE01']
+
+
+def test_currency_issues_aggregate_per_day():
+    seen = []
+
+    def answer(sql, args):
+        if sql.lstrip().startswith('UPDATE tm_monitoring_issues'):
+            return [{'id': 1}] if seen else []
+        if 'INSERT INTO tm_monitoring_issues' in sql:
+            seen.append(args)
+        return []
+    db = FakeDB(answer)
+    for i in range(5):
+        assert S.record_issue(db, 100 + i, 'currency_unconverted', 'USD compared unconverted by TM001')
+    assert len(seen) == 1
+
+
+def test_evaluate_does_not_commit_inside(monkeypatch):
+    db = FakeDB(lambda sql, args: [])
+    monkeypatch.setattr(S, '_evaluate', lambda db, i: [])
+    S.evaluate_transaction(1, db, commit=False)
+    assert db.commits == 0
+    S.evaluate_transaction(1, db)
+    assert db.commits == 1
+
+
+def test_compare_hides_the_diff_of_an_unfinished_run(monkeypatch):
+    txs = [tx(92, days=d, amount=60000) for d in range(3)]
+    for t in txs:
+        t['_ts'] = E.parse_ts(t['transaction_date'])
+    r = rule('TM012', threshold_value=50000)
+    monkeypatch.setattr(B, '_prepare', lambda db, rules, f, t: (
+        txs, {}, B.data_quality(txs, known_customers={92}),
+        type('C', (E.Context,), {})()))
+    ctx_deadline = __import__('time').monotonic() - 1           # already out of time
+    orig = B._prepare
+
+    def prep(db, rules, f, t):
+        a, b, c, d = orig(db, rules, f, t)
+        d.deadline = ctx_deadline
+        return a, b, c, d
+    monkeypatch.setattr(B, '_prepare', prep)
+    out = B.compare(None, r, E.rule_params(r))
+    assert out['current']['truncated'] and 'only_current' not in out

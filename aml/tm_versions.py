@@ -56,6 +56,7 @@ def message(e, ar=False):
 
 
 MIN_REASON = 10
+MIN_SWITCH_REASON = 15     # disabling / re-enabling a rule in force: one person, so a fuller reason
 CODE_RE = re.compile(r'^[A-Z0-9_]{2,20}$')
 # The version in force (legacy rows may still have status NULL with is_active = 1).
 IN_FORCE = "is_active = 1 AND COALESCE(status, 'ACTIVE') = 'ACTIVE'"
@@ -154,9 +155,14 @@ def propose(db, base_id, values, parameters, reason, user_id, code=None):
     row = {f: values.get(f, base.get(f)) for f in FIELDS}
     if row.get('time_period_days') is None:
         row['time_period_days'] = 1
-    # Parameters not on the form (or left empty) keep the base version's values.
+    # Parameters not on the form keep the base version's values; a field cleared on the form
+    # goes back to the rule's default (that is how a list parameter is emptied).
     merged = dict(_json(base.get('parameters')))
-    merged.update({k: v for k, v in (parameters or {}).items() if v not in (None, '')})
+    for k, v in (parameters or {}).items():
+        if v in (None, ''):
+            merged.pop(k, None)
+        else:
+            merged[k] = v
     params = clean_parameters(code, merged)
     new_id = db.execute("""
         INSERT INTO tm_rules (rule_code, rule_name, rule_name_ar, rule_description, rule_category, rule_type,
@@ -233,9 +239,13 @@ def rollback(db, rule_id, user_id, reason):
 
 
 def disable(db, rule_id, user_id, reason):
-    """Take the version in force out of force (reason required, kept in the audit log)."""
-    if not (reason or '').strip():
-        raise VersionError(N_('A reason is required to disable a rule.'), 'لازم تكتب سبب إيقاف القاعدة.')
+    """Take the version in force out of force (reason of at least 15 characters, kept in the
+    audit log). One person may do it: stopping a rule is reversible and visible on the rule
+    list and in the audit trail; a second approval for disabling would need a pending
+    'disable' state and is left to the owner (documented, not built)."""
+    if len((reason or '').strip()) < MIN_SWITCH_REASON:
+        raise VersionError(N_('Write the reason for disabling the rule (at least 15 characters).'),
+                           'اكتب سبب إيقاف القاعدة (15 حرف على الأقل).')
     rule = _get(db, rule_id)
     if (rule.get('status') or ('ACTIVE' if rule.get('is_active') == 1 else 'DISABLED')) != 'ACTIVE':
         raise VersionError(N_('Only an active rule can be disabled.'), 'ممكن توقف بس قاعدة مفعلة.')
@@ -249,8 +259,9 @@ def enable(db, rule_id, user_id, reason):
     """Put a disabled version back in force. Only one that was approved once (or was in
     force before versioning); every other version of the code is retired, so exactly
     one version is in force."""
-    if not (reason or '').strip():
-        raise VersionError(N_('A reason is required to enable a rule.'), 'لازم تكتب سبب تفعيل القاعدة.')
+    if len((reason or '').strip()) < MIN_SWITCH_REASON:
+        raise VersionError(N_('Write the reason for enabling the rule (at least 15 characters).'),
+                           'اكتب سبب تفعيل القاعدة (15 حرف على الأقل).')
     rule = _get(db, rule_id)
     if rule.get('status') != 'DISABLED':
         raise VersionError(N_('Only a disabled rule can be enabled.'), 'ممكن تفعّل بس قاعدة موقوفة.')

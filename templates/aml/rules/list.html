@@ -33,6 +33,13 @@
     <strong>{{ pack_errors|join(', ') }}</strong>
   </div>
   {% endif %}
+  {% if unsupported %}
+  <div class="alert alert-warning small">
+    <i class="fas fa-exclamation-triangle me-1"></i>
+    {{ 'قواعد مفعلة مالهاش منطق مسجل في محرك المراقبة، فمش بتطلع تنبيهات:' if get_locale()|string == 'ar' else 'Rules in force with no logic registered in the monitoring engine, so they raise no alerts:' }}
+    <strong>{{ unsupported|join(', ') }}</strong>
+  </div>
+  {% endif %}
 
   <!-- Simulate panel -->
   <div class="card mb-3 border-info">
@@ -141,7 +148,7 @@
               <form method="post" action="{{ url_for('aml.rule_disable', rule_id=r.id) }}" class="d-inline-flex align-items-center me-1"
                     data-confirm="{{ _('Disable this rule?') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="text" name="reason" class="form-control form-control-sm me-1" size="16"
+                <input type="text" name="reason" class="form-control form-control-sm me-1" size="16" minlength="15"
                        placeholder="{{ _('Reason (required)') }}" aria-label="{{ _('Reason for disabling') }}" required>
                 <button class="btn btn-sm btn-warning" title="{{ _('Disable') }}"><i class="fas fa-pause"></i></button>
               </form>
@@ -149,7 +156,7 @@
               <form method="post" action="{{ url_for('aml.rule_enable', rule_id=r.id) }}" class="d-inline-flex align-items-center me-1"
                     data-confirm="{{ _('Enable this rule?') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="text" name="reason" class="form-control form-control-sm me-1" size="16"
+                <input type="text" name="reason" class="form-control form-control-sm me-1" size="16" minlength="15"
                        placeholder="{{ _('Reason (required)') }}" aria-label="{{ _('Reason for enabling') }}" required>
                 <button class="btn btn-sm btn-success" title="{{ _('Enable') }}"><i class="fas fa-play"></i></button>
               </form>
@@ -191,13 +198,25 @@ async function runSimulate() {
   });
   const data = await resp.json();
 
+  // Built with textContent: the rule name and reason are data, never HTML.
   const cls = data.would_trigger ? 'danger' : 'success';
-  const icon = data.would_trigger ? '⚠️ ' + {{ _('TRIGGERED') | tojson }} : '✅ ' + {{ _('NOT TRIGGERED') | tojson }};
-  res.innerHTML = `<div class="alert alert-${cls} mt-2 mb-0">
-    <strong>${icon}</strong> — ${data.rule_name}<br>
-    <small>${data.reason || ''}</small>
-    ${data.severity ? `<span class="badge bg-danger ms-2">${data.severity}</span>` : ''}
-  </div>`;
+  const box = document.createElement('div');
+  box.className = 'alert alert-' + cls + ' mt-2 mb-0';
+  const head = document.createElement('strong');
+  head.textContent = data.would_trigger ? {{ _('TRIGGERED') | tojson }} : {{ _('NOT TRIGGERED') | tojson }};
+  box.appendChild(head);
+  box.appendChild(document.createTextNode(' — ' + (data.rule_name || data.error || '')));
+  box.appendChild(document.createElement('br'));
+  const small = document.createElement('small');
+  small.textContent = data.reason || '';
+  box.appendChild(small);
+  if (data.severity) {
+    const b = document.createElement('span');
+    b.className = 'badge bg-danger ms-2';
+    b.textContent = data.severity;
+    box.appendChild(b);
+  }
+  res.replaceChildren(box);
   res.classList.remove('d-none');
 }
 </script>

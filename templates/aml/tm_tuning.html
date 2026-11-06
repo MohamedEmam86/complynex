@@ -19,9 +19,9 @@
     {{ L('excluded by data quality', 'مستبعدة بسبب جودة البيانات') }}: {{ '{:,}'.format(result.summary.excluded) }}</p>
   {{ M.quality(result.summary.quality, L) }}
   {% endif %}
-  {% set xc = (result.summary.excluded_currency if result else none) or (sweep.summary.excluded_currency if sweep and sweep.summary else none) %}
+  {% set xc = (result.summary.other_currency if result else none) or (sweep.summary.other_currency if sweep and sweep.summary else none) %}
   {% if xc %}
-  <div class="alert alert-light border small">{{ L('Not compared by the amount rules (their thresholds are in another currency; there is no exchange-rate table)', 'مش متقارنة في قواعد المبالغ (حدودها بعملة تانية، ومافيش جدول أسعار صرف)') }}:
+  <div class="alert alert-warning small">{{ L('Compared UNCONVERTED by the amount rules (their thresholds are in another currency and there is no exchange-rate table): check these alerts by hand', 'اتقارنت من غير تحويل في قواعد المبالغ (حدودها بعملة تانية ومافيش جدول أسعار صرف): راجع التنبيهات دي يدويًا') }}:
     {% for c, n in xc.items() %}<strong>{{ c or '—' }}</strong> {{ '{:,}'.format(n) }}{{ ' · ' if not loop.last }}{% endfor %}</div>
   {% endif %}
 
@@ -47,7 +47,7 @@
             <td class="small">{{ r.reference or '' }}{% if not r.reference %}<span class="text-muted">{{ L('not recorded', 'غير مسجل') }}</span>{% endif %}</td>
             {% if result %}
               {% if res and res.supported %}
-              <td class="text-end fw-bold">{{ '{:,}'.format(res.alerts) }}</td><td class="text-end">{{ '{:,}'.format(res.customers) }}</td><td class="text-end">{{ '{:,}'.format(res.hits) }}</td>
+              <td class="text-end fw-bold">{{ '{:,}'.format(res.alerts) }}{% if res.truncated %} <span class="badge bg-warning text-dark">{{ L('not finished', 'ماخلصش') }}</span>{% endif %}</td><td class="text-end">{{ '{:,}'.format(res.customers) }}</td><td class="text-end">{{ '{:,}'.format(res.hits) }}</td>
               {% else %}<td colspan="3" class="text-muted small">—</td>{% endif %}
             {% endif %}
             <td class="text-nowrap">
@@ -83,7 +83,7 @@
         {% for row in sweep.rows %}
           <tr class="{{ 'table-info' if row.current else '' }}">
             <td>{{ M.value(row.value) }}{% if row.current %} <span class="badge bg-info">{{ L('in force', 'الحالي') }}</span>{% endif %}</td>
-            <td class="text-end fw-bold">{{ '{:,}'.format(row.alerts) }}</td>
+            <td class="text-end fw-bold">{{ '{:,}'.format(row.alerts) }}{% if row.truncated %} <span class="badge bg-warning text-dark">{{ L('not finished', 'ماخلصش') }}</span>{% endif %}</td>
             <td class="text-end">{{ '{:,}'.format(row.customers) }}</td>
             <td class="w-50"><progress class="w-100" max="{{ top }}" value="{{ row.alerts }}" aria-label="{{ L('Alerts', 'تنبيهات') }}"></progress></td>
           </tr>

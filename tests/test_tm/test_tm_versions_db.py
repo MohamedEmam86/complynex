@@ -57,7 +57,7 @@ def db():
     sql = open(MIG).read()
     sql = re.sub(r'^\s*(BEGIN|COMMIT);\s*$', '', sql, flags=re.M)
     sql = re.sub(r'^\s*GRANT .*$', '', sql, flags=re.M)
-    c.execute(sql)
+    raw.cursor().execute(sql)                  # no parameters: the '%' in the SQL stays literal
     u = [r['id'] for r in c.execute("SELECT id FROM users ORDER BY id LIMIT 2").fetchall()]
     assert len(u) == 2
     c.users = u
@@ -115,7 +115,9 @@ def test_enable_requires_approval_and_retires_other_versions(db):
     V.approve(db, v1, b)
     v2 = V.propose(db, v1, {'threshold_value': 500}, {}, 'tighten the rule', a)
     V.approve(db, v2, b)
-    V.enable(db, v1, a, 'go back to version one')              # approved once: allowed, v2 retired
+    with pytest.raises(V.VersionError):
+        V.enable(db, v1, a, 'too short')                        # reason of 15+ characters
+    V.enable(db, v1, a, 'go back to version one please')   # approved once: allowed, v2 retired
     rows = db.execute("SELECT id, status, is_active FROM tm_rules WHERE rule_code='ZZT02' ORDER BY id").fetchall()
     assert [(r['status'], r['is_active']) for r in rows] == [('ACTIVE', 1), ('DISABLED', 0)]
 
@@ -142,9 +144,13 @@ def test_editing_a_pack_rule_keeps_its_parameters(db):
                                'severity': 'HIGH'}, {'hours': '48', 'out_pct': '75'}, 'pack rule for the test', a,
                     code='PSP02')
     V.reject(db, rid, b, 'test: reject then edit')
-    v2 = V.propose(db, rid, {'threshold_value': 25000}, {'out_pct': ''}, 'only the threshold changes', a)
+    v2 = V.propose(db, rid, {'threshold_value': 25000}, {}, 'only the threshold changes', a)
     p = db.execute("SELECT parameters FROM tm_rules WHERE id=%s", (v2,)).fetchone()['parameters']
-    assert p == {'hours': 48.0, 'out_pct': 75.0}
+    assert p == {'hours': 48.0, 'out_pct': 75.0}          # parameters not on the form are kept
+    V.reject(db, v2, b, 'test: reject again then clear')
+    v3 = V.propose(db, v2, {}, {'out_pct': ''}, 'back to the default share', a)
+    p = db.execute("SELECT parameters FROM tm_rules WHERE id=%s", (v3,)).fetchone()['parameters']
+    assert p == {'hours': 48.0}                             # a cleared field goes back to the default
 
 
 def test_rollback_to_a_rule_in_force_before_is_allowed(db):
@@ -157,3 +163,14 @@ def test_rollback_to_a_rule_in_force_before_is_allowed(db):
     v2 = V.propose(db, legacy['id'], {}, {}, 'new version of a legacy rule', a)
     V.approve(db, v2, b)
     assert V.rollback(db, v2, b, 'back to the legacy version')['id'] == legacy['id']
+
+
+def test_disable_needs_a_reason_of_15_characters(db):
+    from aml import tm_versions as V
+    a, b = db.users
+    v1 = _new_rule(db, V, 'ZZT04', a)
+    V.approve(db, v1, b)
+    with pytest.raises(V.VersionError):
+        V.disable(db, v1, a, 'short one')
+    V.disable(db, v1, a, 'stopped for the year-end review')
+    assert V.in_force(db, 'ZZT04') is None

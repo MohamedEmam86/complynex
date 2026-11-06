@@ -63,14 +63,16 @@ ISO_RE = "'^[0-9]{4}-[0-9]{2}-[0-9]{2}'"
 # --------------------------------------------------------------------------- loading
 def _range(date_from, date_to, lookback_days=0):
     """WHERE clause on transaction_date as plain ISO range comparisons (index-friendly;
-    the database collation is C, so text order is date order for YYYY-MM-DD...)."""
+    the database collation is C, so text order is date order for YYYY-MM-DD...). One spare
+    day each side: a row stored with a UTC offset may sit on the neighbouring day as text;
+    the period itself is applied on the parsed local time (_in_period)."""
     where, args = [], []
     if date_from:
-        start = (datetime.strptime(date_from, '%Y-%m-%d') - timedelta(days=int(lookback_days))).strftime('%Y-%m-%d')
+        start = (datetime.strptime(date_from, '%Y-%m-%d') - timedelta(days=int(lookback_days) + 1)).strftime('%Y-%m-%d')
         where.append("transaction_date >= %s")
         args.append(start)
     if date_to:
-        end = (datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+        end = (datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=2)).strftime('%Y-%m-%d')
         where.append("transaction_date < %s")
         args.append(end)
     return where, args
@@ -169,8 +171,10 @@ def data_quality(txs, known_customers=None, now=None):
         tt = (t.get('transaction_type') or '').upper()
         if amount is not None and amount < 0 and tt in REVERSAL_TYPES:
             flag('refund_stored_negative', t)           # kept: the rules use its size
-        elif amount is None or amount <= 0:
+        elif amount is None or amount < 0:
             flag('amount_missing_or_not_positive', t, drop=True)
+        elif amount == 0:
+            flag('amount_zero', t)                      # kept: count rules count it, as live monitoring
         if not (t.get('currency') or '').strip():
             flag('currency_missing', t)
         if not E.is_iso_date(t.get('transaction_date')):
@@ -213,7 +217,7 @@ def replay(rules, txs, customers, ctx, date_from=None, date_to=None, params_by_r
            first_seen=None, deadline=None):
     """Run the rules over the period as live monitoring would. Returns
     {rule_id: {'hits', 'alerts', 'customers', 'by_month', 'sample', 'alert_tx_ids',
-    'excluded_currency', 'truncated'}}. `deadline` (time.monotonic()) stops a run that
+    'other_currency', 'truncated'}}. `deadline` (time.monotonic()) stops a run that
     takes too long; the rules not finished are marked truncated."""
     params_by_rule = params_by_rule or {}
     hist = E.History([t for t in txs if t.get('id') not in exclude], first_seen=first_seen)
@@ -227,14 +231,13 @@ def replay(rules, txs, customers, ctx, date_from=None, date_to=None, params_by_r
         p = params_by_rule.get(rule['id']) or E.rule_params(rule)
         last_alert = {}
         res = {'supported': True, 'hits': 0, 'alerts': 0, 'customers': set(), 'by_month': Counter(),
-               'sample': [], 'alert_tx_ids': set(), 'excluded_currency': Counter(), 'truncated': False}
+               'sample': [], 'alert_tx_ids': set(), 'other_currency': Counter(), 'truncated': False}
         for n, t in enumerate(period):
             if deadline is not None and n % 2000 == 0 and time.monotonic() > deadline:
                 res['truncated'] = True
                 break
-            if E.excluded_by_currency(rule, t):
-                res['excluded_currency'][(t.get('currency') or '').strip().upper()] += 1
-                continue
+            if E.other_currency(rule, t):           # compared unconverted (no FX table), reported
+                res['other_currency'][(t.get('currency') or '').strip().upper()] += 1
             hit = E.evaluate(rule, t, hist, customers.get(t.get('customer_id')), ctx, params=p)
             if not hit:
                 continue
@@ -255,7 +258,7 @@ def replay(rules, txs, customers, ctx, date_from=None, date_to=None, params_by_r
                                       'already_flagged': bool(t.get('alert_raised'))})
         res['customers'] = len(res['customers'])
         res['by_month'] = dict(sorted(res['by_month'].items()))
-        res['excluded_currency'] = dict(res['excluded_currency'])
+        res['other_currency'] = dict(res['other_currency'])
         out[rule['id']] = res
     return out
 
@@ -269,7 +272,7 @@ def _prepare(db, rules, date_from, date_to):
     first_seen = load_first_seen(db, set(customers)) if E.prior_history_rules(rules) else {}
     ctx = E.Context(E.load_high_risk(db))
     ctx.first_seen = first_seen
-    ctx.deadline = time.monotonic() + MAX_SECONDS
+    ctx.deadline = time.monotonic() + MAX_SECONDS     # the whole request (gunicorn kills at 120 s)
     return txs, customers, dq, ctx
 
 
@@ -277,17 +280,23 @@ def _summary(dq, txs, date_from, date_to, res=None):
     in_period = sum(1 for t in txs if t.get('_ts') and _in_period(t, date_from, date_to))
     cur, trunc = Counter(), False
     for r in (res or {}).values():
-        for k, v in (r.get('excluded_currency') or {}).items():
+        for k, v in (r.get('other_currency') or {}).items():
             cur[k] = max(cur[k], v)
         trunc = trunc or bool(r.get('truncated'))
     return {'date_from': date_from, 'date_to': date_to, 'loaded': len(txs), 'evaluated': in_period,
             'excluded': len(dq['exclude']), 'quality': {k: v for k, v in dq.items() if k != 'exclude'},
-            'excluded_currency': dict(cur), 'truncated': trunc}
+            'other_currency': dict(cur), 'truncated': trunc}
 
 
-def _replay(rules, txs, customers, ctx, date_from, date_to, params_by_rule, dq):
+def _replay(rules, txs, customers, ctx, date_from, date_to, params_by_rule, dq, share=1.0):
+    """One replay with its own time budget: `share` of the time left in the request, so a
+    compare / sweep (several replays) always finishes each one or marks it not finished."""
+    deadline = getattr(ctx, 'deadline', None)
+    if deadline is not None:
+        left = max(0.0, deadline - time.monotonic())
+        deadline = time.monotonic() + left * share
     return replay(rules, txs, customers, ctx, date_from, date_to, params_by_rule, dq['exclude'],
-                  first_seen=getattr(ctx, 'first_seen', None), deadline=getattr(ctx, 'deadline', None))
+                  first_seen=getattr(ctx, 'first_seen', None), deadline=deadline)
 
 
 def backtest(db, rules, date_from=None, date_to=None, params_by_rule=None):
@@ -305,16 +314,18 @@ def compare(db, rule, candidate_params, date_from=None, date_to=None, current_ru
     current_rule = current_rule or rule
     both = [current_rule] if current_rule is rule else [current_rule, rule]
     txs, customers, dq, ctx = _prepare(db, both, date_from, date_to)
-    cur = _replay([current_rule], txs, customers, ctx, date_from, date_to, None, dq)[current_rule['id']]
+    cur = _replay([current_rule], txs, customers, ctx, date_from, date_to, None, dq, share=0.5)[current_rule['id']]
     cand_rule = dict(rule, id=-1)
     cand = _replay([cand_rule], txs, customers, ctx, date_from, date_to,
                    {-1: candidate_params or E.rule_params(rule)}, dq)[-1]
     if not cur.get('supported') or not cand.get('supported'):
         return {'summary': _summary(dq, txs, date_from, date_to), 'supported': False}
     a, b = cur.pop('alert_tx_ids'), cand.pop('alert_tx_ids')
-    return {'summary': _summary(dq, txs, date_from, date_to, {1: cur, 2: cand}), 'supported': True,
-            'current': cur, 'candidate': cand,
-            'only_current': len(a - b), 'only_candidate': len(b - a), 'both': len(a & b)}
+    out = {'summary': _summary(dq, txs, date_from, date_to, {1: cur, 2: cand}), 'supported': True,
+           'current': cur, 'candidate': cand}
+    if not (cur.get('truncated') or cand.get('truncated')):     # a partial run has no meaningful diff
+        out.update(only_current=len(a - b), only_candidate=len(b - a), both=len(a & b))
+    return out
 
 
 def sweep(db, rule, values, date_from=None, date_to=None, param='threshold'):
@@ -322,9 +333,10 @@ def sweep(db, rule, values, date_from=None, date_to=None, param='threshold'):
     txs, customers, dq, ctx = _prepare(db, [rule], date_from, date_to)
     base = E.rule_params(rule)
     rows = []
-    for v in values:
+    for i, v in enumerate(values):
         p = dict(base, **{param: v})
-        r = _replay([dict(rule, id=-1)], txs, customers, ctx, date_from, date_to, {-1: p}, dq)[-1]
+        r = _replay([dict(rule, id=-1)], txs, customers, ctx, date_from, date_to, {-1: p}, dq,
+                    share=1.0 / (len(values) - i))[-1]
         if not r.get('supported'):
             return {'summary': _summary(dq, txs, date_from, date_to), 'supported': False, 'rows': []}
         rows.append({'value': v, 'alerts': r['alerts'], 'customers': r['customers'], 'hits': r['hits'],

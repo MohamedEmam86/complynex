@@ -78,8 +78,29 @@ def _period(db):
     return df, dt
 
 
+_DAY_CACHE = {}
+CACHE_SECONDS = 300
+
+
+def _cached(db, name, fn):
+    """Small per-process cache (per database and tenant) for page-load numbers."""
+    import time
+    key = (name,) + E.cache_key(db)
+    hit = _DAY_CACHE.get(key)
+    if hit and time.monotonic() - hit[0] < CACHE_SECONDS:
+        return hit[1]
+    v = fn()
+    _DAY_CACHE[key] = (time.monotonic(), v)
+    return v
+
+
 def latest_data_day(db):
-    """Day of the newest ISO-dated transaction (walks the transaction_date index backwards)."""
+    """Day of the newest ISO-dated transaction (walks the transaction_date index backwards;
+    cached 5 minutes)."""
+    return _cached(db, 'latest_day', lambda: _latest_data_day(db))
+
+
+def _latest_data_day(db):
     row = db.execute("SELECT transaction_date AS d FROM transactions "
                      "WHERE transaction_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' "
                      "ORDER BY transaction_date DESC LIMIT 1").fetchone()
@@ -135,8 +156,9 @@ def tm_tuning():
         rid = request.form.get('sweep_rule', type=int) if posted else None
         if rid:
             chosen = next((r for r in rules if r['id'] == rid), None)
-            param = request.form.get('param') or 'threshold'
-            if chosen and param in E.RULE_SPECS.get(chosen['rule_code'], {}).get('params', {}):
+            param = 'threshold'           # the curve is drawn for the threshold only
+            unit = E.RULE_SPECS.get(chosen['rule_code'], {}).get('params', {}).get(param, {}).get('unit') if chosen else None
+            if chosen and unit in ('amount', 'count', 'ratio', 'percent'):
                 values = B.default_sweep_values(chosen, param)
                 if values:
                     sweep = B.sweep(db, chosen, values, df, dt, param=param)
@@ -182,38 +204,32 @@ def tm_rule_backtest(rule_id):
 def tm_data_quality():
     db = get_db()
     df, dt = _period(db)
+    too_large = None
     try:
         txs = B.load_transactions(db, df, dt, max_rows=B.MAX_ROWS)
     except B.BacktestTooLarge as e:
-        _too_large(e)
-        txs = []
+        too_large, txs = e.rows, []
     known = {r['id'] for r in db.execute("SELECT id FROM customers WHERE id = ANY(%s)",
                                          (list({t['customer_id'] for t in txs if t.get('customer_id')}),)).fetchall()}
     dq = B.data_quality(txs, known_customers=known)
     dq.pop('exclude', None)
-    dq['not_iso_total'] = B.count_not_iso(db)
+    dq['not_iso_total'] = _cached(db, 'not_iso', lambda: B.count_not_iso(db))
     live = _live_issues(db)
     return render_template('aml/tm_data_quality.html', dq=dq, date_from=df, date_to=dt, L=_L, ar=_is_ar(),
-                           live_issues=live)
+                           live_issues=live, too_large=too_large)
 
 
 def _live_issues(db, days=30):
     """What live monitoring could not judge in the last `days` days (tm_monitoring_issues)."""
     try:
-        db.execute("SAVEPOINT tm_live_issues")
-        rows = db.execute("""SELECT issue, COUNT(*) AS n, MAX(created_at) AS last_at,
-                                    (ARRAY_AGG(transaction_id ORDER BY id DESC))[1:10] AS sample
-                               FROM tm_monitoring_issues WHERE created_at >= NOW() - (%s * INTERVAL '1 day')
-                              GROUP BY issue ORDER BY n DESC""", (days,)).fetchall()
-        db.execute("RELEASE SAVEPOINT tm_live_issues")
+        with E.savepoint(db, 'tm_live_issues'):
+            rows = db.execute("""SELECT issue, SUM(occurrences) AS n, MAX(last_at) AS last_at,
+                                        (ARRAY_AGG(last_transaction_id ORDER BY id DESC))[1:10] AS sample
+                                   FROM tm_monitoring_issues WHERE created_at >= NOW() - (%s * INTERVAL '1 day')
+                                  GROUP BY issue ORDER BY n DESC""", (days,)).fetchall()
         return [dict(r) for r in rows]
     except Exception:
-        try:
-            db.execute("ROLLBACK TO SAVEPOINT tm_live_issues")
-            db.execute("RELEASE SAVEPOINT tm_live_issues")
-        except Exception:
-            pass
-        return None
+        return None             # table not there yet (migration not run)
 
 
 @aml_bp.route('/tm-rules/history/<code>')
