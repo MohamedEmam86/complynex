@@ -17,14 +17,18 @@
   {% if problems %}
   <div class="alert alert-danger">
     <div class="fw-bold mb-1"><i class="bi bi-x-octagon me-1"></i>{{ _('This campaign cannot be sent yet:') }}</div>
-    <ul class="mb-0">{% for code, msg in problems %}<li>{{ _(msg) }}</li>{% endfor %}</ul>
+    <ul class="mb-0">{% for code, msg in problems %}<li>{{ msg }}</li>{% endfor %}</ul>
   </div>
   {% else %}
   <div class="alert alert-success"><i class="bi bi-check-circle me-1"></i>{{ _('Authorisation complete and valid today for all recipients.') }}</div>
   {% endif %}
 
   {% if auth and auth.revoked_at %}
-  <div class="alert alert-warning small">{{ _('Revoked on %(d)s: %(r)s', d=auth.revoked_at.strftime('%Y-%m-%d %H:%M'), r=auth.revoke_reason or '') }}</div>
+  <div class="alert alert-warning small">{{ _('Revoked on %(d)s: %(r)s', d=auth.revoked_at.strftime('%Y-%m-%d %H:%M'), r=auth.revoke_reason or '') }}
+    <div class="mt-1">{{ _('A revoked authorisation cannot be edited back. Saving the form below records a NEW authorisation and requires a new signed document.') }}</div></div>
+  {% endif %}
+  {% if doc_locked %}
+  <div class="alert alert-secondary small">{{ _('A signed document is attached. To change the scope, domains or validity dates you must record a NEW authorisation and upload a new signed document.') }}</div>
   {% endif %}
 
   <div class="card border-0 shadow-sm mb-3">

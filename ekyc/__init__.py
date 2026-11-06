@@ -37,10 +37,25 @@ def ekyc_enabled():
         return True          # never lock people out of eKYC because the switch could not be read
 
 
+# Customer-facing and machine-to-machine entry points under /ekyc. When the
+# package is switched off these must NOT answer 404: a customer already holding
+# a verification link, or a vendor posting a webhook/callback, should get a
+# "temporarily unavailable" (503) so the link is understood as paused rather
+# than gone, and a vendor keeps retrying instead of treating it as permanent.
+# Staff/console routes stay hidden (404) when the package is off.
+_EKYC_PUBLIC_PREFIXES = ('/ekyc/verify', '/ekyc/webhook', '/ekyc/webhooks',
+                         '/ekyc/callback', '/ekyc/callbacks', '/ekyc/vendor')
+
+
 @ekyc_bp.before_request
 def _ekyc_package_guard():
     if not ekyc_enabled():
-        from flask import abort
+        from flask import abort, request, Response
+        path = (request.path or '').rstrip('/')
+        if any(path == p or path.startswith(p + '/') for p in _EKYC_PUBLIC_PREFIXES):
+            # temporarily unavailable, not gone: tell the caller to retry later
+            return Response('eKYC is temporarily unavailable.', status=503,
+                            headers={'Retry-After': '3600'}, mimetype='text/plain')
         abort(404)
 
 

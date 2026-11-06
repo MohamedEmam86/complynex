@@ -184,18 +184,47 @@ def workbook(rep):
     """Bilingual Excel workbook of the period report (one sheet per section)."""
     from openpyxl import Workbook
     from openpyxl.styles import Font
+    from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+
+    # Excel/CSV formula injection: a string a user controls (an evidence note, a
+    # topic name …) that starts with one of these is run as a formula when the
+    # workbook is opened. Any such string is stored as literal text instead.
+    _FORMULA_LEAD = ('=', '+', '-', '@', '\t', '\r')
+
+    def _clean(v):
+        if isinstance(v, str):
+            # drop control characters openpyxl would otherwise reject outright
+            v = ILLEGAL_CHARACTERS_RE.sub('', v)
+        return '' if v is None else v
+
+    def _protect(cell):
+        # literal text, never a formula, and quote-prefixed so Excel shows it as
+        # text (belt and braces against formula injection).
+        cell.data_type = 's'
+        try:
+            cell.quotePrefix = True
+        except Exception:
+            pass
 
     def sheet(wb, title, header, rows):
         ws = wb.create_sheet(title)
-        ws.append(header)
+        ws.append([_clean(h) for h in header])
         for c in ws[1]:
             c.font = Font(bold=True)
         for r in rows:
-            ws.append(['' if v is None else v for v in r])
+            ws.append([_clean(v) for v in r])
+            for cell in ws[ws.max_row]:
+                if isinstance(cell.value, str) and cell.value[:1] in _FORMULA_LEAD:
+                    _protect(cell)
         for col in ws.columns:
             ws.column_dimensions[col[0].column_letter].width = max(
                 12, min(60, max(len(str(c.value or '')) for c in col) + 2))
         return ws
+
+    # scores are shown to 2 decimals, the same precision the printable (PDF)
+    # report uses, so the two never disagree on a figure.
+    def _r2(v):
+        return round(float(v), 2) if v is not None else None
 
     wb = Workbook()
     wb.remove(wb.active)
@@ -205,7 +234,7 @@ def workbook(rep):
         ('Framework / الإطار', fw.get('name')),
         ('Reporting period / فترة التقرير', f"{p['label']} ({p['start_date']} - {p['end_date']})"),
         ('Period status / حالة الفترة', p.get('status')),
-        ('Overall score (1-5) / الدرجة الكلية', s.get('overall_score')),
+        ('Overall score (1-5) / الدرجة الكلية', _r2(s.get('overall_score'))),
         ('Overall score (out of 100) / الدرجة من 100', s.get('overall_pct_100')),
         ('Rating / التقييم', (s.get('overall_rating') or (None,))[0]),
         ('Indicators answered / المؤشرات المجاب عنها', f"{c['indicators_answered']} / {c['indicators_total']}"),
@@ -216,11 +245,11 @@ def workbook(rep):
     ])
     sheet(wb, 'Pillars', ['Pillar / الركيزة', 'Pillar (AR)', 'Weight / الوزن', 'Score (1-5) / الدرجة', 'Rating / التقييم',
                           'Answered / المجاب', 'Indicators / المؤشرات', 'Completeness % / الاكتمال'],
-          [(x['name'], x.get('name_ar'), x['weight'], x['score'], (x['rating'] or (None,))[0], x['answered_count'],
+          [(x['name'], x.get('name_ar'), x['weight'], _r2(x['score']), (x['rating'] or (None,))[0], x['answered_count'],
             x['indicator_count'], x['completeness_pct']) for x in s['pillars']])
     sheet(wb, 'Indicators', ['Pillar / الركيزة', 'Code / الرمز', 'Indicator / المؤشر', 'Indicator (AR)', 'Weight / الوزن',
                              'Score (1-5) / الدرجة', 'Maturity / مستوى النضج', 'Evidence notes / ملاحظات الدليل'],
-          [(pl['name'], i['code'], i['name'], i.get('name_ar'), i['weight'], i['score'],
+          [(pl['name'], i['code'], i['name'], i.get('name_ar'), i['weight'], _r2(i['score']),
             rep['maturity_labels'].get(int(round(i['score']))) if i['score'] is not None else None, i.get('evidence_notes'))
            for pl in rep['pillars'] for i in pl['indicators']])
     sheet(wb, 'Materiality', ['Topic / الموضوع', 'Topic (AR)', 'Category / الفئة', 'GRI ref.', 'Stakeholder importance / أهمية أصحاب المصلحة',

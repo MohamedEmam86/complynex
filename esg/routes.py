@@ -479,17 +479,25 @@ def disclosure_update(item_id):
 # ---------------------------------------------------------------------------
 
 def _report_period():
+    """(period, REP, invalid_pid). A period_id that does not exist is reported
+    as invalid (invalid_pid=True) rather than silently falling back to the
+    current period, which would show a different period than the one asked for."""
     from esg import report as REP
     pid = request.args.get('period_id', type=int)
-    period = query_db("SELECT * FROM esg_reporting_periods WHERE id = %s", (pid,), one=True) if pid else None
-    return (period or _current_period()), REP
+    if pid:
+        period = query_db("SELECT * FROM esg_reporting_periods WHERE id = %s", (pid,), one=True)
+        return period, REP, (period is None)
+    return _current_period(), REP, False
 
 
 @esg_bp.route('/report')
 @login_required
 @permission_required('esg')
 def report():
-    period, REP = _report_period()
+    period, REP, invalid = _report_period()
+    if invalid:
+        flash(_('That reporting period does not exist.'), 'warning')
+        return redirect(url_for('esg.report'))
     if not period:
         flash(_('No reporting period found.'), 'warning')
         return redirect(url_for('esg.dashboard'))
@@ -503,7 +511,10 @@ def report():
 def report_export():
     import io
     from flask import send_file
-    period, REP = _report_period()
+    period, REP, invalid = _report_period()
+    if invalid:
+        flash(_('That reporting period does not exist.'), 'warning')
+        return redirect(url_for('esg.report'))
     if not period:
         flash(_('No reporting period found.'), 'warning')
         return redirect(url_for('esg.dashboard'))

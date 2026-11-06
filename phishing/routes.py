@@ -46,6 +46,11 @@ from database.db import get_db, query_db, execute_db
 from utils.decorators import permission_required
 from utils.file_validator import validate_file, secure_filename_strict
 
+try:
+    from psycopg2.errors import UniqueViolation as _UniqueViolation
+except Exception:  # pragma: no cover - psycopg2 missing in a non-PG test env
+    _UniqueViolation = None
+
 UPLOAD_FOLDER = 'static/uploads/phishing'
 
 
@@ -542,7 +547,7 @@ def campaign_detail(campaign_id):
     return render_template('phishing/campaign_detail.html',
                            campaign=campaign, recipients=recipients,
                            events=events, stats=stats, auth=auth,
-                           auth_problems=_auth_problems(campaign_id, auth))
+                           auth_problems=_render_problems(_auth_problems(campaign_id, auth)))
 
 
 # ── RECIPIENTS ─────────────────────────────────────────────────────────────────
@@ -575,7 +580,7 @@ def manage_recipients(campaign_id):
                 rec_email = line
                 rec_name  = rec_email.split('@')[0].title()
 
-            if '@' not in rec_email:
+            if not AUTHZ.valid_email(rec_email):
                 errors.append(f'Invalid email: {line}')
                 continue
 
@@ -631,9 +636,9 @@ def send_campaign(campaign_id):
     auth = _authorisation(campaign_id)
     blockers = _auth_problems(campaign_id, auth)
     if blockers:
-        for _code, msg in blockers[:6]:
-            flash(gettext(msg), 'danger')
-        _log_audit('send_blocked', f'Campaign {campaign_id}: ' + '; '.join(c for c, _m in blockers))
+        for _code, msg in _render_problems(blockers)[:6]:
+            flash(msg, 'danger')
+        _log_audit('send_blocked', f'Campaign {campaign_id}: ' + '; '.join(c for c, _k, _p in blockers))
         return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
     execute_db('UPDATE phishing_campaigns SET authorised_send_check = %s WHERE id = %s',
                (json.dumps({'authorisation_id': auth['id'], 'checked_at': datetime.now().isoformat(timespec='seconds'),
@@ -702,6 +707,13 @@ def delete_campaign(campaign_id):
         abort(404)
     if campaign['status'] == 'sent':
         flash(gettext('Cannot delete a sent campaign.'), 'danger')
+        return redirect(url_for('phishing.campaign_detail', campaign_id=campaign_id))
+    # Finding 8: a recorded authorisation (and its signed document) is evidence —
+    # the FK is ON DELETE RESTRICT, so deleting the campaign would fail anyway.
+    # Refuse explicitly and keep the authorisation history intact.
+    if _has_any_authorisation(campaign_id):
+        flash(gettext('This campaign has a recorded written authorisation and cannot be deleted; '
+                      'its authorisation history is kept as evidence.'), 'danger')
         return redirect(url_for('phishing.campaign_detail', campaign_id=campaign_id))
 
     execute_db('DELETE FROM phishing_events     WHERE campaign_id = %s', (campaign_id,))
@@ -835,6 +847,13 @@ def export_reports():
            ORDER BY c.created_at DESC, r.recipient_name ASC"""
     )
 
+    def _csv_safe(v):
+        # CSV formula injection: a cell a user controls (a campaign or recipient
+        # name) that begins with = + - @ tab cr is run as a formula when the file
+        # is opened in a spreadsheet. Prefix it with a quote so it stays text.
+        s = '' if v is None else str(v)
+        return "'" + s if s[:1] in ('=', '+', '-', '@', '\t', '\r') else s
+
     output = io.StringIO()
     output.write('﻿')  # BOM for Excel compatibility
     writer = csv.writer(output)
@@ -848,11 +867,11 @@ def export_reports():
 
     for r in rows:
         writer.writerow([
-            r['campaign_name'],
+            _csv_safe(r['campaign_name']),
             (r['campaign_status'] or '').title(),
             r['campaign_sent_at'].strftime('%Y-%m-%d %H:%M') if r['campaign_sent_at'] else '',
-            r['recipient_name'] or '',
-            r['recipient_email'] or '',
+            _csv_safe(r['recipient_name']),
+            _csv_safe(r['recipient_email']),
             r['sent_at'].strftime('%Y-%m-%d %H:%M') if r['sent_at'] else '',
             r['clicked_at'].strftime('%Y-%m-%d %H:%M') if r['clicked_at'] else '',
             r['submitted_at'].strftime('%Y-%m-%d %H:%M') if r['submitted_at'] else '',
@@ -873,8 +892,54 @@ def export_reports():
 
 # ── WRITTEN AUTHORISATION (Phase 7, H2) ───────────────────────────────────────
 
+def _cairo_today():
+    """Today's date on the organisation's calendar (Africa/Cairo), so a validity
+    window is judged by the local day, not the server's UTC day."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo('Africa/Cairo')).date()
+    except Exception:
+        return datetime.now().date()
+
+
+def _now():
+    """Current Africa/Cairo wall-clock as a naive datetime, matching
+    _cairo_today(), for the module's TIMESTAMP columns (no surprise UTC shift)."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo('Africa/Cairo')).replace(tzinfo=None)
+    except Exception:
+        current_app.logger.warning('zoneinfo Africa/Cairo unavailable; using server local time')
+        return datetime.now()
+
+
+def _locale_lang():
+    try:
+        from flask_babel import get_locale
+        loc = str(get_locale() or '')
+        return 'ar' if loc.startswith('ar') else 'en'
+    except Exception:
+        return 'en'
+
+
+def _render_problems(problems):
+    """(code, message_key, params) triples -> (code, translated string) pairs."""
+    lang = _locale_lang()
+    return [(item[0], AUTHZ.message(item, lang)) for item in problems]
+
+
 def _authorisation(campaign_id):
-    return query_db('SELECT * FROM phishing_authorisations WHERE campaign_id = %s', (campaign_id,), one=True)
+    """The CURRENT authorisation of the campaign (a revoked one stays current
+    until it is replaced; older, superseded records are kept as evidence)."""
+    return query_db(
+        'SELECT * FROM phishing_authorisations WHERE campaign_id = %s AND is_current = TRUE '
+        'ORDER BY id DESC LIMIT 1', (campaign_id,), one=True)
+
+
+def _has_any_authorisation(campaign_id):
+    row = query_db('SELECT 1 FROM phishing_authorisations WHERE campaign_id = %s LIMIT 1',
+                   (campaign_id,), one=True)
+    return bool(row)
 
 
 def _auth_documents(auth):
@@ -883,11 +948,37 @@ def _auth_documents(auth):
     return list_attachments('phishing', AUTHZ.RECORD_TYPE, auth['id'])
 
 
+def _doc_ever_attached(auth):
+    """Has a signed document EVER been attached to this authorisation record —
+    even one later (soft-)deleted? The lock must survive a delete, so this looks
+    at the stored latch and at generic_attachments ignoring is_deleted."""
+    if not auth:
+        return False
+    if auth.get('document_attached_at'):
+        return True
+    row = query_db(
+        "SELECT 1 FROM generic_attachments WHERE module = 'phishing' AND record_type = %s "
+        "AND record_id = %s LIMIT 1", (AUTHZ.RECORD_TYPE, auth['id']), one=True)
+    return bool(row)
+
+
+def _latch_document(auth):
+    """Record document_attached_at the first time a live signed document exists,
+    so the lock has a server-side timestamp that a later delete cannot clear."""
+    if auth and not auth.get('document_attached_at') and _auth_documents(auth):
+        execute_db('UPDATE phishing_authorisations SET document_attached_at = %s WHERE id = %s',
+                   (_now(), auth['id']))
+        return True
+    return False
+
+
 def _auth_problems(campaign_id, auth=None):
+    """Raw (code, message_key, params) triples — pass through _render_problems()
+    before showing them to a user."""
     auth = auth if auth is not None else _authorisation(campaign_id)
     emails = [r['recipient_email'] for r in (query_db(
         'SELECT recipient_email FROM phishing_recipients WHERE campaign_id = %s', (campaign_id,)) or [])]
-    return AUTHZ.problems(auth, emails, len(_auth_documents(auth)))
+    return AUTHZ.problems(auth, emails, len(_auth_documents(auth)), today=_cairo_today())
 
 
 @phishing_bp.route('/campaign/<int:campaign_id>/authorisation', methods=['GET', 'POST'])
@@ -898,38 +989,97 @@ def campaign_authorisation(campaign_id):
     if not campaign:
         abort(404)
     auth = _authorisation(campaign_id)
+    # latch the document timestamp so the lock cannot be cleared by deleting the PDF
+    if _latch_document(auth):
+        auth = _authorisation(campaign_id)
     if request.method == 'POST':
         if campaign['status'] == 'sent':
             flash(gettext('The campaign was already sent; its authorisation can no longer be changed.'), 'warning')
             return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
-        f = {k: (request.form.get(k) or '').strip() or None for k in (
-            'organisation', 'authorised_by_name', 'authorised_by_title', 'authorised_on', 'scope',
-            'allowed_domains', 'valid_from', 'valid_to', 'notes')}
+        _cols = ('organisation', 'authorised_by_name', 'authorised_by_title', 'authorised_on', 'scope',
+                 'allowed_domains', 'valid_from', 'valid_to', 'notes')
+        f = {k: (request.form.get(k) or '').strip() or None for k in _cols}
         for k in ('authorised_on', 'valid_from', 'valid_to'):
             if f[k] and not AUTHZ._d(f[k]):
                 flash(gettext('Dates must be in the form YYYY-MM-DD. Nothing was saved.'), 'danger')
                 return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
+        # allowed target domains must identify the organisation: reject free
+        # webmail, single-label / public / IP / wildcard domains (finding 4, V4).
         if f['allowed_domains']:
-            f['allowed_domains'] = ', '.join(sorted(AUTHZ.domains(f['allowed_domains'])))
-        cols = list(f)
-        if auth:
+            dset = AUTHZ.domains(f['allowed_domains'])
+            bad = AUTHZ.invalid_domains(dset)
+            if bad:
+                flash(gettext('These are not valid target domains (free webmail, public suffixes, IP addresses '
+                              'and "*" are not allowed): %(bad)s. Nothing was saved.', bad=', '.join(bad)), 'danger')
+                return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
+            f['allowed_domains'] = ', '.join(sorted(dset))
+
+        # B1 + finding 7: a revoked authorisation is final, and once a signed
+        # document has EVER been attached (even if later deleted) the record is
+        # locked. A locked record is never edited back — re-authorisation is a
+        # new record (empty attachment set, so a new signed document must be
+        # uploaded). Old record, its documents, revoke reason and audit kept.
+        locked = bool(auth) and (bool(auth.get('revoked_at')) or _doc_ever_attached(auth))
+
+        # SHOULD-FIX 4: saving a locked record with NO change must not spawn a
+        # new record (which would just demand a pointless re-upload). Compare
+        # date fields by parsed value, the rest as trimmed text.
+        def _same(c):
+            av, fv = auth.get(c), f[c]
+            if c in ('authorised_on', 'valid_from', 'valid_to'):
+                return AUTHZ._d(av) == AUTHZ._d(fv)
+            return ((str(av).strip() or None) if av is not None else None) == fv
+        if auth and locked and all(_same(c) for c in _cols):
+            flash(gettext('No changes to save. To change a locked authorisation, record a new one '
+                          'and upload a new signed document.'), 'info')
+            return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
+
+        cols = list(_cols)
+        if auth and not locked:
             execute_db('UPDATE phishing_authorisations SET ' + ', '.join(f'{c} = %s' for c in cols) +
-                       ', updated_by = %s, updated_at = %s, revoked_at = NULL, revoked_by = NULL, revoke_reason = NULL '
-                       'WHERE id = %s', tuple(f[c] for c in cols) + (current_user.id, datetime.now(), auth['id']))
+                       ', updated_by = %s, updated_at = %s WHERE id = %s',
+                       tuple(f[c] for c in cols) + (current_user.id, _now(), auth['id']))
+            flash(gettext('Authorisation saved. Attach the signed document below.'), 'success')
         else:
-            execute_db('INSERT INTO phishing_authorisations (campaign_id, ' + ', '.join(cols) +
-                       ', recorded_by, recorded_at) VALUES (%s, ' + ', '.join(['%s'] * len(cols)) + ', %s, %s)',
-                       (campaign_id,) + tuple(f[c] for c in cols) + (current_user.id, datetime.now()))
+            # SHOULD-FIX 3: demote the old current row and insert the new one in
+            # ONE transaction, with the campaign row locked (FOR UPDATE) so two
+            # concurrent saves cannot both insert a current row; the partial
+            # unique index is the backstop (catch UniqueViolation -> flash).
+            db = get_db()
+            try:
+                db.execute('SELECT id FROM phishing_campaigns WHERE id = %s FOR UPDATE', (campaign_id,))
+                if auth:
+                    db.execute('UPDATE phishing_authorisations SET is_current = FALSE '
+                               'WHERE campaign_id = %s AND is_current = TRUE', (campaign_id,))
+                db.execute('INSERT INTO phishing_authorisations (campaign_id, ' + ', '.join(cols) +
+                           ', is_current, recorded_by, recorded_at) VALUES (%s, ' +
+                           ', '.join(['%s'] * len(cols)) + ', TRUE, %s, %s)',
+                           (campaign_id,) + tuple(f[c] for c in cols) + (current_user.id, _now()))
+                db.commit()
+            except Exception as e:
+                db.rollback()
+                if _UniqueViolation is not None and isinstance(e, _UniqueViolation):
+                    flash(gettext('The authorisation was changed in another tab. Please review and try again.'), 'warning')
+                    return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
+                raise
+            if auth:
+                flash(gettext('A new authorisation record was created (the previous one is revoked or already '
+                              'has a signed document on file). Upload the new signed document below.'), 'success')
+            else:
+                flash(gettext('Authorisation saved. Attach the signed document below.'), 'success')
         _log_audit('authorisation_saved', f'Campaign {campaign_id}: authorised by {f["authorised_by_name"]} '
                                           f'({f["organisation"]}), {f["valid_from"]} to {f["valid_to"]}, '
-                                          f'domains {f["allowed_domains"]}')
-        flash(gettext('Authorisation saved. Attach the signed document below.'), 'success')
+                                          f'domains {f["allowed_domains"]}'
+                                          + (' [new record]' if (not auth or locked) else ''))
         return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
+    auth_docs = _auth_documents(auth)
     return render_template('phishing/authorisation.html', campaign=campaign, auth=auth,
-                           problems=_auth_problems(campaign_id, auth) if auth else AUTHZ.problems(None, [], 0),
+                           problems=_render_problems(_auth_problems(campaign_id, auth) if auth
+                                                     else AUTHZ.problems(None, [], 0, today=_cairo_today())),
+                           doc_locked=bool(auth) and _doc_ever_attached(auth) and not auth.get('revoked_at'),
                            attach_module='phishing', attach_record_type=AUTHZ.RECORD_TYPE,
-                           attach_record_id=auth['id'] if auth else None, attach_items=_auth_documents(auth),
-                           attach_can_edit=bool(auth) and campaign['status'] != 'sent')
+                           attach_record_id=auth['id'] if auth else None, attach_items=auth_docs,
+                           attach_can_edit=bool(auth) and campaign['status'] != 'sent' and not auth.get('revoked_at'))
 
 
 @phishing_bp.route('/campaign/<int:campaign_id>/authorisation/revoke', methods=['POST'])
@@ -944,7 +1094,7 @@ def revoke_authorisation(campaign_id):
         flash(gettext('Please give the reason for revoking the authorisation.'), 'danger')
         return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))
     execute_db('UPDATE phishing_authorisations SET revoked_at = %s, revoked_by = %s, revoke_reason = %s WHERE id = %s',
-               (datetime.now(), current_user.id, reason[:1000], auth['id']))
+               (_now(), current_user.id, reason[:1000], auth['id']))
     _log_audit('authorisation_revoked', f'Campaign {campaign_id}: {reason[:200]}')
     flash(gettext('Authorisation revoked. The campaign cannot be sent until a new authorisation is recorded.'), 'warning')
     return redirect(url_for('phishing.campaign_authorisation', campaign_id=campaign_id))

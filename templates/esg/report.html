@@ -77,7 +77,7 @@
       {% for i in pl.indicators %}
       <tr class="{{ 'table-warning' if i.score is none }}"><td>{{ i.code }}</td><td>{{ nm(i) }}</td><td class="text-end">{{ i.weight }}</td>
           <td class="text-end">{{ i.score if i.score is not none else '—' }}</td>
-          <td>{{ _(rep.maturity_labels.get(i.score|round|int)) if i.score is not none else _('Not answered') }}</td>
+          <td>{% if i.score is not none and rep.maturity_labels.get(i.score|round|int) %}{{ _(rep.maturity_labels.get(i.score|round|int)) }}{% else %}{{ _('Not answered') }}{% endif %}</td>
           <td class="small">{{ i.evidence_notes or '' }}</td></tr>
       {% endfor %}
     </tbody>
