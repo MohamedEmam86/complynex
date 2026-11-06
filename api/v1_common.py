@@ -274,7 +274,8 @@ def payment_decision(parties):
                 continue
             if tier == 'CONFIRMED' and code in FREEZE_CODES:
                 decision = 'BLOCK'
-                reasons.append({'party': p.get('role'), 'code': 'confirmed_freeze', 'list_type': h.get('list_type'),
+                # code renamed from 'confirmed_freeze' (deprecated alias, same meaning); decision stays BLOCK
+                reasons.append({'party': p.get('role'), 'code': 'confirmed_listed_escalate', 'list_type': h.get('list_type'),
                                 'en': 'Confirmed hit on a sanctions / terrorist / asset-freeze / prohibition list: '
                                       'escalate to the MLRO; any action on the relationship is decided outside ComplyNex.',
                                 'ar': 'تطابق مؤكد على قايمة عقوبات / إرهاب / تجميد / منع من التصرف: صعّد لمسؤول '

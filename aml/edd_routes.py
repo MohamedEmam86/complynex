@@ -157,6 +157,9 @@ HR_MSG_AR = {
     'Country not found.': 'الدولة غير موجودة.',
     'This country is already on the list: edit or reactivate it instead.': 'الدولة موجودة بالفعل في القائمة: عدّلها أو أعد تفعيلها.',
     'Another row already has this code or name.': 'يوجد صف آخر بنفس الرمز أو الاسم.',
+    'Deactivate the country before deleting it.': 'أوقف الدولة أولاً قبل حذفها.',
+    'The country is still referenced and cannot be deleted; keep it deactivated.':
+        'الدولة ما زالت مرتبطة ببيانات أخرى ولا يمكن حذفها؛ اتركها موقوفة.',
 }
 
 
@@ -188,15 +191,16 @@ def high_risk_countries():
             return redirect(here)
         action = request.form.get('action')
         rid = request.form.get('id', type=int)
+        left = None
         try:
             if action == 'add':
                 HR.add(request.form, current_user.id, db)
             elif action == 'update' and rid:
                 HR.update(rid, request.form, current_user.id, db)
             elif action in ('activate', 'deactivate') and rid:
-                HR.set_active(rid, action == 'activate', request.form, current_user.id, db)
+                left = HR.set_active(rid, action == 'activate', request.form, current_user.id, db)
             elif action == 'delete' and rid:
-                HR.delete(rid, request.form, current_user.id, db)
+                left = HR.delete(rid, request.form, current_user.id, db)
             elif action == 'reassess':
                 n = 0
                 for r in db.execute("SELECT id FROM customers WHERE COALESCE(status, '') NOT IN ('CLOSED')").fetchall():
@@ -215,6 +219,10 @@ def high_risk_countries():
             if action == 'update' and rid:
                 return redirect(url_for('aml.high_risk_countries', edit=rid))
             return redirect(here)
+        if left == 0:
+            flash(L('No country is active on the list any more: the customer HIGH floor and rule TM004 now use no '
+                    'country at all.', 'لم تعد أي دولة نشطة في القائمة: الحد الأدنى للتصنيف العالي وقاعدة TM004 لا '
+                    'يستخدمان أي دولة الآن.'), 'warning')
         flash(L('High-risk country list updated. Customer ratings change when customers are re-assessed (button '
                 'above) or next edited; monitoring uses the new list on its next run.',
                 'تم تحديث قائمة الدول عالية المخاطر. تتغير تصنيفات العملاء عند إعادة تقييمهم (الزر أعلاه) أو عند تعديلهم؛ '

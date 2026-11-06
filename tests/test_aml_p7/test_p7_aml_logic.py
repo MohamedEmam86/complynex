@@ -50,10 +50,15 @@ class TestRiskModel:
         probs = ' '.join(R.validate(m))
         assert 'bands' in probs and 'country source' in probs and 'HIGH' in probs and 'reminders' in probs
 
-    def test_home_country_required(self):
+    def test_home_country_required_on_save_only(self):
         m = copy.deepcopy(R.DEFAULT_MODEL)
         m['country']['home_country'] = '  '
-        assert 'the home country is required' in R.validate(m)
+        assert 'the home country is required' in R.validate(m, for_save=True)
+        # a stored model with a blank home country is still valid (read with the default), never replaced
+        assert R.validate(m) == []
+        assert R.merged(m)['country']['home_country'] == 'EGYPT'
+        m['bands'] = {'HIGH': 75, 'MEDIUM': 35}
+        assert R.merged(m)['bands'] == {'HIGH': 75, 'MEDIUM': 35}
 
 
 # --------------------------------------------------------------------------- F2 periodic review
@@ -207,7 +212,8 @@ class TestP8:
     def test_safe_back_rejects_other_hosts(self):
         from aml.p7_routes import _safe_back
         assert _safe_back('/aml/periodic-reviews?state=overdue', '/d') == '/aml/periodic-reviews?state=overdue'
-        for bad in ('//evil.example', 'https://evil.example', '/\\evil.example', '', None, 'aml/x', '/x\r\nLocation: y'):
+        for bad in ('//evil.example', 'https://evil.example', '/\\evil.example', '', None, 'aml/x', '/x\r\nLocation: y',
+                    '/x\ty', '/x\x00y', '/x\x7fy'):
             assert _safe_back(bad, '/d') == '/d'
 
     def test_high_risk_country_form(self):
@@ -225,3 +231,24 @@ class TestP8:
             HR.reason_of({'reason': 'no'})
         assert set(HR.CATEGORY_CODES) >= {'CALL_FOR_ACTION', 'INCREASED_MONITORING', 'INTERNAL', 'OTHER'}
         assert [k for k, *_r in HR.IMPACT] == ['floor', 'tm004', 'model', 'radar']
+
+
+class TestNoFreeze:
+    """Owner decision: ComplyNex only alerts and escalates."""
+
+    def test_screening_texts(self):
+        from screening import result_view as rv
+        from screening import workflow as wf
+        for t in (rv.ESCALATE_CONFIRMED, rv.ESCALATE_POTENTIAL, rv.SERIOUS_STRICT):
+            assert 'freeze funds' not in t.lower() and 'freeze without' not in t.lower() and 'MLRO' in t
+        for code in ('FREEZE_ESCALATE', 'FREEZE_REPORT'):
+            for tier in ('CONFIRMED', 'POTENTIAL'):
+                a = wf.action_for({'source': 'un' if code == 'FREEZE_ESCALATE' else 'internal_blacklist',
+                                   'decision': {'tier': tier}}, wf.DEFAULT_TABLE)
+                assert a['code'] == code and 'MLRO' in a['step']['en'] and '{list}' not in a['step']['en']
+                assert 'freeze funds' not in a['step']['en'].lower() and 'جمّد' not in a['step']['ar']
+
+    def test_api_reason_code(self):
+        from api.v1_common import payment_decision
+        d, reasons = payment_decision([{'role': 'payer', 'hits': [{'tier': 'CONFIRMED', 'action': {'code': 'FREEZE_ESCALATE'}}]}])
+        assert d == 'BLOCK' and reasons[0]['code'] == 'confirmed_listed_escalate' and 'MLRO' in reasons[0]['en']

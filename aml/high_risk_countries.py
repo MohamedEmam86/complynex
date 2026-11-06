@@ -205,15 +205,26 @@ def add(form, user_id, db=None):
     vals['is_active'] = 1
     if _duplicate(db, vals):
         raise CountryError('This country is already on the list: edit or reactivate it instead.')
-    rid = db.execute("""INSERT INTO high_risk_countries (country_code, country_name, name_ar, aliases, risk_category,
-                        source, effective_date, is_active, notes, updated_by, updated_at)
-                        VALUES (%(country_code)s, %(country_name)s, %(name_ar)s, %(aliases)s, %(risk_category)s,
-                                %(source)s, %(effective_date)s, %(is_active)s, %(notes)s, %(uid)s, now()) RETURNING id""",
-                     dict(vals, uid=user_id)).fetchone()['id']
+    try:
+        rid = _insert(db, vals, user_id)
+    except Exception as ex:
+        import psycopg2
+        if not isinstance(ex, psycopg2.IntegrityError):
+            raise
+        db.rollback()
+        raise CountryError('This country is already on the list: edit or reactivate it instead.')
     db.commit()
     _changed()
     _audit(user_id, rid, f'added {vals["country_code"]} {vals["country_name"]} ({vals["risk_category"]}): {reason}')
     return rid
+
+
+def _insert(db, vals, user_id):
+    return db.execute("""INSERT INTO high_risk_countries (country_code, country_name, name_ar, aliases, risk_category,
+                        source, effective_date, is_active, notes, updated_by, updated_at)
+                        VALUES (%(country_code)s, %(country_name)s, %(name_ar)s, %(aliases)s, %(risk_category)s,
+                                %(source)s, %(effective_date)s, %(is_active)s, %(notes)s, %(uid)s, now()) RETURNING id""",
+                      dict(vals, uid=user_id)).fetchone()['id']
 
 
 def update(row_id, form, user_id, db=None):
@@ -232,7 +243,13 @@ def update(row_id, form, user_id, db=None):
                             f'after {_row_text(vals)}')
 
 
+def active_count(db=None):
+    db = db or get_db()
+    return int(db.execute("SELECT count(*) AS n FROM high_risk_countries WHERE is_active = 1").fetchone()['n'])
+
+
 def set_active(row_id, active, form, user_id, db=None):
+    """Returns the number of active countries left."""
     db = db or get_db()
     old = get(row_id, db)
     reason = reason_of(form)
@@ -242,16 +259,28 @@ def set_active(row_id, active, form, user_id, db=None):
     _changed()
     _audit(user_id, row_id, f'{"reactivated" if active else "deactivated"} {old["country_code"]} {old["country_name"]}: '
                             f'{reason}')
+    return active_count(db)
 
 
 def delete(row_id, form, user_id, db=None):
+    """Delete an INACTIVE row (deactivate it first). Returns the number of active countries left."""
     db = db or get_db()
     old = get(row_id, db)
     reason = reason_of(form)
-    db.execute("DELETE FROM high_risk_countries WHERE id = %s", (row_id,))
-    db.commit()
+    if old.get('is_active') not in (0, None, False):
+        raise CountryError('Deactivate the country before deleting it.')
+    try:
+        db.execute("DELETE FROM high_risk_countries WHERE id = %s", (row_id,))
+        db.commit()
+    except Exception as ex:
+        import psycopg2
+        if not isinstance(ex, psycopg2.IntegrityError):
+            raise
+        db.rollback()
+        raise CountryError('The country is still referenced and cannot be deleted; keep it deactivated.')
     _changed()
     _audit(user_id, row_id, f'deleted {old["country_code"]} {old["country_name"]}: {reason}; row was {_row_text(old)}')
+    return active_count(db)
 
 
 def impact_status(db=None):

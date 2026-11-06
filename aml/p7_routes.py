@@ -87,7 +87,7 @@ def _is_mlro():
 def _safe_back(value, default):
     """A local path to go back to; anything else (other hosts, '//host', '\\host') -> default."""
     v = (value or '').strip()
-    if not v.startswith('/') or v.startswith('//') or '\\' in v or any(ch in v for ch in '\r\n'):
+    if not v.startswith('/') or v.startswith('//') or '\\' in v or any(ord(ch) < 32 or ord(ch) == 127 for ch in v):
         return default
     return v
 
@@ -112,7 +112,7 @@ def risk_scoring():
             return redirect(url_for('aml.risk_scoring'))
         try:
             draft = RC.from_form(request.form)
-            probs = aml_risk.validate(draft)
+            probs = aml_risk.validate(draft, for_save=True)
             if probs:
                 raise RC.RiskModelError('; '.join(probs))
             if request.form.get('action') == 'preview':
@@ -165,14 +165,16 @@ def record_periodic_review(customer_id):
 
 HITS_LIMIT = 300
 # Hits still to act on: open (not resolved), or confirmed true matches whose STR case has no MLRO
-# decision yet. A hit resolved as a false positive / PEP, or a true match whose linked case the
-# MLRO has decided (or closed), is no longer on the list.
+# decision yet. A hit resolved as a false positive / PEP, or a TRUE MATCH whose linked case the
+# MLRO has decided (or closed), is no longer on the list. An open hit always stays.
+_TRUE_MATCH = "COALESCE(q.resolution ILIKE 'true match%%', false)"
 _HITS_WHERE = """
-    WHERE (COALESCE(q.status, '') <> 'Resolved' OR q.resolution ILIKE 'true match%%')
-      AND NOT EXISTS (SELECT 1 FROM aml_sar_links l JOIN suspicious_activities s ON s.id = l.sar_id
-                       WHERE l.link_type = 'screening_hit' AND l.target_id = q.id AND l.unlinked_at IS NULL
-                         AND (s.decision IS NOT NULL AND s.decision <> ''
-                              OR s.investigation_status IN ('NO_STR', 'FILED', 'CLOSED')))"""
+    WHERE (COALESCE(q.status, '') <> 'Resolved' OR """ + _TRUE_MATCH + """)
+      AND NOT (""" + _TRUE_MATCH + """ AND COALESCE(q.status, '') = 'Resolved' AND EXISTS (
+               SELECT 1 FROM aml_sar_links l JOIN suspicious_activities s ON s.id = l.sar_id
+                WHERE l.link_type = 'screening_hit' AND l.target_id = q.id AND l.unlinked_at IS NULL
+                  AND ((s.decision IS NOT NULL AND s.decision <> '')
+                       OR s.investigation_status IN ('NO_STR', 'FILED', 'CLOSED'))))"""
 
 
 def _open_hits(db, limit=HITS_LIMIT):
@@ -183,7 +185,7 @@ def _open_hits(db, limit=HITS_LIMIT):
         SELECT q.id, q.entity_name, q.match_name, q.list_source, q.match_score, q.status, q.resolution,
                q.source_module, q.source_record_id, q.created_at
           FROM screening_queue q""" + _HITS_WHERE + """
-         ORDER BY (q.resolution ILIKE 'true match%%') DESC, q.created_at ASC, q.id ASC
+         ORDER BY """ + _TRUE_MATCH + """ DESC, q.created_at ASC, q.id ASC
          LIMIT %s""", (limit,)).fetchall()]
     if not rows:
         return rows, int(total or 0)
@@ -241,7 +243,14 @@ def open_case_from_hit(queue_id):
                           AND unlinked_at IS NULL ORDER BY id LIMIT 1""", (queue_id,)).fetchone()
         return r['sar_id'] if r else None
 
-    db.execute("SELECT pg_advisory_lock(%s, %s)", (HIT_CASE_LOCK, queue_id))
+    got = db.execute("SELECT pg_try_advisory_lock(%s, %s) AS ok", (HIT_CASE_LOCK, queue_id)).fetchone()['ok']
+    if not got:
+        found_sid = existing_case()
+        if found_sid:
+            return redirect(url_for('aml.sar_detail', sar_id=found_sid))
+        flash(_L('Someone is opening a case for this hit right now; try again in a moment.',
+                 'يتم فتح حالة لهذه النتيجة الآن بواسطة مستخدم آخر؛ حاول مرة أخرى بعد لحظات.'), 'warning')
+        return redirect(url_for('aml.hits_to_act'))
     try:
         found_sid = existing_case()
         if found_sid:
@@ -267,10 +276,16 @@ def open_case_from_hit(queue_id):
                 raise
             return redirect(url_for('aml.sar_detail', sar_id=found_sid))
         linked = existing_case()
-        if linked and linked != sid:
-            # another path linked the hit first: keep that case, say so on the new one
-            logger.warning('screening hit %s already linked to case %s; case %s opened without the link',
-                           queue_id, linked, sid)
+        if linked != sid:
+            # the hit could not be linked to the new case (another path linked it first): the new
+            # case is marked as opened in error so it is not worked twice, and the linked one is shown
+            logger.warning('screening hit %s not linked to new case %s (linked case: %s)', queue_id, sid, linked)
+            SR.mark_opened_in_error(sid, f'the screening hit #{queue_id} is on case #{linked}' if linked
+                                    else f'the screening hit #{queue_id} could not be linked', current_user.id, db=db)
+            if not linked:
+                flash(_L('The case could not be linked to the hit; it was marked as opened in error.',
+                         'تعذر ربط الحالة بالنتيجة؛ تم تمييزها كحالة فُتحت بالخطأ.'), 'danger')
+                return redirect(url_for('aml.hits_to_act'))
             flash(_L('This screening hit is already linked to another case; that case is shown.',
                      'نتيجة الفحص مرتبطة بحالة أخرى بالفعل؛ تم عرض تلك الحالة.'), 'warning')
             return redirect(url_for('aml.sar_detail', sar_id=linked))
@@ -371,6 +386,25 @@ def escalation_view(entry_id):
                            targets=tg, dur=EL.duration_text, names=names, cust=cust, sar=sar,
                            statuses=dict((c, (en, a)) for c, en, a in EL.STATUSES),
                            now=datetime.now().strftime('%Y-%m-%dT%H:%M'))
+
+
+# old addresses of the freeze log (Phase 7) -> the escalation log
+@aml_bp.route('/freeze-log')
+@login_required
+def freeze_log_moved():
+    return redirect(url_for('aml.escalation_log'), code=301)
+
+
+@aml_bp.route('/freeze-log/new')
+@login_required
+def freeze_new_moved():
+    return redirect(url_for('aml.escalation_new', **request.args), code=301)
+
+
+@aml_bp.route('/freeze-log/<int:entry_id>')
+@login_required
+def freeze_view_moved(entry_id):
+    return redirect(url_for('aml.escalation_view', entry_id=entry_id), code=301)
 
 
 # ----------------------------------------------------------------------------- F5 STR draft

@@ -29,6 +29,12 @@
             <td>{% if e.reported_at %}{{ e.reported_at.strftime('%Y-%m-%d %H:%M') }} — {{ e.reported_to }}{% if e.report_reference %} · {{ e.report_reference }}{% endif %}{% else %}<span class="text-danger">{{ L('not yet', 'لم يتم بعد') }}</span>{% endif %}</td>
             <td>{% if e.escalated_at %}{{ dur(tl.to_report_h) }} {{ L('after the escalation', 'بعد التصعيد') }}{% if targets.report %} ({{ L('target', 'المستهدف') }} {{ targets.report }} h){% endif %}{% endif %}</td></tr>
         </table></div></div>
+      {% if e.frozen_at or e.released_at or e.freeze_scope %}
+      <div class="card mb-3 border-secondary"><div class="card-header small text-muted">{{ L('Legacy data (recorded before the escalation log; read only)', 'بيانات قديمة (سُجلت قبل سجل التصعيد؛ للعرض فقط)') }}</div><div class="card-body small text-muted">
+        {% if e.frozen_at %}<div>frozen_at: {{ e.frozen_at }}{% if e.freeze_scope %} · {{ e.freeze_scope }}{% endif %}{% if e.amount_frozen is not none %} · {{ e.amount_frozen }} {{ e.currency or '' }}{% endif %}</div>{% endif %}
+        {% if e.released_at %}<div>released_at: {{ e.released_at }} · {{ e.release_reason or '' }}</div>{% endif %}
+      </div></div>
+      {% endif %}
     </div>
     <div class="col-lg-6">
       {% if current_user.can_edit('aml') %}

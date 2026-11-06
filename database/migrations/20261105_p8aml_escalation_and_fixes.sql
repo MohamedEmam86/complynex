@@ -8,6 +8,23 @@ BEGIN;
 --    currency, released_at, release_reason) stay in place, unused.
 ALTER TABLE aml_freeze_log ADD COLUMN IF NOT EXISTS escalated_at TIMESTAMP;
 ALTER TABLE aml_freeze_log ADD COLUMN IF NOT EXISTS escalated_by INTEGER;
+-- any CHECK constraint on aml_freeze_log.status (none in production on 2026-11-05) is replaced by one
+-- that also allows ESCALATED, keeping the legacy values; found through the catalog, not by name
+DO $$
+DECLARE c RECORD; found BOOLEAN := FALSE;
+BEGIN
+    FOR c IN SELECT con.conname FROM pg_constraint con
+               JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = ANY (con.conkey)
+              WHERE con.conrelid = 'aml_freeze_log'::regclass AND con.contype = 'c' AND a.attname = 'status'
+    LOOP
+        EXECUTE format('ALTER TABLE aml_freeze_log DROP CONSTRAINT %I', c.conname);
+        found := TRUE;
+    END LOOP;
+    IF found THEN
+        ALTER TABLE aml_freeze_log ADD CONSTRAINT aml_freeze_log_status_check
+            CHECK (status IN ('DISCOVERED', 'ESCALATED', 'REPORTED', 'FROZEN', 'RELEASED'));
+    END IF;
+END $$;
 COMMENT ON TABLE aml_freeze_log IS
     'Hit escalation log (discovered -> escalated to the MLRO -> reported). Freeze / release columns are legacy and unused.';
 
@@ -56,7 +73,7 @@ END $$;
 --    characters, ISO) and returns NULL for anything that is not a valid date, so the due dates can be
 --    computed, filtered and limited in SQL.
 CREATE OR REPLACE FUNCTION aml_safe_date(v TEXT) RETURNS DATE
-    LANGUAGE plpgsql IMMUTABLE AS $$
+    LANGUAGE plpgsql STABLE AS $$
 BEGIN
     IF v IS NULL OR v !~ '^\s*[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN
         RETURN NULL;

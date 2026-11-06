@@ -112,9 +112,9 @@ WITH c AS (
            last_review_date, next_review_date, onboarding_date, created_at, status,
            CASE WHEN upper(COALESCE(risk_classification, '')) IN ('HIGH', 'MEDIUM', 'LOW')
                 THEN upper(risk_classification) ELSE 'HIGH' END AS rating_class,
-           aml_safe_date(next_review_date) AS stored_due,
-           COALESCE(aml_safe_date(last_review_date), aml_safe_date(risk_classification_date),
-                    aml_safe_date(onboarding_date), aml_safe_date(created_at)) AS base
+           aml_safe_date(next_review_date::text) AS stored_due,
+           COALESCE(aml_safe_date(last_review_date::text), aml_safe_date(risk_classification_date::text),
+                    aml_safe_date(onboarding_date::text), aml_safe_date(created_at::text)) AS base
       FROM customers
      WHERE upper(COALESCE(status, 'ACTIVE')) NOT IN %(closed)s
 ), d AS (

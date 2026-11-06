@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 CACHE_SECONDS = 60
 _lock = threading.Lock()
 _cache = {'at': 0.0, 'model': None}
-_hr_cache = {'at': 0.0, 'rows': None}
+_hr_cache = {'stamp': None, 'rows': None}
 
 
 class RiskModelError(ValueError):
@@ -57,19 +57,25 @@ def safe_rows(db, sql, args=()):
     if conn is None:
         return [dict(r) for r in db.execute(sql, args).fetchall()]
     cur = conn.cursor()
-    cur.execute('SAVEPOINT aml_safe_read')
     try:
-        cur.execute(sql, args)
-        rows = [dict(r) for r in cur.fetchall()]
-    except Exception:
+        cur.execute('SAVEPOINT aml_safe_read')
         try:
-            cur.execute('ROLLBACK TO SAVEPOINT aml_safe_read')
-            cur.execute('RELEASE SAVEPOINT aml_safe_read')
+            cur.execute(sql, args)
+            rows = [dict(r) for r in cur.fetchall()]
+        except Exception:
+            try:
+                cur.execute('ROLLBACK TO SAVEPOINT aml_safe_read')
+                cur.execute('RELEASE SAVEPOINT aml_safe_read')
+            except Exception:
+                pass
+            raise
+        cur.execute('RELEASE SAVEPOINT aml_safe_read')
+        return rows
+    finally:
+        try:
+            cur.close()
         except Exception:
             pass
-        raise
-    cur.execute('RELEASE SAVEPOINT aml_safe_read')
-    return rows
 
 
 def current_model(db=None, force=False):
@@ -89,9 +95,11 @@ def current_model(db=None, force=False):
         except Exception as ex:
             logger.warning('customer risk model not readable (%s); keeping the last good model or the default', ex)
             model = _cache['model']          # keep the last good model
+        probs = aml_risk.validate(model) if model is not None else []
+        if probs:
+            logger.warning('stored customer risk model is invalid (%s); the default model is used', '; '.join(probs))
+            model = None
         model = aml_risk.merged(model)
-        if aml_risk.validate(model):
-            model = copy.deepcopy(aml_risk.DEFAULT_MODEL)
         _cache['model'], _cache['at'] = model, now
         return copy.deepcopy(model)
 
@@ -102,17 +110,23 @@ def high_risk_rows(db=None):
 
 
 def high_risk_rows_cached(db=None):
-    """Active high-risk country rows, cached like the model (one minute); the
-    high-risk countries page clears the cache on every change."""
-    now = time.time()
-    if _hr_cache['rows'] is not None and now - _hr_cache['at'] < CACHE_SECONDS:
-        return [dict(r) for r in _hr_cache['rows']]
+    """Active high-risk country rows, cached per worker and re-read whenever the table
+    changes (a cheap version stamp — row count and latest update — is checked on every
+    call, so a change made in another worker is seen at once). On a read failure the
+    last good rows are used; with none, the error is raised (never an empty list cached)."""
+    db = db or get_db()
     try:
-        rows = safe_rows(db or get_db(), "SELECT * FROM high_risk_countries WHERE is_active = 1")
+        st = safe_rows(db, "SELECT count(*) AS n, max(updated_at) AS at, max(id) AS mx FROM high_risk_countries")
+        stamp = tuple(st[0].values()) if st else None
+        if _hr_cache['rows'] is not None and stamp == _hr_cache['stamp']:
+            return [dict(r) for r in _hr_cache['rows']]
+        rows = safe_rows(db, "SELECT * FROM high_risk_countries WHERE is_active = 1")
     except Exception as ex:
-        logger.warning('high-risk countries not readable (%s); keeping the last rows read', ex)
-        rows = _hr_cache['rows'] or []
-    _hr_cache['rows'], _hr_cache['at'] = rows, now
+        if _hr_cache['rows'] is None:
+            raise
+        logger.warning('high-risk countries not readable (%s); using the last rows read', ex)
+        return [dict(r) for r in _hr_cache['rows']]
+    _hr_cache['rows'], _hr_cache['stamp'] = rows, stamp
     return [dict(r) for r in rows]
 
 
@@ -172,7 +186,7 @@ def save_model(model, reason, user_id, db=None):
     reason = (reason or '').strip()
     if len(reason) < 15:
         raise RiskModelError('give the reason for the change (at least 15 characters)')
-    probs = aml_risk.validate(model)
+    probs = aml_risk.validate(model, for_save=True)
     if probs:
         raise RiskModelError('; '.join(probs))
     old = current_model(db, force=True)

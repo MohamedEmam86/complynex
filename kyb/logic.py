@@ -225,8 +225,9 @@ def sanctioned_ownership(ubos, states, threshold=OFAC_AGGREGATE_THRESHOLD):
             p = Decimal('0')
         if p <= 0:
             continue                   # control without a recorded stake: not ownership
-        total += p
-        owners.append(u.get('full_name'))
+        total += p                 # a person on two rows holds both stakes (aggregate)
+        if u.get('full_name') not in owners:
+            owners.append(u.get('full_name'))
     return {'pct': total, 'owners': owners, 'deemed_sanctioned': total >= threshold, 'threshold': threshold}
 
 

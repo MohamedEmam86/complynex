@@ -29,7 +29,7 @@
               {% else %}{{ actions[table[t]].label[1] if _ar else actions[table[t]].label[0] }}{% endif %}
             </td>
             <td class="small">{{ actions[defaults[t]].label[1] if _ar else actions[defaults[t]].label[0] }}{% if table[t] != defaults[t] %} <span class="badge bg-warning text-dark">{{ _('changed') }}</span>{% endif %}</td>
-            <td class="small"{% if _ar %} dir="rtl"{% endif %}>{{ actions[table[t]]['CONFIRMED'][1] if _ar else actions[table[t]]['CONFIRMED'][0] }}</td>
+            <td class="small"{% if _ar %} dir="rtl"{% endif %}>{{ (actions[table[t]]['CONFIRMED'][1]|replace('{list}', labels[t][1])) if _ar else (actions[table[t]]['CONFIRMED'][0]|replace('{list}', labels[t][0])) }}</td>
           </tr>
           {% endfor %}
           </tbody>

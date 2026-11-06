@@ -221,6 +221,18 @@ def aml_staff(db=None):
          ORDER BY first_name, last_name""").fetchall()]
 
 
+def mark_opened_in_error(sar_id, why, actor_id, db=None):
+    """A case opened twice for the same hit (a race): its description says so and it is
+    audited, so nobody works it; nothing is deleted."""
+    db = db or get_db()
+    case = get_case(db, sar_id)
+    db.execute("""UPDATE suspicious_activities SET activity_description =
+                  '[OPENED IN ERROR — do not work this case: ' || %s || '] ' || COALESCE(activity_description, ''),
+                  updated_at = %s WHERE id = %s""", (why, _now(), sar_id))
+    db.commit()
+    _audit(actor_id, sar_id, f'SAR {case["sar_reference"]}: opened in error ({why})')
+
+
 def is_mlro(user):
     """The MLRO designation used by the screening clearance four-eyes rule
     (screening.clearance.approver_ids): the active compliance managers, or the
