@@ -91,29 +91,7 @@ if restart; then
   fi
   # The eKYC worker is a separate process: restart it so it runs the same code.
   systemctl restart complynex-ekyc-worker 2>/dev/null && echo "ekyc worker restarted" || true
-  # Demo instance (same code in its own folder, own database of fictional data).
-  # Its problems never roll back or block the main instance.
-  DEMO=/var/www/complynex-demo
-  if [ -f "$DEMO/.demo_instance" ]; then
-    echo "-- demo instance"
-    if git -C "$DEMO" -c safe.directory='*' checkout -q --detach "$TARGET"; then
-      git -C "$DEMO" -c safe.directory='*' ls-files -z | (cd "$DEMO" && xargs -0 chown complynex:complynex) || true
-      for m in $MIGR; do
-        sudo -u postgres psql -d complynex_demo -v ON_ERROR_STOP=1 -q < "$APP/$m" || echo "WARNING: demo migration failed: $m"
-        # the template the demo scratch slots are copied from (/usr/local/sbin/demo-scratch);
-        # slots made before this deploy are re-created from it when needed
-        if sudo -u postgres psql -Atc "SELECT 1 FROM pg_database WHERE datname = 'complynex_demo_base'" | grep -q 1; then
-          sudo -u postgres psql -d complynex_demo_base -v ON_ERROR_STOP=1 -q < "$APP/$m" || echo "WARNING: demo base migration failed: $m"
-        fi
-      done
-      systemctl restart complynex-demo || true
-      systemctl is-enabled --quiet complynex-demo-ekyc-worker 2>/dev/null && systemctl restart complynex-demo-ekyc-worker || true
-      for i in $(seq 1 30); do sleep 3; [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/health)" = 200 ] && break; done
-      echo "demo health: $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/health)"
-    else
-      echo "WARNING: demo code update failed (main instance is deployed and fine)"
-    fi
-  fi
+  # (the separate demo instance was removed in Nov 2026; sample data lives in the main instance)
 else
   echo "UNHEALTHY after deploy — rolling code back to $PREV"
   $G reset --hard --quiet "$PREV"

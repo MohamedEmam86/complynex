@@ -493,8 +493,7 @@ def create_app(config_name=None):
     # Rating guides (what each score means) and the ESG / carbon guideline
     from guides import guides_bp
     app.register_blueprint(guides_bp)
-    from demo_access import demo_access_bp
-    app.register_blueprint(demo_access_bp)
+    # The demo instance was removed (owner decision, Nov 2026): no demo access links.
     from legal import legal_bp
     app.register_blueprint(legal_bp)
     # P6-7: server status page for admins (data from scripts/ops_monitor.py)
