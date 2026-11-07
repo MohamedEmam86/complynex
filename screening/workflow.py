@@ -382,6 +382,9 @@ def explain(m, provided=None):
             parts_en.append(f'{n_var} as a spelling variant or typo'); parts_ar.append(f'{n_var} كاختلاف هجاء أو خطأ كتابة')
         en.append(f"Name elements matched: {len(pairs)} ({', '.join(parts_en)}).")
         ar.append(f"مقاطع الاسم المتطابقة: {len(pairs)} ({'، '.join(parts_ar)}).")
+        if nm.get('lookalike_first'):
+            en.append('The first name differs by one letter and the rest of the name is identical: possible typo or list error.')
+            ar.append('الاسم الأول مختلف بحرف واحد وباقي الاسم متطابق: ممكن خطأ كتابة أو خطأ في القايمة.')
         if nm.get('complete'):
             en.append('The full name matches, in the same order.'); ar.append('الاسم كامل متطابق وبنفس الترتيب.')
         elif nm.get('order_ok') is False:

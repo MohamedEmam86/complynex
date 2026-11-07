@@ -46,7 +46,8 @@ def test_long_vowel_variants():
     # a long vowel elsewhere still makes another name
     assert mi._same_token('محمد', 'محمود') == 0.0
     assert mi._same_token('حسن', 'حسين') == 0.0
-    assert s('محمد علي حسن', 'محمود علي حسن') < 75
+    # a different name, but one letter away with the rest identical: a low alert (owner decision, 2 Nov 2026)
+    assert 75 <= s('محمد علي حسن', 'محمود علي حسن') < 80
 
 
 def test_titles_from_other_languages():

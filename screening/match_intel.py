@@ -724,6 +724,28 @@ def _distinct_names(a, b):
     return False
 
 
+LOOKALIKE_SCORE = 76.0       # inside the low tier (75-79): reviewed, never a potential match on its own
+POTENTIAL_FLOOR = 80.0
+
+
+def _lookalike_first(c, q, pairs, matched_c, used):
+    """Owner rule (2 Nov 2026): same script, chains of 3+ elements of the same length, every element after
+    the first matched at the same place (identical or a spelling variant of it), and the two first names one
+    letter apart (one substitution, insertion, deletion or adjacent swap): سامي / سامح، محمود / محمد، احمد /
+    حامد. Across scripts the look-alike veto stays (Hamid / احمد): a transliteration is no letter-level proof."""
+    if len(c) < 3 or len(c) != len(q) or 0 in matched_c or 0 in used:
+        return False
+    a, b = c[0], q[0]
+    if a == b or is_arabic(a) != is_arabic(b) or min(len(a), len(b)) < (3 if is_arabic(a) else 4):
+        return False
+    rest = {ci: (qi, sc) for ci, qi, sc in pairs if ci > 0}
+    if set(rest) != set(range(1, len(c))) or used != set(range(1, len(q))):
+        return False
+    if any(qi != ci or sc < 0.95 for ci, (qi, sc) in rest.items()):
+        return False
+    return _osa(a, b) == 1
+
+
 def _attested(t):
     try:
         from screening import name_idf
@@ -887,8 +909,16 @@ def name_match(query, listed):
         # chain (a different father / grandfather): different people unless an
         # identifier says otherwise
         score = min(score, 74.0)
+    lookalike = _lookalike_first(c, q, pairs, matched_c, used)
+    if lookalike:
+        # owner decision (Gold Set review, 2 Nov 2026): the first name one letter away from the listed one
+        # (سامي / سامح، محمود / محمد) with every other element the same is a LOW alert - a typo in the
+        # customer data or in the list is possible; a different first name (a brother) stays a different
+        # person, and the decision layer keeps it below a potential match
+        score = min(max(score, LOOKALIKE_SCORE), POTENTIAL_FLOOR - 1)
     res.update({
         'score': round(max(0.0, min(100.0, score)), 2),
+        'lookalike_first': lookalike,
         'matched': [(c[ci], q[qi]) for ci, qi, _ in sorted(pairs)],
         'missing_from_query': missing,
         'extra_in_query': extra,
@@ -1259,6 +1289,11 @@ def decide(m, query, national_id=None, dob=None, nationality=None, passport=None
         if nm['score'] < score - 10:
             reasons.append(f"name structure: {nm['score']:.0f}")
             score = (score + nm['score']) / 2
+        if nm.get('lookalike_first'):
+            # first name one letter away, the rest identical: a low alert for review (owner decision, 2 Nov)
+            score = min(max(score, LOW + 1), POTENTIAL - 1)
+            reasons.append('first name differs by one letter, the rest of the name is identical: '
+                           'possible typo or list error')
         if nm['partial']:
             if len(nm['l_tokens']) <= 2 and len(nm['q_tokens']) >= 3:
                 # a two-word listed name inside a longer name: a lead, not an alert,
@@ -1308,7 +1343,7 @@ def decide(m, query, national_id=None, dob=None, nationality=None, passport=None
         'dob': idv.get('dob'), 'country': idv.get('country'), 'gender': idv.get('gender'),
         'name': ({k: nm[k] for k in ('matched', 'missing_from_query', 'extra_in_query',
                                      'cov_listed', 'cov_query', 'order_ok', 'complete')}
-                 if nm else None),
+                 | {'lookalike_first': bool(nm.get('lookalike_first'))} if nm else None),
     }
     return m
 

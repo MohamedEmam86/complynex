@@ -23,9 +23,12 @@ def test_typo_that_moves_al():
 
 
 def test_different_real_first_names_are_different_people():
-    assert s('حامد حسين هشام رفعت سعيد', 'احمد حسين هشام رفعت سعيد') < 75
-    assert s('جمال محمد كامل ابراهيم عشري', 'كمال محمد كامل ابراهيم عشري') < 75
-    assert s('سامي سعد الدين عبد الحكيم', 'سامح سعد الدين عبد الحكيم') < 75
+    # owner decision (2 Nov 2026): a first name one letter away with the rest identical is a LOW alert
+    # (possible typo or list error), never a potential match; a completely different first name stays below 75
+    assert 75 <= s('حامد حسين هشام رفعت سعيد', 'احمد حسين هشام رفعت سعيد') < 80
+    assert 75 <= s('جمال محمد كامل ابراهيم عشري', 'كمال محمد كامل ابراهيم عشري') < 80
+    assert 75 <= s('سامي سعد الدين عبد الحكيم', 'سامح سعد الدين عبد الحكيم') < 80
+    assert s('كريم محمد فاروق عوض محمد', 'جويريه محمد فاروق عوض محمد') < 75
 
 
 def test_one_middle_name_left_out_is_a_lead():
