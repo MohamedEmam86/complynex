@@ -37,6 +37,9 @@ DECIDED = '2026-11-02'
 HUSSEIN = ('Hussein Mohamed Mahmoud Abdellatif', 'الحسين محمد محمود عبد اللطيف')
 OVERRULED_NOTE = (f'owner decision {DECIDED}: siblings / different surnames stay different persons '
                   '(only a one-letter first-name difference with the rest identical is a low alert)')
+CONFIRMED = '2026-11-07'
+LOOKALIKE_NOTE = (f'owner decision {CONFIRMED}: any one-letter first-name difference with the rest identical '
+                  'is a low alert (confirmed after seeing these pairs)')
 
 
 def osa1(a, b):
@@ -81,6 +84,13 @@ def write_jsonl(path, rows):
     os.replace(tmp, path)
 
 
+def write_json(path, obj):
+    tmp = path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(obj, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, path)
+
+
 def relabel(rows):
     changes = []
     for p in rows:
@@ -107,7 +117,7 @@ def update_meta(version, rows, path):
     meta.update({'pairs': len(rows), 'holdout': sum(1 for p in rows if p.get('holdout')), 'by_category': by,
                  'sha256': hashlib.sha256(open(path, 'rb').read()).hexdigest(),
                  'review_applied': DECIDED})
-    json.dump(meta, open(mp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    write_json(mp, meta)
     return meta
 
 
@@ -127,24 +137,72 @@ def update_decisions(version, sample_by_id, changed_ids):
             d['original_note'] = d.get('note', '')
             d['decision'], d['note'] = 'correct', OVERRULED_NOTE
             n['overruled'] += 1
+    n['overruled_lookalike'] = overrule_lookalike(doc, sample_by_id)
     return dp, doc, n
+
+
+def overrule_lookalike(doc, sample_by_id):
+    """A 'correct' decision on a review pair that was relabelled from neg_lookalike_first to a look-alike
+    positive is overruled by the owner (confirmed 7 Nov after seeing the pairs). Idempotent: a decision
+    already overruled is no longer 'correct' and is left alone; the reviewer's note is kept."""
+    n = 0
+    for rid, d in doc.get('decisions', {}).items():
+        p = sample_by_id.get(rid)
+        if not p or d.get('decision') != 'correct' or not p['cat'].endswith('pos_lookalike_first_typo'):
+            continue
+        if 'neg_lookalike_first;' not in (p.get('note') or ''):
+            continue
+        d['original_note'] = d.get('note', '')
+        d['decision'], d['note'], d['overruled_at'] = 'overruled', LOOKALIKE_NOTE, CONFIRMED
+        n += 1
+    return n
+
+
+def fix_decisions(version, review, apply):
+    """--fix-decisions on a copy where the relabel was already applied: bring the review decisions
+    to the same final state a fresh --apply gives (additive, idempotent)."""
+    dp = os.path.join(GOLD_DIR, f'gold_v{version}.review_decisions.json')
+    if not os.path.exists(dp):
+        print('no review decisions file - nothing to do')
+        return
+    doc = json.load(open(dp, encoding='utf-8'))
+    n = overrule_lookalike(doc, {r['id']: r for r in review})
+    kept = sum(1 for d in doc.get('decisions', {}).values() if d.get('note') == OVERRULED_NOTE)
+    print(f'review decisions: {n} look-alike decisions to overrule; {kept} other overrides keep the {DECIDED} note')
+    if not n:
+        print('nothing to change')
+        return
+    if not apply:
+        print('DRY RUN - nothing written (use --apply)')
+        return
+    ts = time.strftime('%Y%m%d_%H%M%S')
+    bdir = os.path.join(GOLD_DIR, f'backup_before_fix_decisions_{ts}')
+    os.makedirs(bdir)
+    shutil.copy2(dp, bdir)
+    write_json(dp, doc)
+    print(f'APPLIED; backup in {bdir}')
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--version', type=int, default=1)
     ap.add_argument('--apply', action='store_true')
+    ap.add_argument('--fix-decisions', action='store_true',
+                    help='relabel already applied: only bring the review decisions up to date')
     a = ap.parse_args()
     gp = os.path.join(GOLD_DIR, f'gold_v{a.version}.jsonl')
     rp = os.path.join(GOLD_DIR, f'gold_v{a.version}.review.jsonl')
     rows = load_jsonl(gp)
+    review = load_jsonl(rp) if os.path.exists(rp) else []
     if any(p.get('note', '').find(f'relabelled {DECIDED}') >= 0 for p in rows):
-        print('already applied - nothing to do')
+        if a.fix_decisions:
+            fix_decisions(a.version, review, a.apply)
+        else:
+            print('already applied - nothing to do (--fix-decisions brings the review decisions up to date)')
         return
     changes = relabel(rows)
-    review = load_jsonl(rp) if os.path.exists(rp) else []
     rchanges = relabel(review)
-    changed_ids = {c[0] for c in changes}
+    changed_ids = {c[0] for c in changes} | {c[0] for c in rchanges}
     dec = update_decisions(a.version, {r['id']: r for r in review}, changed_ids)
     by = collections.Counter((c[1], c[2]) for c in changes)
     print(f'gold_v{a.version}: {len(changes)} pairs relabelled')
@@ -168,12 +226,11 @@ def main():
     meta = update_meta(a.version, rows, gp)
     if dec:
         dp, doc, _ = dec
-        json.dump(doc, open(dp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+        write_json(dp, doc)
     log = {'applied_at': ts, 'version': a.version, 'decision': DECIDED, 'pairs': len(changes),
            'changes': [{'id': i, 'from': f, 'to': t, 'why': w} for i, f, t, w in changes],
            'new_sha256': meta['sha256'], 'backup': bdir}
-    json.dump(log, open(os.path.join(GOLD_DIR, f'gold_v{a.version}.review_applied_{ts}.json'), 'w',
-                        encoding='utf-8'), ensure_ascii=False, indent=1)
+    write_json(os.path.join(GOLD_DIR, f'gold_v{a.version}.review_applied_{ts}.json'), log)
     print(f'APPLIED; backup in {bdir}; new sha256 {meta["sha256"][:12]}…')
     print('next: gold_set_eval.py --write-baseline with the code in force, then deploy the new code')
 

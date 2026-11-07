@@ -724,8 +724,8 @@ def _distinct_names(a, b):
     return False
 
 
-LOOKALIKE_SCORE = 76.0       # inside the low tier (75-79): reviewed, never a potential match on its own
-POTENTIAL_FLOOR = 80.0
+# look-alike first name: a floor at the live LOW threshold + 1 (thresholds.apply() changes LOW at run time);
+# it only ever RAISES a score, never lowers one (review 7 Nov 2026)
 
 
 def _lookalike_first(c, q, pairs, matched_c, used):
@@ -914,8 +914,8 @@ def name_match(query, listed):
         # owner decision (Gold Set review, 2 Nov 2026): the first name one letter away from the listed one
         # (سامي / سامح، محمود / محمد) with every other element the same is a LOW alert - a typo in the
         # customer data or in the list is possible; a different first name (a brother) stays a different
-        # person, and the decision layer keeps it below a potential match
-        score = min(max(score, LOOKALIKE_SCORE), POTENTIAL_FLOOR - 1)
+        # person. A floor at the live LOW + 1 only: a higher score is never lowered
+        score = max(score, LOW + 1)
     res.update({
         'score': round(max(0.0, min(100.0, score)), 2),
         'lookalike_first': lookalike,
@@ -1289,9 +1289,12 @@ def decide(m, query, national_id=None, dob=None, nationality=None, passport=None
         if nm['score'] < score - 10:
             reasons.append(f"name structure: {nm['score']:.0f}")
             score = (score + nm['score']) / 2
-        if nm.get('lookalike_first'):
-            # first name one letter away, the rest identical: a low alert for review (owner decision, 2 Nov)
-            score = min(max(score, LOW + 1), POTENTIAL - 1)
+        if nm.get('lookalike_first') and idv['verdict'] not in ('dob_conflict', 'id_conflict'):
+            # first name one letter away, the rest identical: at least a low alert for review (owner decision,
+            # 2 Nov, confirmed 7 Nov). A floor only: a higher score (e.g. DOB corroborated) is never lowered,
+            # and an identifier that says "different person" (DOB / ID conflict) wins over it.
+            if score < LOW + 1:
+                score = LOW + 1
             reasons.append('first name differs by one letter, the rest of the name is identical: '
                            'possible typo or list error')
         if nm['partial']:

@@ -57,6 +57,9 @@ def write_json(path, obj):
     os.replace(tmp, path)
 
 
+MAX_LOW_SUFFIX = 'pos_lookalike_first_typo'   # positive categories whose score should stay in the LOW tier
+
+
 def evaluate(version, retrieval=True):
     from screening import thresholds
     in_force = thresholds.apply(force=True)
@@ -64,12 +67,15 @@ def evaluate(version, retrieval=True):
     raw = open(path, 'rb').read()
     pairs = [json.loads(l) for l in raw.decode('utf-8').splitlines() if l.strip()]
     t0 = time.time()
-    dev = defaultdict(lambda: {'n': 0, 'miss': 0, 'fp': 0, 'labels': set(), 'tier': None})
-    hold = {'n': 0, 'miss': 0, 'fp': 0}
+    dev = defaultdict(lambda: {'n': 0, 'miss': 0, 'fp': 0, 'over': 0, 'labels': set(), 'tier': None})
+    hold = {'n': 0, 'miss': 0, 'fp': 0, 'over': 0}
     for p in pairs:
         s = mi.name_match(p['query'], p['listed'])['score']
         miss = p['label'] == 1 and s < mi.LOW
         fp = p['label'] == 0 and s >= mi.LOW
+        # a look-alike first name (one letter away, rest identical) is meant to be a LOW alert: on the name
+        # alone it should not reach POTENTIAL. Reported separately and ratcheted by the gate.
+        over = p['label'] == 1 and p['cat'].endswith(MAX_LOW_SUFFIX) and s >= mi.POTENTIAL
         if p['holdout']:
             d = hold
         else:
@@ -79,6 +85,7 @@ def evaluate(version, retrieval=True):
         d['n'] += 1
         d['miss'] += miss
         d['fp'] += fp
+        d['over'] += over
     res = {'gold_version': version, 'gold_sha256': hashlib.sha256(raw).hexdigest(), 'commit': commit(),
            'threshold': mi.LOW, 'thresholds': in_force, 'pairs': len(pairs), 'categories': {}, 'holdout': hold, 'mixed_labels': []}
     for c, d in sorted(dev.items()):
@@ -89,6 +96,8 @@ def evaluate(version, retrieval=True):
         k = 'miss' if lab == 1 else 'fp'
         res['categories'][c] = {'type': 'positive' if lab == 1 else 'negative', 'tier': d['tier'], 'n': d['n'],
                                 'errors': d[k], 'rate': round(100.0 * d[k] / d['n'], 2) if d['n'] else None}
+        if c.endswith(MAX_LOW_SUFFIX):
+            res['categories'][c].update({'max_tier': 'LOW', 'over_tier': d['over']})
     tiers = ['core', 'supplementary'] + sorted({v['tier'] for v in res['categories'].values()} - {'core', 'supplementary'})
     for tier in tiers:
         pos = [v for v in res['categories'].values() if v['type'] == 'positive' and v['tier'] == tier]
@@ -156,11 +165,13 @@ def gate(res, base):
             problems.append(f'{c}: category missing')
         elif r['errors'] > b['errors']:
             problems.append(f"{c}: {b['errors']} -> {r['errors']} {'misses' if b['type'] == 'positive' else 'false positives'}")
+        if r and 'over_tier' in b and r.get('over_tier', 0) > b['over_tier']:
+            problems.append(f"{c}: {b['over_tier']} -> {r['over_tier']} pairs above the LOW tier (POTENTIAL or higher)")
     new = set(res['categories']) - set(base['categories'])
     if new:
         problems.append(f'categories not in the baseline: {sorted(new)}')
-    for k in ('miss', 'fp'):
-        if res['holdout'][k] > base['holdout'][k]:
+    for k in ('miss', 'fp', 'over'):
+        if k in base['holdout'] and res['holdout'].get(k, 0) > base['holdout'][k]:
             problems.append(f"holdout {k}: {base['holdout'][k]} -> {res['holdout'][k]}")
     rb, rr = base.get('retrieval'), res.get('retrieval')
     if rb and not rr:
