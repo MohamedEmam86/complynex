@@ -200,6 +200,9 @@ def main():
         else:
             print('already applied - nothing to do (--fix-decisions brings the review decisions up to date)')
         return
+    if a.fix_decisions:
+        print('the relabel is not applied yet: run --apply instead (it also brings the review decisions up to date)')
+        sys.exit(2)
     changes = relabel(rows)
     rchanges = relabel(review)
     changed_ids = {c[0] for c in changes} | {c[0] for c in rchanges}

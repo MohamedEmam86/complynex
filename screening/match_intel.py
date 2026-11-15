@@ -909,6 +909,9 @@ def name_match(query, listed):
         # chain (a different father / grandfather): different people unless an
         # identifier says otherwise
         score = min(score, 74.0)
+    # the structural score before the look-alike floor: decide() averages a generous fuzzy score against this
+    # one, so the floor cannot by-pass that step when an identifier conflicts (review 7 Nov 2026)
+    unfloored = round(max(0.0, min(100.0, score)), 2)
     lookalike = _lookalike_first(c, q, pairs, matched_c, used)
     if lookalike:
         # owner decision (Gold Set review, 2 Nov 2026): the first name one letter away from the listed one
@@ -918,6 +921,7 @@ def name_match(query, listed):
         score = max(score, LOW + 1)
     res.update({
         'score': round(max(0.0, min(100.0, score)), 2),
+        'score_unfloored': unfloored,
         'lookalike_first': lookalike,
         'matched': [(c[ci], q[qi]) for ci, qi, _ in sorted(pairs)],
         'missing_from_query': missing,
@@ -1286,9 +1290,11 @@ def decide(m, query, national_id=None, dob=None, nationality=None, passport=None
 
     if nm is not None and tier != 'CONFIRMED':
         # the structural name verdict may lower a generous fuzzy score, never raise it
-        if nm['score'] < score - 10:
-            reasons.append(f"name structure: {nm['score']:.0f}")
-            score = (score + nm['score']) / 2
+        # the look-alike floor is applied below, after this step and only without an identifier conflict
+        nm_score = nm.get('score_unfloored', nm['score']) if nm.get('lookalike_first') else nm['score']
+        if nm_score < score - 10:
+            reasons.append(f"name structure: {nm_score:.0f}")
+            score = (score + nm_score) / 2
         if nm.get('lookalike_first') and idv['verdict'] not in ('dob_conflict', 'id_conflict'):
             # first name one letter away, the rest identical: at least a low alert for review (owner decision,
             # 2 Nov, confirmed 7 Nov). A floor only: a higher score (e.g. DOB corroborated) is never lowered,

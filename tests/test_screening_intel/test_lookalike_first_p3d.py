@@ -57,12 +57,40 @@ def test_decide_raises_a_low_name_to_a_low_alert():
     assert any('one letter' in r for r in out['decision']['reasons'])
 
 
-def test_decide_never_lowers_a_potential_hit():
-    # review 7 Nov: the look-alike rule is a floor only; a DOB that agrees keeps the hit POTENTIAL
-    out = mi.decide(_rec(92.0, date_of_birth='1980-05-01'), 'سامي امبابي حسين امين', dob='1980-05-01')
-    assert out['match_score'] >= mi.POTENTIAL, out['match_score']
-    plain = mi.decide(_rec(92.0), 'سامي امبابي حسين امين')
-    assert plain['match_score'] >= mi.LOW
+def _without_rule(monkeypatch, *args, **kw):
+    # the same record judged as main judges it: no look-alike rule
+    with monkeypatch.context() as mp:
+        mp.setattr(mi, '_lookalike_first', lambda *a, **k: False)
+        return mi.decide(*args, **kw)['match_score']
+
+
+Q = 'سامي امبابي حسين امين'
+
+
+def test_decide_is_a_floor_over_main_only(monkeypatch):
+    # review 7 Nov: the rule never lowers what main gives, and lifts only to a LOW alert (LOW + 1)
+    for raw in (40.0, 60.0, 80.0, 92.0, 99.0):
+        for rec, kw in ((_rec(raw), {}), (_rec(raw, date_of_birth='1980-05-01'), {'dob': '1980-05-01'})):
+            base = _without_rule(monkeypatch, dict(rec), Q, **kw)
+            out = mi.decide(dict(rec), Q, **kw)['match_score']
+            assert out == round(max(base, mi.LOW + 1), 2), (raw, kw, base, out)
+
+
+def test_decide_identifier_conflict_is_untouched_at_high_fuzzy_scores(monkeypatch):
+    # review 15 Nov blocker: the floor must not by-pass the name-structure averaging when the DOB or the
+    # ID says "different person" - the rule has no effect: the result is exactly main's at any upstream score
+    for raw in (80.0, 90.0, 99.0):
+        for rec, kw in ((_rec(raw, date_of_birth='1980-05-01'), {'dob': '1962-11-20'}),
+                        (_rec(raw, national_id='27001010100022'), {'national_id': '28001010100011'})):
+            base = _without_rule(monkeypatch, dict(rec), Q, **kw)
+            out = mi.decide(dict(rec), Q, **kw)
+            assert out['match_score'] == base, (raw, kw, base, out['match_score'])
+            assert not any('one letter' in r for r in out['decision']['reasons'])
+
+
+def test_name_match_keeps_the_unfloored_score():
+    nm = mi.name_match('سامي امبابي حسين امين', 'سامح امبابي حسين امين')
+    assert nm['lookalike_first'] and nm['score'] == mi.LOW + 1 and nm['score_unfloored'] <= nm['score']
 
 
 def test_decide_dob_conflict_wins_over_the_floor():
@@ -97,3 +125,18 @@ def test_review_decisions_fix_is_idempotent_and_keeps_the_note():
     assert doc['decisions']['c']['decision'] == 'applied'
     assert ar.overrule_lookalike(doc, sample) == 0
     assert doc['decisions']['a']['original_note'] == 'reviewer note'
+
+
+def test_fix_decisions_refuses_before_the_relabel(tmp_path, monkeypatch, capsys):
+    import sys as _sys
+    ar = _load_apply_review()
+    monkeypatch.setattr(ar, 'load_jsonl', lambda path: [{'id': 'a', 'cat': 'neg_lookalike_first', 'note': ''}])
+    monkeypatch.setattr(ar, 'GOLD_DIR', str(tmp_path))
+    monkeypatch.setattr(_sys, 'argv', ['gold_apply_review.py', '--fix-decisions', '--apply'])
+    try:
+        ar.main()
+    except SystemExit as e:
+        assert e.code == 2
+    else:
+        raise AssertionError('--fix-decisions ran on data that was not relabelled')
+    assert 'run --apply' in capsys.readouterr().out
