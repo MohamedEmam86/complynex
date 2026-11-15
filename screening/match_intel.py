@@ -1245,14 +1245,25 @@ def _best_listed(m, query):
     names = [n for n in dict.fromkeys(names) if n and str(n).strip()]
     best = (None, None, False)
     q_ar = is_arabic(query)
+    lookalike = None
+    # rank the forms by the score before the look-alike floor, so the chosen form (and every step after it in
+    # decide) is exactly the one main would choose; the floor itself is applied in decide (review 15 Nov 2026)
+    raw = lambda x: x.get('score_unfloored', x['score'])
     for n in names:
         nm = name_match(query, n)
         cross = is_arabic(n) != q_ar
         if cross:
             nm['score'] = round(nm['score'] * 0.97, 2)   # transliteration is never certain
-        if best[1] is None or nm['score'] > best[1]['score'] or (
-                nm['score'] == best[1]['score'] and best[2] and not cross):
+            if 'score_unfloored' in nm:
+                nm['score_unfloored'] = round(nm['score_unfloored'] * 0.97, 2)
+        if nm.get('lookalike_first') and lookalike is None:
+            lookalike = nm['lookalike_first']
+        if best[1] is None or raw(nm) > raw(best[1]) or (
+                raw(nm) == raw(best[1]) and best[2] and not cross):
             best = (n, nm, cross)
+    if lookalike and best[1] is not None and not best[1].get('lookalike_first'):
+        # another form of the same record is the look-alike: decide still applies the floor
+        best[1]['lookalike_first'] = lookalike
     return best
 
 

@@ -88,6 +88,24 @@ def test_decide_identifier_conflict_is_untouched_at_high_fuzzy_scores(monkeypatc
             assert not any('one letter' in r for r in out['decision']['reasons'])
 
 
+def test_decide_record_with_several_name_forms(monkeypatch):
+    # review 15 Nov blocker 2: the floored look-alike form must not win over a better real form of the
+    # same record; the result is max(main, LOW + 1) without a conflict and exactly main with one
+    forms = ('Samy Mahmoud Ali Hassan', 'Samy Mohamed Aly Hasan Elsayed', 'Mohamed Ali Hassan')
+    q = 'سامي محمد علي حسن'
+    for other in forms:
+        for raw in (60.0, 85.0, 99.0):
+            for extra, kw, conflict in (({}, {}, False),
+                                        ({'date_of_birth': '1980-05-01'}, {'dob': '1962-11-20'}, True),
+                                        ({'national_id': '27001010100022'}, {'national_id': '28001010100011'}, True)):
+                rec = {'match_score': raw, 'watchlist_name_ar': 'سامح محمد علي حسن', 'original_name': other,
+                       'source': 'internal_blacklist', **extra}
+                base = _without_rule(monkeypatch, dict(rec), q, **kw)
+                out = mi.decide(dict(rec), q, **kw)['match_score']
+                want = base if conflict else round(max(base, mi.LOW + 1), 2)
+                assert out == want, (other, raw, kw, base, out)
+
+
 def test_name_match_keeps_the_unfloored_score():
     nm = mi.name_match('سامي امبابي حسين امين', 'سامح امبابي حسين امين')
     assert nm['lookalike_first'] and nm['score'] == mi.LOW + 1 and nm['score_unfloored'] <= nm['score']
