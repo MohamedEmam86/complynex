@@ -28,3 +28,15 @@ def test_no_initial_vowel_drop_and_lookalikes_stay_apart():
                     ('Hassan', 'حسين'), ('Hussein', 'حسن')]:
         assert s(lat, ar) < 75, (lat, ar)
     assert s('Ahmed', 'احمد') >= 95
+
+
+def test_a_rare_learned_pair_never_scores_below_no_learned_pair(monkeypatch):
+    # the weekly dictionary rebuild (15 Nov 2026) learned hamid -> حامد at 3% next to حميد: that must not
+    # weaken Hamid = حامد below the standard transliteration it got with no learned pair
+    for learned in ({'hamid': [['حميد', 4400]]}, {'hamid': [['حميد', 4400], ['حامد', 141]]},
+                    {'hamid': [['حميد', 4400], ['حامد', 12]]}):
+        monkeypatch.setattr(m, '_XS_DICT', learned)
+        assert s('Hamid', 'حامد') >= 95, learned
+        assert s('Hamid', 'حميد') >= 95, learned
+        assert s('Hamid', 'احمد') < 75, learned
+    monkeypatch.setattr(m, '_XS_DICT', None)
