@@ -534,7 +534,11 @@ def _xs_same_raw(lat, ar):
                 # a less frequent learned pair that is also a clean standard transliteration of a
                 # well-known name keeps full strength (Majid = ماجد although lists write مجيد more often).
                 # A learned pair never scores below the same spelling with no learned pair, however rare it
-                # is in the lists (Hamid = حامد after the 15 Nov 2026 rebuild learned it at 3%)
+                # is in the lists (Hamid = حامد after the 15 Nov 2026 rebuild learned it at 3%) - except a
+                # spelling that belongs to another well-known name (Sayed is سيد, not سعيد) and a rare pair
+                # shorter or longer than the usual spelling (Hamed is حامد; حمد is Hamad)
+                if lat in _canon_names() or (c / total < 0.05 and len(cands[0][0]) != len(ar)):
+                    return 0.85
                 return max(0.85, _xs_phonetic_score(lat, ar))
         if lat in _canon_names():
             return 0.0          # a standard spelling of another well-known name (Mahmoud is محمود, not محمد)

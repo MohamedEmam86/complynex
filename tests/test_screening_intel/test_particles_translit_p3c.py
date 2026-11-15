@@ -39,4 +39,9 @@ def test_a_rare_learned_pair_never_scores_below_no_learned_pair(monkeypatch):
         assert s('Hamid', 'حامد') >= 95, learned
         assert s('Hamid', 'حميد') >= 95, learned
         assert s('Hamid', 'احمد') < 75, learned
+    monkeypatch.setattr(m, '_XS_DICT', {'sayed': [['سيد', 53112], ['سعيد', 2118]],
+                                        'hamed': [['حامد', 600], ['حمد', 27]]})
+    assert s('Sayed', 'سعيد') < 95          # Sayed is سيد: a canon spelling of another name stays weak
+    assert s('Hamed', 'حمد') < 95           # حمد is Hamad: a rare pair of another length stays weak
+    assert s('Hamed', 'حامد') >= 95
     monkeypatch.setattr(m, '_XS_DICT', None)
