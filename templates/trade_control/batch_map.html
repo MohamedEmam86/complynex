@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ rc_loc('Batch screening', 'الفحص المجمّع') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  <h3><i class="bi bi-file-earmark-spreadsheet me-2"></i>{{ rc_loc('Batch screening', 'الفحص المجمّع') }} · {{ file_name }}</h3>
+  {{ dn.nav('batch') }}
+  <form method="post" action="{{ url_for('dualuse.batch_run') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="token" value="{{ token }}">
+    <div class="row g-3">
+      <div class="col-lg-5"><div class="card"><div class="card-header fw-bold">{{ rc_loc('Match the columns', 'مطابقة الأعمدة') }} ({{ n }} {{ rc_loc('lines', 'بند') }})</div><div class="card-body small">
+        {% for f, en, ar in columns %}
+        <div class="row g-1 mb-1 align-items-center"><label class="col-5">{{ rc_loc(en, ar) }}</label>
+          <div class="col-7"><select name="col_{{ f }}" class="form-select form-select-sm"><option value="">—</option>
+            {% for h in header %}<option value="{{ loop.index0 }}" {{ 'selected' if mapping.get(f) == loop.index0 }}>{{ h or ('#' ~ loop.index) }}</option>{% endfor %}</select></div></div>
+        {% endfor %}
+        <hr>
+        <div class="mb-1"><label class="form-label">{{ rc_loc('Reference / title', 'المرجع / العنوان') }}</label><input name="title" class="form-control form-control-sm" maxlength="200"></div>
+        <div class="mb-1"><label class="form-label">{{ rc_loc('Supplier / exporter', 'المورد / المصدّر') }}</label><input name="supplier" class="form-control form-control-sm" maxlength="300"></div>
+        <div class="mb-1"><label class="form-label">{{ rc_loc('Consignee / importer', 'المرسل إليه / المستورد') }}</label><input name="consignee" class="form-control form-control-sm" maxlength="300"></div>
+        <div class="mb-2"><label class="form-label">{{ rc_loc('End user', 'المستخدم النهائي') }}</label><input name="end_user" class="form-control form-control-sm" maxlength="300"></div>
+        <button class="btn btn-primary"><i class="bi bi-play-fill me-1"></i>{{ rc_loc('Screen all lines', 'فحص كل البنود') }}</button>
+      </div></div></div>
+      <div class="col-lg-7"><div class="card"><div class="card-header fw-bold">{{ rc_loc('First lines of the file', 'أول بنود الملف') }}</div>
+        <div class="table-responsive"><table class="table table-sm small mb-0"><thead><tr>{% for h in header %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+          <tbody>{% for r in rows %}<tr>{% for c in r %}<td>{{ c[:80] }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></div></div>
+    </div>
+  </form>
+</div>
+{% endblock %}

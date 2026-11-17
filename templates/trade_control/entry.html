@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ d.code }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  {{ dn.nav('search') }}
+  <nav class="small mb-2"><a href="{{ url_for('dualuse.index', q=d.entry_code or d.code) }}">{{ rc_loc('Search', 'البحث') }}</a>
+    {% if entry_doc %} / <a href="{{ url_for('dualuse.entry', item_id=entry_doc.id) }}">{{ entry_doc.code }}</a>{% endif %}
+    {% if parent and parent.code != (entry_doc.code if entry_doc else '') %} / <a href="{{ url_for('dualuse.entry', item_id=parent.id) }}">{{ parent.code }}</a>{% endif %}
+    / <strong>{{ d.code }}</strong></nav>
+  <div class="card mb-3"><div class="card-body">
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <h4 class="mb-1"><span class="du-code">{{ d.code }}</span> {{ dn.risk_badge(d.risk) }}</h4>
+      <div>{{ dn.list_label(d, others|map(attribute='list_code')|list) }}</div>
+    </div>
+    <div class="text-muted small mb-2">
+      {% if d.category in DU.CATEGORY_LABELS %}{{ rc_loc('Category', 'الفئة') }} {{ d.category }} — {{ rc_loc(*DU.CATEGORY_LABELS[d.category]) }}{% endif %}
+      {% if d.group in DU.GROUP_LABELS %} · {{ rc_loc('Group', 'المجموعة') }} {{ d.group }} — {{ rc_loc(*DU.GROUP_LABELS[d.group]) }}{% endif %}
+    </div>
+    {% if d.context_en and d.level %}<div class="small text-muted mb-2">{{ d.entry_code }}: {{ d.context_en }}</div>{% endif %}
+    <div class="row g-3">
+      <div class="{{ 'col-lg-6' if d.text_ar else 'col-12' }}" dir="ltr">
+        <div class="small text-muted mb-1">{{ rc_loc('Legal text (English, reference)', 'النص القانوني (بالإنجليزية، المرجع)') }}</div>
+        {% if d.title_en and d.title_en != d.text_en %}<div class="fw-bold">{{ d.title_en }}</div>{% endif %}
+        <div class="du-legal">{{ d.text_en }}</div>
+      </div>
+      {% if d.text_ar %}
+      <div class="col-lg-6" dir="rtl">
+        <div class="small text-muted mb-1">{{ rc_loc('Arabic reading text', 'النص العربي للاسترشاد') }}
+          {% set st = {'draft': ('Draft translation', 'ترجمة مبدئية', 'warning'), 'verified': ('Verified translation', 'ترجمة مدققة', 'info'), 'reviewed': ('Reviewed translation', 'ترجمة مراجَعة', 'success'), 'stale': ('English text changed: translation to update', 'تغيّر النص الإنجليزي: الترجمة تحتاج تحديثًا', 'danger')}.get(d.ar_status) %}
+          {% if st %}<span class="badge bg-{{ st[2] }}-subtle text-dark border">{{ rc_loc(st[0], st[1]) }}</span>{% endif %}</div>
+        {% if d.title_ar %}<div class="fw-bold">{{ d.title_ar }}</div>{% endif %}
+        <div class="du-legal">{{ d.text_ar }}</div>
+        <div class="small text-muted mt-1">{{ rc_loc('The English text is the legal reference.', 'النص الإنجليزي هو المرجع القانوني.') }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% if d.notes %}<details class="mt-2"><summary class="small">{{ rc_loc('Notes', 'ملاحظات') }}</summary><div class="small du-legal" dir="ltr">{{ d.notes }}</div></details>{% endif %}
+  </div></div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      {% if d.params %}
+      <div class="card mb-3"><div class="card-header fw-bold"><i class="bi bi-speedometer2 me-1"></i>{{ rc_loc('Technical thresholds', 'الحدود الفنية') }}</div>
+        <ul class="list-group list-group-flush small">{% for p in d.params %}
+          <li class="list-group-item"><span class="text-muted">{{ p.parameter_ar if du_lang == 'ar' and p.parameter_ar else (p.parameter or '') }}</span> <strong dir="ltr">{{ p.operator }} {{ '%g'|format(p.value) }} {{ p.unit }}</strong>{% if not p.reviewed %} <span class="badge bg-light text-muted border">{{ rc_loc('auto-extracted', 'مستخرج آليًا') }}</span>{% endif %}</li>{% endfor %}
+        </ul></div>
+      {% endif %}
+      {% if d.hs %}
+      <div class="card mb-3"><div class="card-header fw-bold">{{ rc_loc('Linked tariff (HS / CN) codes', 'أكواد التعريفة المرتبطة (HS / CN)') }}</div>
+        <div class="card-body small">{% for h in d.hs %}<a class="badge bg-light text-dark border me-1 text-decoration-none" href="{{ url_for('dualuse.index', q=h[:6]) }}">{{ h[:4] }}.{{ h[4:6] }}{% if h|length > 6 %}.{{ h[6:] }}{% endif %}</a>{% endfor %}
+          <div class="text-muted mt-2">{{ rc_loc('A tariff code only points to possible entries; it never clears or confirms a product on its own.', 'كود التعريفة يشير فقط إلى بنود محتملة؛ ولا يكفي وحده لاعتبار المنتج سليمًا أو خاضعًا للرقابة.') }}</div></div></div>
+      {% endif %}
+      {% if chems %}
+      <div class="card mb-3"><div class="card-header fw-bold">{{ rc_loc('Chemicals in this entry', 'المواد الكيميائية في هذا البند') }}</div>
+        <ul class="list-group list-group-flush small">{% for c in chems[:40] %}<li class="list-group-item"><a href="{{ url_for('dualuse.chemical', cas=c.code) }}">{{ c.code }}</a> {{ c.title_en }}</li>{% endfor %}</ul></div>
+      {% endif %}
+    </div>
+    <div class="col-lg-6">
+      {% if family %}
+      <div class="card mb-3"><div class="card-header fw-bold">{{ rc_loc('Sub-items', 'البنود الفرعية') }} ({{ family|length }})</div>
+        <div class="list-group list-group-flush small du-family">{% for f in family[:200] %}
+          <a class="list-group-item list-group-item-action" style="padding-inline-start: {{ 0.75 + (f.level - d.level - 1) * 1.1 }}rem" href="{{ url_for('dualuse.entry', item_id=f.id) }}">
+            <span class="du-code">{{ f.code }}</span> {{ dn.title(f)[:150] if f.title_en else (f.text_en or '')[:150] }}{% if f.params %} <i class="bi bi-speedometer2 text-warning"></i>{% endif %}</a>{% endfor %}
+        </div></div>
+      {% endif %}
+      {% if du_can_edit %}<a class="btn btn-outline-primary" href="{{ url_for('dualuse.screen', description=(d.title_en or d.text_en or '')[:120]) }}"><i class="bi bi-upc-scan me-1"></i>{{ rc_loc('Screen a product against this entry', 'فحص منتج مقابل هذا البند') }}</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

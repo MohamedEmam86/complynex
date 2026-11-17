@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ rc_loc('Screenings', 'عمليات الفحص') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  <h3><i class="bi bi-clock-history me-2"></i>{{ rc_loc('Dual-use screenings', 'عمليات فحص السلع مزدوجة الاستخدام') }}</h3>
+  {{ dn.nav('history') }}
+  <form class="row g-2 mb-3" method="get">
+    <div class="col-md-5"><input name="q" class="form-control" value="{{ args.get('q', '') }}" placeholder="{{ rc_loc('Reference, product, model, HS code, party', 'المرجع أو المنتج أو الموديل أو كود HS أو الطرف') }}"></div>
+    <div class="col-md-3"><select name="status" class="form-select"><option value="">{{ rc_loc('All', 'الكل') }}</option>
+      <option value="open" {{ 'selected' if args.get('status') == 'open' }}>{{ rc_loc('Waiting for decisions', 'بانتظار القرارات') }}</option>
+      <option value="decided" {{ 'selected' if args.get('status') == 'decided' }}>{{ rc_loc('Decided', 'تم البت') }}</option></select></div>
+    <div class="col-md-2"><button class="btn btn-outline-primary w-100">{{ rc_loc('Filter', 'تصفية') }}</button></div>
+  </form>
+  <div class="table-responsive"><table class="table table-hover align-middle small">
+    <thead><tr><th>{{ rc_loc('Reference', 'المرجع') }}</th><th>{{ rc_loc('Type', 'النوع') }}</th><th>{{ rc_loc('Title / file', 'العنوان / الملف') }}</th><th>{{ rc_loc('Lines', 'البنود') }}</th><th>{{ rc_loc('Outcome', 'النتيجة') }}</th><th>{{ rc_loc('Status', 'الحالة') }}</th><th>{{ rc_loc('By', 'بواسطة') }}</th><th>{{ rc_loc('Date', 'التاريخ') }}</th></tr></thead>
+    <tbody>{% for r in rows %}{% set c = r.counts or {} %}
+      <tr><td><a href="{{ url_for('dualuse.screening', sid=r.id) }}">{{ r.ref }}</a></td>
+        <td>{{ rc_loc('Batch', 'مجمّع') if r.kind == 'batch' else rc_loc('Single', 'فردي') }}</td>
+        <td>{{ r.title or r.file_name or '' }}</td><td>{{ r.line_count }}</td>
+        <td>{% for o in ('clear', 'review', 'hold') %}{% if c.get(o) %}{{ dn.outcome_badge(o) }} {{ c[o] }} {% endif %}{% endfor %}</td>
+        <td>{% if r.status == 'decided' %}<span class="badge bg-success-subtle text-dark border">{{ rc_loc('Decided', 'تم البت') }}</span>{% else %}<span class="badge bg-warning-subtle text-dark border">{{ rc_loc('Open', 'مفتوح') }}</span>{% endif %}</td>
+        <td>{{ r.created_by_name or '' }}</td><td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at }}</td></tr>
+    {% else %}<tr><td colspan="8" class="text-muted">{{ rc_loc('No screenings yet.', 'لا توجد عمليات فحص بعد.') }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endblock %}

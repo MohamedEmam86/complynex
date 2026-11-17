@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ rc_loc('Lists & dictionary', 'القوائم والقاموس') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  <h3><i class="bi bi-gear me-2"></i>{{ rc_loc('Control lists & dictionary', 'قوائم الرقابة والقاموس') }}</h3>
+  {{ dn.nav('admin') }}
+  <div class="card mb-3"><div class="card-header fw-bold">{{ rc_loc('Loaded lists', 'القوائم المحمّلة') }} · {{ '{:,}'.format(entries) }} {{ rc_loc('searchable entries', 'بند قابل للبحث') }}</div>
+    <div class="table-responsive"><table class="table table-sm small mb-0">
+      <thead><tr><th>{{ rc_loc('List', 'القائمة') }}</th><th>{{ rc_loc('Version', 'الإصدار') }}</th><th>{{ rc_loc('Records', 'السجلات') }}</th><th>{{ rc_loc('Last change', 'آخر تغيير') }}</th><th>{{ rc_loc('Arabic texts', 'النصوص العربية') }}</th><th>{{ rc_loc('Loaded', 'تاريخ التحميل') }}</th></tr></thead>
+      <tbody>{% for l in lists %}
+        <tr><td>{% if du_show_lists %}<strong>{{ l.code }}</strong><div class="text-muted">{{ l.legal_name }}</div>{% else %}{{ rc_loc('Control list', 'قائمة رقابة') }} {{ loop.index }}{% endif %}</td>
+          <td>{{ l.version_label or '—' }}{% if du_show_lists and l.source_url %}<div><a class="text-muted" href="{{ l.source_url }}" rel="noopener noreferrer" target="_blank">{{ rc_loc('source', 'المصدر') }}</a></div>{% endif %}</td>
+          <td>{{ l.record_count or 0 }}</td>
+          <td>{% set df = l.diff or {} %}{% if df.get('added') is not none %}+{{ df.get('added', 0) }} / −{{ df.get('removed', 0) }} / ~{{ df.get('changed', 0) }}{% endif %}</td>
+          <td>{% if l.ar_done or l.ar_draft or l.ar_stale %}{{ l.ar_done }} {{ rc_loc('reviewed', 'مراجَع') }} · {{ l.ar_draft }} {{ rc_loc('draft', 'مبدئي') }}{% if l.ar_stale %} · <span class="text-danger">{{ l.ar_stale }} {{ rc_loc('to update', 'تحتاج تحديثًا') }}</span>{% endif %}{% else %}—{% endif %}</td>
+          <td>{{ l.loaded_at.strftime('%Y-%m-%d') if l.loaded_at else rc_loc('not loaded', 'غير محمّلة') }}</td></tr>
+      {% endfor %}</tbody></table></div>
+    <div class="card-body small text-muted">{{ rc_loc('Lists are refreshed by the server job scripts/dualuse/import_lists.py (dry run first, then --apply). Each load is a new version; past screenings keep the versions they used.', 'يتم تحديث القوائم بمهمة الخادم scripts/dualuse/import_lists.py (تشغيل تجريبي ثم ‎--apply). كل تحميل إصدار جديد، وعمليات الفحص السابقة تحتفظ بالإصدارات التي استخدمتها.') }}</div>
+  </div>
+
+  <div class="card"><div class="card-header fw-bold">{{ rc_loc('Bilingual dictionary', 'القاموس ثنائي اللغة') }} ({{ terms|length }})</div><div class="card-body">
+    <form method="post" class="row g-2 mb-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="col-md-5"><input name="term_en" class="form-control" dir="ltr" maxlength="200" placeholder="English term" required></div>
+      <div class="col-md-5"><input name="term_ar" class="form-control" dir="rtl" maxlength="200" placeholder="المصطلح بالعربية" required></div>
+      <div class="col-md-2"><button class="btn btn-primary w-100">{{ rc_loc('Add', 'إضافة') }}</button></div>
+    </form>
+    <div class="row small du-terms">{% for t in terms %}<div class="col-md-4 col-xl-3"><span dir="ltr">{{ t.term_en }}</span> — <span dir="rtl">{{ t.term_ar }}</span></div>{% endfor %}</div>
+  </div></div>
+</div>
+{% endblock %}

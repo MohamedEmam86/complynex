@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ rc_loc('Screen a product', 'فحص منتج') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  <h3><i class="bi bi-upc-scan me-2"></i>{{ rc_loc('Screen a product', 'فحص منتج') }}</h3>
+  {{ dn.nav('screen') }}
+  <form method="post" class="row g-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="col-lg-7">
+      <div class="card"><div class="card-header fw-bold">{{ rc_loc('Product', 'المنتج') }}</div><div class="card-body row g-2">
+        <div class="col-12"><label class="form-label">{{ rc_loc('Description (Arabic or English)', 'الوصف (بالعربية أو الإنجليزية)') }}</label>
+          <textarea name="description" class="form-control" rows="3" maxlength="2000" placeholder="{{ rc_loc('As written on the invoice, with technical specifications if known', 'كما هو مكتوب في الفاتورة، مع المواصفات الفنية إن وُجدت') }}">{{ form.get('description', '') }}</textarea></div>
+        <div class="col-md-4"><label class="form-label">{{ rc_loc('HS / tariff code', 'كود HS / البند الجمركي') }}</label><input name="hs_code" class="form-control" maxlength="20" dir="ltr" value="{{ form.get('hs_code', '') }}" placeholder="8517.62"></div>
+        <div class="col-md-4"><label class="form-label">{{ rc_loc('CAS number (chemicals)', 'رقم CAS (للكيماويات)') }}</label><input name="cas" class="form-control" maxlength="40" dir="ltr" value="{{ form.get('cas', '') }}" placeholder="7719-09-7"></div>
+        <div class="col-md-4"><label class="form-label">{{ rc_loc('Model / part number', 'الموديل / رقم القطعة') }}</label><input name="model" class="form-control" maxlength="120" dir="ltr" value="{{ form.get('model', '') }}"></div>
+        <div class="col-md-6"><label class="form-label">{{ rc_loc('Country of origin', 'بلد المنشأ') }}</label><input name="origin" class="form-control" maxlength="80" value="{{ form.get('origin', '') }}"></div>
+        <div class="col-md-6"><label class="form-label">{{ rc_loc('Quantity', 'الكمية') }}</label><input name="quantity" class="form-control" maxlength="60" value="{{ form.get('quantity', '') }}"></div>
+      </div></div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card"><div class="card-header fw-bold">{{ rc_loc('Transaction parties (screened against sanctions lists)', 'أطراف المعاملة (تُفحص على قوائم العقوبات)') }}</div><div class="card-body row g-2">
+        <div class="col-12"><label class="form-label">{{ rc_loc('Reference / title', 'المرجع / العنوان') }}</label><input name="title" class="form-control" maxlength="200" value="{{ form.get('title', '') }}" placeholder="{{ rc_loc('e.g. invoice number', 'مثل رقم الفاتورة') }}"></div>
+        <div class="col-12"><label class="form-label">{{ rc_loc('Supplier / exporter', 'المورد / المصدّر') }}</label><input name="supplier" class="form-control" maxlength="300" value="{{ form.get('supplier', '') }}"></div>
+        <div class="col-12"><label class="form-label">{{ rc_loc('Consignee / importer', 'المرسل إليه / المستورد') }}</label><input name="consignee" class="form-control" maxlength="300" value="{{ form.get('consignee', '') }}"></div>
+        <div class="col-12"><label class="form-label">{{ rc_loc('End user (if known)', 'المستخدم النهائي (إن عُرف)') }}</label><input name="end_user" class="form-control" maxlength="300" value="{{ form.get('end_user', '') }}"></div>
+      </div></div>
+    </div>
+    <div class="col-12"><button class="btn btn-primary btn-lg"><i class="bi bi-search me-1"></i>{{ rc_loc('Screen', 'افحص') }}</button>
+      <span class="small text-muted ms-2">{{ rc_loc('Screened against', 'يتم الفحص مقابل') }} {{ rc_loc(*DU.CLIENT_LIST_LABEL) }}</span></div>
+  </form>
+</div>
+{% endblock %}

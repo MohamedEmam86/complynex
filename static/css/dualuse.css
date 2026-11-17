@@ -1,0 +1,23 @@
+/* Dual-use goods module */
+.du-search .input-group-lg .form-control { font-size: 1.05rem; }
+.du-suggest { position: absolute; z-index: 1050; inset-inline: 0; top: 100%; max-height: 22rem; overflow-y: auto; }
+.du-suggest .list-group-item.active { background: var(--bs-primary-bg-subtle, #cfe2ff); color: inherit; }
+.du-code { font-family: SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; unicode-bidi: isolate; }
+.du-result { border-inline-start: 3px solid var(--bs-border-color, #dee2e6); }
+.du-result:hover { border-inline-start-color: var(--bs-primary, #0d6efd); }
+.du-title { font-weight: 500; margin: .15rem 0; }
+.du-snippet { color: #495057; }
+.du-snippet mark { padding: 0 .1em; background: #fff3a3; }
+.du-legal { white-space: pre-line; line-height: 1.55; }
+.du-risk-high { background: #f8d7da; color: #842029; }
+.du-risk-medium { background: #fff3cd; color: #664d03; }
+.du-risk-low { background: #e2e3e5; color: #41464b; }
+.du-out-clear { background: #d1e7dd; color: #0f5132; }
+.du-out-review { background: #fff3cd; color: #664d03; }
+.du-out-hold { background: #f8d7da; color: #842029; }
+.du-line-hold { border-inline-start: 4px solid #dc3545; }
+.du-line-review { border-inline-start: 4px solid #ffc107; }
+.du-line-clear { border-inline-start: 4px solid #198754; }
+.du-cat:hover { box-shadow: 0 0 0 2px var(--bs-primary-bg-subtle, #cfe2ff); }
+.du-family { max-height: 30rem; overflow-y: auto; }
+.du-terms > div { padding: .15rem .5rem; }

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}CAS {{ d.code }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  {{ dn.nav('search') }}
+  <div class="card mb-3"><div class="card-body">
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <h4 class="mb-1">CAS <span class="du-code">{{ d.code }}</span> {{ dn.risk_badge(d.risk) }}</h4>
+      <div>{{ dn.list_label(d) }}</div>
+    </div>
+    <div class="fs-5" dir="ltr">{{ d.title_en }}</div>
+    {% if d.title_ar %}<div class="fs-5" dir="rtl">{{ d.title_ar }}</div>{% endif %}
+    {% set names = d.extra.get('names') or [] %}{% if names|length > 1 %}<div class="small text-muted mt-1">{{ rc_loc('Other names', 'أسماء أخرى') }}: {{ names[1:]|join(' · ') }}</div>{% endif %}
+    <div class="mt-2">
+      {% if d.extra.get('cwc_schedule') %}<span class="badge bg-danger">{{ rc_loc('Chemical-weapons schedule', 'جدول الأسلحة الكيميائية') }} {{ d.extra.cwc_schedule }}</span>{% endif %}
+      {% if d.extra.get('ag_precursor') %}<span class="badge bg-danger">{{ rc_loc('Chemical-weapons precursor', 'سلائف أسلحة كيميائية') }}</span>{% endif %}
+    </div>
+  </div></div>
+  {% if items or scheds %}
+  <div class="card"><div class="card-header fw-bold">{{ rc_loc('Control entries listing this chemical', 'بنود الرقابة التي تدرج هذه المادة') }}</div>
+    <div class="list-group list-group-flush small">
+      {% for x in scheds %}<div class="list-group-item">{{ rc_loc('Schedule', 'الجدول') }} {{ x.extra.get('schedule') }} — {{ x.text_en[:200] }}</div>{% endfor %}
+      {% for x in items %}<a class="list-group-item list-group-item-action" href="{{ url_for('dualuse.entry', item_id=x.id) }}"><span class="du-code">{{ x.code }}</span> {{ (x.text_en or '')[:200] }}</a>{% endfor %}
+    </div></div>
+  {% endif %}
+</div>
+{% endblock %}

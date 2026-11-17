@@ -1,0 +1,23 @@
+{% macro nav(active) %}
+<ul class="nav nav-tabs mb-3 du-nav">
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'search' }}" href="{{ url_for('dualuse.index') }}"><i class="bi bi-search me-1"></i>{{ rc_loc('Search control lists', 'البحث في قوائم الرقابة') }}</a></li>
+  {% if du_can_edit %}
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'screen' }}" href="{{ url_for('dualuse.screen') }}"><i class="bi bi-upc-scan me-1"></i>{{ rc_loc('Screen a product', 'فحص منتج') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'batch' }}" href="{{ url_for('dualuse.batch') }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>{{ rc_loc('Batch screening', 'الفحص المجمّع') }}</a></li>
+  {% endif %}
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'history' }}" href="{{ url_for('dualuse.screenings') }}"><i class="bi bi-clock-history me-1"></i>{{ rc_loc('Screenings', 'عمليات الفحص') }}</a></li>
+  {% if du_can_admin %}
+  <li class="nav-item ms-auto"><a class="nav-link {{ 'active' if active == 'admin' }}" href="{{ url_for('dualuse.admin') }}"><i class="bi bi-gear me-1"></i>{{ rc_loc('Lists & dictionary', 'القوائم والقاموس') }}</a></li>
+  {% endif %}
+</ul>
+{% endmacro %}
+
+{% macro risk_badge(r) %}{% set l = DU.RISK_LABELS.get(r) %}{% if l %}<span class="badge du-risk du-risk-{{ r }}">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
+
+{% macro outcome_badge(o) %}{% set l = DU.OUTCOME_LABELS.get(o) %}{% if l %}<span class="badge du-out du-out-{{ o }}">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
+
+{% macro list_label(d, also=[]) %}{% if du_show_lists %}<span class="badge bg-light text-dark border" title="{{ rc_loc('Visible to administrators only', 'يظهر للمسؤولين فقط') }}">{{ d.list_code }}{% for a in also %}, {{ a }}{% endfor %}</span>{% else %}<span class="badge bg-light text-muted border">{{ rc_loc(*DU.CLIENT_LIST_LABEL) }}</span>{% endif %}{% endmacro %}
+
+{% macro kind_label(k) %}{% set l = DU.KIND_LABELS.get(k) %}{% if l %}<span class="small text-muted">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
+
+{% macro title(d) %}{% if du_lang == 'ar' and (d.title_ar or d.text_ar) %}{{ d.title_ar or (d.text_ar[:160]) }}{% else %}{{ d.title_en or ((d.text_en or '')[:160]) }}{% endif %}{% endmacro %}

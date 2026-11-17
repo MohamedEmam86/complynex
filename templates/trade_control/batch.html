@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ rc_loc('Batch screening', 'الفحص المجمّع') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  <h3><i class="bi bi-file-earmark-spreadsheet me-2"></i>{{ rc_loc('Batch screening', 'الفحص المجمّع') }}</h3>
+  {{ dn.nav('batch') }}
+  <div class="row g-3">
+    <div class="col-lg-6"><form method="post" enctype="multipart/form-data" class="card"><div class="card-body">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <p>{{ rc_loc('Upload a commercial invoice, packing list or bill of materials as Excel (.xlsx) or CSV. You choose the columns on the next step.', 'ارفع الفاتورة التجارية أو قائمة التعبئة أو قائمة المواد بصيغة Excel (.xlsx) أو CSV. تحدد الأعمدة في الخطوة التالية.') }}</p>
+      <input type="file" name="file" class="form-control mb-3" accept=".xlsx,.xlsm,.csv,.txt" required>
+      <button class="btn btn-primary"><i class="bi bi-upload me-1"></i>{{ rc_loc('Upload', 'رفع') }}</button>
+      <div class="small text-muted mt-2">{{ rc_loc('Up to', 'حتى') }} {{ max_lines }} {{ rc_loc('lines, 10 MB.', 'بند، 10 ميجابايت.') }}</div>
+    </div></form></div>
+    <div class="col-lg-6"><div class="card"><div class="card-header fw-bold">{{ rc_loc('Columns used', 'الأعمدة المستخدمة') }}</div>
+      <ul class="list-group list-group-flush small">{% for f, en, ar in columns %}<li class="list-group-item">{{ rc_loc(en, ar) }}</li>{% endfor %}</ul>
+      <div class="card-body small text-muted">{{ rc_loc('Each line gets Clear, Review or Hold. Lines to review open with their technical questions; every final decision needs a reason and a comment.', 'كل بند يحصل على سليم أو مراجعة أو إيقاف. البنود المطلوب مراجعتها تفتح بأسئلتها الفنية، وكل قرار نهائي يحتاج سببًا وتعليقًا.') }}</div></div></div>
+  </div>
+</div>
+{% endblock %}
