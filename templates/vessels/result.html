@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% from 'vessels/_tier.html' import tier_badge %}
+{% block title %}{{ _('Vessel Screening Result') }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  {% with title=_('Vessel Screening Result'), active='' %}{% include 'vessels/_nav.html' %}{% endwith %}
+  {% set q = res.query %}
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <div class="h5 mb-1">{{ q.name or ('IMO ' ~ q.imo if q.imo else q.mmsi or q.call_sign or q.owner) }}</div>
+      <div class="small text-muted">
+        {% if q.imo %}<span class="me-3">{{ _('IMO') }}: <strong>{{ q.imo }}</strong></span>{% endif %}
+        {% if q.mmsi %}<span class="me-3">{{ _('MMSI') }}: {{ q.mmsi }}</span>{% endif %}
+        {% if q.call_sign %}<span class="me-3">{{ _('Call sign') }}: {{ q.call_sign }}</span>{% endif %}
+        {% if q.flag %}<span class="me-3">{{ _('Flag') }}: {{ q.flag }}</span>{% endif %}
+        {% if q.owner %}<span class="me-3">{{ _('Owner') }}: {{ q.owner }}</span>{% endif %}
+        <span class="me-3">#{{ sid }} · {{ row.created_at.strftime('%Y-%m-%d %H:%M') if row.created_at else '' }}</span>
+      </div>
+    </div>
+    <div class="text-end">
+      <div class="fs-5">{{ tier_badge(res.tier) }}</div>
+      {% if res.hits %}<div class="small text-muted">{{ _('Top score') }}: {{ res.score }}</div>{% endif %}
+    </div>
+  </div></div>
+  {% for w in res.warnings %}<div class="alert alert-warning py-2 small">{{ w }}</div>{% endfor %}
+
+  {% if res.risk.lines %}
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+    <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle me-1 text-warning"></i>{{ _('Risk indicators') }}
+      <span class="badge bg-light text-dark border ms-2">{{ res.risk.score }} / 100</span></h6>
+    <ul class="small mb-0">{% for l in res.risk.lines %}<li>{{ l }}</li>{% endfor %}</ul>
+    <div class="form-text">{{ _('Risk indicators never create a sanctions match on their own.') }}</div>
+  </div></div>
+  {% endif %}
+
+  {% if res.owner_hits %}
+  <div class="card border-danger mb-3"><div class="card-body">
+    <h6 class="fw-bold text-danger"><i class="bi bi-building-exclamation me-1"></i>{{ _('Owner / operator matches a listed party') }}</h6>
+    <table class="table table-sm small mb-0"><thead><tr><th>{{ _('Entered') }}</th><th>{{ _('Listed party') }}</th><th>{{ _('Score') }}</th><th>{{ _('List type') }}</th></tr></thead>
+      <tbody>{% for o in res.owner_hits %}<tr><td>{{ o.query }}</td><td>{{ o.name }}</td><td>{{ o.score }}</td><td>{{ o.list_type or '' }}</td></tr>{% endfor %}</tbody></table>
+  </div></div>
+  {% endif %}
+
+  {% if not res.hits and not res.owner_hits %}
+  <div class="alert alert-success"><i class="bi bi-check-circle me-1"></i>{{ _('No listed vessel matches this ship.') }}</div>
+  {% endif %}
+
+  {% for h in res.hits %}
+  {% set d = decisions.get(h.watchlist_id) %}
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+      <div>
+        <a class="h6 fw-bold text-decoration-none" href="{{ url_for('vessels.profile', wid=h.watchlist_id) }}">{{ h.name }}</a>
+        {% if h.matched_name and h.matched_name != h.name %}<span class="small text-muted ms-2">{{ _('matched') }}: {{ h.matched_name }}</span>{% endif %}
+        <div class="small text-muted">
+          {% if h.imo %}IMO {{ h.imo }} · {% endif %}{% if h.flag %}{{ h.flag }} · {% endif %}{% if h.type %}{{ h.type }} · {% endif %}{{ vessel_list_label(h.source) }}
+        </div>
+        <div class="mt-1">{% for m in h.measures or [] %}<span class="badge bg-dark-subtle text-dark border me-1">{{ vessel_measure_label(m) }}</span>{% endfor %}</div>
+      </div>
+      <div class="text-end">{{ tier_badge(h.tier) }}<div class="small text-muted">{{ _('Score') }} {{ h.score }}</div></div>
+    </div>
+    <ul class="small mt-2 mb-2">{% for e in h.explanation %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% if h.fields %}
+    <table class="table table-sm small mb-2"><thead><tr><th>{{ _('Field') }}</th><th>{{ _('Entered') }}</th><th>{{ _('Listed') }}</th><th></th></tr></thead><tbody>
+      {% for k, f in h.fields.items() %}<tr><td>{{ _(k) }}</td><td>{{ f.query }}</td><td>{{ f.listed or '' }}</td>
+        <td>{% if f.match %}<i class="bi bi-check-circle-fill text-danger" title="{{ _('same') }}"></i>{% else %}<i class="bi bi-dash-circle text-muted" title="{{ _('different') }}"></i>{% endif %}</td></tr>{% endfor %}
+    </tbody></table>
+    {% endif %}
+    {% if h.parties %}<div class="small mb-2"><strong>{{ _('Linked parties') }}:</strong>
+      {% for p in h.parties %}<span class="me-2">{{ p.name }} <span class="text-muted">({{ p.role }})</span>{% if p.party_listed %} <span class="badge bg-danger">{{ _('listed') }}</span>{% endif %}</span>{% endfor %}</div>{% endif %}
+    {% if cleared.get(h.watchlist_id) %}{% set c = cleared[h.watchlist_id] %}
+      <div class="alert alert-secondary py-1 small mb-2"><i class="bi bi-info-circle me-1"></i>{{ _('Cleared before as a false match by %(who)s on %(when)s; the listed ship has not changed since.', who=c.by_name or '-', when=c.decided_at.strftime('%Y-%m-%d') if c.decided_at else '') }}</div>
+    {% endif %}
+    {% if d %}
+      <div class="alert {{ 'alert-danger' if d.decision == 'true_match' else 'alert-success' }} py-2 small mb-0">
+        <strong>{{ _('True match') if d.decision == 'true_match' else _('False match') }}</strong> -
+        {{ vessel_reason_label(d.reason) }} · {{ d.decided_by_name }} · {{ d.decided_at.strftime('%Y-%m-%d %H:%M') if d.decided_at else '' }}
+        <div class="mt-1">{{ d.comment }}</div></div>
+    {% elif can_decide %}
+      <form method="post" action="{{ url_for('vessels.decide', sid=sid) }}" class="row g-2 align-items-end border-top pt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="watchlist_id" value="{{ h.watchlist_id }}">
+        <div class="col-md-3"><label class="form-label small mb-0">{{ _('Decision') }}</label>
+          <select class="form-select form-select-sm" name="decision" required>
+            <option value="">-</option><option value="false_match">{{ _('False match') }}</option><option value="true_match">{{ _('True match') }}</option></select></div>
+        <div class="col-md-3"><label class="form-label small mb-0">{{ _('Reason') }}</label>
+          <select class="form-select form-select-sm" name="reason" required><option value="">-</option>
+            {% for c, l in vessel_reasons %}<option value="{{ c }}">{{ _(l) }}</option>{% endfor %}</select></div>
+        <div class="col-md-4"><label class="form-label small mb-0">{{ _('Comment (required)') }}</label>
+          <input class="form-control form-control-sm" name="comment" minlength="5" required></div>
+        <div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit">{{ _('Save decision') }}</button></div>
+      </form>
+    {% endif %}
+  </div></div>
+  {% endfor %}
+
+  {% if res.near %}
+  <details class="small text-muted mb-4"><summary>{{ _('Similar listed names below the alert threshold') }}</summary>
+    <ul class="mt-2">{% for n in res.near %}<li>{{ n.name }} ({{ n.score }}) - {{ n.explanation | join('; ') }}</li>{% endfor %}</ul></details>
+  {% endif %}
+</div>
+{% endblock %}

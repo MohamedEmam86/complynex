@@ -230,12 +230,19 @@ def menus(user):
     return out
 
 
+# Core modules that keep their access level in user_module_permissions (no users column needed):
+# shown on the user form with the pack modules. 'view' = use the module, 'edit' = record decisions.
+CORE_MODULE_PERMS = [
+    ('vessels', 'Vessel screening & Vessels Database', 'فحص السفن وقاعدة بيانات السفن', ('none', 'view', 'edit')),
+]
+
+
 def permission_modules():
     """[(module, label_en, label_ar, levels)] declared by all discovered packs —
     shown on the user form even before a pack is enabled, so access can be
     prepared in advance."""
     discover()
-    out = []
+    out = list(CORE_MODULE_PERMS)
     for p in PACKS.values():
         out += list(p.permissions)
     return out

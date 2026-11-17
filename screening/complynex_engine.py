@@ -3018,6 +3018,10 @@ class ComplyNexScreeningEngine:
                 input_type = entity_type.upper()
                 cand_type = candidate['entity_type'].upper()
                 type_equivalents = {'INDIVIDUAL': 'PERSON', 'PERSON': 'INDIVIDUAL'}
+                # a listed ship (VESSEL, V1) keeps scoring as a non-person record in company screening,
+                # exactly as before ships had their own type
+                if cand_type == 'VESSEL':
+                    cand_type = 'ENTITY' if input_type != 'VESSEL' else 'VESSEL'
                 if input_type != cand_type and type_equivalents.get(input_type) != cand_type:
                     type_match = False
                     type_mismatch_penalty = -20.0

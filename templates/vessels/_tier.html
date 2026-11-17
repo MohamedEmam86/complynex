@@ -1,0 +1,5 @@
+{%- macro tier_badge(t) -%}
+{%- set cls = {'CONFIRMED': 'danger', 'POTENTIAL': 'warning text-dark', 'LOW': 'info text-dark', 'CLEAR': 'success', 'INCOMPLETE': 'secondary'} -%}
+{%- set lbl = {'CONFIRMED': _('Confirmed match'), 'POTENTIAL': _('Potential match'), 'LOW': _('Low match'), 'CLEAR': _('No match'), 'INCOMPLETE': _('Incomplete')} -%}
+<span class="badge bg-{{ cls.get(t, 'secondary') }}">{{ lbl.get(t, t) }}</span>
+{%- endmacro -%}

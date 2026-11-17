@@ -92,7 +92,7 @@
         <i class="bi bi-chevron-down cnx-nav__caret"></i>
       </button>
       <div class="cnx-nav__panel"><ul class="cnx-nav__sub">
-        {% if (current_user.can_view('screening') or current_user.can_view('aml')) %}
+        {% if (current_user.can_view('screening') or current_user.can_view('aml') or current_user.can_view('vessels')) %}
         <li class="cnx-nav__item cnx-nav__item--module">
           <button class="cnx-nav__toggle cnx-nav__toggle--module" type="button" aria-expanded="false">
             <i class="bi bi-search cnx-nav__icon"></i>
@@ -147,6 +147,18 @@
             <li class="cnx-nav__subitem">
               <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('screening.quality') }}">
                 <span class="cnx-nav__label">{{ _('Screening Quality') }}</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.can_view('vessels') %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('vessels.screen') }}">
+                <span class="cnx-nav__label">{{ _('Vessel Screening') }}</span>
+              </a>
+            </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('vessels.database') }}">
+                <span class="cnx-nav__label">{{ _('ComplyNex Vessels Database') }}</span>
               </a>
             </li>
             {% endif %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Bulk Vessel Screening') }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  {% with title=_('Bulk Vessel Screening'), active='bulk' %}{% include 'vessels/_nav.html' %}{% endwith %}
+  <div class="row justify-content-center"><div class="col-lg-8">
+    <div class="card border-0 shadow-sm"><div class="card-body p-4">
+      <div class="alert alert-info small"><ol class="mb-0 ps-3">
+        <li>{{ _('Upload a CSV (UTF-8) or Excel (.xlsx) file, up to %(n)s rows.', n=max_rows) }}</li>
+        <li>{{ _('Columns: name, imo, mmsi, call_sign, flag, owner, vessel_type, reference. Each row needs a name, IMO, MMSI, call sign or owner.') }}</li>
+        <li>{{ _('Owners are screened for files of up to 100 rows.') }}</li>
+      </ol></div>
+      <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3"><label class="form-label fw-bold" for="vfile">{{ _('Select File') }}</label>
+          <input class="form-control" type="file" id="vfile" name="file" accept=".csv,.xlsx" required></div>
+        <div class="d-flex justify-content-between align-items-center">
+          <a href="{{ url_for('vessels.bulk_template') }}" class="text-decoration-none"><i class="bi bi-download"></i> {{ _('Download template') }}</a>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-play-circle me-1"></i>{{ _('Screen file') }}</button>
+        </div>
+      </form>
+    </div></div>
+  </div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ _('ComplyNex Vessels Database') }}{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4 px-lg-5">
+  {% with title=_('ComplyNex Vessels Database'), active='database' %}{% include 'vessels/_nav.html' %}{% endwith %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+      <div class="small text-muted">{{ _('Listed vessels') }}</div><div class="fs-3 fw-bold">{{ '{:,}'.format(stats.total) }}</div>
+      <div class="small text-muted">{{ _('on international approved lists') }}</div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
+      <div class="small text-muted">{{ _('With an IMO number') }}</div><div class="fs-3 fw-bold">{{ '{:,}'.format(stats.with_imo) }}</div></div></div></div>
+    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body small">
+      <div class="text-muted mb-1">{{ _('Top flags') }}</div>
+      {% for f in stats.flags[:6] %}<a class="d-flex justify-content-between text-decoration-none" href="{{ url_for('vessels.database', flag=f.flag) }}"><span>{{ f.flag }}</span><span class="fw-bold">{{ f.n }}</span></a>{% endfor %}</div></div></div>
+    <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body small">
+      <div class="text-muted mb-1">{{ _('Measures') }}</div>
+      {% for m, n in stats.measures[:6] %}<a class="d-flex justify-content-between text-decoration-none" href="{{ url_for('vessels.database', measure=m) }}"><span>{{ vessel_measure_label(m) }}</span><span class="fw-bold">{{ n }}</span></a>{% endfor %}</div></div></div>
+  </div>
+  <form class="card border-0 shadow-sm mb-3" method="get"><div class="card-body row g-2 align-items-end">
+    <div class="col-md-5"><label class="form-label small mb-0" for="dq">{{ _('Search') }}</label>
+      <input class="form-control" id="dq" name="q" value="{{ q }}" placeholder="{{ _('Name in Arabic or English, IMO or MMSI') }}"></div>
+    <div class="col-md-2"><label class="form-label small mb-0" for="df">{{ _('Flag') }}</label><input class="form-control" id="df" name="flag" value="{{ flag }}"></div>
+    <div class="col-md-2"><label class="form-label small mb-0" for="dt">{{ _('Vessel type') }}</label><input class="form-control" id="dt" name="type" value="{{ vtype }}"></div>
+    <div class="col-md-2"><label class="form-label small mb-0" for="dm">{{ _('Measure') }}</label>
+      <select class="form-select" id="dm" name="measure"><option value="">{{ _('All') }}</option>
+        {% for m, n in stats.measures %}<option value="{{ m }}" {{ 'selected' if m == measure }}>{{ vessel_measure_label(m) }}</option>{% endfor %}</select></div>
+    <div class="col-md-1"><button class="btn btn-primary w-100" type="submit"><i class="bi bi-search"></i></button></div>
+  </div></form>
+  <div class="small text-muted mb-2">{{ '{:,}'.format(total) }} {{ _('vessels') }}{% if ranked %} · {{ _('ranked by name similarity') }}{% endif %}</div>
+  <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle small mb-0">
+    <thead class="table-light"><tr><th>{{ _('Vessel') }}</th><th>{{ _('IMO') }}</th><th>{{ _('MMSI') }}</th><th>{{ _('Type') }}</th><th>{{ _('Flag') }}</th><th>{{ _('Built') }}</th><th>{{ _('Measures') }}</th><th>{{ _('List') }}</th></tr></thead>
+    <tbody>{% for v in items %}
+      <tr><td><a class="fw-bold text-decoration-none" href="{{ url_for('vessels.profile', wid=v.id) }}">{{ v.full_name }}</a>
+          {% if v.previous_names %}<div class="text-muted">{{ _('ex') }} {{ v.previous_names[:3] | join(', ') }}</div>{% endif %}</td>
+        <td>{{ v.imo or '' }}{% if v.imo and v.imo_valid == false %} <i class="bi bi-exclamation-circle text-warning" title="{{ _('IMO check digit fails') }}"></i>{% endif %}</td>
+        <td>{{ v.mmsi or '' }}</td><td>{{ v.vessel_type or '' }}</td>
+        <td>{{ v.current_flag or '' }}{% if v.flag_history %}<div class="text-muted">{{ _('ex') }} {{ v.flag_history[:3] | join(', ') }}</div>{% endif %}</td>
+        <td>{{ v.year_built or '' }}</td>
+        <td>{% for m in v.measures %}<span class="badge bg-light text-dark border me-1">{{ vessel_measure_label(m) }}</span>{% endfor %}</td>
+        <td>{{ vessel_list_label(v.source) }}</td></tr>
+    {% else %}<tr><td colspan="8" class="text-center text-muted py-4">{{ _('No vessel found.') }}</td></tr>{% endfor %}</tbody>
+  </table></div></div>
+  {% if not ranked and total > page_size %}
+  <nav class="mt-3"><ul class="pagination pagination-sm justify-content-center">
+    {% if page > 1 %}<li class="page-item"><a class="page-link" href="{{ url_for('vessels.database', q=q, flag=flag, type=vtype, measure=measure, page=page-1) }}">&laquo;</a></li>{% endif %}
+    <li class="page-item disabled"><span class="page-link">{{ page }} / {{ ((total - 1) // page_size) + 1 }}</span></li>
+    {% if page * page_size < total %}<li class="page-item"><a class="page-link" href="{{ url_for('vessels.database', q=q, flag=flag, type=vtype, measure=measure, page=page+1) }}">&raquo;</a></li>{% endif %}
+  </ul></nav>
+  {% endif %}
+</div>
+{% endblock %}

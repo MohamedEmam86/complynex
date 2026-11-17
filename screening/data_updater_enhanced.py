@@ -360,6 +360,18 @@ class EnhancedDataUpdater:
                     logger.error(f"Delisting sync failed for {sname}: {e}")
                     self.db_conn.rollback()
                 logger.info(f"Batch complete: {added} added, {updated} updated, {unchanged} unchanged")
+                # ships (V1): refresh the vessel tables of this list from its VESSEL rows; a failure
+                # here never undoes the list update (the next run, or scripts/vessels_sync.py, redoes it)
+                if any(e.get('entity_type') == 'VESSEL' for e in entities):
+                    try:
+                        from screening import vessel_store as _VS
+                        source_stats['vessels'] = _VS.sync(self.db_conn, sname).get('vessels')
+                    except Exception as e:
+                        logger.error(f"[VESSELS] {sname}: vessel tables not refreshed: {e}")
+                        try:
+                            self.db_conn.rollback()
+                        except Exception:
+                            pass
                 if vid:
                     try:
                         LV.applied(self.db_conn, vid, source_stats, ev)

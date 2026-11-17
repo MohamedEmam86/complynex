@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Vessel Screening') }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  {% with title=_('Vessel Screening'), active='screen' %}{% include 'vessels/_nav.html' %}{% endwith %}
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm"><div class="card-body p-4">
+        <p class="text-muted small mb-3">{{ _('Screen a ship against international approved sanctions lists. The IMO number identifies a ship for life; names, flags, MMSI and call signs change. Enter what you have - any field, in Arabic or English.') }}</p>
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="row g-3">
+            <div class="col-md-8"><label class="form-label fw-bold" for="v_name">{{ _('Vessel name') }}</label>
+              <input class="form-control" id="v_name" name="name" value="{{ form.get('name', '') }}" placeholder="{{ _('e.g. OCEAN GLORY or the name in Arabic') }}" autofocus></div>
+            <div class="col-md-4"><label class="form-label fw-bold" for="v_imo">{{ _('IMO number') }}</label>
+              <input class="form-control" id="v_imo" name="imo" value="{{ form.get('imo', '') }}" placeholder="9123456" inputmode="numeric"></div>
+            <div class="col-md-4"><label class="form-label" for="v_mmsi">{{ _('MMSI') }}</label>
+              <input class="form-control" id="v_mmsi" name="mmsi" value="{{ form.get('mmsi', '') }}" inputmode="numeric"></div>
+            <div class="col-md-4"><label class="form-label" for="v_call">{{ _('Call sign') }}</label>
+              <input class="form-control" id="v_call" name="call_sign" value="{{ form.get('call_sign', '') }}"></div>
+            <div class="col-md-4"><label class="form-label" for="v_flag">{{ _('Flag') }}</label>
+              <input class="form-control" id="v_flag" name="flag" value="{{ form.get('flag', '') }}" placeholder="{{ _('e.g. Panama') }}"></div>
+            <div class="col-md-6"><label class="form-label" for="v_owner">{{ _('Owner / operator / manager') }}</label>
+              <input class="form-control" id="v_owner" name="owner" value="{{ form.get('owner', '') }}">
+              <div class="form-text">{{ _('Screened against all sanctions lists as a company.') }}</div></div>
+            <div class="col-md-3"><label class="form-label" for="v_type">{{ _('Vessel type') }}</label>
+              <input class="form-control" id="v_type" name="vessel_type" value="{{ form.get('vessel_type', '') }}" placeholder="{{ _('e.g. Crude Oil Tanker') }}"></div>
+            <div class="col-md-3"><label class="form-label" for="v_ref">{{ _('Your reference') }}</label>
+              <input class="form-control" id="v_ref" name="customer_ref" value="{{ form.get('customer_ref', '') }}"></div>
+          </div>
+          <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn btn-primary px-4"><i class="bi bi-shield-check me-1"></i>{{ _('Screen vessel') }}</button>
+          </div>
+        </form>
+      </div></div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card border-0 bg-light"><div class="card-body small">
+        <h6 class="fw-bold"><i class="bi bi-diagram-3 me-1"></i>{{ _('How a vessel is screened') }}</h6>
+        <ol class="ps-3 mb-0">
+          <li class="mb-1">{{ _('Identifiers: the same IMO number (current or former) is the listed ship. MMSI and call sign are strong but change on re-flagging.') }}</li>
+          <li class="mb-1">{{ _('Name: current and former names in any script; every number in the name must be the same (STAR 1 is not STAR 2). A name alone never confirms a match.') }}</li>
+          <li class="mb-1">{{ _('Owner: the owner / operator you enter is screened against all lists.') }}</li>
+          <li>{{ _('Risk: flag of convenience, invalid IMO, flag changes - shown as risk lines, never as a match.') }}</li>
+        </ol>
+      </div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

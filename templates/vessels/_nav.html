@@ -1,0 +1,12 @@
+{# tabs shared by the vessel pages #}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h2 class="mb-0"><i class="bi bi-water me-2"></i>{{ title }}</h2>
+  <ul class="nav nav-pills small">
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == 'screen' }}" href="{{ url_for('vessels.screen') }}"><i class="bi bi-search me-1"></i>{{ _('Screen a vessel') }}</a></li>
+    {% if current_user.can_edit('vessels') %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == 'bulk' }}" href="{{ url_for('vessels.bulk') }}"><i class="bi bi-upload me-1"></i>{{ _('Bulk file') }}</a></li>
+    {% endif %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == 'history' }}" href="{{ url_for('vessels.history') }}"><i class="bi bi-clock-history me-1"></i>{{ _('History') }}</a></li>
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == 'database' }}" href="{{ url_for('vessels.database') }}"><i class="bi bi-database me-1"></i>{{ _('Vessels Database') }}</a></li>
+  </ul>
+</div>

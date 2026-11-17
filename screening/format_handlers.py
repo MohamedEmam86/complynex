@@ -327,6 +327,48 @@ def iso_date(s):
     return s
 
 
+# ---- vessels (V1): every handler that lists ships puts them in properties.vessel / details.vessel
+# with this shape; screening/vessel_store.py materialises it for the vessel engine.
+#   {'imo': str|None, 'imos': [..], 'mmsi': [..], 'call_sign': [..], 'type': str, 'flag': str,
+#    'flags_past': [..], 'names_past': [..], 'gross_tonnage': str, 'year_built': str,
+#    'owners': [{'name': str, 'role': str, 'ref': source_id|None}], 'measures': [..]}
+_VESSEL_MEASURES = (('asset freeze', 'asset_freeze'), ('port entry', 'port_ban'), ('port ban', 'port_ban'),
+                    ('de-flag', 'deflag'), ('deflag', 'deflag'), ('charter', 'chartering_ban'),
+                    ('shipping', 'shipping_sanctions'), ('trade', 'trade_sanctions'),
+                    ('services', 'services_ban'), ('blocked', 'asset_freeze'))
+
+
+def vessel_measures(*texts):
+    """Measures named in free text ('Asset freeze|Prohibition of port entry' -> ['asset_freeze', 'port_ban'])."""
+    out = []
+    blob = ' '.join(str(t or '') for t in texts).lower()
+    for needle, code in _VESSEL_MEASURES:
+        if needle in blob and code not in out:
+            out.append(code)
+    return out
+
+
+def _vessel_digits(v):
+    return re.sub(r'\D', '', str(v or ''))
+
+
+def vessel_block(imos=(), mmsi=(), call_sign=(), vtype=None, flag=None, flags_past=(), names_past=(),
+                 gross_tonnage=None, year_built=None, owners=(), measures=()):
+    imos = [d for d in dict.fromkeys(_vessel_digits(x) for x in imos) if len(d) == 7]
+    return {
+        'imo': imos[0] if imos else None, 'imos': imos,
+        'mmsi': [d for d in dict.fromkeys(_vessel_digits(x) for x in mmsi) if len(d) == 9],
+        'call_sign': [c for c in dict.fromkeys(str(x).strip().upper() for x in call_sign if x and str(x).strip())],
+        'type': (vtype or None), 'flag': (flag or None),
+        'flags_past': [f for f in dict.fromkeys(str(x).strip() for x in flags_past if x and str(x).strip())],
+        'names_past': [n for n in dict.fromkeys(str(x).strip() for x in names_past if x and str(x).strip())],
+        'gross_tonnage': (str(gross_tonnage).strip() or None) if gross_tonnage else None,
+        'year_built': (str(year_built).strip()[:10] or None) if year_built else None,
+        'owners': [o for o in owners if o.get('name') or o.get('ref')],
+        'measures': list(dict.fromkeys(measures)),
+    }
+
+
 _PASSPORT = ('passport',)
 _NATIONAL_ID = ('national id', 'national identification', 'identification number', 'cedula', 'personal id',
                 'id card', 'nic', 'tax id', 'curp', 'c.u.r.p', 'personal number', 'citizen')
@@ -362,7 +404,8 @@ class OFACHandler(BaseFormatHandler):
                         continue
 
                     sdn_type    = self._t(sdn_entry, f'{ns}sdnType')
-                    entity_type = 'INDIVIDUAL' if sdn_type == 'Individual' else 'ENTITY'
+                    entity_type = 'INDIVIDUAL' if sdn_type == 'Individual' else (
+                        'VESSEL' if sdn_type == 'Vessel' else 'ENTITY')
 
                     # Programs
                     programs = []
@@ -422,6 +465,7 @@ class OFACHandler(BaseFormatHandler):
                             if id_type and id_num:
                                 ids.append({'type': id_type, 'number': id_num})
 
+                    vessel = self._vessel(sdn_entry, ns, ids, remarks, programs) if sdn_type == 'Vessel' else None
                     gender = next((i['number'] for i in ids if i['type'].lower() == 'gender'), None)
                     passports = [i['number'] for i in ids if any(k in i['type'].lower() for k in _PASSPORT)]
                     national_ids = [i['number'] for i in ids
@@ -450,7 +494,8 @@ class OFACHandler(BaseFormatHandler):
                                         'dates_of_birth': [iso_date(d) for d in dobs],
                                         'places_of_birth': pobs, 'nationalities': nats, 'citizenships': cits,
                                         'identifiers': [i for i in ids if i['type'].lower() != 'gender'],
-                                        'weak_aliases': weak_aliases},
+                                        'weak_aliases': weak_aliases,
+                                        **({'vessel': vessel} if vessel else {})},
                         '_rich':       True,
                         'is_active':   True,
                         'last_updated': None,
@@ -466,6 +511,29 @@ class OFACHandler(BaseFormatHandler):
             logger.error(f"Failed to parse OFAC XML: {e}")
             self.error_count += 1
         return entities
+
+    def _vessel(self, sdn_entry, ns, ids, remarks, programs):
+        """The ship data of an OFAC 'Vessel' entry: vesselInfo + the vessel identifiers of idList +
+        the '(Linked To: ...)' parties of the remarks."""
+        vi = sdn_entry.find(f'{ns}vesselInfo')
+        g = (lambda tag: self._t(vi, f'{ns}{tag}')) if vi is not None else (lambda tag: None)
+        def idv(*types):
+            return [i['number'] for i in ids if i['type'].strip().lower() in types]
+        owners = []
+        if g('vesselOwner'):
+            owners.append({'name': g('vesselOwner'), 'role': 'owner', 'ref': None})
+        for m in re.finditer(r'Linked To:\s*([^)]+)\)', remarks or ''):
+            for part in m.group(1).split(';'):
+                if part.strip():
+                    owners.append({'name': part.strip().rstrip('.'), 'role': 'linked', 'ref': None})
+        return vessel_block(
+            imos=idv('vessel registration identification'), mmsi=idv('mmsi'),
+            call_sign=[g('callSign')] + idv('other vessel call sign'),
+            vtype=g('vesselType') or (idv('other vessel type') or [None])[0],
+            flag=g('vesselFlag'), flags_past=idv('former vessel flag') + idv('other vessel flag'),
+            gross_tonnage=g('grossRegisteredTonnage') or g('tonnage'),
+            year_built=(idv('vessel year of build') or [None])[0], owners=owners,
+            measures=['asset_freeze'])
 
     def _t(self, element, tag):
         """Safely get text from an element by tag"""
@@ -546,7 +614,8 @@ class HMTreasuryHandler(BaseFormatHandler):
 
         # Entity type
         ind_entity = self._t(desig, 'IndividualEntityShip') or ''
-        entity_type = 'INDIVIDUAL' if ind_entity.lower() == 'individual' else 'ENTITY'
+        entity_type = 'INDIVIDUAL' if ind_entity.lower() == 'individual' else (
+            'VESSEL' if ind_entity.lower() == 'ship' else 'ENTITY')
 
         # Addresses
         addresses = []
@@ -593,6 +662,24 @@ class HMTreasuryHandler(BaseFormatHandler):
         positions = texts('IndividualDetails/Individual/Positions/Position')
         dob_main = next((iso_date(d) for d in dobs if iso_date(d) and len(iso_date(d)) == 10), None) or \
             (iso_date(dobs[0]) if dobs else None)
+        vessel = None
+        if entity_type == 'VESSEL':
+            ship = desig.find('ShipDetails/Ship')
+            if ship is None:
+                ship = desig.find('ShipDetails')
+            tx = (lambda path: texts(f'ShipDetails/Ship/{path}')) if ship is not None else (lambda path: [])
+            vessel = vessel_block(
+                imos=tx('IMONumbers/IMONumber'), mmsi=tx('MMSINumbers/MMSINumber'),
+                call_sign=tx('CallSigns/CallSign'), vtype=(tx('TypeOfShipDetails/TypeOfShip') or [None])[0],
+                flag=(tx('CurrentBelievedFlagOfShips/CurrentBelievedFlagOfShip') or [None])[0],
+                flags_past=tx('PreviousFlags/PreviousFlag'), names_past=[],
+                gross_tonnage=(tx('TonnageOfShipDetails/TonnageOfShip') or [None])[0],
+                year_built=(tx('YearsBuilt/YearBuilt') or [None])[0],
+                owners=[{'name': n, 'role': 'owner_operator', 'ref': None}
+                        for n in tx('CurrentOwnerOperators/CurrentOwnerOperator')] +
+                       [{'name': n, 'role': 'former_owner_operator', 'ref': None}
+                        for n in tx('PreviousOwnerOperators/PreviousOwnerOperator')],
+                measures=vessel_measures(self._t(desig, 'SanctionsImposed')))
         return {
             'source_id':     f"HMT-{unique_id}",
             'source':        'hmt',
@@ -620,7 +707,8 @@ class HMTreasuryHandler(BaseFormatHandler):
                               'statement_of_reasons': self._t(desig, 'UKStatementofReasons'),
                               'titles': texts('Titles/Title'), 'positions': positions,
                               'dates_of_birth': [iso_date(d) for d in dobs], 'places_of_birth': pobs,
-                              'nationalities': nats, 'weak_aliases': weak, 'non_latin_names': non_latin},
+                              'nationalities': nats, 'weak_aliases': weak, 'non_latin_names': non_latin,
+                              **({'vessel': vessel} if vessel else {})},
             '_rich':         True,
             'is_active':     True,
             'last_updated':  self._t(desig, 'LastUpdated'),
@@ -721,6 +809,15 @@ class EUSanctionsHandler(BaseFormatHandler):
                 if num:
                     ids.append(f"{idn.get('identificationTypeDescription') or idn.get('identificationTypeCode') or 'ID'}: {num}")
 
+            vessel = None
+            imo_vessel = [idn.get('number') for idn in entity_elem.findall('fsd:identification', ns)
+                          if idn.get('number') and 'vessel' in (idn.get('identificationTypeDescription') or '').lower()
+                          and 'imo' in ((idn.get('identificationTypeDescription') or '') +
+                                        (idn.get('identificationTypeCode') or '')).lower()]
+            if entity_type == 'ENTITY' and imo_vessel:
+                entity_type = 'VESSEL'
+                vessel = vessel_block(imos=imo_vessel, measures=['asset_freeze'])
+
             programmes, regulation_summary = [], None
             for reg in entity_elem.findall('fsd:regulation', ns):
                 if reg.get('programme') and reg.get('programme') not in programmes:
@@ -757,6 +854,7 @@ class EUSanctionsHandler(BaseFormatHandler):
                     'address': address,
                     'designation_date': entity_elem.get('designationDate'),
                     'un_reference': entity_elem.get('unitedNationId') or None,
+                    **({'vessel': vessel} if vessel else {}),
                 }
             }
         except Exception as e:
@@ -898,7 +996,11 @@ class OpenSanctionsHandler(BaseFormatHandler):
         
         # Filter by schema (only relevant entity types)
         schema = data.get('schema')
-        if schema not in ['Person', 'Organization', 'Company', 'LegalEntity']:
+        if schema == 'Vessel':
+            # ships (V1): only with the profile fields, which carry IMO / MMSI / flags
+            if not self.rich:
+                return None
+        elif schema not in ['Person', 'Organization', 'Company', 'LegalEntity']:
             return None
             
         props = data.get('properties', {})
@@ -912,7 +1014,7 @@ class OpenSanctionsHandler(BaseFormatHandler):
         aliases = names[1:] if len(names) > 1 else []
         
         # Entity Type
-        entity_type = 'INDIVIDUAL' if schema == 'Person' else 'ENTITY'
+        entity_type = 'INDIVIDUAL' if schema == 'Person' else ('VESSEL' if schema == 'Vessel' else 'ENTITY')
         
         # Countries
         countries = props.get('country', [])
@@ -988,6 +1090,19 @@ class OpenSanctionsHandler(BaseFormatHandler):
             ('programs', _vals('programId', 10, 100)),
             ('father_name', _vals('fatherName', 2, 100)),
         ) if v}
+        if schema == 'Vessel':
+            pn = _vals('pastNames', 20, 200)
+            aliases = [a for a in dict.fromkeys(aliases + pn) if a != full_name]
+            properties['vessel'] = vessel_block(
+                imos=_vals('imoNumber', 5, 20), mmsi=_vals('mmsi', 5, 20), call_sign=_vals('callSign', 5, 20),
+                vtype=(_vals('type', 1, 100) or [None])[0], flag=(_vals('flag', 1, 60) or [None])[0],
+                flags_past=_vals('pastFlags', 20, 60), names_past=pn,
+                gross_tonnage=(_vals('grossRegisteredTonnage', 1, 40) or _vals('tonnage', 1, 40) or [None])[0],
+                year_built=(_vals('buildDate', 1, 20) or [None])[0],
+                owners=[{'name': None, 'role': r, 'ref': f'OS-{v}'}
+                        for key, r in (('owner', 'owner'), ('operator', 'operator'))
+                        for v in _vals(key, 10, 200)],
+                measures=vessel_measures(' '.join(topics)) or (['asset_freeze'] if 'sanction' in topics else []))
 
         entity = {
             'source_id': f"OS-{data.get('id')}",

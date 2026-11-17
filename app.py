@@ -399,6 +399,10 @@ def create_app(config_name=None):
     from screening.routes import screening_bp
     app.register_blueprint(screening_bp, url_prefix='/screening')
 
+    # Vessel screening + ComplyNex Vessels Database (V1-V3)
+    from screening.vessel_routes import vessels_bp
+    app.register_blueprint(vessels_bp)
+
     # PEP Management API (search/detail/manual-sync routes only — the actual
     # background sync scheduler runs as its own systemd service,
     # complynex-pep-scheduler.service, not inside gunicorn workers)
