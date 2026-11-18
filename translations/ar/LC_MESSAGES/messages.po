@@ -45541,3 +45541,7 @@ msgstr "بانتظار الاعتماد"
 msgid "vessels"
 msgstr "سفينة"
 
+
+#, python-format
+msgid "The file is too large: up to %(n)s rows and %(mb)s MB per file."
+msgstr "الملف كبير جدًا: الحد الأقصى %(n)s صف و%(mb)s ميجابايت لكل ملف."

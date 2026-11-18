@@ -34,8 +34,8 @@ logger = logging.getLogger(__name__)
 
 vessels_bp = Blueprint('vessels', __name__, url_prefix='/screening/vessels')
 
-BULK_MAX_ROWS = 500
-BULK_OWNER_MAX = 100
+BULK_MAX_ROWS = 200      # screened in the request: kept well inside the worker timeout
+BULK_OWNER_MAX = 25      # the owner layer runs the full person / entity engine per row
 PAGE = 50
 
 # reason codes for the validation of a hit: (code, English, Arabic, decision it fits)
@@ -99,7 +99,9 @@ def vessels_required(level='view'):
 
         @wraps(f)
         def wrapped(*a, **kw):
-            if getattr(current_user, 'role', '') in ('superadmin', 'it_admin'):
+            # site administrators (admin, superadmin, it_admin) always - the same rule as is_site_admin();
+            # only the superadmin sees the real lists (vessel_store.can_see_sources)
+            if getattr(current_user, 'is_authenticated', False) and is_site_admin():
                 return f(*a, **kw)
             return guarded(*a, **kw)
         return wrapped
@@ -242,7 +244,15 @@ def _hit_key(kind, key):
 
 
 def owner_key(o):
-    return 'WL:%s' % o['watchlist_id'] if o.get('watchlist_id') else 'NAME:' + VS.party_key(o.get('name'))
+    """Key of an owner hit (fits vessel_hit_decisions.listed_key, 40 characters): the listed record's id, else
+    the name, hashed when it is long."""
+    if o.get('watchlist_id'):
+        return 'WL:%s' % o['watchlist_id']
+    k = 'NAME:' + VS.party_key(o.get('name'))
+    if len(k) > 40:
+        import hashlib
+        k = 'NAMEH:' + hashlib.sha1(k.encode('utf-8')).hexdigest()[:32]
+    return k
 
 
 @vessels_bp.route('/result/<int:sid>')
@@ -450,30 +460,69 @@ def bulk_template():
                     headers={'Content-Disposition': 'attachment; filename=vessel_screening_template.csv'})
 
 
-def read_bulk_rows(fs):
-    """[(row_no, {column: value})] of a CSV (UTF-8) or .xlsx file; header names in English or Arabic."""
+BULK_MAX_BYTES = 5 * 1024 * 1024           # the upload itself
+BULK_MAX_XLSX_UNZIPPED = 40 * 1024 * 1024  # an .xlsx is a zip: its sheets may not unpack beyond this
+BULK_MAX_COLS = 30
+BULK_MAX_CELL = 300
+
+
+class BulkTooLarge(ValueError):
+    pass
+
+
+def _bulk_bytes(fs):
+    """The upload, refused beyond BULK_MAX_BYTES without reading more than that."""
+    raw = fs.stream.read(BULK_MAX_BYTES + 1)
+    if len(raw) > BULK_MAX_BYTES:
+        raise BulkTooLarge('file')
+    return raw
+
+
+def read_bulk_rows(fs, max_rows=None):
+    """[(row_no, {column: value})] of a CSV (UTF-8) or .xlsx file; header names in English or Arabic.
+    Bounded before anything is parsed in full: file size, the unzipped size of an .xlsx, columns per row,
+    cell length, and rows (stops at max_rows + 1 and raises BulkTooLarge)."""
+    max_rows = max_rows or BULK_MAX_ROWS
     name = (fs.filename or '').lower()
     rows = []
+
+    def take(n, head, values):
+        values = list(values)[:BULK_MAX_COLS]
+        r = {head[i]: ('' if v is None else str(v).strip()[:BULK_MAX_CELL]) for i, v in enumerate(values)
+             if i < len(head)}
+        if any((r.get(c) or '').strip() for c in BULK_COLUMNS):
+            rows.append((n, r))
+            if len(rows) > max_rows:
+                raise BulkTooLarge('rows')
+
     if name.endswith('.xlsx'):
+        import zipfile
+        raw = _bulk_bytes(fs)
+        with zipfile.ZipFile(io.BytesIO(raw)) as z:
+            if sum(i.file_size for i in z.infolist()) > BULK_MAX_XLSX_UNZIPPED:
+                raise BulkTooLarge('unzipped')
         import openpyxl
-        ws = openpyxl.load_workbook(fs, read_only=True, data_only=True).active
-        it = ws.iter_rows(values_only=True)
-        head = [_head(h) for h in next(it, [])]
-        for n, r in enumerate(it, 2):
-            rows.append((n, {head[i]: ('' if v is None else str(v).strip()) for i, v in enumerate(r) if i < len(head)}))
+        wb = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+        try:
+            it = wb.active.iter_rows(values_only=True, max_col=BULK_MAX_COLS)
+            head = [_head(h) for h in (next(it, None) or [])][:BULK_MAX_COLS]
+            for n, r in enumerate(it, 2):
+                take(n, head, r)
+        finally:
+            wb.close()
     elif name.endswith('.csv') or name.endswith('.txt'):
-        raw = fs.read()
+        raw = _bulk_bytes(fs)
         try:
             text = raw.decode('utf-8-sig')
         except UnicodeDecodeError:
             text = raw.decode('cp1256', errors='replace')
         rdr = csv.reader(io.StringIO(text))
-        head = [_head(h) for h in next(rdr, [])]
+        head = [_head(h) for h in (next(rdr, None) or [])][:BULK_MAX_COLS]
         for n, r in enumerate(rdr, 2):
-            rows.append((n, {head[i]: str(v or '').strip() for i, v in enumerate(r) if i < len(head)}))
+            take(n, head, r)
     else:
         raise ValueError('unsupported file type')
-    return [(n, r) for n, r in rows if any((r.get(c) or '').strip() for c in BULK_COLUMNS)]
+    return rows
 
 
 @vessels_bp.route('/bulk', methods=['GET', 'POST'])
@@ -487,6 +536,11 @@ def bulk():
             return redirect(url_for('vessels.bulk'))
         try:
             rows = read_bulk_rows(fs)
+        except BulkTooLarge as e:
+            flash(gettext('The file is too large: up to %(n)s rows and %(mb)s MB per file.', n=BULK_MAX_ROWS,
+                          mb=BULK_MAX_BYTES // (1024 * 1024)), 'warning')
+            logger.info(f'[VESSELS] bulk file refused ({e})')
+            return redirect(url_for('vessels.bulk'))
         except Exception as e:
             logger.warning(f'[VESSELS] bulk file unreadable: {e}')
             flash(gettext('The file could not be read. Use the template (CSV UTF-8 or .xlsx).'), 'danger')
