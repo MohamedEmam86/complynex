@@ -245,6 +245,7 @@ class UNSecurityCouncilHandler(BaseFormatHandler):
             imos = ship_from_text(full_name, comments)
             if imos is not None:
                 entity_type = 'VESSEL'
+                logger.info(f"[VESSELS] UN record {source_id} '{full_name}' read as a ship (IMO {imos}): review if wrong")
                 fm = re.search(r'Flag(?: State)?\s*:\s*([A-Za-z ,.\'()-]+?)(?:\.|;|$)', comments or '', re.M)
                 tm = re.search(r'Type of (?:ship|vessel)\s*:\s*([^.;\n]+)', comments or '', re.I)
                 vessel = vessel_block(imos=imos, flag=fm.group(1).strip() if fm else None,
@@ -932,6 +933,8 @@ class EUSanctionsHandler(BaseFormatHandler):
                 imos = ship_from_text(full_name, remarks_all, imo_ids)
                 if imos is not None:
                     entity_type = 'VESSEL'
+                    logger.info(f"[VESSELS] EU record {source_id} '{full_name}' read as a ship (IMO {imos}): "
+                                f"review if wrong")
                     tm = re.search(r'Type of ship\s*:\s*([^\n]+)', remarks_all, re.I)
                     om = re.search(r'Owner\s*:\s*([^\n]+)', remarks_all)
                     fm = re.search(r'Flag(?: State)?\s*:\s*([^\n.;]+)', remarks_all, re.I)

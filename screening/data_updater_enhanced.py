@@ -363,7 +363,16 @@ class EnhancedDataUpdater:
                 # ships (V1): refresh the vessel tables of this list from its VESSEL rows (also when the
                 # list no longer has any); a failure here never undoes the list update (the next run, or
                 # scripts/vessels_sync.py, redoes it)
-                if True:
+                had_ships = False
+                try:
+                    _c = self.db_conn.cursor()
+                    _c.execute("SELECT EXISTS (SELECT 1 FROM vessel_profile p JOIN screening_watchlist w "
+                               "ON w.id = p.watchlist_id WHERE w.source = %s) AS e", (sname,))
+                    _r = _c.fetchone()
+                    had_ships = bool(_r['e'] if isinstance(_r, dict) else _r[0])
+                except Exception:
+                    self.db_conn.rollback()
+                if had_ships or any(e.get('entity_type') == 'VESSEL' for e in entities):
                     try:
                         from screening import vessel_store as _VS
                         source_stats['vessels'] = _VS.sync(self.db_conn, sname).get('vessels')
@@ -660,6 +669,10 @@ class EnhancedDataUpdater:
                     # rewritten even when lists without profile fields (UN, EU) did not change its name
                     retyped = 'VESSEL' in (existing.get('entity_type'), entity.get('entity_type')) and \
                         existing.get('entity_type') != entity.get('entity_type')
+                    if retyped:
+                        # reviewed by a person: a list record that changed between ship and company / person
+                        logger.warning(f"[VESSELS] {source_name}: record {source_id} '{entity.get('full_name')}' "
+                                       f"re-typed {existing.get('entity_type')} -> {entity.get('entity_type')}")
                     if existing.get('full_name') != entity.get('full_name') or rich_changed or retyped:
                         self._update_entity(entity, cursor)
                         self._store_rich(entity, cursor, source_name)
