@@ -32,6 +32,7 @@ _DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹', '01234567890
 # words in front of (or behind) a ship name that are not part of the name
 _PREFIXES = {'MV', 'MT', 'MY', 'SS', 'FV', 'MS', 'MSV', 'LNG', 'LPG', 'RV', 'TS', 'SV', 'HMS'}
 _FILLER = {'VESSEL', 'SHIP', 'TANKER', 'THE', 'M', 'V', 'T'}
+_TRAILING_FILLER = {'VESSEL', 'SHIP', 'TANKER'}      # a trailing V / X / I is a hull number, not filler
 _AR_FILLER = {'سفينه', 'الناقله', 'ناقله', 'السفينه', 'باخره', 'الباخره', 'المركب', 'مركب',
               'يخت', 'اليخت', 'قاطره', 'القاطره', 'صهريج', 'النفط', 'البضائع', 'الحاويات', 'نفط', 'بضائع'}
 # Arabic ship prefixes: م/ن (motor ship), ن/م, س/ن, م.ن ... become one-letter tokens after punctuation removal
@@ -71,9 +72,34 @@ def mmsi_valid(v):
     return bool(d) and d[0] in '234567'
 
 
+_CS_LABEL = re.compile(r'^\s*(?:C\s*/\s*S|C\.\s*S\.|CALL\s*-?\s*SIGN|CS\s*[:#])\s*[:#.-]?\s*', re.I)
+
+
 def norm_call_sign(v):
-    s = re.sub(r'[^A-Z0-9]', '', str(v or '').upper().translate(_DIGITS))
+    """'C/S 3E2333', 'Call sign: 3E2333' -> '3E2333' (a bare 'CS...' is kept: real call signs start with CS)."""
+    s = _CS_LABEL.sub('', str(v or '').translate(_DIGITS))
+    s = re.sub(r'[^A-Z0-9]', '', s.upper())
     return s or None
+
+
+def imo_neighbours(v):
+    """Valid IMO numbers one keying error away from an IMO that fails its check digit: one digit changed,
+    or two adjacent digits swapped. Used to point a mistyped IMO to a listed ship for review."""
+    d = norm_imo(v)
+    if not d or imo_valid(d):
+        return []
+    out = set()
+    for i in range(7):
+        for c in '0123456789':
+            if c != d[i]:
+                x = d[:i] + c + d[i + 1:]
+                if imo_valid(x):
+                    out.add(x)
+    for i in range(6):
+        x = d[:i] + d[i + 1] + d[i] + d[i + 2:]
+        if x != d and imo_valid(x):
+            out.add(x)
+    return sorted(out)
 
 
 def _strip_accents(s):
@@ -97,7 +123,10 @@ def norm_name(name):
         # leading descriptors ('السفينة', 'ناقلة النفط') and one-letter prefixes (م/ن, ن/م ...) are not the name
         while len(toks) > 1 and (toks[0] in _AR_FILLER or toks[0] in _AR_PREFIX_LETTERS or toks[0] in _PREFIXES):
             toks.pop(0)
-        return ' '.join(toks)
+        out = ' '.join(toks)
+        if not is_arabic(out):          # an Arabic prefix in front of a Latin name ('ناقلة Zal Pars 3')
+            return norm_name(out)
+        return out
     s = _strip_accents(s).upper()
     s = re.sub(r'\b([A-Z])[/.]([A-Z])\b\.?', r'\1\2', s)         # M/V, M.V. -> MV
     s = re.sub(r'(?<=[A-Z])-(?=\d)|(?<=\d)-(?=[A-Z])', ' ', s)    # STAR-1 -> STAR 1
@@ -106,7 +135,7 @@ def norm_name(name):
     toks = s.split()
     while toks and (toks[0] in _PREFIXES or toks[0] in _FILLER):
         toks.pop(0)
-    while len(toks) > 1 and toks[-1] in _FILLER:
+    while len(toks) > 1 and toks[-1] in _TRAILING_FILLER:
         toks.pop()
     return ' '.join(toks)
 
@@ -114,17 +143,24 @@ def norm_name(name):
 def name_numbers(norm):
     """The numbers in a normalised name, Roman numerals included (II = 2), as a sorted tuple."""
     out = []
-    for t in str(norm or '').split():
+    toks = str(norm or '').split()
+    for i, t in enumerate(toks):
         if t.isdigit():
             out.append(int(t))
-        elif t in _ROMAN and len(t) > 1:      # II, III, IV ... (a lone I / V / X stays a letter)
+        elif t in _ROMAN and (len(t) > 1 or (i == len(toks) - 1 and i > 0)):
+            # II, III, IV ...; a lone I / V / X counts only as the last word after a name (PROGRESS V)
             out.append(_ROMAN[t])
     return tuple(sorted(out))
 
 
+def _is_numeral(t, i, n):
+    return t.isdigit() or (t in _ROMAN and (len(t) > 1 or (i == n - 1 and i > 0)))
+
+
 def name_words(norm):
     """The non-number words of a normalised name."""
-    return [t for t in str(norm or '').split() if not t.isdigit() and not (t in _ROMAN and len(t) > 1)]
+    toks = str(norm or '').split()
+    return [t for i, t in enumerate(toks) if not _is_numeral(t, i, len(toks))]
 
 
 def clean_flag(v):

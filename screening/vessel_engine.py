@@ -50,6 +50,11 @@ DEFAULTS = {
     'flag_bonus': 3.0,             # same flag (current or former) on a name hit
     'owner_bonus': 4.0,            # the declared owner is the listed ship's owner, on a name hit
     'name_hit_max': 94.0,          # a name hit never reaches CONFIRMED by itself
+    'single_word_min': 97.0,       # a one-word name (TRIUMPH, MARINA) alerts only when it is the same word ...
+    'single_word_max': 75.0,       # ... and then only for review (LOW): thousands of ships carry such names
+    'near_imo_score': 75.0,        # an IMO failing its check digit one keying error from a listed IMO: review
+    'near_imo_name_score': 90.0,   # ... with the same name as well: an obvious typo of that ship's IMO
+    'conflict_review_score': 75.0, # same name, different valid IMO that no list knows (possible false IMO): review
     'owner_weight': 0.95,          # the screening's score from a listed owner
     'risk': {'invalid_imo': 20, 'invalid_mmsi': 10, 'foc': 15, 'high_risk_flag': 25, 'false_flag': 30,
              'flag_changes': 15, 'listed_flag_changes': 10, 'listed_renamed': 5, 'owner_listed': 40},
@@ -156,6 +161,14 @@ _TEXT = {
     'w_imo_len': ('IMO number is not 7 digits: not used', 'رقم IMO ليس 7 أرقام: لم يُستخدم'),
     'w_mmsi_len': ('MMSI is not 9 digits: not used', 'رقم MMSI ليس 9 أرقام: لم يُستخدم'),
     'w_nothing': ('Nothing to screen', 'لا توجد بيانات للفحص'),
+    'near_imo': ('The IMO {q} fails its check digit; {l} (one keying error away) is listed: check the number',
+                 'رقم IMO {q} لا يجتاز رقم التحقق؛ والرقم {l} (بفارق خطأ إدخال واحد) مدرج: تحقق من الرقم'),
+    'single_word': ('One-word name: many ships carry it, the name alone cannot identify the ship (review only)',
+                    'اسم من كلمة واحدة: تحمله سفن كثيرة، ولا يكفي الاسم وحده لتحديد السفينة (للمراجعة فقط)'),
+    'imo_conflict_review': ('Same name, but the IMO {q} differs from the listed {l} and is on no list: possibly a '
+                            'same-name ship or a false IMO - compare the particulars',
+                            'نفس الاسم، لكن رقم IMO {q} يختلف عن المدرج {l} وغير مدرج في أي قائمة: قد تكون سفينة '
+                            'بنفس الاسم أو رقم IMO مزيف - قارن البيانات'),
     'w_owner_unavailable': ('Owner screening unavailable: screen the owner separately',
                             'فحص المالك غير متاح: افحص المالك بشكل منفصل'),
 }
@@ -207,11 +220,15 @@ def _join_article(words):
     return out
 
 
-_AR_VK = str.maketrans({'ب': 'b', 'ت': 't', 'ث': 's', 'ج': 'g', 'ح': 'h', 'خ': 'k', 'د': 'd', 'ذ': 'z', 'ر': 'r',
+_AR_VK = str.maketrans({'ب': 'b', 'ت': 't', 'ث': 'z', 'ج': 'g', 'ح': 'h', 'خ': 'k', 'د': 'd', 'ذ': 'z', 'ر': 'r',
                         'ز': 'z', 'س': 's', 'ش': 'x', 'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z', 'ع': '', 'غ': 'g',
                         'ف': 'f', 'ق': 'k', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h', 'و': 'u', 'ي': 'i',
                         'ى': 'a', 'ا': 'a', 'أ': 'a', 'إ': 'i', 'آ': 'a', 'ة': 'a', 'ء': '', 'ئ': 'i', 'ؤ': 'u',
                         'پ': 'b', 'گ': 'g', 'چ': 'x', 'ڤ': 'f', ' ': ''})
+# Latin spellings -> the sounds Arabic script writes (foreign names are written as they sound)
+_LAT_VK = (('tch', 'x'), ('sch', 'x'), ('ch', 'x'), ('sh', 'x'), ('zh', 'g'), ('kh', 'k'), ('gh', 'g'), ('ph', 'f'),
+           ('th', 'z'), ('dh', 'z'), ('ck', 'k'), ('qu', 'k'), ('q', 'k'), ('x', 'x'), ('j', 'g'), ('v', 'f'),
+           ('p', 'b'), ('w', 'u'), ('o', 'u'), ('y', 'i'), ('e', 'i'))
 
 
 def _vkey(norm):
@@ -220,16 +237,44 @@ def _vkey(norm):
     (ATTICA / UTAKI / YATEEKA) are not taken for one another."""
     words = VU.name_words(norm)
     if VU.is_arabic(norm):
-        k = ''.join(words).translate(_AR_VK)
+        k = ''.join(words).replace('تش', 'ش')
+        k = k.translate(_AR_VK)
         k = re.sub(r'h$', 'a', k)
+        k = re.sub(r'ng$', 'n', re.sub(r'ng(?=[^aiu]|$)', 'n', k))          # غ after ن: the "ng" sound
     else:
-        k = ''.join(_join_article(words)).lower()
-        for a, b in (('sh', 'x'), ('kh', 'k'), ('gh', 'g'), ('th', 's'), ('dh', 'z'), ('ph', 'f'),
-                     ('q', 'k'), ('c', 'k'), ('j', 'g'), ('v', 'f'), ('p', 'b'), ('e', 'a'), ('y', 'i'),
-                     ('o', 'u'), ('w', 'u')):
-            k = k.replace(a, b)
+        parts = []
+        for w in _join_article(words):
+            w = w.lower()
+            w = re.sub(r'c(?=[eiy])', 's', w)                                # PACIFIC -> pasifik
+            w = re.sub(r'ght', 't', w)                                       # MIGHTY
+            w = re.sub(r'(?<=[a-z])a([bdfgklmnprstvz])e$', r'i\1', w)          # LAKE, GATE: "ei", Arabic ي
+            w = re.sub(r'(?<=[a-z]{3})e$', '', w)                            # silent final e
+            for x, y in _LAT_VK:
+                w = w.replace(x, y)
+            w = w.replace('c', 'k')
+            parts.append(w)
+        k = ''.join(parts)
         k = re.sub(r'h$', '', k) if len(k) > 3 else k
+        k = re.sub(r'ng(?=[^aiu]|$)', 'n', k)
     return re.sub(r'(.)\1+', r'\1', k)
+
+
+def _consonants(k):
+    return re.sub(r'[aiu]', '', k)
+
+
+def cross_script_score(qn, ln):
+    """Similarity of an Arabic-script and a Latin-script ship name from their sound keys: the full key (with
+    the vowels Arabic writes), and for long names the consonants alone (Arabic often leaves short vowels out)."""
+    from rapidfuzz import fuzz
+    a, b = _vkey(qn), _vkey(ln)
+    if not a or not b:
+        return 0.0
+    s = fuzz.ratio(a, b)
+    ca, cb = _consonants(a), _consonants(b)
+    if min(len(ca), len(cb)) >= 5:
+        s = max(s, fuzz.ratio(ca, cb) * 0.95)
+    return float(s)
 
 
 def _skeletons(norm):
@@ -275,13 +320,7 @@ def name_score(query, listed, cfg=None):
         # cross-script: compare the consonant skeleton of each word as well
         # the consonant skeleton says "could be the same name"; the vowel key (Arabic writes the long
         # vowels) says how close the two readings are
-        qs, ls = _skeletons(qn), _skeletons(ln)
-        vk = fuzz.ratio(_vkey(qn), _vkey(ln))
-        if qs and ls and all(qs) and all(ls):
-            sk = vk if qs == ls else min(vk, fuzz.ratio(''.join(qs), ''.join(ls)))
-        else:
-            sk = 0.0
-        s = max(fz, sk * 0.97)
+        s = max(fz, cross_script_score(qn, ln) * 0.97)
         reasons.append('cross_script')
         qnum = VU.name_numbers(q_lat) or qnum
         lnum = VU.name_numbers(l_lat) or lnum
@@ -299,8 +338,9 @@ def name_score(query, listed, cfg=None):
                         _vkey(qn)[:1] == _vkey(ln)[:1]:
                     s = 88.0
                     reasons.append('spelling')
-            if len(qw) == 1 and len(lw) > 1 and qw[0] in lw:
-                # one word of a longer listed name ("OCEAN" vs "OCEAN GLORY") is not that ship
+            if len(qw) == 1 and len(lw) > 1 and fuzz.ratio(a.replace(' ', ''), b.replace(' ', '')) < 95:
+                # one word against a longer listed name ("OCEAN" vs "OCEAN GLORY", "ATLANTIC" vs
+                # "HS ATLANTICA") is not that ship; the joined form of the whole name (SANSEVERUS) is
                 s = min(s, cfg['partial_word_cap'])
                 reasons.append('partial_word')
     if qnum != lnum:
@@ -341,7 +381,7 @@ def _prefilter_index(cands):
     hit = _PF.get('idx')
     if hit and hit[0] == key and hit[1] == len(cands):
         return hit[2]
-    keys, vals, sks = [], [], []
+    keys, vals, sks, vks = [], [], [], []
     for i, c in enumerate(cands):
         for n in c['names']:
             nn = VU.norm_name(n)
@@ -349,7 +389,8 @@ def _prefilter_index(cands):
                 keys.append(i)
                 vals.append(nn)
                 sks.append(' '.join(_skeletons(nn)))
-    idx = (keys, vals, sks)
+                vks.append(_vkey(nn))
+    idx = (keys, vals, sks, vks)
     _PF['idx'] = (key, len(cands), idx)
     return idx
 
@@ -361,7 +402,7 @@ def _prefilter(query, cands, limit=60, cfg=None):
     qn = VU.norm_name(query)
     if not qn:
         return []
-    keys, vals, sks = _prefilter_index(cands)
+    keys, vals, sks, vks = _prefilter_index(cands)
     q_lat = VU.norm_name(_latin(query)) if VU.is_arabic(qn) else qn
     q_sk = ' '.join(_skeletons(qn))
     picked = set()
@@ -372,6 +413,11 @@ def _prefilter(query, cands, limit=60, cfg=None):
     if q_sk:
         for _, sc, idx in process.extract(q_sk, sks, scorer=fuzz.ratio, limit=limit, score_cutoff=80):
             picked.add(keys[idx])
+    if VU.is_arabic(qn):        # Arabic script: the sound key (as Arabic writes foreign names)
+        qv = _vkey(qn)
+        if qv:
+            for _, sc, idx in process.extract(qv, vks, scorer=fuzz.ratio, limit=limit, score_cutoff=70):
+                picked.add(keys[idx])
     return [cands[i] for i in picked]
 
 
@@ -500,12 +546,32 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
                     fields['IMO number'] = {'query': q_imo, 'listed': c['imo'], 'match': False}
             add(c, sc, 'identifier', expl, matched_name=nm, fields=fields)
 
+    # ---- layer 1b: an IMO failing its check digit, one keying error from a listed IMO (review)
+    if q_imo and not q_imo_ok:
+        for n in VU.imo_neighbours(q_imo):
+            for wid, is_current in ids_for('IMO', n):
+                c = by_id.get(wid)
+                if c is None:
+                    continue
+                add(c, cfg['near_imo_score'], 'identifier', [say('near_imo', q=q_imo, l=n)],
+                    fields={'IMO number': {'query': q_imo, 'listed': n, 'match': False}})
+
     # ---- layer 2: names
+    q_norm = VU.norm_name(q_name) if q_name else ''
+    single_word = bool(q_norm) and len(q_norm.split()) == 1
+    q_imo_listed = bool(q_imo_ok and ids_for('IMO', q_imo))
     if q_name:
         for c in _prefilter(q_name, candidates, cfg=cfg):
             ns, nm, nr = best_name(q_name, c['names'], cfg)
             if ns < cfg['name_min']:
                 continue
+            # a one-word name: the screened name and the listed name are both one word (a joined form
+            # of a two-word listed name such as SANSEVERUS / SAN SEVERUS is not)
+            one_word = single_word and len(VU.norm_name(nm or '').split()) <= 1
+            if one_word and ns < cfg['single_word_min']:
+                continue
+            near = hits.get(c['watchlist_id'])
+            near_imo = bool(near and any(e['code'] == 'near_imo' for e in near['explanation']))
             sc = ns * cfg['name_weight']
             expl = [say('name_match', s='%.0f' % ns, n=nm or c['name'])] + _reason_items(nr)
             if nm and nm in (c.get('previous_names') or []):
@@ -514,8 +580,13 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
             if q_imo and c.get('imo'):
                 fields['IMO number'] = {'query': q_imo, 'listed': c['imo'], 'match': q_imo == c['imo']}
                 if imo_conflict(c):
-                    sc = min(sc, cfg['conflict_cap'])
-                    expl.append(say('imo_conflict', q=q_imo, l=c['imo']))
+                    if ns >= cfg['name_strong'] and not q_imo_listed and not one_word:
+                        # the screened IMO is on no list: a same-name ship, or a falsified IMO (shadow fleet)
+                        sc = min(sc, cfg['conflict_review_score'])
+                        expl.append(say('imo_conflict_review', q=q_imo, l=c['imo']))
+                    else:
+                        sc = min(sc, cfg['conflict_cap'])
+                        expl.append(say('imo_conflict', q=q_imo, l=c['imo']))
             if q_mmsi and c.get('mmsi') and q_mmsi != c['mmsi']:
                 fields['MMSI'] = {'query': q_mmsi, 'listed': c['mmsi'], 'match': False}
                 expl.append(say('mmsi_differs'))
@@ -537,6 +608,11 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
             if query['type'] and c.get('type'):
                 qt, lt = query['type'].lower(), str(c['type']).lower()
                 fields['type'] = {'query': query['type'], 'listed': c['type'], 'match': qt in lt or lt in qt}
+            if near_imo and ns >= cfg['name_strong']:
+                sc = max(sc, cfg['near_imo_name_score'])      # mistyped IMO + the same name: that ship
+            elif one_word:
+                sc = min(sc, cfg['single_word_max'])
+                expl.append(say('single_word'))
             add(c, min(sc, cfg['name_hit_max']), 'name', expl, matched_name=nm, fields=fields)
 
     # ---- layer 3: owner / operator / manager
@@ -594,7 +670,8 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
         h.pop('names', None)
         h.pop('flags_all', None)
         merged.append(h)
-    merged.sort(key=lambda h: -h['score'])
+    # equal scores: a ship whose own (primary) name matched before one matched through an alias
+    merged.sort(key=lambda h: (-h['score'], VU.norm_name(h.get('matched_name')) != VU.norm_name(h.get('name'))))
 
     # ---- whitelist (cleared false matches): suppressed while nothing changed on either side
     qkey = VU.query_key(q_name, q_imo, q_mmsi, query['flag'])
@@ -691,8 +768,52 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
             'query_key': qkey, 'query_fp': qfp, 'thresholds': thresholds}
 
 
-def party_screener():
-    """screen_party callable backed by the person / entity engine (company screening, no media)."""
+_LEGAL_FORMS = (('LIMITED', 'LTD'), ('COMPANY', 'CO'), ('CORPORATION', 'CORP'), ('INCORPORATED', 'INC'),
+                ('L L C', 'LLC'))
+
+
+def owner_variants(name):
+    """Comparable forms of a company name with its legal form spelt both ways ('SKADI LTD' / 'SKADI LIMITED')."""
+    from screening.vessel_store import party_key
+    k = party_key(name)
+    out = {k}
+    for long_, short in _LEGAL_FORMS:
+        for a, b in ((long_, short), (short, long_)):
+            if re.search(r'\b%s$' % a, k):
+                out.add(re.sub(r'\b%s$' % a, b, k))
+    return sorted(x for x in out if x)
+
+
+def exact_owner_records(conn, name, limit=5):
+    """Active list records (not ships) whose name is the declared owner's, legal form aside. The person / entity
+    engine groups records sharing a name, so a company named like one of its ships can hide behind the ship."""
+    if conn is None or not name:
+        return []
+    keys = owner_variants(name)
+    if not keys:
+        return []
+    key_sql = ("upper(btrim(regexp_replace(regexp_replace(regexp_replace(full_name, '[(][^)]*[)]', ' ', 'g'), "
+               "'[^A-Za-z0-9\u0600-\u06ff]+', ' ', 'g'), '\\s+', ' ', 'g')))")
+    try:
+        cur = conn.cursor()
+        cur.execute(f"""SELECT id, full_name, source, list_type FROM screening_watchlist
+                        WHERE is_active = 1 AND coalesce(entity_type, '') NOT IN ('VESSEL', 'INDIVIDUAL')
+                          AND {key_sql} = ANY(%s) ORDER BY id LIMIT %s""", (keys, limit))
+        rows = cur.fetchall()
+        return [dict(r) if isinstance(r, dict) else dict(zip(('id', 'full_name', 'source', 'list_type'), r))
+                for r in rows]
+    except Exception as e:
+        logger.warning(f'[VESSELS] exact owner lookup failed: {e}')
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return []
+
+
+def party_screener(conn=None):
+    """screen_party callable backed by the person / entity engine (company screening, no media), plus an exact
+    lookup of the owner's name among the listed organisations."""
     def _run(name):
         from screening.routes import get_engine
         eng = get_engine()
@@ -705,5 +826,39 @@ def party_screener():
                         'tier': (m.get('decision') or {}).get('tier'), 'list_type': m.get('list_type'),
                         'source': m.get('source') or m.get('list_source'),
                         'watchlist_id': m.get('id') or m.get('entity_id')})
+        db = conn
+        if db is None:
+            try:
+                from database.db import get_db
+                db = get_db()
+            except Exception:
+                db = None
+        have = {o['watchlist_id'] for o in out}
+        for r in exact_owner_records(db, name):
+            if r['id'] not in have:
+                out.append({'name': r['full_name'], 'score': 100.0, 'tier': None, 'list_type': r.get('list_type'),
+                            'source': r.get('source'), 'watchlist_id': r['id'], 'exact': True})
+        out.sort(key=lambda o: -float(o.get('score') or 0))
         return out[:10]
     return _run
+
+
+def decision(res):
+    """The screening's outcome in three words, for the Gold Set gate, the API and bulk summaries:
+       'match'    an alert that identifies a listed ship or a listed owner (CONFIRMED / POTENTIAL tier)
+       'review'   an alert an analyst must look at, but that does not identify a hull (LOW tier)
+       'no_match' nothing at or above the alert threshold (risk indicators never count)
+    Returns (decision, imo of the top listed ship or None, score)."""
+    hits = res.get('hits') or []
+    owners = res.get('owner_hits') or []
+    top = hits[0] if hits else None
+    best_t = top['tier'] if top else 'BELOW'
+    owner_t = owners[0]['tier'] if owners else 'BELOW'
+    rank = {'CONFIRMED': 3, 'POTENTIAL': 2, 'LOW': 1, 'BELOW': 0}
+    t = max(best_t, owner_t, key=lambda x: rank.get(x, 0))
+    if rank.get(t, 0) == 0:
+        return 'no_match', None, float(res.get('score') or 0)
+    dec = 'match' if rank[t] >= 2 else 'review'
+    # the ship is named only when a ship hit decides the outcome (an owner hit alone names no hull)
+    imo = top.get('imo') if top and rank.get(best_t, 0) >= rank[t] else None
+    return dec, imo, float(res.get('score') or 0)
