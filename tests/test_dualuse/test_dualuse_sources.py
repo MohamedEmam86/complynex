@@ -9,6 +9,7 @@ Fixtures (small excerpts, reusable):
   chpl_tiers.txt                List of Common High Priority Items, version of February 2024 (pdftotext -layout)
 """
 import importlib.util
+import io
 import os
 import sys
 
@@ -221,3 +222,47 @@ def test_vessel_screening_degrades_without_engine_tables():
             pass
     assert S.screen_vessel('', '', FakeDB()) == {}
     assert S.screen_vessel('OCEAN STAR', '9074729', FakeDB())['error'] == 'unavailable'
+
+
+# ------------------------------------------------------------------ batch file limits (review M6, minors 6 and 9)
+def test_batch_file_limits_stop_early_and_speak_arabic():
+    big = ('desc,hs\n' + ''.join('item %d,8471.30\n' % i for i in range(S.MAX_BATCH_LINES + 5))).encode()
+    with pytest.raises(S.TableError) as e:
+        S.read_table('a.csv', big)
+    assert e.value.ar and str(S.MAX_BATCH_LINES) in e.value.en
+    wide = (','.join('c%d' % i for i in range(80)) + '\n' + ','.join('v' for _ in range(80)) + '\n').encode()
+    header, rows = S.read_table('w.csv', wide)
+    assert len(header) == S.MAX_COLUMNS and len(rows[0]) == S.MAX_COLUMNS
+    with pytest.raises(S.TableError):
+        S.read_table('f.csv', b'a,b\n"' + b'x' * 200000 + b'",1\n')        # csv.Error is not a 500
+    with pytest.raises(S.TableError) as e:
+        S.read_table('x.pdf', b'%PDF')
+    assert e.value.ar
+
+
+def test_xlsx_zip_bomb_refused_before_parsing():
+    import zipfile
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.writestr('xl/worksheets/sheet1.xml', b'0' * (S.MAX_XLSX_UNZIPPED + 1))
+    with pytest.raises(S.TableError) as e:
+        S.read_table('bomb.xlsx', buf.getvalue())
+    assert 'unpacked' in e.value.en
+
+
+def test_tmp_uploads_are_swept(tmp_path):
+    import time as _t
+    from packs.trade_control import routes as R
+    old, new = tmp_path / ('a' * 32 + '.json'), tmp_path / ('b' * 32 + '.json')
+    old.write_text('{}')
+    new.write_text('{}')
+    past = _t.time() - R.TMP_TTL - 10
+    os.utime(old, (past, past))
+    R._sweep_tmp(str(tmp_path))
+    assert not old.exists() and new.exists()
+
+
+def test_roles_sources_superadmin_only():
+    assert S.SOURCE_ROLES == ('superadmin',)
+    assert set(S.BYPASS_ROLES) == {'superadmin', 'it_admin'}
+    assert S.VESSEL_LIST_LABEL[1] == 'قوائم دولية معتمدة'

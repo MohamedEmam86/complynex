@@ -6,6 +6,7 @@
 <div class="container-fluid du-page">
   <h3><i class="bi bi-clock-history me-2"></i>{{ rc_loc('Dual-use screenings', 'عمليات فحص السلع مزدوجة الاستخدام') }}</h3>
   {{ dn.nav('history') }}
+  {% if own_only %}<div class="small text-muted mb-2">{{ rc_loc('Showing your own screenings.', 'تظهر عمليات الفحص الخاصة بك فقط.') }}</div>{% endif %}
   <form class="row g-2 mb-3" method="get">
     <div class="col-md-5"><input name="q" class="form-control" value="{{ args.get('q', '') }}" placeholder="{{ rc_loc('Reference, product, model, HS code, party', 'المرجع أو المنتج أو الموديل أو كود HS أو الطرف') }}"></div>
     <div class="col-md-3"><select name="status" class="form-select"><option value="">{{ rc_loc('All', 'الكل') }}</option>

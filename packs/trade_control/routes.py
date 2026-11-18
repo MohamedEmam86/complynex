@@ -21,6 +21,7 @@ import os
 import re
 import secrets
 import tempfile
+import time
 from functools import wraps
 
 from flask import (Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_file,
@@ -38,18 +39,42 @@ MODULE = S.MODULE
 PAGE = 20
 
 
+def can(level='view', user=None):
+    """Module access with the vessel module's rule: superadmin and it_admin always; everyone else (the
+    client's 'admin' included, whom User._get_perm gives 'edit') by the per-user permission."""
+    user = user or current_user
+    if not getattr(user, 'is_authenticated', False):
+        return False
+    if (getattr(user, 'role', '') or '') in S.BYPASS_ROLES:
+        return True
+    return bool({'view': user.can_view, 'edit': user.can_edit, 'admin': user.can_admin_module}[level](MODULE))
+
+
 def perm(level='view'):
     def deco(f):
         @wraps(f)
         @login_required
         def wrapped(*a, **kw):
-            ok = {'view': current_user.can_view, 'edit': current_user.can_edit,
-                  'admin': current_user.can_admin_module}[level](MODULE)
-            if not ok:
+            if not can(level):
                 abort(403)
             return f(*a, **kw)
         return wrapped
     return deco
+
+
+def sees_all():
+    """Editors and module administrators work on every screening; a view-only user sees only their own
+    (the vessel module's rule)."""
+    return can('edit')
+
+
+def _load(sid):
+    s, lines = S.get_screening(sid)
+    if not s:
+        abort(404)
+    if not sees_all() and s.get('created_by') != current_user.id:
+        abort(403)
+    return s, lines
 
 
 def _audit(action, item_id=None, details=None):
@@ -60,17 +85,18 @@ def _audit(action, item_id=None, details=None):
 
 
 def show_lists():
-    """Real list names are for site administrators (superadmin) only; clients see the generic label."""
+    """Real list names, versions and links are for the platform superadmin only (owner decision); every
+    client user, their 'admin' included, sees the generic label."""
     if not getattr(current_user, 'is_authenticated', False):
         return False
-    return (getattr(current_user, 'role', '') or '') in S.SITE_ADMIN_ROLES
+    return (getattr(current_user, 'role', '') or '') in S.SOURCE_ROLES
 
 
 @bp.context_processor
 def _ctx():
     if not getattr(current_user, 'is_authenticated', False):
         return {}
-    return {'du_can_edit': current_user.can_edit(MODULE), 'du_can_admin': current_user.can_admin_module(MODULE),
+    return {'du_can_edit': can('edit'), 'du_can_admin': can('admin'),
             'du_show_lists': show_lists(), 'DU': S, 'DUSC': SC, 'du_lang': 'ar' if _rc('en', 'ar') == 'ar' else 'en'}
 
 
@@ -219,15 +245,14 @@ def _rc(en, ar):
 @bp.route('/screenings')
 @perm('view')
 def screenings():
-    return render_template('trade_control/history.html', rows=S.history(request.args), args=request.args)
+    return render_template('trade_control/history.html', args=request.args, own_only=not sees_all(),
+                           rows=S.history(request.args, user_id=None if sees_all() else current_user.id))
 
 
 @bp.route('/screenings/<int:sid>')
 @perm('view')
 def screening(sid):
-    s, lines = S.get_screening(sid)
-    if not s:
-        abort(404)
+    s, lines = _load(sid)
     idx = S.get_index()
     open_line = request.args.get('line', type=int)
     return render_template('trade_control/screening.html', s=s, lines=lines, open_line=open_line,
@@ -277,6 +302,25 @@ def line_decide(line_id):
 
 
 # ------------------------------------------------------------------ batch
+TMP_TTL = 3600          # an uploaded invoice waits at most one hour for its column mapping
+
+
+def _sweep_tmp(d):
+    """Uploads never run (the user left the mapping page) hold customer invoice data: delete them after TMP_TTL."""
+    now = time.time()
+    try:
+        names = os.listdir(d)
+    except OSError:
+        return
+    for n in names:
+        p = os.path.join(d, n)
+        try:
+            if n.endswith('.json') and now - os.path.getmtime(p) > TMP_TTL:
+                os.remove(p)
+        except OSError:
+            continue
+
+
 def _tmp_dir():
     d = os.path.join(tempfile.gettempdir(), 'complynex_dualuse')
     os.makedirs(d, mode=0o700, exist_ok=True)
@@ -288,16 +332,17 @@ def _tmp_dir():
 def batch():
     if request.method == 'POST' and request.files.get('file'):
         f = request.files['file']
-        data = f.read(10 * 1024 * 1024 + 1)
-        if len(data) > 10 * 1024 * 1024:
+        data = f.stream.read(S.MAX_UPLOAD_BYTES + 1)
+        if len(data) > S.MAX_UPLOAD_BYTES:
             flash(_rc('The file is larger than 10 MB.', 'حجم الملف أكبر من 10 ميجابايت.'), 'danger')
             return redirect(url_for('dualuse.batch'))
         try:
             header, rows = S.read_table(f.filename, data)
-        except ValueError as e:
-            flash(str(e), 'danger')
+        except S.TableError as e:
+            flash(_rc(e.en, e.ar), 'danger')
             return redirect(url_for('dualuse.batch'))
         token = secrets.token_hex(16)
+        _sweep_tmp(_tmp_dir())
         with open(os.path.join(_tmp_dir(), token + '.json'), 'w', encoding='utf-8') as fh:
             json.dump({'name': os.path.basename(f.filename or '')[:200], 'header': header, 'rows': rows,
                        'user': current_user.id}, fh, ensure_ascii=False)
@@ -365,30 +410,30 @@ EXPORT_HEAD = ['Line', 'Description', 'HS code', 'CAS', 'Model', 'Origin', 'Cand
 def export_xlsx(sid):
     import openpyxl
     from openpyxl.styles import Font, PatternFill
-    s, lines = S.get_screening(sid)
-    if not s:
-        abort(404)
+    s, lines = _load(sid)
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'Screening'
-    ws.append(['Dual-use goods screening', s['ref']])
-    ws.append(['Screened against', S.CLIENT_LIST_LABEL[0]])
-    ws.append(['Note', S.DISCLAIMER[0]])
+    from utils.sheet_safe import row as safe_row
+    ws.append(safe_row(['Dual-use goods screening', s['ref']]))
+    ws.append(safe_row(['Screened against', S.CLIENT_LIST_LABEL[0]]))
+    ws.append(safe_row(['Note', S.DISCLAIMER[0]]))
     if s.get('vessel_name') or s.get('vessel_imo'):
         v = s.get('vessel_result') or {}
-        ws.append(['Vessel', '%s %s' % (s.get('vessel_name') or '', ('IMO ' + s['vessel_imo']) if s.get('vessel_imo') else ''),
-                   'not available' if v.get('error') else (v.get('tier') or '')])
-    ws.append(['Created', s['created_at'].strftime('%Y-%m-%d %H:%M') if s['created_at'] else '',
-               s.get('created_by_name') or ''])
+        ws.append(safe_row(['Vessel', '%s %s' % (s.get('vessel_name') or '',
+                                                 ('IMO ' + s['vessel_imo']) if s.get('vessel_imo') else ''),
+                            'not available' if v.get('error') else (v.get('tier') or ''), S.VESSEL_LIST_LABEL[0]]))
+    ws.append(safe_row(['Created', s['created_at'].strftime('%Y-%m-%d %H:%M') if s['created_at'] else '',
+                        s.get('created_by_name') or '']))
     for p in s['party_results'] or []:
-        ws.append(['Party: ' + p['role'], p['name'], p.get('result') or p.get('error') or ''])
+        ws.append(safe_row(['Party: ' + p['role'], p['name'], p.get('result') or p.get('error') or '']))
     ws.append([])
     ws.append(EXPORT_HEAD)
     for c in ws[ws.max_row]:
         c.font = Font(bold=True, color='FFFFFF')
         c.fill = PatternFill('solid', fgColor='1F3A5F')
     for r in _export_rows(s, lines):
-        ws.append(r)
+        ws.append(safe_row(r))           # customer data never becomes a formula (= + - @ ...)
     for col, w in zip('ABCDEFGHIJKLMN', (6, 50, 14, 14, 18, 12, 30, 18, 11, 11, 20, 40, 18, 17)):
         ws.column_dimensions[col].width = w
     buf = io.BytesIO()
@@ -402,9 +447,7 @@ def export_xlsx(sid):
 @bp.route('/screenings/<int:sid>/export.pdf')
 @perm('view')
 def export_pdf(sid):
-    s, lines = S.get_screening(sid)
-    if not s:
-        abort(404)
+    s, lines = _load(sid)
     html = render_template('trade_control/report_pdf.html', s=s, lines=lines, reasons=dict(
         (r[0], (r[1], r[2])) for r in S.DECISION_REASONS), trail=S.decisions(sid),
         explain={ln['id']: SC.explain(ln['candidates'] or [], ln['hard_flags'] or [], ln['suggested']) for ln in lines})

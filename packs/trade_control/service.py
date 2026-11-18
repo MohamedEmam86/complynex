@@ -56,7 +56,13 @@ OUTCOME_HELP = {
                'بنود رقابة محتملة: أجب عن الأسئلة الفنية أو راجع المواصفات.'),
     'hold': ('A listed chemical, a control code on the document or a met threshold: do not proceed until assessed.',
              'مادة كيميائية مدرجة أو كود رقابة في المستند أو حد فني مستوفى: لا تستكمل قبل التقييم.')}
-SITE_ADMIN_ROLES = ('admin', 'superadmin', 'it_admin')
+# Owner decision: the real list names, versions and links are for the platform superadmin only. The
+# superadmin and it_admin use the module without a per-user permission (the vessel module's rule); the
+# client's 'admin' gets 'edit' through User._get_perm but never sees the sources.
+SOURCE_ROLES = ('superadmin',)
+BYPASS_ROLES = ('superadmin', 'it_admin')
+# a vessel hit carries the vessel module's generic label, not the dual-use one
+VESSEL_LIST_LABEL = ('International approved lists', 'قوائم دولية معتمدة')
 CATEGORY_LABELS = {
     '0': ('Nuclear materials, facilities and equipment', 'المواد والمنشآت والمعدات النووية'),
     '1': ('Special materials, chemicals, microorganisms and toxins', 'المواد الخاصة والكيماويات والكائنات الدقيقة والسموم'),
@@ -271,6 +277,15 @@ def screen_parties(parties, user_id, screening_id):
     return out
 
 
+def _vessel_text(VE, items):
+    """Explanation items of the vessel engine as [(english, arabic)] (older results stored plain strings)."""
+    try:
+        en, ar = VE.text(items, 'en'), VE.text(items, 'ar')
+    except Exception:
+        en = ar = [str(i) for i in items]
+    return [[e or a, a or e] for e, a in zip(en, ar)][:4]
+
+
 def screen_vessel(name, imo, db=None):
     """The vessel named on the bill of lading through the vessel screening engine, when that engine and its
     tables exist on this installation. Never raises: returns {} when there is nothing to screen and
@@ -296,7 +311,7 @@ def screen_vessel(name, imo, db=None):
         return {'name': name, 'imo': imo, 'error': 'failed'}
     hits = [{'name': h.get('name'), 'matched_name': h.get('matched_name'), 'imo': h.get('imo'),
              'flag': h.get('flag'), 'tier': h.get('tier'), 'score': h.get('score'), 'source': h.get('source'),
-             'explanation': (h.get('explanation') or [])[:4]} for h in (res.get('hits') or [])[:5]]
+             'explanation': _vessel_text(VE, h.get('explanation') or [])} for h in (res.get('hits') or [])[:5]]
     return {'name': name, 'imo': imo, 'tier': res.get('tier'), 'score': res.get('score'), 'hits': hits,
             'warnings': res.get('warnings') or []}
 
@@ -472,9 +487,13 @@ def _recount(db, sid):
                 'decided' if r['open'] == 0 else 'open', sid))
 
 
-def history(args, limit=200, db=None):
+def history(args, limit=200, db=None, user_id=None):
+    """Screenings, newest first; user_id limits them to one user's own (view-only users)."""
     db = db or get_db()
     where, params = ['TRUE'], []
+    if user_id is not None:
+        where.append('s.created_by = %s')
+        params.append(user_id)
     if args.get('status') in ('open', 'decided'):
         where.append('s.status = %s')
         params.append(args['status'])
@@ -525,19 +544,54 @@ _GUESS = {'description': ('description', 'desc', 'goods', 'item', 'product', 'ا
 MAX_BATCH_LINES = 1000
 
 
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+MAX_XLSX_UNZIPPED = 60 * 1024 * 1024     # an .xlsx expands about 100x: refuse a "zip bomb" before parsing
+MAX_COLUMNS = 50
+MAX_CELL = 2000
+
+
+class TableError(ValueError):
+    """A batch file that cannot be used; carries the message in English and Arabic."""
+    def __init__(self, en, ar):
+        super().__init__(en)
+        self.en, self.ar = en, ar
+
+
+def _limited(rows_iter):
+    """Rows with at most MAX_COLUMNS cells of at most MAX_CELL characters; stops after the line limit
+    (header + MAX_BATCH_LINES + 1 non-empty rows) so a huge file is never read to the end."""
+    out = []
+    for r in rows_iter:
+        cells = [('' if c is None else str(c)).strip()[:MAX_CELL] for c in list(r)[:MAX_COLUMNS]]
+        if any(cells):
+            out.append(cells)
+            if len(out) > MAX_BATCH_LINES + 1:
+                raise TableError('At most %d lines per file.' % MAX_BATCH_LINES,
+                                 'الحد الأقصى %d بند في الملف.' % MAX_BATCH_LINES)
+    return out
+
+
 def read_table(filename, data):
-    """Excel / CSV bytes -> (header, rows as lists). Raises ValueError with a user message."""
+    """Excel / CSV bytes -> (header, rows as lists). Raises TableError (English and Arabic message)."""
+    import io
+    import zipfile
     name = (filename or '').lower()
+    if len(data or b'') > MAX_UPLOAD_BYTES:
+        raise TableError('The file is larger than 10 MB.', 'حجم الملف أكبر من 10 ميجابايت.')
     if name.endswith(('.xlsx', '.xlsm')):
-        import io
         import openpyxl
         try:
+            with zipfile.ZipFile(io.BytesIO(data)) as z:
+                if sum(i.file_size for i in z.infolist()) > MAX_XLSX_UNZIPPED:
+                    raise TableError('The Excel file is too large once unpacked.',
+                                     'ملف Excel كبير جدًا بعد فك الضغط.')
             wb = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+            rows = _limited(wb.worksheets[0].iter_rows(values_only=True))
+        except TableError:
+            raise
         except Exception:
-            raise ValueError('The Excel file could not be read.')
-        rows = [[('' if c is None else str(c)).strip() for c in r] for r in wb.worksheets[0].iter_rows(values_only=True)]
+            raise TableError('The Excel file could not be read.', 'تعذرت قراءة ملف Excel.')
     elif name.endswith(('.csv', '.txt')):
-        import io
         text = None
         for enc in ('utf-8-sig', 'cp1256', 'latin-1'):
             try:
@@ -545,15 +599,18 @@ def read_table(filename, data):
                 break
             except UnicodeDecodeError:
                 continue
-        dialect = csv.Sniffer().sniff(text[:4000], delimiters=',;\t') if text else csv.excel
-        rows = [[c.strip() for c in r] for r in csv.reader(io.StringIO(text), dialect)]
+        try:
+            dialect = csv.Sniffer().sniff(text[:4000], delimiters=',;\t') if text else csv.excel
+        except csv.Error:
+            dialect = csv.excel
+        try:
+            rows = _limited(csv.reader(io.StringIO(text or ''), dialect))
+        except csv.Error:
+            raise TableError('The CSV file could not be read.', 'تعذرت قراءة ملف CSV.')
     else:
-        raise ValueError('Upload an Excel (.xlsx) or CSV file.')
-    rows = [r for r in rows if any(r)]
+        raise TableError('Upload an Excel (.xlsx) or CSV file.', 'ارفع ملف Excel (.xlsx) أو CSV.')
     if len(rows) < 2:
-        raise ValueError('The file has no data rows.')
-    if len(rows) - 1 > MAX_BATCH_LINES:
-        raise ValueError('At most %d lines per file.' % MAX_BATCH_LINES)
+        raise TableError('The file has no data rows.', 'الملف لا يحتوي على بنود.')
     return rows[0], rows[1:]
 
 

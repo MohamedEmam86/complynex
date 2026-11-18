@@ -37,7 +37,7 @@
     <div>{{ rc_loc('Vessel', 'السفينة') }}: <strong>{{ s.vessel_name or '' }}</strong>{% if s.vessel_imo %} · IMO <span dir="ltr">{{ s.vessel_imo }}</span>{% endif %}</div>
     <div class="mt-1">{% if v.get('error') %}<span class="badge bg-secondary">{{ rc_loc('Vessel screening is not available on this installation', 'فحص السفن غير متاح في هذا النظام') if v.error == 'unavailable' else rc_loc('Vessel screening did not complete', 'لم يكتمل فحص السفينة') }}</span>
       {% elif v.get('tier') %}{{ rc_loc('Vessel screening', 'فحص السفينة') }}: <span class="badge {{ 'bg-success' if v.tier == 'CLEAR' else ('bg-danger' if v.tier == 'CONFIRMED' else 'bg-warning text-dark') }}">{{ v.tier }}</span>
-        {% for h in v.get('hits') or [] %}<div class="mt-1">{{ h.name }}{% if h.imo %} · IMO {{ h.imo }}{% endif %} · {{ h.tier }} ({{ h.score }}){% if du_show_lists and h.source %} <span class="badge bg-light text-dark border">{{ h.source }}</span>{% else %} · {{ rc_loc(*DU.CLIENT_LIST_LABEL) }}{% endif %}{% for e in h.explanation or [] %}<div class="text-muted">{{ e }}</div>{% endfor %}</div>{% endfor %}
+        {% for h in v.get('hits') or [] %}<div class="mt-1">{{ h.name }}{% if h.imo %} · IMO {{ h.imo }}{% endif %} · {{ h.tier }} ({{ h.score }}){% if du_show_lists and h.source %} <span class="badge bg-light text-dark border">{{ h.source }}</span>{% else %} · {{ rc_loc(*DU.VESSEL_LIST_LABEL) }}{% endif %}{% for e in h.explanation or [] %}<div class="text-muted" dir="auto">{% if e is mapping %}{{ rc_loc(e.get('en') or '', e.get('ar') or e.get('en') or '') }}{% elif e is string %}{{ e }}{% else %}{{ rc_loc(e[0], e[1]) }}{% endif %}</div>{% endfor %}</div>{% endfor %}
       {% endif %}</div>
     {% endif %}
   </div></div></div>

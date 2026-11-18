@@ -34,7 +34,9 @@ def app():
         db = get_db()
         ids = {}
         for email, role, perm in (('du-admin@example.test', 'admin', None), ('du-edit@example.test', 'employee', 'edit'),
-                                  ('du-view@example.test', 'employee', 'view'), ('du-none@example.test', 'employee', None)):
+                                  ('du-view@example.test', 'employee', 'view'), ('du-none@example.test', 'employee', None),
+                                  ('du-super@example.test', 'superadmin', None),
+                                  ('du-itadm@example.test', 'it_admin', None)):
             u = User.get_by_email(email) or User.create_user(email, PW, 'Test', 'User', role=role)
             ids[email.split('@')[0][3:]] = u.id
             if perm:
@@ -70,7 +72,8 @@ def test_pack_and_permission_are_registered(app):
 def test_screen_decide_and_pages(app):
     ids = app.du_ids
     adm = _client(app, ids['edit'])
-    r = adm.post('/dual-use/screen', data={'description': 'Thionyl chloride', 'cas': '7719-09-7', 'supplier': '',
+    r = adm.post('/dual-use/screen', data={'description': 'Thionyl chloride', 'cas': '7719-09-7',
+                                           'supplier': '=HYPERLINK("http://example.invalid")',
                                            'vessel_name': 'OCEAN STAR', 'vessel_imo': '9074729'})
     assert r.status_code == 302
     sid = int(re.search(r'/screenings/(\d+)', r.headers['Location']).group(1))
@@ -109,21 +112,36 @@ def test_screen_decide_and_pages(app):
             '/dual-use/?category=1', '/dual-use/?q=7719097', '/dual-use/api/suggest?q=enc', '/dual-use/api/search?q=1C350',
             '/dual-use/screenings', '/dual-use/screenings/%d' % sid, '/dual-use/screenings/%d' % bid,
             '/dual-use/screenings/%d/export.xlsx' % bid, '/dual-use/screenings/%d/export.pdf' % sid]
-    for who, expect in (('admin', 200), ('edit', 200), ('view', 200), ('none', 403)):
+    own = ('/dual-use/screenings/%d' % sid, '/dual-use/screenings/%d' % bid,
+           '/dual-use/screenings/%d/export.xlsx' % bid, '/dual-use/screenings/%d/export.pdf' % sid)
+    for who, expect in (('super', 200), ('itadm', 200), ('admin', 200), ('edit', 200), ('view', 200), ('none', 403)):
         for lang in ('en', 'ar'):
             c = _client(app, ids[who], lang)
             for u in urls:
                 r = c.get(u)
-                assert r.status_code == expect, (who, lang, u, r.status_code)
-                if who != 'admin' and r.mimetype in ('text/html', 'application/json'):
+                # a view-only user opens only their own screenings (the vessel module's rule)
+                want = 403 if (who == 'view' and u in own) else expect
+                assert r.status_code == want, (who, lang, u, r.status_code)
+                if who != 'super' and r.mimetype in ('text/html', 'application/json'):
                     body = r.get_data(as_text=True)
                     assert not [w for w in LEAK if w in body], (who, u)
-    for who, code in (('admin', 200), ('edit', 403), ('view', 403), ('none', 403)):
-        assert _client(app, ids[who]).get('/dual-use/admin').status_code == code
-    for who, code in (('edit', 200), ('view', 403), ('none', 403)):
+    # only the platform superadmin sees the real lists
+    body = _client(app, ids['super']).get('/dual-use/api/search?q=1C350').get_data(as_text=True)
+    assert 'eu_annex1' in body or 'us_ccl' in body
+    hist = _client(app, ids['view']).get('/dual-use/screenings').get_data(as_text=True)
+    assert 'Showing your own screenings' in hist or 'عمليات الفحص الخاصة بك فقط' in hist
+    for who, code in (('super', 200), ('itadm', 200), ('admin', 200), ('edit', 403), ('view', 403), ('none', 403)):
+        assert _client(app, ids[who]).get('/dual-use/admin').status_code == code, who
+    for who, code in (('super', 200), ('edit', 200), ('view', 403), ('none', 403)):
         assert _client(app, ids[who]).get('/dual-use/screen').status_code == code
-    r = _client(app, ids['view']).get('/dual-use/screenings/%d/export.pdf' % sid)
+    r = _client(app, ids['edit']).get('/dual-use/screenings/%d/export.pdf' % sid)
     assert r.mimetype == 'application/pdf' and r.data[:4] == b'%PDF'
+    # spreadsheet formula injection: the supplier name is written as text
+    import openpyxl
+    r = _client(app, ids['edit']).get('/dual-use/screenings/%d/export.xlsx' % sid)
+    cells = [c.value for row in openpyxl.load_workbook(io.BytesIO(r.data)).active.iter_rows() for c in row]
+    assert "'=HYPERLINK(\"http://example.invalid\")" in cells
+    assert not any(isinstance(v, str) and v.startswith('=') for v in cells)
 
 
 def test_versions_carry_arabic_and_mark_stale(app):
