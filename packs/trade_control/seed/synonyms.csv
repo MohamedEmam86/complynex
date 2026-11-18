@@ -67,3 +67,1384 @@ furnace;induction furnace;vacuum furnace
 machine tool;machine tools
 3D printer;additive manufacturing;3D printing
 spare parts;parts;components;component
+dual-use goods;dual use items;dual-use items
+export control;export controls
+import control;import controls
+control list;control lists
+control code;control number;classification code
+export control classification number;ECCN
+licence;license;permit
+export licence;export license
+import licence;import license;import permit
+end user;end-user;ultimate consignee
+end use;end-use
+end-user certificate;EUC;end user statement
+consignor;shipper
+importer;importer of record
+supplier;vendor;seller
+manufacturer;producer;maker;OEM
+distributor;reseller;dealer
+broker;intermediary;agent
+freight forwarder;forwarding agent
+customs broker;customs agent
+customs;customs authority
+customs declaration;customs entry;import declaration
+customs clearance;clearance
+customs tariff;tariff schedule
+harmonized system code;HS code;tariff code;commodity code
+tariff heading;heading
+tariff subheading;subheading
+chapter;tariff chapter
+combined nomenclature;CN code
+commercial invoice;invoice
+proforma invoice;pro forma invoice
+packing list;packing slip
+bill of lading;B/L;BOL
+airway bill;AWB;air waybill
+certificate of origin;COO
+bill of materials;BOM
+letter of credit;L/C;documentary credit
+purchase order;PO
+technical specification;datasheet;spec sheet
+safety data sheet;SDS;MSDS
+country of origin;origin country
+country of destination;destination
+transit;transshipment
+transshipment;trans-shipment
+re-export;reexport
+diversion;diversion risk
+catch-all;catch-all control
+military goods;munitions;military items
+military list;munitions list
+weapons of mass destruction;WMD
+non-proliferation;nonproliferation
+chemical weapons;CW
+biological weapons;BW
+nuclear weapons;nuclear explosive devices
+missile technology;MTCR items
+high priority items;CHPL;common high priority list
+reason for control;control reason
+national security;NS
+regional stability;RS
+anti-terrorism;AT
+crime control;CC
+screening;screen;check
+dual-use screening;goods screening
+self-classification;self classification
+technical threshold;threshold
+specially designed;specially-designed
+specially prepared;especially prepared
+having any of the following;having any of
+having all of the following;having all of
+other than;except
+technical note;technical notes
+note;N.B.
+decontrol note;decontrol
+general technology note;GTN
+general software note;GSN
+nuclear technology note;NTN
+component;components;part
+accessory;accessories
+assembly;assemblies
+system;systems
+spare parts;spares
+raw materials;raw material
+finished goods;finished products
+semi-finished goods;semi-finished
+quantity;qty
+unit price;price
+net weight;NW
+gross weight;GW
+model number;model;part number
+part number;P/N
+serial number;S/N
+brand;trademark
+description of goods;goods description
+shipment;consignment
+port of loading;POL
+port of discharge;POD
+vessel;ship
+clear;cleared
+validation;validate
+rationale;justification
+audit trail;audit log
+due diligence;DD
+red flag;red flags
+risk level;risk rating
+watchlist;watch list
+restricted party;denied party
+civilian use;civil use
+military use;military end use
+industrial use;industrial application
+laboratory use;lab use
+research and development;R&D
+nuclear reactor;reactor
+natural uranium;natural U
+depleted uranium;DU
+enriched uranium;HEU;LEU
+special fissile materials;fissile material
+plutonium;Pu
+thorium;Th
+tritium;H-3
+deuterium;D;H-2
+heavy water;D2O
+isotope separation;isotope enrichment
+gas centrifuge;centrifuge
+gaseous diffusion;diffusion
+uranium hexafluoride;UF6
+fuel element;fuel rod;fuel assembly
+spent fuel;irradiated fuel
+pressure vessel;reactor vessel
+control rod;control rods
+hot cell;shielded cell
+radiation shielding;shielding
+radiation hardened;rad-hard
+radionuclide;radioisotope
+neutron source;neutron emitter
+neutron generator;neutron tube
+radium;Ra-226
+polonium;Po-210
+helium-3;He-3
+lithium-6;Li-6
+boron-10;B-10
+zirconium;Zr
+hafnium;Hf
+beryllium;Be
+tungsten;W;wolfram
+tungsten carbide;WC
+rhenium;Re
+tantalum;Ta
+niobium;Nb;columbium
+molybdenum;Mo
+titanium;Ti
+titanium alloy;Ti alloy
+nickel alloy;nickel-based alloy
+superalloy;super alloy
+maraging steel;maraging
+stainless steel;inox;SS
+duplex stainless steel;duplex steel
+magnesium;Mg
+calcium;Ca
+bismuth;Bi
+gallium;Ga
+germanium;Ge
+indium;In
+silicon;Si
+silicon carbide;SiC
+silicon nitride;Si3N4
+boron nitride;BN
+carbon fibre;carbon fiber
+aramid fibre;aramid fiber;Kevlar
+glass fibre;fiberglass;glass fiber
+fibrous or filamentary materials;fibres;filaments
+prepreg;pre-impregnated
+composite;composites
+laminate;laminates
+epoxy;epoxy resin
+polyimide;PI
+fluoropolymer;fluorinated polymer
+PTFE;Teflon;polytetrafluoroethylene
+ceramic;ceramics
+ceramic powder;ceramic powders
+metal powder;metal powders
+alloy;alloys
+ingot;billet
+scrap;waste and scrap
+pure;high purity
+purity;purity level
+tensile strength;ultimate tensile strength;UTS
+magnetic materials;magnetic metals
+superconductor;superconductive
+absorber;radar absorbing material;RAM
+lubricant;lubricating fluid
+hydraulic fluid;hydraulic oil
+body armour;body armor;bulletproof vest
+bulletproof;ballistic protection
+protective equipment;PPE
+gas mask;respirator
+explosive;explosives
+high explosive;HE
+detonator;blasting cap
+initiator;igniter
+propellant;propellants
+improvised explosive device;IED
+pyrotechnic;pyrotechnics
+chemical;chemicals
+toxic chemical;toxic chemicals
+precursor;precursors
+chemical mixture;chemical mixtures
+nerve agent;nerve gas
+blister agent;vesicant
+riot control agent;tear gas
+CAS number;CAS registry number
+reactor vessel;reaction vessel;reactor
+heat exchanger;heat exchangers
+distillation column;distillation tower
+absorption column;absorption tower
+storage tank;storage tanks
+agitator;stirrer;mixer
+multiple-seal pump;seal-less pump;canned pump
+filling equipment;filling machine
+incinerator;incinerators
+glass-lined;glass lined
+corrosion resistant;corrosion-resistant
+hastelloy;nickel-chromium alloy
+fluoropolymer-lined;PTFE lined
+gas monitor;gas detector
+toxic gas detector;gas sensor
+phosgene;carbonyl dichloride
+hydrogen cyanide;HCN
+hydrogen fluoride;HF
+sodium cyanide;NaCN
+potassium cyanide;KCN
+thionyl chloride;SOCl2
+phosphorus trichloride;PCl3
+phosphorus oxychloride;POCl3
+triethanolamine;TEA
+thiodiglycol;TDG
+sarin;GB
+soman;GD
+tabun;GA
+VX;VX nerve agent
+mustard gas;sulfur mustard;HD
+lewisite;L
+saxitoxin;STX
+pathogen;pathogens
+human pathogen;human pathogens
+animal pathogen;animal pathogens
+plant pathogen;plant pathogens
+toxin;toxins
+virus;viruses
+bacteria;bacterium
+fungi;fungus
+genetic elements;genetic material
+genetically modified organism;GMO
+nucleic acid;DNA;RNA
+nucleic acid synthesiser;DNA synthesizer
+cross-flow filtration;tangential flow filtration
+freeze-drying equipment;lyophilizer;freeze dryer
+spray-drying equipment;spray dryer
+biosafety cabinet;BSC;laminar flow cabinet
+containment facility;BSL-3;BSL-4
+isolator;isolators
+aerosol;aerosols
+aerosol inhalation chamber;exposure chamber
+protective suit;protective clothing
+vaccine;vaccines
+anthrax;Bacillus anthracis
+botulinum toxin;botulinum
+nitrogen mustard;HN1;HN2;HN3
+organophosphate;organophosphorus
+pesticide;insecticide
+fertilizer;fertiliser
+ammonium nitrate;AN
+hydrazine;N2H4
+nitric acid;HNO3
+sulphuric acid;sulfuric acid
+hydrogen peroxide;H2O2
+perchlorate;perchlorates
+ammonium perchlorate;AP
+aluminium powder;aluminum powder
+nitrocellulose;NC
+nitroglycerine;NG
+TNT;trinitrotoluene
+RDX;cyclonite
+HMX;octogen
+fluorine;F2
+chlorine;Cl2
+ammonia;NH3
+solvent;solvents
+reagent;reagents
+laboratory chemicals;lab chemicals
+fine chemicals;specialty chemicals
+lathe;turning machine
+CNC lathe;CNC turning centre
+turning centre;turning center
+milling machine;mill;milling
+machining centre;machining center;VMC;HMC
+grinding machine;grinder
+honing machine;hone
+boring machine;borer
+drilling machine;drill press
+electrical discharge machine;EDM;wire EDM
+gear cutting machine;gear hobbing
+numerical control;CNC;NC
+contouring control;contouring
+axis;axes
+spindle;spindles
+tilting spindle;tilting spindles
+rotary table;rotary tables
+repeatability;unidirectional repeatability
+isostatic press;HIP;CIP
+hot isostatic press;HIP
+spin-forming machine;spinning machine
+flow-forming machine;flow forming
+mandrel;mandrels
+die;dies
+mould;mold;moulds
+fixture;fixtures;jig
+tooling;tools
+robot;robots;industrial robot
+end-effector;gripper;end effector
+remote manipulator;master-slave manipulator
+balancing machine;dynamic balancer
+vibration test system;shaker;vibration table
+centrifuge;centrifuges
+motion simulator;rate table
+coordinate measuring machine;CMM
+dimensional inspection;metrology
+interferometer;interferometers
+linear encoder;linear scale
+rotary encoder;angle encoder
+induction furnace;induction melting furnace
+vacuum furnace;vacuum furnaces
+melting furnace;smelting furnace
+casting;foundry
+electron beam furnace;EB furnace
+plasma atomization;plasma atomizer
+additive manufacturing;3D printing;AM
+3D printer;3D printers
+laser powder bed fusion;LPBF;SLM;DMLS
+coating equipment;coating machine
+chemical vapour deposition;CVD
+physical vapour deposition;PVD
+sputtering;sputter deposition
+thermal spraying;plasma spray
+ion implantation;ion implanter
+bearing;bearings
+ball bearing;ball bearings
+roller bearing;roller bearings
+magnetic bearing;active magnetic bearing
+compressor;compressors
+scroll compressor;scroll pump
+turboexpander;turbo expander
+bellows;bellows seal
+bellows-sealed valve;bellows valve
+pressure transducer;pressure sensor;pressure transmitter
+capacitance manometer;capacitive pressure gauge
+flow meter;flowmeter
+frequency changer;frequency converter;inverter;VFD
+power supply;power supplies
+high-voltage;HV
+gear;gears
+gearbox;gear box
+hydraulic press;press
+welding machine;welder
+friction welding;friction stir welding;FSW
+diffusion bonding;diffusion welding
+superplastic forming;SPF
+heat treatment;heat-treated
+cutting tool;cutting tools;inserts
+water jet cutting;waterjet
+laser cutting machine;laser cutter
+plasma cutting;plasma cutter
+manufacturing equipment;production equipment
+production line;assembly line
+industrial machinery;industrial equipment
+mixer;mixers
+batch mixer;batch mixers
+continuous mixer;extruder mixer
+fluid energy mill;jet mill
+extruder;extrusion machine
+dryer;drier
+oven;ovens
+autoclave;autoclaves
+glove box;glovebox
+clean room;cleanroom
+electronics;electronic items
+integrated circuit;IC;chip;microchip
+microprocessor;CPU;microprocessor microcircuit
+microcontroller;MCU
+memory;memories;RAM;flash
+FPGA;field programmable gate array
+programmable logic device;CPLD
+ASIC;application specific integrated circuit
+analogue-to-digital converter;ADC
+digital-to-analogue converter;DAC
+amplifier;amplifiers
+power amplifier;PA
+low noise amplifier;LNA
+MMIC;monolithic microwave integrated circuit
+transistor;transistors
+diode;diodes
+thyristor;SCR
+resistor;resistors
+inductor;inductors;coil
+oscillator;oscillators
+crystal oscillator;quartz oscillator
+frequency synthesizer;synthesizer
+signal generator;signal generators
+spectrum analyser;spectrum analyzer
+network analyser;VNA
+oscilloscope;oscilloscopes
+multimeter;DMM
+digital recorder;data recorder
+semiconductor;semiconductors
+wafer;wafers
+substrate;substrates
+epitaxial;epitaxy
+lithography;photolithography
+EUV lithography;extreme ultraviolet
+photomask;mask;reticle
+resist;photoresist
+etching;etch
+gallium nitride;GaN
+gallium arsenide;GaAs
+indium phosphide;InP
+gallium oxide;Ga2O3
+printed circuit board;PCB;printed circuit
+electronic assembly;electronic assemblies;PCBA
+module;modules
+connector;connectors
+switch;switches
+relay;relays
+spark gap;triggered spark gap
+pulse generator;pulse generators
+capacitor bank;energy storage capacitors
+thermal battery;thermal batteries
+battery;cell;battery pack
+lithium battery;Li-ion
+solar cell;photovoltaic cell
+superconducting;superconductive
+cryogenic;cryogenics
+cryocooler;cryogenic cooler
+dilution refrigerator;dilution fridge
+mass spectrometer;mass spectrometers
+scanning electron microscope;SEM
+electron beam;e-beam
+ion beam;focused ion beam;FIB
+photomultiplier tube;PMT
+traveling wave tube;TWT
+vacuum electronic device;vacuum tube
+gate-all-around transistor;GAAFET
+radiation-hardened;rad-hard
+quantum computer;quantum computing
+qubit;qubits
+electromagnetic pulse;EMP
+electrostatic discharge;ESD
+electromagnetic interference;EMI
+static converter;inverter;rectifier
+UPS;uninterruptible power supply
+transformer;transformers
+antenna;aerial;antennas
+phased array antenna;AESA;phased array
+waveguide;waveguides
+radio frequency;RF
+millimetre wave;mmWave
+terahertz;THz
+semiconductor manufacturing equipment;SME
+wafer prober;probe station
+test equipment;ATE;test gear
+computer;computers
+digital computer;digital computers
+analogue computer;analog computer
+hybrid computer;hybrid computers
+server;servers
+supercomputer;HPC;high performance computer
+workstation;workstations
+laptop;notebook
+graphics processing unit;GPU;graphics card
+AI accelerator;NPU;TPU
+data processing;data-processing
+automatic data-processing machine;ADP machine
+storage unit;storage;HDD;SSD
+input unit;input device
+output unit;output device
+adjusted peak performance;APP
+weighted TeraFLOPS;WT
+intrusion software;spyware;exploit software
+surveillance;monitoring
+IP network surveillance;lawful interception
+lawful interception;LI
+forensics;digital forensics
+telecommunications;telecom
+telecommunications equipment;telecom equipment
+transmission equipment;transmitter
+receiver;receivers
+transceiver;transceivers
+radio;radio set
+two-way radio;walkie-talkie
+satellite phone;satphone
+satellite communication;SATCOM
+mobile phone;cell phone;smartphone
+base station;BTS;eNodeB
+router;routers
+network switch;switches
+modem;modems
+optical fibre;optical fiber;fibre optic cable
+optical fibre cable;fiber optic cable
+spread spectrum;frequency hopping
+frequency hopping;FHSS
+jammer;jamming equipment
+interception equipment;interception
+IMSI catcher;stingray
+cellular interception;mobile interception
+telecontrol;remote control
+software defined radio;SDR
+encryption;cryptography
+decryption;decrypt
+cryptography;cryptographic
+information security;infosec;IT security
+encryption key;key
+key length;key size
+symmetric algorithm;symmetric encryption
+asymmetric algorithm;public key
+bits;bit
+AES;advanced encryption standard
+VPN;virtual private network
+hardware security module;HSM
+cryptanalytic;cryptanalysis
+quantum key distribution;QKD
+mass market;mass-market
+smart card;smartcard
+firewall;firewalls
+penetration testing;pentest
+digital signature;e-signature
+operating system;OS
+software update;patch
+cloud computing;cloud
+data centre;data center
+artificial intelligence;AI
+machine learning;ML
+drone controller;flight controller
+sensor;sensors
+optical sensor;optical sensors
+detector;detectors
+focal plane array;FPA
+infrared;IR
+thermal imaging camera;thermal camera;FLIR
+night vision;night vision device;NVG
+image intensifier tube;image intensifier
+microbolometer;uncooled detector
+camera;cameras
+high-speed camera;high speed camera
+streak camera;streak tube camera
+hyperspectral;hyperspectral imaging
+ultraviolet;UV
+X-ray;X-rays
+fibre laser;fiber laser
+semiconductor laser;laser diode
+pulsed laser;pulsed lasers
+continuous wave laser;CW laser
+laser rangefinder;LRF
+lidar;LIDAR
+laser designator;target designator
+optics;optical
+lens;lenses
+mirror;mirrors
+deformable mirror;adaptive mirror
+optical filter;filter
+optical coating;coatings
+telescope;telescopes
+periscope;periscopes
+riflescope;telescopic sight
+binoculars;binocular
+gyroscope;gyro;gyros
+ring laser gyro;RLG
+fibre optic gyro;FOG
+MEMS;microelectromechanical
+accelerometer;accelerometers
+magnetometer;magnetometers
+gradiometer;gradiometers
+gravimeter;gravity meter
+hydrophone;hydrophones
+sonar;sonars
+acoustic;acoustics
+side-scan sonar;SSS
+echo sounder;depth sounder
+radar;radars
+radar system;radar systems
+synthetic aperture radar;SAR
+inverse synthetic aperture radar;ISAR
+phased array radar;AESA radar
+weather radar;meteorological radar
+air traffic control radar;ATC radar
+ground penetrating radar;GPR
+radome;radomes
+radar cross section;RCS
+stealth;low observable
+tracking system;tracking
+direction finding;DF
+electronic warfare;EW
+pressure sensor;pressure sensors
+temperature sensor;thermocouple
+flash X-ray;flash radiography
+velocity interferometer;VISAR
+radiation detector;dosimeter;Geiger counter
+spectrometer;spectrometers
+chemical detector;chemical sensor
+explosive detector;trace detector
+metal detector;metal detectors
+surveillance camera;CCTV camera
+drone camera;gimbal camera
+optical fibre sensor;fibre optic sensor
+inertial navigation system;INS
+inertial measurement unit;IMU
+attitude and heading reference system;AHRS
+satellite navigation;GNSS;GPS
+GNSS receiver;GPS receiver
+anti-jam;anti-jamming
+star tracker;star sensor
+altimeter;altimeters
+compass;compasses
+guidance set;guidance system
+flight control system;FCS
+servo valve;servovalve
+circular error probable;CEP
+drift rate;bias stability
+aircraft;aeroplane;airplane
+helicopter;helicopters
+unmanned aerial vehicle;UAV;drone;UAS
+quadcopter;multirotor
+airship;blimp;dirigible
+balloon;balloons
+gas turbine engine;gas turbine
+turbojet;turbojet engine
+turbofan;turbofan engine
+turboprop;turboprop engine
+pulse jet;pulsejet
+rocket;rockets
+missile;missiles
+sounding rocket;research rocket
+space launch vehicle;SLV;launcher
+satellite;satellites
+spacecraft bus;satellite bus
+reentry vehicle;RV
+rocket motor;rocket motors
+rocket engine;rocket engines
+solid propellant;solid fuel
+liquid propellant;liquid fuel
+hybrid rocket;hybrid motor
+nozzle;nozzles
+thrust vector control;TVC
+total impulse;impulse
+payload;payloads
+interstage;interstages
+staging mechanism;stage separation
+launcher;launch platform
+launch support equipment;ground support equipment
+wind tunnel;wind tunnels
+test stand;test bench
+turbine blade;blades;aerofoil
+FADEC;full authority digital engine control
+spraying system;sprayer
+crop dusting;agricultural spraying
+fuel tank;tanks
+composite structure;composite structures
+landing gear;undercarriage
+ejection seat;ejector seat
+flight simulator;simulator
+parachute;parachutes
+submarine;submarines
+submersible;submersible vehicle
+remotely operated vehicle;ROV
+autonomous underwater vehicle;AUV
+unmanned surface vessel;USV
+surface vessel;ship;boat
+hydrofoil;hydrofoil vessel
+hovercraft;air cushion vehicle
+propeller;propellers;screw
+marine engine;marine engines
+marine gas turbine;marine gas turbine engine
+diving equipment;diving apparatus
+underwater vehicle;UUV
+pressure hull;pressure housing
+underwater lighting;underwater lights
+underwater camera;subsea camera
+water tunnel;cavitation tunnel
+noise reduction;quieting
+air independent propulsion;AIP
+fuel cell;fuel cells
+kilogram;kg
+gram;g
+millimetre;mm;millimeter
+micrometre;μm;micron
+nanometre;nm
+metre;m;meter
+kilometre;km
+hertz;Hz
+megahertz;MHz
+gigahertz;GHz
+watt;W
+kilowatt;kW
+volt;V
+kilovolt;kV
+ampere;A
+milliampere;mA
+pascal;Pa
+megapascal;MPa
+kelvin;K
+degree Celsius;°C
+decibel;dB
+gray;Gy
+newton;N
+newton-second;Ns
+mega newton second;MNs
+joule;J
+parts per million;ppm
+percent by weight;wt%;weight percent
+atomic percent;at%
+Mach;Mach number
+g (acceleration);g-force
+milligal;mGal
+nanotesla;nT
+tesla;T
+gauss;G
+arc second;arcsec
+degree;deg
+per hour;/h
+greater than;exceeding;more than;>
+less than;below;<
+equal to or greater than;≥;at least
+equal to or less than;≤;not exceeding
+better than;better
+exceeding;above
+not exceeding;up to
+output power;power output
+average power;average output power
+pulse duration;pulse width
+noise level;noise floor
+pressure rating;rated pressure
+internal volume;inner volume
+inside diameter;ID
+weight;mass
+speed;velocity
+rotational speed;rpm
+gross tonnage;GT
+nominal size;DN
+tolerance;tolerances
+standard;standards
+ISO;International Organization for Standardization
+military standard;MIL-STD
+ruggedized;rugged
+space-qualified;space qualified
+spare;spares
+used;second-hand
+new;unused
+refurbished;reconditioned
+kit;kits
+set;sets
+parts and accessories;parts & accessories
+not elsewhere specified;n.e.s.
+laboratory equipment;lab equipment
+analytical instrument;analyzer
+gas chromatograph;GC
+liquid chromatograph;HPLC
+GC-MS;gas chromatography mass spectrometry
+spectrophotometer;UV-Vis
+FTIR spectrometer;infrared spectrometer
+Raman spectrometer;Raman
+X-ray diffractometer;XRD
+X-ray fluorescence;XRF analyzer
+atomic absorption;AAS
+ICP-MS;inductively coupled plasma
+NMR spectrometer;nuclear magnetic resonance
+electron microscope;TEM;SEM
+microscope;microscopes
+PCR machine;thermal cycler
+DNA sequencer;sequencer
+incubator;incubators
+laboratory centrifuge;benchtop centrifuge
+fume hood;fume cupboard
+balance;analytical balance
+rotary evaporator;rotavap
+glassware;labware
+reactor (lab);lab reactor
+pilot plant;pilot unit
+chemical plant;chemical facility
+petrochemical;petrochemicals
+refinery;oil refinery
+oil and gas;O&G
+drilling rig;rig
+pipeline;pipelines
+pipe;pipes;tube
+tube;tubes;tubing
+fitting;fittings
+flange;flanges
+gasket;gaskets;seal
+seal;seals
+boiler;boilers
+steam turbine;steam turbines
+generator;generators;genset
+electric motor;motors
+servo motor;servomotor
+stepper motor;stepping motor
+PLC;programmable logic controller
+SCADA;supervisory control
+industrial control system;ICS;DCS
+instrumentation;instruments
+transmitter;transmitters
+control valve;control valves
+ball valve;ball valves
+gate valve;gate valves
+butterfly valve;butterfly valves
+check valve;non-return valve
+diaphragm valve;diaphragm valves
+centrifugal pump;centrifugal pumps
+metering pump;dosing pump
+magnetic drive pump;mag drive pump
+air compressor;air compressors
+chiller;chillers
+cooling tower;cooling towers
+filter;filters
+HEPA filter;HEPA
+membrane;membranes
+reverse osmosis;RO
+evaporator;evaporators
+condenser;condensers
+crystallizer;crystallizers
+furnace;furnaces
+kiln;kilns
+welding electrode;electrodes
+steel plate;steel sheet
+steel bar;rebar;bars
+wire;wires
+cable;cables
+fastener;bolts;nuts;screws
+spring;springs
+hose;hoses
+insulation;insulating material
+refractory;refractories
+packaging machine;packing machine
+printing machine;printer
+conveyor;conveyors
+forklift;fork lift
+crane;cranes
+tank truck;tanker
+heat sink;heatsink
+thermal management;cooling system
+air conditioning;HVAC
+water treatment;water treatment plant
+desalination;desalination plant
+medical equipment;medical devices
+X-ray machine;radiography
+CT scanner;computed tomography
+MRI;magnetic resonance imaging
+linear accelerator;LINAC
+radiotherapy;radiation therapy
+cobalt-60;Co-60
+cesium-137;Cs-137
+iridium-192;Ir-192
+americium-241;Am-241
+radioactive source;sealed source
+industrial radiography;NDT radiography
+non-destructive testing;NDT
+ultrasonic testing;UT
+eddy current;eddy current testing
+borescope;endoscope
+security equipment;security systems
+X-ray baggage scanner;baggage scanner
+access control;access control system
+biometric;biometrics
+facial recognition;face recognition
+police equipment;law enforcement equipment
+handcuffs;cuffs
+stun gun;taser;electroshock weapon
+pepper spray;OC spray
+riot shield;shield
+helmet;helmets
+firearm;firearms
+ammunition;ammo
+hunting rifle;shotgun
+silencer;suppressor
+armoured vehicle;armored vehicle
+bulletproof glass;armoured glass
+four-wheel drive vehicle;4x4;SUV
+pickup truck;pickup
+truck;lorry
+trailer;trailers
+engine;engines
+diesel engine;diesel engines
+tyre;tire;tyres
+specially designed components;specially designed parts
+related equipment;associated equipment
+production facilities;production plant
+plant;plants
+facility;facilities
+auxiliary systems;auxiliaries
+installation;installations
+usable in;usable for
+capable of;able to
+characteristics;features
+parameters;parameter
+function;functions
+operation;operating
+maintenance;servicing
+repair;repairs
+overhaul;refurbishment
+calibration;calibrate
+alignment;align
+integration;integrate
+modelling;modeling
+simulation;simulate
+testing;test
+inspection;inspect
+measuring;measurement
+monitoring;monitor
+detection;detect
+protection;protect
+containment;contain
+disposal;dispose
+decontamination;decon
+handling;handle
+storage;store
+transport;transportation
+mixture;mixtures
+solution;solutions
+compound;compounds
+concentrate;concentrates
+powder;powders
+film;films
+sheet;sheets
+tape;tapes
+fibre;fiber;fibers
+wire rope;cable
+block;blocks
+rod;rods
+plate;plates
+ring;rings
+disk;discs
+shaft;shafts
+rotor;rotors
+stator;stators
+housing;housings;casing
+frame;frames
+window;windows
+chamber;chambers
+cell;cells
+column;columns
+vessel (container);vessels
+target;targets
+source;sources
+shield;shields
+coating;coatings
+lining;linings
+insulation layer;insulator
+layer;layers
+surface;surfaces
+structure;structures
+platform;platforms
+vehicle;vehicles
+ground equipment;ground station
+on-board;onboard
+underwater;subsea
+portable;handheld
+fixed;stationary
+automatic;automated
+real time;real-time
+pulsed;pulse
+high-speed;high speed
+high-power;high power
+high-temperature;high temperature
+low-temperature;low temperature
+high-pressure;high pressure
+inert gas;argon;nitrogen
+fluoride;fluorides
+chloride;chlorides
+hydride;hydrides
+oxide;oxides
+nitride;nitrides
+carbide;carbides
+isotope;isotopes
+enrichment level;enrichment
+irradiation;irradiate
+electromagnetic;EM
+electrical;electric
+chemical (adj);chemical
+civil;civilian
+government use;governmental
+industrial (adj);industrial
+medical (adj);medical
+drone;UAV;quadcopter
+drone parts;UAV components
+drone motor;brushless motor
+flight controller;FC
+gimbal;stabilizer
+FPV goggles;FPV headset
+remote controller;transmitter
+propeller (drone);props
+GPS module;GNSS module
+GPS tracker;tracker
+night vision goggles;NVG
+thermal scope;thermal sight
+laser pointer;laser pen
+rangefinder;range finder
+walkie-talkie;handheld radio
+satellite modem;satellite terminal
+signal booster;repeater
+signal jammer;jammer
+spy camera;hidden camera
+voice recorder;audio recorder
+encrypted phone;secure phone
+network equipment;networking equipment
+graphics card;GPU card
+server rack;rack
+storage device;storage
+solid state drive;SSD
+hard disk;HDD
+memory card;SD card
+USB flash drive;USB stick
+electronic components;electronic parts
+semiconductor chips;chips
+development board;dev board;Arduino;Raspberry Pi
+power bank;portable charger
+inverter;power inverter
+solar panel;PV panel
+camera lens;lens
+optical sight;optic
+binocular telescope;binoculars
+CNC router;CNC engraving machine
+laser engraving machine;laser engraver
+3D printing filament;filament
+metal 3D printer;metal AM machine
+carbon fibre sheet;CF plate
+carbon fibre tube;CF tube
+titanium sheet;Ti plate
+aluminium profile;aluminum extrusion
+industrial chemicals;bulk chemicals
+cleaning chemicals;detergents
+agrochemicals;agricultural chemicals
+pharmaceutical raw materials;API;active pharmaceutical ingredient
+pharmaceutical equipment;pharma machinery
+tablet press;tablet machine
+capsule filling machine;encapsulator
+fermentation tank;fermentation vessel
+spray dryer;atomizer dryer
+freeze dryer;lyophilizer
+laboratory reactor;jacketed reactor
+glass-lined reactor;GLR
+stainless steel tank;SS tank
+heat exchanger plate;PHE
+vacuum pump oil;pump oil
+valve actuator;actuator
+pressure gauge;manometer
+temperature controller;thermostat
+data logger;recorder
+industrial camera;machine vision camera
+thermal camera;IR camera
+gas detector;gas leak detector
+radiation meter;survey meter
+dosimeter;personal dosimeter
+ultrasonic flaw detector;UT flaw detector
+oscilloscope probe;probe
+soldering station;soldering iron
+reflow oven;SMT oven
+pick and place machine;SMT placement
+wire bonding machine;wire bonder
+dicing saw;wafer saw
+mask aligner;lithography aligner
+sputter coater;sputter
+ion implanter;implanter
+furnace (semiconductor);diffusion furnace
+bearings (precision);precision bearings
+linear guide;linear rail
+ball screw;ballscrew
+servo drive;servo amplifier
+CNC controller;NC controller
+spindle motor;spindle
+encoder;encoders
+industrial robot arm;robotic arm
+vacuum chamber;vacuum vessel
+cryogenic tank;dewar
+liquid nitrogen;LN2
+helium gas;He
+argon gas;Ar
+high purity gas;specialty gas
+marine radar;ship radar
+fish finder;sonar fishfinder
+boat engine;outboard motor
+diving scooter;DPV
+life raft;liferaft
+aircraft parts;aviation spares
+aircraft engine;aero engine
+avionics unit;LRU
+helicopter parts;rotorcraft parts
+paraglider;paramotor
+isotope separation plant;enrichment plant
+uranium conversion;conversion plant
+yellowcake;U3O8
+uranium oxide;UO2
+zirconium tube;zircaloy tube
+calandria;calandria tubes
+fuel cladding;cladding
+neutron flux;flux
+criticality;critical
+nuclear grade;nuclear-grade
+boron equivalent;BE
+alpha-n reaction;alpha neutron
+electromagnetic isotope separator;calutron
+laser isotope separation;AVLIS;MLIS
+lithium amalgam;amalgam
+mercury;Hg
+lithium;Li
+cobalt;Co
+nickel;Ni
+nickel powder;Ni powder
+chromium;Cr
+vanadium;V
+copper;Cu
+iron;Fe
+lead;Pb
+lead glass;leaded glass
+fused silica;fused quartz
+sapphire;Al2O3 crystal
+zinc selenide;ZnSe
+zinc sulphide;ZnS
+germanium lens;Ge lens
+chalcogenide glass;chalcogenide
+rare earth;REE;rare earth elements
+neodymium magnet;NdFeB
+samarium cobalt;SmCo
+amorphous alloy;metallic glass
+high-entropy alloy;HEA
+refractory metal;refractory metals
+intermetallic;intermetallics
+single crystal;monocrystalline
+directionally solidified;DS
+powder metallurgy;PM
+sintering;sinter
+pyrolytic;pyrolysis
+carbon-carbon;C/C
+ceramic matrix composite;CMC
+metal matrix composite;MMC
+polymer matrix composite;PMC
+UHMWPE;Dyneema;Spectra
+PBO fibre;Zylon
+boron fibre;boron filament
+silicon carbide fibre;SiC fiber
+alumina fibre;alumina fiber
+polysilazane;polysilazanes
+polycarbosilane;PCS
+liquid crystal polymer;LCP
+polyetheretherketone;PEEK
+polyarylene ether;PAE
+fluorinated polyimide;fluoropolyimide
+fluoroelastomer;FKM;Viton
+perfluoropolyether;PFPE
+radar absorbing material;RAM
+conductive polymer;intrinsically conductive polymer
+damping fluid;damping oil
+flotation fluid;flotation
+inoculant;inoculants
+binder;binders
+plasticiser;plasticizer
+oxidiser;oxidizer
+fuel additive;additive
+burning rate modifier;ballistic modifier
+curing agent;hardener
+HTPB;hydroxyl-terminated polybutadiene
+ferrocene;ferrocene derivatives
+hydrazine nitrate;HN
+MMH;monomethylhydrazine
+UDMH;unsymmetrical dimethylhydrazine
+nitrogen tetroxide;N2O4
+red fuming nitric acid;IRFNA
+liquid oxygen;LOX
+liquid hydrogen;LH2
+gel propellant;gelled propellant
+composite propellant;composite solid propellant
+double-base propellant;DB propellant
+igniter;ignitor
+safe and arm device;SAD
+fuze;fuzes
+shaped charge;HEAT
+slapper detonator;EFI
+exploding bridgewire;EBW detonator
+firing set;fire set
+multipoint initiation;MPI
+stripline;strip line
+blasting machine;exploder
+commercial explosives;mining explosives
+detonating cord;det cord
+mine detection;mine detector
+bomb disposal robot;EOD robot
+EOD equipment;explosive ordnance disposal
+x-ray inspection system;x-ray scanner
+cargo scanner;container scanner
+trace detection;ETD
+canine detection;K9
+CBRN;NBC
+decontamination equipment;decon kit
+collective protection;COLPRO
+respirator filter;canister
+chemical protective suit;hazmat suit
+personal protective equipment;PPE
+cellular network;mobile network
+5G equipment;5G
+LTE;4G
+microwave link;radio link
+optical transceiver;SFP
+optical amplifier;EDFA
+wavelength division multiplexing;DWDM
+submarine cable;undersea cable
+deep packet inspection;DPI
+network monitoring;network analytics
+data retention;retention
+voice over IP;VoIP
+tactical radio;military radio
+HF radio;shortwave
+VHF radio;marine VHF
+troposcatter;tropo
+burst transmission;burst
+covert communication;covert comms
+GNSS spoofing;spoofing
+anti-spoofing;anti spoofing
+Doppler velocity log;DVL
+terrain contour matching;TERCOM
+celestial navigation;astro navigation
+gyrocompass;gyro compass
+heading sensor;heading
+angular rate;angular velocity
+scale factor;SF
+random walk;ARW
+vibration rectification;VRE
+hydrodynamic;hydrodynamics
+underwater noise;radiated noise
+degaussing;degauss
+mine countermeasures;MCM
+towed array;towed sonar
+dipping sonar;dunking sonar
+sonobuoy;sonobuoys
+underwater communication;acoustic modem
+diver detection;DDS
+rebreather;closed circuit breathing
+aerofoil;airfoil
+compressor blade;blades
+combustor;combustion chamber
+afterburner;reheat
+brush seal;brush seals
+blisk;bladed disk
+thermal barrier coating;TBC
+heat shield;thermal protection
+ablative;ablative material
+nose tip;nosecone
+reaction wheel;momentum wheel
+thruster;thrusters
+electric propulsion;ion thruster
+solar array;solar wings
+earth observation satellite;EO satellite
+remote sensing;RS
+ground station;GCS
+ground control station;GCS
+catapult launcher;launcher rail
+recovery system;recovery
+endurance;flight endurance
+maximum takeoff weight;MTOW
+autonomous flight;autonomous
+swarm;drone swarm
+loitering munition;kamikaze drone
+counter-UAS;C-UAS
+agricultural drone;spraying drone
+mapping drone;survey drone
+fixed-wing UAV;fixed wing drone
+VTOL;vertical take-off and landing
+heavy-lift drone;cargo drone
+tethered drone;tethered UAV
+aerostat;tethered balloon
+stratospheric balloon;high altitude balloon
+rocket nozzle;exhaust nozzle
+motor case;rocket casing
+propellant tank;tank
+turbopump;turbo pump
+injector;injectors
+regenerative cooling;regen cooling
+umbilical connector;umbilical
+separation mechanism;separation
+environmental chamber;climatic chamber
+anechoic chamber;anechoic room
+shaker table;vibration shaker
+acoustic test;acoustic testing
+thermal vacuum chamber;TVAC
+nuclear reactors and boilers (HS 84);chapter 84
+electrical machinery (HS 85);chapter 85
+optical instruments (HS 90);chapter 90
+aircraft and spacecraft (HS 88);chapter 88
+ships and boats (HS 89);chapter 89
+inorganic chemicals (HS 28);chapter 28
+organic chemicals (HS 29);chapter 29
+explosives (HS 36);chapter 36
+plastics (HS 39);chapter 39
+iron and steel (HS 72);chapter 72
+articles of iron or steel (HS 73);chapter 73
+aluminium (HS 76);chapter 76
+other base metals (HS 81);chapter 81
+arms and ammunition (HS 93);chapter 93
+vehicles (HS 87);chapter 87
+glass (HS 70);chapter 70
+ceramic products (HS 69);chapter 69
+miscellaneous chemical products (HS 38);chapter 38
+pharmaceutical products (HS 30);chapter 30
+radioactive elements (HS 2844);heading 2844
+heavy water (HS 2845);heading 2845
+machine tools for metal (HS 8456-8463);machine tools headings
+pumps (HS 8413);heading 8413
+compressors (HS 8414);heading 8414
+centrifuges (HS 8421);heading 8421
+valves (HS 8481);heading 8481
+bearings (HS 8482);heading 8482
+computers (HS 8471);heading 8471
+telephones and network equipment (HS 8517);heading 8517
+radar apparatus (HS 8526);heading 8526
+cameras (HS 8525);heading 8525
+integrated circuits (HS 8542);heading 8542
+semiconductor devices (HS 8541);heading 8541
+measuring instruments (HS 9030);heading 9030
+navigation instruments (HS 9014);heading 9014
+unmanned aircraft (HS 8806);heading 8806
+parts of aircraft (HS 8807);heading 8807
+lasers (HS 9013);heading 9013
+X-ray apparatus (HS 9022);heading 9022
+cyanides (HS 2837);heading 2837
+halides of non-metals (HS 2812);heading 2812
+amines (HS 2921-2922);amine headings
+organo-phosphorus compounds (HS 2931);heading 2931
+toxins and cultures (HS 3002);heading 3002
+bulletproof vest (HS 6307);protective vest
+import permit authority;competent authority
+security clearance;security approval
+prior approval;prior authorization
+restricted goods;controlled goods
+prohibited goods;banned goods
+strategic goods;strategic items
+sensitive goods;sensitive items
+temporary admission;temporary import
+free zone;FTZ
+bonded warehouse;bonded store
+inspection certificate;inspection report
+conformity certificate;CoC
+end-use statement;end use declaration
+undertaking;declaration
+power of attorney;POA
+sales contract;supply contract
+tender;bid
+quotation;quote
+catalogue;catalog;brochure
+user manual;manual
+datasheet;data sheet
+warranty;guarantee
+after-sales service;service
+installation and commissioning;commissioning
+technical assistance;technical support
+technology transfer;know-how transfer
+intangible transfer;ITT
+cloud service;SaaS
+sample;samples
+prototype;prototypes
+replacement part;replacement
+upgrade;upgrades
+modification;modifications
+assembly kit;CKD;SKD
+importer of record;IOR
+agent;agents
+sole agent;exclusive agent
+trading company;trader
+front company;shell company
+intermediary country;third country
+unusual routing;circuitous route
+cash payment;cash
+vague end use;unclear end use
+mismatch;inconsistency
+undervaluation;under-invoicing
+misdescription;false description
+licence exception;license exception
+foreign direct product;FDP rule

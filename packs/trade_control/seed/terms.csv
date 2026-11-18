@@ -144,3 +144,3060 @@ explosives detector,كاشف متفجرات
 spectrometer,مطياف
 mass spectrometer,مطياف كتلة
 chromatograph,جهاز كروماتوغرافيا
+dual-use goods,سلع ثنائية الاستخدام
+dual-use goods,سلع مزدوجة الاستخدام
+dual-use goods,مواد ذات استخدام مزدوج
+export control,رقابة على الصادرات
+export control,ضوابط التصدير
+export control,مراقبة الصادرات
+import control,رقابة على الواردات
+import control,ضوابط الاستيراد
+control list,قائمة رقابة
+control list,قائمة المراقبة
+control list,قائمة الضوابط
+control code,رمز الرقابة
+control code,كود الرقابة
+control code,رقم التصنيف الرقابي
+export control classification number,رقم تصنيف رقابة الصادرات
+export control classification number,رقم ECCN
+licence,ترخيص
+licence,رخصة
+licence,تصريح
+export licence,ترخيص تصدير
+export licence,رخصة تصدير
+export licence,تصريح تصدير
+import licence,ترخيص استيراد
+import licence,رخصة استيراد
+import licence,تصريح استيراد
+import licence,موافقة استيرادية
+end user,المستخدم النهائي
+end user,المستعمل النهائي
+end use,الاستخدام النهائي
+end use,الاستعمال النهائي
+end-user certificate,شهادة المستخدم النهائي
+end-user certificate,شهادة الاستخدام النهائي
+consignee,المرسل إليه
+consignee,المستلم
+consignor,الشاحن
+consignor,المرسل
+importer,المستورد
+importer,الجهة المستوردة
+exporter,المصدّر
+exporter,الجهة المصدرة
+supplier,المورّد
+supplier,البائع
+manufacturer,الشركة المصنعة
+manufacturer,المصنّع
+manufacturer,الصانع
+distributor,الموزع
+distributor,الوكيل
+broker,الوسيط
+broker,السمسار
+freight forwarder,وكيل الشحن
+freight forwarder,مخلّص جمركي
+freight forwarder,شركة شحن
+customs broker,المخلص الجمركي
+customs broker,مستخلص جمركي
+customs,الجمارك
+customs,مصلحة الجمارك
+customs declaration,البيان الجمركي
+customs declaration,الإقرار الجمركي
+customs clearance,الإفراج الجمركي
+customs clearance,التخليص الجمركي
+customs tariff,التعريفة الجمركية
+customs tariff,جدول التعريفة
+harmonized system code,رمز النظام المنسق
+harmonized system code,البند الجمركي
+harmonized system code,كود HS
+harmonized system code,الرقم الجمركي
+tariff heading,البند التعريفي
+tariff heading,البند الجمركي
+tariff subheading,البند الفرعي
+tariff subheading,البند الجمركي الفرعي
+chapter,فصل
+chapter,الفصل الجمركي
+combined nomenclature,التسمية المركبة
+combined nomenclature,التسمية الجمركية الأوروبية
+commercial invoice,فاتورة تجارية
+commercial invoice,الفاتورة التجارية
+proforma invoice,فاتورة مبدئية
+proforma invoice,فاتورة أولية
+proforma invoice,بروفورما
+packing list,قائمة التعبئة
+packing list,كشف التعبئة
+packing list,بيان العبوات
+bill of lading,بوليصة الشحن
+bill of lading,سند الشحن
+bill of lading,بوليصة
+airway bill,بوليصة الشحن الجوي
+airway bill,سند الشحن الجوي
+certificate of origin,شهادة المنشأ
+certificate of origin,شهادة منشأ
+bill of materials,قائمة المواد
+bill of materials,كشف المكونات
+letter of credit,اعتماد مستندي
+letter of credit,خطاب اعتماد
+purchase order,أمر شراء
+purchase order,طلب شراء
+technical specification,المواصفات الفنية
+technical specification,المواصفة الفنية
+technical specification,الداتا شيت
+safety data sheet,صحيفة بيانات السلامة
+safety data sheet,نشرة بيانات السلامة
+country of origin,بلد المنشأ
+country of origin,دولة المنشأ
+country of destination,بلد المقصد
+country of destination,دولة الوجهة
+transit,عبور
+transit,الترانزيت
+transshipment,إعادة الشحن
+transshipment,المسافنة
+re-export,إعادة التصدير
+re-export,إعادة تصدير
+diversion,تحويل المسار
+diversion,التحويل غير المشروع
+catch-all,بند الشمول
+catch-all,الضبط الشامل
+sanctions,العقوبات
+sanctions,الجزاءات
+embargo,حظر
+embargo,الحظر التجاري
+arms embargo,حظر الأسلحة
+arms embargo,حظر توريد السلاح
+military goods,السلع العسكرية
+military goods,المعدات العسكرية
+military list,القائمة العسكرية
+military list,قائمة السلع العسكرية
+weapons of mass destruction,أسلحة الدمار الشامل
+weapons of mass destruction,أسلحة دمار شامل
+proliferation,الانتشار
+proliferation,انتشار الأسلحة
+non-proliferation,عدم الانتشار
+non-proliferation,منع الانتشار
+chemical weapons,الأسلحة الكيميائية
+chemical weapons,سلاح كيميائي
+biological weapons,الأسلحة البيولوجية
+biological weapons,سلاح بيولوجي
+nuclear weapons,الأسلحة النووية
+nuclear weapons,سلاح نووي
+missile technology,تكنولوجيا القذائف الصاروخية
+missile technology,تكنولوجيا الصواريخ
+high priority items,مواد ذات أولوية عالية
+high priority items,السلع عالية الأولوية
+reason for control,سبب الرقابة
+reason for control,دافع الرقابة
+national security,الأمن القومي
+national security,الأمن الوطني
+regional stability,الاستقرار الإقليمي
+regional stability,الأمن الإقليمي
+anti-terrorism,مكافحة الإرهاب
+crime control,مكافحة الجريمة
+crime control,ضبط الجريمة
+screening,فحص
+screening,تدقيق
+screening,مطابقة
+dual-use screening,فحص السلع ثنائية الاستخدام
+dual-use screening,تدقيق السلع المزدوجة
+classification,تصنيف
+classification,تبويب
+self-classification,التصنيف الذاتي
+self-classification,تصنيف ذاتي
+technical threshold,الحد الفني
+technical threshold,العتبة الفنية
+specially designed,مصمم خصيصاً
+specially designed,مصمم خصيصا
+specially prepared,معد خصيصاً
+specially prepared,محضر خصيصاً
+as follows,على النحو التالي
+as follows,كما يلي
+having any of the following,تتوفر فيه أي مما يلي
+having any of the following,يتسم بأي مما يلي
+having all of the following,تتوفر فيه جميع الخصائص التالية
+having all of the following,يتسم بكل ما يلي
+other than,عدا
+other than,باستثناء
+other than,خلاف
+technical note,ملاحظة فنية
+technical note,ملاحظة تقنية
+note,ملاحظة
+note,ملحوظة
+decontrol note,ملاحظة استثناء
+decontrol note,ملاحظة رفع الرقابة
+general technology note,ملاحظة التكنولوجيا العامة
+general technology note,الملاحظة العامة للتكنولوجيا
+general software note,ملاحظة البرمجيات العامة
+general software note,الملاحظة العامة للبرمجيات
+nuclear technology note,ملاحظة التكنولوجيا النووية
+nuclear technology note,الملاحظة النووية
+development,تطوير
+development,التطوير
+production,إنتاج
+production,الإنتاج
+production,تصنيع
+use,استخدام
+use,الاستعمال
+use,التشغيل
+technology,تكنولوجيا
+technology,التكنولوجيا
+software,البرامج
+software,سوفت وير
+source code,الشفرة المصدرية
+source code,الكود المصدري
+source code,السورس كود
+equipment,أجهزة
+component,مكونات
+component,جزء
+accessory,ملحق
+accessory,ملحقات
+accessory,إكسسوار
+assembly,مجمع
+assembly,تجميعة
+system,منظومة
+materials,مواد
+materials,خامات
+spare parts,قطع الغيار
+raw materials,مواد خام
+raw materials,خامات أولية
+finished goods,سلع تامة الصنع
+finished goods,منتجات نهائية
+semi-finished goods,سلع نصف مصنعة
+semi-finished goods,منتجات شبه مصنعة
+consumables,مستهلكات
+consumables,مواد مستهلكة
+quantity,الكمية
+quantity,العدد
+unit price,سعر الوحدة
+unit price,ثمن الوحدة
+net weight,الوزن الصافي
+net weight,صافي الوزن
+gross weight,الوزن القائم
+gross weight,الوزن الإجمالي
+model number,رقم الطراز
+model number,الموديل
+model number,رقم الموديل
+part number,رقم القطعة
+part number,رقم الجزء
+part number,البارت نمبر
+serial number,الرقم التسلسلي
+serial number,السيريال
+brand,العلامة التجارية
+brand,الماركة
+description of goods,وصف البضاعة
+description of goods,وصف السلعة
+shipment,الشحنة
+shipment,الإرسالية
+container,حاوية
+container,كونتينر
+port of loading,ميناء الشحن
+port of loading,ميناء التحميل
+port of discharge,ميناء التفريغ
+port of discharge,ميناء الوصول
+vessel,مركب
+vessel,باخرة
+hold,إيقاف
+hold,تعليق
+hold,حجز
+clear,سليم
+clear,مفرج عنه
+clear,لا مانع
+review,مراجعة
+review,تحت المراجعة
+validation,تحقق
+validation,اعتماد القرار
+rationale,المبررات
+rationale,سبب القرار
+audit trail,سجل التدقيق
+audit trail,مسار المراجعة
+due diligence,العناية الواجبة
+due diligence,بذل العناية الواجبة
+red flag,مؤشر خطر
+red flag,علامة تحذيرية
+risk level,مستوى الخطر
+risk level,درجة المخاطر
+watchlist,قائمة المراقبة
+watchlist,قائمة الرصد
+restricted party,طرف مقيد
+restricted party,جهة محظورة
+entity list,قائمة الكيانات
+entity list,قائمة الجهات
+civilian use,استخدام مدني
+civilian use,الاستعمال المدني
+military use,استخدام عسكري
+military use,الاستعمال العسكري
+industrial use,استخدام صناعي
+industrial use,الاستعمال الصناعي
+laboratory use,استخدام مختبري
+laboratory use,للاستخدام المعملي
+research and development,البحث والتطوير
+research and development,البحوث والتطوير
+nuclear reactor,مفاعل نووي
+nuclear reactor,المفاعل النووي
+natural uranium,اليورانيوم الطبيعي
+natural uranium,يورانيوم طبيعي
+depleted uranium,اليورانيوم المستنفد
+depleted uranium,يورانيوم منضب
+enriched uranium,اليورانيوم المخصب
+enriched uranium,يورانيوم مخصب
+special fissile materials,المواد الانشطارية الخاصة
+special fissile materials,مواد انشطارية
+plutonium,البلوتونيوم
+thorium,الثوريوم
+thorium,ثوريوم
+tritium,التريتيوم
+deuterium,الديوتيريوم
+heavy water,الماء الثقيل
+heavy water,ماء ثقيل
+heavy water,أكسيد الديوتيريوم
+isotope separation,فصل النظائر
+isotope separation,فصل نظائري
+enrichment,تخصيب
+enrichment,التخصيب
+gas centrifuge,جهاز طرد مركزي غازي
+gas centrifuge,طاردة غازية
+gas centrifuge,سنتريفيوج
+gaseous diffusion,الانتشار الغازي
+gaseous diffusion,انتشار غازي
+uranium hexafluoride,سداسي فلوريد اليورانيوم
+uranium hexafluoride,UF6
+fuel element,عنصر وقود
+fuel element,قضيب وقود
+spent fuel,الوقود المستهلك
+spent fuel,وقود مستنفد
+reprocessing,إعادة المعالجة
+reprocessing,إعادة معالجة الوقود
+pressure vessel,وعاء ضغط
+pressure vessel,خزان ضغط
+pressure vessel,وعاء الضغط
+control rod,قضيب تحكم
+control rod,قضبان التحكم
+moderator,مهدئ
+moderator,مادة مهدئة
+coolant,مبرد
+coolant,سائل التبريد
+coolant,مادة التبريد
+hot cell,خلية ساخنة
+hot cell,خلايا ساخنة
+radiation shielding,تدريع إشعاعي
+radiation shielding,واقي إشعاعي
+radiation hardened,مقاوم للإشعاع
+radiation hardened,مقسى ضد الإشعاع
+radionuclide,نويدة مشعة
+radionuclide,نظير مشع
+neutron source,مصدر نيوتروني
+neutron source,مصدر نيوترونات
+neutron generator,مولد نيوترونات
+neutron generator,مولد نيوتروني
+radium,الراديوم
+radium,راديوم
+polonium,البولونيوم
+polonium,بولونيوم
+helium-3,الهيليوم-3
+helium-3,هيليوم 3
+lithium-6,الليثيوم-6
+lithium-6,ليثيوم 6
+boron-10,البورون-10
+boron-10,بورون 10
+zirconium,الزركونيوم
+hafnium,الهافنيوم
+hafnium,هافنيوم
+beryllium,البريليوم
+beryllium,بريليوم
+tungsten,التنجستن
+tungsten,ولفرام
+tungsten carbide,كربيد التنجستن
+tungsten carbide,كاربيد التنجستن
+rhenium,الرينيوم
+rhenium,رينيوم
+tantalum,التنتالوم
+tantalum,تنتالوم
+niobium,النيوبيوم
+niobium,نيوبيوم
+molybdenum,الموليبدنوم
+molybdenum,موليبدينوم
+titanium,التيتانيوم
+titanium alloy,سبيكة تيتانيوم
+titanium alloy,سبائك التيتانيوم
+aluminium alloy,سبائك الألومنيوم
+nickel alloy,سبائك النيكل
+superalloy,سبيكة فائقة
+superalloy,سبائك فائقة
+maraging steel,فولاذ المارجينج
+maraging steel,صلب مارجينج
+stainless steel,فولاذ مقاوم للصدأ
+stainless steel,ستانلس ستيل
+stainless steel,صلب لا يصدأ
+duplex stainless steel,فولاذ مقاوم للصدأ مزدوج الطور
+duplex stainless steel,ستانلس دوبلكس
+magnesium,المغنيسيوم
+magnesium,مغنسيوم
+calcium,الكالسيوم
+calcium,كالسيوم
+bismuth,البزموت
+bismuth,بزموت
+gallium,الجاليوم
+gallium,جاليوم
+germanium,الجرمانيوم
+germanium,جرمانيوم
+indium,الإنديوم
+indium,إنديوم
+silicon,السيليكون
+silicon,سيليكون
+silicon carbide,كربيد السيليكون
+silicon carbide,كاربيد السليكون
+silicon nitride,نيتريد السيليكون
+silicon nitride,نيتريد السليكون
+boron nitride,نيتريد البورون
+boron nitride,نتريد البورون
+graphite,الجرافيت
+graphite,غرافيت
+carbon fibre,ألياف الكربون
+carbon fibre,فايبر كربون
+carbon fibre,كاربون فايبر
+aramid fibre,ألياف الأراميد
+aramid fibre,كيفلر
+glass fibre,ألياف زجاجية
+glass fibre,فايبر جلاس
+fibrous or filamentary materials,المواد الليفية أو الخيطية
+fibrous or filamentary materials,ألياف وخيوط
+prepreg,مادة مشبعة مسبقاً
+prepreg,بريبريج
+composite,مادة مركّبة
+composite,كومبوزيت
+composite,مواد مركبة
+laminate,رقائق
+laminate,مادة مصفحة
+laminate,لامينيت
+matrix,مصفوفة
+matrix,المادة الرابطة
+resin,راتنج
+resin,راتينج
+resin,ريزن
+epoxy,إيبوكسي
+epoxy,راتنج الإيبوكسي
+polyimide,بولي إيميد
+polyimide,بوليمايد
+fluoropolymer,بوليمر مفلور
+fluoropolymer,بوليمرات فلورية
+PTFE,بولي تترافلوروإيثيلين
+PTFE,تفلون
+ceramic,خزف
+ceramic powder,مسحوق خزفي
+ceramic powder,بودرة سيراميك
+metal powder,مسحوق معدني
+metal powder,بودرة معدنية
+alloy,سبيكة
+alloy,سبائك
+ingot,سبيكة مصبوبة
+ingot,كتلة معدنية
+ingot,إنجوت
+scrap,خردة
+scrap,سكراب
+pure,نقي
+pure,عالي النقاوة
+purity,درجة النقاء
+purity,النقاوة
+density,كثافة
+density,الكثافة
+tensile strength,مقاومة الشد
+tensile strength,قوة الشد
+specific modulus,المعامل النوعي
+specific modulus,معامل المرونة النوعي
+specific tensile strength,مقاومة الشد النوعية
+specific tensile strength,قوة الشد النوعية
+magnetic materials,مواد مغناطيسية
+magnetic materials,معادن مغناطيسية
+superconductor,موصل فائق
+superconductor,فائق التوصيل
+syntactic foam,رغوة تركيبية
+syntactic foam,فوم سينتاكتيك
+absorber,ممتص
+absorber,مادة ماصة
+lubricant,مادة تزييت
+lubricant,زيت تشحيم
+lubricant,شحم
+hydraulic fluid,سائل هيدروليكي
+hydraulic fluid,زيت هيدروليك
+catalyst,محفز
+catalyst,عامل حفاز
+catalyst,كتاليست
+crucible,بوتقة
+crucible,بواتق
+filament winding,لف الألياف
+filament winding,لف الفتائل
+body armour,درع واقي للجسم
+body armour,سترة واقية
+body armour,صديري واقي من الرصاص
+bulletproof,مضاد للرصاص
+bulletproof,واقي من الرصاص
+protective equipment,معدات حماية
+gas mask,كمامة واقية
+explosive,متفجر
+explosive,مادة متفجرة
+high explosive,متفجر شديد
+high explosive,متفجرات شديدة الانفجار
+detonator,مفجر
+detonator,كبسولة تفجير
+initiator,بادئ
+initiator,مشعل
+energetic materials,مواد نشطة طاقياً
+energetic materials,مواد طاقية
+propellant,مادة دافعة
+improvised explosive device,عبوة ناسفة مرتجلة
+improvised explosive device,عبوة ناسفة
+pyrotechnic,ألعاب نارية
+pyrotechnic,مادة نارية
+chemical,كيماويات
+chemical,كيماوي
+toxic chemical,مادة كيميائية سامة
+toxic chemical,كيماويات سامة
+precursor,سليفة
+precursor,مادة أولية
+chemical mixture,مخلوط كيميائي
+chemical mixture,خليط كيميائي
+nerve agent,عامل أعصاب
+nerve agent,غاز أعصاب
+blister agent,عامل منفط
+blister agent,عامل مقرح
+riot control agent,عامل مكافحة شغب
+riot control agent,غاز مسيل للدموع
+CAS number,رقم CAS
+CAS number,رقم التسجيل الكيميائي
+reactor vessel,وعاء تفاعل
+reactor vessel,مفاعل كيميائي
+heat exchanger,مبادل حرارة
+distillation column,عمود تقطير
+distillation column,برج تقطير
+absorption column,عمود امتصاص
+absorption column,برج امتصاص
+storage tank,خزان تخزين
+storage tank,صهريج
+agitator,خلاط
+agitator,مقلّب
+valve,محبس
+valve,بلف
+pump,طلمبة
+multiple-seal pump,مضخة متعددة موانع التسرب
+multiple-seal pump,مضخة مانعة للتسرب
+vacuum pump,مضخة تفريغ
+vacuum pump,طلمبة فاكيوم
+filling equipment,معدات تعبئة
+filling equipment,ماكينة تعبئة
+incinerator,محرقة
+incinerator,فرن حرق
+glass-lined,مبطن بالزجاج
+glass-lined,مزجج
+corrosion resistant,مقاوم للتآكل
+corrosion resistant,ضد التآكل
+hastelloy,هاستيلوي
+hastelloy,سبيكة هاستيلوي
+fluoropolymer-lined,مبطن ببوليمر مفلور
+fluoropolymer-lined,مبطن بالتفلون
+gas monitor,جهاز رصد الغازات
+gas monitor,كاشف غاز
+toxic gas detector,كاشف غازات سامة
+toxic gas detector,جهاز كشف الغازات السامة
+phosgene,الفوسجين
+phosgene,ثنائي كلوريد الكربونيل
+hydrogen cyanide,سيانيد الهيدروجين
+hydrogen cyanide,حمض الهيدروسيانيك
+hydrogen fluoride,فلوريد الهيدروجين
+hydrogen fluoride,حمض الهيدروفلوريك
+sodium cyanide,سيانيد الصوديوم
+potassium cyanide,سيانيد البوتاسيوم
+thionyl chloride,كلوريد الثيونيل
+thionyl chloride,ثيونيل كلورايد
+phosphorus trichloride,ثلاثي كلوريد الفوسفور
+phosphorus trichloride,كلوريد الفوسفور
+phosphorus oxychloride,أوكسي كلوريد الفوسفور
+phosphorus oxychloride,كلوريد الفوسفوريل
+triethanolamine,ثلاثي إيثانول أمين
+triethanolamine,ترايإيثانول أمين
+thiodiglycol,ثيوداي جلايكول
+thiodiglycol,ثيودايجليكول
+sarin,السارين
+sarin,غاز السارين
+soman,السومان
+soman,غاز السومان
+tabun,التابون
+tabun,غاز التابون
+VX,في إكس
+VX,غاز VX
+mustard gas,غاز الخردل
+mustard gas,الخردل الكبريتي
+lewisite,اللويزيت
+lewisite,لويزيت
+ricin,الريسين
+ricin,سم الريسين
+saxitoxin,الساكسيتوكسين
+saxitoxin,سم الساكسيتوكسين
+pathogen,مسبب مرض
+pathogen,ممرض
+human pathogen,مسبب مرض للإنسان
+human pathogen,ممرض بشري
+animal pathogen,مسبب مرض للحيوان
+animal pathogen,ممرض حيواني
+plant pathogen,مسبب مرض للنبات
+plant pathogen,ممرض نباتي
+toxin,ذيفان
+toxin,توكسين
+virus,فيروسات
+bacteria,جراثيم
+fungi,فطريات
+fungi,فطر
+genetic elements,العناصر الوراثية
+genetic elements,المادة الوراثية
+genetically modified organism,كائن معدل وراثياً
+genetically modified organism,كائنات محورة جينياً
+nucleic acid,حمض نووي
+nucleic acid,الأحماض النووية
+nucleic acid synthesiser,جهاز تخليق الأحماض النووية
+nucleic acid synthesiser,مخلق الحمض النووي
+fermenter,جهاز تخمير
+fermenter,مفاعل حيوي
+centrifugal separator,فاصل طرد مركزي
+centrifugal separator,جهاز فصل بالطرد المركزي
+cross-flow filtration,الترشيح بالتدفق المستعرض
+cross-flow filtration,ترشيح عرضي
+freeze-drying equipment,معدات التجفيف بالتجميد
+freeze-drying equipment,مجفف بالتجميد
+spray-drying equipment,معدات التجفيف بالرذاذ
+spray-drying equipment,مجفف رذاذي
+biosafety cabinet,كابينة سلامة بيولوجية
+biosafety cabinet,خزانة السلامة الحيوية
+containment facility,مرفق احتواء
+containment facility,مختبر احتواء
+isolator,عازل
+isolator,غرفة عزل
+aerosol,هباء جوي
+aerosol,رذاذ
+aerosol,أيروسول
+aerosol inhalation chamber,حجرة استنشاق الهباء
+aerosol inhalation chamber,غرفة اختبار الاستنشاق
+protective suit,بدلة واقية
+protective suit,بدلة حماية
+vaccine,تطعيم
+anthrax,الجمرة الخبيثة
+anthrax,بكتيريا الجمرة الخبيثة
+botulinum toxin,سم البوتولينوم
+botulinum toxin,بوتوكس
+nitrogen mustard,خردل نيتروجيني
+nitrogen mustard,الخردل النيتروجيني
+organophosphate,فوسفات عضوي
+organophosphate,مركبات الفوسفور العضوية
+pesticide,مبيد حشري
+pesticide,مبيدات آفات
+fertilizer,سماد
+fertilizer,أسمدة
+ammonium nitrate,نترات الأمونيوم
+ammonium nitrate,نترات أمونيوم
+hydrazine,الهيدرازين
+hydrazine,هيدرازين
+nitric acid,حمض النيتريك
+nitric acid,حامض النيتريك
+sulphuric acid,حمض الكبريتيك
+sulphuric acid,حامض الكبريتيك
+hydrogen peroxide,بيروكسيد الهيدروجين
+hydrogen peroxide,ماء أكسجين
+perchlorate,بيركلورات
+perchlorate,فوق الكلورات
+ammonium perchlorate,بيركلورات الأمونيوم
+ammonium perchlorate,فوق كلورات الأمونيوم
+aluminium powder,مسحوق الألومنيوم
+aluminium powder,بودرة ألومنيوم
+nitrocellulose,النيتروسليلوز
+nitrocellulose,سليلوز منترج
+nitroglycerine,النيتروجليسرين
+nitroglycerine,نيتروغليسرين
+TNT,ثلاثي نيترو التولوين
+TNT,تي إن تي
+PETN,رباعي نترات خماسي إريثريتول
+PETN,بنتريت
+RDX,آر دي إكس
+RDX,هكسوجين
+HMX,إتش إم إكس
+HMX,أوكتوجين
+fluorine,الفلور
+fluorine,غاز الفلور
+chlorine,الكلور
+chlorine,غاز الكلور
+ammonia,الأمونيا
+ammonia,نشادر
+solvent,مذيب
+solvent,مذيبات
+reagent,كاشف كيميائي
+reagent,مادة كاشفة
+laboratory chemicals,كيماويات معملية
+laboratory chemicals,مواد مختبرية
+fine chemicals,كيماويات دقيقة
+fine chemicals,كيماويات عالية النقاوة
+machine tool,عدة آلية
+machine tool,ماكينة تشغيل
+machine tool,مكنة
+lathe,مكنة خراطة
+lathe,ماكينة خراطة
+CNC lathe,مخرطة CNC
+CNC lathe,مخرطة بالتحكم الرقمي
+turning centre,مركز خراطة
+turning centre,سنتر خراطة
+milling machine,ماكينة تفريز
+milling machine,فريزة
+milling machine,مكنة فريزة
+machining centre,مركز تشغيل
+machining centre,ماشينينج سنتر
+grinding machine,ماكينة تجليخ
+grinding machine,مجلخة
+grinding machine,ماكينة جلخ
+honing machine,ماكينة صقل (هونينج)
+honing machine,هونينج
+boring machine,ماكينة تجويف
+boring machine,مكنة تخويش
+drilling machine,ماكينة ثقب
+drilling machine,مثقاب
+drilling machine,شنيور صناعي
+electrical discharge machine,ماكينة التفريغ الكهربائي
+electrical discharge machine,ماكينة EDM
+electrical discharge machine,إيروجن
+gear cutting machine,ماكينة قطع التروس
+gear cutting machine,ماكينة تروس
+numerical control,التحكم الرقمي
+numerical control,التحكم العددي
+numerical control,سي إن سي
+contouring control,التحكم الكنتوري
+contouring control,التحكم المحيطي
+axis,محور
+axis,محاور
+spindle,عمود الدوران
+spindle,سبيندل
+spindle,عمود الإدارة
+tilting spindle,عمود دوران مائل
+tilting spindle,سبيندل مائل
+rotary table,طاولة دوارة
+rotary table,ترابيزة دوارة
+positioning accuracy,دقة التموضع
+positioning accuracy,دقة تحديد الموضع
+repeatability,قابلية التكرار
+repeatability,دقة التكرار
+isostatic press,مكبس متساوي الضغط
+isostatic press,مكبس أيزوستاتيكي
+hot isostatic press,مكبس ساخن متساوي الضغط
+hot isostatic press,مكبس HIP
+spin-forming machine,ماكينة تشكيل بالبرم
+spin-forming machine,ماكينة سبنينج
+flow-forming machine,ماكينة تشكيل بالتدفق
+flow-forming machine,فلو فورمنج
+mandrel,محور تشكيل
+mandrel,ماندريل
+mandrel,شياق
+die,قالب كبس
+die,اسطمبة
+mould,قالب
+mould,قالب صب
+mould,فورمة
+fixture,مثبت
+fixture,تثبيتة
+fixture,فيكسشر
+tooling,عدد
+tooling,عدة الإنتاج
+robot,إنسان آلي
+end-effector,مؤثر طرفي
+end-effector,قابض روبوت
+remote manipulator,جهاز مناولة عن بعد
+remote manipulator,ذراع تحكم عن بعد
+balancing machine,آلة موازنة
+balancing machine,ماكينة ترصيص
+vibration test system,نظام اختبار الاهتزاز
+vibration test system,هزاز اختبار
+centrifuge,سنتريفيوج
+motion simulator,محاكي حركة
+motion simulator,محاكي الحركة
+coordinate measuring machine,آلة قياس الإحداثيات
+coordinate measuring machine,جهاز CMM
+dimensional inspection,الفحص البعدي
+dimensional inspection,قياس الأبعاد
+interferometer,مقياس التداخل
+interferometer,انترفيروميتر
+linear encoder,مشفر خطي
+linear encoder,مسطرة رقمية
+rotary encoder,مشفر دوراني
+rotary encoder,إنكودر
+induction furnace,فرن حث
+induction furnace,فرن الحث الكهربائي
+vacuum furnace,فرن تفريغ
+vacuum furnace,فرن فاكيوم
+melting furnace,فرن صهر
+melting furnace,فرن تسييح
+casting,صب
+casting,سباكة
+electron beam furnace,فرن الحزمة الإلكترونية
+electron beam furnace,فرن شعاع الإلكترون
+plasma atomization,التذرية بالبلازما
+plasma atomization,رش البلازما
+additive manufacturing,التصنيع بالإضافة
+additive manufacturing,الطباعة ثلاثية الأبعاد
+additive manufacturing,الطباعة 3D
+3D printer,طابعة ثلاثية الأبعاد
+3D printer,طابعة 3D
+laser powder bed fusion,الصهر بالليزر في طبقة المسحوق
+laser powder bed fusion,طباعة معدنية بالليزر
+coating equipment,معدات طلاء
+coating equipment,ماكينة طلاء
+chemical vapour deposition,الترسيب الكيميائي للأبخرة
+chemical vapour deposition,ترسيب CVD
+physical vapour deposition,الترسيب الفيزيائي للأبخرة
+physical vapour deposition,ترسيب PVD
+sputtering,الرش المهبطي
+sputtering,ترسيب بالرش
+thermal spraying,الرش الحراري
+thermal spraying,رش حراري
+ion implantation,زرع الأيونات
+ion implantation,غرس أيوني
+bearing,محمل
+bearing,رولمان بلي
+bearing,بيلية
+ball bearing,محمل كريات
+ball bearing,رولمان بلي
+roller bearing,محمل أسطوانات
+roller bearing,رولمان أسطواني
+magnetic bearing,محمل مغناطيسي
+magnetic bearing,بيلية مغناطيسية
+compressor,كمبروسر
+scroll compressor,ضاغط حلزوني
+scroll compressor,كمبروسر سكرول
+turboexpander,موسع توربيني
+turboexpander,تربو إكسباندر
+bellows,منفاخ
+bellows,خرطوم منفاخي
+bellows-sealed valve,صمام محكم بالمنفاخ
+bellows-sealed valve,بلف بالمنفاخ
+pressure transducer,محول ضغط
+pressure transducer,حساس ضغط
+pressure transducer,ترانسميتر ضغط
+capacitance manometer,مانومتر سعوي
+capacitance manometer,مقياس ضغط سعوي
+flow meter,مقياس تدفق
+flow meter,عداد تدفق
+frequency changer,مغيّر تردد
+frequency changer,انفرتر
+frequency changer,مغير سرعة
+power supply,مصدر قدرة
+power supply,باور سبلاي
+power supply,مزود طاقة
+high-voltage,جهد عالي
+high-voltage,ضغط عالي
+gear,ترس
+gear,تروس
+gear,جير
+gearbox,صندوق تروس
+gearbox,علبة سرعات
+hydraulic press,مكبس هيدروليكي
+hydraulic press,مكبس
+welding machine,ماكينة لحام
+welding machine,لحام
+friction welding,لحام بالاحتكاك
+friction welding,اللحام الاحتكاكي
+diffusion bonding,الربط بالانتشار
+diffusion bonding,لحام الانتشار
+superplastic forming,التشكيل الفائق اللدونة
+superplastic forming,تشكيل فائق اللدونة
+heat treatment,المعالجة الحرارية
+heat treatment,التقسية
+cutting tool,أداة قطع
+cutting tool,سكينة قطع
+water jet cutting,القطع بالنفث المائي
+water jet cutting,قطع ووتر جت
+laser cutting machine,ماكينة قطع بالليزر
+laser cutting machine,ليزر قطع
+plasma cutting,القطع بالبلازما
+plasma cutting,قطع بلازما
+manufacturing equipment,معدات تصنيع
+manufacturing equipment,خط إنتاج
+production line,خط إنتاج
+production line,خط تصنيع
+industrial machinery,آلات صناعية
+industrial machinery,ماكينات صناعية
+mixer,خلاط
+mixer,ماكينة خلط
+batch mixer,خلاط دفعات
+batch mixer,خلاط متقطع
+continuous mixer,خلاط مستمر
+continuous mixer,خلاط متواصل
+fluid energy mill,مطحنة الطاقة المائعة
+fluid energy mill,مطحنة نفاثة
+extruder,بثاقة
+extruder,ماكينة بثق
+dryer,مجفف
+dryer,ماكينة تجفيف
+oven,فرن
+oven,أفران
+autoclave,أوتوكلاف
+autoclave,معقم ضغطي
+glove box,صندوق القفازات
+glove box,جلوف بوكس
+clean room,غرفة نظيفة
+clean room,كلين روم
+electronics,إلكترونيات
+electronics,أجهزة إلكترونية
+integrated circuit,شريحة إلكترونية
+integrated circuit,آي سي
+integrated circuit,تشيب
+microprocessor,معالج دقيق
+microprocessor,بروسيسور
+microprocessor,معالج
+microcontroller,متحكم دقيق
+microcontroller,ميكروكنترولر
+memory,ذواكر
+memory,ميموري
+FPGA,مصفوفة بوابات قابلة للبرمجة ميدانياً
+FPGA,FPGA
+programmable logic device,جهاز منطقي قابل للبرمجة
+programmable logic device,PLD
+ASIC,دائرة متكاملة لتطبيق محدد
+ASIC,ASIC
+analogue-to-digital converter,محول تناظري إلى رقمي
+analogue-to-digital converter,محول ADC
+digital-to-analogue converter,محول رقمي إلى تناظري
+digital-to-analogue converter,محول DAC
+amplifier,أمبلفاير
+amplifier,مضخم
+power amplifier,مكبر قدرة
+power amplifier,مضخم قدرة
+low noise amplifier,مكبر منخفض الضوضاء
+low noise amplifier,LNA
+microwave,الموجات الدقيقة
+microwave,ميكروويف
+MMIC,دائرة ميكروويف متكاملة أحادية
+MMIC,MMIC
+transistor,ترانزستور
+transistor,ترانزستورات
+diode,ثنائي
+diode,دايود
+thyristor,ثايرستور
+thyristor,ثايرستورات
+capacitor,كباستور
+resistor,مقاومة
+resistor,مقاومات
+inductor,ملف حثي
+inductor,ملف
+oscillator,مذبذب
+oscillator,أوسيلاتور
+crystal oscillator,مذبذب بلوري
+crystal oscillator,كريستالة
+frequency synthesizer,مركب ترددات
+frequency synthesizer,سينثيسايزر
+signal generator,مولد ذبذبات
+spectrum analyser,سبكترم أناليزر
+network analyser,محلل شبكات
+network analyser,نتورك أناليزر
+oscilloscope,راسم الذبذبات
+oscilloscope,أوسيلوسكوب
+multimeter,مقياس متعدد
+multimeter,ملتيميتر
+multimeter,آفوميتر
+digital recorder,مسجل رقمي
+digital recorder,مسجل بيانات
+semiconductor,أشباه الموصلات
+semiconductor,سيميكوندكتور
+wafer,رقاقة
+wafer,ويفر
+substrate,ركيزة
+substrate,سبستريت
+substrate,قاعدة
+epitaxial,نمو طبقي
+epitaxial,إبيتاكسيال
+lithography,طباعة حجرية
+lithography,ليثوغرافيا
+EUV lithography,طباعة حجرية بالأشعة فوق البنفسجية القصوى
+EUV lithography,ليثوغرافيا EUV
+photomask,قناع ضوئي
+photomask,ماسك
+resist,مادة مقاومة
+resist,ريزست
+etching,حفر
+etching,إتشنج
+deposition,ترسيب
+deposition,ديبوزيشن
+gallium nitride,نيتريد الجاليوم
+gallium nitride,GaN
+gallium arsenide,زرنيخيد الجاليوم
+gallium arsenide,GaAs
+indium phosphide,فوسفيد الإنديوم
+indium phosphide,InP
+gallium oxide,أكسيد الجاليوم
+gallium oxide,Ga2O3
+diamond,ماس
+diamond,الألماس
+printed circuit board,لوحة دوائر مطبوعة
+printed circuit board,بوردة
+printed circuit board,PCB
+electronic assembly,مجمع إلكتروني
+electronic assembly,بوردة مجمعة
+module,وحدة
+module,موديول
+connector,موصل
+connector,كونيكتور
+connector,فيشة
+switch,مفتاح
+switch,سويتش
+relay,مرحل
+relay,ريليه
+spark gap,فجوة شرارية
+spark gap,سبارك جاب
+krytron,كريترون
+krytron,أنبوب كريترون
+pulse generator,مولد نبضات
+pulse generator,بلس جنريتور
+capacitor bank,بنك مكثفات
+capacitor bank,مجموعة مكثفات
+thermal battery,بطارية حرارية
+thermal battery,بطاريات حرارية
+battery,بطاريات
+lithium battery,بطارية ليثيوم
+lithium battery,بطارية ليثيوم أيون
+solar cell,خلية شمسية
+solar cell,خلايا كهروضوئية
+superconducting,سوبركونداكتور
+cryogenic,كريوجيني
+cryogenic,بالتبريد الشديد
+cryocooler,مبرد كريوجيني
+cryocooler,مبرد بالتبريد الشديد
+dilution refrigerator,ثلاجة التخفيف
+dilution refrigerator,مبرد تخفيف
+mass spectrometer,مطياف الكتلة
+mass spectrometer,جهاز مطياف كتلي
+scanning electron microscope,مجهر إلكتروني ماسح
+scanning electron microscope,ميكروسكوب إلكتروني
+electron beam,حزمة إلكترونية
+electron beam,شعاع إلكتروني
+ion beam,حزمة أيونية
+ion beam,شعاع أيوني
+photomultiplier tube,أنبوب مضاعف ضوئي
+photomultiplier tube,مضاعف ضوئي
+traveling wave tube,أنبوب الموجة المتنقلة
+traveling wave tube,أنبوب TWT
+magnetron,ماجنترون
+magnetron,مولد ماجنترون
+klystron,كلايسترون
+klystron,أنبوب كلايسترون
+vacuum electronic device,جهاز إلكتروني فراغي
+vacuum electronic device,صمام إلكتروني
+gate-all-around transistor,ترانزستور البوابة المحيطة بالكامل
+gate-all-around transistor,GAAFET
+radiation-hardened,مقسى ضد الإشعاع
+radiation-hardened,مقاوم للإشعاع
+quantum computer,حاسوب كمومي
+quantum computer,كمبيوتر كمومي
+qubit,بت كمومي
+qubit,كيوبت
+electromagnetic pulse,نبضة كهرومغناطيسية
+electromagnetic pulse,EMP
+electrostatic discharge,تفريغ كهروستاتيكي
+electrostatic discharge,كهرباء ساكنة
+electromagnetic interference,تداخل كهرومغناطيسي
+electromagnetic interference,EMI
+static converter,محول ساكن
+static converter,محول كهربائي
+UPS,مصدر طاقة غير منقطع
+UPS,يو بي إس
+transformer,محول كهربائي
+transformer,ترانس
+antenna,أنتينا
+antenna,إريال
+phased array antenna,هوائي مصفوفة مرحلية
+phased array antenna,أنتينا فيزد أراي
+waveguide,دليل موجي
+waveguide,ويف جايد
+radio frequency,تردد راديوي
+radio frequency,RF
+radio frequency,ترددات لاسلكية
+millimetre wave,موجات مليمترية
+millimetre wave,ميليمتر ويف
+terahertz,تيراهرتز
+terahertz,ترددات التيراهرتز
+semiconductor manufacturing equipment,معدات تصنيع أشباه الموصلات
+semiconductor manufacturing equipment,معدات تصنيع الرقائق
+wafer prober,جهاز فحص الرقائق
+wafer prober,بروبر
+test equipment,معدات اختبار
+test equipment,أجهزة اختبار
+computer,كمبيوتر
+computer,حاسب آلي
+digital computer,حاسوب رقمي
+digital computer,كمبيوتر رقمي
+analogue computer,حاسوب تناظري
+analogue computer,كمبيوتر تناظري
+hybrid computer,حاسوب هجين
+hybrid computer,كمبيوتر هجين
+server,خادم
+server,سيرفر
+supercomputer,حاسوب فائق
+supercomputer,سوبر كمبيوتر
+workstation,محطة عمل
+workstation,وركستيشن
+laptop,حاسوب محمول
+laptop,لاب توب
+graphics processing unit,وحدة معالجة الرسومات
+graphics processing unit,كارت شاشة
+graphics processing unit,GPU
+AI accelerator,مسرّع الذكاء الاصطناعي
+AI accelerator,معالج ذكاء اصطناعي
+data processing,معالجة البيانات
+data processing,معالجة بيانات
+automatic data-processing machine,آلة معالجة البيانات الآلية
+automatic data-processing machine,حاسب آلي
+storage unit,وحدة تخزين
+storage unit,هارد ديسك
+input unit,وحدة إدخال
+input unit,وحدة الإدخال
+output unit,وحدة إخراج
+output unit,وحدة الإخراج
+adjusted peak performance,الأداء الأقصى المعدل
+adjusted peak performance,APP
+weighted TeraFLOPS,تيرافلوب مرجح
+weighted TeraFLOPS,WT
+intrusion software,برمجيات الاختراق
+intrusion software,برامج التجسس
+intrusion software,برمجيات اقتحام
+surveillance,مراقبة
+surveillance,تجسس
+surveillance,رقابة
+IP network surveillance,مراقبة شبكات IP
+IP network surveillance,مراقبة الإنترنت
+lawful interception,الاعتراض القانوني
+lawful interception,التنصت القانوني
+forensics,التحليل الجنائي الرقمي
+forensics,الأدلة الجنائية الرقمية
+telecommunications,الاتصالات السلكية واللاسلكية
+telecommunications equipment,معدات اتصالات
+telecommunications equipment,أجهزة اتصالات
+transmission equipment,معدات إرسال
+transmission equipment,أجهزة إرسال
+receiver,مستقبل
+receiver,ريسيفر
+transceiver,مرسل مستقبل
+transceiver,ترانسيفر
+radio,جهاز لاسلكي
+two-way radio,جهاز اتصال لاسلكي
+two-way radio,ووكي توكي
+satellite phone,هاتف ثريا
+satellite phone,هاتف عبر الأقمار الصناعية
+satellite communication,اتصالات الأقمار الصناعية
+satellite communication,اتصالات فضائية
+mobile phone,هاتف محمول
+mobile phone,موبايل
+mobile phone,جوال
+base station,محطة قاعدة
+base station,برج اتصالات
+router,موجه
+router,راوتر
+network switch,مبدل شبكة
+network switch,سويتش
+modem,مودم
+optical fibre,ألياف بصرية
+optical fibre,فايبر
+optical fibre cable,كابل ألياف بصرية
+optical fibre cable,كابل فايبر
+spread spectrum,طيف منتشر
+spread spectrum,سبريد سبكترم
+frequency hopping,القفز الترددي
+frequency hopping,تغيير التردد
+jammer,جهاز تشويش
+jammer,مشوش
+jamming,تشويش
+jamming,إعاقة
+interception equipment,معدات اعتراض
+interception equipment,أجهزة تنصت
+IMSI catcher,ملتقط IMSI
+IMSI catcher,جهاز تتبع الهواتف
+cellular interception,اعتراض الاتصالات الخلوية
+cellular interception,تنصت على المحمول
+telemetry,القياس عن بعد
+telemetry,تليمتري
+telecontrol,التحكم عن بعد
+telecontrol,تحكم لاسلكي
+software defined radio,راديو معرف بالبرمجيات
+software defined radio,SDR
+encryption,التعمية
+encryption,الترميز
+decryption,فك التشفير
+decryption,فك التعمية
+cryptography,علم التشفير
+cryptography,التعمية
+information security,الأمن السيبراني
+encryption key,مفتاح التشفير
+encryption key,مفتاح التعمية
+key length,طول المفتاح
+key length,طول مفتاح التشفير
+symmetric algorithm,خوارزمية متماثلة
+symmetric algorithm,تشفير متماثل
+asymmetric algorithm,خوارزمية غير متماثلة
+asymmetric algorithm,تشفير غير متماثل
+bits,بت
+bits,بتات
+AES,معيار التشفير المتقدم
+AES,AES
+VPN,شبكة افتراضية خاصة
+VPN,في بي إن
+hardware security module,وحدة أمن العتاد
+hardware security module,HSM
+cryptanalytic,تحليل الشفرات
+cryptanalytic,كسر الشفرات
+quantum key distribution,توزيع المفاتيح الكمومي
+quantum key distribution,QKD
+mass market,السوق العام
+mass market,منتجات السوق الشاملة
+smart card,بطاقة ذكية
+smart card,كارت ذكي
+firewall,جدار حماية
+firewall,فايروول
+penetration testing,اختبار الاختراق
+penetration testing,بن تست
+authentication,المصادقة
+authentication,التحقق من الهوية
+digital signature,التوقيع الرقمي
+digital signature,توقيع إلكتروني
+operating system,نظام تشغيل
+operating system,أنظمة التشغيل
+firmware,برمجيات ثابتة
+firmware,فيرموير
+software update,تحديث البرمجيات
+software update,أبديت
+cloud computing,الحوسبة السحابية
+cloud computing,كلاود
+data centre,مركز بيانات
+data centre,داتا سنتر
+artificial intelligence,الذكاء الاصطناعي
+artificial intelligence,AI
+machine learning,تعلم الآلة
+machine learning,التعلم الآلي
+neural network,شبكة عصبية
+neural network,شبكات عصبية
+drone controller,وحدة تحكم المسيرة
+drone controller,ريموت الدرون
+sensor,حساس
+sensor,سنسور
+optical sensor,مستشعر بصري
+optical sensor,حساس ضوئي
+detector,ديتكتور
+focal plane array,مصفوفة المستوى البؤري
+focal plane array,FPA
+infrared,الأشعة تحت الحمراء
+infrared,انفرارد
+infrared,تحت حمراء
+thermal imaging camera,كاميرا تصوير حراري
+thermal imager,جهاز تصوير حراري
+thermal imager,مصور حراري
+night vision,منظار ليلي
+image intensifier tube,أنبوب مكثف الصورة
+image intensifier tube,أنبوب تقوية الصورة
+microbolometer,ميكروبولومتر
+microbolometer,كاشف حراري غير مبرد
+camera,آلة تصوير
+high-speed camera,كاميرا عالية السرعة
+high-speed camera,كاميرا سريعة
+streak camera,كاميرا خطية
+streak camera,كاميرا ستريك
+framing camera,كاميرا إطارية
+framing camera,كاميرا لقطات
+hyperspectral,فائق الطيفية
+hyperspectral,تصوير فائق الطيف
+multispectral,متعدد الأطياف
+multispectral,تصوير متعدد الأطياف
+ultraviolet,الأشعة فوق البنفسجية
+ultraviolet,فوق بنفسجية
+X-ray,الأشعة السينية
+X-ray,أشعة إكس
+laser,جهاز ليزر
+fibre laser,ليزر ألياف
+fibre laser,فايبر ليزر
+semiconductor laser,ليزر أشباه موصلات
+semiconductor laser,ليزر دايود
+pulsed laser,ليزر نبضي
+pulsed laser,ليزر نبضات
+continuous wave laser,ليزر موجة مستمرة
+continuous wave laser,ليزر CW
+laser rangefinder,مقياس مسافة بالليزر
+laser rangefinder,محدد مدى بالليزر
+lidar,رادار ليزري
+lidar,ليدار
+laser designator,محدد أهداف بالليزر
+laser designator,مؤشر ليزري
+optics,البصريات
+optics,أجهزة بصرية
+lens,عدسة
+lens,عدسات
+mirror,مرآة
+mirror,مرايا
+deformable mirror,مرآة قابلة للتشكيل
+deformable mirror,مرآة مرنة
+beam steering,توجيه الحزمة
+beam steering,توجيه الشعاع
+optical filter,مرشح بصري
+optical filter,فلتر ضوئي
+optical coating,طلاء بصري
+optical coating,طلاء عدسات
+telescope,منظار مقرب
+telescope,تلسكوب
+periscope,بيريسكوب
+periscope,منظار الأفق
+riflescope,منظار تصويب
+riflescope,منظار بندقية
+riflescope,تلسكوب سلاح
+binoculars,منظار ثنائي
+binoculars,دربيل
+binoculars,نظارة معظمة
+interferometric,تداخلي
+interferometric,انترفيرومتري
+gyroscope,جيرو
+ring laser gyro,جيروسكوب ليزري حلقي
+ring laser gyro,جيرو ليزر حلقي
+fibre optic gyro,جيروسكوب ألياف بصرية
+fibre optic gyro,جيرو فايبر
+MEMS,نظم كهروميكانيكية دقيقة
+MEMS,ميمز
+accelerometer,مقياس التسارع
+accelerometer,أكسيليروميتر
+accelerometer,حساس تسارع
+magnetometer,مقياس المغناطيسية
+magnetometer,ماجنتوميتر
+gradiometer,مقياس التدرج
+gradiometer,جراديوميتر
+gravimeter,مقياس الجاذبية
+gravimeter,جرافيميتر
+hydrophone,ميكروفون مائي
+hydrophone,هيدروفون
+sonar,جهاز سونار
+acoustic,صوتي
+acoustic,صوتيات
+side-scan sonar,سونار المسح الجانبي
+side-scan sonar,سونار جانبي
+echo sounder,مسبار صدى
+echo sounder,جهاز قياس الأعماق
+radar,جهاز رادار
+radar system,نظام رادار
+radar system,منظومة رادار
+synthetic aperture radar,رادار الفتحة التركيبية
+synthetic aperture radar,رادار SAR
+inverse synthetic aperture radar,رادار الفتحة التركيبية العكسية
+inverse synthetic aperture radar,ISAR
+phased array radar,رادار مصفوفة مرحلية
+phased array radar,رادار AESA
+weather radar,رادار طقس
+weather radar,رادار أرصاد
+air traffic control radar,رادار مراقبة الحركة الجوية
+air traffic control radar,رادار ATC
+ground penetrating radar,رادار مخترق للأرض
+ground penetrating radar,جورادار
+radome,قبة رادار
+radome,رادوم
+radar cross section,المقطع الراداري
+radar cross section,البصمة الرادارية
+stealth,التخفي
+stealth,الشبح
+tracking system,نظام تتبع
+tracking system,منظومة تعقب
+direction finding,تحديد الاتجاه
+direction finding,معدات تحديد الاتجاه
+electronic warfare,الحرب الإلكترونية
+electronic warfare,حرب إلكترونية
+pressure sensor,مستشعر ضغط
+pressure sensor,حساس ضغط
+temperature sensor,مستشعر حرارة
+temperature sensor,حساس حرارة
+temperature sensor,ثرمومتر
+flash X-ray,أشعة سينية ومضية
+flash X-ray,فلاش أشعة إكس
+velocity interferometer,مقياس التداخل السرعي
+velocity interferometer,VISAR
+radiation detector,كاشف إشعاع
+radiation detector,مقياس إشعاع
+radiation detector,عداد جايجر
+spectrometer,سبكتروميتر
+chemical detector,كاشف كيميائي
+chemical detector,جهاز كشف كيماويات
+explosive detector,كاشف متفجرات
+explosive detector,جهاز كشف المتفجرات
+metal detector,كاشف معادن
+metal detector,جهاز كشف معادن
+surveillance camera,كاميرا مراقبة
+surveillance camera,كاميرا أمنية
+surveillance camera,CCTV
+drone camera,كاميرا مسيّرة
+drone camera,كاميرا درون
+optical fibre sensor,مستشعر ألياف بصرية
+optical fibre sensor,حساس فايبر
+navigation,الملاحة
+inertial navigation system,نظام الملاحة بالقصور الذاتي
+inertial navigation system,ملاحة قصورية
+inertial measurement unit,وحدة القياس بالقصور الذاتي
+inertial measurement unit,IMU
+attitude and heading reference system,نظام مرجع الوضع والاتجاه
+attitude and heading reference system,AHRS
+satellite navigation,الملاحة بالأقمار الصناعية
+satellite navigation,GPS
+satellite navigation,جي بي إس
+GNSS receiver,مستقبل الملاحة بالأقمار الصناعية
+GNSS receiver,جهاز GPS
+anti-jam,مضاد للتشويش
+anti-jam,مقاوم للتشويش
+star tracker,متتبع النجوم
+star tracker,مستشعر نجمي
+altimeter,مقياس الارتفاع
+altimeter,ألتيميتر
+compass,بوصلة
+compass,بوصلة ملاحية
+guidance set,مجموعة توجيه
+guidance set,منظومة توجيه
+autopilot,طيار آلي
+autopilot,أوتوبايلوت
+flight control system,نظام التحكم في الطيران
+flight control system,منظومة التحكم بالطيران
+servo valve,صمام مؤازر
+servo valve,صمام سيرفو
+circular error probable,احتمال الخطأ الدائري
+circular error probable,CEP
+drift rate,معدل الانجراف
+drift rate,الانجراف
+avionics,إلكترونيات الطيران
+avionics,أفيونكس
+aircraft,طائرات
+helicopter,طائرة عمودية
+helicopter,هليكوبتر
+unmanned aerial vehicle,مركبة جوية غير مأهولة
+unmanned aerial vehicle,مسيّرة
+unmanned aerial vehicle,درون
+quadcopter,طائرة رباعية المراوح
+quadcopter,كوادكوبتر
+quadcopter,درون
+airship,منطاد
+airship,مناطيد
+balloon,بالون
+balloon,منطاد هوائي
+gas turbine engine,محرك توربيني غازي
+gas turbine engine,توربينة غازية
+turbojet,محرك نفاث توربيني
+turbojet,توربوجيت
+turbofan,محرك توربيني مروحي
+turbofan,توربوفان
+turboprop,محرك توربيني دافع
+turboprop,توربوبروب
+ramjet,محرك نفاث تضاغطي
+ramjet,رامجت
+scramjet,محرك نفاث تضاغطي فوق صوتي
+scramjet,سكرامجت
+pulse jet,محرك نفاث نبضي
+pulse jet,بلس جت
+rocket,صواريخ
+missile,قذيفة صاروخية
+missile,صاروخ موجه
+sounding rocket,صاروخ سبري
+sounding rocket,صاروخ أبحاث
+space launch vehicle,مركبة إطلاق فضائي
+space launch vehicle,صاروخ إطلاق
+spacecraft,مركبة فضائية
+spacecraft,سفينة فضاء
+satellite,أقمار صناعية
+spacecraft bus,منصة مركبة فضائية
+spacecraft bus,هيكل القمر الصناعي
+reentry vehicle,مركبة العودة
+reentry vehicle,مركبة دخول الغلاف الجوي
+rocket motor,محرك صاروخي
+rocket motor,موتور صاروخ
+rocket engine,محرك صاروخي
+rocket engine,محرك صاروخ
+solid propellant,وقود دافع صلب
+solid propellant,وقود صلب
+liquid propellant,وقود دافع سائل
+liquid propellant,وقود سائل
+hybrid rocket,صاروخ هجين
+hybrid rocket,محرك هجين
+nozzle,فوهة
+nozzle,منفث
+nozzle,نوزل
+thrust vector control,التحكم في متجه الدفع
+thrust vector control,توجيه الدفع
+total impulse,الدفع الكلي
+total impulse,الدفع الإجمالي
+payload,حمولة
+payload,الحمولة النافعة
+range,مدى
+range,المدى
+interstage,مرحلة بينية
+interstage,قسم بين المراحل
+staging mechanism,آلية فصل المراحل
+staging mechanism,آلية المراحل
+launcher,منصة إطلاق
+launcher,قاذف
+launch support equipment,معدات دعم الإطلاق
+launch support equipment,معدات الإطلاق
+wind tunnel,نفق رياح
+wind tunnel,نفق هوائي
+test stand,منصة اختبار
+test stand,مقعد اختبار
+turbine blade,ريشة توربين
+turbine blade,ريش التوربينة
+FADEC,نظام التحكم الرقمي الكامل في المحرك
+FADEC,فيدك
+spraying system,نظام رش
+spraying system,منظومة رش
+crop dusting,الرش الزراعي الجوي
+crop dusting,رش المبيدات جواً
+fuel tank,خزان وقود
+fuel tank,تنك وقود
+composite structure,هيكل مركّب
+composite structure,هياكل كومبوزيت
+landing gear,عجلات الهبوط
+landing gear,جهاز الهبوط
+ejection seat,مقعد قذف
+ejection seat,كرسي القذف
+flight simulator,محاكي طيران
+flight simulator,سيموليتور
+parachute,مظلة
+parachute,باراشوت
+submarine,غواصات
+submersible,مركبة غاطسة
+submersible,غاطسة
+remotely operated vehicle,مركبة تعمل عن بعد
+remotely operated vehicle,ROV
+autonomous underwater vehicle,مركبة ذاتية تحت الماء
+autonomous underwater vehicle,AUV
+autonomous underwater vehicle,غواصة آلية
+unmanned surface vessel,سفينة سطحية غير مأهولة
+unmanned surface vessel,زورق مسير
+surface vessel,سفينة سطحية
+surface vessel,مركب
+hydrofoil,قارب جناحي
+hydrofoil,هيدروفويل
+hovercraft,حوامة
+hovercraft,هوفركرافت
+propeller,مروحة دفع
+propeller,رفاص
+propeller,بروبيلر
+marine engine,محرك بحري
+marine engine,موتور بحري
+marine gas turbine,توربين غازي بحري
+marine gas turbine,توربينة بحرية
+diving equipment,معدات غوص
+diving equipment,عدة غطس
+underwater vehicle,مركبة تحت الماء
+underwater vehicle,غاطس
+pressure hull,بدن ضغط
+pressure hull,هيكل الضغط
+underwater lighting,إضاءة تحت الماء
+underwater lighting,كشافات تحت الماء
+underwater camera,كاميرا تحت الماء
+underwater camera,كاميرا غطس
+water tunnel,نفق مائي
+water tunnel,نفق مياه
+noise reduction,خفض الضوضاء
+noise reduction,تقليل الضجيج
+air independent propulsion,الدفع المستقل عن الهواء
+air independent propulsion,AIP
+fuel cell,خلية وقود
+fuel cell,خلايا الوقود
+kilogram,كيلوجرام
+kilogram,كجم
+kilogram,كيلو
+gram,جرام
+gram,جم
+millimetre,مليمتر
+millimetre,مم
+millimetre,ملي
+micrometre,ميكرومتر
+micrometre,ميكرون
+nanometre,نانومتر
+nanometre,نانو
+metre,متر
+metre,م
+kilometre,كيلومتر
+kilometre,كم
+hertz,هيرتز
+hertz,ذبذبة/ثانية
+megahertz,ميجاهيرتز
+megahertz,ميجا
+gigahertz,جيجاهيرتز
+gigahertz,جيجا
+watt,واط
+watt,وات
+kilowatt,كيلوواط
+kilowatt,ك.و
+volt,فولت
+volt,فولط
+kilovolt,كيلوفولت
+kilovolt,ك.ف
+ampere,أمبير
+milliampere,ملي أمبير
+milliampere,مللي أمبير
+pascal,باسكال
+megapascal,ميجاباسكال
+megapascal,ميجا باسكال
+bar,بار
+kelvin,كلفن
+kelvin,درجة كلفن
+degree Celsius,درجة مئوية
+degree Celsius,سلزيوس
+decibel,ديسيبل
+decibel,دسبل
+gray,جراي
+rad,راد
+rad,وحدة راد
+newton,نيوتن
+newton-second,نيوتن ثانية
+newton-second,نيوتن.ثانية
+mega newton second,ميجا نيوتن ثانية
+mega newton second,MNs
+joule,جول
+bit,بت
+byte,بايت
+parts per million,جزء في المليون
+parts per million,ppm
+percent by weight,نسبة مئوية وزناً
+percent by weight,% وزناً
+percent by weight,وزن/وزن
+atomic percent,نسبة مئوية ذرياً
+atomic percent,% ذرية
+Mach,ماخ
+Mach,رقم ماخ
+g (acceleration),تسارع الجاذبية
+g (acceleration),جي
+milligal,ملي جال
+milligal,mGal
+nanotesla,نانو تسلا
+nanotesla,nT
+tesla,تسلا
+gauss,جاوس
+arc second,ثانية قوسية
+arc second,ثانية زاوية
+degree,درجة
+degree,درجة زاوية
+per hour,في الساعة
+per hour,/ساعة
+greater than,أكبر من
+greater than,يزيد على
+greater than,أكثر من
+less than,أقل من
+less than,يقل عن
+equal to or greater than,يساوي أو يزيد على
+equal to or greater than,لا يقل عن
+equal to or less than,يساوي أو يقل عن
+equal to or less than,لا يزيد على
+better than,أفضل من
+better than,أدق من
+exceeding,يتجاوز
+exceeding,يزيد على
+not exceeding,لا يتجاوز
+not exceeding,لا يزيد على
+inclusive,شاملاً
+inclusive,متضمناً
+accuracy,الدقة
+accuracy,درجة الدقة
+resolution,درجة التمييز
+resolution,الدقة التحليلية
+resolution,الريزولوشن
+bandwidth,عرض النطاق
+bandwidth,الباندويدث
+frequency,التردد
+frequency,الذبذبة
+output power,قدرة الخرج
+output power,القدرة الخارجة
+peak power,القدرة القصوى
+peak power,قدرة الذروة
+average power,القدرة المتوسطة
+average power,متوسط القدرة
+pulse duration,مدة النبضة
+pulse duration,عرض النبضة
+wavelength,الطول الموجي
+wavelength,طول الموجة
+sensitivity,الحساسية
+sensitivity,درجة الحساسية
+noise level,مستوى الضوضاء
+noise level,مستوى الضجيج
+operating temperature,درجة حرارة التشغيل
+operating temperature,حرارة التشغيل
+pressure rating,الضغط المقنن
+pressure rating,تصنيف الضغط
+flow rate,معدل التدفق
+flow rate,التدفق
+capacity,السعة
+capacity,القدرة الاستيعابية
+volume,الحجم
+volume,السعة
+internal volume,الحجم الداخلي
+internal volume,السعة الداخلية
+diameter,القطر
+inside diameter,القطر الداخلي
+inside diameter,القطر من الداخل
+length,الطول
+thickness,السمك
+thickness,التخانة
+weight,الوزن
+speed,السرعة
+rotational speed,سرعة الدوران
+rotational speed,عدد اللفات
+gross tonnage,الحمولة الإجمالية
+gross tonnage,الطناج الإجمالي
+nominal size,المقاس الاسمي
+nominal size,القطر الاسمي
+tolerance,التفاوت
+tolerance,السماحية
+standard,معيار
+standard,مواصفة قياسية
+ISO,المنظمة الدولية للمعايير
+ISO,أيزو
+military standard,معيار عسكري
+military standard,مواصفة عسكرية
+ruggedized,مقوّى
+ruggedized,مدعم ضد الظروف القاسية
+space-qualified,مؤهل للفضاء
+space-qualified,معتمد للاستخدام الفضائي
+spare,احتياطي
+spare,قطع احتياطية
+used,مستعمل
+used,مستخدم
+new,جديد
+new,غير مستعمل
+refurbished,مجدد
+refurbished,معاد تأهيله
+kit,طقم
+kit,مجموعة
+set,مجموعة
+set,طقم
+parts and accessories,أجزاء ولوازم
+parts and accessories,قطع وإكسسوارات
+not elsewhere specified,غير مذكورة ولا داخلة في مكان آخر
+not elsewhere specified,غ.م.م.أ
+whether or not,وإن كانت
+whether or not,سواء أكانت أم لا
+other,غيرها
+other,أخرى
+laboratory equipment,معدات معملية
+laboratory equipment,أجهزة مختبرات
+analytical instrument,جهاز تحليلي
+analytical instrument,أجهزة تحليل
+gas chromatograph,جهاز الكروماتوجرافيا الغازية
+gas chromatograph,كروماتوجراف غازي
+liquid chromatograph,جهاز الكروماتوجرافيا السائلة
+liquid chromatograph,HPLC
+GC-MS,كروماتوجراف غازي مع مطياف كتلة
+GC-MS,جي سي ماس
+spectrophotometer,مقياس الطيف الضوئي
+spectrophotometer,سبكتروفوتوميتر
+FTIR spectrometer,مطياف الأشعة تحت الحمراء
+FTIR spectrometer,FTIR
+Raman spectrometer,مطياف رامان
+Raman spectrometer,رامان
+X-ray diffractometer,جهاز حيود الأشعة السينية
+X-ray diffractometer,XRD
+X-ray fluorescence,مطياف الفلورة بالأشعة السينية
+X-ray fluorescence,XRF
+atomic absorption,مطياف الامتصاص الذري
+atomic absorption,AAS
+ICP-MS,مطياف الكتلة بالبلازما المقترنة حثياً
+ICP-MS,آي سي بي
+NMR spectrometer,مطياف الرنين المغناطيسي النووي
+NMR spectrometer,NMR
+electron microscope,مجهر إلكتروني
+electron microscope,ميكروسكوب إلكتروني
+microscope,مجهر
+microscope,ميكروسكوب
+PCR machine,جهاز تفاعل البوليمراز المتسلسل
+PCR machine,جهاز PCR
+DNA sequencer,جهاز تحديد تسلسل الحمض النووي
+DNA sequencer,سيكوينسر
+incubator,حضّانة
+incubator,إنكيوبيتر
+laboratory centrifuge,جهاز طرد مركزي معملي
+laboratory centrifuge,سنترفيوج معمل
+ultracentrifuge,جهاز طرد مركزي فائق السرعة
+ultracentrifuge,ألترا سنترفيوج
+fume hood,خزانة شفط الأبخرة
+fume hood,هود
+balance,ميزان
+balance,ميزان حساس
+pH meter,مقياس الأس الهيدروجيني
+pH meter,جهاز pH
+rotary evaporator,مبخر دوار
+rotary evaporator,روتافاب
+glassware,أدوات زجاجية
+glassware,زجاجيات معمل
+reactor (lab),مفاعل معملي
+reactor (lab),مفاعل زجاجي
+pilot plant,مصنع تجريبي
+pilot plant,وحدة تجريبية
+chemical plant,مصنع كيماويات
+chemical plant,مجمع كيميائي
+petrochemical,بتروكيماويات
+petrochemical,بتروكيماوي
+refinery,معمل تكرير
+refinery,مصفاة
+oil and gas,النفط والغاز
+oil and gas,البترول والغاز
+drilling rig,جهاز حفر
+drilling rig,حفار
+drilling rig,برج حفر
+pipeline,خط أنابيب
+pipeline,أنابيب
+pipe,ماسورة
+pipe,أنبوب
+pipe,مواسير
+tube,أنبوب
+tube,أنابيب
+fitting,وصلة
+fitting,قطعة توصيل
+fitting,فيتنج
+flange,شفة
+flange,فلانشة
+gasket,حشية
+gasket,جوان
+seal,مانع تسرب
+seal,سيل
+boiler,غلاية
+boiler,بويلر
+steam turbine,توربين بخاري
+steam turbine,توربينة بخار
+generator,مولد
+generator,مولد كهرباء
+generator,جنريتور
+electric motor,محرك كهربائي
+electric motor,موتور كهربا
+servo motor,محرك مؤازر
+servo motor,سيرفو موتور
+stepper motor,محرك خطوي
+stepper motor,ستيبر موتور
+PLC,وحدة تحكم منطقية قابلة للبرمجة
+PLC,بي إل سي
+SCADA,نظام التحكم الإشرافي وتجميع البيانات
+SCADA,سكادا
+industrial control system,نظام تحكم صناعي
+industrial control system,أنظمة التحكم الصناعية
+instrumentation,أجهزة القياس والتحكم
+instrumentation,إنسترومنتيشن
+transmitter,مرسل قياس
+transmitter,ترانسميتر
+control valve,صمام تحكم
+control valve,بلف تحكم
+ball valve,صمام كروي
+ball valve,بلف بلية
+gate valve,صمام بوابي
+gate valve,بلف سكينة
+butterfly valve,صمام فراشة
+butterfly valve,بلف فراشة
+check valve,صمام عدم رجوع
+check valve,بلف عدم رجوع
+diaphragm valve,صمام غشائي
+diaphragm valve,بلف دايافرام
+centrifugal pump,مضخة طرد مركزي
+centrifugal pump,طلمبة طاردة
+metering pump,مضخة قياس
+metering pump,طلمبة جرعات
+magnetic drive pump,مضخة دفع مغناطيسي
+magnetic drive pump,طلمبة مغناطيسية
+air compressor,ضاغط هواء
+air compressor,كمبروسر هواء
+chiller,مبرد مياه
+chiller,تشيلر
+cooling tower,برج تبريد
+cooling tower,أبراج تبريد
+filter,فلتر
+HEPA filter,مرشح هواء عالي الكفاءة
+HEPA filter,فلتر هيبا
+membrane,غشاء
+membrane,ممبرين
+reverse osmosis,التناضح العكسي
+reverse osmosis,تحلية RO
+evaporator,مبخر
+evaporator,إيفابوريتور
+condenser,مكثف بخار
+condenser,كوندنسر
+crystallizer,مبلور
+crystallizer,وحدة تبلور
+furnace,أفران صناعية
+kiln,فرن حرق
+kiln,قمينة
+welding electrode,قطب لحام
+welding electrode,سلك لحام
+steel plate,لوح صلب
+steel plate,صاج
+steel bar,قضيب صلب
+steel bar,حديد تسليح
+steel bar,بار
+wire,سلك
+wire,أسلاك
+cable,كابل
+cable,كابلات
+fastener,مثبت
+fastener,مسامير وصواميل
+spring,زنبرك
+spring,سوستة
+hose,خرطوم
+hose,خراطيم
+insulation,عزل
+insulation,مواد عازلة
+refractory,حراري
+refractory,مواد مقاومة للحرارة
+refractory,طوب حراري
+packaging machine,ماكينة تغليف
+packaging machine,ماكينة تعبئة وتغليف
+printing machine,ماكينة طباعة
+printing machine,مطبعة
+conveyor,ناقل
+conveyor,سير ناقل
+forklift,رافعة شوكية
+forklift,كلارك
+forklift,ونش شوكة
+crane,رافعة
+crane,ونش
+tank truck,سيارة صهريج
+tank truck,تنك
+heat sink,مشتت حراري
+heat sink,مبدد حرارة
+thermal management,الإدارة الحرارية
+thermal management,التحكم الحراري
+air conditioning,تكييف الهواء
+air conditioning,تكييف
+water treatment,معالجة المياه
+water treatment,محطة معالجة
+desalination,تحلية المياه
+desalination,تحلية
+medical equipment,معدات طبية
+medical equipment,أجهزة طبية
+X-ray machine,جهاز أشعة سينية
+X-ray machine,جهاز أشعة إكس
+CT scanner,جهاز الأشعة المقطعية
+CT scanner,سي تي
+MRI,جهاز الرنين المغناطيسي
+MRI,رنين مغناطيسي
+linear accelerator,معجل خطي
+linear accelerator,لينك
+radiotherapy,العلاج الإشعاعي
+radiotherapy,علاج بالإشعاع
+cobalt-60,الكوبالت-60
+cobalt-60,كوبالت 60
+cesium-137,السيزيوم-137
+cesium-137,سيزيوم 137
+iridium-192,الإيريديوم-192
+iridium-192,إيريديوم 192
+americium-241,الأمريسيوم-241
+americium-241,أمريسيوم 241
+radioactive source,مصدر مشع
+radioactive source,مصدر إشعاعي
+industrial radiography,التصوير الإشعاعي الصناعي
+industrial radiography,فحص بالأشعة
+non-destructive testing,الاختبار غير الإتلافي
+non-destructive testing,فحص غير إتلافي
+ultrasonic testing,الفحص بالموجات فوق الصوتية
+ultrasonic testing,ألتراسونيك
+eddy current,التيارات الدوامية
+eddy current,إيدي كرنت
+borescope,منظار داخلي صناعي
+borescope,بوروسكوب
+security equipment,معدات أمنية
+security equipment,أجهزة أمن
+X-ray baggage scanner,جهاز فحص الحقائب بالأشعة
+X-ray baggage scanner,جهاز تفتيش
+access control,التحكم في الدخول
+access control,نظام دخول
+biometric,قياسات حيوية
+biometric,بصمة
+facial recognition,التعرف على الوجه
+facial recognition,بصمة الوجه
+police equipment,معدات شرطية
+police equipment,أدوات الشرطة
+handcuffs,أصفاد
+handcuffs,كلبشات
+stun gun,مسدس صاعق
+stun gun,صاعق كهربائي
+stun gun,تيزر
+pepper spray,رذاذ الفلفل
+pepper spray,بخاخ فلفل
+riot shield,درع مكافحة الشغب
+riot shield,درع شغب
+helmet,خوذة
+helmet,خوذات
+firearm,سلاح
+ammunition,ذخائر
+ammunition,طلقات
+hunting rifle,بندقية صيد
+hunting rifle,بندقية خرطوش
+silencer,كاتم صوت
+silencer,مخمد صوت
+armoured vehicle,مركبة مدرعة
+armoured vehicle,عربة مصفحة
+bulletproof glass,زجاج مضاد للرصاص
+bulletproof glass,زجاج مصفح
+four-wheel drive vehicle,مركبة دفع رباعي
+four-wheel drive vehicle,سيارة 4x4
+pickup truck,سيارة نقل خفيف
+pickup truck,بيك أب
+pickup truck,كابينة
+truck,شاحنة
+truck,لوري
+truck,تريلا
+trailer,مقطورة
+trailer,تريلا
+engine,موتور
+diesel engine,محرك ديزل
+diesel engine,موتور ديزل
+tyre,إطار
+tyre,كاوتش
+specially designed components,مكونات مصممة خصيصاً
+specially designed components,أجزاء مصممة خصيصاً
+related equipment,معدات متصلة
+related equipment,معدات ذات صلة
+production facilities,مرافق الإنتاج
+production facilities,منشآت الإنتاج
+production equipment,معدات الإنتاج
+production equipment,أجهزة الإنتاج
+plant,منشأة
+plant,مصنع
+facility,مرفق
+facility,منشأة
+auxiliary systems,نظم مساعدة
+auxiliary systems,أنظمة مساعدة
+installation,تركيب
+installation,منشأة
+designed or modified,مصمم أو معدل
+designed or modified,صمم أو عدل
+usable in,قابل للاستخدام في
+usable in,يمكن استخدامه في
+capable of,قادر على
+capable of,بإمكانه
+rated,مقدر
+rated,مصنف
+characteristics,خصائص
+characteristics,مواصفات
+parameters,معلمات
+parameters,بارامترات
+performance,أداء
+performance,كفاءة
+function,وظيفة
+function,دالة
+operation,تشغيل
+operation,عملية
+maintenance,صيانة
+maintenance,الصيانة
+repair,إصلاح
+repair,تصليح
+overhaul,عَمرة
+overhaul,تجديد شامل
+calibration,معايرة
+calibration,ضبط
+alignment,محاذاة
+alignment,ضبط المحاذاة
+integration,تكامل
+integration,دمج
+modelling,نمذجة
+modelling,محاكاة
+simulation,محاكاة
+simulation,سيميوليشن
+testing,اختبار
+testing,فحص
+inspection,فحص
+inspection,تفتيش
+inspection,معاينة
+measuring,قياس
+measuring,القياس
+monitoring,رصد
+monitoring,مراقبة
+detection,كشف
+detection,الكشف
+protection,حماية
+protection,وقاية
+containment,احتواء
+containment,الاحتواء
+disposal,تخلص
+disposal,إتلاف
+decontamination,إزالة التلوث
+decontamination,تطهير
+handling,مناولة
+handling,تداول
+storage,تخزين
+transport,نقل
+transport,ترحيل
+mixture,مخلوط
+mixture,خليط
+solution,محلول
+solution,محاليل
+compound,مركب
+compound,مركبات
+concentrate,مركّز
+concentrate,مركز
+powder,مسحوق
+powder,بودرة
+particle size,حجم الجسيمات
+particle size,حجم الحبيبات
+form,شكل
+form,صورة
+film,غشاء
+film,فيلم
+sheet,لوح
+sheet,شيت
+tape,شريط
+tape,شريط لاصق
+fibre,ليف
+fibre,ألياف
+wire rope,حبل سلكي
+wire rope,واير
+block,كتلة
+block,بلوك
+rod,قضيب
+rod,عمود
+plate,لوح
+plate,ألواح
+ring,حلقة
+ring,حلقات
+disk,قرص
+disk,أقراص
+shaft,عمود
+shaft,محور
+rotor,دوار
+rotor,روتور
+stator,ثابت
+stator,ستاتور
+housing,غلاف
+housing,هيكل
+frame,إطار
+frame,هيكل
+window,نافذة
+window,شباك
+chamber,حجرة
+chamber,غرفة
+cell,خلية
+cell,خلايا
+column,عمود
+column,برج
+vessel (container),وعاء
+vessel (container),إناء
+target,هدف
+target,مجمع هدف
+source,مصدر
+source,مصادر
+shield,درع
+shield,واقي
+coating,تغطية
+lining,بطانة
+lining,تبطين
+insulation layer,طبقة عزل
+insulation layer,عازل
+layer,طبقة
+layer,طبقات
+surface,سطح
+surface,أسطح
+structure,هيكل
+structure,بنية
+platform,منصة
+platform,بلاتفورم
+vehicle,مركبة
+vehicle,عربة
+ground equipment,معدات أرضية
+ground equipment,معدات المحطة الأرضية
+on-board,على متن
+on-board,محمول على المركبة
+airborne,محمول جواً
+airborne,جوي
+underwater,مغمور
+portable,محمول
+portable,متنقل
+fixed,ثابت
+fixed,مثبت
+automatic,آلي
+automatic,أوتوماتيكي
+manual,يدوي
+manual,مانيوال
+remote,عن بعد
+remote,عن بُعد
+real time,في الزمن الحقيقي
+real time,فوري
+real time,لحظي
+continuous,مستمر
+continuous,متواصل
+pulsed,نبضي
+pulsed,متقطع
+high-speed,عالي السرعة
+high-speed,سريع
+high-power,عالي القدرة
+high-power,قدرة عالية
+high-temperature,عالي الحرارة
+high-temperature,مقاوم للحرارة العالية
+low-temperature,منخفض الحرارة
+low-temperature,مبرد
+high-pressure,عالي الضغط
+high-pressure,ضغط عالي
+vacuum,فراغ
+vacuum,فاكيوم
+inert gas,غاز خامل
+inert gas,غاز نبيل
+controlled atmosphere,جو متحكم فيه
+controlled atmosphere,جو محكوم
+corrosion,تآكل
+corrosion,صدأ
+fluorinated,مفلور
+fluorinated,مُفلور
+fluoride,فلوريد
+fluoride,فلورايد
+chloride,كلوريد
+chloride,كلورايد
+hydride,هيدريد
+hydride,هيدرايد
+oxide,أكسيد
+oxide,أكاسيد
+nitride,نيتريد
+nitride,نتريد
+carbide,كربيد
+carbide,كاربيد
+isotope,نظائر
+enrichment level,مستوى التخصيب
+enrichment level,درجة التخصيب
+irradiation,تشعيع
+irradiation,التعرض للإشعاع
+radiation,إشعاعات
+radioactive,إشعاعي
+electromagnetic,كهرومغناطيسي
+electromagnetic,كهرومغناطيسية
+magnetic,مغناطيسي
+magnetic,ممغنط
+optical,بصري
+optical,ضوئي
+thermal,حراري
+thermal,حرارية
+mechanical,ميكانيكي
+mechanical,ميكانيكية
+electrical,كهربائي
+electrical,كهرباء
+hydraulic,هيدروليكي
+hydraulic,هيدروليك
+pneumatic,هوائي
+pneumatic,نيوماتيك
+chemical (adj),كيميائي
+chemical (adj),كيماوي
+biological,حيوي
+nuclear,ذري
+military,عسكري
+military,حربي
+civil,مدني
+civil,مدنية
+government use,استخدام حكومي
+government use,للجهات الحكومية
+commercial,تجاري
+commercial,تجارية
+consumer,استهلاكي
+consumer,للمستهلك
+industrial (adj),صناعي
+industrial (adj),صناعية
+scientific,علمي
+scientific,بحثي
+medical (adj),طبي
+medical (adj),طبية
+agricultural,زراعي
+agricultural,زراعية
+drone,مسيّرة
+drone,درون
+drone parts,قطع غيار المسيّرات
+drone parts,قطع درون
+drone motor,محرك مسيّرة
+drone motor,موتور درون
+flight controller,وحدة التحكم في الطيران
+flight controller,فلايت كنترولر
+gimbal,محور تثبيت الكاميرا
+gimbal,جيمبال
+FPV goggles,نظارات الرؤية من منظور الطيار
+FPV goggles,نظارة FPV
+remote controller,جهاز تحكم عن بعد
+remote controller,ريموت
+propeller (drone),مروحة مسيّرة
+propeller (drone),ريش الدرون
+GPS module,وحدة تحديد المواقع
+GPS module,موديول GPS
+GPS tracker,جهاز تتبع GPS
+GPS tracker,متتبع
+night vision goggles,منظار ليلي
+thermal scope,منظار حراري
+thermal scope,تلسكوب حراري
+laser pointer,مؤشر ليزر
+laser pointer,قلم ليزر
+rangefinder,مقياس المسافة
+rangefinder,رينج فايندر
+walkie-talkie,جهاز لاسلكي محمول
+walkie-talkie,ووكي توكي
+satellite modem,مودم أقمار صناعية
+satellite modem,VSAT
+signal booster,مقوي إشارة
+signal booster,بوستر
+signal jammer,مشوش إشارة
+signal jammer,جهاز تشويش
+spy camera,كاميرا خفية
+spy camera,كاميرا تجسس
+voice recorder,مسجل صوت
+voice recorder,ريكوردر
+encrypted phone,هاتف مشفر
+encrypted phone,موبايل مشفر
+network equipment,معدات شبكات
+network equipment,أجهزة نتورك
+graphics card,بطاقة رسوميات
+graphics card,كارت شاشة
+server rack,خزانة خوادم
+server rack,راك سيرفر
+storage device,جهاز تخزين
+storage device,وحدة تخزين
+solid state drive,وحدة تخزين ذات حالة صلبة
+solid state drive,SSD
+hard disk,قرص صلب
+hard disk,هارد ديسك
+memory card,بطاقة ذاكرة
+memory card,كارت ميموري
+USB flash drive,وحدة ذاكرة فلاش
+USB flash drive,فلاشة
+electronic components,مكونات إلكترونية
+electronic components,قطع إلكترونية
+semiconductor chips,رقائق أشباه الموصلات
+semiconductor chips,شرائح
+semiconductor chips,تشيبات
+development board,لوحة تطوير
+development board,بوردة تطوير
+power bank,بطارية خارجية
+power bank,باور بانك
+inverter,عاكس
+inverter,انفرتر
+solar panel,لوح شمسي
+solar panel,ألواح طاقة شمسية
+camera lens,عدسة كاميرا
+camera lens,عدسة
+optical sight,منظار بصري
+optical sight,منظار
+binocular telescope,منظار مزدوج
+binocular telescope,نظارة معظمة
+CNC router,راوتر CNC
+CNC router,ماكينة حفر CNC
+laser engraving machine,ماكينة حفر بالليزر
+laser engraving machine,ليزر حفر
+3D printing filament,خيوط الطباعة ثلاثية الأبعاد
+3D printing filament,فلامنت
+metal 3D printer,طابعة معدنية ثلاثية الأبعاد
+metal 3D printer,طابعة 3D معدنية
+carbon fibre sheet,لوح ألياف كربون
+carbon fibre sheet,شيت كربون
+carbon fibre tube,أنبوب ألياف كربون
+carbon fibre tube,ماسورة كربون
+titanium sheet,لوح تيتانيوم
+titanium sheet,صاج تيتانيوم
+aluminium profile,قطاع ألومنيوم
+aluminium profile,بروفيل ألومنيوم
+industrial chemicals,كيماويات صناعية
+industrial chemicals,مواد كيميائية صناعية
+cleaning chemicals,كيماويات تنظيف
+cleaning chemicals,منظفات صناعية
+agrochemicals,كيماويات زراعية
+agrochemicals,مبيدات وأسمدة
+pharmaceutical raw materials,مواد خام دوائية
+pharmaceutical raw materials,مواد فعالة
+pharmaceutical equipment,معدات صناعة الأدوية
+pharmaceutical equipment,ماكينات أدوية
+tablet press,مكبس أقراص
+tablet press,ماكينة كبس أقراص
+capsule filling machine,ماكينة تعبئة كبسولات
+capsule filling machine,ماكينة كبسولات
+fermentation tank,خزان تخمير
+fermentation tank,تانك تخمير
+spray dryer,مجفف رذاذي
+spray dryer,سبراي دراير
+freeze dryer,مجفف بالتجميد
+freeze dryer,ليوفيلايزر
+laboratory reactor,مفاعل معملي
+laboratory reactor,مفاعل زجاجي
+glass-lined reactor,مفاعل مبطن بالزجاج
+glass-lined reactor,مفاعل زجاجي مبطن
+stainless steel tank,خزان ستانلس
+stainless steel tank,تانك ستانلس
+heat exchanger plate,مبادل حراري لوحي
+heat exchanger plate,مبادل ألواح
+vacuum pump oil,زيت مضخة تفريغ
+vacuum pump oil,زيت فاكيوم
+valve actuator,مشغل صمام
+valve actuator,أكتيويتر
+pressure gauge,مقياس ضغط
+pressure gauge,مانومتر
+pressure gauge,عداد ضغط
+temperature controller,منظم حرارة
+temperature controller,كنترولر حرارة
+data logger,مسجل بيانات
+data logger,داتا لوجر
+industrial camera,كاميرا صناعية
+industrial camera,كاميرا فحص
+thermal camera,كاميرا ثرمال
+gas detector,كاشف غاز
+gas detector,جهاز كشف تسرب الغاز
+radiation meter,مقياس إشعاع
+radiation meter,جهاز قياس الإشعاع
+dosimeter,مقياس جرعة
+dosimeter,دوزيميتر
+ultrasonic flaw detector,كاشف عيوب بالموجات فوق الصوتية
+ultrasonic flaw detector,جهاز ألتراسونيك
+oscilloscope probe,مجس راسم الذبذبات
+oscilloscope probe,بروب
+soldering station,محطة لحام إلكتروني
+soldering station,كاوية
+reflow oven,فرن لحام إلكتروني
+reflow oven,فرن ريفلو
+pick and place machine,ماكينة تركيب المكونات
+pick and place machine,ماكينة SMT
+wire bonding machine,ماكينة ربط الأسلاك
+wire bonding machine,وايربوندر
+dicing saw,منشار تقطيع الرقائق
+dicing saw,ماكينة تقطيع ويفر
+mask aligner,جهاز محاذاة الأقنعة
+mask aligner,ماسك ألاينر
+sputter coater,جهاز طلاء بالرش
+sputter coater,سبتر
+ion implanter,جهاز زرع الأيونات
+ion implanter,إمبلانتر
+furnace (semiconductor),فرن أشباه الموصلات
+furnace (semiconductor),فرن انتشار
+bearings (precision),محامل دقيقة
+bearings (precision),رولمان بلي دقيق
+linear guide,دليل خطي
+linear guide,سكة خطية
+ball screw,عمود كريات لولبي
+ball screw,بول سكرو
+servo drive,مشغل سيرفو
+servo drive,درايف سيرفو
+CNC controller,وحدة تحكم CNC
+CNC controller,كنترولر CNC
+spindle motor,محرك عمود الدوران
+spindle motor,موتور سبيندل
+encoder,مشفر
+encoder,إنكودر
+industrial robot arm,ذراع روبوت صناعي
+industrial robot arm,ذراع آلي
+vacuum chamber,حجرة تفريغ
+vacuum chamber,غرفة فاكيوم
+cryogenic tank,خزان كريوجيني
+cryogenic tank,تنك نيتروجين سائل
+liquid nitrogen,النيتروجين السائل
+liquid nitrogen,نيتروجين سائل
+helium gas,غاز الهيليوم
+helium gas,هيليوم
+argon gas,غاز الأرجون
+argon gas,أرجون
+high purity gas,غاز عالي النقاوة
+high purity gas,غازات نقية
+marine radar,رادار بحري
+marine radar,رادار سفن
+fish finder,جهاز كشف الأسماك
+fish finder,سونار صيد
+boat engine,محرك قارب
+boat engine,موتور مركب
+diving scooter,مركبة دفع للغواص
+diving scooter,سكوتر غوص
+life raft,طوف نجاة
+life raft,قارب نجاة
+aircraft parts,قطع غيار طائرات
+aircraft parts,قطع طيران
+aircraft engine,محرك طائرة
+aircraft engine,موتور طيارة
+avionics unit,وحدة إلكترونيات طيران
+avionics unit,جهاز أفيونكس
+helicopter parts,قطع غيار مروحيات
+helicopter parts,قطع هليكوبتر
+paraglider,مظلة طيران شراعي
+paraglider,براشوت طيران
+isotope separation plant,منشأة فصل النظائر
+isotope separation plant,مصنع فصل النظائر
+uranium conversion,تحويل اليورانيوم
+yellowcake,الكعكة الصفراء
+yellowcake,أكسيد اليورانيوم المركز
+uranium oxide,أكسيد اليورانيوم
+uranium oxide,ثاني أكسيد اليورانيوم
+zirconium tube,أنبوب زركونيوم
+zirconium tube,مواسير زركونيوم
+calandria,كالاندريا
+calandria,وعاء كالاندريا
+fuel cladding,كسوة الوقود
+fuel cladding,غلاف الوقود
+neutron flux,التدفق النيوتروني
+neutron flux,فيض النيوترونات
+criticality,الحرجية
+criticality,الحالة الحرجة
+nuclear grade,درجة نووية
+nuclear grade,مخصص للاستخدام النووي
+boron equivalent,مكافئ البورون
+boron equivalent,مكافئ بورون
+alpha-n reaction,تفاعل ألفا-نيوترون
+alpha-n reaction,"تفاعل (α,n)"
+electromagnetic isotope separator,فاصل نظائر كهرومغناطيسي
+electromagnetic isotope separator,كالوترون
+laser isotope separation,فصل النظائر بالليزر
+laser isotope separation,فصل ليزري
+lithium amalgam,ملغم الليثيوم
+lithium amalgam,زئبق الليثيوم
+mercury,الزئبق
+mercury,زئبق
+lithium,الليثيوم
+lithium,ليثيوم
+cobalt,الكوبالت
+cobalt,كوبالت
+nickel,النيكل
+nickel,نيكل
+nickel powder,مسحوق النيكل
+nickel powder,بودرة نيكل
+chromium,الكروم
+chromium,كروم
+vanadium,الفاناديوم
+vanadium,فاناديوم
+copper,النحاس
+copper,نحاس
+iron,الحديد
+iron,حديد
+steel,الصلب
+steel,فولاذ
+steel,حديد صلب
+lead,الرصاص
+lead,رصاص
+lead glass,زجاج الرصاص
+lead glass,زجاج رصاصي
+quartz,الكوارتز
+quartz,مرو
+fused silica,السيليكا المنصهرة
+fused silica,كوارتز منصهر
+sapphire,الياقوت الصناعي
+sapphire,سافاير
+zinc selenide,سيلينيد الزنك
+zinc selenide,ZnSe
+zinc sulphide,كبريتيد الزنك
+zinc sulphide,ZnS
+germanium lens,عدسة جرمانيوم
+germanium lens,عدسة Ge
+chalcogenide glass,زجاج الكالكوجينيد
+chalcogenide glass,زجاج كالكوجيني
+rare earth,العناصر الأرضية النادرة
+rare earth,معادن نادرة
+neodymium magnet,مغناطيس النيوديميوم
+neodymium magnet,مغناطيس نيوديميوم
+samarium cobalt,ساماريوم كوبالت
+samarium cobalt,مغناطيس SmCo
+amorphous alloy,سبيكة غير متبلورة
+amorphous alloy,معدن زجاجي
+high-entropy alloy,سبيكة عالية الإنتروبيا
+high-entropy alloy,HEA
+refractory metal,معدن حراري
+refractory metal,معادن مقاومة للحرارة
+intermetallic,مركب بين فلزي
+intermetallic,بين فلزات
+single crystal,بلورة أحادية
+single crystal,أحادي البلورة
+directionally solidified,متصلب اتجاهياً
+directionally solidified,تصلب موجه
+powder metallurgy,تعدين المساحيق
+powder metallurgy,ميتالورجيا المساحيق
+sintering,تلبيد
+sintering,التلبيد
+pyrolytic,انحلال حراري
+pyrolytic,بيروليتي
+carbon-carbon,كربون-كربون
+carbon-carbon,مركب كربون كربون
+ceramic matrix composite,مركّب ذو مصفوفة خزفية
+ceramic matrix composite,CMC
+metal matrix composite,مركّب ذو مصفوفة معدنية
+metal matrix composite,MMC
+polymer matrix composite,مركّب ذو مصفوفة بوليمرية
+polymer matrix composite,PMC
+UHMWPE,بولي إيثيلين فائق الوزن الجزيئي
+UHMWPE,ألياف داينيما
+PBO fibre,ألياف PBO
+PBO fibre,زايلون
+boron fibre,ألياف البورون
+boron fibre,بورون فايبر
+silicon carbide fibre,ألياف كربيد السيليكون
+silicon carbide fibre,ألياف SiC
+alumina fibre,ألياف الألومينا
+alumina fibre,ألياف أكسيد الألومنيوم
+polysilazane,بولي سيلازان
+polysilazane,سيلازان
+polycarbosilane,بولي كربوسيلان
+polycarbosilane,كربوسيلان
+liquid crystal polymer,بوليمر بلوري سائل
+liquid crystal polymer,LCP
+polyetheretherketone,بولي إيثر إيثر كيتون
+polyetheretherketone,بيك
+polyarylene ether,بولي أريلين إيثر
+polyarylene ether,PAE
+fluorinated polyimide,بولي إيميد مفلور
+fluorinated polyimide,بوليمايد مفلور
+fluoroelastomer,مطاط مفلور
+fluoroelastomer,فايتون
+perfluoropolyether,بولي إيثر مشبع بالفلور
+perfluoropolyether,PFPE
+radar absorbing material,مادة ماصة للرادار
+radar absorbing material,طلاء ماص للرادار
+conductive polymer,بوليمر موصل
+conductive polymer,بوليمرات موصلة
+damping fluid,مائع تخميد
+damping fluid,زيت تخميد
+flotation fluid,مائع تعويم
+flotation fluid,سائل طفو
+inoculant,مادة تلقيح
+inoculant,ملقح
+binder,مادة رابطة
+binder,بايندر
+plasticiser,ملدن
+plasticiser,مادة ملدنة
+oxidiser,مؤكسد
+oxidiser,عامل مؤكسد
+fuel additive,مضاف وقود
+fuel additive,محسن وقود
+burning rate modifier,معدل معدل الاحتراق
+burning rate modifier,محفز احتراق
+curing agent,عامل معالجة
+curing agent,مصلد
+HTPB,بولي بيوتادايين منتهي بالهيدروكسيل
+HTPB,HTPB
+ferrocene,الفيروسين
+ferrocene,فيروسين
+hydrazine nitrate,نترات الهيدرازين
+hydrazine nitrate,هيدرازين نترات
+MMH,ميثيل هيدرازين أحادي
+MMH,MMH
+UDMH,ثنائي ميثيل هيدرازين غير متماثل
+UDMH,UDMH
+nitrogen tetroxide,رباعي أكسيد النيتروجين
+nitrogen tetroxide,NTO
+red fuming nitric acid,حمض النيتريك المدخن الأحمر
+red fuming nitric acid,RFNA
+liquid oxygen,الأكسجين السائل
+liquid oxygen,لوكس
+liquid hydrogen,الهيدروجين السائل
+liquid hydrogen,هيدروجين سائل
+gel propellant,وقود دافع هلامي
+gel propellant,وقود جل
+composite propellant,وقود دافع مركّب
+composite propellant,وقود مركب
+double-base propellant,وقود دافع مزدوج القاعدة
+double-base propellant,وقود ثنائي القاعدة
+igniter,مشعل
+igniter,جهاز إشعال
+safe and arm device,جهاز الأمان والتسليح
+safe and arm device,S&A
+fuze,صمامة
+fuze,فيوز
+shaped charge,شحنة جوفاء
+shaped charge,شحنة مشكلة
+slapper detonator,مفجر صفيحي
+slapper detonator,مفجر سلابر
+exploding bridgewire,مفجر السلك المنفجر
+exploding bridgewire,EBW
+firing set,مجموعة الإطلاق
+firing set,جهاز إطلاق التفجير
+multipoint initiation,إشعال متعدد النقاط
+multipoint initiation,بدء تفجير متعدد
+stripline,خط شريطي
+stripline,ستريب لاين
+blasting machine,ماكينة تفجير
+blasting machine,جهاز تفجير صخور
+commercial explosives,متفجرات تجارية
+commercial explosives,متفجرات المحاجر
+detonating cord,فتيل تفجير
+detonating cord,كورد متفجر
+demolition,تدمير
+demolition,هدم
+mine detection,كشف الألغام
+mine detection,كاشف ألغام
+bomb disposal robot,روبوت تفكيك المتفجرات
+bomb disposal robot,روبوت إبطال القنابل
+EOD equipment,معدات إبطال المتفجرات
+EOD equipment,معدات EOD
+x-ray inspection system,نظام فحص بالأشعة السينية
+x-ray inspection system,جهاز سكانر
+cargo scanner,جهاز فحص الحاويات
+cargo scanner,سكانر حاويات
+trace detection,الكشف عن الآثار
+trace detection,كشف الأثر
+canine detection,الكشف بالكلاب
+canine detection,كلاب بوليسية
+CBRN,كيميائي بيولوجي إشعاعي نووي
+CBRN,الأسلحة غير التقليدية
+decontamination equipment,معدات إزالة التلوث
+decontamination equipment,معدات التطهير
+collective protection,الوقاية الجماعية
+collective protection,ملاجئ محكمة
+respirator filter,مرشح كمامة
+respirator filter,فلتر قناع
+chemical protective suit,بدلة وقاية كيميائية
+chemical protective suit,بدلة CBRN
+personal protective equipment,معدات الوقاية الشخصية
+personal protective equipment,مهمات وقاية
+cellular network,شبكة خلوية
+cellular network,شبكة محمول
+5G equipment,معدات الجيل الخامس
+5G equipment,أجهزة 5G
+LTE,الجيل الرابع
+LTE,فور جي
+microwave link,وصلة ميكروويف
+microwave link,لينك ميكروويف
+optical transceiver,مرسل مستقبل بصري
+optical transceiver,موديول SFP
+optical amplifier,مكبر بصري
+optical amplifier,أمبليفاير ضوئي
+wavelength division multiplexing,تعدد الإرسال بتقسيم الطول الموجي
+wavelength division multiplexing,WDM
+submarine cable,كابل بحري
+submarine cable,كابل تحت البحر
+deep packet inspection,الفحص العميق للحزم
+deep packet inspection,DPI
+network monitoring,مراقبة الشبكات
+network monitoring,رصد الشبكة
+data retention,الاحتفاظ بالبيانات
+data retention,حفظ البيانات
+voice over IP,الصوت عبر بروتوكول الإنترنت
+voice over IP,VoIP
+tactical radio,راديو تكتيكي
+tactical radio,جهاز لاسلكي عسكري
+HF radio,راديو موجات قصيرة
+HF radio,راديو HF
+VHF radio,راديو VHF
+VHF radio,لاسلكي VHF
+UHF,تردد فائق العلو
+UHF,UHF
+troposcatter,الاتصال بالتشتت التروبوسفيري
+troposcatter,تروبوسكاتر
+burst transmission,الإرسال الانفجاري
+burst transmission,إرسال متقطع
+covert communication,الاتصال الخفي
+covert communication,اتصال سري
+GNSS spoofing,انتحال إشارة الملاحة
+GNSS spoofing,تزييف GPS
+anti-spoofing,مضاد للانتحال
+anti-spoofing,ضد التزييف
+Doppler velocity log,سجل السرعة الدوبلري
+Doppler velocity log,DVL
+terrain contour matching,مطابقة تضاريس الأرض
+terrain contour matching,TERCOM
+celestial navigation,الملاحة الفلكية
+celestial navigation,ملاحة بالنجوم
+gyrocompass,بوصلة جيروسكوبية
+gyrocompass,جيرو كومباس
+heading sensor,مستشعر الاتجاه
+heading sensor,حساس الاتجاه
+attitude,الوضع
+attitude,وضعية المركبة
+angular rate,المعدل الزاوي
+angular rate,سرعة زاوية
+bias,انحياز
+bias,الانحراف
+scale factor,معامل المقياس
+scale factor,عامل التحجيم
+random walk,المسير العشوائي
+random walk,الضوضاء العشوائية
+vibration rectification,تقويم الاهتزاز
+vibration rectification,خطأ الاهتزاز
+hydrodynamic,هيدروديناميكي
+hydrodynamic,ديناميكا الموائع
+cavitation,تكهف
+cavitation,تجويف
+underwater noise,ضوضاء تحت الماء
+underwater noise,ضجيج تحت الماء
+degaussing,إزالة المغناطيسية
+degaussing,تفريغ مغناطيسي
+mine countermeasures,مكافحة الألغام البحرية
+mine countermeasures,كاسحة ألغام
+towed array,مصفوفة مقطورة
+towed array,سونار مقطور
+dipping sonar,سونار غاطس
+dipping sonar,سونار متدلي
+sonobuoy,عوامة سونار
+sonobuoy,سونوبوي
+underwater communication,الاتصالات تحت الماء
+underwater communication,مودم صوتي
+diver detection,كشف الغواصين
+diver detection,سونار كشف الغواصين
+rebreather,جهاز إعادة التنفس
+rebreather,ريبريذر
+aerofoil,جنيح
+aerofoil,ريشة
+compressor blade,ريشة ضاغط
+compressor blade,ريش الكمبروسر
+combustor,غرفة احتراق
+combustor,حارق
+afterburner,حارق لاحق
+afterburner,أفتر بيرنر
+brush seal,مانع تسرب فرشاتي
+brush seal,سيل فرشاة
+blisk,قرص مريش
+blisk,بليسك
+thermal barrier coating,طلاء حاجز حراري
+thermal barrier coating,TBC
+hypersonic,فرط صوتي
+hypersonic,فوق سرعة الصوت بكثير
+supersonic,فوق صوتي
+supersonic,أسرع من الصوت
+heat shield,درع حراري
+heat shield,واقي حراري
+ablative,مادة متآكلة حرارياً
+ablative,مادة استئصالية
+nose tip,مقدمة
+nose tip,رأس المقدمة
+reaction wheel,عجلة رد الفعل
+reaction wheel,عجلة زخم
+thruster,دافع
+thruster,نافث
+electric propulsion,الدفع الكهربائي
+electric propulsion,دفع أيوني
+solar array,مصفوفة شمسية
+solar array,ألواح شمسية فضائية
+earth observation satellite,قمر رصد الأرض
+earth observation satellite,قمر استشعار عن بعد
+remote sensing,الاستشعار عن بعد
+remote sensing,استشعار
+ground station,محطة أرضية
+ground station,محطة تحكم أرضية
+ground control station,محطة التحكم الأرضية
+ground control station,محطة تحكم المسيرة
+catapult launcher,قاذف منجنيقي
+catapult launcher,منصة إطلاق مسيرات
+recovery system,نظام الاسترجاع
+recovery system,نظام استعادة
+endurance,مدة التحمل
+endurance,زمن الطيران
+maximum takeoff weight,الوزن الأقصى للإقلاع
+maximum takeoff weight,MTOW
+autonomous flight,الطيران الذاتي
+autonomous flight,طيران آلي
+swarm,سرب
+swarm,طيران سربي
+loitering munition,ذخيرة جوالة
+loitering munition,مسيرة انتحارية
+counter-UAS,مكافحة المسيّرات
+counter-UAS,مضاد للدرونز
+agricultural drone,مسيّرة زراعية
+agricultural drone,درون رش
+mapping drone,مسيّرة مسح
+mapping drone,درون تصوير جوي
+fixed-wing UAV,مسيّرة ثابتة الجناح
+fixed-wing UAV,طائرة بدون طيار بجناح ثابت
+VTOL,إقلاع وهبوط عمودي
+VTOL,في تول
+heavy-lift drone,مسيّرة حمولة ثقيلة
+heavy-lift drone,درون نقل
+tethered drone,مسيّرة مقيدة
+tethered drone,درون مربوط
+aerostat,منطاد مقيد
+aerostat,إيروستات
+stratospheric balloon,منطاد الستراتوسفير
+stratospheric balloon,بالون طبقة عليا
+rocket nozzle,فوهة صاروخ
+rocket nozzle,منفث صاروخي
+motor case,غلاف المحرك
+motor case,جسم الموتور
+propellant tank,خزان الوقود الدافع
+propellant tank,تنك الوقود
+turbopump,مضخة توربينية
+turbopump,توربو بامب
+injector,حاقن
+injector,بخاخ
+regenerative cooling,التبريد الاسترجاعي
+regenerative cooling,تبريد تجديدي
+umbilical connector,موصل سري
+umbilical connector,موصل أمبيليكال
+separation mechanism,آلية فصل
+separation mechanism,نظام الفصل
+environmental chamber,حجرة بيئية
+environmental chamber,غرفة اختبار بيئي
+anechoic chamber,حجرة عديمة الصدى
+anechoic chamber,غرفة كاتمة للصدى
+shaker table,طاولة اهتزاز
+shaker table,هزاز
+acoustic test,اختبار صوتي
+acoustic test,اختبار ضوضاء
+thermal vacuum chamber,حجرة فراغ حراري
+thermal vacuum chamber,غرفة TVAC
+nuclear reactors and boilers (HS 84),المفاعلات النووية والمراجل والآلات (فصل 84)
+nuclear reactors and boilers (HS 84),الفصل 84
+electrical machinery (HS 85),الآلات والأجهزة الكهربائية (فصل 85)
+electrical machinery (HS 85),الفصل 85
+optical instruments (HS 90),أدوات وأجهزة البصريات والقياس (فصل 90)
+optical instruments (HS 90),الفصل 90
+aircraft and spacecraft (HS 88),الطائرات والمركبات الفضائية (فصل 88)
+aircraft and spacecraft (HS 88),الفصل 88
+ships and boats (HS 89),السفن والقوارب (فصل 89)
+ships and boats (HS 89),الفصل 89
+inorganic chemicals (HS 28),المواد الكيميائية غير العضوية (فصل 28)
+inorganic chemicals (HS 28),الفصل 28
+organic chemicals (HS 29),المواد الكيميائية العضوية (فصل 29)
+organic chemicals (HS 29),الفصل 29
+explosives (HS 36),البارود والمتفجرات (فصل 36)
+explosives (HS 36),الفصل 36
+plastics (HS 39),اللدائن ومصنوعاتها (فصل 39)
+plastics (HS 39),الفصل 39
+iron and steel (HS 72),الحديد الصب والحديد والصلب (فصل 72)
+iron and steel (HS 72),الفصل 72
+articles of iron or steel (HS 73),مصنوعات من حديد أو صلب (فصل 73)
+articles of iron or steel (HS 73),الفصل 73
+aluminium (HS 76),الألومنيوم ومصنوعاته (فصل 76)
+aluminium (HS 76),الفصل 76
+other base metals (HS 81),المعادن العادية الأخرى (فصل 81)
+other base metals (HS 81),الفصل 81
+arms and ammunition (HS 93),الأسلحة والذخائر (فصل 93)
+arms and ammunition (HS 93),الفصل 93
+vehicles (HS 87),السيارات والمركبات (فصل 87)
+vehicles (HS 87),الفصل 87
+glass (HS 70),الزجاج ومصنوعاته (فصل 70)
+glass (HS 70),الفصل 70
+ceramic products (HS 69),المنتجات الخزفية (فصل 69)
+ceramic products (HS 69),الفصل 69
+miscellaneous chemical products (HS 38),منتجات كيميائية متنوعة (فصل 38)
+miscellaneous chemical products (HS 38),الفصل 38
+pharmaceutical products (HS 30),المنتجات الصيدلية (فصل 30)
+pharmaceutical products (HS 30),الفصل 30
+radioactive elements (HS 2844),العناصر الكيميائية المشعة (بند 2844)
+radioactive elements (HS 2844),بند 2844
+heavy water (HS 2845),الماء الثقيل والنظائر (بند 2845)
+heavy water (HS 2845),بند 2845
+machine tools for metal (HS 8456-8463),العدد الآلية لتشغيل المعادن (بنود 8456-8463)
+machine tools for metal (HS 8456-8463),عدد آلية
+pumps (HS 8413),المضخات (بند 8413)
+pumps (HS 8413),طلمبات
+compressors (HS 8414),مضخات الهواء والضواغط (بند 8414)
+compressors (HS 8414),كمبروسرات
+centrifuges (HS 8421),أجهزة الطرد المركزي والترشيح (بند 8421)
+centrifuges (HS 8421),فلاتر وسنتريفيوج
+valves (HS 8481),الصنابير والمحابس والصمامات (بند 8481)
+valves (HS 8481),محابس
+valves (HS 8481),بلوف
+bearings (HS 8482),المحامل بكريات أو بأسطوانات (بند 8482)
+bearings (HS 8482),رولمان بلي
+computers (HS 8471),آلات معالجة البيانات الآلية (بند 8471)
+computers (HS 8471),كمبيوترات
+telephones and network equipment (HS 8517),أجهزة الهاتف ومعدات الشبكات (بند 8517)
+telephones and network equipment (HS 8517),موبايلات وراوترات
+radar apparatus (HS 8526),أجهزة الرادار والملاحة الراديوية (بند 8526)
+radar apparatus (HS 8526),رادارات
+cameras (HS 8525),أجهزة الإرسال والكاميرات (بند 8525)
+cameras (HS 8525),كاميرات
+integrated circuits (HS 8542),الدوائر الإلكترونية المتكاملة (بند 8542)
+integrated circuits (HS 8542),شرائح إلكترونية
+semiconductor devices (HS 8541),أجهزة أشباه الموصلات (بند 8541)
+semiconductor devices (HS 8541),ترانزستورات ودايودات
+measuring instruments (HS 9030),أجهزة قياس الكميات الكهربائية والإشعاعية (بند 9030)
+measuring instruments (HS 9030),أجهزة قياس
+navigation instruments (HS 9014),البوصلات وأدوات الملاحة (بند 9014)
+navigation instruments (HS 9014),أجهزة ملاحة
+unmanned aircraft (HS 8806),الطائرات بدون طيار (بند 8806)
+unmanned aircraft (HS 8806),درونز
+unmanned aircraft (HS 8806),مسيرات
+parts of aircraft (HS 8807),أجزاء الطائرات (بند 8807)
+parts of aircraft (HS 8807),قطع غيار طيران
+lasers (HS 9013),أجهزة الليزر والأجهزة البصرية (بند 9013)
+lasers (HS 9013),ليزر
+X-ray apparatus (HS 9022),أجهزة الأشعة السينية والإشعاع (بند 9022)
+X-ray apparatus (HS 9022),أجهزة أشعة
+cyanides (HS 2837),السيانيدات (بند 2837)
+cyanides (HS 2837),سيانيد
+halides of non-metals (HS 2812),هاليدات اللافلزات (بند 2812)
+halides of non-metals (HS 2812),كلوريدات الفوسفور
+amines (HS 2921-2922),الأمينات ومركبات الأمين (بنود 2921-2922)
+amines (HS 2921-2922),أمينات
+organo-phosphorus compounds (HS 2931),مركبات الفوسفور العضوية (بند 2931)
+organo-phosphorus compounds (HS 2931),فوسفور عضوي
+toxins and cultures (HS 3002),السموم ومزارع الكائنات الدقيقة (بند 3002)
+toxins and cultures (HS 3002),لقاحات وسموم
+bulletproof vest (HS 6307),سترات واقية من الرصاص
+bulletproof vest (HS 6307),صديري واقي
+import permit authority,جهة إصدار الموافقة الاستيرادية
+import permit authority,الجهة المختصة
+security clearance,الموافقة الأمنية
+security clearance,تصريح أمني
+prior approval,موافقة مسبقة
+prior approval,إذن مسبق
+restricted goods,سلع مقيدة
+restricted goods,بضائع مقيدة
+prohibited goods,سلع محظورة
+prohibited goods,بضائع ممنوعة
+strategic goods,سلع استراتيجية
+strategic goods,مواد استراتيجية
+sensitive goods,سلع حساسة
+sensitive goods,مواد حساسة
+temporary admission,الإفراج المؤقت
+temporary admission,السماح المؤقت
+free zone,منطقة حرة
+free zone,المناطق الحرة
+bonded warehouse,مستودع جمركي
+bonded warehouse,مخزن تحت الجمارك
+inspection certificate,شهادة فحص
+inspection certificate,تقرير معاينة
+conformity certificate,شهادة مطابقة
+conformity certificate,شهادة الجودة
+end-use statement,إقرار الاستخدام النهائي
+end-use statement,تعهد الاستخدام
+undertaking,تعهد
+undertaking,إقرار
+power of attorney,توكيل
+power of attorney,تفويض
+sales contract,عقد بيع
+sales contract,عقد توريد
+tender,مناقصة
+tender,عطاء
+quotation,عرض سعر
+quotation,كوتيشن
+catalogue,كتالوج
+catalogue,دليل المنتجات
+user manual,دليل المستخدم
+user manual,كتيب التشغيل
+datasheet,نشرة البيانات الفنية
+datasheet,داتا شيت
+warranty,ضمان
+warranty,جارانتي
+after-sales service,خدمة ما بعد البيع
+after-sales service,صيانة ما بعد البيع
+installation and commissioning,التركيب والتشغيل
+installation and commissioning,التركيب والتشغيل التجريبي
+training,تدريب
+training,تأهيل
+technical assistance,مساعدة فنية
+technical assistance,دعم فني
+technology transfer,نقل التكنولوجيا
+technology transfer,نقل المعرفة
+intangible transfer,نقل غير ملموس
+intangible transfer,نقل إلكتروني للتكنولوجيا
+download,تنزيل
+download,تحميل
+cloud service,خدمة سحابية
+cloud service,خدمة كلاود
+sample,عينة
+sample,عينات
+prototype,نموذج أولي
+prototype,بروتوتايب
+replacement part,قطعة بديلة
+replacement part,قطعة استبدال
+upgrade,ترقية
+upgrade,تحديث
+modification,تعديل
+modification,تحوير
+assembly kit,طقم تجميع
+assembly kit,كيت تجميع
+importer of record,المستورد المسجل
+importer of record,صاحب البيان الجمركي
+agent,وكيل
+agent,مندوب
+sole agent,وكيل حصري
+sole agent,الوكيل الوحيد
+trading company,شركة تجارية
+trading company,شركة استيراد وتصدير
+front company,شركة واجهة
+front company,شركة صورية
+intermediary country,دولة وسيطة
+intermediary country,بلد عبور
+unusual routing,مسار شحن غير معتاد
+unusual routing,مسار ملتوي
+cash payment,دفع نقدي
+cash payment,كاش
+vague end use,استخدام نهائي غامض
+vague end use,استخدام غير واضح
+mismatch,عدم تطابق
+mismatch,تعارض
+undervaluation,تقليل القيمة
+undervaluation,تخفيض الفاتورة
+misdescription,وصف مضلل
+misdescription,وصف غير صحيح
+licence exception,استثناء من الترخيص
+licence exception,إعفاء ترخيص
+de minimis,الحد الأدنى
+de minimis,نسبة الحد الأدنى
+foreign direct product,المنتج الأجنبي المباشر
+foreign direct product,قاعدة المنتج الأجنبي
