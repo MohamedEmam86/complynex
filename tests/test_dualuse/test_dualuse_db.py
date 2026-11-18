@@ -106,8 +106,9 @@ def test_screen_decide_and_pages(app):
         from database.db import get_db
         lines = get_db().execute("SELECT * FROM dualuse_screening_lines WHERE screening_id = %s ORDER BY line_no",
                                  (bid,)).fetchall()
-        assert [l['suggested'] if not l['decision'] else l['decision'] for l in lines] == ['hold', 'clear']
-        assert lines[0]['reused_from']          # the decision above was reused for the identical product
+        assert [l['suggested'] for l in lines] == ['hold', 'clear']
+        # nothing is decided automatically, and a line with hold flags never gets a proposal
+        assert all(l['decision'] is None for l in lines) and lines[0]['proposal'] is None
     urls = ['/dual-use/', '/dual-use/?q=encryption', '/dual-use/?q=%D9%85%D8%AE%D8%B1%D8%B7%D8%A9',
             '/dual-use/?category=1', '/dual-use/?q=7719097', '/dual-use/api/suggest?q=enc', '/dual-use/api/search?q=1C350',
             '/dual-use/screenings', '/dual-use/screenings/%d' % sid, '/dual-use/screenings/%d' % bid,
@@ -194,3 +195,77 @@ def test_arabic_text_carries_the_draft_note(app):
         assert r.status_code == 200
         assert 'ترجمة عربية مبدئية — النص الإنجليزي هو المرجع القانوني' in body or \
             'Arabic draft translation — English is the legal reference' in body
+
+
+def test_reuse_is_a_proposal_confirmed_by_the_current_user(app):
+    """Review r2 N-B1: a remembered decision is never applied to a different product (same model, different
+    description) nor to a line with hold flags, and on an identical product it is only a proposal."""
+    ids = app.du_ids
+    a, b = _client(app, ids['edit']), _client(app, ids['super'])
+
+    def screen(c, **line):
+        r = c.post('/dual-use/screen', data=line)
+        sid = int(re.search(r'/screenings/(\d+)', r.headers['Location']).group(1))
+        with app.app_context():
+            from database.db import get_db
+            return get_db().execute("SELECT * FROM dualuse_screening_lines WHERE screening_id = %s", (sid,)).fetchone()
+
+    chairs = dict(description='Office chairs, black leather', hs_code='940130', model='X-100')
+    ln = screen(a, **chairs)
+    assert ln['suggested'] == 'clear'
+    a.post('/dual-use/lines/%d/decide' % ln['id'], data={'decision': 'clear', 'reason': 'not_controlled',
+                                                         'comment': 'Furniture, no control entry', 'remember': '1'})
+    # same model, different product: a listed chemical is held and gets no proposal
+    tdg = screen(b, description='Thiodiglycol 99% drum', hs_code='9401.30', model='X100')
+    assert tdg['suggested'] == 'hold' and tdg['decision'] is None and tdg['proposal'] is None
+    # the identical product: a proposal only, decided by nobody until confirmed
+    again = screen(b, **chairs)
+    assert again['decision'] is None and again['decided_by'] is None and again['proposal']['decision'] == 'clear'
+    r = b.post('/dual-use/lines/%d/confirm' % again['id'], data={'comment': 'Same chairs, same supplier'})
+    assert r.status_code == 302
+    with app.app_context():
+        from database.db import get_db
+        row = get_db().execute("SELECT * FROM dualuse_screening_lines WHERE id = %s", (again['id'],)).fetchone()
+        assert row['decision'] == 'clear' and row['decided_by'] == ids['super'] and row['proposal'] is None
+        t = get_db().execute("SELECT * FROM dualuse_decisions WHERE line_id = %s", (again['id'],)).fetchall()
+        assert len(t) == 1 and t[0]['decided_by'] == ids['super'] and 'Confirmed the earlier decision' in t[0]['comment']
+
+
+def test_lists_unavailable_never_clear():
+    from packs.trade_control import screening as SC, search as SE
+    r = SC.screen_line(SE.Index([], []), {'description': 'Hydrofluoric acid', 'cas': '7664-39-3', 'hs_code': '281111'})
+    assert r['suggested'] == 'review' and any(h['flag'] == 'lists_unavailable' for h in r['hard'])
+
+
+REVIEW_CASES = [  # review r2 N-B2: clear-cut controlled goods must never come out clear
+    ({'description': 'Network encryptor AES-256 for government networks'}, ('5A00',), None),
+    ({'description': 'Maraging steel bar 350 grade, 100 mm diameter'}, ('1C116', '1C216'), None),
+    ({'description': 'طائرة بدون طيار للتصوير الزراعي'}, ('9A012', '9A112', '9A120'), None),
+    ({'description': 'حمض الهيدروفلوريك 49%'}, (), 'hold'),
+    ({'description': 'Hydrofluoric acid 49% solution', 'hs_code': '281111'}, (), 'hold'),
+    ({'description': 'Pressure transducer 0-10 kPa absolute, Inconel', 'hs_code': '902620'}, ('2B230',), None),
+    ({'description': 'Quadcopter drone 25 min flight', 'hs_code': '880621'}, ('9A012',), None),
+    ({'description': 'Frequency synthesizer 40 GHz'}, ('3A001', '3A002'), None),
+    ({'description': 'Pressure transducer 0-10 kPa absolute, Inconel diaphragm', 'hs_code': 9026.2}, ('2B230',), None),
+    ({'description': 'Thiodiglycol 99% drum', 'hs_code': '9401.30', 'model': 'X100'}, (), 'hold'),
+    ({'description': 'office chairs', 'hs_code': '9401.30'}, (), 'clear'),
+    ({'description': 'cotton t-shirts', 'hs_code': '6109.10'}, (), 'clear'),
+]
+
+
+def test_review_cases_on_the_loaded_lists(app):
+    with app.app_context():
+        from packs.trade_control import service as S, screening as SC
+        idx = S.get_index(force=True)
+        if not idx.ready:
+            pytest.skip('lists not loaded')
+        for line, codes, outcome in REVIEW_CASES:
+            r = SC.screen_line(idx, line)
+            got = [c['code'] for c in r['candidates']]
+            if outcome:
+                assert r['suggested'] == outcome, (line, r['suggested'], got)
+            else:
+                assert r['suggested'] != 'clear' and any(g.startswith(codes) for g in got), (line, got)
+                # answering "no" to every threshold question never clears a candidate
+                no = {q['id']: 'no' for q in r['questions'] if q['type'] == 'threshold'}
+                assert SC.evaluate(r['candidates'], r['hard'], r['questions'], no, line)[0] != 'clear'

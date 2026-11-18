@@ -228,7 +228,11 @@ def screen():
             flash(_rc('Enter at least a description, an HS code, a CAS number or a model.',
                       'أدخل الوصف أو كود HS أو رقم CAS أو الموديل على الأقل.'), 'warning')
             return render_template('trade_control/screen.html', form=request.form)
-        sid = S.create_screening(_header_from_form(request.form), [line], current_user.id)
+        try:
+            sid = S.create_screening(_header_from_form(request.form), [line], current_user.id)
+        except S.ListsUnavailable as e:
+            flash(_rc(e.en, e.ar), 'danger')
+            return render_template('trade_control/screen.html', form=request.form)
         _audit('dualuse_screen', sid, (line.get('description') or line.get('model') or '')[:200])
         return redirect(url_for('dualuse.screening', sid=sid))
     return render_template('trade_control/screen.html', form=request.args)
@@ -258,7 +262,7 @@ def screening(sid):
     return render_template('trade_control/screening.html', s=s, lines=lines, open_line=open_line,
                            reasons=S.DECISION_REASONS, idx=idx, trail=S.decisions(sid),
                            explain={ln['id']: SC.explain(ln['candidates'] or [], ln['hard_flags'] or [],
-                                                         ln['decision'] or ln['suggested']) for ln in lines})
+                                                         ln['suggested'], ln) for ln in lines})
 
 
 @bp.route('/lines/<int:line_id>/answers', methods=['POST'])
@@ -297,6 +301,29 @@ def line_decide(line_id):
         return redirect(url_for('dualuse.screening', sid=ln['screening_id'], line=line_id) + '#line-%d' % line_id)
     S.decide_line(line_id, decision, reason, comment, current_user.id, remember=request.form.get('remember') == '1')
     _audit('dualuse_decision', line_id, '%s / %s / suggested %s: %s' % (decision, reason, ln['suggested'], comment[:300]))
+    flash(_rc('Decision recorded.', 'تم تسجيل القرار.'), 'success')
+    return redirect(url_for('dualuse.screening', sid=ln['screening_id']) + '#line-%d' % line_id)
+
+
+@bp.route('/lines/<int:line_id>/confirm', methods=['POST'])
+@perm('edit')
+def line_confirm(line_id):
+    """Confirm the decision proposed from an identical product decided earlier: it is recorded as a new
+    decision of the CURRENT user (never under the earlier decider's name), with their own comment."""
+    ln = S.get_line(line_id)
+    if not ln:
+        abort(404)
+    p = ln.get('proposal') or {}
+    comment = (request.form.get('comment') or '').strip()
+    errs = S.validate_decision(p.get('decision'), p.get('reason'), comment)
+    if not p or errs:
+        for e in errs or [('Nothing to confirm.', 'لا يوجد ما يمكن تأكيده.')]:
+            flash(_rc(*e), 'danger')
+        return redirect(url_for('dualuse.screening', sid=ln['screening_id'], line=line_id) + '#line-%d' % line_id)
+    full = 'Confirmed the earlier decision of an identical product (%s): %s' % ((p.get('decided_at') or '')[:10], comment)
+    S.decide_line(line_id, p['decision'], p['reason'], full, current_user.id, remember=False)
+    _audit('dualuse_decision_confirmed', line_id, '%s / %s (proposal from %s): %s' % (
+        p['decision'], p['reason'], (p.get('decided_at') or '')[:10], comment[:300]))
     flash(_rc('Decision recorded.', 'تم تسجيل القرار.'), 'success')
     return redirect(url_for('dualuse.screening', sid=ln['screening_id']) + '#line-%d' % line_id)
 
@@ -377,8 +404,12 @@ def batch_run():
         return render_template('trade_control/batch_map.html', token=token, header=up['header'], rows=up['rows'][:5],
                                n=len(up['rows']), mapping=mapping, columns=S.COLUMNS, file_name=up['name'])
     lines = S.lines_from(up['rows'], mapping)
-    sid = S.create_screening(_header_from_form(request.form), lines, current_user.id, batch=True,
-                             file_name=up['name'])
+    try:
+        sid = S.create_screening(_header_from_form(request.form), lines, current_user.id, batch=True,
+                                 file_name=up['name'])
+    except S.ListsUnavailable as e:
+        flash(_rc(e.en, e.ar), 'danger')
+        return redirect(url_for('dualuse.batch'))
     try:
         os.remove(path)
     except OSError:
@@ -450,7 +481,7 @@ def export_pdf(sid):
     s, lines = _load(sid)
     html = render_template('trade_control/report_pdf.html', s=s, lines=lines, reasons=dict(
         (r[0], (r[1], r[2])) for r in S.DECISION_REASONS), trail=S.decisions(sid),
-        explain={ln['id']: SC.explain(ln['candidates'] or [], ln['hard_flags'] or [], ln['suggested']) for ln in lines})
+        explain={ln['id']: SC.explain(ln['candidates'] or [], ln['hard_flags'] or [], ln['suggested'], ln) for ln in lines})
     try:
         from weasyprint import HTML
         pdf = HTML(string=html, base_url=request.url_root).write_pdf()

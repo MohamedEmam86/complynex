@@ -54,7 +54,20 @@
         <a class="btn btn-sm btn-link" data-bs-toggle="collapse" href="#body-{{ ln.id }}">{{ rc_loc('Details', 'التفاصيل') }}</a></div>
     </div>
     <div class="collapse {{ 'show' if (open_line == ln.id) or (lines|length == 1) or (not ln.decision and lines|length <= 5) }}" id="body-{{ ln.id }}"><div class="card-body">
-      {% if ln.reused_from and ln.decision %}<div class="alert alert-info py-1 small">{{ rc_loc('Same product decided before under the same list versions: the earlier decision was applied. You can change it below.', 'تم اتخاذ قرار سابق لنفس المنتج وبنفس إصدارات القوائم وتم تطبيقه. يمكنك تعديله أدناه.') }}</div>{% endif %}
+      {% if ln.proposal and not ln.decision %}{% set p = ln.proposal %}
+      <div class="alert alert-info py-2 small">
+        <div><i class="bi bi-arrow-repeat me-1"></i>{{ rc_loc('An identical product (same description, model, HS code and CAS number, same candidate entries, same list versions) was decided before:', 'تم اتخاذ قرار سابق لمنتج مطابق (نفس الوصف والموديل وكود HS ورقم CAS ونفس البنود المحتملة وإصدارات القوائم):') }}
+          {{ dn.outcome_badge(p.decision) }} {{ rc_loc(*reason_map.get(p.reason, (p.reason, p.reason))) }} · {{ (p.decided_at or '')[:10] }}</div>
+        {% if p.comment %}<div class="text-muted" dir="auto">“{{ p.comment }}”</div>{% endif %}
+        {% if du_can_edit %}
+        <form method="post" action="{{ url_for('dualuse.line_confirm', line_id=ln.id) }}" class="d-flex gap-2 mt-1 flex-wrap">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input name="comment" class="form-control form-control-sm du-confirm" minlength="{{ DU.MIN_COMMENT }}" maxlength="2000" required placeholder="{{ rc_loc('Your comment: why the earlier decision applies (required)', 'تعليقك: لماذا ينطبق القرار السابق (إلزامي)') }}">
+          <button class="btn btn-sm btn-outline-primary">{{ rc_loc('Confirm under my name', 'تأكيد باسمي') }}</button>
+        </form>
+        <div class="text-muted mt-1">{{ rc_loc('This is a proposal only: nothing is recorded until you confirm it or record your own decision below.', 'هذا اقتراح فقط: لا يُسجَّل شيء حتى تؤكده أو تسجل قرارك أدناه.') }}</div>
+        {% endif %}
+      </div>{% endif %}
       {% for h in ln.hard_flags or [] %}{% set hl = DUSC.HARD_LABELS.get(h.flag, (h.flag, h.flag)) %}
       <div class="alert {{ 'alert-warning' if h.flag == 'priority' else 'alert-danger' }} py-1 small mb-1"><i class="bi bi-exclamation-octagon me-1"></i>{{ rc_loc(*hl) }}: <strong dir="ltr">{{ h.name or h.code }}</strong>{% if h.flag in ('cwc', 'precursor') %} · CAS <span dir="ltr">{{ h.code }}</span>{% endif %}{% if h.flag == 'cwc' and h.schedule %} {{ dn.chem_level(h.schedule) }}{% endif %}{% if h.flag == 'priority' and h.tier %} · {{ rc_loc('tier', 'الفئة') }} {{ h.tier }}{% endif %}</div>{% endfor %}
 
@@ -68,7 +81,7 @@
           <tr><td>{% if d %}<a class="du-code" href="{{ url_for('dualuse.entry', item_id=d.id) }}">{{ c.code }}</a>{% else %}<span class="du-code">{{ c.code }}</span> <span class="badge bg-light text-muted border" title="{{ rc_loc('Not in the current list version', 'غير موجود في الإصدار الحالي للقائمة') }}">{{ rc_loc('earlier version', 'إصدار سابق') }}</span>{% endif %}
               <span class="text-muted">{{ (c.title_ar if du_lang == 'ar' and c.title_ar else c.title_en)[:140] }}</span>{% if du_lang == 'ar' and c.title_ar %} {{ dn.ar_note() }}{% endif %}
               {% if du_show_lists %}{% for l in c.lists or [c.list_code] %} <span class="badge bg-light text-dark border">{{ DU.LIST_SHORT.get(l, l) }}</span>{% endfor %}{% endif %}
-              {% for w in c.why or [] %}<div class="text-muted">{{ w }}</div>{% endfor %}</td>
+              {% for w in c.why or [] %}<div class="text-muted" dir="auto">{% if w is string %}{{ w }}{% else %}{{ rc_loc(w[0], w[1]) }}{% endif %}</div>{% endfor %}</td>
             <td>{% for r in c.reasons %}{{ dn.why_label(r) }}{% endfor %}</td>
             <td>{{ dn.risk_badge(c.risk) }}</td>
             <td>{% set st = {'open': ('Open', 'مفتوح', 'secondary'), 'cleared': ('Below threshold / not this product', 'أقل من الحد / منتج مختلف', 'success'), 'controlled': ('Meets the entry', 'يستوفي البند', 'danger')}.get(c.state or 'open') %}<span class="badge bg-{{ st[2] }}-subtle text-dark border">{{ rc_loc(st[0], st[1]) }}</span></td></tr>{% endfor %}
@@ -104,7 +117,7 @@
           {% for code, en, ar in reasons %}<option value="{{ code }}" {{ 'selected' if ln.reason == code }}>{{ rc_loc(en, ar) }}</option>{% endfor %}
         </select>
         <textarea name="comment" class="form-control form-control-sm mb-2" rows="2" minlength="{{ DU.MIN_COMMENT }}" maxlength="4000" required placeholder="{{ rc_loc('Comment: what was checked and why (required)', 'التعليق: ما الذي تم التحقق منه ولماذا (إلزامي)') }}"></textarea>
-        <label class="form-check mb-2"><input class="form-check-input" type="checkbox" name="remember" value="1" checked> {{ rc_loc('Reuse this decision for the same product while the lists do not change', 'استخدام هذا القرار لنفس المنتج طالما لم تتغير القوائم') }}</label>
+        <label class="form-check mb-2"><input class="form-check-input" type="checkbox" name="remember" value="1"> {{ rc_loc('Propose this decision for the identical product in later screenings (each one is confirmed by its user)', 'اقتراح هذا القرار للمنتج المطابق في عمليات الفحص اللاحقة (يؤكده مستخدمها في كل مرة)') }}</label>
         <button class="btn btn-sm btn-primary">{{ rc_loc('Record decision', 'تسجيل القرار') }}</button>
         <div class="text-muted mt-1">{{ rc_loc('Your decision is recorded with your name, the time, the answers and the list versions used.', 'يُسجَّل قرارك باسمك ووقته والإجابات وإصدارات القوائم المستخدمة.') }}</div>
       </div></form></div>

@@ -249,6 +249,9 @@ def test_screening_hs_candidates_and_questions(idx):
     assert '5A002' in codes or '5A002.a' in codes
     assert res['suggested'] == 'review'
     assert res['questions'] and len(res['questions']) <= SC.MAX_QUESTIONS
+    # every candidate gets the entry-level question; thresholds only when they relate to the description
+    assert any(q['type'] == 'describes' and q['code'].startswith('5A002') for q in res['questions'])
+    res = SC.screen_line(idx, {'description': 'cryptography with key length of 128 bits', 'hs_code': '8517.62.00'})
     q = next(q for q in res['questions'] if q['type'] == 'threshold')
     assert q['operator'] == '>' and q['value'] == 56
 
@@ -265,7 +268,11 @@ def test_screening_answers_drive_outcome(idx):
     val = {tq['id']: {'value': '4', 'unit': 'µm'}}         # 4 µm accuracy is better than 6 µm: controlled
     assert SC.evaluate(res['candidates'], res['hard'], qs, val)[0] == 'hold'
     val = {tq['id']: {'value': '0.01', 'unit': 'mm'}}      # 10 µm: not controlled by this threshold
-    _, state = SC.evaluate(res['candidates'], res['hard'], qs, val)
+    sug, state = SC.evaluate(res['candidates'], res['hard'], qs, val)
+    # below the asked threshold is the user's declaration, never a clear: the entry is not ruled out
+    assert state[('eu_annex1', '2B001')] == 'below' and sug == 'review'
+    dq = next(q for q in qs if q['type'] == 'describes' and q['code'] == '2B001')
+    sug, state = SC.evaluate(res['candidates'], res['hard'], qs, {dq['id']: 'no'})
     assert state[('eu_annex1', '2B001')] == 'cleared'
 
 

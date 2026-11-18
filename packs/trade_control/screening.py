@@ -32,27 +32,37 @@ from . import text as T
 MAX_CANDIDATES = 6
 MAX_QUESTIONS = 5
 OUTCOMES = ('clear', 'review', 'hold')
-MIN_TEXT_COVERAGE = 0.6      # share of the description's concepts an entry must contain to be a text candidate
+# text candidates are the search ranking: entries within TEXT_FLOOR of the best score that contain at least
+# MIN_TEXT_COVERAGE of the description's concepts (idf-weighted), at most MAX_TEXT_CANDIDATES
+MIN_TEXT_COVERAGE = 0.35
+HS_UNMAPPED_COVERAGE = 0.7
+TEXT_FLOOR = 0.3
+MAX_TEXT_CANDIDATES = 5
+MAX_HS_ONLY = 3              # entries found only through a broad tariff heading
+MAX_MATCH_CHARS = 400        # description characters used for matching (a 2,000-character cell is cut)
 
 HARD_LABELS = {
     'cwc': ('Listed toxic chemical or precursor', 'مادة كيميائية سامة أو سليفة مدرجة'),
     'precursor': ('Chemical-weapons precursor', 'سلائف أسلحة كيميائية'),
     'priority': ('High-priority item (diversion risk)', 'صنف عالي الأولوية (خطر تحويل الاستخدام)'),
     'code': ('Control code given on the document', 'كود الرقابة مذكور في المستند'),
+    'lists_unavailable': ('Control lists not loaded', 'قوائم الرقابة غير محمّلة'),
 }
 HOLD_FLAGS = ('cwc', 'precursor', 'code')     # 'priority' is a risk indicator: review, not hold
 OP_TEXT = {'>': ('more than', 'أكثر من'), '>=': ('at least', 'لا يقل عن'), '<': ('less than', 'أقل من'),
            '<=': ('at most', 'لا يزيد عن')}
 
 
-def line_key(line):
-    """Item-master key: the same product (model / description + HS + CAS) reuses an earlier decision."""
+def line_key(line, tenant_id=None):
+    """Item-master key of a product: its normalised description AND model AND tariff code AND CAS number (never
+    the model alone - two different products can share a model number), within one tenant."""
     model = re.sub(r'[^a-z0-9]', '', (line.get('model') or '').lower())
-    desc = ' '.join(t for t, _ in T.tokens(line.get('description') or ''))
-    base = model or desc
-    if not base:
+    desc = ' '.join(sorted({t for t, _ in T.tokens(line.get('description') or '')}))
+    if not (desc or model):
         return None
-    raw = '|'.join([base, re.sub(r'\D', '', line.get('hs_code') or '')[:8], (line.get('cas') or '').strip()])
+    hs = T.normalize_hs(line.get('hs_code'))[0] or ''
+    cas = ','.join(sorted(T.find_cas(line.get('cas') or '')))
+    raw = '|'.join(['t%s' % (tenant_id if tenant_id is not None else ''), desc, model, hs, cas])
     return hashlib.sha256(raw.encode('utf-8')).hexdigest()[:32]
 
 
@@ -80,6 +90,10 @@ def _drop_ancestors(cands):
             continue
         out[k] = c
     return out
+
+
+def _w(en, ar):
+    return [en, ar]
 
 
 def find_candidates(index, line):
@@ -110,17 +124,20 @@ def find_candidates(index, line):
                          'how': how})
         for ref in d.extra.get('item_codes') or []:
             for j in index.by_code.get(ref.lower(), ()):
-                add(index.docs[j], how, 0.95, 'Listed chemical: %s (CAS %s)' % (d.title_en, d.code))
+                add(index.docs[j], how, 0.95, _w('Listed chemical: %s (CAS %s)' % (d.title_en, d.code),
+                                                 'مادة كيميائية مدرجة: %s (CAS %s)' % (d.title_en, d.code)))
 
     # 1. a control code written on the invoice / description
-    for word in re.findall(r'\b\d[A-Ea-e]\d{3}(?:\.[a-z0-9]{1,3})*\b', ' '.join(
+    for word in re.findall(r'\b\d[A-Ea-e]\d{3}(?:\.?[a-z0-9]{1,3})*\b', ' '.join(
             str(line.get(k) or '') for k in ('description', 'model', 'control_code'))):
         code = T.control_code(word)
         for i in index.by_code.get(code.lower(), ()) if code else ():
-            add(index.docs[i], 'code', 1.0, 'Control code %s written on the document' % code)
+            add(index.docs[i], 'code', 1.0, _w('Control code %s written on the document' % code,
+                                               'كود الرقابة %s مكتوب في المستند' % code))
             hard.append({'flag': 'code', 'code': index.docs[i].code, 'list_code': index.docs[i].list_code})
-    # 2. HS / tariff code: the longest published prefix
-    hs = T.hs_digits(line.get('hs_code') or '')
+    # 2. HS / tariff code: the longest published prefix (candidates ranked after the text search below)
+    hs, _warn = T.normalize_hs(line.get('hs_code'))
+    hs_docs = []
     if hs:
         for k in range(len(hs), 3, -1):
             if k % 2 == 0 and hs[:k] in index.by_hs:
@@ -130,7 +147,7 @@ def find_candidates(index, line):
                         hard.append({'flag': 'priority', 'code': d.code, 'tier': d.extra.get('tier'),
                                      'list_code': d.list_code})
                     else:
-                        add(d, 'hs', 0.4 if k >= 6 else 0.25, 'Tariff code %s is correlated with this entry' % hs[:k])
+                        hs_docs.append((d, k))
                 break
     # 3. CAS number (also written without dashes, or in the description)
     cas_list = index._cas_in(' '.join(str(line.get(k) or '') for k in ('cas', 'description')))
@@ -142,28 +159,55 @@ def find_candidates(index, line):
                 chemical_hit(d, 'cas')
                 in_register = True
             elif d.kind != 'chemical':
-                add(d, 'cas', 0.95, None if in_register else 'CAS %s is listed in this entry' % cas)
-    # 4. text: description and model
-    q = ' '.join(x for x in (line.get('description'), line.get('model')) if x)
+                add(d, 'cas', 0.95, None if in_register else _w('CAS %s is listed in this entry' % cas,
+                                                                'رقم CAS %s مدرج في هذا البند' % cas))
+    # 4. text: description and model, ranked by the same search as the search page (top results with a
+    #    relative score floor), so the screening never drops what the search finds first
+    q = ' '.join(x for x in (line.get('description'), line.get('model')) if x)[:MAX_MATCH_CHARS]
+    text_score = {}
     if q.strip():
         q_tokens = {t for t, _ in T.tokens(q)}
-        res = index.search(q, limit=25)
-        top = res['results'][0]['score'] if res['results'] else 0
-        for r in res['results']:
+        res = index.search(q, limit=30)
+        items = [r for r in res['results'] if r['doc'].kind == 'item']
+        top = items[0]['score'] if items else 0
+        chem_seen = 0
+        for n, r in enumerate(res['results']):
             d = r['doc']
             if d.list_code == 'chemicals':
-                if not cas_list and _names_in(d, q_tokens):   # chemical named in the description
+                # a chemical named in the description, also through a synonym or a translation
+                # ("hydrofluoric acid", «حمض الهيدروفلوريك» -> hydrogen fluoride)
+                if not cas_list and (_names_in(d, q_tokens) or (chem_seen == 0 and n < 6 and _names_in(d, set(r['terms'])))):
                     chemical_hit(d, 'name')
+                chem_seen += 1
                 continue
-            cov = r.get('coverage', 0)
-            agrees = (d.code or '').lower() in cands and 'hs' in cands[(d.code or '').lower()]['reasons']
-            if (cov < MIN_TEXT_COVERAGE and not (agrees and cov >= 0.3)) or r['score'] < 0.35 * top:
+            if d.kind != 'item':
                 continue
-            if d.kind in ('chemical', 'priority'):
+            text_score[(d.code or '').lower()] = r['score'] / (top or 1)
+        taken = 0
+        # the tariff heading given correlates with no control entry: a text-only candidate must then match the
+        # description closely (office chairs, printer paper ...)
+        min_cov = HS_UNMAPPED_COVERAGE if (hs and not hs_docs) else MIN_TEXT_COVERAGE
+        for r in items:
+            d, cov = r['doc'], r.get('coverage', 0)
+            rel = r['score'] / (top or 1)
+            if rel < TEXT_FLOOR or cov < min_cov or taken >= MAX_TEXT_CANDIDATES:
                 continue
+            taken += 1
             words = ', '.join(sorted({index.surface_of.get(t, t) for t in r['terms']})[:6])
-            strength = 0.35 + 0.5 * cov * min(1.0, r['score'] / (top or 1)) + (0.15 if agrees else 0)
-            add(d, 'text', min(0.9, strength), 'Description matches: %s' % words if words else None)
+            add(d, 'text', min(0.9, 0.4 + 0.45 * rel * max(cov, 0.5)),
+                _w('Description matches: %s' % words, 'الوصف يطابق: %s' % words) if words else None)
+    # HS-correlated entries: agreement with the text first, then the most specific mappings, at most a few
+    for d, k in hs_docs:
+        key = (d.code or '').lower()
+        if key in cands:
+            add(d, 'hs', min(0.95, cands[key]['strength'] + 0.15),
+                _w('Tariff code %s is correlated with this entry' % hs[:k], 'كود التعريفة %s مرتبط بهذا البند' % hs[:k]))
+    hs_only = [(d, k) for d, k in hs_docs if (d.code or '').lower() not in cands]
+    hs_only.sort(key=lambda x: (-text_score.get((x[0].code or '').lower(), 0), len(x[0].hs), -(x[0].level or 0),
+                                x[0].code))
+    for d, k in hs_only[:MAX_HS_ONLY]:
+        add(d, 'hs', 0.4 if k >= 6 else 0.25,
+            _w('Tariff code %s is correlated with this entry' % hs[:k], 'كود التعريفة %s مرتبط بهذا البند' % hs[:k]))
     cands = _drop_ancestors(cands)
     ordered = sorted(cands.values(), key=lambda c: (-c['strength'], -len(c['reasons']), c['code']))
     return ordered[:MAX_CANDIDATES], _dedupe(hard)
@@ -172,7 +216,7 @@ def find_candidates(index, line):
 def _names_in(d, q_tokens):
     """A listed chemical's full name is written in the description ('Thionyl chloride 99 %, drums')."""
     for name in [d.title_en] + list(d.extra.get('names') or []):
-        nt = [t for t, _ in T.tokens(name or '')]
+        nt = [t for t, _ in T.tokens(re.sub(r'\([^)]*\)', ' ', name or ''))]   # "(anhydrous)" is a form, not the name
         if nt and set(nt) <= q_tokens and (len(nt) >= 2 or len(nt[0]) >= 8):
             return True
     return False
@@ -230,16 +274,16 @@ def questions_for(index, candidates, line=None, limit=MAX_QUESTIONS):
                 q['id'] = 'q%d' % (len(qs) + 1)
                 qs.append(q)
             continue
-        own = [(p, d) for p in d.params]
-        pool = own or [(p, ch) for ch in index.family(d)[:60] for p in ch.params]
+        own = [(p, d) for p in d.params if p.get('parameter')]
+        pool = own or [(p, ch) for ch in index.family(d)[:60] for p in ch.params if p.get('parameter')]
 
         def rel(item):
             p, owner = item
             words = {t for t, _ in T.tokens((p.get('parameter') or '') + ' ' + (owner.text_en or '')[:300])}
             return len(words & desc_tokens)
         scored = sorted(((rel(it), n, it) for n, it in enumerate(pool)), key=lambda x: (-x[0], x[1]))
-        if not own and (not scored or scored[0][0] == 0):
-            scored = []                     # nothing in the family relates to the product: ask about the entry
+        if not scored or scored[0][0] == 0:
+            scored = []                     # no threshold relates to the product: ask about the entry itself
         taken = 0
         for _, _, (p, owner) in scored:
             if taken >= per or len(qs) >= limit:
@@ -247,27 +291,34 @@ def questions_for(index, candidates, line=None, limit=MAX_QUESTIONS):
             if p.get('operator') not in OP_TEXT or p.get('value') is None:
                 continue
             name = _clean_param(p.get('parameter'))
+            if not name:
+                continue                    # never a question without the name of what is measured
             en, ar = OP_TEXT[p['operator']]
             unit = p.get('unit') or ''
             val = '%g' % p['value']
-            if name:
-                text_en = '%s: %s %s %s?' % (name, en, val, unit)
-                text_ar = '%s: %s %s %s؟' % (p.get('parameter_ar') or name, ar, val, unit)
-            else:
-                text_en = 'Does the product reach this value: %s %s %s?' % (en, val, unit)
-                text_ar = 'هل يبلغ المنتج هذه القيمة: %s %s %s؟' % (ar, val, unit)
+            text_en = '%s: %s %s %s' % (name, en, val, unit)
+            text_ar = '%s: %s %s %s' % (p.get('parameter_ar') or name, ar, val, unit)
+            if p.get('upper_op') in OP_TEXT and p.get('upper_value') is not None:
+                uen, uar = OP_TEXT[p['upper_op']]
+                uu = p.get('upper_unit') or unit
+                text_en += ' and %s %g %s' % (uen, p['upper_value'], uu)
+                text_ar += ' و%s %g %s' % (uar, p['upper_value'], uu)
+            text_en, text_ar = re.sub(r'\s+', ' ', text_en).strip() + '?', re.sub(r'\s+', ' ', text_ar).strip() + '؟'
             k = text_en.lower()
             if k in seen:
                 continue
             seen.add(k)
             qs.append({'id': 'q%d' % (len(qs) + 1), 'type': 'threshold', 'list_code': c['list_code'], 'code': c['code'],
-                       'item_code': owner.code, 'text_en': text_en.replace('  ', ' '), 'text_ar': text_ar.replace('  ', ' '),
+                       'item_code': owner.code, 'text_en': text_en, 'text_ar': text_ar,
                        'context': (owner.text_en or '')[:240], 'context_ar': (owner.text_ar or '')[:240],
                        'operator': p['operator'], 'value': p['value'], 'unit': unit,
                        'base_value': p.get('base_value'), 'base_unit': p.get('base_unit'), 'raw': p.get('raw'),
+                       'upper_op': p.get('upper_op'), 'upper_base': p.get('upper_base'),
                        'param_words': sorted({t for t, _ in T.tokens(p.get('parameter') or '')})})
             taken += 1
-        if taken == 0 and len(qs) < limit and ('d:' + c['code']) not in seen:
+        if len(qs) < limit and ('d:' + c['code']) not in seen:
+            # every candidate also gets the entry-level question: only "this entry does not describe the
+            # product" can rule a candidate out
             seen.add('d:' + c['code'])
             q = _describes(c, d)
             q['id'] = 'q%d' % (len(qs) + 1)
@@ -296,88 +347,127 @@ def prefill(questions, line):
     return out
 
 
-def evaluate(candidates, hard, questions, answers):
+def _threshold_result(q, a):
+    """'yes' / 'no' / 'unknown' / None for one threshold question and its answer (a value is compared, a
+    range needs both bounds)."""
+    if isinstance(a, dict) and a.get('value') not in (None, ''):
+        try:
+            num = T.number(str(a['value']))
+        except ValueError:
+            return None
+        if q.get('base_unit') == T.UNITLESS:
+            v, base = num, T.UNITLESS
+        else:
+            v, base = T.to_base(num, a.get('unit') or q.get('unit'))
+        if not base or base != q.get('base_unit'):
+            return None
+        ok = T.compare(v, q['operator'], q['base_value'])
+        if ok and q.get('upper_op') and q.get('upper_base') is not None:
+            ok = T.compare(v, q['upper_op'], q['upper_base'])
+        return 'yes' if ok else 'no'
+    return a if a in ('yes', 'no', 'unknown') else None
+
+
+def evaluate(candidates, hard, questions, answers, line=None, ready=True):
     """answers: {question_id: 'yes' | 'no' | 'unknown' | {'value': 12, 'unit': 'GHz'}} -> (suggested, per_candidate).
 
-    hold    a listed chemical / precursor, a control code on the document, or a 'yes' / a value that meets a
-            threshold of a candidate entry
-    clear   no candidate and no flag, or every candidate answered below its thresholds / not describing it
-    review  anything else (open questions, a high-priority tariff heading)"""
+    Per candidate:
+      controlled   a threshold is met, or the user says the entry describes the product
+      cleared      the user says the entry does NOT describe the product (the only way to rule it out)
+      below        the user's answers are below the asked thresholds: "below threshold - declared by the
+                   user"; the parsed thresholds cover only part of an entry, so this stays REVIEW
+      open         not answered
+    Line:
+      hold    a listed chemical / precursor, a control code on the document, or a controlled candidate
+      clear   lists loaded, no flag, and either every candidate ruled out, or no candidate although an HS code
+              or a CAS number was given (clear by absence)
+      review  anything else, including a description-only line with no candidate (insufficient data) and
+              a screening made while a list is not loaded"""
     answers = answers or {}
     state = {(c['list_code'], c['code']): 'open' for c in candidates}
-    asked = {}
+    thr, desc = {}, {}
     for q in questions:
         k = (q['list_code'], q['code'])
-        a = answers.get(q['id'])
-        res = None
-        if isinstance(a, dict) and a.get('value') not in (None, ''):
-            try:
-                v, base = T.to_base(float(str(a['value']).replace(',', '.')), a.get('unit') or q.get('unit'))
-            except ValueError:
-                v, base = None, None
-            if base and base == q.get('base_unit'):
-                res = 'yes' if T.compare(v, q['operator'], q['base_value']) else 'no'
-        elif a in ('yes', 'no', 'unknown'):
-            res = a
-        asked.setdefault(k, []).append(res)
-    for k, rs in asked.items():
-        if k not in state:
-            continue
-        if 'yes' in rs:
+        if q.get('type') == 'threshold':
+            thr.setdefault(k, []).append(_threshold_result(q, answers.get(q['id'])))
+        else:
+            desc[k] = answers.get(q['id']) if answers.get(q['id']) in ('yes', 'no', 'unknown') else None
+    for k in state:
+        rs, d = thr.get(k, []), desc.get(k)
+        if 'yes' in rs or (d == 'yes' and not rs):
             state[k] = 'controlled'
-        elif rs and all(r == 'no' for r in rs):
+        elif d == 'no':
             state[k] = 'cleared'
+        elif rs and all(r == 'no' for r in rs):
+            state[k] = 'below'
     hold = any(h.get('flag') in HOLD_FLAGS for h in hard or [])
     soft = any(h.get('flag') not in HOLD_FLAGS for h in hard or [])
+    identified = bool(line and (T.normalize_hs((line or {}).get('hs_code'))[0] or T.find_cas((line or {}).get('cas') or '')))
     if hold or any(s == 'controlled' for s in state.values()):
         suggested = 'hold'
-    elif not soft and (not candidates or all(s == 'cleared' for s in state.values())):
+    elif not ready or soft:
+        suggested = 'review'
+    elif candidates and all(s == 'cleared' for s in state.values()):
+        suggested = 'clear'
+    elif not candidates and (identified or line is None):
         suggested = 'clear'
     else:
         suggested = 'review'
     return suggested, state
 
 
-def explain(candidates, hard, suggested):
+def explain(candidates, hard, suggested, line=None, ready=True):
     """Plain-language reasons for the suggested outcome (English, Arabic) - shown on the page and the report."""
     out = []
+    if not ready:
+        out.append(('Control lists are not loaded on this installation: no product can be cleared.',
+                    'قوائم الرقابة غير محمّلة في هذا النظام: لا يمكن اعتبار أي منتج خاليًا من المؤشرات.'))
     for h in hard or []:
         en, ar = HARD_LABELS.get(h.get('flag'), (h.get('flag'), h.get('flag')))
         out.append(('%s: %s' % (en, h.get('name') or h.get('code')), '%s: %s' % (ar, h.get('name') or h.get('code'))))
     for c in candidates:
         st = c.get('state') or 'open'
         head = '%s — %s' % (c['code'], (c.get('title_en') or '')[:120])
+        head_ar = '%s — %s' % (c['code'], (c.get('title_ar') or c.get('title_en') or '')[:120])
+        whys = [w if isinstance(w, (list, tuple)) else [w, w] for w in (c.get('why') or [])]
         if st == 'controlled':
-            out.append(('%s: the answers meet a control threshold' % head, '%s: الإجابات تستوفي حدًّا للرقابة' % head))
+            out.append(('%s: the answers meet the entry' % head, '%s: الإجابات تستوفي البند' % head_ar))
         elif st == 'cleared':
-            out.append(('%s: the answers are below the control thresholds' % head,
-                        '%s: الإجابات أقل من حدود الرقابة' % head))
+            out.append(('%s: the user declared that the entry does not describe the product' % head,
+                        '%s: قرر المستخدم أن البند لا يصف المنتج' % head_ar))
+        elif st == 'below':
+            out.append(('%s: below the asked thresholds - declared by the user; the entry is not ruled out' % head,
+                        '%s: أقل من الحدود المسؤول عنها - بإقرار المستخدم؛ ولم يُستبعد البند' % head_ar))
         else:
-            why = '; '.join(c.get('why') or []) or ', '.join(c.get('reasons') or [])
-            out.append(('%s: possible match (%s) - open' % (head, why), '%s: تطابق محتمل (%s) - مفتوح' % (head, why)))
-    if not out and suggested == 'clear':
-        out.append(('No control entry matched the product data given.',
-                    'لم يطابق أي بند رقابة بيانات المنتج المدخلة.'))
+            out.append(('%s: possible match (%s) - open' % (head, '; '.join(w[0] for w in whys) or ', '.join(c['reasons'])),
+                        '%s: تطابق محتمل (%s) - مفتوح' % (head_ar, '؛ '.join(w[1] for w in whys) or '، '.join(c['reasons']))))
+    if not candidates and not hard and ready:
+        if suggested == 'clear':
+            out.append(('No control entry matched the tariff code / CAS number and the description given.',
+                        'لم يطابق أي بند رقابة كود التعريفة / رقم CAS والوصف المدخلين.'))
+        else:
+            out.append(('Insufficient data: no entry matched the description alone. Add the HS code, the CAS number '
+                        'or the technical specifications.',
+                        'بيانات غير كافية: لم يطابق أي بند الوصف وحده. أضف كود HS أو رقم CAS أو المواصفات الفنية.'))
     return out
 
 
 def screen_line(index, line, answers=None):
     """Full screening of one line -> dict ready to store (candidates, flags, questions, suggestion)."""
+    ready = getattr(index, 'ready', True)
     candidates, hard = find_candidates(index, line)
+    if not ready:
+        hard = hard + [{'flag': 'lists_unavailable', 'code': ''}]
     qs = questions_for(index, candidates, line)
     if answers is None:
         answers = prefill(qs, line)
-    suggested, state = evaluate(candidates, hard, qs, answers)
+    suggested, state = evaluate(candidates, hard, qs, answers, line, ready)
     for c in candidates:
         c['state'] = state.get((c['list_code'], c['code']), 'open')
     return {'candidates': candidates, 'hard': hard, 'questions': qs, 'answers': answers or {},
-            'suggested': suggested, 'key': line_key(line)}
+            'suggested': suggested, 'key': line_key(line), 'ready': ready}
 
 
 def batch_suggestion(result):
-    """No questions in a batch: hold on a hold flag, review when a candidate or a priority flag remains, else
-    clear."""
-    hard = result['hard'] or []
-    if any(h.get('flag') in HOLD_FLAGS for h in hard):
-        return 'hold'
-    return 'review' if (result['candidates'] or hard) else 'clear'
+    """The batch keeps the suggestion of the single screening (prefilled values included)."""
+    return result['suggested']

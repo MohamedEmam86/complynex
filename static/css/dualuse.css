@@ -27,3 +27,4 @@
 .du-explain { background: var(--bs-light, #f8f9fa); border-radius: .375rem; padding: .4rem .7rem; }
 .du-trail li { padding: .2rem 0; border-bottom: 1px dashed var(--bs-border-color, #dee2e6); }
 .du-ar-note { font-weight: normal; font-size: .72rem; }
+.du-confirm { max-width: 32rem; }

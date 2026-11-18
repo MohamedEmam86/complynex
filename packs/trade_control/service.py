@@ -115,7 +115,21 @@ def _stamp(db):
                              (SELECT coalesce(max(id), 0) FROM dualuse_terms) AS t,
                              (SELECT count(*) FROM dualuse_terms) AS tc,
                              (SELECT coalesce(max(ar_updated_at)::text, '') FROM dualuse_items) AS a""").fetchone()
-    return '%s|%s|%s|%s' % (r['v'], r['t'], r['tc'], r['a'])
+    return '%s|%s|%s|%s|%s' % (r['v'], r['t'], r['tc'], r['a'], _code_stamp())
+
+
+def _code_stamp():
+    """The synonyms file and the search code are part of the index: a deploy that changes them rebuilds it."""
+    import hashlib
+    h = hashlib.sha256()
+    base = os.path.dirname(os.path.abspath(__file__))
+    for name in (os.path.join('seed', 'synonyms.csv'), 'search.py', 'text.py'):
+        try:
+            with open(os.path.join(base, name), 'rb') as f:
+                h.update(f.read())
+        except OSError:
+            pass
+    return h.hexdigest()[:12]
 
 
 def load_docs(db):
@@ -196,26 +210,93 @@ def synonyms():
         return []
 
 
+# Every kind of list must have a current, non-empty version before anything can be screened as clear.
+REQUIRED_LISTS = ('eu_annex1', 'us_ccl', 'cwc', 'chemicals', 'eu_cn_correlation', 'chpl')
+
+
+def readiness(db):
+    rows = {r['code']: r['n'] for r in db.execute("""SELECT l.code, coalesce(v.record_count, 0) AS n FROM dualuse_lists l
+                LEFT JOIN dualuse_list_versions v ON v.list_id = l.id AND v.is_current WHERE l.is_active""").fetchall()}
+    missing = [c for c in REQUIRED_LISTS if not rows.get(c)]
+    return {'ready': not missing, 'missing': missing, 'counts': rows}
+
+
+def _pickle_path(stamp):
+    import hashlib
+    import tempfile
+    d = os.path.join(tempfile.gettempdir(), 'complynex_dualuse_index')
+    os.makedirs(d, mode=0o700, exist_ok=True)
+    if os.stat(d).st_uid != os.getuid():          # never read a cache another account could have written
+        return None
+    return os.path.join(d, hashlib.sha256(stamp.encode()).hexdigest()[:24] + '.pkl')
+
+
+def _load_or_build(db, stamp):
+    """The index of this stamp: from the cache file another worker of this server wrote, else built here
+    (about 3 s) and written for the others. The cache is versioned by the stamp of the list versions,
+    the dictionary and the Arabic texts."""
+    import pickle
+    path = None
+    try:
+        path = _pickle_path(stamp)
+        if path and os.path.exists(path):
+            with open(path, 'rb') as f:
+                idx = pickle.load(f)
+            if getattr(idx, 'version', None) == stamp:
+                return idx
+    except Exception:
+        log.warning('dual-use: index cache unreadable, rebuilding', exc_info=True)
+    docs, terms = load_docs(db)
+    idx = SE.Index(docs, terms, version=stamp, synonyms=synonyms())
+    try:
+        if path:
+            tmp = path + '.%d.tmp' % os.getpid()
+            with open(tmp, 'wb') as f:
+                pickle.dump(idx, f, protocol=pickle.HIGHEST_PROTOCOL)
+            os.replace(tmp, path)
+            for old in os.listdir(os.path.dirname(path)):          # keep only the current stamp
+                if old.endswith('.pkl') and os.path.join(os.path.dirname(path), old) != path:
+                    try:
+                        os.remove(os.path.join(os.path.dirname(path), old))
+                    except OSError:
+                        pass
+    except Exception:
+        log.warning('dual-use: index cache not written', exc_info=True)
+    return idx
+
+
 def get_index(db=None, force=False):
-    """The shared index, rebuilt when a list version, the dictionary or an Arabic text changes (checked every 60 s)."""
+    """The index shared by the requests of this worker: built lazily once, rebuilt only when a list version,
+    the dictionary or an Arabic text changes (the stamp is checked every 60 s). Never rolls back the
+    request's transaction: the stamp query runs in a savepoint."""
     now = time.time()
     if not force and _cache['index'] is not None and now - _cache['checked'] < 60:
         return _cache['index']
     db = db or get_db()
     with _lock:
+        if not force and _cache['index'] is not None and now - _cache['checked'] < 60:
+            return _cache['index']
         try:
+            db.execute("SAVEPOINT du_index")
             stamp = _stamp(db)
+            ready = readiness(db)
+            db.execute("RELEASE SAVEPOINT du_index")
         except Exception:
-            db.rollback()
+            try:
+                db.execute("ROLLBACK TO SAVEPOINT du_index")
+            except Exception:
+                pass
             log.warning('dual-use: tables not available', exc_info=True)
-            return _cache['index'] or SE.Index([], [])
+            idx = _cache['index'] or SE.Index([], [])
+            return idx
         _cache['checked'] = now
         if force or stamp != _cache['stamp'] or _cache['index'] is None:
             t0 = time.time()
-            docs, terms = load_docs(db)
-            _cache['index'] = SE.Index(docs, terms, version=stamp, synonyms=synonyms())
-            _cache['stamp'] = stamp
-            log.info('dual-use index: %d entries in %.1fs', len(docs), time.time() - t0)
+            idx = _load_or_build(db, stamp)
+            _cache['index'], _cache['stamp'] = idx, stamp
+            log.info('dual-use index: %d entries in %.1fs', len(idx.docs), time.time() - t0)
+        _cache['index'].ready = ready['ready'] and len(_cache['index'].docs) > 0
+        _cache['index'].readiness = ready
     return _cache['index']
 
 
@@ -321,9 +402,15 @@ def _ref():
     return 'DU-%s-%s' % (datetime.now().strftime('%y%m%d'), secrets.token_hex(3).upper())
 
 
-def _reuse(db, key, versions):
-    """An earlier decision on the same product, while the lists it was based on are still current."""
-    if not key:
+def _cand_codes(cands):
+    return sorted({(c.get('code') or '') for c in cands or []})
+
+
+def _reuse(db, key, versions, res, line):
+    """An earlier decision on the identical product (description, model, HS and CAS) that may be PROPOSED for
+    the new line: same list versions, same suggestion, same candidate entries, and no hold or priority flag on
+    the new line. The proposal is never a decision: a user confirms it under their own name."""
+    if not key or res.get('hard'):
         return None
     r = db.execute("SELECT * FROM dualuse_item_master WHERE item_key = %s", (key,)).fetchone()
     if not r:
@@ -331,41 +418,59 @@ def _reuse(db, key, versions):
     lv = r['list_versions'] or {}
     if any(lv.get(c) != v['id'] for c, v in versions.items() if c in lv):
         return None
+    initial = SC.evaluate(res['candidates'], res['hard'], res['questions'], {}, line)[0]
+    if (r.get('suggested') or None) != initial or list(r.get('candidate_codes') or []) != _cand_codes(
+            res['candidates']):
+        return None
     return r
+
+
+def _tenant():
+    try:
+        from database.tenancy import current_tenant_id
+        return current_tenant_id()
+    except Exception:
+        return None
 
 
 def run_lines(db, screening_id, lines, index, versions, batch=False):
     counts = {'clear': 0, 'review': 0, 'hold': 0}
+    tenant = _tenant()
     for n, line in enumerate(lines, start=1):
         res = SC.screen_line(index, line)
         sug = SC.batch_suggestion(res) if batch else res['suggested']
-        prev = _reuse(db, res['key'], versions)
-        lid = db.execute("""INSERT INTO dualuse_screening_lines (screening_id, line_no, description, hs_code, cas, model,
+        key = SC.line_key(line, tenant)
+        prev = _reuse(db, key, versions, res, line)
+        proposal = {'decision': prev['decision'], 'reason': prev['reason'], 'comment': (prev['comment'] or '')[:1000],
+                    'decided_at': prev['decided_at'].isoformat() if prev['decided_at'] else None,
+                    'master_id': prev['id']} if prev else None
+        db.execute("""INSERT INTO dualuse_screening_lines (screening_id, line_no, description, hs_code, cas, model,
                       origin, quantity, item_key, candidates, hard_flags, questions, answers, suggested, reused_from,
-                      decision, reason, comment, decided_by, decided_at)
-                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+                      proposal, hs_warning)
+                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                    (screening_id, line.get('line_no') or n, line.get('description'), line.get('hs_code'),
-                    line.get('cas'), line.get('model'), line.get('origin'), line.get('quantity'), res['key'],
+                    line.get('cas'), line.get('model'), line.get('origin'), line.get('quantity'), key,
                     json.dumps(res['candidates']), json.dumps(res['hard']), json.dumps(res['questions']),
-                    json.dumps(res['answers'] or {}), sug,
-                    prev['id'] if prev else None, prev['decision'] if prev else None,
-                    prev['reason'] if prev else None,
-                    ('Reused decision of an identical product (%s)' % prev['decided_at'].date()) if prev else None,
-                    prev['decided_by'] if prev else None, datetime.now() if prev else None)).fetchone()['id']
-        if prev:
-            db.execute("""INSERT INTO dualuse_decisions (line_id, screening_id, decision, reason, comment, suggested,
-                          list_versions, reused, decided_by) VALUES (%s,%s,%s,%s,%s,%s,%s,TRUE,%s)""",
-                       (lid, screening_id, prev['decision'], prev['reason'] or 'other',
-                        'Reused decision of an identical product (%s): %s' % (prev['decided_at'].date(),
-                                                                             (prev['comment'] or '')[:300]),
-                        sug, json.dumps({k: v['id'] for k, v in versions.items()}), prev['decided_by']))
+                    json.dumps(res['answers'] or {}), sug, prev['id'] if prev else None,
+                    json.dumps(proposal) if proposal else None, line.get('hs_warning')))
         counts[sug] += 1
     return counts
+
+
+class ListsUnavailable(RuntimeError):
+    """The control lists are not loaded (or one of them is empty): nothing may be screened as clear."""
+    def __init__(self, missing):
+        super().__init__('control lists not loaded: %s' % ', '.join(missing))
+        self.missing = missing
+        self.en = 'The control lists are not loaded on this installation, so no screening can be made yet.'
+        self.ar = 'قوائم الرقابة غير محمّلة في هذا النظام، لذلك لا يمكن إجراء أي فحص بعد.'
 
 
 def create_screening(header, lines, user_id, batch=False, file_name=None, db=None):
     db = db or get_db()
     index = get_index(db)
+    if not getattr(index, 'ready', False):
+        raise ListsUnavailable((getattr(index, 'readiness', None) or {}).get('missing') or ['all'])
     versions = current_versions(db)
     sid = db.execute("""INSERT INTO dualuse_screenings (ref, kind, title, file_name, supplier, consignee, end_user, origin,
                         transport_doc, vessel_name, vessel_imo, list_versions, line_count, created_by)
@@ -413,7 +518,7 @@ def answer_line(line_id, answers, db=None):
     ln = get_line(line_id, db)
     if not ln:
         return None
-    sug, state = SC.evaluate(ln['candidates'] or [], ln['hard_flags'] or [], ln['questions'] or [], answers)
+    sug, state = SC.evaluate(ln['candidates'] or [], ln['hard_flags'] or [], ln['questions'] or [], answers, ln)
     cands = ln['candidates'] or []
     for c in cands:
         c['state'] = state.get((c['list_code'], c['code']), 'open')
@@ -437,24 +542,32 @@ def validate_decision(decision, reason, comment):
     return errs
 
 
-def decide_line(line_id, decision, reason, comment, user_id, remember=True, db=None):
+def _initial_suggestion(ln):
+    """The suggestion of the line before any answer (what a new identical line will get)."""
+    return SC.evaluate(ln['candidates'] or [], ln['hard_flags'] or [], ln['questions'] or [], {}, ln)[0]
+
+
+def decide_line(line_id, decision, reason, comment, user_id, remember=False, db=None):
     db = db or get_db()
     ln = get_line(line_id, db)
     if not ln:
         return None
     now = datetime.now()
     db.execute("""UPDATE dualuse_screening_lines SET decision = %s, reason = %s, comment = %s, decided_by = %s,
-                  decided_at = %s, reused_from = NULL WHERE id = %s""",
+                  decided_at = %s, proposal = NULL WHERE id = %s""",
                (decision, reason, comment.strip()[:4000], user_id, now, line_id))
     if remember and ln['item_key']:
         s = db.execute("SELECT list_versions FROM dualuse_screenings WHERE id = %s", (ln['screening_id'],)).fetchone()
         db.execute("""INSERT INTO dualuse_item_master (item_key, description, hs_code, cas, model, decision, reason, comment,
-                      list_versions, decided_by, decided_at, screening_line_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                      list_versions, decided_by, decided_at, screening_line_id, candidate_codes, suggested)
+                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                       ON CONFLICT (item_key) DO UPDATE SET decision = EXCLUDED.decision, reason = EXCLUDED.reason,
                       comment = EXCLUDED.comment, list_versions = EXCLUDED.list_versions, decided_by = EXCLUDED.decided_by,
-                      decided_at = EXCLUDED.decided_at, screening_line_id = EXCLUDED.screening_line_id""",
+                      decided_at = EXCLUDED.decided_at, screening_line_id = EXCLUDED.screening_line_id,
+                      candidate_codes = EXCLUDED.candidate_codes, suggested = EXCLUDED.suggested""",
                    (ln['item_key'], ln['description'], ln['hs_code'], ln['cas'], ln['model'], decision, reason,
-                    comment.strip()[:4000], json.dumps(s['list_versions'] or {}), user_id, now, line_id))
+                    comment.strip()[:4000], json.dumps(s['list_versions'] or {}), user_id, now, line_id,
+                    _cand_codes(ln['candidates']), _initial_suggestion(ln)))
     s = db.execute("SELECT list_versions FROM dualuse_screenings WHERE id = %s", (ln['screening_id'],)).fetchone()
     db.execute("""INSERT INTO dualuse_decisions (line_id, screening_id, decision, reason, comment, suggested, answers,
                   list_versions, decided_by, decided_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
