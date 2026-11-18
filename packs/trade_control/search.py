@@ -44,6 +44,10 @@ FIELD_W = {'title_en': 3.0, 'title_ar': 3.0, 'text_en': 1.0, 'text_ar': 1.0, 'co
            'notes': 0.3, 'names': 3.5}
 TEXT_FIELDS = ('text_en', 'text_ar', 'notes')
 RISK_ORDER = {'high': 0, 'medium': 1, 'low': 2}
+HS_AFFINITY = {'84': ('2', '3', '4', '5'), '85': ('3', '4', '5', '6'), '90': ('3', '6', '7', '2'),
+               '88': ('9', '7'), '93': ('0', '1'), '28': ('1',), '29': ('1',), '38': ('1',), '81': ('1',),
+               '72': ('1', '2'), '76': ('1',), '89': ('8',), '87': ('0', '9')}
+Y_ITEM = re.compile(r'^\d[A-E][56]\d{2}\.y\b')
 UNKNOWN_IDF = 5.0            # weight of a query word that no entry uses
 LEAD = 10                    # words at the head of an entry ("Cameras, systems ...")
 HOW_W = {'exact': 1.0, 'translated': 0.85, 'synonym': 0.8, 'fuzzy': 0.6, 'prefix': 0.7}
@@ -74,6 +78,7 @@ class Index:
         same-language phrases that mean the same thing (["drone", "UAV", "unmanned aerial vehicle"])."""
         self.version = version
         self.docs = []
+        self.readiness = None              # set by the service: which lists are loaded
         self.post = defaultdict(dict)          # token -> {doc_i: weight}
         self.title_tok = []                    # per doc: set of title tokens (phrase bonus)
         self.lead_tok = []                     # per doc: {token: first position} among the first LEAD words
@@ -103,6 +108,8 @@ class Index:
             self.add_term(en, ar)
         for group in synonyms:
             self.add_synonyms(group)
+        # an empty index can never clear anything; the service also checks every list kind is loaded
+        self.ready = bool(self.docs)
 
     # ------------------------------------------------------------- building
     @staticmethod
@@ -217,7 +224,11 @@ class Index:
             known = t in self.post or t in self.syn
             if not known and len(t) >= 4 and _rf_process is not None and not t[0].isdigit():
                 voc = self.vocab['ar' if lang == 'ar' else 'en']
-                for cand, score, _ in _rf_process.extract(t, voc, scorer=_rf_fuzz.ratio, limit=3, score_cutoff=80):
+                # a real word missing from the lists is not "corrected" into another real word
+                # (hydrofluoric -> hydrochloric): the cut-off is high and the first letters must agree
+                for cand, score, _ in _rf_process.extract(t, voc, scorer=_rf_fuzz.ratio, limit=3, score_cutoff=86):
+                    if cand[:2] != t[:2]:
+                        continue
                     g.append(((cand,), HOW_W['fuzzy'] * score / 100, 'fuzzy'))
                     g += [(alt, w * HOW_W['fuzzy'] * score / 100, 'fuzzy') for alt, w, _ in self._related(cand)]
                 dict_keys = [k for k in self.syn if ' ' not in k and (T.is_arabic(k) == (lang == 'ar'))]
@@ -310,8 +321,11 @@ class Index:
                         d = self.docs[i]
                         exact = any(re.sub(r'\D', '', str(h)).startswith(hs[:k]) and len(re.sub(r'\D', '', str(h))) <= k
                                     for h in d.hs)
+                        # most specific mapping first: priority heading, exact code, entries mapped by few
+                        # tariff lines, then the categories that usually match the tariff chapter
                         scores[i] += 600 + 10 * k + (40 if d.kind == 'priority' else 0) + (20 if exact else 0) \
-                            - 5 * (d.level or 0)
+                            - 3 * (d.level or 0) - min(30, len(d.hs) / 4.0) \
+                            + (15 if d.category in HS_AFFINITY.get(hs[:2], ()) else 0)
                         why[i].add('hs')
                     break
 
@@ -350,7 +364,9 @@ class Index:
                 scores[i] *= 1 + 0.5 * lead_hits[i] / n_groups
                 d = self.docs[i]
                 if d.group in ('D', 'E') and not wants_sw:
-                    scores[i] *= 0.8                   # software / technology entries after the goods themselves
+                    scores[i] *= 0.35                  # software / technology entries after the goods themselves
+                if Y_ITEM.match(d.code or ''):
+                    scores[i] *= 0.4                   # ".y" parts of the 500/600 series (knobs, pads, switches)
                 if d.kind == 'priority':
                     scores[i] *= 0.75                  # tariff-heading hints rank after the control entries
                 if pairs:
@@ -396,7 +412,8 @@ class Index:
 
         top = max(scores.values()) if scores else 0
         min_score = 0.0 if exact_kind else max(0.6, 0.04 * top)
-        ranked = [i for i in scores if scores[i] > min_score and keep(self.docs[i])]
+        ranked = [i for i in scores if scores[i] > min_score and keep(self.docs[i])
+                  and (exact_kind or not text_groups or coverage.get(i, 0) >= 0.15)]
         ranked.sort(key=lambda i: (-round(scores[i], 3), RISK_ORDER.get(self.docs[i].risk, 3), self.docs[i].level or 0,
                                    self.docs[i].code or ''))
         # merge the same control code published by several lists into one result

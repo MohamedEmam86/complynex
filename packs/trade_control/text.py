@@ -122,7 +122,12 @@ def control_code(q):
     q = re.sub(r'\s+', '.', (q or '').strip()).strip('.')
     m = CONTROL_CODE.match(q)
     if not m:
-        return None
+        c = re.fullmatch(r'(\d[a-eA-E]\d{3})((?:[a-zA-Z]|\d{1,2})+)', q)   # compact: 5a002a1 -> 5A002.a.1
+        if not c:
+            return None
+        m = CONTROL_CODE.match(c.group(1) + ''.join('.' + x for x in re.findall(r'[a-zA-Z]|\d{1,2}', c.group(2))))
+        if not m:
+            return None
     head, rest = m.groups()
     return head[0] + head[1].upper() + head[2:] + rest.lower()
 
@@ -139,13 +144,46 @@ def find_cas(s):
     return ['%s-%s-%s' % m.groups() for m in CAS_RE.finditer(s or '')]
 
 
+def normalize_hs(value):
+    """A tariff code as typed or as an Excel number -> (digits, warning or None).
+
+    '8517.62' / '8517 62 00' / 'HS 8517.62' -> '851762'; Excel numbers lose zeros: 9026.2 -> '902620',
+    8471.3 -> '847130', 106.11 -> '010611' (chapter 01), 85423190.0 -> '85423190'. A code that can only be
+    repaired by guessing returns a warning."""
+    if value is None:
+        return None, None
+    if isinstance(value, float):
+        value = repr(value)
+    q = str(value).strip()
+    q = re.sub(r'^(?:hs|h\.s\.|cn|hts|tariff)(?:\s*code)?\s*[:#]?\s*', '', q, flags=re.I)
+    q = re.sub(r'\.0+$', '', q) if re.fullmatch(r'\d+\.0+', q) else q
+    if not q or not re.fullmatch(r'[\d .\-]+', q):
+        return None, None
+    warn = None
+    if re.fullmatch(r'\d+\.\d+', q):                       # one dot: "heading.subheading" as Excel shows it
+        head, frac = q.split('.')
+        if len(head) == 3:                                # leading zero lost (chapters 01 to 09)
+            head, warn = '0' + head, 'leading zero restored'
+        if len(head) == 4 and len(frac) % 2 == 1:        # trailing zero lost (9026.2 = 9026.20)
+            frac += '0'
+            warn = warn or 'trailing zero restored'
+        d = head + frac
+    else:
+        d = re.sub(r'\D', '', q)
+    if len(d) % 2 == 1 and 5 <= len(d) <= 9:
+        return d[:-1], 'odd number of digits: last digit ignored'
+    return (d, warn) if 4 <= len(d) <= 10 else (None, None)
+
+
 def hs_digits(q):
-    """HS / CN / tariff code -> digits only (4 to 10 digits) or None."""
-    q = (q or '').strip()
-    if not q or not HS_RE.match(q.replace('-', '.')):
+    """HS / CN / tariff code -> digits only (4 to 10 digits) or None ('HS 8526', Excel floats repaired)."""
+    q = (q or '').strip() if isinstance(q, str) else q
+    if not q:
         return None
-    d = re.sub(r'\D', '', q)
-    return d if 4 <= len(d) <= 10 else None
+    if isinstance(q, str) and not re.fullmatch(r'(?:(?:hs|h\.s\.|cn|hts)(?:\s*code)?\s*[:#]?\s*)?\d{2}(?:[.\s\-]?\d{1,2}){1,4}',
+                                              q, re.I):
+        return None
+    return normalize_hs(q)[0]
 
 
 def looks_like_model(t):
@@ -173,7 +211,15 @@ UNIT_TABLE.update({'bar': ('Pa', 1e5), 'psi': ('Pa', 6894.757), 'min': ('s', 60.
                    'TFLOPS': ('FLOPS', 1e12), 'GFLOPS': ('FLOPS', 1e9), 'FLOPS': ('FLOPS', 1.0),
                    'TOPS': ('OPS', 1e12), 'TeraFLOPS': ('FLOPS', 1e12), 'TeraOPS': ('OPS', 1e12),
                    'Weighted TeraFLOPS': ('WT', 1.0), 'Weighted TeraOPS': ('WT', 1.0), 'channels': ('channels', 1.0),
-                   'axes': ('axes', 1.0), 'Mach': ('Mach', 1.0), 'Gy': ('Gy', 1.0), 'Bq': ('Bq', 1.0)})
+                   'axes': ('axes', 1.0), 'Mach': ('Mach', 1.0), 'Gy': ('Gy', 1.0), 'Bq': ('Bq', 1.0),
+                   'Gb/s': ('bit/s', 1e9), 'Mb/s': ('bit/s', 1e6), 'Gbps': ('bit/s', 1e9), 'Mbps': ('bit/s', 1e6),
+                   'GSPS': ('SPS', 1e9), 'MSPS': ('SPS', 1e6), 'kSPS': ('SPS', 1e3), 'SPS': ('SPS', 1.0),
+                   'GS/s': ('SPS', 1e9), 'MS/s': ('SPS', 1e6), 'fps': ('fps', 1.0), 'frames/s': ('fps', 1.0),
+                   'kn': ('m/s', 0.514444), 'knots': ('m/s', 0.514444), 'Gy/s': ('Gy/s', 1.0),
+                   'n/cm2': ('n/cm2', 1.0), 'minutes': ('s', 60.0), 'hours': ('s', 3600.0), 'hour': ('s', 3600.0),
+                   'seconds': ('s', 1.0)})
+# a unitless quantity ("total processing performance 4800"): compared as a plain number
+UNITLESS = '1'
 # Arabic unit words a user may type
 AR_UNITS = {'جيجاهرتز': 'GHz', 'ميجاهرتز': 'MHz', 'كيلوهرتز': 'kHz', 'هرتز': 'Hz', 'كيلوواط': 'kW',
             'ميجاواط': 'MW', 'واط': 'W', 'فولت': 'V', 'كيلوفولت': 'kV', 'امبير': 'A', 'ملم': 'mm', 'مم': 'mm',
@@ -185,8 +231,20 @@ _UNIT_KEYS = sorted(UNIT_TABLE, key=len, reverse=True)
 _LOWER_PREF = {'mw': 'MW', 'mhz': 'MHz', 'mpa': 'MPa', 'mm': 'mm', 'ms': 'ms', 'mv': 'mV', 'ma': 'mA',
                'gb': 'GB', 'mb': 'MB', 'tb': 'TB', 'kb': 'kB', 'ghz': 'GHz', 'khz': 'kHz', 'kw': 'kW', 'kv': 'kV',
                'gw': 'GW', 'thz': 'THz', 'mg': 'mg', 'kg': 'kg', 'ns': 'ns', 'ps': 'ps', 'nm': 'nm', 'pa': 'Pa',
-               'gpa': 'GPa', 'kpa': 'kPa', 'hz': 'Hz', 'w': 'W', 'v': 'V', 'a': 'A', 's': 's', 'm': 'm', 'g': 'g'}
-_QV = re.compile(r'(\d+(?:[.,]\d+)?)\s*(' + '|'.join(re.escape(u) for u in _UNIT_KEYS) + r')(?![A-Za-z])', re.I)
+               'gpa': 'GPa', 'kpa': 'kPa', 'hz': 'Hz', 'w': 'W', 'v': 'V', 'a': 'A', 's': 's', 'm': 'm', 'g': 'g',
+               'gsps': 'GSPS', 'msps': 'MSPS', 'gb/s': 'Gb/s', 'mb/s': 'Mb/s', 'gbps': 'Gbps', 'mbps': 'Mbps',
+               'gs/s': 'GS/s', 'ms/s': 'MS/s', 'kn': 'kn'}
+# "12,000 rpm" (thousands comma: exactly three digits) / "1,25 GHz" (decimal comma)
+_QV = re.compile(r'(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:[.,]\d+)?)\s*(' + '|'.join(re.escape(u) for u in _UNIT_KEYS) +
+                 r')(?![A-Za-z/])', re.I)
+
+
+def number(s):
+    """'12,000' -> 12000.0, '1,25' -> 1.25, '1.5' -> 1.5."""
+    s = (s or '').strip()
+    if re.fullmatch(r'\d{1,3}(?:,\d{3})+(?:\.\d+)?', s):
+        return float(s.replace(',', ''))
+    return float(s.replace(',', '.'))
 
 
 def _unit_key(u):
@@ -223,7 +281,7 @@ def quantities(s):
         unit = m.group(2)
         if unit not in UNIT_TABLE and unit.lower() == unit:      # typed in lower case
             unit = _LOWER_PREF.get(unit, unit)
-        v, b = to_base(float(m.group(1).replace(',', '.')), unit)
+        v, b = to_base(number(m.group(1)), unit)
         if b:
             out.append((v, b, m.group(0)))
     return out

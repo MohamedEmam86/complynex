@@ -1,5 +1,5 @@
 group
-encryption;cryptography;cryptographic;information security;encrypted;cipher;AES;RSA;VPN;IPsec;TLS
+encryption;cryptography;cryptographic;information security;encrypted;cipher;encryptor;encryption device;AES;RSA;VPN;IPsec;TLS
 router;routing;network switch;packet switch;switching
 drone;unmanned aerial vehicle;UAV;UAS;unmanned aircraft;quadcopter;multicopter
 thermal camera;thermal imaging;infrared camera;thermal imager;focal plane array;infrared imaging;microbolometer
@@ -19,7 +19,7 @@ laser;lasers
 optical fibre;optical fiber;fibre optic;fiber optic
 integrated circuit;microchip;chip;microcircuit;IC
 FPGA;field programmable gate array;programmable logic device
-processor;microprocessor;CPU;GPU;microcontroller
+processor;microprocessor;CPU;microcontroller
 analogue-to-digital converter;analog-to-digital converter;ADC
 digital-to-analogue converter;digital-to-analog converter;DAC
 amplifier;power amplifier
@@ -54,11 +54,11 @@ firearm;rifle;pistol;gun
 ammunition;cartridge;rounds
 armour;armor;body armour;body armor;ballistic protection
 submarine;submersible;underwater vehicle;ROV;AUV
-satellite;spacecraft
+spacecraft;satellite bus
 robot;robotic;manipulator
 isotope;isotopes;enriched
 uranium;U-235;yellowcake
-battery;batteries;lithium-ion battery
+battery;batteries
 capacitor;capacitors
 magnet;permanent magnet
 superconducting;superconductor
@@ -707,7 +707,6 @@ rocket;rockets
 missile;missiles
 sounding rocket;research rocket
 space launch vehicle;SLV;launcher
-satellite;satellites
 spacecraft bus;satellite bus
 reentry vehicle;RV
 rocket motor;rocket motors
@@ -1448,3 +1447,11 @@ undervaluation;under-invoicing
 misdescription;false description
 licence exception;license exception
 foreign direct product;FDP rule
+GPU;graphics processing unit;AI accelerator;AI chip;datacenter GPU;total processing performance;advanced computing integrated circuit
+HBM;high bandwidth memory
+lithium battery;lithium-ion battery;li-ion battery;lithium cell
+hydrofluoric acid;hydrogen fluoride;anhydrous hydrogen fluoride;HF acid
+hydrochloric acid;hydrogen chloride
+sodium cyanide;cyanide of sodium
+network encryptor;encryption device;cryptographic equipment;VPN gateway
+thermal imaging camera;infrared camera;thermal camera;focal plane array camera
