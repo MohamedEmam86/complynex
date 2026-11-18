@@ -1,33 +1,26 @@
 # =============================================================================
 # Copyright (c) 2026 ComplyNex (complynex.online) — All Rights Reserved.
-#
-# This software is the proprietary and confidential intellectual property of
-# ComplyNex (complynex.online), owned by Mohamed Emam.
-# Unauthorized copying, reproduction, modification,
-# distribution, reverse engineering, or use of this software, in whole or in
-# part, via any medium, is strictly prohibited without prior written
-# permission from the owner.
-#
 # Owner and Author: Mohamed Emam — GRC & Compliance Expert
-# Contact: f.mohemam85@gmail.com | admin@complynex.online
-#
-# Registered deployment: complynex.online
 # ComplyNex Full Compliance Platform (CMS) — Proprietary & Confidential
 # =============================================================================
 """
-Vessel screening pages (V3): screen one ship, bulk file, history, validation of each hit, and the
-ComplyNex Vessels Database (browse / search every listed ship).
+Vessel screening pages (V3): screen one ship, bulk file (CSV / Excel, per-row results), history and open
+alerts, validation of each hit (true / false match with a mandatory reason and comment), the vessel
+whitelist (cleared ships, re-opened when the name / flag / owner changes), the PDF report, the flag-risk
+reference and the ComplyNex Vessels Database (browse / search every listed ship).
 
-Access: module permission 'vessels' (user form -> Additional modules): view = screen and browse,
-edit = record validation decisions and run bulk files. Site admins have both.
-Clients see "International approved lists"; the real list is shown to site administrators only.
+Access: users.perm_vessels (user form): view = screen and browse, edit = validate hits, bulk files and the
+whitelist. Site administrators have both. Clients see "International approved lists"; the real list is
+shown to the platform superadmin only (vessel_store.can_see_sources) - never in PDFs, exports or the API.
+The system alerts and records; it never freezes or blocks anything (actions happen outside the system).
 """
 import csv
 import io
 import json
 import logging
+from functools import wraps
 
-from flask import (Blueprint, Response, abort, flash, redirect, render_template, request, url_for)
+from flask import (Blueprint, Response, abort, flash, redirect, render_template, request, send_file, url_for)
 from flask_babel import gettext
 from flask_login import current_user, login_required
 
@@ -42,17 +35,52 @@ logger = logging.getLogger(__name__)
 vessels_bp = Blueprint('vessels', __name__, url_prefix='/screening/vessels')
 
 BULK_MAX_ROWS = 500
+BULK_OWNER_MAX = 100
+PAGE = 50
+
+# reason codes for the validation of a hit: (code, English, Arabic, decision it fits)
 REASONS = [
-    ('identifier_differs', 'IMO / MMSI differs'), ('name_only', 'Name similarity only'),
-    ('different_ship_type', 'Different ship type / tonnage / build year'),
-    ('different_owner', 'Different owner / operator'), ('number_differs', 'Different number in the name'),
-    ('identifier_matches', 'Same IMO / MMSI'), ('owner_matches', 'Owner / operator is listed'),
-    ('other', 'Other (see comment)'),
+    ('identifier_differs', 'IMO / MMSI differs', 'رقم IMO أو MMSI مختلف', 'false_match'),
+    ('name_only', 'Name similarity only', 'تشابه في الاسم فقط', 'false_match'),
+    ('number_differs', 'Different number in the name', 'رقم مختلف في الاسم', 'false_match'),
+    ('different_ship_type', 'Different ship type / tonnage / build year', 'نوع أو حمولة أو سنة بناء مختلفة', 'false_match'),
+    ('different_owner', 'Different owner / operator', 'مالك أو مشغّل مختلف', 'false_match'),
+    ('identifier_matches', 'Same IMO / MMSI', 'نفس رقم IMO أو MMSI', 'true_match'),
+    ('name_and_details_match', 'Name and ship details match', 'الاسم وبيانات السفينة متطابقة', 'true_match'),
+    ('owner_matches', 'Owner / operator is listed', 'المالك أو المشغّل مدرج', 'true_match'),
+    ('other', 'Other (see comment)', 'أخرى (انظر التعليق)', 'any'),
 ]
-REASON_CODES = {c for c, _ in REASONS}
-MEASURES = {'asset_freeze': 'Asset freeze', 'port_ban': 'Port entry ban', 'deflag': 'De-flagging',
-            'chartering_ban': 'Chartering ban', 'shipping_sanctions': 'Shipping sanctions',
-            'trade_sanctions': 'Trade sanctions', 'services_ban': 'Services ban'}
+REASON_CODES = {c for c, *_ in REASONS}
+MEASURES = {'asset_freeze': ('Asset freeze', 'تجميد أصول'), 'port_ban': ('Port entry ban', 'حظر دخول الموانئ'),
+            'deflag': ('De-flagging', 'سحب العلم'), 'chartering_ban': ('Chartering ban', 'حظر التأجير'),
+            'shipping_sanctions': ('Shipping sanctions', 'عقوبات شحن'),
+            'trade_sanctions': ('Trade sanctions', 'عقوبات تجارية'), 'services_ban': ('Services ban', 'حظر الخدمات')}
+TIERS = ('CONFIRMED', 'POTENTIAL', 'LOW', 'CLEAR', 'INCOMPLETE')
+RISK_LINE_LABELS = {
+    'foc': ('Flag of convenience', 'علم مواءمة'), 'high_risk_flag': ('High-risk flag', 'علم عالي المخاطر'),
+    'false_flag': ('False flag', 'علم مزيف'), 'flag_changes': ('Several flag changes', 'تغيير العلم عدة مرات'),
+    'renamed': ('Renamed', 'تغيير الاسم'), 'invalid_imo': ('IMO fails its check digit', 'رقم IMO غير صحيح'),
+    'owner_listed': ('Owner / operator listed', 'المالك أو المشغّل مدرج'),
+    'multi_list': ('On several lists', 'مدرجة في عدة قوائم'),
+}
+RISK_BAND_LABELS = {'high': ('High', 'مرتفع'), 'medium': ('Medium', 'متوسط'), 'low': ('Low', 'منخفض'),
+                    'none': ('None', 'لا يوجد')}
+ROLE_LABELS = {'owner': ('owner', 'مالك'), 'operator': ('operator', 'مشغّل'), 'manager': ('manager', 'مدير'),
+               'owner_operator': ('owner / operator', 'مالك / مشغّل'),
+               'former_owner_operator': ('former owner / operator', 'مالك / مشغّل سابق'),
+               'beneficial_interest': ('beneficial interest', 'مصلحة منتفعة'), 'linked': ('linked', 'مرتبط')}
+
+
+def _lang():
+    try:
+        from flask_babel import get_locale
+        return 'ar' if str(get_locale()) == 'ar' else 'en'
+    except Exception:
+        return 'en'
+
+
+def _pick(pair):
+    return pair[1] if _lang() == 'ar' else pair[0]
 
 
 def is_site_admin():
@@ -60,29 +88,67 @@ def is_site_admin():
         (hasattr(current_user, 'is_admin') and current_user.is_admin())
 
 
+def can_decide():
+    return is_site_admin() or current_user.can_edit('vessels')
+
+
+def vessels_required(level='view'):
+    """users.perm_vessels (site administrators always); otherwise refused like every other module."""
+    def deco(f):
+        guarded = permission_required('vessels', level=level)(f)
+
+        @wraps(f)
+        def wrapped(*a, **kw):
+            if getattr(current_user, 'role', '') in ('superadmin', 'it_admin'):
+                return f(*a, **kw)
+            return guarded(*a, **kw)
+        return wrapped
+    return deco
+
+
 def list_label(source):
-    """What the page shows for a list: generic for clients, the real source for site administrators."""
-    if is_site_admin():
-        return source or '-'
-    return gettext('International approved lists')
+    """What the page shows for a list: generic for every client user, the real source for the superadmin."""
+    return VS.list_label(source, _lang())
+
+
+def sources_label(h):
+    srcs = (h or {}).get('sources') or ([h.get('source')] if (h or {}).get('source') else [])
+    if VS.can_see_sources():
+        return ', '.join(srcs) or '-'
+    return VS.list_label(None, _lang())
 
 
 @vessels_bp.app_context_processor
 def _vessel_helpers():
-    return {'vessel_list_label': list_label, 'vessel_measure_label': lambda m: gettext(MEASURES.get(m, m)),
-            'vessel_reasons': REASONS,
-            'vessel_reason_label': lambda c: gettext(dict(REASONS).get(c, c))}
+    from screening import vessel_flags as VF
+    return {'vessel_list_label': list_label, 'vessel_sources_label': sources_label,
+            'vessel_can_see_sources': VS.can_see_sources,
+            'vessel_measure_label': lambda m: _pick(MEASURES.get(m, (m, m))),
+            'vessel_reasons': [(c, _pick((en, ar)), d) for c, en, ar, d in REASONS],
+            'vessel_reason_label': lambda c: _pick(next(((en, ar) for cc, en, ar, _ in REASONS if cc == c), (c, c))),
+            'vessel_text': lambda items: VE.text(items, _lang()),
+            'vessel_flag': lambda f: VF.name(f, _lang()) if f else '',
+            'vessel_risk_line': lambda c: _pick(RISK_LINE_LABELS.get(c, (c, c))),
+            'vessel_risk_band': lambda s: VS.risk_band(s),
+            'vessel_risk_band_label': lambda b: _pick(RISK_BAND_LABELS.get(b, (b, b))),
+            'vessel_role': lambda r: _pick(ROLE_LABELS.get(r, (r or '', r or '')))}
 
 
 def _conn():
     return get_db()
 
 
+def _form_query(form):
+    return {k: (form.get(k) or '').strip()[:300] for k in
+            ('name', 'imo', 'mmsi', 'call_sign', 'flag', 'flags_past', 'owner', 'vessel_type')}
+
+
 def _screen(form, conn, with_owner=True):
+    q = _form_query(form)
     return VE.screen_vessel(
-        name=form.get('name'), imo=form.get('imo'), mmsi=form.get('mmsi'), call_sign=form.get('call_sign'),
-        flag=form.get('flag'), owner=form.get('owner'), vessel_type=form.get('vessel_type'), conn=conn,
-        screen_party=VE.party_screener() if (with_owner and (form.get('owner') or '').strip()) else None)
+        name=q['name'], imo=q['imo'], mmsi=q['mmsi'], call_sign=q['call_sign'], flag=q['flag'],
+        flags_past=q['flags_past'], owner=q['owner'], vessel_type=q['vessel_type'], conn=conn,
+        screen_party=VE.party_screener() if (with_owner and q['owner']) else None)
 
 
 def _release_engine():
@@ -94,41 +160,41 @@ def _release_engine():
         pass
 
 
-def _save(conn, res, kind='single', bulk_id=None, customer_ref=None):
+def save_screening(conn, res, user_id, kind='single', bulk_id=None, customer_ref=None):
     row = conn.execute("""INSERT INTO vessel_screenings (user_id, kind, bulk_id, customer_ref, query, result, tier,
                                                          hit_count)
                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
-                       (getattr(current_user, 'id', None), kind, bulk_id, customer_ref,
+                       (user_id, kind, bulk_id, customer_ref,
                         json.dumps(res['query'], ensure_ascii=False), json.dumps(res, ensure_ascii=False, default=str),
                         res['tier'], len(res['hits']) + len(res['owner_hits']))).fetchone()
     conn.commit()
     return row['id']
 
 
-def _audit(action, details):
+def _audit(action, details, item_id=None):
     try:
         from models.audit import AuditLog
-        AuditLog.log(current_user.id, action, 'Vessel screening', None, details, request.remote_addr)
+        AuditLog.log(current_user.id, action, 'Vessel screening', item_id, details, request.remote_addr)
     except Exception:
         pass
 
 
-def candidate_fp(h):
-    return VU.fingerprint(h.get('name'), h.get('imo'), h.get('flag'),
-                          ','.join(sorted(str(o.get('name') or '') for o in h.get('owners') or [])))
+def _query_label(q):
+    return q.get('name') or ('IMO ' + q['imo'] if q.get('imo') else None) or q.get('mmsi') or \
+        q.get('call_sign') or q.get('owner') or '-'
 
 
 # --------------------------------------------------------------------------- screen one ship
 @vessels_bp.route('/', methods=['GET'])
 @login_required
-@permission_required('vessels', level='view')
+@vessels_required('view')
 def index():
     return redirect(url_for('vessels.screen'))
 
 
 @vessels_bp.route('/screen', methods=['GET', 'POST'])
 @login_required
-@permission_required('vessels', level='view')
+@vessels_required('view')
 def screen():
     if request.method == 'POST':
         f = request.form
@@ -140,8 +206,10 @@ def screen():
             res = _screen(f, conn)
         finally:
             _release_engine()
-        sid = _save(conn, res, customer_ref=(f.get('customer_ref') or '').strip()[:200] or None)
-        _audit('Vessel screened', f"{res['query'].get('name') or res['query'].get('imo')} - {res['tier']}")
+        sid = save_screening(conn, res, current_user.id,
+                             customer_ref=(f.get('customer_ref') or '').strip()[:200] or None)
+        _audit('Vessel screened', f"{_query_label(res['query'])} - {res['tier']} "
+                                  f"({len(res['hits'])} ship hits, {len(res['owner_hits'])} owner hits)", sid)
         return redirect(url_for('vessels.result', sid=sid))
     return render_template('vessels/screen.html', form={})
 
@@ -151,129 +219,265 @@ def _load_screening(sid):
     row = conn.execute('SELECT * FROM vessel_screenings WHERE id = %s', (sid,)).fetchone()
     if not row:
         abort(404)
-    if not is_site_admin() and row['user_id'] not in (None, current_user.id) and \
-            not current_user.can_edit('vessels'):
+    if not is_site_admin() and row['user_id'] != current_user.id and not current_user.can_edit('vessels'):
         abort(403)
     res = row['result'] if isinstance(row['result'], dict) else json.loads(row['result'])
     return conn, row, res
 
 
+def _decisions(conn, sid):
+    """Latest decision per hit ('ship:<listed_key>' / 'owner:<watchlist_id or name>') + full history."""
+    rows = conn.execute("""SELECT d.*, TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS decided_by_name
+                           FROM vessel_hit_decisions d LEFT JOIN users u ON u.id = d.decided_by
+                           WHERE d.screening_id = %s ORDER BY d.decided_at, d.id""", (sid,)).fetchall()
+    latest = {}
+    for d in rows:
+        latest[_hit_key(d['hit_kind'], d['listed_key'] or ('WL:%s' % d['watchlist_id']))] = d
+    return latest, rows
+
+
+def _hit_key(kind, key):
+    return f'{kind}:{key}'
+
+
+def owner_key(o):
+    return 'WL:%s' % o['watchlist_id'] if o.get('watchlist_id') else 'NAME:' + VS.party_key(o.get('name'))
+
+
 @vessels_bp.route('/result/<int:sid>')
 @login_required
-@permission_required('vessels', level='view')
+@vessels_required('view')
 def result(sid):
     conn, row, res = _load_screening(sid)
-    decisions = {d['watchlist_id']: d for d in conn.execute(
-        """SELECT d.*, TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS decided_by_name FROM vessel_hit_decisions d LEFT JOIN users u ON u.id = d.decided_by
-           WHERE d.screening_id = %s ORDER BY d.decided_at""", (sid,)).fetchall()}
-    qkey = VU.query_key(res['query'].get('name'), res['query'].get('imo'), res['query'].get('mmsi'),
-                        res['query'].get('flag'))
-    cleared = {}
-    for h in res['hits']:
-        prev = conn.execute("""SELECT d.decided_at, d.reason, TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS by_name FROM vessel_hit_decisions d
-                               LEFT JOIN users u ON u.id = d.decided_by
-                               WHERE d.query_key = %s AND d.watchlist_id = %s AND d.decision = 'false_match'
-                                 AND d.candidate_fp = %s AND d.screening_id <> %s
-                               ORDER BY d.decided_at DESC LIMIT 1""",
-                            (qkey, h['watchlist_id'], candidate_fp(h), sid)).fetchone()
-        if prev:
-            cleared[h['watchlist_id']] = prev
-    return render_template('vessels/result.html', sid=sid, row=row, res=res, decisions=decisions,
-                           cleared=cleared, can_decide=current_user.can_edit('vessels') or is_site_admin())
+    latest, history = _decisions(conn, sid)
+    for h in res.get('hits') or []:
+        h.setdefault('listed_key', VS.listed_key(h))
+    open_n = sum(1 for h in res.get('hits') or [] if _hit_key('ship', h['listed_key']) not in latest) + \
+        sum(1 for o in res.get('owner_hits') or [] if _hit_key('owner', owner_key(o)) not in latest)
+    return render_template('vessels/result.html', sid=sid, row=row, res=res, decisions=latest, history=history,
+                           open_n=open_n, can_decide=can_decide(), owner_key=owner_key)
 
 
 @vessels_bp.route('/result/<int:sid>/decide', methods=['POST'])
 @login_required
-@permission_required('vessels', level='edit')
+@vessels_required('edit')
 def decide(sid):
     conn, row, res = _load_screening(sid)
-    try:
-        wid = int(request.form.get('watchlist_id') or 0)
-    except ValueError:
-        wid = 0
-    hit = next((h for h in res['hits'] if h['watchlist_id'] == wid), None)
+    kind = 'owner' if request.form.get('hit_kind') == 'owner' else 'ship'
+    key = (request.form.get('hit_key') or '').strip()
+    if kind == 'ship':
+        hit = next((h for h in res.get('hits') or [] if (h.get('listed_key') or VS.listed_key(h)) == key), None)
+    else:
+        hit = next((o for o in res.get('owner_hits') or [] if owner_key(o) == key), None)
     decision = request.form.get('decision')
     reason = request.form.get('reason')
     comment = (request.form.get('comment') or '').strip()
-    if not hit or decision not in ('true_match', 'false_match') or reason not in REASON_CODES:
-        flash(gettext('Choose the hit, the decision and a reason.'), 'danger')
+    fits = next((d for c, _, _, d in REASONS if c == reason), None)
+    if not hit or decision not in ('true_match', 'false_match') or reason not in REASON_CODES or \
+            fits not in ('any', decision):
+        flash(gettext('Choose the decision and a reason that fits it.'), 'danger')
         return redirect(url_for('vessels.result', sid=sid))
     if len(comment) < 5:
-        flash(gettext('A comment explaining the decision is required.'), 'danger')
+        flash(gettext('A comment explaining the decision is required (at least 5 characters).'), 'danger')
         return redirect(url_for('vessels.result', sid=sid))
     q = res['query']
-    conn.execute("""INSERT INTO vessel_hit_decisions (screening_id, watchlist_id, decision, reason, comment, query_key,
-                                                      candidate_fp, decided_by)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-                 (sid, wid, decision, reason, comment[:4000], VU.query_key(q.get('name'), q.get('imo'),
-                                                                            q.get('mmsi'), q.get('flag')),
-                  candidate_fp(hit), current_user.id))
+    qkey = res.get('query_key') or VU.query_key(q.get('name'), q.get('imo'), q.get('mmsi'), q.get('flag'))
+    qfp = res.get('query_fp') or VS.query_fingerprint(q)
+    lfp = hit.get('listed_fp') if kind == 'ship' else VU.fingerprint(hit.get('name'))
+    d = conn.execute("""INSERT INTO vessel_hit_decisions (screening_id, watchlist_id, decision, reason, comment, query_key,
+                                                          candidate_fp, decided_by, listed_key, query_fp, hit_kind)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                     (sid, hit.get('watchlist_id'), decision, reason, comment[:4000], qkey, lfp, current_user.id,
+                      key[:40], qfp, kind)).fetchone()
+    wl_note = ''
+    if kind == 'ship' and decision == 'false_match' and request.form.get('whitelist') == '1' and lfp:
+        conn.execute("""UPDATE vessel_whitelist SET status = 'revoked', revoked_by = %s, revoked_at = now(),
+                               revoke_reason = 'replaced by a new clearance'
+                        WHERE query_key = %s AND listed_key = %s AND status IN ('active', 'reopened')""",
+                     (current_user.id, qkey, key))
+        conn.execute("""INSERT INTO vessel_whitelist (query_key, listed_key, watchlist_id, listed_name, listed_fp,
+                                                      query_fp, query_label, decision_id, reason, comment, created_by)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                     (qkey, key, hit.get('watchlist_id'), hit.get('name'), lfp, qfp, _query_label(q), d['id'],
+                      reason, comment[:4000], current_user.id))
+        wl_note = ' + whitelist'
+    elif kind == 'ship' and decision == 'true_match':
+        # a true match ends any clearance of the same pair
+        conn.execute("""UPDATE vessel_whitelist SET status = 'revoked', revoked_by = %s, revoked_at = now(),
+                               revoke_reason = 'validated as a true match'
+                        WHERE query_key = %s AND listed_key = %s AND status IN ('active', 'reopened')""",
+                     (current_user.id, qkey, key))
     conn.commit()
-    _audit('Vessel hit validated', f'screening {sid}, listed ship {hit.get("name")}: {decision} ({reason})')
+    _audit('Vessel hit validated', f'screening {sid}: {kind} hit "{hit.get("name")}" ({key}) - {decision}, '
+                                   f'reason {reason}{wl_note}: {comment[:300]}', sid)
     flash(gettext('Decision recorded.'), 'success')
     return redirect(url_for('vessels.result', sid=sid))
 
 
+@vessels_bp.route('/result/<int:sid>/pdf')
+@login_required
+@vessels_required('view')
+def result_pdf(sid):
+    conn, row, res = _load_screening(sid)
+    latest, history = _decisions(conn, sid)
+    for h in res.get('hits') or []:
+        h.setdefault('listed_key', VS.listed_key(h))
+    from datetime import datetime
+    html = render_template('vessels/report_pdf.html', sid=sid, row=row, res=res, decisions=latest,
+                           history=history, owner_key=owner_key, generated_at=datetime.now(),
+                           generated_by=f'{current_user.first_name or ""} {current_user.last_name or ""}'.strip(),
+                           generic_label=VS.list_label(None, _lang(), user=False))
+    try:
+        from weasyprint import HTML
+        pdf = HTML(string=html, base_url=request.host_url).write_pdf()
+    except Exception as e:
+        logger.error(f'[VESSELS] PDF failed: {e}')
+        flash(gettext('The PDF could not be produced.'), 'danger')
+        return redirect(url_for('vessels.result', sid=sid))
+    _audit('Vessel screening PDF', f'screening {sid}', sid)
+    return send_file(io.BytesIO(pdf), mimetype='application/pdf', as_attachment=True,
+                     download_name=f'vessel_screening_{sid}.pdf')
+
+
 @vessels_bp.route('/history')
 @login_required
-@permission_required('vessels', level='view')
+@vessels_required('view')
 def history():
     conn = _conn()
-    if is_site_admin() or current_user.can_edit('vessels'):
-        rows = conn.execute("""SELECT s.id, s.kind, s.query, s.tier, s.hit_count, s.created_at, s.customer_ref,
-                                      TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS user_name,
-                                      (SELECT count(*) FROM vessel_hit_decisions d WHERE d.screening_id = s.id) AS decided
-                               FROM vessel_screenings s LEFT JOIN users u ON u.id = s.user_id
-                               ORDER BY s.id DESC LIMIT 300""").fetchall()
-    else:
-        rows = conn.execute("""SELECT s.id, s.kind, s.query, s.tier, s.hit_count, s.created_at, s.customer_ref,
-                                      TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS user_name,
-                                      (SELECT count(*) FROM vessel_hit_decisions d WHERE d.screening_id = s.id) AS decided
-                               FROM vessel_screenings s LEFT JOIN users u ON u.id = s.user_id
-                               WHERE s.user_id = %s ORDER BY s.id DESC LIMIT 300""", (current_user.id,)).fetchall()
+    status = request.args.get('status') or ''
+    tier = request.args.get('tier') or ''
+    where, params = [], []
+    if not (is_site_admin() or current_user.can_edit('vessels')):
+        where.append('s.user_id = %s')
+        params.append(current_user.id)
+    if tier in TIERS:
+        where.append('s.tier = %s')
+        params.append(tier)
+    w = ('WHERE ' + ' AND '.join(where)) if where else ''
+    rows = conn.execute(f"""SELECT s.id, s.kind, s.query, s.tier, s.hit_count, s.created_at, s.customer_ref, s.bulk_id,
+                                   TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS user_name,
+                                   (SELECT count(DISTINCT d.hit_kind || ':' || coalesce(d.listed_key, d.watchlist_id::text))
+                                      FROM vessel_hit_decisions d WHERE d.screening_id = s.id) AS decided
+                            FROM vessel_screenings s LEFT JOIN users u ON u.id = s.user_id {w}
+                            ORDER BY s.id DESC LIMIT 500""", params).fetchall()
     items = []
     for r in rows:
         q = r['query'] if isinstance(r['query'], dict) else json.loads(r['query'] or '{}')
-        items.append(dict(r, q=q))
-    return render_template('vessels/history.html', items=items)
+        it = dict(r, q=q, open=max(0, int(r['hit_count'] or 0) - int(r['decided'] or 0)))
+        if status == 'open' and not it['open']:
+            continue
+        items.append(it)
+    return render_template('vessels/history.html', items=items, status=status, tier=tier, tiers=TIERS)
+
+
+# --------------------------------------------------------------------------- whitelist
+@vessels_bp.route('/whitelist')
+@login_required
+@vessels_required('edit')
+def whitelist():
+    status = request.args.get('status') or ''
+    params, w = [], ''
+    if status in ('active', 'reopened', 'revoked'):
+        w = 'WHERE w.status = %s'
+        params.append(status)
+    rows = _conn().execute(f"""SELECT w.*, TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS by_name
+                               FROM vessel_whitelist w LEFT JOIN users u ON u.id = w.created_by {w}
+                               ORDER BY (w.status = 'reopened') DESC, w.created_at DESC LIMIT 500""", params).fetchall()
+    return render_template('vessels/whitelist.html', items=rows, status=status)
+
+
+@vessels_bp.route('/whitelist/<int:wid>/revoke', methods=['POST'])
+@login_required
+@vessels_required('edit')
+def whitelist_revoke(wid):
+    reason = (request.form.get('reason') or '').strip()
+    if len(reason) < 5:
+        flash(gettext('A reason is required (at least 5 characters).'), 'danger')
+        return redirect(url_for('vessels.whitelist'))
+    conn = _conn()
+    r = conn.execute("""UPDATE vessel_whitelist SET status = 'revoked', revoked_by = %s, revoked_at = now(),
+                               revoke_reason = %s WHERE id = %s AND status <> 'revoked' RETURNING query_label, listed_name""",
+                     (current_user.id, reason[:1000], wid)).fetchone()
+    conn.commit()
+    if r:
+        _audit('Vessel whitelist revoked', f'entry {wid}: {r["query_label"]} / {r["listed_name"]}: {reason[:300]}', wid)
+        flash(gettext('The clearance was revoked: the hit will alert again.'), 'success')
+    return redirect(url_for('vessels.whitelist'))
 
 
 # --------------------------------------------------------------------------- bulk
-BULK_COLUMNS = ('name', 'imo', 'mmsi', 'call_sign', 'flag', 'owner', 'vessel_type', 'reference')
+BULK_COLUMNS = ('reference', 'name', 'imo', 'mmsi', 'call_sign', 'flag', 'flags_past', 'owner', 'vessel_type')
+_HEAD_ALIASES = {'vessel name': 'name', 'ship name': 'name', 'vessel': 'name', 'ship': 'name', 'imo number': 'imo',
+                 'imo no': 'imo', 'call sign': 'call_sign', 'callsign': 'call_sign', 'flag state': 'flag',
+                 'previous flags': 'flags_past', 'former flags': 'flags_past', 'operator': 'owner',
+                 'owner / operator': 'owner', 'type': 'vessel_type', 'vessel type': 'vessel_type', 'ref': 'reference',
+                 'customer_ref': 'reference', 'اسم السفينة': 'name', 'السفينة': 'name', 'رقم imo': 'imo',
+                 'العلم': 'flag', 'المالك': 'owner', 'المرجع': 'reference', 'نداء الاتصال': 'call_sign',
+                 'نوع السفينة': 'vessel_type'}
+
+
+def _head(h):
+    k = str(h or '').strip().lower().replace('﻿', '')
+    return _HEAD_ALIASES.get(k, k.replace(' ', '_'))
+
+
+def _template_rows():
+    return [list(BULK_COLUMNS), ['REF-001', 'OCEAN GLORY', '9074729', '', '', 'Panama', 'Togo; Comoros', '',
+                                 'Crude Oil Tanker'],
+            ['REF-002', 'م/ن النور 2', '', '', '', 'مصر', '', '', '']]
 
 
 @vessels_bp.route('/bulk/template')
 @login_required
-@permission_required('vessels', level='view')
+@vessels_required('view')
 def bulk_template():
+    if request.args.get('format') == 'xlsx':
+        import openpyxl
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'vessels'
+        for r in _template_rows():
+            ws.append(r)
+        out = io.BytesIO()
+        wb.save(out)
+        out.seek(0)
+        return send_file(out, as_attachment=True, download_name='vessel_screening_template.xlsx',
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     buf = io.StringIO()
-    w = csv.writer(buf)
-    w.writerow(BULK_COLUMNS)
-    w.writerow(['OCEAN GLORY', '9074729', '', '', 'Panama', '', 'Crude Oil Tanker', 'REF-001'])
+    csv.writer(buf).writerows(_template_rows())
     return Response('﻿' + buf.getvalue(), mimetype='text/csv',
                     headers={'Content-Disposition': 'attachment; filename=vessel_screening_template.csv'})
 
 
-def _read_rows(fs):
+def read_bulk_rows(fs):
+    """[(row_no, {column: value})] of a CSV (UTF-8) or .xlsx file; header names in English or Arabic."""
     name = (fs.filename or '').lower()
     rows = []
     if name.endswith('.xlsx'):
         import openpyxl
         ws = openpyxl.load_workbook(fs, read_only=True, data_only=True).active
         it = ws.iter_rows(values_only=True)
-        head = [str(h or '').strip().lower() for h in next(it, [])]
-        for r in it:
-            rows.append({head[i]: ('' if v is None else str(v).strip()) for i, v in enumerate(r) if i < len(head)})
+        head = [_head(h) for h in next(it, [])]
+        for n, r in enumerate(it, 2):
+            rows.append((n, {head[i]: ('' if v is None else str(v).strip()) for i, v in enumerate(r) if i < len(head)}))
+    elif name.endswith('.csv') or name.endswith('.txt'):
+        raw = fs.read()
+        try:
+            text = raw.decode('utf-8-sig')
+        except UnicodeDecodeError:
+            text = raw.decode('cp1256', errors='replace')
+        rdr = csv.reader(io.StringIO(text))
+        head = [_head(h) for h in next(rdr, [])]
+        for n, r in enumerate(rdr, 2):
+            rows.append((n, {head[i]: str(v or '').strip() for i, v in enumerate(r) if i < len(head)}))
     else:
-        text = fs.read().decode('utf-8-sig', errors='replace')
-        for r in csv.DictReader(io.StringIO(text)):
-            rows.append({str(k or '').strip().lower(): str(v or '').strip() for k, v in r.items()})
-    return [r for r in rows if any(r.get(c) for c in ('name', 'imo', 'mmsi', 'call_sign', 'owner'))]
+        raise ValueError('unsupported file type')
+    return [(n, r) for n, r in rows if any((r.get(c) or '').strip() for c in BULK_COLUMNS)]
 
 
 @vessels_bp.route('/bulk', methods=['GET', 'POST'])
 @login_required
-@permission_required('vessels', level='edit')
+@vessels_required('edit')
 def bulk():
     if request.method == 'POST':
         fs = request.files.get('file')
@@ -281,7 +485,7 @@ def bulk():
             flash(gettext('Choose a CSV or Excel file.'), 'warning')
             return redirect(url_for('vessels.bulk'))
         try:
-            rows = _read_rows(fs)
+            rows = read_bulk_rows(fs)
         except Exception as e:
             logger.warning(f'[VESSELS] bulk file unreadable: {e}')
             flash(gettext('The file could not be read. Use the template (CSV UTF-8 or .xlsx).'), 'danger')
@@ -297,24 +501,29 @@ def bulk():
                               RETURNING id""", (current_user.id, fs.filename[:200], len(rows))).fetchone()
         conn.commit()
         hit_rows = 0
-        # the owner layer runs the full person / entity engine: kept for files of up to 100 rows
-        with_owner = len(rows) <= 100
-        if not with_owner and any((r.get('owner') or '').strip() for r in rows):
-            flash(gettext('Owners were not screened (file over 100 rows): screen them with bulk name screening.'),
-                  'warning')
+        # the owner layer runs the full person / entity engine: kept for files of up to BULK_OWNER_MAX rows
+        with_owner = len(rows) <= BULK_OWNER_MAX
+        if not with_owner and any((r.get('owner') or '').strip() for _, r in rows):
+            flash(gettext('Owners were not screened (file over %(n)s rows): screen them with bulk name screening.',
+                          n=BULK_OWNER_MAX), 'warning')
         try:
-            for r in rows:
-                res = _screen(r, conn, with_owner=with_owner)
+            for n, r in rows:
+                if not any((r.get(c) or '').strip() for c in ('name', 'imo', 'mmsi', 'call_sign', 'owner')):
+                    res = VE.screen_vessel(conn=conn)        # INCOMPLETE: nothing to screen on this row
+                else:
+                    res = _screen(r, conn, with_owner=with_owner)
+                res['row_no'] = n
                 if res['hits'] or res['owner_hits']:
                     hit_rows += 1
-                _save(conn, res, kind='bulk', bulk_id=job['id'], customer_ref=(r.get('reference') or '')[:200] or None)
+                save_screening(conn, res, current_user.id, kind='bulk', bulk_id=job['id'],
+                               customer_ref=(r.get('reference') or '')[:200] or None)
         finally:
             _release_engine()
         conn.execute('UPDATE vessel_bulk_jobs SET hit_rows = %s WHERE id = %s', (hit_rows, job['id']))
         conn.commit()
-        _audit('Vessel bulk screening', f'{fs.filename}: {len(rows)} rows, {hit_rows} with hits')
+        _audit('Vessel bulk screening', f'{fs.filename}: {len(rows)} rows, {hit_rows} with hits', job['id'])
         return redirect(url_for('vessels.bulk_result', job_id=job['id']))
-    return render_template('vessels/bulk.html', max_rows=BULK_MAX_ROWS)
+    return render_template('vessels/bulk.html', max_rows=BULK_MAX_ROWS, owner_max=BULK_OWNER_MAX)
 
 
 def _bulk_rows(job_id):
@@ -324,158 +533,336 @@ def _bulk_rows(job_id):
         abort(404)
     if not is_site_admin() and job['user_id'] != current_user.id and not current_user.can_edit('vessels'):
         abort(403)
-    rows = conn.execute('SELECT id, query, result, tier, customer_ref FROM vessel_screenings WHERE bulk_id = %s '
-                        'ORDER BY id', (job_id,)).fetchall()
+    rows = conn.execute("""SELECT s.id, s.query, s.result, s.tier, s.customer_ref,
+                                  (SELECT count(DISTINCT d.hit_kind || ':' || coalesce(d.listed_key, d.watchlist_id::text))
+                                     FROM vessel_hit_decisions d WHERE d.screening_id = s.id) AS decided
+                           FROM vessel_screenings s WHERE s.bulk_id = %s ORDER BY s.id""", (job_id,)).fetchall()
     out = []
     for r in rows:
         res = r['result'] if isinstance(r['result'], dict) else json.loads(r['result'])
-        out.append({'id': r['id'], 'ref': r['customer_ref'], 'q': res['query'], 'tier': r['tier'], 'res': res})
+        out.append({'id': r['id'], 'ref': r['customer_ref'], 'q': res['query'], 'tier': r['tier'], 'res': res,
+                    'row_no': res.get('row_no'), 'decided': r['decided']})
     return job, out
 
 
 @vessels_bp.route('/bulk/<int:job_id>')
 @login_required
-@permission_required('vessels', level='view')
+@vessels_required('view')
 def bulk_result(job_id):
     job, rows = _bulk_rows(job_id)
-    return render_template('vessels/bulk_result.html', job=job, rows=rows)
+    counts = {t: sum(1 for r in rows if r['tier'] == t) for t in TIERS}
+    return render_template('vessels/bulk_result.html', job=job, rows=rows, counts=counts)
+
+
+def _export_rows(rows, lang='en'):
+    """Bulk results as rows; the list behind a hit is never named (generic label)."""
+    label = VS.list_label(None, lang, user=False)
+    head = ['row', 'reference', 'name', 'imo', 'mmsi', 'flag', 'owner', 'result', 'score', 'top_hit', 'top_hit_imo',
+            'top_hit_flag', 'measures', 'lists', 'explanation', 'owner_hit', 'risk_score', 'risk', 'warnings',
+            'screening_id']
+    out = [head]
+    for r in rows:
+        res = r['res']
+        top = (res.get('hits') or [{}])[0]
+        oh = (res.get('owner_hits') or [{}])[0]
+        out.append([r.get('row_no') or '', r['ref'] or '', r['q'].get('name') or '', r['q'].get('imo') or '',
+                    r['q'].get('mmsi') or '', r['q'].get('flag') or '', r['q'].get('owner') or '', r['tier'],
+                    res.get('score'), top.get('name') or '', top.get('imo') or '', top.get('flag') or '',
+                    ', '.join(top.get('measures') or []), label if (res.get('hits') or res.get('owner_hits')) else '',
+                    '; '.join(VE.text(top.get('explanation'), lang)), oh.get('name') or '',
+                    res['risk']['score'], '; '.join(VE.text(res['risk']['lines'], lang)),
+                    '; '.join(VE.text(res.get('warnings'), lang)), r['id']])
+    return out
 
 
 @vessels_bp.route('/bulk/<int:job_id>.csv')
 @login_required
-@permission_required('vessels', level='view')
+@vessels_required('view')
 def bulk_csv(job_id):
     job, rows = _bulk_rows(job_id)
     buf = io.StringIO()
-    w = csv.writer(buf)
-    w.writerow(['reference', 'name', 'imo', 'mmsi', 'flag', 'owner', 'result', 'score', 'top_hit', 'top_hit_imo',
-                'explanation', 'risk_score', 'risk', 'screening_id'])
-    for r in rows:
-        top = (r['res']['hits'] or [{}])[0]
-        w.writerow([r['ref'] or '', r['q'].get('name') or '', r['q'].get('imo') or '', r['q'].get('mmsi') or '',
-                    r['q'].get('flag') or '', r['q'].get('owner') or '', r['tier'], r['res']['score'],
-                    top.get('name') or '', top.get('imo') or '', '; '.join(top.get('explanation') or []),
-                    r['res']['risk']['score'], '; '.join(r['res']['risk']['lines']), r['id']])
+    csv.writer(buf).writerows(_export_rows(rows, _lang()))
     return Response('﻿' + buf.getvalue(), mimetype='text/csv',
                     headers={'Content-Disposition': f'attachment; filename=vessel_bulk_{job_id}.csv'})
 
 
+@vessels_bp.route('/bulk/<int:job_id>.xlsx')
+@login_required
+@vessels_required('view')
+def bulk_xlsx(job_id):
+    job, rows = _bulk_rows(job_id)
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'results'
+    for r in _export_rows(rows, _lang()):
+        ws.append(r)
+    out = io.BytesIO()
+    wb.save(out)
+    out.seek(0)
+    return send_file(out, as_attachment=True, download_name=f'vessel_bulk_{job_id}.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
 # --------------------------------------------------------------------------- Vessels Database
-PAGE = 50
+LIST_TYPES = ('SANCTIONS', 'DEBARMENT', 'EXPORT_CONTROL', 'WATCHLIST')
+
+
+def _db_filters(conn):
+    a = request.args
+    f = {'q': (a.get('q') or '').strip()[:200], 'flag': (a.get('flag') or '').strip()[:80],
+         'type': (a.get('type') or '').strip()[:80], 'measure': (a.get('measure') or '').strip()[:40],
+         'list_type': (a.get('list_type') or '').strip()[:40], 'risk': (a.get('risk') or '').strip()[:10],
+         'source': (a.get('source') or '').strip()[:40] if VS.can_see_sources() else ''}
+    try:
+        f['page'] = max(1, int(a.get('page') or 1))
+    except ValueError:
+        f['page'] = 1
+    return f
 
 
 @vessels_bp.route('/database')
 @login_required
-@permission_required('vessels', level='view')
+@vessels_required('view')
 def database():
+    """One row per ship (the same IMO on several lists is one ship), searchable and filterable."""
     conn = _conn()
-    q = (request.args.get('q') or '').strip()
-    flag = (request.args.get('flag') or '').strip()
-    vtype = (request.args.get('type') or '').strip()
-    measure = (request.args.get('measure') or '').strip()
-    try:
-        page = max(1, int(request.args.get('page') or 1))
-    except ValueError:
-        page = 1
+    f = _db_filters(conn)
     inc_os = VS.include_opensanctions(conn)
     where = ["w.is_active = 1", "w.entity_type = 'VESSEL'"]
     params = []
     if not inc_os:
         where.append("w.source <> ALL(%s)")
         params.append(list(VS.OPENSANCTIONS_SOURCES))
-    ranked_ids = None
-    if q:
-        d = VU.digits_only(q)
-        if d and len(d) in (7, 9) and len(d) >= len(q.replace(' ', '')) - 4:
+    ranked = None
+    if f['q']:
+        d = VU.digits_only(f['q'])
+        if d and len(d) in (7, 9) and len(d) >= len(f['q'].replace(' ', '')) - 4:
             kind = 'IMO' if len(d) == 7 else 'MMSI'
-            where.append("w.id IN (SELECT watchlist_id FROM vessel_identifier WHERE kind = %s AND value_norm = %s)")
+            where.append("p.group_key IN (SELECT p2.group_key FROM vessel_identifier i JOIN vessel_profile p2 "
+                         "ON p2.watchlist_id = i.watchlist_id WHERE i.kind = %s AND i.value_norm = %s)")
             params += [kind, d]
         else:
             cands = VS.load_candidates(conn)
-            scored = []
-            for c in VE._prefilter(q, cands, limit=200):
-                s, nm, _ = VE.best_name(q, c['names'])
-                if s >= 65:
-                    scored.append((s, c['watchlist_id']))
-            scored.sort(reverse=True)
-            ranked_ids = [w for _, w in scored[:500]]
-            where.append('w.id = ANY(%s)')
-            params.append(ranked_ids or [0])
-    if flag:
-        where.append('lower(p.current_flag) = lower(%s)')
-        params.append(flag)
-    if vtype:
+            scored = {}
+            for c in VE._prefilter(f['q'], cands, limit=200):
+                s, nm, _ = VE.best_name(f['q'], c['names'])
+                if s >= 70:
+                    scored[c['group_key']] = max(scored.get(c['group_key'], 0), s)
+            ranked = sorted(scored, key=lambda g: -scored[g])[:300]
+            where.append('p.group_key = ANY(%s)')
+            params.append(ranked or ['-'])
+    if f['flag']:
+        where.append('p.group_key IN (SELECT group_key FROM vessel_profile WHERE current_flag = %s)')
+        params.append(VU.clean_flag(f['flag']) or f['flag'])
+    if f['type']:
         where.append('p.vessel_type ILIKE %s')
-        params.append('%' + vtype.replace('%', '') + '%')
-    if measure:
+        params.append('%' + f['type'].replace('%', '').replace('_', ' ') + '%')
+    if f['measure']:
         where.append('p.measures LIKE %s')
-        params.append('%"' + measure.replace('%', '').replace('"', '') + '"%')
+        params.append('%"' + f['measure'].replace('%', '').replace('"', '') + '"%')
+    if f['list_type'] in LIST_TYPES:
+        where.append('upper(w.list_type) = %s')
+        params.append(f['list_type'])
+    if f['source']:
+        where.append('w.source = %s')
+        params.append(f['source'])
     w_sql = ' AND '.join(where)
-    total = conn.execute(f"""SELECT count(*) AS n FROM screening_watchlist w JOIN vessel_profile p
-                             ON p.watchlist_id = w.id WHERE {w_sql}""", params).fetchone()['n']
-    rows = conn.execute(f"""SELECT w.id, w.full_name, w.source, p.imo, p.imo_valid, p.mmsi, p.vessel_type,
-                                   p.current_flag, p.year_built, p.measures, p.flag_history, p.previous_names
-                            FROM screening_watchlist w JOIN vessel_profile p ON p.watchlist_id = w.id
-                            WHERE {w_sql} ORDER BY w.full_name LIMIT %s OFFSET %s""",
-                        params + [PAGE if ranked_ids is None else 500, 0 if ranked_ids is not None else (page - 1) * PAGE]
-                        ).fetchall()
-    items = [dict(r, measures=VS._j(r['measures'], []), flag_history=VS._j(r['flag_history'], []),
-                  previous_names=VS._j(r['previous_names'], [])) for r in rows]
-    if ranked_ids is not None:
-        order = {w: i for i, w in enumerate(ranked_ids)}
-        items.sort(key=lambda r: order.get(r['id'], 1e9))
-        total = len(items)
+    having = ''
+    if f['risk'] == 'high':
+        having = 'HAVING max(p.risk_score) >= 50'
+    elif f['risk'] == 'medium':
+        having = 'HAVING max(p.risk_score) >= 25 AND max(p.risk_score) < 50'
+    elif f['risk'] == 'low':
+        having = 'HAVING max(p.risk_score) < 25'
+    grouped = f"""SELECT p.group_key, min(w.id) AS id, count(*) AS records, count(DISTINCT w.source) AS lists,
+                         max(p.risk_score) AS risk_score
+                  FROM screening_watchlist w JOIN vessel_profile p ON p.watchlist_id = w.id
+                  WHERE {w_sql} GROUP BY p.group_key {having}"""
+    total = conn.execute(f'SELECT count(*) AS n FROM ({grouped}) g', params).fetchone()['n']
+    if ranked is not None:
+        rows = conn.execute(grouped, params).fetchall()
+        order = {g: i for i, g in enumerate(ranked)}
+        rows = sorted(rows, key=lambda r: order.get(r['group_key'], 1e9))
+        rows = rows[(f['page'] - 1) * PAGE: f['page'] * PAGE]
+    else:
+        rows = conn.execute(f"""SELECT g.* FROM ({grouped}) g JOIN screening_watchlist w0 ON w0.id = g.id
+                                ORDER BY upper(w0.full_name) LIMIT %s OFFSET %s""",
+                            params + [PAGE, (f['page'] - 1) * PAGE]).fetchall()
+    items = _ship_views(conn, [r['group_key'] for r in rows], {r['group_key']: r for r in rows})
     stats = _db_stats(conn, inc_os)
-    return render_template('vessels/database.html', items=items, total=total, page=page, page_size=PAGE,
-                           q=q, flag=flag, vtype=vtype, measure=measure, stats=stats, ranked=ranked_ids is not None)
+    return render_template('vessels/database.html', items=items, total=total, page=f['page'], page_size=PAGE,
+                           f=f, stats=stats, ranked=ranked is not None, list_types=LIST_TYPES)
+
+
+def _ship_views(conn, group_keys, meta):
+    """One merged view per ship group (all its list records)."""
+    if not group_keys:
+        return []
+    cur = conn.execute("""SELECT w.id, w.full_name, w.source, w.list_type, w.aliases, p.*
+                          FROM screening_watchlist w JOIN vessel_profile p ON p.watchlist_id = w.id
+                          WHERE w.is_active = 1 AND p.group_key = ANY(%s)""", (list(group_keys),)).fetchall()
+    by = {}
+    for r in cur:
+        by.setdefault(r['group_key'], []).append(r)
+    out = []
+    for gk in group_keys:
+        recs = sorted(by.get(gk) or [], key=lambda r: (r['source'] in VS.OPENSANCTIONS_SOURCES, r['id']))
+        if not recs:
+            continue
+        base = recs[0]
+        v = {'id': base['id'], 'group_key': gk, 'name': base['full_name'],
+             'imo': next((r['imo'] for r in recs if r['imo']), None),
+             'imo_valid': next((r['imo_valid'] for r in recs if r['imo']), None),
+             'mmsi': next((r['mmsi'] for r in recs if r['mmsi']), None),
+             'vessel_type': next((r['vessel_type'] for r in recs if r['vessel_type']), None),
+             'flag': next((r['current_flag'] for r in recs if r['current_flag']), None),
+             'year_built': next((r['year_built'] for r in recs if r['year_built']), None),
+             'flag_history': list(dict.fromkeys(x for r in recs for x in VS._j(r['flag_history'], []) or [])),
+             'previous_names': list(dict.fromkeys(x for r in recs for x in VS._j(r['previous_names'], []) or [])),
+             'measures': list(dict.fromkeys(x for r in recs for x in VS._j(r['measures'], []) or [])),
+             'sources': sorted({r['source'] for r in recs}),
+             'risk_score': max(int(r['risk_score'] or 0) for r in recs),
+             'risk_lines': list(dict.fromkeys(x for r in recs for x in VS._j(r['risk_lines'], []) or [])),
+             'records': len(recs)}
+        out.append(v)
+    return out
 
 
 def _db_stats(conn, inc_os):
     excl = '' if inc_os else "AND w.source <> ALL(%s)"
     p = [] if inc_os else [list(VS.OPENSANCTIONS_SOURCES)]
     base = f"FROM screening_watchlist w JOIN vessel_profile p ON p.watchlist_id = w.id WHERE w.is_active = 1 {excl}"
-    tot = conn.execute(f"SELECT count(*) AS n, count(p.imo) AS with_imo {base}", p).fetchone()
-    flags = conn.execute(f"""SELECT p.current_flag AS flag, count(*) AS n {base} AND p.current_flag IS NOT NULL
-                             GROUP BY 1 ORDER BY 2 DESC LIMIT 12""", p).fetchall()
-    types = conn.execute(f"""SELECT p.vessel_type AS type, count(*) AS n {base} AND p.vessel_type IS NOT NULL
-                             GROUP BY 1 ORDER BY 2 DESC LIMIT 12""", p).fetchall()
+    tot = conn.execute(f"""SELECT count(DISTINCT p.group_key) AS ships, count(*) AS records,
+                                  count(DISTINCT p.group_key) FILTER (WHERE p.group_key LIKE 'IMO:%%') AS with_imo,
+                                  count(DISTINCT p.group_key) FILTER (WHERE p.risk_score >= 50) AS high_risk {base}""",
+                       p).fetchone()
+    flags = conn.execute(f"""SELECT p.current_flag AS flag, count(DISTINCT p.group_key) AS n {base}
+                             AND p.current_flag IS NOT NULL GROUP BY 1 ORDER BY 2 DESC""", p).fetchall()
+    types = conn.execute(f"""SELECT p.vessel_type AS type, count(DISTINCT p.group_key) AS n {base}
+                             AND p.vessel_type IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 12""", p).fetchall()
     meas = {}
-    for r in conn.execute(f"SELECT p.measures {base}", p).fetchall():
+    for r in conn.execute(f"SELECT p.group_key, p.measures {base}", p).fetchall():
         for m in VS._j(r['measures'], []) or []:
-            meas[m] = meas.get(m, 0) + 1
-    return {'total': tot['n'], 'with_imo': tot['with_imo'], 'flags': flags, 'types': types,
-            'measures': sorted(meas.items(), key=lambda x: -x[1])}
+            meas.setdefault(m, set()).add(r['group_key'])
+    sources = []
+    if VS.can_see_sources():
+        sources = conn.execute(f"SELECT w.source, count(*) AS n {base} GROUP BY 1 ORDER BY 2 DESC", p).fetchall()
+    return {'ships': tot['ships'], 'records': tot['records'], 'with_imo': tot['with_imo'],
+            'high_risk': tot['high_risk'], 'flags': flags, 'types': types,
+            'measures': sorted(((k, len(v)) for k, v in meas.items()), key=lambda x: -x[1]), 'sources': sources}
 
 
 @vessels_bp.route('/database/<int:wid>')
 @login_required
-@permission_required('vessels', level='view')
+@vessels_required('view')
 def profile(wid):
+    """A ship's profile: every list record of the same IMO merged; the records themselves (and their real
+    sources) for the superadmin only."""
     conn = _conn()
-    row = conn.execute("""SELECT w.id, w.full_name, w.aliases, w.full_name_arabic, w.source, w.source_id,
-                                 w.is_active, w.list_type, w.first_seen, w.last_seen, w.legal_status, w.properties,
-                                 w.details, p.*
-                          FROM screening_watchlist w JOIN vessel_profile p ON p.watchlist_id = w.id
-                          WHERE w.id = %s""", (wid,)).fetchone()
+    row = conn.execute("""SELECT p.group_key, w.source FROM screening_watchlist w JOIN vessel_profile p
+                          ON p.watchlist_id = w.id WHERE w.id = %s""", (wid,)).fetchone()
     if not row:
         abort(404)
-    if not VS.include_opensanctions(conn) and row['source'] in VS.OPENSANCTIONS_SOURCES:
+    inc_os = VS.include_opensanctions(conn)
+    recs = conn.execute("""SELECT w.id, w.full_name, w.aliases, w.full_name_arabic, w.source, w.source_id, w.is_active,
+                                  w.list_type, w.first_seen, w.properties, w.details, p.*
+                           FROM screening_watchlist w JOIN vessel_profile p ON p.watchlist_id = w.id
+                           WHERE p.group_key = %s ORDER BY (w.source = ANY(%s)), w.id""",
+                        (row['group_key'], list(VS.OPENSANCTIONS_SOURCES))).fetchall()
+    recs = [r for r in recs if inc_os or r['source'] not in VS.OPENSANCTIONS_SOURCES]
+    if not recs:
         abort(404)
-    idents = conn.execute("""SELECT kind, value_norm, is_current, check_ok FROM vessel_identifier
-                             WHERE watchlist_id = %s ORDER BY kind, is_current DESC""", (wid,)).fetchall()
-    parties = VS.party_links(conn, [wid]).get(wid, [])
-    # the same ship on other lists (same IMO)
-    same = []
-    if row['imo']:
-        same = conn.execute("""SELECT w.id, w.full_name, w.source FROM vessel_identifier i
-                               JOIN screening_watchlist w ON w.id = i.watchlist_id
-                               WHERE i.kind = 'IMO' AND i.value_norm = %s AND w.id <> %s AND w.is_active = 1""",
-                            (row['imo'], wid)).fetchall()
-    props = VS._j(row['properties'], {}) or {}
-    v = dict(row, aliases=VS._j(row['aliases'], []) or [], measures=VS._j(row['measures'], []) or [],
-             flag_history=VS._j(row['flag_history'], []) or [], previous_names=VS._j(row['previous_names'], []) or [])
-    internal = {'source': row['source'], 'source_id': row['source_id'],
-                'programs': props.get('programs') or props.get('regime'),
-                'remarks': props.get('remarks') or props.get('other_information')} if is_site_admin() else None
-    return render_template('vessels/profile.html', v=v, idents=idents, parties=parties, same=same,
-                           internal=internal)
+    active = [r for r in recs if r['is_active']] or recs
+    base = active[0]
+    ids = [r['id'] for r in active]
+    idents = conn.execute("""SELECT kind, value_norm, bool_or(is_current) AS is_current, bool_and(check_ok) AS check_ok
+                             FROM vessel_identifier WHERE watchlist_id = ANY(%s)
+                             GROUP BY kind, value_norm ORDER BY kind, value_norm""", (ids,)).fetchall()
+    parties, seen = [], set()
+    for lst in VS.party_links(conn, ids).values():
+        for p in lst:
+            k = (VS.party_key(p['name']), p['role'])
+            if k not in seen:
+                seen.add(k)
+                parties.append(p)
+    names = []
+    for r in active:
+        names += [r['full_name']] + (VS._j(r['aliases'], []) or [])
+    prev = list(dict.fromkeys(x for r in active for x in VS._j(r['previous_names'], []) or []))
+    v = {'name': base['full_name'], 'is_active': any(r['is_active'] for r in recs),
+         'other_names': [n for n in dict.fromkeys(names) if n and n != base['full_name'] and n not in prev][:40],
+         'previous_names': prev, 'full_name_arabic': next((r['full_name_arabic'] for r in active if r['full_name_arabic']), None),
+         'imo': next((r['imo'] for r in active if r['imo']), None),
+         'imo_valid': next((r['imo_valid'] for r in active if r['imo']), None),
+         'mmsi': next((r['mmsi'] for r in active if r['mmsi']), None),
+         'call_sign': next((r['call_sign'] for r in active if r['call_sign']), None),
+         'flag': next((r['current_flag'] for r in active if r['current_flag']), None),
+         'flag_history': list(dict.fromkeys(x for r in active for x in VS._j(r['flag_history'], []) or [])),
+         'vessel_type': next((r['vessel_type'] for r in active if r['vessel_type']), None),
+         'gross_tonnage': next((r['gross_tonnage'] for r in active if r['gross_tonnage']), None),
+         'year_built': next((r['year_built'] for r in active if r['year_built']), None),
+         'measures': list(dict.fromkeys(x for r in active for x in VS._j(r['measures'], []) or [])),
+         'first_seen': min((str(r['first_seen']) for r in active if r['first_seen']), default=None),
+         'lists': len({r['source'] for r in active}),
+         'risk_score': max(int(r['risk_score'] or 0) for r in active),
+         'risk_lines': list(dict.fromkeys(x for r in active for x in VS._j(r['risk_lines'], []) or []))}
+    internal = None
+    if VS.can_see_sources():
+        internal = []
+        for r in recs:
+            props = VS._j(r['properties'], {}) or {}
+            det = VS._j(r['details'], {}) or {}
+            if not isinstance(det, dict):          # OpenSanctions keeps its notes as a list
+                det = {'comments': det}
+            if not isinstance(props, dict):
+                props = {}
+            internal.append({'id': r['id'], 'source': r['source'], 'source_id': r['source_id'], 'active': r['is_active'],
+                             'programs': props.get('programs') or det.get('program') or props.get('regime'),
+                             'remarks': props.get('remarks') or det.get('comments') or det.get('reason')})
+    return render_template('vessels/profile.html', v=v, idents=idents, parties=parties, internal=internal, wid=wid)
+
+
+# --------------------------------------------------------------------------- flag risk reference
+@vessels_bp.route('/flags', methods=['GET', 'POST'])
+@login_required
+@vessels_required('view')
+def flags():
+    """The flag-risk reference (open registries, high-risk flags): a risk indicator, never a match.
+    Site administrators edit it."""
+    conn = _conn()
+    if request.method == 'POST':
+        if not is_site_admin():
+            abort(403)
+        from screening import vessel_flags as VF
+        country = VU.clean_flag(request.form.get('country'))
+        iso = VF.iso2(country or '')
+        note = (request.form.get('note') or '').strip()[:300]
+        if not country or len(note) < 3:
+            flash(gettext('Choose a flag state and give a note (the reason).'), 'danger')
+            return redirect(url_for('vessels.flags'))
+        foc = request.form.get('foc') == '1'
+        high = request.form.get('high_risk') == '1'
+        if request.form.get('action') == 'delete':
+            conn.execute('DELETE FROM flag_risk WHERE country = %s', (country,))
+        else:
+            conn.execute("""INSERT INTO flag_risk (country, iso2, flag_of_convenience, high_risk, note, updated_by, updated_at)
+                            VALUES (%s, %s, %s, %s, %s, %s, now())
+                            ON CONFLICT (country) DO UPDATE SET flag_of_convenience = EXCLUDED.flag_of_convenience,
+                              high_risk = EXCLUDED.high_risk, note = EXCLUDED.note, iso2 = EXCLUDED.iso2,
+                              updated_by = EXCLUDED.updated_by, updated_at = now()""",
+                         (country, (iso or '').upper() or None, foc, high, note, current_user.id))
+        conn.commit()
+        VS._CACHE.pop('flags', None)
+        try:
+            VS.refresh_risk(conn)
+        except Exception as e:
+            logger.warning(f'[VESSELS] risk refresh failed: {e}')
+            conn.rollback()
+        _audit('Vessel flag risk changed', f'{country}: {request.form.get("action") or "save"} foc={foc} high={high}: {note}')
+        flash(gettext('Saved.'), 'success')
+        return redirect(url_for('vessels.flags'))
+    rows = conn.execute('SELECT * FROM flag_risk ORDER BY country').fetchall()
+    from screening import vessel_flags as VF
+    countries = sorted(v[0] for v in VF.COUNTRIES.values())
+    return render_template('vessels/flags.html', rows=rows, countries=countries, can_edit=is_site_admin())

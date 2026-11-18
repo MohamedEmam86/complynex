@@ -1,50 +1,52 @@
 {% extends "base.html" %}
-{% block title %}{{ v.full_name }}{% endblock %}
+{% from 'vessels/_tier.html' import risk_badge with context %}
+{% block title %}{{ v.name }}{% endblock %}
 {% block content %}
 <div class="container mt-4">
   {% with title=_('Vessel profile'), active='database' %}{% include 'vessels/_nav.html' %}{% endwith %}
   <div class="card border-0 shadow-sm mb-3"><div class="card-body">
     <div class="d-flex flex-wrap justify-content-between gap-2">
-      <div><div class="h4 mb-1">{{ v.full_name }}</div>
-        <div class="text-muted small">{{ vessel_list_label(v.source) }}{% if not v.is_active %} · <span class="badge bg-secondary">{{ _('No longer listed') }}</span>{% endif %}</div></div>
+      <div><div class="h4 mb-1">{{ v.name }}</div>
+        <div class="text-muted small">{{ vessel_list_label(none) }}{% if v.lists > 1 %} · {{ v.lists }} {{ _('lists') }}{% endif %}{% if not v.is_active %} · <span class="badge bg-secondary">{{ _('No longer listed') }}</span>{% endif %}</div></div>
       <div>{% for m in v.measures %}<span class="badge bg-danger me-1">{{ vessel_measure_label(m) }}</span>{% endfor %}</div>
     </div>
     <div class="row g-3 mt-2 small">
       <div class="col-md-3"><div class="text-muted">{{ _('IMO number') }}</div><div class="fw-bold">{{ v.imo or '-' }}{% if v.imo and v.imo_valid == false %} <span class="badge bg-warning text-dark">{{ _('check digit fails') }}</span>{% endif %}</div></div>
       <div class="col-md-3"><div class="text-muted">{{ _('MMSI') }}</div><div class="fw-bold">{{ v.mmsi or '-' }}</div></div>
       <div class="col-md-3"><div class="text-muted">{{ _('Call sign') }}</div><div class="fw-bold">{{ v.call_sign or '-' }}</div></div>
-      <div class="col-md-3"><div class="text-muted">{{ _('Flag') }}</div><div class="fw-bold">{{ v.current_flag or '-' }}</div></div>
+      <div class="col-md-3"><div class="text-muted">{{ _('Flag') }}</div><div class="fw-bold">{{ vessel_flag(v.flag) or '-' }}</div></div>
       <div class="col-md-3"><div class="text-muted">{{ _('Vessel type') }}</div><div>{{ v.vessel_type or '-' }}</div></div>
       <div class="col-md-3"><div class="text-muted">{{ _('Gross tonnage') }}</div><div>{{ v.gross_tonnage or '-' }}</div></div>
       <div class="col-md-3"><div class="text-muted">{{ _('Year built') }}</div><div>{{ v.year_built or '-' }}</div></div>
-      <div class="col-md-3"><div class="text-muted">{{ _('Listed since') }}</div><div>{{ (v.first_seen|string)[:10] if v.first_seen else '' }}</div></div>
+      <div class="col-md-3"><div class="text-muted">{{ _('Risk') }}</div><div>{{ risk_badge(v.risk_score) }}
+        {% for l in v.risk_lines %}<span class="badge bg-light text-dark border ms-1">{{ vessel_risk_line(l) }}</span>{% endfor %}</div></div>
     </div>
   </div></div>
   <div class="row g-3">
     <div class="col-md-6"><div class="card border-0 shadow-sm h-100"><div class="card-body small">
       <h6 class="fw-bold">{{ _('Identity history') }}</h6>
-      {% if v.previous_names or v.aliases %}<div class="mb-2"><span class="text-muted">{{ _('Other / former names') }}:</span> {{ (v.previous_names + v.aliases) | unique | join(' · ') }}</div>{% endif %}
+      {% if v.previous_names %}<div class="mb-2"><span class="text-muted">{{ _('Former names') }}:</span> {{ v.previous_names | join(' · ') }}</div>{% endif %}
+      {% if v.other_names %}<div class="mb-2"><span class="text-muted">{{ _('Other names') }}:</span> {{ v.other_names | join(' · ') }}</div>{% endif %}
       {% if v.full_name_arabic %}<div class="mb-2" dir="rtl">{{ v.full_name_arabic }}</div>{% endif %}
-      {% if v.flag_history %}<div class="mb-2"><span class="text-muted">{{ _('Former / other flags') }}:</span> {{ v.flag_history | join(' · ') }}</div>{% endif %}
+      {% if v.flag_history %}<div class="mb-2"><span class="text-muted">{{ _('Former / other flags') }}:</span> {% for x in v.flag_history %}{{ vessel_flag(x) }}{{ ' · ' if not loop.last }}{% endfor %}</div>{% endif %}
       <table class="table table-sm mb-0"><thead><tr><th>{{ _('Identifier') }}</th><th>{{ _('Value') }}</th><th></th></tr></thead><tbody>
         {% for i in idents %}<tr><td>{{ i.kind }}</td><td>{{ i.value_norm }}</td><td>{{ _('current') if i.is_current else _('former') }}{% if i.check_ok == false %} <span class="badge bg-warning text-dark">{{ _('invalid') }}</span>{% endif %}</td></tr>{% endfor %}
       </tbody></table>
     </div></div></div>
     <div class="col-md-6"><div class="card border-0 shadow-sm h-100"><div class="card-body small">
       <h6 class="fw-bold">{{ _('Owners, operators and linked parties') }}</h6>
-      {% for p in parties %}<div class="d-flex justify-content-between border-bottom py-1"><span>{{ p.name }} <span class="text-muted">({{ p.role }})</span></span>
+      {% for p in parties %}<div class="d-flex justify-content-between border-bottom py-1"><span>{{ p.name }} <span class="text-muted">({{ vessel_role(p.role) }})</span></span>
         {% if p.party_listed %}<span class="badge bg-danger">{{ _('listed') }}</span>{% endif %}</div>
       {% else %}<div class="text-muted">{{ _('No owner on the list record.') }}</div>{% endfor %}
-      {% if same %}<h6 class="fw-bold mt-3">{{ _('Same ship on other lists') }}</h6>
-        {% for s in same %}<div><a href="{{ url_for('vessels.profile', wid=s.id) }}">{{ s.full_name }}</a> <span class="text-muted">{{ vessel_list_label(s.source) }}</span></div>{% endfor %}{% endif %}
+      {% if v.first_seen %}<div class="text-muted mt-3">{{ _('First listed') }}: {{ v.first_seen[:10] }}</div>{% endif %}
     </div></div></div>
   </div>
   {% if internal %}
   <div class="card border-warning mt-3"><div class="card-body small">
-    <h6 class="fw-bold text-warning"><i class="bi bi-lock me-1"></i>{{ _('Internal (administrators only)') }}</h6>
-    <div>{{ _('Source') }}: {{ internal.source }} · {{ internal.source_id }}</div>
-    {% if internal.programs %}<div>{{ _('Programmes') }}: {{ internal.programs if internal.programs is string else internal.programs | join(', ') }}</div>{% endif %}
-    {% if internal.remarks %}<div class="text-muted mt-1">{{ internal.remarks }}</div>{% endif %}
+    <h6 class="fw-bold text-warning"><i class="bi bi-lock me-1"></i>{{ _('List records (platform administrator only)') }}</h6>
+    {% for r in internal %}<div class="border-bottom py-1"><strong>{{ r.source }}</strong> · {{ r.source_id }}{% if not r.active %} · {{ _('inactive') }}{% endif %}
+      {% if r.programs %}<div>{{ _('Programmes') }}: {{ r.programs if r.programs is string else r.programs | join(', ') }}</div>{% endif %}
+      {% if r.remarks %}<div class="text-muted">{{ r.remarks if r.remarks is string else r.remarks | join(' ') }}</div>{% endif %}</div>{% endfor %}
   </div></div>
   {% endif %}
   <div class="mt-3"><a class="btn btn-outline-primary btn-sm" href="{{ url_for('vessels.screen') }}"><i class="bi bi-search me-1"></i>{{ _('Screen a vessel') }}</a></div>

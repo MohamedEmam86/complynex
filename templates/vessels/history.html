@@ -1,18 +1,27 @@
 {% extends "base.html" %}
-{% from 'vessels/_tier.html' import tier_badge %}
+{% from 'vessels/_tier.html' import tier_badge with context %}
 {% block title %}{{ _('Vessel Screening History') }}{% endblock %}
 {% block content %}
 <div class="container mt-4">
   {% with title=_('Vessel Screening History'), active='history' %}{% include 'vessels/_nav.html' %}{% endwith %}
+  <form class="d-flex flex-wrap gap-2 mb-3 small" method="get">
+    <select class="form-select form-select-sm w-auto" name="status" aria-label="{{ _('Status') }}">
+      <option value="">{{ _('All screenings') }}</option><option value="open" {{ 'selected' if status == 'open' }}>{{ _('Open alerts (hits not validated)') }}</option></select>
+    <select class="form-select form-select-sm w-auto" name="tier" aria-label="{{ _('Result') }}"><option value="">{{ _('Any result') }}</option>
+      {% for t in tiers %}<option value="{{ t }}" {{ 'selected' if tier == t }}>{{ t }}</option>{% endfor %}</select>
+    <button class="btn btn-sm btn-outline-primary" type="submit">{{ _('Filter') }}</button>
+  </form>
   <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0 small">
-    <thead class="table-light"><tr><th>#</th><th>{{ _('Date') }}</th><th>{{ _('Vessel') }}</th><th>{{ _('IMO') }}</th><th>{{ _('Result') }}</th><th>{{ _('Hits') }}</th><th>{{ _('Validated') }}</th><th>{{ _('By') }}</th><th>{{ _('Type') }}</th></tr></thead>
+    <thead class="table-light"><tr><th>#</th><th>{{ _('Date') }}</th><th>{{ _('Vessel') }}</th><th>{{ _('IMO') }}</th><th>{{ _('Reference') }}</th><th>{{ _('Result') }}</th><th>{{ _('Hits') }}</th><th>{{ _('To validate') }}</th><th>{{ _('By') }}</th><th>{{ _('Type') }}</th></tr></thead>
     <tbody>
     {% for i in items %}
       <tr><td><a href="{{ url_for('vessels.result', sid=i.id) }}">{{ i.id }}</a></td>
         <td>{{ i.created_at.strftime('%Y-%m-%d %H:%M') if i.created_at else '' }}</td>
-        <td>{{ i.q.get('name') or i.q.get('owner') or '' }}</td><td>{{ i.q.get('imo') or '' }}</td>
-        <td>{{ tier_badge(i.tier) }}</td><td>{{ i.hit_count }}</td><td>{{ i.decided }}</td><td>{{ i.user_name }}</td><td>{{ i.kind }}</td></tr>
-    {% else %}<tr><td colspan="9" class="text-center text-muted py-4">{{ _('No vessel screenings yet.') }}</td></tr>{% endfor %}
+        <td>{{ i.q.get('name') or i.q.get('owner') or '' }}</td><td>{{ i.q.get('imo') or '' }}</td><td>{{ i.customer_ref or '' }}</td>
+        <td>{{ tier_badge(i.tier) }}</td><td>{{ i.hit_count }}</td>
+        <td>{% if i.open %}<span class="badge bg-danger">{{ i.open }}</span>{% elif i.hit_count %}<i class="bi bi-check2 text-success"></i>{% endif %}</td>
+        <td>{{ i.user_name }}</td><td>{% if i.bulk_id %}<a href="{{ url_for('vessels.bulk_result', job_id=i.bulk_id) }}">{{ _('bulk') }}</a>{% else %}{{ i.kind }}{% endif %}</td></tr>
+    {% else %}<tr><td colspan="10" class="text-center text-muted py-4">{{ _('No vessel screenings yet.') }}</td></tr>{% endfor %}
     </tbody></table></div></div>
 </div>
 {% endblock %}

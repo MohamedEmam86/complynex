@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Cleared ships') }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  {% with title=_('Cleared ships (vessel whitelist)'), active='whitelist' %}{% include 'vessels/_nav.html' %}{% endwith %}
+  <div class="alert alert-info small">{{ _('A hit validated as a false match is not alerted again for the same screened ship (IMO, else MMSI or name and flag) while nothing changes. A change of name, flag or owner on either side re-opens it.') }}</div>
+  <form class="d-flex gap-2 mb-3 small" method="get">
+    <select class="form-select form-select-sm w-auto" name="status" aria-label="{{ _('Status') }}"><option value="">{{ _('All') }}</option>
+      {% for s, l in [('active', _('Active')), ('reopened', _('Re-opened')), ('revoked', _('Revoked'))] %}<option value="{{ s }}" {{ 'selected' if status == s }}>{{ l }}</option>{% endfor %}</select>
+    <button class="btn btn-sm btn-outline-primary" type="submit">{{ _('Filter') }}</button></form>
+  <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle small mb-0">
+    <thead class="table-light"><tr><th>{{ _('Screened ship') }}</th><th>{{ _('Listed ship') }}</th><th>{{ _('Reason') }}</th><th>{{ _('Comment') }}</th><th>{{ _('By') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+    <tbody>{% for w in items %}
+      <tr><td>{{ w.query_label }}<div class="text-muted">{{ w.query_key }}</div></td>
+        <td>{% if w.watchlist_id %}<a href="{{ url_for('vessels.profile', wid=w.watchlist_id) }}">{{ w.listed_name }}</a>{% else %}{{ w.listed_name }}{% endif %}<div class="text-muted">{{ w.listed_key }}</div></td>
+        <td>{{ vessel_reason_label(w.reason) }}</td><td>{{ w.comment }}</td>
+        <td>{{ w.by_name }}<div class="text-muted">{{ w.created_at.strftime('%Y-%m-%d') if w.created_at else '' }}</div></td>
+        <td>{% if w.status == 'active' %}<span class="badge bg-success">{{ _('Active') }}</span>
+          {% elif w.status == 'reopened' %}<span class="badge bg-warning text-dark">{{ _('Re-opened') }}</span><div class="text-muted">{{ w.reopened_reason }}</div>
+          {% else %}<span class="badge bg-secondary">{{ _('Revoked') }}</span><div class="text-muted">{{ w.revoke_reason }}</div>{% endif %}</td>
+        <td>{% if w.status != 'revoked' %}
+          <form method="post" action="{{ url_for('vessels.whitelist_revoke', wid=w.id) }}" class="d-flex gap-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input class="form-control form-control-sm" name="reason" minlength="5" required placeholder="{{ _('Reason') }}" aria-label="{{ _('Reason') }}">
+            <button class="btn btn-sm btn-outline-danger" type="submit">{{ _('Revoke') }}</button></form>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="7" class="text-center text-muted py-4">{{ _('No cleared ships.') }}</td></tr>{% endfor %}</tbody>
+  </table></div></div>
+</div>
+{% endblock %}

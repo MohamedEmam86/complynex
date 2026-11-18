@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+{% set _ar = get_locale()|string == 'ar' %}
+<html lang="{{ 'ar' if _ar else 'en' }}" dir="{{ 'rtl' if _ar else 'ltr' }}">
+<head>
+<meta charset="UTF-8">
+<title>{{ _('Vessel Screening Report') }} #{{ sid }}</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm;
+    @bottom-right { content: "{{ _('Page') }} " counter(page) " / " counter(pages); font-size: 7pt; color: #666; } }
+  body { font-family: "DejaVu Sans", "Noto Sans Arabic", Arial, sans-serif; font-size: 8.5pt; color: #222; }
+  h1 { font-size: 14pt; margin: 0 0 2mm 0; }
+  h2 { font-size: 10pt; background: #eef2f6; border-inline-start: 3px solid #1f4e79; padding: 1.5mm 2mm; margin: 5mm 0 2mm 0; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }
+  th, td { border: 0.4pt solid #bbb; padding: 1.2mm 1.5mm; vertical-align: top; text-align: start; }
+  th { background: #f4f6f8; }
+  .muted { color: #666; }
+  .hit { border: 0.5pt solid #999; padding: 2mm; margin-bottom: 2.5mm; page-break-inside: avoid; }
+  .bad { color: #a00; } .ok { color: #176c2e; }
+</style>
+</head>
+<body>
+{% set q = res.query %}
+<h1>{{ _('Vessel Screening Report') }}</h1>
+<div class="muted">#{{ sid }} · {{ _('Screened') }} {{ row.created_at.strftime('%Y-%m-%d %H:%M') if row.created_at else '' }} · {{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }} · {{ _('by') }} {{ generated_by }}</div>
+<h2>{{ _('Screened vessel') }}</h2>
+<table>
+  <tr><th>{{ _('Vessel name') }}</th><td>{{ q.name or '-' }}</td><th>{{ _('IMO number') }}</th><td>{{ q.imo or '-' }}</td></tr>
+  <tr><th>{{ _('MMSI') }}</th><td>{{ q.mmsi or '-' }}</td><th>{{ _('Call sign') }}</th><td>{{ q.call_sign or '-' }}</td></tr>
+  <tr><th>{{ _('Flag') }}</th><td>{{ vessel_flag(q.flag) or '-' }}</td><th>{{ _('Owner / operator') }}</th><td>{{ q.owner or '-' }}</td></tr>
+  <tr><th>{{ _('Result') }}</th><td><strong>{{ res.tier }}</strong> ({{ res.score }})</td><th>{{ _('Lists screened') }}</th><td>{{ generic_label }}</td></tr>
+</table>
+{% if res.risk.lines %}<h2>{{ _('Risk indicators') }} ({{ res.risk.score }} / 100)</h2>
+<ul>{% for l in vessel_text(res.risk.lines) %}<li>{{ l }}</li>{% endfor %}</ul>
+<div class="muted">{{ _('Risk indicators never create a sanctions match on their own.') }}</div>{% endif %}
+<h2>{{ _('Hits') }}</h2>
+{% if not res.hits and not res.owner_hits %}<p class="ok">{{ _('No listed vessel matches this ship.') }}</p>{% endif %}
+{% for h in res.hits %}{% set d = decisions.get('ship:' ~ h.listed_key) %}
+<div class="hit">
+  <strong>{{ h.name }}</strong>{% if h.imo %} · IMO {{ h.imo }}{% endif %}{% if h.flag %} · {{ vessel_flag(h.flag) }}{% endif %}{% if h.type %} · {{ h.type }}{% endif %}
+  · {{ h.tier }} ({{ h.score }}) · {{ generic_label }}
+  {% if h.measures %}<div>{{ _('Measures') }}: {% for m in h.measures %}{{ vessel_measure_label(m) }}{{ ', ' if not loop.last }}{% endfor %}</div>{% endif %}
+  <ul>{% for e in vessel_text(h.explanation) %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% if d %}<div class="{{ 'bad' if d.decision == 'true_match' else 'ok' }}"><strong>{{ _('True match') if d.decision == 'true_match' else _('False match') }}</strong> - {{ vessel_reason_label(d.reason) }} · {{ d.decided_by_name }} · {{ d.decided_at.strftime('%Y-%m-%d %H:%M') if d.decided_at else '' }}: {{ d.comment }}</div>
+  {% else %}<div class="bad">{{ _('Not validated yet') }}</div>{% endif %}
+</div>{% endfor %}
+{% for o in res.owner_hits %}{% set d = decisions.get('owner:' ~ owner_key(o)) %}
+<div class="hit"><strong>{{ _('Owner / operator') }}: {{ o.name }}</strong> ({{ _('entered') }}: {{ o.query }}) · {{ o.tier }} ({{ o.score }}) · {{ generic_label }}
+  {% if d %}<div>{{ _('True match') if d.decision == 'true_match' else _('False match') }} - {{ vessel_reason_label(d.reason) }} · {{ d.decided_by_name }}: {{ d.comment }}</div>{% else %}<div class="bad">{{ _('Not validated yet') }}</div>{% endif %}
+</div>{% endfor %}
+{% if res.suppressed %}<h2>{{ _('Cleared before (not alerted)') }}</h2>
+<ul>{% for s in res.suppressed %}<li>{{ s.name }}{% if s.imo %} · IMO {{ s.imo }}{% endif %} - {{ vessel_text(s.explanation)[-1] }}</li>{% endfor %}</ul>{% endif %}
+<p class="muted">{{ _('ComplyNex alerts and records. Any action on a confirmed match (freezing, rejecting, reporting) is taken outside the system under your procedures.') }}</p>
+</body>
+</html>

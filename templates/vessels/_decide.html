@@ -1,0 +1,28 @@
+{# validation form of one hit: kind = 'ship' | 'owner', key = listed_key / owner key #}
+{%- macro decide_form(sid, kind, key, allow_whitelist) -%}
+<form method="post" action="{{ url_for('vessels.decide', sid=sid) }}" class="row g-2 align-items-end border-top pt-2 mt-1">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="hit_kind" value="{{ kind }}">
+  <input type="hidden" name="hit_key" value="{{ key }}">
+  <div class="col-md-2"><label class="form-label small mb-0">{{ _('Decision') }}</label>
+    <select class="form-select form-select-sm" name="decision" required>
+      <option value="">-</option><option value="false_match">{{ _('False match') }}</option><option value="true_match">{{ _('True match') }}</option></select></div>
+  <div class="col-md-3"><label class="form-label small mb-0">{{ _('Reason') }}</label>
+    <select class="form-select form-select-sm" name="reason" required><option value="">-</option>
+      <optgroup label="{{ _('False match') }}">{% for c, l, d in vessel_reasons if d in ('false_match', 'any') %}<option value="{{ c }}">{{ l }}</option>{% endfor %}</optgroup>
+      <optgroup label="{{ _('True match') }}">{% for c, l, d in vessel_reasons if d == 'true_match' %}<option value="{{ c }}">{{ l }}</option>{% endfor %}</optgroup>
+    </select></div>
+  <div class="col-md-4"><label class="form-label small mb-0">{{ _('Comment (required)') }}</label>
+    <input class="form-control form-control-sm" name="comment" minlength="5" maxlength="4000" required></div>
+  <div class="col-md-3 d-flex flex-column gap-1">
+    {% if allow_whitelist %}<div class="form-check small mb-0"><input class="form-check-input" type="checkbox" name="whitelist" value="1" id="wl_{{ kind }}_{{ key|replace(':', '_') }}" checked>
+      <label class="form-check-label" for="wl_{{ kind }}_{{ key|replace(':', '_') }}">{{ _('If false: do not alert again while nothing changes') }}</label></div>{% endif %}
+    <button class="btn btn-sm btn-primary" type="submit">{{ _('Save decision') }}</button></div>
+</form>
+{%- endmacro -%}
+{%- macro decision_box(d) -%}
+<div class="alert {{ 'alert-danger' if d.decision == 'true_match' else 'alert-success' }} py-2 small mb-0 mt-2">
+  <strong>{{ _('True match') if d.decision == 'true_match' else _('False match') }}</strong> -
+  {{ vessel_reason_label(d.reason) }} · {{ d.decided_by_name }} · {{ d.decided_at.strftime('%Y-%m-%d %H:%M') if d.decided_at else '' }}
+  <div class="mt-1">{{ d.comment }}</div></div>
+{%- endmacro -%}

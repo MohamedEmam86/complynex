@@ -1,5 +1,10 @@
 {%- macro tier_badge(t) -%}
-{%- set cls = {'CONFIRMED': 'danger', 'POTENTIAL': 'warning text-dark', 'LOW': 'info text-dark', 'CLEAR': 'success', 'INCOMPLETE': 'secondary'} -%}
-{%- set lbl = {'CONFIRMED': _('Confirmed match'), 'POTENTIAL': _('Potential match'), 'LOW': _('Low match'), 'CLEAR': _('No match'), 'INCOMPLETE': _('Incomplete')} -%}
+{%- set cls = {'CONFIRMED': 'danger', 'POTENTIAL': 'warning text-dark', 'LOW': 'info text-dark', 'BELOW': 'light text-dark border', 'CLEAR': 'success', 'INCOMPLETE': 'secondary'} -%}
+{%- set lbl = {'CONFIRMED': _('Confirmed match'), 'POTENTIAL': _('Potential match'), 'LOW': _('Low match'), 'BELOW': _('Below threshold'), 'CLEAR': _('No match'), 'INCOMPLETE': _('Incomplete')} -%}
 <span class="badge bg-{{ cls.get(t, 'secondary') }}">{{ lbl.get(t, t) }}</span>
+{%- endmacro -%}
+{%- macro risk_badge(score) -%}
+{%- set b = vessel_risk_band(score) -%}
+{%- set cls = {'high': 'danger', 'medium': 'warning text-dark', 'low': 'info text-dark', 'none': 'light text-dark border'} -%}
+<span class="badge bg-{{ cls.get(b) }}" title="{{ _('Risk score') }} {{ score or 0 }} / 100">{{ vessel_risk_band_label(b) }}</span>
 {%- endmacro -%}
