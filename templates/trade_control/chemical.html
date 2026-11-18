@@ -11,7 +11,7 @@
       <div>{{ dn.list_label(d) }}</div>
     </div>
     <div class="fs-5" dir="ltr">{{ d.title_en }}</div>
-    {% if d.title_ar %}<div class="fs-5" dir="rtl">{{ d.title_ar }}</div>{% endif %}
+    {% if d.title_ar %}<div class="fs-5" dir="rtl">{{ d.title_ar }} {{ dn.ar_note(d.ar_status) }}</div>{% endif %}
     {% set names = d.extra.get('names') or [] %}{% if names|length > 1 %}<div class="small text-muted mt-1">{{ rc_loc('Other names', 'أسماء أخرى') }}: <span dir="auto">{{ names[1:]|join(' · ') }}</span></div>{% endif %}
     <div class="mt-2">
       {% if d.extra.get('cwc_schedule') %}{{ dn.chem_level(d.extra.cwc_schedule) }}{% endif %}

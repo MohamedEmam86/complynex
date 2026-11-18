@@ -66,7 +66,7 @@
         <thead><tr><th>{{ rc_loc('Possible entry', 'البند المحتمل') }}</th><th>{{ rc_loc('Found by', 'طريقة الإيجاد') }}</th><th>{{ rc_loc('Risk', 'الخطر') }}</th><th>{{ rc_loc('Status', 'الحالة') }}</th></tr></thead>
         <tbody>{% for c in ln.candidates %}{% set d = idx.get(c.list_code, c.code) %}
           <tr><td>{% if d %}<a class="du-code" href="{{ url_for('dualuse.entry', item_id=d.id) }}">{{ c.code }}</a>{% else %}<span class="du-code">{{ c.code }}</span> <span class="badge bg-light text-muted border" title="{{ rc_loc('Not in the current list version', 'غير موجود في الإصدار الحالي للقائمة') }}">{{ rc_loc('earlier version', 'إصدار سابق') }}</span>{% endif %}
-              <span class="text-muted">{{ (c.title_ar if du_lang == 'ar' and c.title_ar else c.title_en)[:140] }}</span>
+              <span class="text-muted">{{ (c.title_ar if du_lang == 'ar' and c.title_ar else c.title_en)[:140] }}</span>{% if du_lang == 'ar' and c.title_ar %} {{ dn.ar_note() }}{% endif %}
               {% if du_show_lists %}{% for l in c.lists or [c.list_code] %} <span class="badge bg-light text-dark border">{{ DU.LIST_SHORT.get(l, l) }}</span>{% endfor %}{% endif %}
               {% for w in c.why or [] %}<div class="text-muted">{{ w }}</div>{% endfor %}</td>
             <td>{% for r in c.reasons %}{{ dn.why_label(r) }}{% endfor %}</td>
@@ -81,7 +81,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% for q in ln.questions %}{% set a = (ln.answers or {}).get(q.id) %}
         <div class="mb-2 pb-2 border-bottom"><div><span class="du-code me-1">{{ q.item_code or q.code }}</span> <span dir="auto">{{ q.text_ar if du_lang == 'ar' and q.text_ar else q.text_en }}</span></div>
-          {% if q.context %}<div class="text-muted" dir="{{ 'auto' if du_lang == 'ar' and q.context_ar else 'ltr' }}">{{ q.context_ar if du_lang == 'ar' and q.context_ar else q.context }}</div>{% endif %}
+          {% if q.context %}<div class="text-muted" dir="{{ 'auto' if du_lang == 'ar' and q.context_ar else 'ltr' }}">{{ q.context_ar if du_lang == 'ar' and q.context_ar else q.context }}{% if du_lang == 'ar' and q.context_ar %} {{ dn.ar_note() }}{% endif %}</div>{% endif %}
           {% if du_can_edit %}
           {% for v, en, ar in [('yes', 'Yes', 'نعم'), ('no', 'No', 'لا'), ('unknown', "Don't know", 'لا أعرف')] %}
           <label class="form-check form-check-inline"><input class="form-check-input" type="radio" name="a_{{ q.id }}" value="{{ v }}" {{ 'checked' if a == v }}> {{ rc_loc(en, ar) }}</label>{% endfor %}

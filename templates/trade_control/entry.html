@@ -32,7 +32,7 @@
           {% if st %}<span class="badge bg-{{ st[2] }}-subtle text-dark border">{{ rc_loc(st[0], st[1]) }}</span>{% endif %}</div>
         {% if d.title_ar %}<div class="fw-bold">{{ d.title_ar }}</div>{% endif %}
         <div class="du-legal">{{ d.text_ar }}</div>
-        <div class="small text-muted mt-1">{{ rc_loc('The English text is the legal reference.', 'النص الإنجليزي هو المرجع القانوني.') }}</div>
+        <div class="mt-1">{{ dn.ar_note(d.ar_status) }}</div>
       </div>
       {% endif %}
     </div>

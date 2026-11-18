@@ -64,7 +64,7 @@
         <div class="du-title">{{ dn.title(d) }}</div>
         {% if d.context_en and d.level %}<div class="small text-muted">{{ rc_loc('Under', 'ضمن') }} {{ d.entry_code }}: {{ (d.context_ar if du_lang == 'ar' and d.context_ar else d.context_en)[:140] }}</div>{% endif %}
         <div class="small du-snippet" dir="ltr">{{ r.snippet_en|safe }}</div>
-        {% if r.snippet_ar %}<div class="small du-snippet" dir="rtl">{{ r.snippet_ar|safe }}</div>{% endif %}
+        {% if r.snippet_ar %}<div class="small du-snippet" dir="rtl">{{ r.snippet_ar|safe }} {{ dn.ar_note(d.ar_status) }}</div>{% elif du_lang == 'ar' and d.title_ar %}<div>{{ dn.ar_note(d.ar_status) }}</div>{% endif %}
         <div class="small mt-1">
           <span class="text-muted me-1">{{ rc_loc('Matched by', 'سبب الظهور') }}:</span>{% for w in r.why %}{{ dn.why_label(w) }}{% endfor %}
           {% if d.list_code == 'chemicals' and d.extra.get('cwc_schedule') %}{{ dn.chem_level(d.extra.cwc_schedule) }}{% endif %}

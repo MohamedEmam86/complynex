@@ -177,3 +177,20 @@ def test_versions_carry_arabic_and_mark_stale(app):
     finally:
         conn.rollback()
         conn.close()
+
+
+def test_arabic_text_carries_the_draft_note(app):
+    with app.app_context():
+        from database.db import get_db
+        row = get_db().execute("""SELECT i.id FROM dualuse_items i JOIN dualuse_list_versions v ON v.id = i.version_id
+                                  AND v.is_current JOIN dualuse_lists l ON l.id = v.list_id AND l.code = 'eu_annex1'
+                                  WHERE i.text_ar IS NOT NULL AND i.ar_status = 'draft' AND NOT i.not_used
+                                  LIMIT 1""").fetchone()
+    if not row:
+        pytest.skip('no Arabic texts loaded')
+    for lang in ('ar', 'en'):
+        r = _client(app, app.du_ids['edit'], lang).get('/dual-use/entry/%d' % row['id'])
+        body = r.get_data(as_text=True)
+        assert r.status_code == 200
+        assert 'ترجمة عربية مبدئية — النص الإنجليزي هو المرجع القانوني' in body or \
+            'Arabic draft translation — English is the legal reference' in body

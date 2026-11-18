@@ -34,3 +34,6 @@
 {% macro title(d) %}{% if du_lang == 'ar' and (d.title_ar or d.text_ar) %}{{ d.title_ar or (d.text_ar[:160]) }}{% else %}{{ d.title_en or ((d.text_en or '')[:160]) }}{% endif %}{% endmacro %}
 
 {% macro disclaimer(cls='') %}<div class="small text-muted du-disclaimer {{ cls }}"><i class="bi bi-info-circle me-1"></i>{{ rc_loc(*DU.DISCLAIMER) }}</div>{% endmacro %}
+
+{# Shown wherever an Arabic legal text appears: Arabic texts are draft translations, English is the reference. #}
+{% macro ar_note(status='draft') %}<span class="badge bg-warning-subtle text-dark border du-ar-note">{% if status in ('verified', 'reviewed') %}{{ rc_loc('Arabic translation — English is the legal reference', 'ترجمة عربية — النص الإنجليزي هو المرجع القانوني') }}{% else %}{{ rc_loc('Arabic draft translation — English is the legal reference', 'ترجمة عربية مبدئية — النص الإنجليزي هو المرجع القانوني') }}{% endif %}</span>{% endmacro %}
