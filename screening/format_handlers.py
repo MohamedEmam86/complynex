@@ -186,7 +186,7 @@ class UNSecurityCouncilHandler(BaseFormatHandler):
                 'details': {
                     'designation': designation,
                     'listed_on': listed_on,
-                    'comments': comments
+                    'comments': comments,
                 }
             }
             
@@ -237,13 +237,26 @@ class UNSecurityCouncilHandler(BaseFormatHandler):
             
             # Comments
             comments = self._get_text(entity_elem, 'COMMENTS1')
-            
+
+            # Ships (V1): the UN lists ships as ENTITY records (e.g. 2146 Libya designations) with the IMO
+            # number and the flag state in the comments; a shipping company's own IMO company number is
+            # told apart by the ship check digit and the company-like name (format_handlers.ship_from_text)
+            entity_type, vessel = 'ENTITY', None
+            imos = ship_from_text(full_name, comments)
+            if imos is not None:
+                entity_type = 'VESSEL'
+                fm = re.search(r'Flag(?: State)?\s*:\s*([A-Za-z ,.\'()-]+?)(?:\.|;|$)', comments or '', re.M)
+                tm = re.search(r'Type of (?:ship|vessel)\s*:\s*([^.;\n]+)', comments or '', re.I)
+                vessel = vessel_block(imos=imos, flag=fm.group(1).strip() if fm else None,
+                                      vtype=tm.group(1).strip() if tm else None,
+                                      measures=vessel_measures(comments) or ['asset_freeze'])
+
             entity = {
                 'source_id': source_id,
                 'full_name': full_name,
                 'original_name': self._get_text(entity_elem, 'NAME_ORIGINAL_SCRIPT'),
                 'list_type': 'UN_Sanctions',
-                'entity_type': 'ENTITY',
+                'entity_type': entity_type,
                 'dataset': 'UN_Security_Council',
                 'source': 'un',
                 'source_url': f"https://www.un.org/securitycouncil/sanctions/1267/aq_sanctions_list",
@@ -254,7 +267,8 @@ class UNSecurityCouncilHandler(BaseFormatHandler):
                 'details': {
                     'address': address,
                     'listed_on': listed_on,
-                    'comments': comments
+                    'comments': comments,
+                    **({'vessel': vessel} if vessel else {}),
                 }
             }
             
@@ -331,11 +345,48 @@ def iso_date(s):
 # with this shape; screening/vessel_store.py materialises it for the vessel engine.
 #   {'imo': str|None, 'imos': [..], 'mmsi': [..], 'call_sign': [..], 'type': str, 'flag': str,
 #    'flags_past': [..], 'names_past': [..], 'gross_tonnage': str, 'year_built': str,
-#    'owners': [{'name': str, 'role': str, 'ref': source_id|None}], 'measures': [..]}
+#    'owners': [{'name': str, 'role': str, 'ref': source_id|None}], 'measures': [..],
+#    'bad_identifiers': [..]  (IMO / MMSI values that are not 7 / 9 digits, kept for the record)}
 _VESSEL_MEASURES = (('asset freeze', 'asset_freeze'), ('port entry', 'port_ban'), ('port ban', 'port_ban'),
-                    ('de-flag', 'deflag'), ('deflag', 'deflag'), ('charter', 'chartering_ban'),
-                    ('shipping', 'shipping_sanctions'), ('trade', 'trade_sanctions'),
-                    ('services', 'services_ban'), ('blocked', 'asset_freeze'))
+                    ('enter ports', 'port_ban'), ('de-flag', 'deflag'), ('deflag', 'deflag'),
+                    ('charter', 'chartering_ban'), ('shipping sanction', 'shipping_sanctions'),
+                    ('specified ship', 'shipping_sanctions'), ('trade sanction', 'trade_sanctions'),
+                    ('services', 'services_ban'), ('bunkering', 'services_ban'), ('blocked', 'asset_freeze'),
+                    ('prohibition to load', 'port_ban'))
+
+# names that are companies, not ships (lists record a company's own "IMO number" - the IMO company
+# number, 7 digits without the ship check digit - so an IMO alone does not make a record a ship)
+_COMPANY_WORDS = re.compile(
+    r"\b(SHIPPING|SHIPMANAGEMENT|SHIP ?MANAGEMENT|MANAGEMENT|CO|CORP|CORPORATION|COMPANY|LTD|LIMITED|LLC|"
+    r"L\.L\.C|INC|PTE|JSC|PJSC|OJSC|SPC|FZCO|FZE|FZ|GMBH|HOLDING|HOLDINGS|SERVICES|TRADING|GROUP|JV|"
+    r"MARITIME|NAVIGATION|LOGISTICS|FREIGHT|ENTERPRISE|INVESTMENT|BANK|AGENCY|OOO|S\.A\.|S\.A\.R\.L|B\.V)\b",
+    re.I)
+_IMO_IN_TEXT = re.compile(r'\bIMO(?:\s*(?:\(IMO\)\s*)?(?:number|no\.?|nr\.?|#)?)?\s*[:.]?\s*(\d{7})\b', re.I)
+_SHIP_WORDS = re.compile(r'\b(flag state|the vessel|this vessel|vessel was|type of ship|ship type|oil tanker|'
+                         r'tanker|bulk carrier|cargo ship|general cargo|container ship)\b', re.I)
+
+
+def _imo_check(d):
+    return len(d) == 7 and d.isdigit() and sum(int(d[i]) * (7 - i) for i in range(6)) % 10 == int(d[6])
+
+
+def looks_like_company(name):
+    return bool(_COMPANY_WORDS.search(str(name or '')))
+
+
+def ship_from_text(name, text, imos=()):
+    """Decide whether a list ENTITY record (UN / EU, which have no 'ship' subject type) is a ship.
+    A ship needs a ship IMO number (check digit valid) or a 'Type of ship' remark, and a name that is not a
+    company's. Returns the IMO numbers found, or None when the record is not a ship."""
+    text = str(text or '')
+    found = [m.group(1) for m in _IMO_IN_TEXT.finditer(text)] + [re.sub(r'\D', '', str(i)) for i in imos or ()]
+    found = [d for d in dict.fromkeys(found) if len(d) == 7]
+    if looks_like_company(name):
+        return None
+    if any(_imo_check(d) for d in found) or re.search(r'type of ship', text, re.I):
+        if found or _SHIP_WORDS.search(text):
+            return found
+    return None
 
 
 def vessel_measures(*texts):
@@ -349,23 +400,55 @@ def vessel_measures(*texts):
 
 
 def _vessel_digits(v):
-    return re.sub(r'\D', '', str(v or ''))
+    return re.sub(r'\D', '', str(v or '').translate(str.maketrans('٠١٢٣٤٥٦٧٨٩', '0123456789')))
+
+
+def _vessel_flag(v):
+    if not v or not str(v).strip():
+        return None
+    try:
+        from screening.vessel_flags import canonical
+        return canonical(v)
+    except Exception:
+        return str(v).strip()
 
 
 def vessel_block(imos=(), mmsi=(), call_sign=(), vtype=None, flag=None, flags_past=(), names_past=(),
                  gross_tonnage=None, year_built=None, owners=(), measures=()):
-    imos = [d for d in dict.fromkeys(_vessel_digits(x) for x in imos) if len(d) == 7]
+    raw_imos = [x for x in imos if x and str(x).strip()]
+    d_imos = [_vessel_digits(x) for x in raw_imos]
+    good = [d for d in dict.fromkeys(d_imos) if len(d) == 7]
+    # the check digit decides which IMO is the ship's own: a valid one first (an invalid one is kept and
+    # flagged by the vessel tables, never dropped)
+    good.sort(key=lambda d: 0 if _imo_check(d) else 1)
+    raw_mmsi = [x for x in mmsi if x and str(x).strip()]
+    good_mmsi = [d for d in dict.fromkeys(_vessel_digits(x) for x in raw_mmsi) if len(d) == 9]
+    bad = [str(x).strip() for x, d in zip(raw_imos, d_imos) if len(d) != 7]
+    bad += [str(x).strip() for x in raw_mmsi if len(_vessel_digits(x)) != 9]
+    flag_c = _vessel_flag(flag)
+    past = [f for f in dict.fromkeys(_vessel_flag(x) for x in flags_past if x and str(x).strip()) if f and f != flag_c]
+    yb = str(year_built).strip() if year_built else ''
+    m = re.search(r'\b(1[89]\d\d|20\d\d)\b', yb)
+    seen_o, own = set(), []
+    for o in owners:
+        if not (o.get('name') or o.get('ref')):
+            continue
+        k = (str(o.get('name') or '').strip().upper(), o.get('ref'), o.get('role'))
+        if k not in seen_o:
+            seen_o.add(k)
+            own.append(o)
     return {
-        'imo': imos[0] if imos else None, 'imos': imos,
-        'mmsi': [d for d in dict.fromkeys(_vessel_digits(x) for x in mmsi) if len(d) == 9],
+        'imo': good[0] if good else None, 'imos': good,
+        'mmsi': good_mmsi,
         'call_sign': [c for c in dict.fromkeys(str(x).strip().upper() for x in call_sign if x and str(x).strip())],
-        'type': (vtype or None), 'flag': (flag or None),
-        'flags_past': [f for f in dict.fromkeys(str(x).strip() for x in flags_past if x and str(x).strip())],
+        'type': (str(vtype).strip() if vtype and str(vtype).strip() else None), 'flag': flag_c,
+        'flags_past': past,
         'names_past': [n for n in dict.fromkeys(str(x).strip() for x in names_past if x and str(x).strip())],
         'gross_tonnage': (str(gross_tonnage).strip() or None) if gross_tonnage else None,
-        'year_built': (str(year_built).strip()[:10] or None) if year_built else None,
-        'owners': [o for o in owners if o.get('name') or o.get('ref')],
+        'year_built': (m.group(1) if m else (yb[:10] or None)),
+        'owners': own,
         'measures': list(dict.fromkeys(measures)),
+        **({'bad_identifiers': bad} if bad else {}),
     }
 
 
@@ -513,12 +596,22 @@ class OFACHandler(BaseFormatHandler):
         return entities
 
     def _vessel(self, sdn_entry, ns, ids, remarks, programs):
-        """The ship data of an OFAC 'Vessel' entry: vesselInfo + the vessel identifiers of idList +
-        the '(Linked To: ...)' parties of the remarks."""
+        """The ship data of an OFAC 'Vessel' entry: vesselInfo + the vessel identifiers of idList, the
+        f.k.a. names (former names of the ship), the '(Linked To: ...)' parties of the remarks."""
         vi = sdn_entry.find(f'{ns}vesselInfo')
         g = (lambda tag: self._t(vi, f'{ns}{tag}')) if vi is not None else (lambda tag: None)
+
         def idv(*types):
             return [i['number'] for i in ids if i['type'].strip().lower() in types]
+        former = []
+        al = sdn_entry.find(f'{ns}akaList')
+        if al is not None:
+            for aka in al.findall(f'{ns}aka'):
+                if (self._t(aka, f'{ns}type') or '').lower().startswith('f.k.a'):
+                    fn, ln = self._t(aka, f'{ns}firstName'), self._t(aka, f'{ns}lastName')
+                    n = f"{fn} {ln}".strip() if fn and ln else (fn or ln)
+                    if n:
+                        former.append(n)
         owners = []
         if g('vesselOwner'):
             owners.append({'name': g('vesselOwner'), 'role': 'owner', 'ref': None})
@@ -531,6 +624,7 @@ class OFACHandler(BaseFormatHandler):
             call_sign=[g('callSign')] + idv('other vessel call sign'),
             vtype=g('vesselType') or (idv('other vessel type') or [None])[0],
             flag=g('vesselFlag'), flags_past=idv('former vessel flag') + idv('other vessel flag'),
+            names_past=former,
             gross_tonnage=g('grossRegisteredTonnage') or g('tonnage'),
             year_built=(idv('vessel year of build') or [None])[0], owners=owners,
             measures=['asset_freeze'])
@@ -679,7 +773,7 @@ class HMTreasuryHandler(BaseFormatHandler):
                         for n in tx('CurrentOwnerOperators/CurrentOwnerOperator')] +
                        [{'name': n, 'role': 'former_owner_operator', 'ref': None}
                         for n in tx('PreviousOwnerOperators/PreviousOwnerOperator')],
-                measures=vessel_measures(self._t(desig, 'SanctionsImposed')))
+                measures=self._uk_measures(desig))
         return {
             'source_id':     f"HMT-{unique_id}",
             'source':        'hmt',
@@ -713,6 +807,25 @@ class HMTreasuryHandler(BaseFormatHandler):
             'is_active':     True,
             'last_updated':  self._t(desig, 'LastUpdated'),
         }
+
+    _UK_INDICATORS = (('AssetFreeze', 'asset_freeze'), ('ProhibitionOfPortEntry', 'port_ban'),
+                      ('Deflag', 'deflag'), ('CharteringOfShips', 'chartering_ban'),
+                      ('PreventionOfCharteringOfShips', 'chartering_ban'),
+                      ('PreventionOfCharteringOfShipsAndAircraft', 'chartering_ban'),
+                      ('CrewServicingOfShipsAndAircraft', 'services_ban'))
+
+    def _uk_measures(self, desig):
+        """Measures of a UK-listed ship: the SanctionsImposedIndicators flags, else the free text."""
+        out = []
+        ind = desig.find('SanctionsImposedIndicators')
+        if ind is not None:
+            for tag, code in self._UK_INDICATORS:
+                if (self._t(ind, tag) or '').strip().lower() == 'true' and code not in out:
+                    out.append(code)
+        for c in vessel_measures(self._t(desig, 'SanctionsImposed')):
+            if c not in out:
+                out.append(c)
+        return out or ['shipping_sanctions']
 
     def _standardize_entity(self, raw_entity):
         return raw_entity
@@ -809,14 +922,23 @@ class EUSanctionsHandler(BaseFormatHandler):
                 if num:
                     ids.append(f"{idn.get('identificationTypeDescription') or idn.get('identificationTypeCode') or 'ID'}: {num}")
 
+            # Ships (V1): the EU file has no ship subject type, and its "IMO (vessel identification)"
+            # is mostly a shipping company's IMO company number; ship_from_text tells the two apart.
             vessel = None
-            imo_vessel = [idn.get('number') for idn in entity_elem.findall('fsd:identification', ns)
-                          if idn.get('number') and 'vessel' in (idn.get('identificationTypeDescription') or '').lower()
-                          and 'imo' in ((idn.get('identificationTypeDescription') or '') +
-                                        (idn.get('identificationTypeCode') or '')).lower()]
-            if entity_type == 'ENTITY' and imo_vessel:
-                entity_type = 'VESSEL'
-                vessel = vessel_block(imos=imo_vessel, measures=['asset_freeze'])
+            remarks_all = ' '.join(r.text or '' for r in entity_elem.iter('{http://eu.europa.ec/fpi/fsd/export}remark'))
+            imo_ids = [idn.get('number') for idn in entity_elem.findall('fsd:identification', ns)
+                       if idn.get('number') and (idn.get('identificationTypeCode') or '').lower() == 'imo']
+            if entity_type == 'ENTITY':
+                imos = ship_from_text(full_name, remarks_all, imo_ids)
+                if imos is not None:
+                    entity_type = 'VESSEL'
+                    tm = re.search(r'Type of ship\s*:\s*([^\n]+)', remarks_all, re.I)
+                    om = re.search(r'Owner\s*:\s*([^\n]+)', remarks_all)
+                    fm = re.search(r'Flag(?: State)?\s*:\s*([^\n.;]+)', remarks_all, re.I)
+                    vessel = vessel_block(imos=imos, vtype=tm.group(1).strip() if tm else None,
+                                          flag=fm.group(1).strip() if fm else None,
+                                          owners=[{'name': om.group(1).strip(), 'role': 'owner', 'ref': None}] if om else [],
+                                          measures=['asset_freeze'])
 
             programmes, regulation_summary = [], None
             for reg in entity_elem.findall('fsd:regulation', ns):
@@ -958,6 +1080,55 @@ class OpenSanctionsHandler(BaseFormatHandler):
     def __init__(self, rich=False):
         super().__init__()
         self.rich = bool(rich)
+        # ship ownership (V1): FtM keeps owners in separate Ownership / UnknownLink records;
+        # {entity id: [(other entity id, role)]}, attached to the ships by attach_vessel_links()
+        self.vessel_links = {}
+
+    _OS_LINK_ROLES = {'owned or controlled by': 'owner', 'owns, controls, or operates': 'owner',
+                      'property in the interest of': 'beneficial_interest', '': 'owner'}
+
+    def _collect_link(self, data):
+        p = data.get('properties') or {}
+        role_txt = ((p.get('role') or [''])[0] or '').strip().lower()
+        if data.get('schema') == 'Ownership':
+            role = self._OS_LINK_ROLES.get(role_txt, 'linked')
+            for a in p.get('asset') or []:
+                for o in p.get('owner') or []:
+                    self.vessel_links.setdefault(a, []).append((o, role))
+        else:       # UnknownLink: direction unknown - kept both ways, only ships are read
+            for a in p.get('subject') or []:
+                for o in p.get('object') or []:
+                    self.vessel_links.setdefault(a, []).append((o, 'linked'))
+                    self.vessel_links.setdefault(o, []).append((a, 'linked'))
+
+    def attach_vessel_links(self, entities):
+        """Add the owners / linked parties collected from Ownership / UnknownLink records to the ships'
+        properties.vessel.owners (ref = the party's source_id, resolved to its row by vessel_store)."""
+        n = 0
+        for e in entities:
+            if e.get('entity_type') != 'VESSEL':
+                continue
+            links = self.vessel_links.get(str(e.get('source_id') or '')[3:])
+            if not links:
+                continue
+            full = expand_rich(e)
+            props = dict(full.get('properties') or {})
+            v = dict(props.get('vessel') or {})
+            have = {(o.get('ref'), o.get('role')) for o in v.get('owners') or []}
+            add = [{'name': None, 'role': r, 'ref': f'OS-{o}'} for o, r in sorted(set(links))
+                   if (f'OS-{o}', r) not in have]
+            if not add:
+                continue
+            v['owners'] = list(v.get('owners') or []) + add
+            props['vessel'] = v
+            if '_os_rich' in e:
+                rich = json.loads(zlib.decompress(e['_os_rich']).decode('utf-8'))
+                rich['properties'] = props
+                e['_os_rich'] = _pack_rich(rich)
+            else:
+                e['properties'] = props
+            n += 1
+        return n
     
     def parse(self, content):
         """
@@ -982,6 +1153,7 @@ class OpenSanctionsHandler(BaseFormatHandler):
                     self.error_count += 1
                     continue
                     
+            self.attach_vessel_links(entities)
             logger.info(f"OpenSanctions Parser: Processed {self.processed_count} entities")
             
         except Exception as e:
@@ -996,11 +1168,10 @@ class OpenSanctionsHandler(BaseFormatHandler):
         
         # Filter by schema (only relevant entity types)
         schema = data.get('schema')
-        if schema == 'Vessel':
-            # ships (V1): only with the profile fields, which carry IMO / MMSI / flags
-            if not self.rich:
-                return None
-        elif schema not in ['Person', 'Organization', 'Company', 'LegalEntity']:
+        if schema in ('Ownership', 'UnknownLink'):
+            self._collect_link(data)
+            return None
+        if schema not in ['Person', 'Organization', 'Company', 'LegalEntity', 'Vessel']:
             return None
             
         props = data.get('properties', {})
@@ -1022,7 +1193,8 @@ class OpenSanctionsHandler(BaseFormatHandler):
         # Topics
         topics = props.get('topics', [])
         
-        if not self.rich:
+        # ships always get the profile record: IMO / MMSI / flags live there (a few thousand rows)
+        if not self.rich and schema != 'Vessel':
             return self._legacy_entity(data, props, full_name, aliases, entity_type, countries, topics)
 
         # ---- deterministic record (P2 churn fix): OpenSanctions re-orders an entity's names, aliases,
@@ -1091,18 +1263,34 @@ class OpenSanctionsHandler(BaseFormatHandler):
             ('father_name', _vals('fatherName', 2, 100)),
         ) if v}
         if schema == 'Vessel':
-            pn = _vals('pastNames', 20, 200)
-            aliases = [a for a in dict.fromkeys(aliases + pn) if a != full_name]
+            pn = _vals('previousName', 20, 200) + _vals('pastNames', 20, 200)
+            # 'YI MENG SHAN (formerly ATTICA)': the bracket names a former name, the rest is the name
+            clean_aliases = []
+            for a in aliases:
+                m = re.search(r'\(\s*(?:formerly|ex|f\.?k\.?a\.?|previously)\s*:?\s*([^)]+)\)', a, re.I)
+                if m:
+                    pn += [x.strip() for x in re.split(r'[,;/]', m.group(1)) if x.strip()]
+                    a = (a[:m.start()] + a[m.end():]).strip()
+                if a:
+                    clean_aliases.append(a)
+            m = re.search(r'\(\s*(?:formerly|ex|f\.?k\.?a\.?|previously)\s*:?\s*([^)]+)\)', full_name, re.I)
+            if m:
+                pn += [x.strip() for x in re.split(r'[,;/]', m.group(1)) if x.strip()]
+                full_name = (full_name[:m.start()] + full_name[m.end():]).strip() or full_name
+            pn = [x for x in dict.fromkeys(pn) if x and x.upper() != full_name.upper()]
+            aliases = [a for a in dict.fromkeys(clean_aliases + pn) if a != full_name]
             properties['vessel'] = vessel_block(
                 imos=_vals('imoNumber', 5, 20), mmsi=_vals('mmsi', 5, 20), call_sign=_vals('callSign', 5, 20),
-                vtype=(_vals('type', 1, 100) or [None])[0], flag=(_vals('flag', 1, 60) or [None])[0],
+                vtype=next((t for t in sorted(props.get('type') or []) if t and t.isascii()), None) or
+                (_vals('type', 1, 100) or [None])[0], flag=(_vals('flag', 1, 60) or [None])[0],
                 flags_past=_vals('pastFlags', 20, 60), names_past=pn,
                 gross_tonnage=(_vals('grossRegisteredTonnage', 1, 40) or _vals('tonnage', 1, 40) or [None])[0],
                 year_built=(_vals('buildDate', 1, 20) or [None])[0],
                 owners=[{'name': None, 'role': r, 'ref': f'OS-{v}'}
                         for key, r in (('owner', 'owner'), ('operator', 'operator'))
                         for v in _vals(key, 10, 200)],
-                measures=vessel_measures(' '.join(topics)) or (['asset_freeze'] if 'sanction' in topics else []))
+                measures=vessel_measures(' '.join(props.get('notes') or [])) or
+                (['asset_freeze'] if 'sanction' in topics else []))
 
         entity = {
             'source_id': f"OS-{data.get('id')}",

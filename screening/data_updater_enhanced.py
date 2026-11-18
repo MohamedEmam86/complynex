@@ -360,9 +360,10 @@ class EnhancedDataUpdater:
                     logger.error(f"Delisting sync failed for {sname}: {e}")
                     self.db_conn.rollback()
                 logger.info(f"Batch complete: {added} added, {updated} updated, {unchanged} unchanged")
-                # ships (V1): refresh the vessel tables of this list from its VESSEL rows; a failure
-                # here never undoes the list update (the next run, or scripts/vessels_sync.py, redoes it)
-                if any(e.get('entity_type') == 'VESSEL' for e in entities):
+                # ships (V1): refresh the vessel tables of this list from its VESSEL rows (also when the
+                # list no longer has any); a failure here never undoes the list update (the next run, or
+                # scripts/vessels_sync.py, redoes it)
+                if True:
                     try:
                         from screening import vessel_store as _VS
                         source_stats['vessels'] = _VS.sync(self.db_conn, sname).get('vessels')
@@ -499,6 +500,12 @@ class EnhancedDataUpdater:
                     except Exception as e:
                         handler.error_count += 1
                         continue
+                try:
+                    # ship owners / operators are separate Ownership records in the stream (V1)
+                    n_links = handler.attach_vessel_links(entities)
+                    logger.info(f"OpenSanctions: owners attached to {n_links} ships")
+                except Exception as e:
+                    logger.warning(f"OpenSanctions: ship owners not attached: {e}")
                 logger.info(f"OpenSanctions streamed {handler.processed_count} entities")
                 # Final download progress update
                 self._update_download_progress(
@@ -607,7 +614,8 @@ class EnhancedDataUpdater:
             # hash is still empty: rich fields are only stored for rows that change for another
             # reason (name) or are new.
             for e in entities:
-                e.pop('_rich', None)
+                if e.get('entity_type') != 'VESSEL':     # ships always keep their profile (IMO, flags)
+                    e.pop('_rich', None)
 
         cursor = self.db_conn.cursor()
         added, updated, unchanged = 0, 0, 0
@@ -624,7 +632,7 @@ class EnhancedDataUpdater:
             # Get existing records for this chunk
             placeholders = ','.join(['%s'] * len(source_ids))
             cursor.execute(
-                f"SELECT source_id, id, full_name, content_hash FROM screening_watchlist "
+                f"SELECT source_id, id, full_name, content_hash, entity_type FROM screening_watchlist "
                 f"WHERE source = %s AND source_id IN ({placeholders})",
                 [source_name] + source_ids
             )
@@ -648,7 +656,11 @@ class EnhancedDataUpdater:
                         rich_changed = existing['content_hash'] != self._content_hash(entity)
                     else:
                         rich_changed = os_mode == 'on'
-                    if existing.get('full_name') != entity.get('full_name') or rich_changed:
+                    # a record re-typed by its list handler (e.g. a ship that was stored as ENTITY) is
+                    # rewritten even when lists without profile fields (UN, EU) did not change its name
+                    retyped = 'VESSEL' in (existing.get('entity_type'), entity.get('entity_type')) and \
+                        existing.get('entity_type') != entity.get('entity_type')
+                    if existing.get('full_name') != entity.get('full_name') or rich_changed or retyped:
                         self._update_entity(entity, cursor)
                         self._store_rich(entity, cursor, source_name)
                         updated += 1

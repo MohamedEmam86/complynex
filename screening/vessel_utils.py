@@ -32,8 +32,10 @@ _DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹', '01234567890
 # words in front of (or behind) a ship name that are not part of the name
 _PREFIXES = {'MV', 'MT', 'MY', 'SS', 'FV', 'MS', 'MSV', 'LNG', 'LPG', 'RV', 'TS', 'SV', 'HMS'}
 _FILLER = {'VESSEL', 'SHIP', 'TANKER', 'THE', 'M', 'V', 'T'}
-_AR_FILLER = {'سفينه', 'سفينة', 'الناقله', 'الناقلة', 'ناقله', 'ناقلة', 'السفينه', 'السفينة', 'باخره', 'باخرة',
-              'الباخره', 'الباخرة'}
+_AR_FILLER = {'سفينه', 'الناقله', 'ناقله', 'السفينه', 'باخره', 'الباخره', 'المركب', 'مركب',
+              'يخت', 'اليخت', 'قاطره', 'القاطره', 'صهريج', 'النفط', 'البضائع', 'الحاويات', 'نفط', 'بضائع'}
+# Arabic ship prefixes: م/ن (motor ship), ن/م, س/ن, م.ن ... become one-letter tokens after punctuation removal
+_AR_PREFIX_LETTERS = {'م', 'ن', 'س', 'ب', 'ي', 'ق', 'ص', 'ك'}
 
 _ROMAN = {'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10,
           'XI': 11, 'XII': 12, 'XIII': 13, 'XIV': 14, 'XV': 15, 'XVI': 16, 'XVII': 17, 'XVIII': 18,
@@ -90,7 +92,11 @@ def norm_name(name):
         s = re.sub('[ً-ٰٟـ]', '', s)          # diacritics, tatweel
         s = s.translate(str.maketrans({'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ى': 'ي', 'ة': 'ه'}))
         s = re.sub(r'[^\w\s]', ' ', s)
-        toks = [t for t in s.split() if t not in _AR_FILLER]
+        s = re.sub(r'(?<=[\u0600-\u06ff])(?=\d)|(?<=\d)(?=[\u0600-\u06ff])', ' ', s)
+        toks = s.split()
+        # leading descriptors ('السفينة', 'ناقلة النفط') and one-letter prefixes (م/ن, ن/م ...) are not the name
+        while len(toks) > 1 and (toks[0] in _AR_FILLER or toks[0] in _AR_PREFIX_LETTERS or toks[0] in _PREFIXES):
+            toks.pop(0)
         return ' '.join(toks)
     s = _strip_accents(s).upper()
     s = re.sub(r'\b([A-Z])[/.]([A-Z])\b\.?', r'\1\2', s)         # M/V, M.V. -> MV
@@ -122,9 +128,18 @@ def name_words(norm):
 
 
 def clean_flag(v):
+    """One spelling per flag state ('pa', 'PANAMA', 'بنما' -> 'Panama'); unknown text kept as written."""
     s = re.sub(r'\s+', ' ', str(v or '').strip())
     s = re.sub(r'^(flag of|flag)\s*:?\s*', '', s, flags=re.I)
-    return s or None
+    if not s:
+        return None
+    from screening.vessel_flags import canonical
+    return canonical(s)
+
+
+def flag_code(v):
+    from screening.vessel_flags import iso2
+    return iso2(v)
 
 
 def fingerprint(*parts):
