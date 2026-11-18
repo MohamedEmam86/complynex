@@ -226,7 +226,7 @@ def test_vessel_screening_degrades_without_engine_tables():
 
 # ------------------------------------------------------------------ batch file limits (review M6, minors 6 and 9)
 def test_batch_file_limits_stop_early_and_speak_arabic():
-    big = ('desc,hs\n' + ''.join('item %d,8471.30\n' % i for i in range(S.MAX_BATCH_LINES + 5))).encode()
+    big = ('desc,hs\n' + ''.join('item %d,8471.30\n' % i for i in range(S.MAX_BATCH_LINES + S.HEADER_SCAN + 5))).encode()
     with pytest.raises(S.TableError) as e:
         S.read_table('a.csv', big)
     assert e.value.ar and str(S.MAX_BATCH_LINES) in e.value.en
@@ -266,3 +266,59 @@ def test_roles_sources_superadmin_only():
     assert S.SOURCE_ROLES == ('superadmin',)
     assert set(S.BYPASS_ROLES) == {'superadmin', 'it_admin'}
     assert S.VESSEL_LIST_LABEL[1] == 'قوائم دولية معتمدة'
+
+
+def test_every_dualuse_table_is_classified_on_purpose():
+    """Reference lists are shared (loaded centrally, no tenant_id); screenings and decisions are tenant-owned."""
+    import re as _re
+    from database.tenancy import classify
+    sql = open(os.path.join(ROOT, 'database', 'migrations', '20261117_dualuse.sql'), encoding='utf-8').read()
+    tables = set(_re.findall(r'CREATE TABLE IF NOT EXISTS (\w+)', sql))
+    shared = {'dualuse_lists', 'dualuse_list_versions', 'dualuse_items', 'dualuse_parameters', 'dualuse_hs_map',
+              'dualuse_chemicals', 'dualuse_terms'}
+    tenant = {'dualuse_screenings', 'dualuse_screening_lines', 'dualuse_decisions', 'dualuse_item_master'}
+    assert tables == shared | tenant
+    assert all(classify(t) == 'shared' for t in shared) and all(classify(t) == 'tenant' for t in tenant)
+
+
+def test_invoice_header_detection_totals_and_excel_hs_numbers():
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    for r in (['COMMERCIAL INVOICE'], ['Invoice No 123'], ['Seller: Example Trading'], [],
+              ['Description of goods', 'HS Code', 'CAS No.', 'Qty'],
+              ['Pressure transducer 0-10 kPa', 9026.2, None, 4], ['Laptop', 8471.3, None, 2],
+              ['Live animals', 106.11, None, 1], ['TOTAL', None, None, 7]):
+        ws.append(r)
+    buf = io.BytesIO()
+    wb.save(buf)
+    header, rows = S.read_table('invoice.xlsx', buf.getvalue())
+    assert header[0] == 'Description of goods'
+    m = S.guess_mapping(header)
+    lines = S.lines_from(rows, m)
+    assert [l['hs_code'] for l in lines] == ['9026.20', '8471.30', '0106.11']
+    assert all(l.get('hs_warning') for l in lines)
+    assert not any((l['description'] or '').upper() == 'TOTAL' for l in lines)
+
+
+def test_compact_code_and_hs_prefix_queries():
+    assert T.control_code('5a002a1') == '5A002.a.1' and T.control_code('5A002A') == '5A002.a'
+    assert T.hs_digits('HS 8526') == '8526' and T.normalize_hs(9026.2) == ('902620', 'trailing zero restored')
+
+
+def test_range_and_unitless_thresholds():
+    ps = P.extract_parameters("A maximum 'endurance' greater than or equal to 30 minutes but less than 1 hour", '.')
+    assert [(p['parameter'], p['operator'], p['value'], p['unit'], p['upper_op'], p['upper_value'], p['upper_unit'])
+            for p in ps] == [('endurance', '>=', 30.0, 'min', '<', 1.0, 'h')]
+    ps = P.extract_parameters("wind gusts equal to or exceeding 46,3 km/h (25 knots)", ',')
+    assert ps[0]['operator'] == '>=' and ps[0]['unit'] == 'km/h'
+    ps = P.extract_parameters("A 'total processing performance' of 1600 or more and a 'performance density' of "
+                              "5.92 or more.", '.')
+    assert [(p['parameter'], p['value'], p['unit']) for p in ps] == [
+        ('total processing performance', 1600.0, None), ('performance density', 5.92, None)]
+    q = {'type': 'threshold', 'operator': '>=', 'base_value': 1800.0, 'upper_op': '<', 'upper_base': 3600.0,
+         'base_unit': 's', 'unit': 'min'}
+    assert SC._threshold_result(q, {'value': '45', 'unit': 'min'}) == 'yes'
+    assert SC._threshold_result(q, {'value': '25', 'unit': 'min'}) == 'no'
+    assert SC._threshold_result(q, {'value': '2', 'unit': 'h'}) == 'no'
+    assert T.quantities('12,000 rpm')[0][0] == 12000.0

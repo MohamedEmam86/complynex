@@ -63,6 +63,16 @@ def main():
     stats = {'items': 0, 'chemicals': 0, 'priority': 0, 'params': 0, 'terms': 0, 'skipped_status': 0,
              'skipped_source_changed': 0, 'not_found': 0, 'not_arabic': 0}
     problems = []
+    # a code given twice in the file (two translations for one item) is reported, not silently overwritten
+    seen = {}
+    for rec in data:
+        if 'terms' not in rec and rec.get('code'):
+            k = (rec.get('list'), rec.get('code'))
+            seen[k] = seen.get(k, 0) + 1
+    dups = sorted(k for k, n in seen.items() if n > 1)
+    stats['duplicate_codes'] = len(dups)
+    for k in dups[:30]:
+        problems.append((k[0], k[1], 'given %d times in the file: the last one wins' % seen[k]))
     for rec in data:
         if 'terms' in rec:
             for en, ar in rec['terms']:
