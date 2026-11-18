@@ -47,22 +47,24 @@
 
 <h2>{{ L('Lines to note: hold, review or pending', 'بنود تستدعي الانتباه: إيقاف أو مراجعة أو قرار معلق') }}</h2>
 <table><thead><tr><th>#</th><th>{{ L('Product', 'المنتج') }}</th><th>{{ L('HS / CAS / model', 'HS / CAS / الموديل') }}</th><th>{{ L('Screening result and why', 'نتيجة الفحص وسببها') }}</th><th>{{ L('Decision', 'القرار') }}</th><th>{{ L('Reason / comment', 'السبب / التعليق') }}</th><th>{{ L('By / date', 'بواسطة / التاريخ') }}</th></tr></thead>
-<tbody>{% for ln in lines if ln.suggested != 'clear' or (ln.decision and ln.decision != 'clear') or not ln.decision %}{% if loop.index <= 200 %}
+<tbody>{% for ln in lines if ln.suggested != 'clear' or (ln.decision and ln.decision != 'clear') or not ln.decision %}{% if loop.index <= 100 %}
 <tr><td>{{ ln.line_no }}</td><td><span class="bidi">{{ (ln.description or '')[:300] }}</span></td>
   <td>{% if ln.hs_code %}HS {{ ln.hs_code }}<br>{% endif %}{% if ln.cas %}CAS {{ ln.cas }}<br>{% endif %}{{ ln.model or '' }}</td>
   <td><span class="{{ ln.suggested }}">{{ outcome(ln.suggested) }}</span>
-    <ul>{% for en, ar_ in (explain.get(ln.id) or [])[:6] %}<li class="bidi">{{ L(en, ar_)[:300] }}</li>{% endfor %}</ul></td>
+    <ul>{% for en, ar_ in (explain.get(ln.id) or [])[:3] %}<li class="bidi">{{ L(en, ar_)[:300] }}</li>{% endfor %}</ul></td>
   <td class="{{ ln.decision or '' }}">{{ outcome(ln.decision) if ln.decision else L('Pending', 'معلق') }}</td>
   <td>{{ L(*reasons.get(ln.reason, (ln.reason or '', ln.reason or ''))) }}{% if ln.comment %}<br><span class="bidi">{{ ln.comment[:500] }}</span>{% endif %}
     {% set tr = trail.get(ln.id) or [] %}{% if tr|length > 1 %}<div class="muted">{{ L('Earlier decisions', 'قرارات سابقة') }}: {% for t in tr[:-1] %}{{ t.decided_at.strftime('%Y-%m-%d') }} {{ outcome(t.decision) }} ({{ t.decided_by_name or '' }}){{ '; ' if not loop.last }}{% endfor %}</div>{% endif %}</td>
   <td>{{ ln.decided_by_name or '' }}<br>{{ ln.decided_at.strftime('%Y-%m-%d %H:%M') if ln.decided_at else '' }}</td></tr>
 {% endif %}{% endfor %}</tbody></table>
+{% set noted = lines|rejectattr('decision', 'equalto', 'clear')|list %}
+{% if noted|length > 100 %}<p class="muted">{{ L('The first 100 lines are shown; every line is in the Excel export.', 'تظهر أول 100 بند؛ كل البنود موجودة في ملف Excel.') }}</p>{% endif %}
 
 {% set cleared = lines|selectattr('decision', 'equalto', 'clear')|list %}
 {% if cleared %}
 <h2>{{ L('Lines decided clear', 'بنود قرارها «لا مؤشرات»') }} ({{ cleared|length }})</h2>
 <table><thead><tr><th>#</th><th>{{ L('Product', 'المنتج') }}</th><th>HS</th><th>{{ L('Reason / comment', 'السبب / التعليق') }}</th><th>{{ L('By / date', 'بواسطة / التاريخ') }}</th></tr></thead>
-<tbody>{% for ln in cleared[:200] %}<tr><td>{{ ln.line_no }}</td><td class="bidi">{{ (ln.description or ln.model or '')[:150] }}</td><td>{{ ln.hs_code or '' }}</td>
+<tbody>{% for ln in cleared[:100] %}<tr><td>{{ ln.line_no }}</td><td class="bidi">{{ (ln.description or ln.model or '')[:150] }}</td><td>{{ ln.hs_code or '' }}</td>
   <td>{{ L(*reasons.get(ln.reason, (ln.reason or '', ln.reason or ''))) }}{% if ln.comment %} — <span class="bidi">{{ ln.comment[:200] }}</span>{% endif %}</td>
   <td>{{ ln.decided_by_name or '' }} {{ ln.decided_at.strftime('%Y-%m-%d') if ln.decided_at else '' }}</td></tr>{% endfor %}</tbody></table>
 {% endif %}
