@@ -21,3 +21,8 @@
 .du-cat:hover { box-shadow: 0 0 0 2px var(--bs-primary-bg-subtle, #cfe2ff); }
 .du-family { max-height: 30rem; overflow-y: auto; }
 .du-terms > div { padding: .15rem .5rem; }
+.du-num { width: 6rem; }
+.du-unit { width: 5rem; }
+.du-disclaimer { border-inline-start: 3px solid var(--bs-info, #0dcaf0); padding: .25rem .6rem; background: var(--bs-light, #f8f9fa); }
+.du-explain { background: var(--bs-light, #f8f9fa); border-radius: .375rem; padding: .4rem .7rem; }
+.du-trail li { padding: .2rem 0; border-bottom: 1px dashed var(--bs-border-color, #dee2e6); }

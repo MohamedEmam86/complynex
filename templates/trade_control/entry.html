@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% import 'trade_control/_nav.html' as dn with context %}
-{% block title %}{{ d.code }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
+{% block title %}{{ dn.dcode(d) }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
 <div class="container-fluid du-page">
@@ -8,10 +8,10 @@
   <nav class="small mb-2"><a href="{{ url_for('dualuse.index', q=d.entry_code or d.code) }}">{{ rc_loc('Search', 'البحث') }}</a>
     {% if entry_doc %} / <a href="{{ url_for('dualuse.entry', item_id=entry_doc.id) }}">{{ entry_doc.code }}</a>{% endif %}
     {% if parent and parent.code != (entry_doc.code if entry_doc else '') %} / <a href="{{ url_for('dualuse.entry', item_id=parent.id) }}">{{ parent.code }}</a>{% endif %}
-    / <strong>{{ d.code }}</strong></nav>
+    / <strong>{{ dn.dcode(d) }}</strong></nav>
   <div class="card mb-3"><div class="card-body">
     <div class="d-flex justify-content-between flex-wrap gap-2">
-      <h4 class="mb-1"><span class="du-code">{{ d.code }}</span> {{ dn.risk_badge(d.risk) }}</h4>
+      <h4 class="mb-1"><span class="du-code">{{ dn.dcode(d) }}</span> {{ dn.risk_badge(d.risk) }}</h4>
       <div>{{ dn.list_label(d, others|map(attribute='list_code')|list) }}</div>
     </div>
     <div class="text-muted small mb-2">
@@ -44,7 +44,7 @@
       {% if d.params %}
       <div class="card mb-3"><div class="card-header fw-bold"><i class="bi bi-speedometer2 me-1"></i>{{ rc_loc('Technical thresholds', 'الحدود الفنية') }}</div>
         <ul class="list-group list-group-flush small">{% for p in d.params %}
-          <li class="list-group-item"><span class="text-muted">{{ p.parameter_ar if du_lang == 'ar' and p.parameter_ar else (p.parameter or '') }}</span> <strong dir="ltr">{{ p.operator }} {{ '%g'|format(p.value) }} {{ p.unit }}</strong>{% if not p.reviewed %} <span class="badge bg-light text-muted border">{{ rc_loc('auto-extracted', 'مستخرج آليًا') }}</span>{% endif %}</li>{% endfor %}
+          <li class="list-group-item"><span class="text-muted">{{ p.parameter_ar if du_lang == 'ar' and p.parameter_ar else (p.parameter or '') }}</span> <strong dir="ltr">{{ p.operator }} {{ '%g'|format(p.value) }} {{ p.unit }}</strong>{% if not p.reviewed %} <span class="badge bg-light text-muted border" title="{{ rc_loc('Read automatically from the legal text: check it against the text above', 'مستخرج آليًا من النص القانوني: راجعه مقابل النص أعلاه') }}">{{ rc_loc('auto-extracted', 'مستخرج آليًا') }}</span>{% endif %}<div class="small text-muted" dir="ltr">“{{ p.raw }}”</div></li>{% endfor %}
         </ul></div>
       {% endif %}
       {% if d.hs %}
@@ -54,7 +54,7 @@
       {% endif %}
       {% if chems %}
       <div class="card mb-3"><div class="card-header fw-bold">{{ rc_loc('Chemicals in this entry', 'المواد الكيميائية في هذا البند') }}</div>
-        <ul class="list-group list-group-flush small">{% for c in chems[:40] %}<li class="list-group-item"><a href="{{ url_for('dualuse.chemical', cas=c.code) }}">{{ c.code }}</a> {{ c.title_en }}</li>{% endfor %}</ul></div>
+        <ul class="list-group list-group-flush small">{% for c in chems[:40] %}<li class="list-group-item"><a href="{{ url_for('dualuse.chemical', cas=c.code) }}">CAS {{ c.code }}</a> {{ c.title_en }}</li>{% endfor %}</ul></div>
       {% endif %}
     </div>
     <div class="col-lg-6">
@@ -62,9 +62,10 @@
       <div class="card mb-3"><div class="card-header fw-bold">{{ rc_loc('Sub-items', 'البنود الفرعية') }} ({{ family|length }})</div>
         <div class="list-group list-group-flush small du-family">{% for f in family[:200] %}
           <a class="list-group-item list-group-item-action" style="padding-inline-start: {{ 0.75 + (f.level - d.level - 1) * 1.1 }}rem" href="{{ url_for('dualuse.entry', item_id=f.id) }}">
-            <span class="du-code">{{ f.code }}</span> {{ dn.title(f)[:150] if f.title_en else (f.text_en or '')[:150] }}{% if f.params %} <i class="bi bi-speedometer2 text-warning"></i>{% endif %}</a>{% endfor %}
+            <span class="du-code">{{ dn.dcode(f) }}</span> {{ dn.title(f)[:150] if f.title_en else (f.text_en or '')[:150] }}{% if f.params %} <i class="bi bi-speedometer2 text-warning"></i>{% endif %}</a>{% endfor %}
         </div></div>
       {% endif %}
+      {{ dn.disclaimer('mb-2') }}
       {% if du_can_edit %}<a class="btn btn-outline-primary" href="{{ url_for('dualuse.screen', description=(d.title_en or d.text_en or '')[:120]) }}"><i class="bi bi-upc-scan me-1"></i>{{ rc_loc('Screen a product against this entry', 'فحص منتج مقابل هذا البند') }}</a>{% endif %}
     </div>
   </div>

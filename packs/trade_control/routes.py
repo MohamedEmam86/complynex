@@ -60,8 +60,10 @@ def _audit(action, item_id=None, details=None):
 
 
 def show_lists():
-    """Real list names are for site administrators only; clients see the generic label."""
-    return bool(getattr(current_user, 'is_authenticated', False) and current_user.is_admin())
+    """Real list names are for site administrators (superadmin) only; clients see the generic label."""
+    if not getattr(current_user, 'is_authenticated', False):
+        return False
+    return (getattr(current_user, 'role', '') or '') in S.SITE_ADMIN_ROLES
 
 
 @bp.context_processor
@@ -69,7 +71,7 @@ def _ctx():
     if not getattr(current_user, 'is_authenticated', False):
         return {}
     return {'du_can_edit': current_user.can_edit(MODULE), 'du_can_admin': current_user.can_admin_module(MODULE),
-            'du_show_lists': show_lists(), 'DU': S, 'du_lang': 'ar' if _rc('en', 'ar') == 'ar' else 'en'}
+            'du_show_lists': show_lists(), 'DU': S, 'DUSC': SC, 'du_lang': 'ar' if _rc('en', 'ar') == 'ar' else 'en'}
 
 
 def _filters(args):
@@ -118,7 +120,13 @@ def index():
             _audit('dualuse_search', None, q[:200])
     idx = S.get_index()
     return render_template('trade_control/search.html', q=q, res=res, page=page, pages=((res or {}).get('total', 0)
-                           + PAGE - 1) // PAGE, args=request.args, entries=len(idx.docs), stats=S.stats())
+                           + PAGE - 1) // PAGE, args=_safe_args(), entries=len(idx.docs), stats=S.stats())
+
+
+def _safe_args():
+    """The query string echoed into links and hidden fields; the source-list filter only for site admins."""
+    from werkzeug.datastructures import MultiDict
+    return MultiDict([(k, v) for k, v in request.args.items(multi=True) if k != 'list' or show_lists()])
 
 
 @bp.route('/api/suggest')
@@ -141,7 +149,7 @@ def api_search():
 @perm('view')
 def entry(item_id):
     idx = S.get_index()
-    d = next((x for x in idx.docs if x.id == item_id), None)
+    d = idx.by_id(item_id)
     if d is None:
         abort(404)
     family = idx.family(d)
@@ -165,8 +173,9 @@ def chemical(cas):
     if d is None:
         abort(404)
     items = [x for x in idx.docs if x.kind == 'item' and x.code in (d.extra.get('item_codes') or [])]
-    scheds = [x for x in idx.docs if x.list_code == 'cwc' and cas in x.cas]
-    return render_template('trade_control/chemical.html', d=d, items=items, scheds=scheds)
+    _audit('dualuse_view_chemical', None, cas)
+    return render_template('trade_control/chemical.html', d=d, items=items,
+                           listings=d.extra.get('listings') or [])
 
 
 # ------------------------------------------------------------------ single screening
@@ -177,8 +186,11 @@ def _line_from_form(f):
             'quantity': (f.get('quantity') or '').strip()[:60] or None}
 
 
+HEADER_FIELDS = ('title', 'supplier', 'consignee', 'end_user', 'origin', 'transport_doc', 'vessel_name', 'vessel_imo')
+
+
 def _header_from_form(f):
-    return {k: (f.get(k) or '').strip()[:300] or None for k in ('title', 'supplier', 'consignee', 'end_user', 'origin')}
+    return {k: (f.get(k) or '').strip()[:300] or None for k in HEADER_FIELDS}
 
 
 @bp.route('/screen', methods=['GET', 'POST'])
@@ -219,7 +231,9 @@ def screening(sid):
     idx = S.get_index()
     open_line = request.args.get('line', type=int)
     return render_template('trade_control/screening.html', s=s, lines=lines, open_line=open_line,
-                           reasons=S.DECISION_REASONS, idx=idx)
+                           reasons=S.DECISION_REASONS, idx=idx, trail=S.decisions(sid),
+                           explain={ln['id']: SC.explain(ln['candidates'] or [], ln['hard_flags'] or [],
+                                                         ln['decision'] or ln['suggested']) for ln in lines})
 
 
 @bp.route('/lines/<int:line_id>/answers', methods=['POST'])
@@ -333,7 +347,8 @@ def _export_rows(s, lines):
     out = []
     for ln in lines:
         cands = ', '.join(c['code'] for c in (ln['candidates'] or [])[:6])
-        flags = ', '.join(SC.HARD_LABELS.get(h['flag'], (h['flag'],))[0] for h in (ln['hard_flags'] or []))
+        flags = ', '.join('%s (%s)' % (SC.HARD_LABELS.get(h['flag'], (h['flag'],))[0], h.get('name') or h.get('code'))
+                          for h in (ln['hard_flags'] or []))
         out.append([ln['line_no'], ln['description'] or '', ln['hs_code'] or '', ln['cas'] or '', ln['model'] or '',
                     ln['origin'] or '', cands, flags, ln['suggested'], ln['decision'] or '', ln['reason'] or '',
                     ln['comment'] or '', ln.get('decided_by_name') or '',
@@ -358,6 +373,11 @@ def export_xlsx(sid):
     ws.title = 'Screening'
     ws.append(['Dual-use goods screening', s['ref']])
     ws.append(['Screened against', S.CLIENT_LIST_LABEL[0]])
+    ws.append(['Note', S.DISCLAIMER[0]])
+    if s.get('vessel_name') or s.get('vessel_imo'):
+        v = s.get('vessel_result') or {}
+        ws.append(['Vessel', '%s %s' % (s.get('vessel_name') or '', ('IMO ' + s['vessel_imo']) if s.get('vessel_imo') else ''),
+                   'not available' if v.get('error') else (v.get('tier') or '')])
     ws.append(['Created', s['created_at'].strftime('%Y-%m-%d %H:%M') if s['created_at'] else '',
                s.get('created_by_name') or ''])
     for p in s['party_results'] or []:
@@ -386,7 +406,8 @@ def export_pdf(sid):
     if not s:
         abort(404)
     html = render_template('trade_control/report_pdf.html', s=s, lines=lines, reasons=dict(
-        (r[0], (r[1], r[2])) for r in S.DECISION_REASONS))
+        (r[0], (r[1], r[2])) for r in S.DECISION_REASONS), trail=S.decisions(sid),
+        explain={ln['id']: SC.explain(ln['candidates'] or [], ln['hard_flags'] or [], ln['suggested']) for ln in lines})
     try:
         from weasyprint import HTML
         pdf = HTML(string=html, base_url=request.url_root).write_pdf()

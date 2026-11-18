@@ -20,7 +20,10 @@
         <div class="mb-1"><label class="form-label">{{ rc_loc('Reference / title', 'المرجع / العنوان') }}</label><input name="title" class="form-control form-control-sm" maxlength="200"></div>
         <div class="mb-1"><label class="form-label">{{ rc_loc('Supplier / exporter', 'المورد / المصدّر') }}</label><input name="supplier" class="form-control form-control-sm" maxlength="300"></div>
         <div class="mb-1"><label class="form-label">{{ rc_loc('Consignee / importer', 'المرسل إليه / المستورد') }}</label><input name="consignee" class="form-control form-control-sm" maxlength="300"></div>
-        <div class="mb-2"><label class="form-label">{{ rc_loc('End user', 'المستخدم النهائي') }}</label><input name="end_user" class="form-control form-control-sm" maxlength="300"></div>
+        <div class="mb-1"><label class="form-label">{{ rc_loc('End user', 'المستخدم النهائي') }}</label><input name="end_user" class="form-control form-control-sm" maxlength="300"></div>
+        <div class="mb-1"><label class="form-label">{{ rc_loc('Bill of lading / airway bill no.', 'رقم بوليصة الشحن') }}</label><input name="transport_doc" class="form-control form-control-sm" maxlength="100" dir="ltr"></div>
+        <div class="row g-1 mb-2"><div class="col-7"><label class="form-label">{{ rc_loc('Vessel name', 'اسم السفينة') }}</label><input name="vessel_name" class="form-control form-control-sm" maxlength="200"></div>
+          <div class="col-5"><label class="form-label">{{ rc_loc('IMO number', 'رقم IMO') }}</label><input name="vessel_imo" class="form-control form-control-sm" maxlength="20" dir="ltr"></div></div>
         <button class="btn btn-primary"><i class="bi bi-play-fill me-1"></i>{{ rc_loc('Screen all lines', 'فحص كل البنود') }}</button>
       </div></div></div>
       <div class="col-lg-7"><div class="card"><div class="card-header fw-bold">{{ rc_loc('First lines of the file', 'أول بنود الملف') }}</div>

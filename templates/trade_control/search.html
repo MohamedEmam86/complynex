@@ -32,7 +32,7 @@
   {% if res %}
   <div class="row g-3">
     <div class="col-lg-3">
-      {% set fl = {'category': rc_loc('Control category', 'فئة الرقابة'), 'group': rc_loc('Product group', 'مجموعة المنتج'), 'risk': rc_loc('Risk level', 'مستوى الخطر'), 'kind': rc_loc('Type', 'النوع'), 'chapter': rc_loc('HS chapter', 'فصل HS'), 'list': rc_loc('List (administrators)', 'القائمة (للمسؤولين)')} %}
+      {% set fl = {'list': rc_loc('Source list (site administrators)', 'القائمة المصدر (لمسؤولي النظام)'), 'category': rc_loc('Control category', 'فئة الرقابة'), 'group': rc_loc('Product group', 'مجموعة المنتج'), 'risk': rc_loc('Risk level', 'مستوى الخطر'), 'kind': rc_loc('Type', 'النوع'), 'chapter': rc_loc('HS chapter', 'فصل HS')} %}
       {% for key, label in fl.items() %}{% set vals = res.facets.get(key) %}{% if vals %}
       <div class="card mb-2"><div class="card-header py-1 small fw-bold">{{ label }}</div>
         <div class="list-group list-group-flush small">
@@ -40,7 +40,7 @@
           {% set a = args.to_dict() %}{% set _ = a.pop('page', None) %}
           {% if args.get(key) == v %}{% set _ = a.pop(key, None) %}{% else %}{% set _ = a.update({key: v}) %}{% endif %}
           <a class="list-group-item list-group-item-action d-flex justify-content-between py-1 {{ 'active' if args.get(key) == v }}" href="{{ url_for('dualuse.index', **a) }}">
-            <span>{% if key == 'category' %}{{ v }} — {{ rc_loc(*DU.CATEGORY_LABELS.get(v, (v, v))) }}{% elif key == 'group' %}{{ v }} — {{ rc_loc(*DU.GROUP_LABELS.get(v, (v, v))) }}{% elif key == 'risk' %}{{ rc_loc(*DU.RISK_LABELS.get(v, (v, v))) }}{% elif key == 'kind' %}{{ rc_loc(*DU.KIND_LABELS.get(v, (v, v))) }}{% else %}{{ v }}{% endif %}</span>
+            <span>{% if key == 'list' %}{{ DU.LIST_SHORT.get(v, v) }}{% elif key == 'category' %}{{ v }} — {{ rc_loc(*DU.CATEGORY_LABELS.get(v, (v, v))) }}{% elif key == 'group' %}{{ v }} — {{ rc_loc(*DU.GROUP_LABELS.get(v, (v, v))) }}{% elif key == 'risk' %}{{ rc_loc(*DU.RISK_LABELS.get(v, (v, v))) }}{% elif key == 'kind' %}{{ rc_loc(*DU.KIND_LABELS.get(v, (v, v))) }}{% else %}{{ v }}{% endif %}</span>
             <span class="badge bg-secondary-subtle text-dark">{{ n }}</span></a>
           {% endfor %}
         </div></div>
@@ -48,14 +48,14 @@
     </div>
     <div class="col-lg-9">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="text-muted small">{{ '{:,}'.format(res.total) }} {{ rc_loc('results', 'نتيجة') }}{% if res.exact in ('code', 'cas', 'hs') %} · <span class="badge bg-info-subtle text-dark">{{ rc_loc({'code': 'Control code', 'cas': 'CAS number', 'hs': 'HS code'}[res.exact], {'code': 'كود رقابة', 'cas': 'رقم CAS', 'hs': 'كود HS'}[res.exact]) }}</span>{% endif %}</div>
+        <div class="text-muted small">{{ '{:,}'.format(res.total) }} {{ rc_loc('results', 'نتيجة') }}{% if res.expanded %} · <span title="{{ rc_loc('Synonyms, translations and spelling corrections used', 'المرادفات والترجمات وتصحيحات الإملاء المستخدمة') }}">{{ rc_loc('also searched', 'تم البحث أيضًا عن') }}: <span dir="auto">{{ res.expanded[:6]|join(' · ') }}</span></span>{% endif %}{% if res.exact in ('code', 'cas', 'hs') %} · <span class="badge bg-info-subtle text-dark">{{ rc_loc({'code': 'Control code', 'cas': 'CAS number', 'hs': 'HS code'}[res.exact], {'code': 'كود رقابة', 'cas': 'رقم CAS', 'hs': 'كود HS'}[res.exact]) }}</span>{% endif %}</div>
         {% if du_can_edit and q %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('dualuse.screen', description=q) }}"><i class="bi bi-upc-scan me-1"></i>{{ rc_loc('Screen this product', 'فحص هذا المنتج') }}</a>{% endif %}
       </div>
       {% for r in res.results %}{% set d = r.doc %}
       <div class="card du-result mb-2"><div class="card-body py-2">
         <div class="d-flex justify-content-between flex-wrap gap-2">
           <div>
-            <a class="fw-bold du-code" href="{{ r.url }}">{{ d.code }}</a>
+            <a class="fw-bold du-code" href="{{ r.url }}">{{ dn.dcode(d) }}</a>
             {{ dn.kind_label(d.kind) }} {{ dn.risk_badge(d.risk) }}
             {% if 'threshold' in r.why %}<span class="badge bg-warning text-dark" title="{{ r.meets|map(attribute=0)|join(', ') }}"><i class="bi bi-speedometer2"></i> {{ rc_loc('Your value meets a threshold', 'القيمة المدخلة تستوفي حدًّا للرقابة') }}</span>{% endif %}
           </div>
@@ -66,7 +66,8 @@
         <div class="small du-snippet" dir="ltr">{{ r.snippet_en|safe }}</div>
         {% if r.snippet_ar %}<div class="small du-snippet" dir="rtl">{{ r.snippet_ar|safe }}</div>{% endif %}
         <div class="small mt-1">
-          {% for w in r.why %}{% set wl = {'code': ('Code', 'الكود'), 'cas': ('CAS', 'CAS'), 'hs': ('HS mapping', 'ربط HS'), 'exact': ('Words', 'كلمات'), 'translated': ('Cross-language', 'عبر اللغتين'), 'fuzzy': ('Spelling tolerance', 'تصحيح الإملاء'), 'prefix': ('Partial word', 'كلمة جزئية'), 'phrase': ('Title match', 'مطابقة العنوان'), 'threshold': ('Threshold', 'حد فني')}.get(w) %}{% if wl %}<span class="badge bg-light text-muted border me-1">{{ rc_loc(*wl) }}</span>{% endif %}{% endfor %}
+          <span class="text-muted me-1">{{ rc_loc('Matched by', 'سبب الظهور') }}:</span>{% for w in r.why %}{{ dn.why_label(w) }}{% endfor %}
+          {% if d.list_code == 'chemicals' and d.extra.get('cwc_schedule') %}{{ dn.chem_level(d.extra.cwc_schedule) }}{% endif %}
           {% if d.hs %}<span class="text-muted ms-2">HS: {% for h in d.hs[:6] %}<a href="{{ url_for('dualuse.index', q=h[:6]) }}">{{ h[:4] }}.{{ h[4:6] }}</a>{{ ', ' if not loop.last }}{% endfor %}{% if d.hs|length > 6 %} …{% endif %}</span>{% endif %}
         </div>
       </div></div>
@@ -91,6 +92,7 @@
     {% endfor %}
   </div>
   {% endif %}
+  {{ dn.disclaimer('mt-3') }}
 </div>
 <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/dualuse.js') }}"></script>
 {% endblock %}

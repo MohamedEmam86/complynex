@@ -3,91 +3,122 @@
 {% block title %}{{ s.ref }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+{% set reason_map = {} %}{% for code, en, ar in reasons %}{% set _ = reason_map.update({code: (en, ar)}) %}{% endfor %}
 <div class="container-fluid du-page">
   {{ dn.nav('history') }}
-  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
     <div>
       <h4 class="mb-0">{{ s.ref }} {% if s.title %}<small class="text-muted">· {{ s.title }}</small>{% endif %}</h4>
       <div class="small text-muted">{{ rc_loc('Batch file', 'ملف مجمّع') if s.kind == 'batch' else rc_loc('Single product', 'منتج واحد') }}{% if s.file_name %}: {{ s.file_name }}{% endif %}
         · {{ s.created_by_name or '' }} · {{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at }}
         · {{ rc_loc('Screened against', 'تم الفحص مقابل') }} {{ rc_loc(*DU.CLIENT_LIST_LABEL) }}</div>
     </div>
-    <div class="d-flex gap-2 align-items-center">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
       {% set c = s.counts or {} %}
       {{ dn.outcome_badge('clear') }} {{ c.get('clear', 0) }} &nbsp; {{ dn.outcome_badge('review') }} {{ c.get('review', 0) }} &nbsp; {{ dn.outcome_badge('hold') }} {{ c.get('hold', 0) }}
       <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('dualuse.export_xlsx', sid=s.id) }}"><i class="bi bi-file-earmark-excel"></i> Excel</a>
       <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('dualuse.export_pdf', sid=s.id) }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
     </div>
   </div>
+  {{ dn.disclaimer('mb-3') }}
 
+  <div class="row g-3 mb-1">
   {% if s.party_results %}
-  <div class="card mb-3"><div class="card-header fw-bold"><i class="bi bi-people me-1"></i>{{ rc_loc('Parties — sanctions screening', 'الأطراف — الفحص على قوائم العقوبات') }}</div>
+  <div class="col-lg-7"><div class="card mb-3"><div class="card-header fw-bold"><i class="bi bi-people me-1"></i>{{ rc_loc('Parties — sanctions screening', 'الأطراف — الفحص على قوائم العقوبات') }}</div>
     <ul class="list-group list-group-flush small">{% for p in s.party_results %}
-      <li class="list-group-item d-flex justify-content-between"><span><strong>{{ {'supplier': rc_loc('Supplier', 'المورد'), 'consignee': rc_loc('Consignee', 'المرسل إليه'), 'end_user': rc_loc('End user', 'المستخدم النهائي')}.get(p.role, p.role) }}:</strong> {{ p.name }}</span>
-        <span>{% if p.error %}<span class="badge bg-warning text-dark">{{ rc_loc('Screening not completed — screen again', 'لم يكتمل الفحص — أعد الفحص') }}</span>{% else %}<span class="badge {{ 'bg-success' if (p.result or '')|lower in ('clear', 'no match', 'no_match', 'cleared') else 'bg-danger' }}">{{ p.result or '—' }}</span>{% if p.history_id %} <span class="text-muted ms-1">{{ rc_loc('screening', 'فحص') }} #{{ p.history_id }}</span>{% endif %}{% endif %}</span></li>{% endfor %}
-    </ul></div>
+      <li class="list-group-item d-flex justify-content-between gap-2"><span><strong>{{ {'supplier': rc_loc('Supplier', 'المورد'), 'consignee': rc_loc('Consignee', 'المرسل إليه'), 'end_user': rc_loc('End user', 'المستخدم النهائي')}.get(p.role, p.role) }}:</strong> {{ p.name }}</span>
+        <span>{% if p.error %}<span class="badge bg-warning text-dark">{{ rc_loc('Screening not completed — screen the party again', 'لم يكتمل الفحص — أعد فحص الطرف') }}</span>{% else %}<span class="badge {{ 'bg-success' if (p.result or '')|lower in ('clear', 'no match', 'no_match', 'cleared') else 'bg-danger' }}">{{ p.result or '—' }}</span>{% if p.match_count %} <span class="text-muted">{{ p.match_count }} {{ rc_loc('possible matches', 'تطابق محتمل') }}</span>{% endif %}{% if p.history_id %} <span class="text-muted ms-1">{{ rc_loc('screening', 'فحص') }} #{{ p.history_id }}</span>{% endif %}{% endif %}</span></li>{% endfor %}
+    </ul></div></div>
   {% endif %}
+  {% if s.vessel_name or s.vessel_imo or s.transport_doc %}{% set v = s.vessel_result or {} %}
+  <div class="col-lg-5"><div class="card mb-3"><div class="card-header fw-bold"><i class="bi bi-truck me-1"></i>{{ rc_loc('Transport', 'النقل') }}</div><div class="card-body small">
+    {% if s.transport_doc %}<div>{{ rc_loc('Bill of lading / airway bill', 'بوليصة الشحن') }}: <span dir="ltr">{{ s.transport_doc }}</span></div>{% endif %}
+    {% if s.vessel_name or s.vessel_imo %}
+    <div>{{ rc_loc('Vessel', 'السفينة') }}: <strong>{{ s.vessel_name or '' }}</strong>{% if s.vessel_imo %} · IMO <span dir="ltr">{{ s.vessel_imo }}</span>{% endif %}</div>
+    <div class="mt-1">{% if v.get('error') %}<span class="badge bg-secondary">{{ rc_loc('Vessel screening is not available on this installation', 'فحص السفن غير متاح في هذا النظام') if v.error == 'unavailable' else rc_loc('Vessel screening did not complete', 'لم يكتمل فحص السفينة') }}</span>
+      {% elif v.get('tier') %}{{ rc_loc('Vessel screening', 'فحص السفينة') }}: <span class="badge {{ 'bg-success' if v.tier == 'CLEAR' else ('bg-danger' if v.tier == 'CONFIRMED' else 'bg-warning text-dark') }}">{{ v.tier }}</span>
+        {% for h in v.get('hits') or [] %}<div class="mt-1">{{ h.name }}{% if h.imo %} · IMO {{ h.imo }}{% endif %} · {{ h.tier }} ({{ h.score }}){% if du_show_lists and h.source %} <span class="badge bg-light text-dark border">{{ h.source }}</span>{% else %} · {{ rc_loc(*DU.CLIENT_LIST_LABEL) }}{% endif %}{% for e in h.explanation or [] %}<div class="text-muted">{{ e }}</div>{% endfor %}</div>{% endfor %}
+      {% endif %}</div>
+    {% endif %}
+  </div></div></div>
+  {% endif %}
+  </div>
 
   {% for ln in lines %}
   {% set final = ln.decision or ln.suggested %}
   <div class="card mb-3 du-line du-line-{{ final }}" id="line-{{ ln.id }}">
     <div class="card-header d-flex justify-content-between flex-wrap gap-2">
-      <div><span class="text-muted">#{{ ln.line_no }}</span> <strong>{{ ln.description or ln.model or ln.hs_code or ln.cas }}</strong>
+      <div><span class="text-muted">#{{ ln.line_no }}</span> <strong dir="auto">{{ ln.description or ln.model or ln.hs_code or ln.cas }}</strong>
         <span class="small text-muted ms-2" dir="ltr">{% if ln.hs_code %}HS {{ ln.hs_code }}{% endif %}{% if ln.cas %} · CAS {{ ln.cas }}{% endif %}{% if ln.model %} · {{ ln.model }}{% endif %}{% if ln.origin %} · {{ ln.origin }}{% endif %}{% if ln.quantity %} · {{ ln.quantity }}{% endif %}</span></div>
-      <div>{% if ln.decision %}{{ dn.outcome_badge(ln.decision) }} <span class="small text-muted">{{ rc_loc('decided by', 'قرار') }} {{ ln.decided_by_name or '' }}</span>{% else %}<span class="small text-muted">{{ rc_loc('Suggested', 'مقترح') }}</span> {{ dn.outcome_badge(ln.suggested) }}{% endif %}
+      <div>{% if ln.decision %}<span class="small text-muted">{{ rc_loc('User decision', 'قرار المستخدم') }}</span> {{ dn.outcome_badge(ln.decision) }} <span class="small text-muted">{{ ln.decided_by_name or '' }}</span>{% else %}<span class="small text-muted">{{ rc_loc('Screening result', 'نتيجة الفحص') }}</span> {{ dn.outcome_badge(ln.suggested) }} <span class="small text-muted">· {{ rc_loc('decision pending', 'بانتظار القرار') }}</span>{% endif %}
         <a class="btn btn-sm btn-link" data-bs-toggle="collapse" href="#body-{{ ln.id }}">{{ rc_loc('Details', 'التفاصيل') }}</a></div>
     </div>
     <div class="collapse {{ 'show' if (open_line == ln.id) or (lines|length == 1) or (not ln.decision and lines|length <= 5) }}" id="body-{{ ln.id }}"><div class="card-body">
       {% if ln.reused_from and ln.decision %}<div class="alert alert-info py-1 small">{{ rc_loc('Same product decided before under the same list versions: the earlier decision was applied. You can change it below.', 'تم اتخاذ قرار سابق لنفس المنتج وبنفس إصدارات القوائم وتم تطبيقه. يمكنك تعديله أدناه.') }}</div>{% endif %}
-      {% for h in ln.hard_flags or [] %}{% set hl = {'cwc': ('Chemical on a chemical-weapons schedule', 'مادة مدرجة في جداول الأسلحة الكيميائية'), 'precursor': ('Chemical-weapons precursor', 'سلائف أسلحة كيميائية'), 'priority': ('High-priority item (diversion risk)', 'صنف عالي الأولوية (خطر تحويل الاستخدام)'), 'code': ('Control code written on the document', 'كود الرقابة مكتوب في المستند')}.get(h.flag, (h.flag, h.flag)) %}
-      <div class="alert alert-danger py-1 small mb-1"><i class="bi bi-exclamation-octagon me-1"></i>{{ rc_loc(*hl) }}: <strong dir="ltr">{{ h.code }}</strong></div>{% endfor %}
+      {% for h in ln.hard_flags or [] %}{% set hl = DUSC.HARD_LABELS.get(h.flag, (h.flag, h.flag)) %}
+      <div class="alert {{ 'alert-warning' if h.flag == 'priority' else 'alert-danger' }} py-1 small mb-1"><i class="bi bi-exclamation-octagon me-1"></i>{{ rc_loc(*hl) }}: <strong dir="ltr">{{ h.name or h.code }}</strong>{% if h.flag in ('cwc', 'precursor') %} · CAS <span dir="ltr">{{ h.code }}</span>{% endif %}{% if h.flag == 'cwc' and h.schedule %} {{ dn.chem_level(h.schedule) }}{% endif %}{% if h.flag == 'priority' and h.tier %} · {{ rc_loc('tier', 'الفئة') }} {{ h.tier }}{% endif %}</div>{% endfor %}
+
+      <div class="du-explain small mb-2"><div class="fw-bold">{{ rc_loc('Why this result', 'سبب هذه النتيجة') }}</div>
+        <ul class="mb-0">{% for en, ar in explain.get(ln.id) or [] %}<li dir="auto">{{ rc_loc(en, ar) }}</li>{% endfor %}</ul></div>
 
       {% if ln.candidates %}
       <div class="table-responsive"><table class="table table-sm align-middle small mb-2">
-        <thead><tr><th>{{ rc_loc('Possible entry', 'البند المحتمل') }}</th><th>{{ rc_loc('Why', 'السبب') }}</th><th>{{ rc_loc('Risk', 'الخطر') }}</th><th>{{ rc_loc('Status', 'الحالة') }}</th></tr></thead>
+        <thead><tr><th>{{ rc_loc('Possible entry', 'البند المحتمل') }}</th><th>{{ rc_loc('Found by', 'طريقة الإيجاد') }}</th><th>{{ rc_loc('Risk', 'الخطر') }}</th><th>{{ rc_loc('Status', 'الحالة') }}</th></tr></thead>
         <tbody>{% for c in ln.candidates %}{% set d = idx.get(c.list_code, c.code) %}
-          <tr><td><a class="du-code" href="{{ url_for('dualuse.entry', item_id=d.id) if d else '#' }}">{{ c.code }}</a> <span class="text-muted">{{ (c.title_ar if du_lang == 'ar' and c.title_ar else c.title_en)[:120] }}</span>{% if du_show_lists %} <span class="badge bg-light text-dark border">{{ c.list_code }}</span>{% endif %}</td>
-            <td>{% for r in c.reasons %}<span class="badge bg-light text-muted border me-1">{{ rc_loc(*{'hs': ('HS code', 'كود HS'), 'cas': ('CAS', 'CAS'), 'text': ('Description', 'الوصف'), 'code': ('Control code', 'كود الرقابة')}.get(r, (r, r))) }}</span>{% endfor %}</td>
+          <tr><td>{% if d %}<a class="du-code" href="{{ url_for('dualuse.entry', item_id=d.id) }}">{{ c.code }}</a>{% else %}<span class="du-code">{{ c.code }}</span> <span class="badge bg-light text-muted border" title="{{ rc_loc('Not in the current list version', 'غير موجود في الإصدار الحالي للقائمة') }}">{{ rc_loc('earlier version', 'إصدار سابق') }}</span>{% endif %}
+              <span class="text-muted">{{ (c.title_ar if du_lang == 'ar' and c.title_ar else c.title_en)[:140] }}</span>
+              {% if du_show_lists %}{% for l in c.lists or [c.list_code] %} <span class="badge bg-light text-dark border">{{ DU.LIST_SHORT.get(l, l) }}</span>{% endfor %}{% endif %}
+              {% for w in c.why or [] %}<div class="text-muted">{{ w }}</div>{% endfor %}</td>
+            <td>{% for r in c.reasons %}{{ dn.why_label(r) }}{% endfor %}</td>
             <td>{{ dn.risk_badge(c.risk) }}</td>
-            <td>{% set st = {'open': ('Open', 'مفتوح', 'secondary'), 'cleared': ('Below threshold', 'أقل من الحد', 'success'), 'controlled': ('Meets threshold', 'يستوفي الحد', 'danger')}.get(c.state or 'open') %}<span class="badge bg-{{ st[2] }}-subtle text-dark border">{{ rc_loc(st[0], st[1]) }}</span></td></tr>{% endfor %}
+            <td>{% set st = {'open': ('Open', 'مفتوح', 'secondary'), 'cleared': ('Below threshold / not this product', 'أقل من الحد / منتج مختلف', 'success'), 'controlled': ('Meets the entry', 'يستوفي البند', 'danger')}.get(c.state or 'open') %}<span class="badge bg-{{ st[2] }}-subtle text-dark border">{{ rc_loc(st[0], st[1]) }}</span></td></tr>{% endfor %}
         </tbody></table></div>
-      {% elif not ln.hard_flags %}
-      <div class="alert alert-success py-1 small">{{ rc_loc('No control entry matches this product.', 'لا يوجد بند رقابة يطابق هذا المنتج.') }}</div>
       {% endif %}
 
       <div class="row g-3">
-      {% if ln.questions and du_can_edit %}
+      {% if ln.questions %}
       <div class="col-lg-6"><form method="post" action="{{ url_for('dualuse.line_answers', line_id=ln.id) }}" class="card"><div class="card-header fw-bold py-1"><i class="bi bi-question-circle me-1"></i>{{ rc_loc('Technical questions', 'أسئلة فنية') }}</div><div class="card-body small">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% for q in ln.questions %}{% set a = (ln.answers or {}).get(q.id) %}
-        <div class="mb-2"><div><span class="du-code me-1">{{ q.code }}</span> {{ q.text_ar if du_lang == 'ar' else q.text_en }}</div>
+        <div class="mb-2 pb-2 border-bottom"><div><span class="du-code me-1">{{ q.item_code or q.code }}</span> <span dir="auto">{{ q.text_ar if du_lang == 'ar' and q.text_ar else q.text_en }}</span></div>
+          {% if q.context %}<div class="text-muted" dir="{{ 'auto' if du_lang == 'ar' and q.context_ar else 'ltr' }}">{{ q.context_ar if du_lang == 'ar' and q.context_ar else q.context }}</div>{% endif %}
+          {% if du_can_edit %}
           {% for v, en, ar in [('yes', 'Yes', 'نعم'), ('no', 'No', 'لا'), ('unknown', "Don't know", 'لا أعرف')] %}
           <label class="form-check form-check-inline"><input class="form-check-input" type="radio" name="a_{{ q.id }}" value="{{ v }}" {{ 'checked' if a == v }}> {{ rc_loc(en, ar) }}</label>{% endfor %}
-          {% if q.type == 'threshold' %}<span class="d-inline-flex gap-1 align-items-center"><span class="text-muted">{{ rc_loc('or the value:', 'أو القيمة:') }}</span><input name="v_{{ q.id }}" class="form-control form-control-sm" style="width:6rem" dir="ltr" value="{{ a.value if a is mapping else '' }}"><input name="u_{{ q.id }}" class="form-control form-control-sm" style="width:5rem" dir="ltr" value="{{ a.unit if a is mapping else q.unit }}"></span>{% endif %}
+          {% if q.type == 'threshold' %}<span class="d-inline-flex gap-1 align-items-center"><span class="text-muted">{{ rc_loc('or the value:', 'أو القيمة:') }}</span><input name="v_{{ q.id }}" class="form-control form-control-sm du-num" dir="ltr" value="{{ a.value if a is mapping else '' }}"><input name="u_{{ q.id }}" class="form-control form-control-sm du-unit" dir="ltr" value="{{ a.unit if a is mapping else q.unit }}"></span>
+            {% if a is mapping and a.get('auto') %}<div class="text-warning-emphasis">{{ rc_loc('Value read from the description: confirm it or correct it.', 'القيمة مقروءة من الوصف: أكدها أو صححها.') }}</div>{% endif %}{% endif %}
+          {% else %}<div>{{ rc_loc('Answer', 'الإجابة') }}: {{ (a.value ~ ' ' ~ a.unit) if a is mapping else (a or '—') }}</div>{% endif %}
         </div>{% endfor %}
-        <button class="btn btn-sm btn-outline-primary">{{ rc_loc('Save answers', 'حفظ الإجابات') }}</button>
+        {% if du_can_edit %}<button class="btn btn-sm btn-outline-primary">{{ rc_loc('Save answers and update the result', 'حفظ الإجابات وتحديث النتيجة') }}</button>{% endif %}
       </div></form></div>
       {% endif %}
       {% if du_can_edit %}
-      <div class="col-lg-6"><form method="post" action="{{ url_for('dualuse.line_decide', line_id=ln.id) }}" class="card border-primary"><div class="card-header fw-bold py-1"><i class="bi bi-check2-square me-1"></i>{{ rc_loc('Decision', 'القرار') }}</div><div class="card-body small">
+      <div class="col-lg-6"><form method="post" action="{{ url_for('dualuse.line_decide', line_id=ln.id) }}" class="card border-primary"><div class="card-header fw-bold py-1"><i class="bi bi-check2-square me-1"></i>{{ rc_loc('Your decision', 'قرارك') }}</div><div class="card-body small">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-2">
-          <label class="form-check form-check-inline"><input class="form-check-input" type="radio" name="decision" value="clear" {{ 'checked' if (ln.decision or ln.suggested) == 'clear' }} required> {{ dn.outcome_badge('clear') }}</label>
-          <label class="form-check form-check-inline"><input class="form-check-input" type="radio" name="decision" value="hold" {{ 'checked' if (ln.decision or ln.suggested) == 'hold' }}> {{ dn.outcome_badge('hold') }}</label>
+          <label class="form-check form-check-inline"><input class="form-check-input" type="radio" name="decision" value="clear" {{ 'checked' if ln.decision == 'clear' }} required> {{ dn.outcome_badge('clear') }}</label>
+          <label class="form-check form-check-inline"><input class="form-check-input" type="radio" name="decision" value="hold" {{ 'checked' if ln.decision == 'hold' }}> {{ dn.outcome_badge('hold') }}</label>
         </div>
         <select name="reason" class="form-select form-select-sm mb-2" required>
-          <option value="">{{ rc_loc('Reason…', 'السبب…') }}</option>
+          <option value="">{{ rc_loc('Reason (required)…', 'السبب (إلزامي)…') }}</option>
           {% for code, en, ar in reasons %}<option value="{{ code }}" {{ 'selected' if ln.reason == code }}>{{ rc_loc(en, ar) }}</option>{% endfor %}
         </select>
-        <textarea name="comment" class="form-control form-control-sm mb-2" rows="2" minlength="{{ DU.MIN_COMMENT }}" maxlength="4000" required placeholder="{{ rc_loc('Comment: what was checked and why (required)', 'التعليق: ما الذي تم التحقق منه ولماذا (إلزامي)') }}">{{ ln.comment or '' }}</textarea>
+        <textarea name="comment" class="form-control form-control-sm mb-2" rows="2" minlength="{{ DU.MIN_COMMENT }}" maxlength="4000" required placeholder="{{ rc_loc('Comment: what was checked and why (required)', 'التعليق: ما الذي تم التحقق منه ولماذا (إلزامي)') }}"></textarea>
         <label class="form-check mb-2"><input class="form-check-input" type="checkbox" name="remember" value="1" checked> {{ rc_loc('Reuse this decision for the same product while the lists do not change', 'استخدام هذا القرار لنفس المنتج طالما لم تتغير القوائم') }}</label>
         <button class="btn btn-sm btn-primary">{{ rc_loc('Record decision', 'تسجيل القرار') }}</button>
-        {% if ln.decided_at %}<div class="text-muted mt-1">{{ rc_loc('Last decision', 'آخر قرار') }}: {{ ln.decided_at.strftime('%Y-%m-%d %H:%M') }} · {{ ln.decided_by_name or '' }}</div>{% endif %}
+        <div class="text-muted mt-1">{{ rc_loc('Your decision is recorded with your name, the time, the answers and the list versions used.', 'يُسجَّل قرارك باسمك ووقته والإجابات وإصدارات القوائم المستخدمة.') }}</div>
       </div></form></div>
-      {% elif ln.decision %}
-      <div class="col-lg-6 small"><strong>{{ rc_loc('Reason', 'السبب') }}:</strong> {{ ln.reason }}<br>{{ ln.comment }}</div>
       {% endif %}
       </div>
+
+      {% set tr = trail.get(ln.id) or [] %}
+      {% if tr %}
+      <div class="mt-2 small"><div class="fw-bold">{{ rc_loc('Decision history', 'سجل القرارات') }}</div>
+        <ul class="list-unstyled mb-0 du-trail">{% for t in tr|reverse %}
+          <li>{{ t.decided_at.strftime('%Y-%m-%d %H:%M') if t.decided_at }} · {{ t.decided_by_name or '' }} · {{ dn.outcome_badge(t.decision) }} · {{ rc_loc(*reason_map.get(t.reason, (t.reason, t.reason))) }}{% if t.reused %} <span class="badge bg-light text-muted border">{{ rc_loc('reused', 'مُعاد استخدامه') }}</span>{% endif %}
+            <div class="text-muted" dir="auto">{{ t.comment }}</div></li>{% endfor %}
+        </ul></div>
+      {% endif %}
     </div></div>
   </div>
   {% endfor %}

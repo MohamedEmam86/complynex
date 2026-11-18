@@ -12,18 +12,22 @@
     </div>
     <div class="fs-5" dir="ltr">{{ d.title_en }}</div>
     {% if d.title_ar %}<div class="fs-5" dir="rtl">{{ d.title_ar }}</div>{% endif %}
-    {% set names = d.extra.get('names') or [] %}{% if names|length > 1 %}<div class="small text-muted mt-1">{{ rc_loc('Other names', 'أسماء أخرى') }}: {{ names[1:]|join(' · ') }}</div>{% endif %}
+    {% set names = d.extra.get('names') or [] %}{% if names|length > 1 %}<div class="small text-muted mt-1">{{ rc_loc('Other names', 'أسماء أخرى') }}: <span dir="auto">{{ names[1:]|join(' · ') }}</span></div>{% endif %}
     <div class="mt-2">
-      {% if d.extra.get('cwc_schedule') %}<span class="badge bg-danger">{{ rc_loc('Chemical-weapons schedule', 'جدول الأسلحة الكيميائية') }} {{ d.extra.cwc_schedule }}</span>{% endif %}
+      {% if d.extra.get('cwc_schedule') %}{{ dn.chem_level(d.extra.cwc_schedule) }}{% endif %}
       {% if d.extra.get('ag_precursor') %}<span class="badge bg-danger">{{ rc_loc('Chemical-weapons precursor', 'سلائف أسلحة كيميائية') }}</span>{% endif %}
     </div>
   </div></div>
-  {% if items or scheds %}
-  <div class="card"><div class="card-header fw-bold">{{ rc_loc('Control entries listing this chemical', 'بنود الرقابة التي تدرج هذه المادة') }}</div>
+  {% if items %}
+  <div class="card mb-3"><div class="card-header fw-bold">{{ rc_loc('Control entries listing this chemical', 'بنود الرقابة التي تدرج هذه المادة') }}</div>
     <div class="list-group list-group-flush small">
-      {% for x in scheds %}<div class="list-group-item">{{ rc_loc('Schedule', 'الجدول') }} {{ x.extra.get('schedule') }} — {{ x.text_en[:200] }}</div>{% endfor %}
-      {% for x in items %}<a class="list-group-item list-group-item-action" href="{{ url_for('dualuse.entry', item_id=x.id) }}"><span class="du-code">{{ x.code }}</span> {{ (x.text_en or '')[:200] }}</a>{% endfor %}
+      {% for x in items %}<a class="list-group-item list-group-item-action" href="{{ url_for('dualuse.entry', item_id=x.id) }}"><span class="du-code">{{ x.code }}</span> {{ (x.text_en or '')[:200] }}{% if du_show_lists %} <span class="badge bg-light text-dark border">{{ DU.LIST_SHORT.get(x.list_code, x.list_code) }}</span>{% endif %}</a>{% endfor %}
     </div></div>
   {% endif %}
+  {% if du_show_lists and listings %}
+  <div class="card mb-3"><div class="card-header fw-bold"><i class="bi bi-shield-lock me-1"></i>{{ rc_loc('Listings (site administrators only)', 'الإدراجات (لمسؤولي النظام فقط)') }}</div>
+    <ul class="list-group list-group-flush small">{% for l in listings %}<li class="list-group-item">{{ DU.LIST_SHORT.get(l.source, l.source) }} — {{ l.ref }}</li>{% endfor %}</ul></div>
+  {% endif %}
+  {{ dn.disclaimer() }}
 </div>
 {% endblock %}

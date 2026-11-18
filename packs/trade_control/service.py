@@ -31,11 +31,32 @@ from . import search as SE
 
 log = logging.getLogger(__name__)
 MODULE = 'dualuse'
-CLIENT_LIST_LABEL = ('International approved control lists', 'القوائم الدولية المعتمدة للرقابة')
+# Owner decision: clients never see the source lists, only this generic label (real names: site admins only).
+CLIENT_LIST_LABEL = ('International control lists', 'قوائم الرقابة الدولية')
+# Short real names of the lists - shown to site administrators only.
+LIST_SHORT = {'eu_annex1': 'EU 2021/821 Annex I', 'us_ccl': 'US CCL (EAR Part 774)', 'cwc': 'CWC schedules',
+              'chemicals': 'Chemicals register', 'eu_cn_correlation': 'EU CN / dual-use correlation',
+              'chpl': 'Common High Priority List'}
+CHEM_LEVEL = {1: ('Listed toxic chemical - highest concern', 'مادة كيميائية سامة مدرجة - أعلى درجة خطورة'),
+              2: ('Listed toxic chemical or precursor - high concern', 'مادة سامة أو سليفة مدرجة - خطورة مرتفعة'),
+              3: ('Listed toxic chemical or precursor - elevated concern', 'مادة سامة أو سليفة مدرجة - خطورة ملحوظة')}
+DISCLAIMER = ('This is a screening result that supports your own assessment. It is not a legal classification, an '
+              'export or import licence decision, or a clearance. The English text of each control entry is the '
+              'reference; the decision and its justification are recorded by the user.',
+              'هذه نتيجة فحص تدعم تقييمك الخاص، وليست تصنيفًا قانونيًا ولا قرارًا بترخيص تصدير أو استيراد ولا إفراجًا. '
+              'النص الإنجليزي لكل بند رقابة هو المرجع، والقرار ومبرراته يسجلها المستخدم.')
 KIND_LABELS = {'item': ('Controlled item', 'صنف خاضع للرقابة'), 'chemical': ('Controlled chemical', 'مادة كيميائية خاضعة للرقابة'),
                'priority': ('High-priority item', 'صنف عالي الأولوية')}
 RISK_LABELS = {'high': ('High', 'مرتفع'), 'medium': ('Medium', 'متوسط'), 'low': ('Low', 'منخفض')}
-OUTCOME_LABELS = {'clear': ('Clear', 'سليم'), 'review': ('Review', 'مراجعة'), 'hold': ('Hold', 'إيقاف')}
+OUTCOME_LABELS = {'clear': ('Clear', 'لا مؤشرات'), 'review': ('Review', 'مراجعة'), 'hold': ('Hold', 'إيقاف')}
+OUTCOME_HELP = {
+    'clear': ('No control entry or flag remains open for the data given.',
+              'لا يوجد بند رقابة أو مؤشر مفتوح للبيانات المدخلة.'),
+    'review': ('Possible control entries: answer the technical questions or check the specifications.',
+               'بنود رقابة محتملة: أجب عن الأسئلة الفنية أو راجع المواصفات.'),
+    'hold': ('A listed chemical, a control code on the document or a met threshold: do not proceed until assessed.',
+             'مادة كيميائية مدرجة أو كود رقابة في المستند أو حد فني مستوفى: لا تستكمل قبل التقييم.')}
+SITE_ADMIN_ROLES = ('admin', 'superadmin', 'it_admin')
 CATEGORY_LABELS = {
     '0': ('Nuclear materials, facilities and equipment', 'المواد والمنشآت والمعدات النووية'),
     '1': ('Special materials, chemicals, microorganisms and toxins', 'المواد الخاصة والكيماويات والكائنات الدقيقة والسموم'),
@@ -109,14 +130,21 @@ def load_docs(db):
                          JOIN dualuse_lists l ON l.id = v.list_id AND l.is_active
                          WHERE NOT i.not_used ORDER BY l.display_order, i.code""").fetchall()
     titles = {}
+    parents = {r['parent_code'] for r in rows if r['parent_code']}
     for r in rows:
         if r['level'] == 0:
             titles[(r['list_code'], r['code'])] = (r['title_en'] or r['text_en'] or '', r['title_ar'] or '')
     for r in rows:
         extra = r['extra'] or {}
+        if r['list_code'] == 'cwc' and extra.get('cas'):
+            continue                # the chemicals register carries every listed chemical with a CAS number
         kind = 'chemical' if r['list_code'] == 'cwc' else 'item'
         entry = titles.get((r['list_code'], r['entry_code']), ('', ''))
+        # A US entry's own text is its whole list of items (each item is also its own document): index the
+        # heading only, or the entry would match every word of every sub-item.
+        has_children = r['level'] == 0 and r['list_code'] == 'us_ccl' and r['code'] in parents
         docs.append({'id': r['id'], 'list_code': r['list_code'], 'code': r['code'], 'entry_code': r['entry_code'],
+                     'index_text': (r['title_en'] or '') if has_children else None,
                      'parent_code': r['parent_code'], 'level': r['level'], 'category': r['category'], 'group': r['grp'],
                      'title_en': r['title_en'], 'title_ar': r['title_ar'],
                      'context_en': entry[0][:300] if r['level'] else None,
@@ -138,7 +166,8 @@ def load_docs(db):
                      'text_ar': '; '.join(r['names_ar'] or []), 'cas': [r['cas']], 'risk': risk, 'kind': 'chemical',
                      'ar_status': r['ar_status'],
                      'extra': {'names': names + list(r['names_ar'] or []), 'cwc_schedule': r['cwc_schedule'],
-                               'ag_precursor': r['ag_precursor'], 'item_codes': refs}})
+                               'ag_precursor': r['ag_precursor'], 'item_codes': refs,
+                               'listings': r['listings'] or []}})
     for r in db.execute("""SELECT m.*, l.code AS list_code FROM dualuse_hs_map m
                            JOIN dualuse_list_versions v ON v.id = m.version_id AND v.is_current
                            JOIN dualuse_lists l ON l.id = v.list_id AND l.code = 'chpl' AND l.is_active""").fetchall():
@@ -149,6 +178,16 @@ def load_docs(db):
                      'extra': {'tier': r['priority_tier']}})
     terms = [(r['term_en'], r['term_ar']) for r in db.execute("SELECT term_en, term_ar FROM dualuse_terms").fetchall()]
     return docs, terms
+
+
+def synonyms():
+    """English synonym groups shipped with the pack (seed/synonyms.csv, one group per line, ';'-separated)."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'seed', 'synonyms.csv')
+    try:
+        with open(path, encoding='utf-8') as f:
+            return [[x.strip() for x in r['group'].split(';') if x.strip()] for r in csv.DictReader(f)]
+    except OSError:
+        return []
 
 
 def get_index(db=None, force=False):
@@ -168,7 +207,7 @@ def get_index(db=None, force=False):
         if force or stamp != _cache['stamp'] or _cache['index'] is None:
             t0 = time.time()
             docs, terms = load_docs(db)
-            _cache['index'] = SE.Index(docs, terms, version=stamp)
+            _cache['index'] = SE.Index(docs, terms, version=stamp, synonyms=synonyms())
             _cache['stamp'] = stamp
             log.info('dual-use index: %d entries in %.1fs', len(docs), time.time() - t0)
     return _cache['index']
@@ -232,6 +271,36 @@ def screen_parties(parties, user_id, screening_id):
     return out
 
 
+def screen_vessel(name, imo, db=None):
+    """The vessel named on the bill of lading through the vessel screening engine, when that engine and its
+    tables exist on this installation. Never raises: returns {} when there is nothing to screen and
+    {'error': 'unavailable'} when vessel screening is not available."""
+    name, imo = (name or '').strip()[:200], (imo or '').strip()[:20]
+    if not (name or imo):
+        return {}
+    db = db or get_db()
+    try:
+        from screening import vessel_engine as VE
+    except Exception:
+        return {'name': name, 'imo': imo, 'error': 'unavailable'}
+    try:
+        if not db.execute("SELECT to_regclass('public.vessel_identifier') AS t").fetchone()['t']:
+            return {'name': name, 'imo': imo, 'error': 'unavailable'}
+        res = VE.screen_vessel(name=name or None, imo=imo or None, conn=db)
+    except Exception:
+        log.warning('dual-use: vessel screening failed', exc_info=True)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        return {'name': name, 'imo': imo, 'error': 'failed'}
+    hits = [{'name': h.get('name'), 'matched_name': h.get('matched_name'), 'imo': h.get('imo'),
+             'flag': h.get('flag'), 'tier': h.get('tier'), 'score': h.get('score'), 'source': h.get('source'),
+             'explanation': (h.get('explanation') or [])[:4]} for h in (res.get('hits') or [])[:5]]
+    return {'name': name, 'imo': imo, 'tier': res.get('tier'), 'score': res.get('score'), 'hits': hits,
+            'warnings': res.get('warnings') or []}
+
+
 # ------------------------------------------------------------------ screenings
 def _ref():
     return 'DU-%s-%s' % (datetime.now().strftime('%y%m%d'), secrets.token_hex(3).upper())
@@ -256,17 +325,25 @@ def run_lines(db, screening_id, lines, index, versions, batch=False):
         res = SC.screen_line(index, line)
         sug = SC.batch_suggestion(res) if batch else res['suggested']
         prev = _reuse(db, res['key'], versions)
-        db.execute("""INSERT INTO dualuse_screening_lines (screening_id, line_no, description, hs_code, cas, model, origin,
-                      quantity, item_key, candidates, hard_flags, questions, suggested, reused_from, decision, reason,
-                      comment, decided_by, decided_at)
-                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+        lid = db.execute("""INSERT INTO dualuse_screening_lines (screening_id, line_no, description, hs_code, cas, model,
+                      origin, quantity, item_key, candidates, hard_flags, questions, answers, suggested, reused_from,
+                      decision, reason, comment, decided_by, decided_at)
+                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
                    (screening_id, line.get('line_no') or n, line.get('description'), line.get('hs_code'),
                     line.get('cas'), line.get('model'), line.get('origin'), line.get('quantity'), res['key'],
-                    json.dumps(res['candidates']), json.dumps(res['hard']), json.dumps(res['questions']), sug,
+                    json.dumps(res['candidates']), json.dumps(res['hard']), json.dumps(res['questions']),
+                    json.dumps(res['answers'] or {}), sug,
                     prev['id'] if prev else None, prev['decision'] if prev else None,
                     prev['reason'] if prev else None,
                     ('Reused decision of an identical product (%s)' % prev['decided_at'].date()) if prev else None,
-                    prev['decided_by'] if prev else None, datetime.now() if prev else None))
+                    prev['decided_by'] if prev else None, datetime.now() if prev else None)).fetchone()['id']
+        if prev:
+            db.execute("""INSERT INTO dualuse_decisions (line_id, screening_id, decision, reason, comment, suggested,
+                          list_versions, reused, decided_by) VALUES (%s,%s,%s,%s,%s,%s,%s,TRUE,%s)""",
+                       (lid, screening_id, prev['decision'], prev['reason'] or 'other',
+                        'Reused decision of an identical product (%s): %s' % (prev['decided_at'].date(),
+                                                                             (prev['comment'] or '')[:300]),
+                        sug, json.dumps({k: v['id'] for k, v in versions.items()}), prev['decided_by']))
         counts[sug] += 1
     return counts
 
@@ -276,18 +353,24 @@ def create_screening(header, lines, user_id, batch=False, file_name=None, db=Non
     index = get_index(db)
     versions = current_versions(db)
     sid = db.execute("""INSERT INTO dualuse_screenings (ref, kind, title, file_name, supplier, consignee, end_user, origin,
-                        list_versions, line_count, created_by) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+                        transport_doc, vessel_name, vessel_imo, list_versions, line_count, created_by)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
                      (_ref(), 'batch' if batch else 'single', (header.get('title') or '')[:200] or None, file_name,
                       header.get('supplier'), header.get('consignee'), header.get('end_user'), header.get('origin'),
+                      header.get('transport_doc'), header.get('vessel_name'), header.get('vessel_imo'),
                       json.dumps({k: v['id'] for k, v in versions.items()}), len(lines), user_id)).fetchone()['id']
-    counts = run_lines(db, sid, lines, index, versions, batch)
-    db.execute("UPDATE dualuse_screenings SET counts = %s WHERE id = %s", (json.dumps(counts), sid))
+    run_lines(db, sid, lines, index, versions, batch)
+    _recount(db, sid)
     db.commit()
     parties = [('supplier', header.get('supplier')), ('consignee', header.get('consignee')),
                ('end_user', header.get('end_user'))]
     if any(n for _, n in parties):
         pr = screen_parties(parties, user_id, sid)
         db.execute("UPDATE dualuse_screenings SET party_results = %s WHERE id = %s", (json.dumps(pr), sid))
+        db.commit()
+    vr = screen_vessel(header.get('vessel_name'), header.get('vessel_imo'), db)
+    if vr:
+        db.execute("UPDATE dualuse_screenings SET vessel_result = %s WHERE id = %s", (json.dumps(vr, default=str), sid))
         db.commit()
     return sid
 
@@ -330,7 +413,7 @@ def validate_decision(decision, reason, comment):
     """-> list of error messages (English, Arabic)."""
     errs = []
     if decision not in ('clear', 'hold'):
-        errs.append(('Choose Clear or Hold.', 'اختر سليم أو إيقاف.'))
+        errs.append(('Choose Clear or Hold.', 'اختر «لا مؤشرات» أو «إيقاف».'))
     if reason not in REASON_CODES:
         errs.append(('Choose a reason.', 'اختر السبب.'))
     if len((comment or '').strip()) < MIN_COMMENT:
@@ -357,9 +440,25 @@ def decide_line(line_id, decision, reason, comment, user_id, remember=True, db=N
                       decided_at = EXCLUDED.decided_at, screening_line_id = EXCLUDED.screening_line_id""",
                    (ln['item_key'], ln['description'], ln['hs_code'], ln['cas'], ln['model'], decision, reason,
                     comment.strip()[:4000], json.dumps(s['list_versions'] or {}), user_id, now, line_id))
+    s = db.execute("SELECT list_versions FROM dualuse_screenings WHERE id = %s", (ln['screening_id'],)).fetchone()
+    db.execute("""INSERT INTO dualuse_decisions (line_id, screening_id, decision, reason, comment, suggested, answers,
+                  list_versions, decided_by, decided_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+               (line_id, ln['screening_id'], decision, reason, comment.strip()[:4000], ln['suggested'],
+                json.dumps(ln['answers'] or {}), json.dumps(s['list_versions'] or {}), user_id, now))
     _recount(db, ln['screening_id'])
     db.commit()
     return ln['screening_id']
+
+
+def decisions(sid, db=None):
+    """Every decision recorded in a screening, oldest first: {line_id: [rows]}."""
+    db = db or get_db()
+    out = {}
+    for r in db.execute("""SELECT d.*, u.first_name || ' ' || u.last_name AS decided_by_name FROM dualuse_decisions d
+                           LEFT JOIN users u ON u.id = d.decided_by WHERE d.screening_id = %s
+                           ORDER BY d.decided_at, d.id""", (sid,)).fetchall():
+        out.setdefault(r['line_id'], []).append(r)
+    return out
 
 
 def _recount(db, sid):

@@ -12,12 +12,25 @@
 </ul>
 {% endmacro %}
 
-{% macro risk_badge(r) %}{% set l = DU.RISK_LABELS.get(r) %}{% if l %}<span class="badge du-risk du-risk-{{ r }}">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
+{% macro risk_badge(r) %}{% set l = DU.RISK_LABELS.get(r) %}{% if l %}<span class="badge du-risk du-risk-{{ r }}">{{ rc_loc('Risk', 'الخطر') }}: {{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
 
-{% macro outcome_badge(o) %}{% set l = DU.OUTCOME_LABELS.get(o) %}{% if l %}<span class="badge du-out du-out-{{ o }}">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
+{% macro outcome_badge(o) %}{% set l = DU.OUTCOME_LABELS.get(o) %}{% if l %}<span class="badge du-out du-out-{{ o }}" title="{{ rc_loc(*DU.OUTCOME_HELP[o]) }}">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
 
-{% macro list_label(d, also=[]) %}{% if du_show_lists %}<span class="badge bg-light text-dark border" title="{{ rc_loc('Visible to administrators only', 'يظهر للمسؤولين فقط') }}">{{ d.list_code }}{% for a in also %}, {{ a }}{% endfor %}</span>{% else %}<span class="badge bg-light text-muted border">{{ rc_loc(*DU.CLIENT_LIST_LABEL) }}</span>{% endif %}{% endmacro %}
+{# Source lists: the real name for site administrators only, the generic label for everyone else. #}
+{% macro list_name(code) %}{% if du_show_lists %}{{ DU.LIST_SHORT.get(code, code) }}{% else %}{{ rc_loc(*DU.CLIENT_LIST_LABEL) }}{% endif %}{% endmacro %}
+
+{% macro list_label(d, also=[]) %}{% if du_show_lists %}<span class="badge bg-light text-dark border" title="{{ rc_loc('Visible to site administrators only', 'يظهر لمسؤولي النظام فقط') }}"><i class="bi bi-shield-lock me-1"></i>{{ DU.LIST_SHORT.get(d.list_code, d.list_code) }}{% for a in also %}, {{ DU.LIST_SHORT.get(a, a) }}{% endfor %}</span>{% else %}<span class="badge bg-light text-muted border">{{ rc_loc(*DU.CLIENT_LIST_LABEL) }}</span>{% endif %}{% endmacro %}
+
+{# The code shown for an entry. Chemical-schedule rows use internal codes: clients see a neutral label. #}
+{% macro dcode(d) %}{% if d.list_code == 'cwc' %}{% if du_show_lists %}CWC {{ d.code }}{% else %}{{ rc_loc('Listed chemical family', 'فئة كيميائية مدرجة') }}{% endif %}{% elif d.list_code == 'chemicals' %}CAS {{ d.code }}{% elif d.kind == 'priority' %}HS {{ d.code }}{% else %}{{ d.code }}{% endif %}{% endmacro %}
+
+{% macro chem_level(level) %}{% set l = DU.CHEM_LEVEL.get(level) %}{% if l %}<span class="badge bg-danger">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
 
 {% macro kind_label(k) %}{% set l = DU.KIND_LABELS.get(k) %}{% if l %}<span class="small text-muted">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
 
+{% macro why_label(w) %}{% set wl = {'code': ('Control code', 'كود الرقابة'), 'cas': ('CAS number', 'رقم CAS'), 'hs': ('Tariff code', 'كود التعريفة'), 'exact': ('Words', 'كلمات'), 'translated': ('Arabic / English dictionary', 'القاموس العربي / الإنجليزي'), 'synonym': ('Related term', 'مصطلح مرادف'), 'fuzzy': ('Spelling corrected', 'تصحيح الإملاء'), 'prefix': ('Partial word', 'كلمة جزئية'), 'phrase': ('Phrase', 'عبارة'), 'threshold': ('Threshold', 'حد فني'), 'text': ('Description', 'الوصف'), 'name': ('Chemical name', 'اسم المادة')}.get(w) %}{% if wl %}<span class="badge bg-light text-muted border me-1">{{ rc_loc(*wl) }}</span>{% endif %}{% endmacro %}
+
+{# English-first: the Arabic text is used automatically when it exists, field by field. #}
 {% macro title(d) %}{% if du_lang == 'ar' and (d.title_ar or d.text_ar) %}{{ d.title_ar or (d.text_ar[:160]) }}{% else %}{{ d.title_en or ((d.text_en or '')[:160]) }}{% endif %}{% endmacro %}
+
+{% macro disclaimer(cls='') %}<div class="small text-muted du-disclaimer {{ cls }}"><i class="bi bi-info-circle me-1"></i>{{ rc_loc(*DU.DISCLAIMER) }}</div>{% endmacro %}

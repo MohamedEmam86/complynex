@@ -1,29 +1,46 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>{{ s.ref }}</title>
 <style>
-  @page { size: A4 landscape; margin: 14mm; }
-  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #1b2733; }
+  @page { size: A4 landscape; margin: 14mm; @bottom-right { content: "{{ s.ref }} · page " counter(page) " / " counter(pages); font-size: 7pt; color: #777; } }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 8.5pt; color: #1b2733; }
   h1 { font-size: 15pt; margin: 0 0 4px; color: #1F3A5F; }
-  .meta { color: #555; margin-bottom: 10px; }
+  h2 { font-size: 10.5pt; margin: 12px 0 4px; color: #1F3A5F; }
+  .meta { color: #555; margin-bottom: 8px; }
+  .note { border-left: 3px solid #0d6efd; background: #f3f6fb; padding: 5px 8px; margin: 6px 0 10px; }
   table { width: 100%; border-collapse: collapse; }
-  th { background: #1F3A5F; color: #fff; text-align: left; padding: 4px; font-size: 8pt; }
+  th { background: #1F3A5F; color: #fff; text-align: left; padding: 4px; font-size: 7.5pt; }
   td { border-bottom: 1px solid #ddd; padding: 4px; vertical-align: top; }
   .clear { color: #146c43; font-weight: bold; } .hold { color: #b02a37; font-weight: bold; } .review { color: #997404; font-weight: bold; }
   .bidi { unicode-bidi: plaintext; }
-  .foot { margin-top: 12px; color: #777; font-size: 8pt; }
+  .muted { color: #666; }
+  ul { margin: 2px 0 0 14px; padding: 0; }
 </style></head><body>
-<h1>Dual-use goods screening · {{ s.ref }}</h1>
-<div class="meta">{{ s.title or '' }}{% if s.file_name %} · {{ s.file_name }}{% endif %} · {{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at }} · {{ s.created_by_name or '' }}<br>
-Screened against: International approved control lists{% for p in s.party_results or [] %}<br>{{ p.role|replace('_', ' ')|capitalize }}: {{ p.name }} — sanctions screening: {{ p.result or p.error or '—' }}{% endfor %}</div>
-<table><thead><tr><th>#</th><th>Product</th><th>HS</th><th>CAS</th><th>Model</th><th>Possible entries</th><th>Suggested</th><th>Decision</th><th>Reason / comment</th><th>By / date</th></tr></thead>
+<h1>Dual-use goods screening report · {{ s.ref }}</h1>
+<div class="meta">{{ s.title or '' }}{% if s.file_name %} · file {{ s.file_name }}{% endif %} · {{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at }} · {{ s.created_by_name or '' }}<br>
+Screened against: {{ DU.CLIENT_LIST_LABEL[0] }} (list versions recorded with the screening)</div>
+<div class="note">{{ DU.DISCLAIMER[0] }}</div>
+
+{% if s.party_results or s.vessel_name or s.vessel_imo or s.transport_doc %}
+<h2>Parties and transport</h2>
+<table><tbody>
+{% for p in s.party_results or [] %}<tr><td>{{ p.role|replace('_', ' ')|capitalize }}</td><td class="bidi">{{ p.name }}</td><td>Sanctions screening: {{ p.result or ('not completed' if p.error else '—') }}{% if p.history_id %} (screening #{{ p.history_id }}){% endif %}</td></tr>{% endfor %}
+{% if s.transport_doc %}<tr><td>Bill of lading / airway bill</td><td>{{ s.transport_doc }}</td><td></td></tr>{% endif %}
+{% if s.vessel_name or s.vessel_imo %}{% set v = s.vessel_result or {} %}<tr><td>Vessel</td><td class="bidi">{{ s.vessel_name or '' }}{% if s.vessel_imo %} · IMO {{ s.vessel_imo }}{% endif %}</td>
+  <td>Vessel screening: {% if v.get('error') %}not available{% else %}{{ v.get('tier') or '—' }}{% for h in v.get('hits') or [] %}<br>{{ h.name }}{% if h.imo %} · IMO {{ h.imo }}{% endif %} · {{ h.tier }}{% endfor %}{% endif %}</td></tr>{% endif %}
+</tbody></table>
+{% endif %}
+
+<h2>Products</h2>
+<table><thead><tr><th>#</th><th>Product</th><th>HS / CAS / model</th><th>Screening result and why</th><th>Decision</th><th>Reason / comment</th><th>By / date</th></tr></thead>
 <tbody>{% for ln in lines %}
 <tr><td>{{ ln.line_no }}</td><td><span class="bidi">{{ ln.description or '' }}</span></td>
-  <td>{{ ln.hs_code or '' }}</td><td>{{ ln.cas or '' }}</td><td>{{ ln.model or '' }}</td>
-  <td>{{ (ln.candidates or [])[:6]|map(attribute='code')|join(', ') }}</td>
-  <td class="{{ ln.suggested }}">{{ ln.suggested|capitalize }}</td>
-  <td class="{{ ln.decision or '' }}">{{ (ln.decision or 'pending')|capitalize }}</td>
-  <td>{{ reasons.get(ln.reason, (ln.reason or '', ''))[0] }}{% if ln.comment %}<br>{{ ln.comment }}{% endif %}</td>
+  <td>{% if ln.hs_code %}HS {{ ln.hs_code }}<br>{% endif %}{% if ln.cas %}CAS {{ ln.cas }}<br>{% endif %}{{ ln.model or '' }}</td>
+  <td><span class="{{ ln.suggested }}">{{ DU.OUTCOME_LABELS[ln.suggested][0] }}</span>
+    <ul>{% for en, ar in explain.get(ln.id) or [] %}<li>{{ en }}</li>{% endfor %}</ul></td>
+  <td class="{{ ln.decision or '' }}">{{ DU.OUTCOME_LABELS[ln.decision][0] if ln.decision else 'Pending' }}</td>
+  <td>{{ reasons.get(ln.reason, (ln.reason or '', ''))[0] }}{% if ln.comment %}<br><span class="bidi">{{ ln.comment }}</span>{% endif %}
+    {% set tr = trail.get(ln.id) or [] %}{% if tr|length > 1 %}<div class="muted">Earlier decisions: {% for t in tr[:-1] %}{{ t.decided_at.strftime('%Y-%m-%d') }} {{ DU.OUTCOME_LABELS[t.decision][0] }} ({{ t.decided_by_name or '' }}){{ '; ' if not loop.last }}{% endfor %}</div>{% endif %}</td>
   <td>{{ ln.decided_by_name or '' }}<br>{{ ln.decided_at.strftime('%Y-%m-%d %H:%M') if ln.decided_at else '' }}</td></tr>
 {% endfor %}</tbody></table>
-<div class="foot">A tariff code alone never clears or confirms a product. The English text of each control entry is the legal reference. Generated by ComplyNex.</div>
+<p class="muted">A tariff code alone never clears or confirms a product. Thresholds are read automatically from the legal texts and must be checked against them. Generated by ComplyNex on {{ s.updated_at.strftime('%Y-%m-%d %H:%M') if s.updated_at }}.</p>
 </body></html>

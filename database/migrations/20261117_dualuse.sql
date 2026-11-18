@@ -1,7 +1,8 @@
 -- Dual-use goods screening (optional pack 'trade_control', permission module 'dualuse').
 -- Control lists are loaded by scripts/dualuse/import_lists.py (versioned; a past screening
--- keeps the list versions it used). Clients see the lists as "International approved control
--- lists"; the real list name (dualuse_lists.legal_name) is shown to site administrators only.
+-- keeps the list versions it used). Clients see the lists only as "International control lists"
+-- (قوائم الرقابة الدولية); the real list name (dualuse_lists.legal_name) is shown to site administrators only.
+-- Idempotent: safe to run more than once.
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS dualuse_lists (
@@ -171,10 +172,35 @@ CREATE TABLE IF NOT EXISTS dualuse_screening_lines (
 );
 CREATE INDEX IF NOT EXISTS idx_du_lines_screening ON dualuse_screening_lines(screening_id, line_no);
 
+-- Transport document (bill of lading / airway bill) and the vessel screened through the vessel engine.
+ALTER TABLE dualuse_screenings ADD COLUMN IF NOT EXISTS transport_doc TEXT;
+ALTER TABLE dualuse_screenings ADD COLUMN IF NOT EXISTS vessel_name TEXT;
+ALTER TABLE dualuse_screenings ADD COLUMN IF NOT EXISTS vessel_imo TEXT;
+ALTER TABLE dualuse_screenings ADD COLUMN IF NOT EXISTS vessel_result JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+-- Every decision ever recorded on a line (the line keeps only the latest): the audit trail of the module.
+CREATE TABLE IF NOT EXISTS dualuse_decisions (
+    id              SERIAL PRIMARY KEY,
+    line_id         INTEGER NOT NULL REFERENCES dualuse_screening_lines(id) ON DELETE CASCADE,
+    screening_id    INTEGER NOT NULL REFERENCES dualuse_screenings(id) ON DELETE CASCADE,
+    decision        TEXT NOT NULL,                    -- clear | hold
+    reason          TEXT NOT NULL,
+    comment         TEXT NOT NULL,
+    suggested       TEXT,                             -- the system suggestion at the time
+    answers         JSONB NOT NULL DEFAULT '{}'::jsonb,
+    list_versions   JSONB NOT NULL DEFAULT '{}'::jsonb,
+    reused          BOOLEAN NOT NULL DEFAULT FALSE,   -- applied from an identical product decided earlier
+    decided_by      INTEGER,
+    decided_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_du_decisions_line ON dualuse_decisions(line_id, decided_at);
+CREATE INDEX IF NOT EXISTS idx_du_decisions_screening ON dualuse_decisions(screening_id);
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON dualuse_lists, dualuse_list_versions, dualuse_items, dualuse_parameters,
     dualuse_hs_map, dualuse_chemicals, dualuse_terms, dualuse_item_master, dualuse_screenings,
-    dualuse_screening_lines TO complynex;
+    dualuse_screening_lines, dualuse_decisions TO complynex;
 GRANT USAGE, SELECT ON SEQUENCE dualuse_lists_id_seq, dualuse_list_versions_id_seq, dualuse_items_id_seq,
     dualuse_parameters_id_seq, dualuse_hs_map_id_seq, dualuse_chemicals_id_seq, dualuse_terms_id_seq,
-    dualuse_item_master_id_seq, dualuse_screenings_id_seq, dualuse_screening_lines_id_seq TO complynex;
+    dualuse_item_master_id_seq, dualuse_screenings_id_seq, dualuse_screening_lines_id_seq,
+    dualuse_decisions_id_seq TO complynex;
 COMMIT;

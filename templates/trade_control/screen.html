@@ -26,9 +26,16 @@
         <div class="col-12"><label class="form-label">{{ rc_loc('Consignee / importer', 'المرسل إليه / المستورد') }}</label><input name="consignee" class="form-control" maxlength="300" value="{{ form.get('consignee', '') }}"></div>
         <div class="col-12"><label class="form-label">{{ rc_loc('End user (if known)', 'المستخدم النهائي (إن عُرف)') }}</label><input name="end_user" class="form-control" maxlength="300" value="{{ form.get('end_user', '') }}"></div>
       </div></div>
+      <div class="card mt-3"><div class="card-header fw-bold"><i class="bi bi-truck me-1"></i>{{ rc_loc('Transport (optional)', 'النقل (اختياري)') }}</div><div class="card-body row g-2">
+        <div class="col-12"><label class="form-label">{{ rc_loc('Bill of lading / airway bill no.', 'رقم بوليصة الشحن') }}</label><input name="transport_doc" class="form-control" maxlength="100" dir="ltr" value="{{ form.get('transport_doc', '') }}"></div>
+        <div class="col-md-7"><label class="form-label">{{ rc_loc('Vessel name', 'اسم السفينة') }}</label><input name="vessel_name" class="form-control" maxlength="200" value="{{ form.get('vessel_name', '') }}"></div>
+        <div class="col-md-5"><label class="form-label">{{ rc_loc('IMO number', 'رقم IMO') }}</label><input name="vessel_imo" class="form-control" maxlength="20" dir="ltr" inputmode="numeric" value="{{ form.get('vessel_imo', '') }}" placeholder="9074729"></div>
+        <div class="col-12 small text-muted">{{ rc_loc('The vessel is screened with vessel screening when it is available on this installation.', 'تُفحص السفينة بفحص السفن عند توفره في هذا النظام.') }}</div>
+      </div></div>
     </div>
     <div class="col-12"><button class="btn btn-primary btn-lg"><i class="bi bi-search me-1"></i>{{ rc_loc('Screen', 'افحص') }}</button>
-      <span class="small text-muted ms-2">{{ rc_loc('Screened against', 'يتم الفحص مقابل') }} {{ rc_loc(*DU.CLIENT_LIST_LABEL) }}</span></div>
+      <span class="small text-muted ms-2">{{ rc_loc('Screened against', 'يتم الفحص مقابل') }} {{ rc_loc(*DU.CLIENT_LIST_LABEL) }}</span>
+      {{ dn.disclaimer('mt-2') }}</div>
   </form>
 </div>
 {% endblock %}
