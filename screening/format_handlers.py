@@ -1080,12 +1080,21 @@ class OpenSanctionsHandler(BaseFormatHandler):
     def __init__(self, rich=False):
         super().__init__()
         self.rich = bool(rich)
-        # ship ownership (V1): FtM keeps owners in separate Ownership / UnknownLink records;
-        # {entity id: [(other entity id, role)]}, attached to the ships by attach_vessel_links()
-        self.vessel_links = {}
+        # ship ownership (V1): FtM keeps owners in separate Ownership / UnknownLink records. The full feed
+        # holds hundreds of thousands of them and only the ships' links are used, so they are spooled to a
+        # temporary file during the stream (memory stays flat) and read back once the ship ids are known.
+        self._link_file = None
+        self.link_count = 0
 
     _OS_LINK_ROLES = {'owned or controlled by': 'owner', 'owns, controls, or operates': 'owner',
                       'property in the interest of': 'beneficial_interest', '': 'owner'}
+
+    def _spool(self, asset, other, role):
+        if self._link_file is None:
+            import tempfile
+            self._link_file = tempfile.TemporaryFile(mode='w+', encoding='utf-8')
+        self._link_file.write(f'{asset}\t{other}\t{role}\n')
+        self.link_count += 1
 
     def _collect_link(self, data):
         p = data.get('properties') or {}
@@ -1094,21 +1103,47 @@ class OpenSanctionsHandler(BaseFormatHandler):
             role = self._OS_LINK_ROLES.get(role_txt, 'linked')
             for a in p.get('asset') or []:
                 for o in p.get('owner') or []:
-                    self.vessel_links.setdefault(a, []).append((o, role))
+                    self._spool(a, o, role)
         else:       # UnknownLink: direction unknown - kept both ways, only ships are read
             for a in p.get('subject') or []:
                 for o in p.get('object') or []:
-                    self.vessel_links.setdefault(a, []).append((o, 'linked'))
-                    self.vessel_links.setdefault(o, []).append((a, 'linked'))
+                    self._spool(a, o, 'linked')
+                    self._spool(o, a, 'linked')
+
+    def _links_for(self, ids):
+        """{ship id: [(party id, role)]} from the spooled links, for the given ship ids only."""
+        out = {}
+        if self._link_file is None or not ids:
+            return out
+        self._link_file.flush()
+        self._link_file.seek(0)
+        for line in self._link_file:
+            a, _, rest = line.rstrip('\n').partition('\t')
+            if a in ids:
+                o, _, role = rest.partition('\t')
+                out.setdefault(a, []).append((o, role))
+        return out
+
+    @property
+    def vessel_links(self):
+        """All spooled links (tests / diagnostics only - reads the whole spool)."""
+        out = {}
+        if self._link_file is not None:
+            self._link_file.flush()
+            self._link_file.seek(0)
+            for line in self._link_file:
+                a, o, role = line.rstrip('\n').split('\t')
+                out.setdefault(a, []).append((o, role))
+        return out
 
     def attach_vessel_links(self, entities):
         """Add the owners / linked parties collected from Ownership / UnknownLink records to the ships'
         properties.vessel.owners (ref = the party's source_id, resolved to its row by vessel_store)."""
         n = 0
-        for e in entities:
-            if e.get('entity_type') != 'VESSEL':
-                continue
-            links = self.vessel_links.get(str(e.get('source_id') or '')[3:])
+        ships = [e for e in entities if e.get('entity_type') == 'VESSEL']
+        by_ship = self._links_for({str(e.get('source_id') or '')[3:] for e in ships})
+        for e in ships:
+            links = by_ship.get(str(e.get('source_id') or '')[3:])
             if not links:
                 continue
             full = expand_rich(e)
@@ -1128,6 +1163,9 @@ class OpenSanctionsHandler(BaseFormatHandler):
             else:
                 e['properties'] = props
             n += 1
+        if self._link_file is not None:
+            self._link_file.close()
+            self._link_file = None
         return n
     
     def parse(self, content):
