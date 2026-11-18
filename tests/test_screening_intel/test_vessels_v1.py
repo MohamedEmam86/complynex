@@ -433,3 +433,38 @@ def test_name_screening_ship_scope():
     assert CE._vessel_allowed({'entity_type': 'VESSEL', 'source': 'ofac'})            # as before ships had a type
     assert not CE._vessel_allowed({'entity_type': 'VESSEL', 'source': 'opensanctions'})
     assert CE._vessel_allowed({'entity_type': 'ENTITY', 'source': 'opensanctions'})
+
+
+def _upload(data, name):
+    from werkzeug.datastructures import FileStorage
+    import io as _io
+    return FileStorage(stream=_io.BytesIO(data), filename=name)
+
+
+def test_bulk_upload_bounded_before_parsing():
+    from screening import vessel_routes as VR
+    rows = VR.read_bulk_rows(_upload(b'name,imo\nATTICA,\n,9436941\n', 'a.csv'))
+    assert [r[0] for r in rows] == [2, 3]
+    big = ('name\n' + 'SHIP\n' * (VR.BULK_MAX_ROWS + 5)).encode()
+    with pytest.raises(VR.BulkTooLarge):
+        VR.read_bulk_rows(_upload(big, 'b.csv'))
+    with pytest.raises(VR.BulkTooLarge):
+        VR.read_bulk_rows(_upload(b'name\n' + b'x' * (VR.BULK_MAX_BYTES + 10), 'c.csv'))
+    import io as _io
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(['name'] + ['c%d' % i for i in range(100)])
+    ws.append(['ATTICA'] + ['y' * 1000] * 100)
+    buf = _io.BytesIO()
+    wb.save(buf)
+    rows = VR.read_bulk_rows(_upload(buf.getvalue(), 'd.xlsx'))
+    assert rows[0][1]['name'] == 'ATTICA' and len(rows[0][1]) <= VR.BULK_MAX_COLS
+    assert all(len(v) <= VR.BULK_MAX_CELL for v in rows[0][1].values())
+
+
+def test_owner_key_fits_the_column():
+    from screening.vessel_routes import owner_key
+    assert owner_key({'watchlist_id': 5}) == 'WL:5'
+    k = owner_key({'name': 'A VERY LONG DESIGNATED SHIPPING COMPANY NAME LIMITED LIABILITY'})
+    assert len(k) <= 40 and k == owner_key({'name': 'A very long designated shipping company name limited liability'})
