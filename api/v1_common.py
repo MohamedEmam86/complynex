@@ -32,7 +32,7 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 API_VERSION = 'v1'
-EVENTS = ('screening.completed', 'hit.decided', 'list.updated')
+EVENTS = ('screening.completed', 'hit.decided', 'list.updated', 'vessel_screening.completed')
 IDEM_TTL_HOURS = 24
 MAX_BATCH_ROWS = 5000
 _RID = re.compile(r'^[A-Za-z0-9._:-]{1,64}$')
@@ -69,6 +69,7 @@ SCOPES = (
     ('screening:read', 'Read screenings and list status'),
     ('screening:write', 'Run screenings (single and batch)'),
     ('payments:screen', 'Real-time payment screening'),
+    ('vessels:screen', 'Vessel screening (screen ships, read their results)'),
     ('aml:read', 'AML read'), ('aml:write', 'AML write'),
     ('kyc:read', 'eKYC read'), ('kyc:write', 'eKYC write'),
 )
