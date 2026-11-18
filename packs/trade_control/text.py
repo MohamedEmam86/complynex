@@ -263,7 +263,8 @@ def snippet(text, terms, width=220):
     esc = _h.escape(piece)
     for t in sorted({t for t in terms if len(t) >= 2}, key=len, reverse=True):
         try:
-            esc = re.sub('(' + _fold_pattern(t) + ')', r'<mark>\1</mark>', esc, flags=re.I)
+            tail = r'[a-z]*' if re.fullmatch(r'[a-z]+', t) else ''      # a stem marks the whole word
+            esc = re.sub(r'(?<![a-z&#])(' + _fold_pattern(t) + tail + ')', r'<mark>\1</mark>', esc, flags=re.I)
         except re.error:
             continue
     esc = re.sub(r'(<mark>)+', '<mark>', re.sub(r'(</mark>)+', '</mark>', esc))
