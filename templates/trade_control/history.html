@@ -8,10 +8,12 @@
   {{ dn.nav('history') }}
   {% if own_only %}<div class="small text-muted mb-2">{{ rc_loc('Showing your own screenings.', 'تظهر عمليات الفحص الخاصة بك فقط.') }}</div>{% endif %}
   <form class="row g-2 mb-3" method="get">
-    <div class="col-md-5"><input name="q" class="form-control" value="{{ args.get('q', '') }}" placeholder="{{ rc_loc('Reference, product, model, HS code, party', 'المرجع أو المنتج أو الموديل أو كود HS أو الطرف') }}"></div>
+    <div class="col-md-3"><input name="q" class="form-control" value="{{ args.get('q', '') }}" placeholder="{{ rc_loc('Reference, product, model, HS code, party', 'المرجع أو المنتج أو الموديل أو كود HS أو الطرف') }}"></div>
     <div class="col-md-3"><select name="status" class="form-select"><option value="">{{ rc_loc('All', 'الكل') }}</option>
       <option value="open" {{ 'selected' if args.get('status') == 'open' }}>{{ rc_loc('Waiting for decisions', 'بانتظار القرارات') }}</option>
       <option value="decided" {{ 'selected' if args.get('status') == 'decided' }}>{{ rc_loc('Decided', 'تم البت') }}</option></select></div>
+    <div class="col-md-2"><input type="date" name="date_from" class="form-control" value="{{ args.get('date_from', '') }}" title="{{ rc_loc('From', 'من') }}"></div>
+    <div class="col-md-2"><input type="date" name="date_to" class="form-control" value="{{ args.get('date_to', '') }}" title="{{ rc_loc('To', 'إلى') }}"></div>
     <div class="col-md-2"><button class="btn btn-outline-primary w-100">{{ rc_loc('Filter', 'تصفية') }}</button></div>
   </form>
   <div class="table-responsive"><table class="table table-hover align-middle small">
@@ -25,5 +27,11 @@
         <td>{{ r.created_by_name or '' }}</td><td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at }}</td></tr>
     {% else %}<tr><td colspan="8" class="text-muted">{{ rc_loc('No screenings yet.', 'لا توجد عمليات فحص بعد.') }}</td></tr>{% endfor %}</tbody>
   </table></div>
+  {% if page > 1 or has_next %}{% set a = args.to_dict() %}
+  <nav><ul class="pagination pagination-sm">
+    {% if page > 1 %}{% set _ = a.update({'page': page - 1}) %}<li class="page-item"><a class="page-link" href="{{ url_for('dualuse.screenings', **a) }}">{{ rc_loc('Newer', 'الأحدث') }}</a></li>{% endif %}
+    <li class="page-item disabled"><span class="page-link">{{ page }}</span></li>
+    {% if has_next %}{% set _ = a.update({'page': page + 1}) %}<li class="page-item"><a class="page-link" href="{{ url_for('dualuse.screenings', **a) }}">{{ rc_loc('Older', 'الأقدم') }}</a></li>{% endif %}
+  </ul></nav>{% endif %}
 </div>
 {% endblock %}

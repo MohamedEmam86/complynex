@@ -28,7 +28,13 @@
       </div></div></div>
       <div class="col-lg-7"><div class="card"><div class="card-header fw-bold">{{ rc_loc('First lines of the file', 'أول بنود الملف') }}</div>
         <div class="table-responsive"><table class="table table-sm small mb-0"><thead><tr>{% for h in header %}<th>{{ h }}</th>{% endfor %}</tr></thead>
-          <tbody>{% for r in rows %}<tr>{% for c in r %}<td>{{ c[:80] }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></div></div>
+          <tbody>{% for r in rows %}<tr>{% for c in r %}<td>{{ c[:80] }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></div>
+        {% if preview %}
+        <div class="card mt-3"><div class="card-header fw-bold">{{ rc_loc('As they will be screened (with the columns detected)', 'كما ستُفحص (بالأعمدة المكتشفة)') }}</div>
+          <div class="table-responsive"><table class="table table-sm small mb-0"><thead><tr><th>#</th><th>{{ rc_loc('Description', 'الوصف') }}</th><th>HS</th><th>CAS</th><th>{{ rc_loc('Model', 'الموديل') }}</th></tr></thead>
+          <tbody>{% for l in preview %}<tr><td>{{ l.line_no }}</td><td dir="auto">{{ (l.description or '')[:80] }}</td><td dir="ltr">{{ l.hs_code or '' }}{% if l.hs_warning %}<div class="text-warning-emphasis">{{ l.hs_warning }}</div>{% endif %}</td><td dir="ltr">{{ l.cas or '' }}</td><td dir="ltr">{{ l.model or '' }}</td></tr>{% endfor %}</tbody></table></div>
+          <div class="card-body small text-muted py-1">{{ rc_loc('Title rows above the header and total rows are skipped. Tariff codes read as numbers are repaired: check them.', 'تُتخطى صفوف العنوان فوق رأس الجدول وصفوف الإجمالي. تُصحح أكواد التعريفة المقروءة كأرقام: راجعها.') }}</div></div>
+        {% endif %}</div>
     </div>
   </form>
 </div>

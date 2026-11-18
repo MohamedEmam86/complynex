@@ -21,13 +21,16 @@
   </div>
 
   <div class="card"><div class="card-header fw-bold">{{ rc_loc('Bilingual dictionary', 'القاموس ثنائي اللغة') }} ({{ terms|length }})</div><div class="card-body">
+    {% if du_show_lists %}
     <form method="post" class="row g-2 mb-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="col-md-5"><input name="term_en" class="form-control" dir="ltr" maxlength="200" placeholder="English term" required></div>
       <div class="col-md-5"><input name="term_ar" class="form-control" dir="rtl" maxlength="200" placeholder="المصطلح بالعربية" required></div>
       <div class="col-md-2"><button class="btn btn-primary w-100">{{ rc_loc('Add', 'إضافة') }}</button></div>
     </form>
-    <div class="row small du-terms">{% for t in terms %}<div class="col-md-4 col-xl-3"><span dir="ltr">{{ t.term_en }}</span> — <span dir="rtl">{{ t.term_ar }}</span></div>{% endfor %}</div>
+    {% else %}<div class="small text-muted mb-2">{{ rc_loc('The dictionary is shared by every organisation: it is maintained by the platform administrator.', 'القاموس مشترك بين كل المؤسسات ويحدّثه مسؤول المنصة.') }}</div>{% endif %}
+    <div class="row small du-terms">{% for t in terms[:300] %}<div class="col-md-4 col-xl-3"><span dir="ltr">{{ t.term_en }}</span> — <span dir="rtl">{{ t.term_ar }}</span></div>{% endfor %}</div>
+    {% if terms|length > 300 %}<div class="small text-muted mt-2">{{ rc_loc('First 300 terms shown.', 'تظهر أول 300 مصطلح.') }}</div>{% endif %}
   </div></div>
 </div>
 {% endblock %}

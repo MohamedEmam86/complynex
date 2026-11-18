@@ -1,46 +1,70 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>{{ s.ref }}</title>
+{% set ar = du_lang == 'ar' %}
+<html lang="{{ 'ar' if ar else 'en' }}" dir="{{ 'rtl' if ar else 'ltr' }}"><head><meta charset="utf-8"><title>{{ s.ref }}</title>
 <style>
-  @page { size: A4 landscape; margin: 14mm; @bottom-right { content: "{{ s.ref }} · page " counter(page) " / " counter(pages); font-size: 7pt; color: #777; } }
-  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 8.5pt; color: #1b2733; }
+  @page { size: A4 landscape; margin: 14mm; @bottom-right { content: "{{ s.ref }} · " counter(page) " / " counter(pages); font-size: 7pt; color: #777; } }
+  body { font-family: 'DejaVu Sans', 'Noto Naskh Arabic', Arial, sans-serif; font-size: 8.5pt; color: #1b2733; }
   h1 { font-size: 15pt; margin: 0 0 4px; color: #1F3A5F; }
   h2 { font-size: 10.5pt; margin: 12px 0 4px; color: #1F3A5F; }
   .meta { color: #555; margin-bottom: 8px; }
-  .note { border-left: 3px solid #0d6efd; background: #f3f6fb; padding: 5px 8px; margin: 6px 0 10px; }
+  .note { border-inline-start: 3px solid #0d6efd; background: #f3f6fb; padding: 5px 8px; margin: 6px 0 10px; }
   table { width: 100%; border-collapse: collapse; }
-  th { background: #1F3A5F; color: #fff; text-align: left; padding: 4px; font-size: 7.5pt; }
-  td { border-bottom: 1px solid #ddd; padding: 4px; vertical-align: top; }
+  th { background: #1F3A5F; color: #fff; text-align: start; padding: 4px; font-size: 7.5pt; }
+  td { border-bottom: 1px solid #ddd; padding: 4px; vertical-align: top; text-align: start; }
   .clear { color: #146c43; font-weight: bold; } .hold { color: #b02a37; font-weight: bold; } .review { color: #997404; font-weight: bold; }
   .bidi { unicode-bidi: plaintext; }
   .muted { color: #666; }
+  .sum td { font-size: 10pt; }
   ul { margin: 2px 0 0 14px; padding: 0; }
 </style></head><body>
-<h1>Dual-use goods screening report · {{ s.ref }}</h1>
-<div class="meta">{{ s.title or '' }}{% if s.file_name %} · file {{ s.file_name }}{% endif %} · {{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at }} · {{ s.created_by_name or '' }}<br>
-Screened against: {{ DU.CLIENT_LIST_LABEL[0] }} (list versions recorded with the screening)</div>
-<div class="note">{{ DU.DISCLAIMER[0] }}</div>
+{% macro L(en, ar_) %}{{ ar_ if ar else en }}{% endmacro %}
+{% macro outcome(o) %}{{ L(*DU.OUTCOME_LABELS[o]) if o in DU.OUTCOME_LABELS else '' }}{% endmacro %}
+<h1>{{ L('Dual-use goods screening report', 'تقرير فحص السلع مزدوجة الاستخدام') }} · {{ s.ref }}</h1>
+<div class="meta">{{ s.title or '' }}{% if s.file_name %} · {{ s.file_name }}{% endif %} · {{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at }} · {{ s.created_by_name or '' }}<br>
+{{ L('Screened against', 'تم الفحص مقابل') }}: {{ L(*DU.CLIENT_LIST_LABEL) }}{% for c in coverage %} · {{ c }}{% endfor %}</div>
+<div class="note">{{ L(*DU.DISCLAIMER) }}</div>
+
+{% set c = s.counts or {} %}
+{% set held = lines|selectattr('decision', 'equalto', 'hold')|list %}
+{% set open_ = lines|selectattr('decision', 'none')|list %}
+<h2>{{ L('Summary', 'الملخص') }}</h2>
+<table class="sum"><tbody><tr>
+  <td>{{ L('Lines', 'البنود') }}: <b>{{ lines|length }}</b></td>
+  <td class="clear">{{ outcome('clear') }}: {{ c.get('clear', 0) }}</td><td class="review">{{ outcome('review') }}: {{ c.get('review', 0) }}</td>
+  <td class="hold">{{ outcome('hold') }}: {{ c.get('hold', 0) }}</td>
+  <td>{{ L('Decisions pending', 'قرارات معلقة') }}: <b>{{ open_|length }}</b></td></tr></tbody></table>
 
 {% if s.party_results or s.vessel_name or s.vessel_imo or s.transport_doc %}
-<h2>Parties and transport</h2>
+<h2>{{ L('Parties and transport', 'الأطراف والنقل') }}</h2>
 <table><tbody>
-{% for p in s.party_results or [] %}<tr><td>{{ p.role|replace('_', ' ')|capitalize }}</td><td class="bidi">{{ p.name }}</td><td>Sanctions screening: {{ p.result or ('not completed' if p.error else '—') }}{% if p.history_id %} (screening #{{ p.history_id }}){% endif %}</td></tr>{% endfor %}
-{% if s.transport_doc %}<tr><td>Bill of lading / airway bill</td><td>{{ s.transport_doc }}</td><td></td></tr>{% endif %}
-{% if s.vessel_name or s.vessel_imo %}{% set v = s.vessel_result or {} %}<tr><td>Vessel</td><td class="bidi">{{ s.vessel_name or '' }}{% if s.vessel_imo %} · IMO {{ s.vessel_imo }}{% endif %}</td>
-  <td>Vessel screening: {% if v.get('error') %}not available{% else %}{{ v.get('tier') or '—' }}{% for h in v.get('hits') or [] %}<br>{{ h.name }}{% if h.imo %} · IMO {{ h.imo }}{% endif %} · {{ h.tier }}{% endfor %}{% endif %}</td></tr>{% endif %}
+{% set roles = {'supplier': ('Supplier', 'المورد'), 'consignee': ('Consignee', 'المرسل إليه'), 'end_user': ('End user', 'المستخدم النهائي')} %}
+{% for p in s.party_results or [] %}<tr><td>{{ L(*roles.get(p.role, (p.role, p.role))) }}</td><td class="bidi">{{ p.name }}</td><td>{{ L('Sanctions screening', 'الفحص على قوائم العقوبات') }}: {{ p.result or (L('not completed', 'لم يكتمل') if p.error else '—') }}{% if p.history_id %} (#{{ p.history_id }}){% endif %}</td></tr>{% endfor %}
+{% if s.transport_doc %}<tr><td>{{ L('Bill of lading / airway bill', 'بوليصة الشحن') }}</td><td>{{ s.transport_doc }}</td><td></td></tr>{% endif %}
+{% if s.vessel_name or s.vessel_imo %}{% set v = s.vessel_result or {} %}<tr><td>{{ L('Vessel', 'السفينة') }}</td><td class="bidi">{{ s.vessel_name or '' }}{% if s.vessel_imo %} · IMO {{ s.vessel_imo }}{% endif %}</td>
+  <td>{{ L('Vessel screening', 'فحص السفينة') }}: {% if v.get('error') %}{{ L('not available', 'غير متاح') }}{% else %}{{ L(*DU.VESSEL_TIERS.get(v.get('tier'), (v.get('tier') or '—', v.get('tier') or '—'))) }}{% for h in v.get('hits') or [] %}<br>{{ h.name }}{% if h.imo %} · IMO {{ h.imo }}{% endif %} · {{ L(*DU.VESSEL_TIERS.get(h.tier, (h.tier, h.tier))) }} · {{ L(*DU.VESSEL_LIST_LABEL) }}{% endfor %}{% endif %}</td></tr>{% endif %}
 </tbody></table>
 {% endif %}
 
-<h2>Products</h2>
-<table><thead><tr><th>#</th><th>Product</th><th>HS / CAS / model</th><th>Screening result and why</th><th>Decision</th><th>Reason / comment</th><th>By / date</th></tr></thead>
-<tbody>{% for ln in lines %}
-<tr><td>{{ ln.line_no }}</td><td><span class="bidi">{{ ln.description or '' }}</span></td>
+<h2>{{ L('Lines to note: hold, review or pending', 'بنود تستدعي الانتباه: إيقاف أو مراجعة أو قرار معلق') }}</h2>
+<table><thead><tr><th>#</th><th>{{ L('Product', 'المنتج') }}</th><th>{{ L('HS / CAS / model', 'HS / CAS / الموديل') }}</th><th>{{ L('Screening result and why', 'نتيجة الفحص وسببها') }}</th><th>{{ L('Decision', 'القرار') }}</th><th>{{ L('Reason / comment', 'السبب / التعليق') }}</th><th>{{ L('By / date', 'بواسطة / التاريخ') }}</th></tr></thead>
+<tbody>{% for ln in lines if ln.suggested != 'clear' or (ln.decision and ln.decision != 'clear') or not ln.decision %}{% if loop.index <= 200 %}
+<tr><td>{{ ln.line_no }}</td><td><span class="bidi">{{ (ln.description or '')[:300] }}</span></td>
   <td>{% if ln.hs_code %}HS {{ ln.hs_code }}<br>{% endif %}{% if ln.cas %}CAS {{ ln.cas }}<br>{% endif %}{{ ln.model or '' }}</td>
-  <td><span class="{{ ln.suggested }}">{{ DU.OUTCOME_LABELS[ln.suggested][0] }}</span>
-    <ul>{% for en, ar in explain.get(ln.id) or [] %}<li>{{ en }}</li>{% endfor %}</ul></td>
-  <td class="{{ ln.decision or '' }}">{{ DU.OUTCOME_LABELS[ln.decision][0] if ln.decision else 'Pending' }}</td>
-  <td>{{ reasons.get(ln.reason, (ln.reason or '', ''))[0] }}{% if ln.comment %}<br><span class="bidi">{{ ln.comment }}</span>{% endif %}
-    {% set tr = trail.get(ln.id) or [] %}{% if tr|length > 1 %}<div class="muted">Earlier decisions: {% for t in tr[:-1] %}{{ t.decided_at.strftime('%Y-%m-%d') }} {{ DU.OUTCOME_LABELS[t.decision][0] }} ({{ t.decided_by_name or '' }}){{ '; ' if not loop.last }}{% endfor %}</div>{% endif %}</td>
+  <td><span class="{{ ln.suggested }}">{{ outcome(ln.suggested) }}</span>
+    <ul>{% for en, ar_ in (explain.get(ln.id) or [])[:6] %}<li class="bidi">{{ L(en, ar_)[:300] }}</li>{% endfor %}</ul></td>
+  <td class="{{ ln.decision or '' }}">{{ outcome(ln.decision) if ln.decision else L('Pending', 'معلق') }}</td>
+  <td>{{ L(*reasons.get(ln.reason, (ln.reason or '', ln.reason or ''))) }}{% if ln.comment %}<br><span class="bidi">{{ ln.comment[:500] }}</span>{% endif %}
+    {% set tr = trail.get(ln.id) or [] %}{% if tr|length > 1 %}<div class="muted">{{ L('Earlier decisions', 'قرارات سابقة') }}: {% for t in tr[:-1] %}{{ t.decided_at.strftime('%Y-%m-%d') }} {{ outcome(t.decision) }} ({{ t.decided_by_name or '' }}){{ '; ' if not loop.last }}{% endfor %}</div>{% endif %}</td>
   <td>{{ ln.decided_by_name or '' }}<br>{{ ln.decided_at.strftime('%Y-%m-%d %H:%M') if ln.decided_at else '' }}</td></tr>
-{% endfor %}</tbody></table>
-<p class="muted">A tariff code alone never clears or confirms a product. Thresholds are read automatically from the legal texts and must be checked against them. Generated by ComplyNex on {{ s.updated_at.strftime('%Y-%m-%d %H:%M') if s.updated_at }}.</p>
+{% endif %}{% endfor %}</tbody></table>
+
+{% set cleared = lines|selectattr('decision', 'equalto', 'clear')|list %}
+{% if cleared %}
+<h2>{{ L('Lines decided clear', 'بنود قرارها «لا مؤشرات»') }} ({{ cleared|length }})</h2>
+<table><thead><tr><th>#</th><th>{{ L('Product', 'المنتج') }}</th><th>HS</th><th>{{ L('Reason / comment', 'السبب / التعليق') }}</th><th>{{ L('By / date', 'بواسطة / التاريخ') }}</th></tr></thead>
+<tbody>{% for ln in cleared[:200] %}<tr><td>{{ ln.line_no }}</td><td class="bidi">{{ (ln.description or ln.model or '')[:150] }}</td><td>{{ ln.hs_code or '' }}</td>
+  <td>{{ L(*reasons.get(ln.reason, (ln.reason or '', ln.reason or ''))) }}{% if ln.comment %} — <span class="bidi">{{ ln.comment[:200] }}</span>{% endif %}</td>
+  <td>{{ ln.decided_by_name or '' }} {{ ln.decided_at.strftime('%Y-%m-%d') if ln.decided_at else '' }}</td></tr>{% endfor %}</tbody></table>
+{% endif %}
+<p class="muted">{{ L('A tariff code alone never clears or confirms a product. Thresholds are read automatically from the legal texts and must be checked against them.', 'كود التعريفة وحده لا يكفي لاعتبار المنتج خاليًا من المؤشرات أو خاضعًا للرقابة. الحدود الفنية مستخرجة آليًا من النصوص القانونية ويجب مراجعتها مقابلها.') }} ComplyNex · {{ s.updated_at.strftime('%Y-%m-%d %H:%M') if s.updated_at }}</p>
 </body></html>

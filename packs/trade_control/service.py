@@ -17,6 +17,7 @@
 """Database side of the dual-use module: the search index cache, screenings, decisions."""
 import csv
 import json
+import re
 import logging
 import os
 import secrets
@@ -61,6 +62,9 @@ OUTCOME_HELP = {
 # client's 'admin' gets 'edit' through User._get_perm but never sees the sources.
 SOURCE_ROLES = ('superadmin',)
 BYPASS_ROLES = ('superadmin', 'it_admin')
+VESSEL_TIERS = {'CONFIRMED': ('Confirmed match', 'تطابق مؤكد'), 'POTENTIAL': ('Potential match', 'تطابق محتمل'),
+                'POTENTIAL_MATCH': ('Potential match', 'تطابق محتمل'), 'LOW': ('Low - review', 'منخفض - للمراجعة'),
+                'CLEAR': ('No match', 'لا يوجد تطابق'), 'INCOMPLETE': ('Incomplete', 'غير مكتمل')}
 # a vessel hit carries the vessel module's generic label, not the dual-use one
 VESSEL_LIST_LABEL = ('International approved lists', 'قوائم دولية معتمدة')
 CATEGORY_LABELS = {
@@ -298,6 +302,21 @@ def get_index(db=None, force=False):
         _cache['index'].ready = ready['ready'] and len(_cache['index'].docs) > 0
         _cache['index'].readiness = ready
     return _cache['index']
+
+
+def coverage_lines(list_versions, lang='en', db=None):
+    """The list versions a screening used, without naming a list: 'International control lists - version 21 of
+    2026-11-18' (the audit trail needs the versions; the source names stay with the superadmin)."""
+    ids = [v for v in (list_versions or {}).values() if v]
+    if not ids:
+        return []
+    db = db or get_db()
+    rows = db.execute("""SELECT v.id, v.loaded_at FROM dualuse_list_versions v WHERE v.id = ANY(%s) ORDER BY v.id""",
+                      (ids,)).fetchall()
+    label = CLIENT_LIST_LABEL[1] if lang == 'ar' else CLIENT_LIST_LABEL[0]
+    word = ('الإصدار', 'بتاريخ') if lang == 'ar' else ('version', 'of')
+    return ['%s - %s %s %s %s' % (label, word[0], r['id'], word[1], r['loaded_at'].strftime('%Y-%m-%d') if r['loaded_at'] else '')
+            for r in rows]
 
 
 def current_versions(db=None):
@@ -600,7 +619,7 @@ def _recount(db, sid):
                 'decided' if r['open'] == 0 else 'open', sid))
 
 
-def history(args, limit=200, db=None, user_id=None):
+def history(args, limit=50, db=None, user_id=None, offset=0):
     """Screenings, newest first; user_id limits them to one user's own (view-only users)."""
     db = db or get_db()
     where, params = ['TRUE'], []
@@ -610,6 +629,11 @@ def history(args, limit=200, db=None, user_id=None):
     if args.get('status') in ('open', 'decided'):
         where.append('s.status = %s')
         params.append(args['status'])
+    for k, op in (('date_from', '>='), ('date_to', '<')):
+        v = (args.get(k) or '').strip()
+        if re.fullmatch(r'\d{4}-\d{2}-\d{2}', v):
+            where.append('s.created_at %s %%s::date%s' % (op, " + 1" if k == 'date_to' else ''))
+            params.append(v)
     q = (args.get('q') or '').strip()[:100]
     if q:
         like = '%' + q.replace('\\', '\\\\').replace('%', r'\%').replace('_', r'\_') + '%'
@@ -619,18 +643,28 @@ def history(args, limit=200, db=None, user_id=None):
         params += [like] * 7
     return db.execute(f"""SELECT s.*, u.first_name || ' ' || u.last_name AS created_by_name FROM dualuse_screenings s
                           LEFT JOIN users u ON u.id = s.created_by WHERE {' AND '.join(where)}
-                          ORDER BY s.created_at DESC LIMIT %s""", params + [limit]).fetchall()
+                          ORDER BY s.created_at DESC LIMIT %s OFFSET %s""", params + [limit + 1, offset]).fetchall()
 
 
-def stats(db=None):
+def stats(db=None, user_id=None):
+    """Landing counts; user_id limits them to one user's own screenings (view-only users)."""
     db = db or get_db()
+    own = ' AND s.created_by = %(u)s' if user_id is not None else ''
     try:
-        return db.execute("""SELECT (SELECT count(*) FROM dualuse_screenings) AS screenings,
-                                    (SELECT count(*) FROM dualuse_screening_lines WHERE decision IS NULL) AS open_lines,
-                                    (SELECT count(*) FROM dualuse_screening_lines WHERE decision = 'hold') AS held,
-                                    (SELECT count(*) FROM dualuse_item_master) AS known_items""").fetchone()
+        db.execute("SAVEPOINT du_stats")
+        r = db.execute(f"""SELECT (SELECT count(*) FROM dualuse_screenings s WHERE TRUE{own}) AS screenings,
+                    (SELECT count(*) FROM dualuse_screening_lines l JOIN dualuse_screenings s ON s.id = l.screening_id
+                     WHERE l.decision IS NULL{own}) AS open_lines,
+                    (SELECT count(*) FROM dualuse_screening_lines l JOIN dualuse_screenings s ON s.id = l.screening_id
+                     WHERE l.decision = 'hold'{own}) AS held,
+                    (SELECT count(*) FROM dualuse_item_master) AS known_items""", {'u': user_id}).fetchone()
+        db.execute("RELEASE SAVEPOINT du_stats")
+        return r
     except Exception:
-        db.rollback()
+        try:
+            db.execute("ROLLBACK TO SAVEPOINT du_stats")
+        except Exception:
+            pass
         return {}
 
 
@@ -654,7 +688,11 @@ _GUESS = {'description': ('description', 'desc', 'goods', 'item', 'product', 'ا
           'hs_code': ('hs', 'hs code', 'tariff', 'cn', 'hts', 'customs code', 'البند', 'الكود الجمركي', 'رمز'),
           'cas': ('cas',), 'model': ('model', 'part', 'part no', 'part number', 'sku', 'الموديل', 'الطراز'),
           'origin': ('origin', 'country of origin', 'المنشأ', 'بلد المنشأ'), 'quantity': ('qty', 'quantity', 'الكمية')}
-MAX_BATCH_LINES = 1000
+# The batch runs inside the web request (no background worker for this module yet): 200 lines take a few
+# seconds; a longer invoice is split by the user. Matching uses at most screening.MAX_MATCH_CHARS per line.
+MAX_BATCH_LINES = 200
+HEADER_SCAN = 30                          # title rows ("COMMERCIAL INVOICE", seller, buyer...) above the header
+MAX_TOTAL_CHARS = 2 * 1000 * 1000          # an upload is refused beyond 2 million characters of cell text
 
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
@@ -671,17 +709,32 @@ class TableError(ValueError):
 
 
 def _limited(rows_iter):
-    """Rows with at most MAX_COLUMNS cells of at most MAX_CELL characters; stops after the line limit
-    (header + MAX_BATCH_LINES + 1 non-empty rows) so a huge file is never read to the end."""
-    out = []
+    """Rows with at most MAX_COLUMNS cells of at most MAX_CELL characters; stops as soon as the file is
+    over the line limit (title rows + header + MAX_BATCH_LINES) or MAX_TOTAL_CHARS, so a huge or crafted file
+    is never read to the end."""
+    out, total = [], 0
     for r in rows_iter:
-        cells = [('' if c is None else str(c)).strip()[:MAX_CELL] for c in list(r)[:MAX_COLUMNS]]
+        cells = [('' if c is None else (repr(c) if isinstance(c, float) else str(c))).strip()[:MAX_CELL]
+                 for c in list(r)[:MAX_COLUMNS]]
         if any(cells):
+            total += sum(len(c) for c in cells)
+            if total > MAX_TOTAL_CHARS:
+                raise TableError('The file holds too much text (more than 2 million characters).',
+                                 'الملف يحتوي على نص كثير جدًا (أكثر من مليوني حرف).')
             out.append(cells)
-            if len(out) > MAX_BATCH_LINES + 1:
-                raise TableError('At most %d lines per file.' % MAX_BATCH_LINES,
-                                 'الحد الأقصى %d بند في الملف.' % MAX_BATCH_LINES)
+            if len(out) > MAX_BATCH_LINES + HEADER_SCAN + 1:
+                raise TableError('At most %d lines per file: split the invoice.' % MAX_BATCH_LINES,
+                                 'الحد الأقصى %d بند في الملف: قسّم الفاتورة.' % MAX_BATCH_LINES)
     return out
+
+
+def header_row(rows):
+    """Index of the header row: the first of the first HEADER_SCAN rows with at least two cells that name a
+    known column (description, HS code, quantity ...); 0 when none does."""
+    for i, r in enumerate(rows[:HEADER_SCAN]):
+        if len(guess_mapping(r)) >= 2:
+            return i
+    return 0
 
 
 def read_table(filename, data):
@@ -722,9 +775,14 @@ def read_table(filename, data):
             raise TableError('The CSV file could not be read.', 'تعذرت قراءة ملف CSV.')
     else:
         raise TableError('Upload an Excel (.xlsx) or CSV file.', 'ارفع ملف Excel (.xlsx) أو CSV.')
-    if len(rows) < 2:
+    h = header_row(rows)
+    header, rows = (rows[h] if rows else []), rows[h + 1:]
+    if not rows:
         raise TableError('The file has no data rows.', 'الملف لا يحتوي على بنود.')
-    return rows[0], rows[1:]
+    if len(rows) > MAX_BATCH_LINES + 5:
+        raise TableError('At most %d lines per file: split the invoice.' % MAX_BATCH_LINES,
+                         'الحد الأقصى %d بند في الملف: قسّم الفاتورة.' % MAX_BATCH_LINES)
+    return header, rows
 
 
 def guess_mapping(header):
@@ -738,13 +796,32 @@ def guess_mapping(header):
     return m
 
 
+_TOTAL_ROW = re.compile(r'^\s*(?:sub\s*-?\s*)?totals?\b|^\s*grand total|^\s*(?:ال)?(?:مجموع|اجمالي|إجمالي)', re.I)
+
+
 def lines_from(rows, mapping):
+    """Product lines of the mapped columns. Rows without a description, HS code, CAS or model, and total /
+    subtotal rows, are skipped. Tariff codes read as Excel numbers are repaired (9026.2 -> 9026.20) and the
+    repair is shown on the line."""
+    from . import text as T
     out = []
     for n, r in enumerate(rows, start=1):
         line = {'line_no': n}
         for field, _, _ in COLUMNS:
             i = mapping.get(field)
             line[field] = (r[i] if i is not None and i < len(r) else '').strip()[:1000] or None
-        if any(line.get(f) for f in ('description', 'hs_code', 'cas', 'model')):
-            out.append(line)
+        if not any(line.get(f) for f in ('description', 'hs_code', 'cas', 'model')):
+            continue
+        if _TOTAL_ROW.match(line.get('description') or '') and not (line.get('hs_code') or line.get('cas')):
+            continue
+        if line.get('hs_code'):
+            hs, warn = T.normalize_hs(line['hs_code'])
+            if hs:
+                shown = '.'.join(x for x in (hs[:4], hs[4:6], hs[6:]) if x)
+                if shown.replace('.', '') != re.sub(r'\D', '', line['hs_code']):
+                    line['hs_warning'] = '%s -> %s (%s)' % (line['hs_code'], shown, warn or 'normalised')
+                line['hs_code'] = shown
+            else:
+                line['hs_warning'] = '%s: not a tariff code, ignored' % line['hs_code']
+        out.append(line)
     return out

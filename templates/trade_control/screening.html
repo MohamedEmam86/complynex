@@ -3,6 +3,8 @@
 {% block title %}{{ s.ref }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+{% macro pager() %}<nav class="mb-2"><ul class="pagination pagination-sm flex-wrap">{% for p in range(1, pages + 1) %}<li class="page-item {{ 'active' if p == page }}"><a class="page-link" href="{{ url_for('dualuse.screening', sid=s.id, page=p, only=only) }}">{{ p }}</a></li>{% endfor %}
+  <li class="page-item ms-2 {{ 'active' if only == 'open' }}"><a class="page-link" href="{{ url_for('dualuse.screening', sid=s.id, only='open') }}">{{ rc_loc('Open lines only', 'البنود المفتوحة فقط') }}</a></li></ul></nav>{% endmacro %}
 {% set reason_map = {} %}{% for code, en, ar in reasons %}{% set _ = reason_map.update({code: (en, ar)}) %}{% endfor %}
 <div class="container-fluid du-page">
   {{ dn.nav('history') }}
@@ -36,20 +38,21 @@
     {% if s.vessel_name or s.vessel_imo %}
     <div>{{ rc_loc('Vessel', 'السفينة') }}: <strong>{{ s.vessel_name or '' }}</strong>{% if s.vessel_imo %} · IMO <span dir="ltr">{{ s.vessel_imo }}</span>{% endif %}</div>
     <div class="mt-1">{% if v.get('error') %}<span class="badge bg-secondary">{{ rc_loc('Vessel screening is not available on this installation', 'فحص السفن غير متاح في هذا النظام') if v.error == 'unavailable' else rc_loc('Vessel screening did not complete', 'لم يكتمل فحص السفينة') }}</span>
-      {% elif v.get('tier') %}{{ rc_loc('Vessel screening', 'فحص السفينة') }}: <span class="badge {{ 'bg-success' if v.tier == 'CLEAR' else ('bg-danger' if v.tier == 'CONFIRMED' else 'bg-warning text-dark') }}">{{ v.tier }}</span>
-        {% for h in v.get('hits') or [] %}<div class="mt-1">{{ h.name }}{% if h.imo %} · IMO {{ h.imo }}{% endif %} · {{ h.tier }} ({{ h.score }}){% if du_show_lists and h.source %} <span class="badge bg-light text-dark border">{{ h.source }}</span>{% else %} · {{ rc_loc(*DU.VESSEL_LIST_LABEL) }}{% endif %}{% for e in h.explanation or [] %}<div class="text-muted" dir="auto">{% if e is mapping %}{{ rc_loc(e.get('en') or '', e.get('ar') or e.get('en') or '') }}{% elif e is string %}{{ e }}{% else %}{{ rc_loc(e[0], e[1]) }}{% endif %}</div>{% endfor %}</div>{% endfor %}
+      {% elif v.get('tier') %}{{ rc_loc('Vessel screening', 'فحص السفينة') }}: <span class="badge {{ 'bg-success' if v.tier == 'CLEAR' else ('bg-danger' if v.tier == 'CONFIRMED' else 'bg-warning text-dark') }}">{{ rc_loc(*DU.VESSEL_TIERS.get(v.tier, (v.tier, v.tier))) }}</span>
+        {% for h in v.get('hits') or [] %}<div class="mt-1">{{ h.name }}{% if h.imo %} · IMO {{ h.imo }}{% endif %} · {{ rc_loc(*DU.VESSEL_TIERS.get(h.tier, (h.tier, h.tier))) }} ({{ h.score }}){% if du_show_lists and h.source %} <span class="badge bg-light text-dark border">{{ h.source }}</span>{% else %} · {{ rc_loc(*DU.VESSEL_LIST_LABEL) }}{% endif %}{% for e in h.explanation or [] %}<div class="text-muted" dir="auto">{% if e is mapping %}{{ rc_loc(e.get('en') or '', e.get('ar') or e.get('en') or '') }}{% elif e is string %}{{ e }}{% else %}{{ rc_loc(e[0], e[1]) }}{% endif %}</div>{% endfor %}</div>{% endfor %}
       {% endif %}</div>
     {% endif %}
   </div></div></div>
   {% endif %}
   </div>
 
+  {% if pages > 1 %}{{ pager() }}{% endif %}
   {% for ln in lines %}
   {% set final = ln.decision or ln.suggested %}
   <div class="card mb-3 du-line du-line-{{ final }}" id="line-{{ ln.id }}">
     <div class="card-header d-flex justify-content-between flex-wrap gap-2">
       <div><span class="text-muted">#{{ ln.line_no }}</span> <strong dir="auto">{{ ln.description or ln.model or ln.hs_code or ln.cas }}</strong>
-        <span class="small text-muted ms-2" dir="ltr">{% if ln.hs_code %}HS {{ ln.hs_code }}{% endif %}{% if ln.cas %} · CAS {{ ln.cas }}{% endif %}{% if ln.model %} · {{ ln.model }}{% endif %}{% if ln.origin %} · {{ ln.origin }}{% endif %}{% if ln.quantity %} · {{ ln.quantity }}{% endif %}</span></div>
+        <span class="small text-muted ms-2" dir="ltr">{% if ln.hs_code %}HS {{ ln.hs_code }}{% endif %}{% if ln.cas %} · CAS {{ ln.cas }}{% endif %}{% if ln.model %} · {{ ln.model }}{% endif %}{% if ln.origin %} · {{ ln.origin }}{% endif %}{% if ln.quantity %} · {{ ln.quantity }}{% endif %}</span>{% if ln.hs_warning %} <span class="badge bg-warning-subtle text-dark border" dir="ltr" title="{{ rc_loc('Tariff code repaired from the file: check it', 'تم تصحيح كود التعريفة من الملف: راجعه') }}">{{ ln.hs_warning }}</span>{% endif %}</div>
       <div>{% if ln.decision %}<span class="small text-muted">{{ rc_loc('User decision', 'قرار المستخدم') }}</span> {{ dn.outcome_badge(ln.decision) }} <span class="small text-muted">{{ ln.decided_by_name or '' }}</span>{% else %}<span class="small text-muted">{{ rc_loc('Screening result', 'نتيجة الفحص') }}</span> {{ dn.outcome_badge(ln.suggested) }} <span class="small text-muted">· {{ rc_loc('decision pending', 'بانتظار القرار') }}</span>{% endif %}
         <a class="btn btn-sm btn-link" data-bs-toggle="collapse" href="#body-{{ ln.id }}">{{ rc_loc('Details', 'التفاصيل') }}</a></div>
     </div>
@@ -135,5 +138,6 @@
     </div></div>
   </div>
   {% endfor %}
+  {% if pages > 1 %}{{ pager() }}{% endif %}
 </div>
 {% endblock %}

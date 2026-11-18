@@ -146,7 +146,8 @@ def index():
             _audit('dualuse_search', None, q[:200])
     idx = S.get_index()
     return render_template('trade_control/search.html', q=q, res=res, page=page, pages=((res or {}).get('total', 0)
-                           + PAGE - 1) // PAGE, args=_safe_args(), entries=len(idx.docs), stats=S.stats())
+                           + PAGE - 1) // PAGE, args=_safe_args(), entries=len(idx.docs),
+                           stats=S.stats(user_id=None if sees_all() else current_user.id))
 
 
 def _safe_args():
@@ -246,11 +247,20 @@ def _rc(en, ar):
         return en
 
 
+HISTORY_PAGE = 50
+
+
 @bp.route('/screenings')
 @perm('view')
 def screenings():
+    page = max(1, request.args.get('page', 1, type=int) or 1)
+    rows = S.history(request.args, limit=HISTORY_PAGE, offset=(page - 1) * HISTORY_PAGE,
+                     user_id=None if sees_all() else current_user.id)
     return render_template('trade_control/history.html', args=request.args, own_only=not sees_all(),
-                           rows=S.history(request.args, user_id=None if sees_all() else current_user.id))
+                           rows=rows[:HISTORY_PAGE], page=page, has_next=len(rows) > HISTORY_PAGE)
+
+
+LINES_PER_PAGE = 25        # a 200-line invoice is shown in pages, not as one 7 MB page
 
 
 @bp.route('/screenings/<int:sid>')
@@ -259,7 +269,17 @@ def screening(sid):
     s, lines = _load(sid)
     idx = S.get_index()
     open_line = request.args.get('line', type=int)
-    return render_template('trade_control/screening.html', s=s, lines=lines, open_line=open_line,
+    only = request.args.get('only') if request.args.get('only') in ('open',) else None
+    if only == 'open':
+        lines = [ln for ln in lines if not ln['decision']]
+    pages = max(1, (len(lines) + LINES_PER_PAGE - 1) // LINES_PER_PAGE)
+    page = min(pages, max(1, request.args.get('page', 1, type=int) or 1))
+    if open_line:
+        pos = next((n for n, ln in enumerate(lines) if ln['id'] == open_line), None)
+        page = pos // LINES_PER_PAGE + 1 if pos is not None else page
+    lines = lines[(page - 1) * LINES_PER_PAGE: page * LINES_PER_PAGE]
+    return render_template('trade_control/screening.html', s=s, lines=lines, open_line=open_line, page=page,
+                           pages=pages, only=only,
                            reasons=S.DECISION_REASONS, idx=idx, trail=S.decisions(sid),
                            explain={ln['id']: SC.explain(ln['candidates'] or [], ln['hard_flags'] or [],
                                                          ln['suggested'], ln) for ln in lines})
@@ -373,9 +393,10 @@ def batch():
         with open(os.path.join(_tmp_dir(), token + '.json'), 'w', encoding='utf-8') as fh:
             json.dump({'name': os.path.basename(f.filename or '')[:200], 'header': header, 'rows': rows,
                        'user': current_user.id}, fh, ensure_ascii=False)
+        mapping = S.guess_mapping(header)
         return render_template('trade_control/batch_map.html', token=token, header=header, rows=rows[:5],
-                               n=len(rows), mapping=S.guess_mapping(header), columns=S.COLUMNS,
-                               file_name=f.filename)
+                               n=len(rows), mapping=mapping, columns=S.COLUMNS, file_name=f.filename,
+                               preview=S.lines_from(rows[:40], mapping)[:6])
     return render_template('trade_control/batch.html', columns=S.COLUMNS, max_lines=S.MAX_BATCH_LINES)
 
 
@@ -402,7 +423,8 @@ def batch_run():
         flash(_rc('Map at least the description, HS code, CAS or model column.',
                   'حدّد عمود الوصف أو كود HS أو CAS أو الموديل على الأقل.'), 'warning')
         return render_template('trade_control/batch_map.html', token=token, header=up['header'], rows=up['rows'][:5],
-                               n=len(up['rows']), mapping=mapping, columns=S.COLUMNS, file_name=up['name'])
+                               n=len(up['rows']), mapping=mapping, columns=S.COLUMNS, file_name=up['name'],
+                               preview=[])
     lines = S.lines_from(up['rows'], mapping)
     try:
         sid = S.create_screening(_header_from_form(request.form), lines, current_user.id, batch=True,
@@ -419,21 +441,35 @@ def batch_run():
 
 
 # ------------------------------------------------------------------ export
-def _export_rows(s, lines):
+def _L(pair, lang):
+    return pair[1] if lang == 'ar' else pair[0]
+
+
+def _export_rows(s, lines, lang='en'):
     out = []
+    reasons = {r[0]: (r[1], r[2]) for r in S.DECISION_REASONS}
     for ln in lines:
         cands = ', '.join(c['code'] for c in (ln['candidates'] or [])[:6])
-        flags = ', '.join('%s (%s)' % (SC.HARD_LABELS.get(h['flag'], (h['flag'],))[0], h.get('name') or h.get('code'))
-                          for h in (ln['hard_flags'] or []))
-        out.append([ln['line_no'], ln['description'] or '', ln['hs_code'] or '', ln['cas'] or '', ln['model'] or '',
-                    ln['origin'] or '', cands, flags, ln['suggested'], ln['decision'] or '', ln['reason'] or '',
-                    ln['comment'] or '', ln.get('decided_by_name') or '',
+        flags = ', '.join('%s (%s)' % (_L(SC.HARD_LABELS.get(h['flag'], (h['flag'], h['flag'])), lang),
+                                       h.get('name') or h.get('code')) for h in (ln['hard_flags'] or []))
+        why = ' | '.join(_L(e, lang) for e in SC.explain(ln['candidates'] or [], ln['hard_flags'] or [],
+                                                          ln['suggested'], ln))
+        out.append([ln['line_no'], (ln['description'] or '')[:1000], ln['hs_code'] or '', ln['cas'] or '',
+                    ln['model'] or '', ln['origin'] or '', cands, flags, _L(S.OUTCOME_LABELS[ln['suggested']], lang),
+                    why[:2000], _L(S.OUTCOME_LABELS[ln['decision']], lang) if ln['decision'] else '',
+                    _L(reasons.get(ln['reason'], (ln['reason'] or '', ln['reason'] or '')), lang),
+                    (ln['comment'] or '')[:2000], ln.get('decided_by_name') or '',
                     ln['decided_at'].strftime('%Y-%m-%d %H:%M') if ln['decided_at'] else ''])
     return out
 
 
-EXPORT_HEAD = ['Line', 'Description', 'HS code', 'CAS', 'Model', 'Origin', 'Candidate entries', 'Flags', 'Suggested',
-               'Decision', 'Reason', 'Comment', 'Decided by', 'Decided at']
+EXPORT_HEAD = [('Line', 'البند'), ('Description', 'الوصف'), ('HS code', 'كود HS'), ('CAS', 'CAS'),
+               ('Model', 'الموديل'), ('Origin', 'المنشأ'), ('Candidate entries', 'البنود المحتملة'),
+               ('Flags', 'المؤشرات'), ('Screening result', 'نتيجة الفحص'), ('Why', 'السبب'),
+               ('Decision', 'القرار'), ('Reason', 'سبب القرار'), ('Comment', 'التعليق'), ('Decided by', 'بواسطة'),
+               ('Decided at', 'التاريخ')]
+_ROLES = {'supplier': ('Supplier', 'المورد'), 'consignee': ('Consignee', 'المرسل إليه'),
+          'end_user': ('End user', 'المستخدم النهائي')}
 
 
 @bp.route('/screenings/<int:sid>/export.xlsx')
@@ -441,31 +477,42 @@ EXPORT_HEAD = ['Line', 'Description', 'HS code', 'CAS', 'Model', 'Origin', 'Cand
 def export_xlsx(sid):
     import openpyxl
     from openpyxl.styles import Font, PatternFill
+    from utils.sheet_safe import row as safe_row
     s, lines = _load(sid)
+    lang = 'ar' if _rc('en', 'ar') == 'ar' else 'en'
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = 'Screening'
-    from utils.sheet_safe import row as safe_row
-    ws.append(safe_row(['Dual-use goods screening', s['ref']]))
-    ws.append(safe_row(['Screened against', S.CLIENT_LIST_LABEL[0]]))
-    ws.append(safe_row(['Note', S.DISCLAIMER[0]]))
+    ws.title = 'فحص' if lang == 'ar' else 'Screening'
+    ws.sheet_view.rightToLeft = lang == 'ar'
+
+    def row(*vals):
+        ws.append(safe_row(list(vals)))            # customer data never becomes a formula (= + - @ ...)
+
+    row(_L(('Dual-use goods screening', 'فحص السلع مزدوجة الاستخدام'), lang), s['ref'])
+    row(_L(('Screened against', 'تم الفحص مقابل'), lang), _L(S.CLIENT_LIST_LABEL, lang))
+    for c in S.coverage_lines(s['list_versions'], lang):
+        row(_L(('Lists used', 'القوائم المستخدمة'), lang), c)
+    row(_L(('Note', 'ملاحظة'), lang), _L(S.DISCLAIMER, lang))
     if s.get('vessel_name') or s.get('vessel_imo'):
         v = s.get('vessel_result') or {}
-        ws.append(safe_row(['Vessel', '%s %s' % (s.get('vessel_name') or '',
-                                                 ('IMO ' + s['vessel_imo']) if s.get('vessel_imo') else ''),
-                            'not available' if v.get('error') else (v.get('tier') or ''), S.VESSEL_LIST_LABEL[0]]))
-    ws.append(safe_row(['Created', s['created_at'].strftime('%Y-%m-%d %H:%M') if s['created_at'] else '',
-                        s.get('created_by_name') or '']))
+        row(_L(('Vessel', 'السفينة'), lang),
+            '%s %s' % (s.get('vessel_name') or '', ('IMO ' + s['vessel_imo']) if s.get('vessel_imo') else ''),
+            _L(('not available', 'غير متاح'), lang) if v.get('error') else
+            _L(S.VESSEL_TIERS.get(v.get('tier'), (v.get('tier') or '', v.get('tier') or '')), lang),
+            _L(S.VESSEL_LIST_LABEL, lang))
+    row(_L(('Created', 'تاريخ الإنشاء'), lang), s['created_at'].strftime('%Y-%m-%d %H:%M') if s['created_at'] else '',
+        s.get('created_by_name') or '')
     for p in s['party_results'] or []:
-        ws.append(safe_row(['Party: ' + p['role'], p['name'], p.get('result') or p.get('error') or '']))
+        row(_L(_ROLES.get(p['role'], (p['role'], p['role'])), lang), p['name'],
+            p.get('result') or (_L(('not completed', 'لم يكتمل'), lang) if p.get('error') else ''))
     ws.append([])
-    ws.append(EXPORT_HEAD)
+    ws.append([_L(h, lang) for h in EXPORT_HEAD])
     for c in ws[ws.max_row]:
         c.font = Font(bold=True, color='FFFFFF')
         c.fill = PatternFill('solid', fgColor='1F3A5F')
-    for r in _export_rows(s, lines):
-        ws.append(safe_row(r))           # customer data never becomes a formula (= + - @ ...)
-    for col, w in zip('ABCDEFGHIJKLMN', (6, 50, 14, 14, 18, 12, 30, 18, 11, 11, 20, 40, 18, 17)):
+    for r in _export_rows(s, lines, lang):
+        row(*r)
+    for col, w in zip('ABCDEFGHIJKLMNO', (6, 50, 14, 14, 18, 12, 30, 18, 12, 50, 11, 20, 40, 18, 17)):
         ws.column_dimensions[col].width = w
     buf = io.BytesIO()
     wb.save(buf)
@@ -481,6 +528,7 @@ def export_pdf(sid):
     s, lines = _load(sid)
     html = render_template('trade_control/report_pdf.html', s=s, lines=lines, reasons=dict(
         (r[0], (r[1], r[2])) for r in S.DECISION_REASONS), trail=S.decisions(sid),
+        coverage=S.coverage_lines(s['list_versions'], 'ar' if _rc('en', 'ar') == 'ar' else 'en'),
         explain={ln['id']: SC.explain(ln['candidates'] or [], ln['hard_flags'] or [], ln['suggested'], ln) for ln in lines})
     try:
         from weasyprint import HTML
@@ -498,10 +546,12 @@ def export_pdf(sid):
 @perm('admin')
 def admin():
     if request.method == 'POST':
+        # the dictionary is shared reference data (all tenants): only the platform superadmin edits it
+        if not show_lists():
+            abort(403)
         en, ar = (request.form.get('term_en') or '').strip(), (request.form.get('term_ar') or '').strip()
         if en and ar and T.is_arabic(ar):
             S.add_term(en, ar, current_user.id)
-            S.get_index(force=True)
             _audit('dualuse_add_term', None, '%s = %s' % (en[:100], ar[:100]))
             flash(_rc('Term added.', 'تمت إضافة المصطلح.'), 'success')
         else:
