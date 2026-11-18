@@ -41,7 +41,8 @@ def app():
                 packs.save_module_perms(u.id, {'modperm_dualuse': perm})
         packs.enable('trade_control', ids['admin'])
         a.du_ids = ids
-        yield a
+    # no app context stays pushed: each test-client request must load its own user
+    yield a
 
 
 def _client(app, uid, lang='en'):
