@@ -392,3 +392,44 @@ def test_owner_variants():
 def test_decision_mapping():
     assert VE.decision({'hits': [], 'owner_hits': []})[0] == 'no_match'
     assert VE.decision({'hits': [], 'owner_hits': [{'tier': 'POTENTIAL'}], 'score': 90}) == ('match', None, 90.0)
+
+
+def test_owner_hit_list_type_is_a_category_never_a_list_name():
+    from screening import vessel_store as VS
+    from api.vessels_v1 import _view
+
+    class U:
+        is_authenticated = True
+        role = 'admin'
+    assert VS.list_category('UN_Sanctions') == 'SANCTIONS' and VS.list_category('OFAC_SDN_LIST_X') is None
+    assert VS.list_category('EU-Something') is None
+    assert VS.category_label('UN_Sanctions', user=U()) == 'Sanctions'
+    assert VS.category_label('ofac-weird', 'ar', user=U()) == VS.GENERIC_LIST_LABEL_AR
+    r = run(name='NO SUCH SHIP', owner='Irano Hind Shipping Company',
+            screen_party=lambda n: [{'name': 'IRANO HIND SHIPPING COMPANY', 'score': 94.0, 'source': 'un',
+                                     'list_type': 'UN_Sanctions', 'list_type_raw': 'UN_Sanctions'}])
+    assert r['owner_hits'][0]['list_type'] == 'SANCTIONS'
+    body = json.dumps(_view(1, r, None))
+    assert 'UN_Sanctions' not in body and '"un"' not in body and '"category": "SANCTIONS"' in body
+
+
+def test_export_cells_are_formula_safe():
+    from utils.sheet_safe import cell, row
+    assert row(['=HYPERLINK("http://x")', '@SUM(1)', '+1', '-2', 'ok', 5, None]) == \
+        ["'=HYPERLINK(\"http://x\")", "'@SUM(1)", "'+1", "'-2", 'ok', 5, '']
+    from screening.vessel_routes import _export_rows
+    res = run(name='=cmd|calc!A1')
+    rows = _export_rows([{'row_no': 2, 'ref': '=HYPERLINK("x")', 'q': res['query'], 'tier': res['tier'],
+                          'res': res, 'id': 1}])
+    assert all(not str(c).startswith(('=', '@', '+')) for r in rows for c in r)
+
+
+def test_name_screening_ship_scope():
+    from screening import complynex_engine as CE
+    CE._VESSEL_SCOPE.set(CE._vessel_scope_for('INDIVIDUAL'))
+    assert not CE._vessel_allowed({'entity_type': 'VESSEL', 'source': 'ofac'})
+    assert "<> 'VESSEL'" in CE._vessel_sql()
+    CE._VESSEL_SCOPE.set(CE._vessel_scope_for('ENTITY'))
+    assert CE._vessel_allowed({'entity_type': 'VESSEL', 'source': 'ofac'})            # as before ships had a type
+    assert not CE._vessel_allowed({'entity_type': 'VESSEL', 'source': 'opensanctions'})
+    assert CE._vessel_allowed({'entity_type': 'ENTITY', 'source': 'opensanctions'})
