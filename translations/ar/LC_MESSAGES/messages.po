@@ -45103,3 +45103,441 @@ msgstr "بدون صوت"
 #: governance (p8-gov)
 msgid "Include sample records"
 msgstr "تضمين سجلات المثال"
+
+# --- vessel screening (wave 2)
+msgid "A comment explaining the decision is required (at least 5 characters)."
+msgstr "التعليق الذي يشرح القرار مطلوب (5 أحرف على الأقل)."
+
+msgid "A hit validated as a false match is not alerted again for the same screened ship (IMO, else MMSI or name and flag) while nothing changes. A change of name, flag or owner on either side re-opens it."
+msgstr "التطابق الذي تم اعتماده كتطابق خاطئ لا يُنبَّه عنه مرة أخرى لنفس السفينة المفحوصة (رقم IMO، وإلا MMSI أو الاسم والعلم) طالما لم يتغير شيء. أي تغيير في الاسم أو العلم أو المالك لدى أي من الطرفين يعيد فتحه."
+
+msgid "A reason is required (at least 5 characters)."
+msgstr "السبب مطلوب (5 أحرف على الأقل)."
+
+msgid "All screenings"
+msgstr "كل عمليات الفحص"
+
+msgid "Any result"
+msgstr "أي نتيجة"
+
+msgid "Built"
+msgstr "سنة البناء"
+
+msgid "Bulk Vessel Screening"
+msgstr "الفحص الجماعي للسفن"
+
+msgid "Bulk file"
+msgstr "ملف جماعي"
+
+msgid "Call sign"
+msgstr "نداء الاتصال"
+
+msgid "Choose a CSV or Excel file."
+msgstr "اختر ملف CSV أو Excel."
+
+msgid "Choose a flag state and give a note (the reason)."
+msgstr "اختر دولة العلم واكتب ملاحظة (السبب)."
+
+msgid "Choose the decision and a reason that fits it."
+msgstr "اختر القرار وسببًا يتوافق معه."
+
+msgid "Cleared before (not alerted)"
+msgstr "تم استبعادها سابقًا (بدون تنبيه)"
+
+msgid "Cleared ships"
+msgstr "السفن المستبعدة"
+
+msgid "Cleared ships (vessel whitelist)"
+msgstr "السفن المستبعدة (القائمة البيضاء للسفن)"
+
+msgid "Columns: reference, name, imo, mmsi, call_sign, flag, flags_past, owner, vessel_type (English or Arabic headers). Each row needs a name, IMO, MMSI, call sign or owner."
+msgstr "الأعمدة: reference و name و imo و mmsi و call_sign و flag و flags_past و owner و vessel_type (عناوين بالإنجليزية أو العربية). كل صف يحتاج اسمًا أو رقم IMO أو MMSI أو نداء اتصال أو مالكًا."
+
+msgid "ComplyNex Vessels Database"
+msgstr "قاعدة بيانات السفن من ComplyNex"
+
+msgid "ComplyNex alerts and records. Any action on a confirmed match (freezing, rejecting, reporting) is taken outside the system under your procedures."
+msgstr "يقوم ComplyNex بالتنبيه والتسجيل فقط. أي إجراء على تطابق مؤكد (التجميد أو الرفض أو الإبلاغ) يتم خارج النظام وفق إجراءاتكم."
+
+msgid "Debarment"
+msgstr "الحرمان"
+
+msgid "Enter at least a ship name, IMO number, MMSI, call sign or owner."
+msgstr "أدخل على الأقل اسم السفينة أو رقم IMO أو MMSI أو نداء الاتصال أو المالك."
+
+msgid "Entered"
+msgstr "المُدخل"
+
+msgid "Every row gets its own result, which you validate like a single screening."
+msgstr "لكل صف نتيجته الخاصة التي تعتمدها كما في الفحص الفردي."
+
+msgid "Export Control"
+msgstr "رقابة التصدير"
+
+msgid "False match"
+msgstr "تطابق خاطئ"
+
+msgid "First listed"
+msgstr "تاريخ أول إدراج"
+
+msgid "Flag of convenience"
+msgstr "علم مواءمة"
+
+msgid "Flag risk"
+msgstr "مخاطر العلم"
+
+msgid "Flag risk reference"
+msgstr "مرجع مخاطر الأعلام"
+
+msgid "Flag state"
+msgstr "دولة العلم"
+
+msgid "Flags of convenience (open registries) and high-risk flags raise the risk score of a screening. They never create a match on their own."
+msgstr "أعلام المواءمة (السجلات المفتوحة) والأعلام عالية المخاطر ترفع درجة مخاطر الفحص، ولا تنشئ تطابقًا بمفردها أبدًا."
+
+msgid "Former / other flags"
+msgstr "الأعلام السابقة / الأخرى"
+
+msgid "Former flags"
+msgstr "الأعلام السابقة"
+
+msgid "Former flags (optional)"
+msgstr "الأعلام السابقة (اختياري)"
+
+msgid "Former names"
+msgstr "الأسماء السابقة"
+
+msgid "Gross tonnage"
+msgstr "الحمولة الإجمالية"
+
+msgid "High-risk flag"
+msgstr "علم عالي المخاطر"
+
+msgid "History & alerts"
+msgstr "السجل والتنبيهات"
+
+msgid "How a vessel is screened"
+msgstr "كيف تُفحص السفينة"
+
+msgid "IMO"
+msgstr "IMO"
+
+msgid "IMO check digit fails"
+msgstr "رقم التحقق في IMO غير صحيح"
+
+msgid "IMO number"
+msgstr "رقم IMO"
+
+msgid "Identifier"
+msgstr "المعرّف"
+
+msgid "Identifiers: the same IMO number (current or former) is the listed ship. MMSI and call sign are strong but change on re-flagging."
+msgstr "المعرّفات: نفس رقم IMO (الحالي أو السابق) يعني السفينة المدرجة نفسها. رقم MMSI ونداء الاتصال قويان لكنهما يتغيران عند تغيير العلم."
+
+msgid "Identity history"
+msgstr "سجل الهوية"
+
+msgid "If false: do not alert again while nothing changes"
+msgstr "إذا كان خاطئًا: لا تنبّه مرة أخرى طالما لم يتغير شيء"
+
+msgid "List records (platform administrator only)"
+msgstr "سجلات القوائم (لمسؤول المنصة فقط)"
+
+msgid "Listed"
+msgstr "المدرج"
+
+msgid "Listed ship"
+msgstr "السفينة المدرجة"
+
+msgid "Listed vessels"
+msgstr "السفن المدرجة"
+
+msgid "Lists"
+msgstr "القوائم"
+
+msgid "Lists screened"
+msgstr "القوائم التي تم الفحص عليها"
+
+msgid "MMSI"
+msgstr "MMSI"
+
+msgid "Measure"
+msgstr "الإجراء"
+
+msgid "Measures"
+msgstr "الإجراءات"
+
+msgid "Name in Arabic or English, IMO or MMSI"
+msgstr "الاسم بالعربية أو الإنجليزية، أو رقم IMO أو MMSI"
+
+msgid "Name: current and former names in any script; every number in the name must be the same (STAR 1 is not STAR 2). A name alone never confirms a match."
+msgstr "الاسم: الأسماء الحالية والسابقة بأي حروف؛ ويجب أن تتطابق كل الأرقام في الاسم (STAR 1 ليست STAR 2). الاسم وحده لا يؤكد التطابق أبدًا."
+
+msgid "No cleared ships."
+msgstr "لا توجد سفن مستبعدة."
+
+msgid "No listed vessel matches this ship."
+msgstr "لا توجد سفينة مدرجة تطابق هذه السفينة."
+
+msgid "No longer listed"
+msgstr "لم تعد مدرجة"
+
+msgid "No match"
+msgstr "لا يوجد تطابق"
+
+msgid "No owner on the list record."
+msgstr "لا يوجد مالك في سجل القائمة."
+
+msgid "No vessel found."
+msgstr "لم يتم العثور على سفينة."
+
+msgid "No vessel screenings yet."
+msgstr "لا توجد عمليات فحص سفن بعد."
+
+msgid "Not validated yet"
+msgstr "لم يتم الاعتماد بعد"
+
+msgid "Note / reason"
+msgstr "ملاحظة / سبب"
+
+msgid "Open alerts (hits not validated)"
+msgstr "التنبيهات المفتوحة (تطابقات لم تُعتمد)"
+
+msgid "Other names"
+msgstr "أسماء أخرى"
+
+msgid "Owner / operator"
+msgstr "المالك / المشغّل"
+
+msgid "Owner / operator / manager"
+msgstr "المالك / المشغّل / المدير"
+
+msgid "Owner / operator matches a listed party"
+msgstr "المالك أو المشغّل يطابق طرفًا مدرجًا"
+
+msgid "Owner listed"
+msgstr "المالك مدرج"
+
+msgid "Owner: the owner / operator you enter is screened against all lists."
+msgstr "المالك: يُفحص المالك أو المشغّل الذي تدخله على جميع القوائم."
+
+msgid "Owners and linked parties of the listed ship"
+msgstr "ملاك السفينة المدرجة والأطراف المرتبطة بها"
+
+#, python-format
+msgid "Owners are screened for files of up to %(n)s rows."
+msgstr "يُفحص الملاك في الملفات حتى %(n)s صف."
+
+#, python-format
+msgid "Owners were not screened (file over %(n)s rows): screen them with bulk name screening."
+msgstr "لم يُفحص الملاك (الملف يتجاوز %(n)s صف): افحصهم عبر الفحص الجماعي للأسماء."
+
+msgid "Owners, operators and linked parties"
+msgstr "الملاك والمشغّلون والأطراف المرتبطة"
+
+msgid "PDF report"
+msgstr "تقرير PDF"
+
+msgid "Programmes"
+msgstr "البرامج"
+
+msgid "Re-opened"
+msgstr "أُعيد فتحها"
+
+msgid "Risk indicators"
+msgstr "مؤشرات المخاطر"
+
+msgid "Risk indicators never create a sanctions match on their own."
+msgstr "مؤشرات المخاطر لا تنشئ تطابق عقوبات بمفردها أبدًا."
+
+msgid "Risk score"
+msgstr "درجة المخاطر"
+
+msgid "Risk: flag of convenience, high-risk or false flag, flag changes, invalid IMO - shown as risk lines, never as a match."
+msgstr "المخاطر: علم المواءمة، العلم عالي المخاطر أو المزيف، تغييرات العلم، رقم IMO غير الصحيح - تظهر كمؤشرات مخاطر وليست تطابقًا أبدًا."
+
+msgid "Save decision"
+msgstr "حفظ القرار"
+
+msgid "Screen a ship against international approved sanctions lists. The IMO number identifies a ship for life; names, flags, MMSI and call signs change. Enter what you have - any field, in Arabic or English."
+msgstr "افحص سفينة على قوائم العقوبات الدولية المعتمدة. رقم IMO يعرّف السفينة طوال عمرها، أما الأسماء والأعلام وأرقام MMSI ونداءات الاتصال فتتغير. أدخل ما لديك - أي حقل، بالعربية أو الإنجليزية."
+
+msgid "Screen a vessel"
+msgstr "فحص سفينة"
+
+msgid "Screen file"
+msgstr "فحص الملف"
+
+msgid "Screen vessel"
+msgstr "فحص السفينة"
+
+msgid "Screened against all sanctions lists as a company."
+msgstr "يُفحص على جميع قوائم العقوبات كشركة."
+
+msgid "Screened ship"
+msgstr "السفينة المفحوصة"
+
+msgid "Screened vessel"
+msgstr "السفينة المفحوصة"
+
+msgid "Separate with ; - frequent flag changes raise the risk score, never create a match."
+msgstr "افصل بينها بـ ; - تغيير العلم المتكرر يرفع درجة المخاطر ولا ينشئ تطابقًا."
+
+msgid "Similar listed names below the alert threshold"
+msgstr "أسماء مدرجة مشابهة أقل من حد التنبيه"
+
+msgid "Template (CSV)"
+msgstr "النموذج (CSV)"
+
+msgid "Template (Excel)"
+msgstr "النموذج (Excel)"
+
+msgid "The PDF could not be produced."
+msgstr "تعذر إنشاء ملف PDF."
+
+msgid "The clearance was revoked: the hit will alert again."
+msgstr "تم إلغاء الاستبعاد: سيتم التنبيه عن التطابق مرة أخرى."
+
+msgid "The file could not be read. Use the template (CSV UTF-8 or .xlsx)."
+msgstr "تعذرت قراءة الملف. استخدم النموذج (CSV بترميز UTF-8 أو ‎.xlsx)."
+
+msgid "The file has no rows to screen."
+msgstr "لا يحتوي الملف على صفوف للفحص."
+
+msgid "The same ship on several lists is shown once. Clients see the lists as \"International approved lists\"."
+msgstr "السفينة نفسها المدرجة في عدة قوائم تظهر مرة واحدة. ويرى العملاء القوائم باسم «قوائم دولية معتمدة»."
+
+msgid "This hit was cleared before and has been re-opened: validate it again."
+msgstr "تم استبعاد هذا التطابق سابقًا وأُعيد فتحه: اعتمده مرة أخرى."
+
+msgid "To validate"
+msgstr "بانتظار الاعتماد"
+
+msgid "Top flags"
+msgstr "أكثر الأعلام"
+
+msgid "Top hit"
+msgstr "أعلى تطابق"
+
+#, python-format
+msgid "Up to %(n)s rows per file."
+msgstr "حتى %(n)s صف لكل ملف."
+
+#, python-format
+msgid "Upload a CSV (UTF-8) or Excel (.xlsx) file, up to %(n)s rows."
+msgstr "ارفع ملف CSV (UTF-8) أو Excel (‎.xlsx) حتى %(n)s صف."
+
+msgid "Validated"
+msgstr "معتمد"
+
+msgid "Vessel Screening"
+msgstr "فحص السفن"
+
+msgid "Vessel Screening History"
+msgstr "سجل فحص السفن"
+
+msgid "Vessel Screening Report"
+msgstr "تقرير فحص السفينة"
+
+msgid "Vessel Screening Result"
+msgstr "نتيجة فحص السفينة"
+
+msgid "Vessel name"
+msgstr "اسم السفينة"
+
+msgid "Vessel profile"
+msgstr "ملف السفينة"
+
+msgid "Vessel type"
+msgstr "نوع السفينة"
+
+msgid "Vessels Database"
+msgstr "قاعدة بيانات السفن"
+
+msgid "Watchlist"
+msgstr "قائمة المراقبة"
+
+msgid "With an IMO number"
+msgstr "برقم IMO"
+
+msgid "Year built"
+msgstr "سنة البناء"
+
+msgid "Your reference"
+msgstr "مرجعك"
+
+msgid "all validated"
+msgstr "تم اعتماد الكل"
+
+msgid "built"
+msgstr "بُنيت"
+
+msgid "bulk"
+msgstr "جماعي"
+
+msgid "call sign"
+msgstr "نداء الاتصال"
+
+msgid "check digit fails"
+msgstr "رقم التحقق غير صحيح"
+
+msgid "different"
+msgstr "مختلف"
+
+msgid "e.g. Crude Oil Tanker"
+msgstr "مثال: ناقلة نفط خام"
+
+msgid "e.g. OCEAN GLORY or the name in Arabic"
+msgstr "مثال: OCEAN GLORY أو الاسم بالعربية"
+
+msgid "e.g. Panama"
+msgstr "مثال: بنما"
+
+msgid "e.g. Togo; Comoros"
+msgstr "مثال: توغو; جزر القمر"
+
+msgid "entered"
+msgstr "المُدخل"
+
+msgid "ex"
+msgstr "سابقًا"
+
+msgid "flag"
+msgstr "العلم"
+
+msgid "former"
+msgstr "سابق"
+
+msgid "high-risk"
+msgstr "عالية المخاطر"
+
+msgid "invalid"
+msgstr "غير صحيح"
+
+msgid "list records"
+msgstr "سجلات قوائم"
+
+msgid "lists"
+msgstr "قوائم"
+
+msgid "matched"
+msgstr "التطابق مع"
+
+msgid "on international approved lists"
+msgstr "على القوائم الدولية المعتمدة"
+
+msgid "owner"
+msgstr "المالك"
+
+msgid "ranked by name similarity"
+msgstr "مرتبة حسب تشابه الاسم"
+
+msgid "same"
+msgstr "متطابق"
+
+msgid "to validate"
+msgstr "بانتظار الاعتماد"
+
+msgid "vessels"
+msgstr "سفينة"
+
