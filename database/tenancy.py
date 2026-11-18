@@ -47,6 +47,11 @@ SHARED_TABLES = frozenset({
     # central Egyptian PEP reference database (pep management module)
     'pep_master', 'pep_positions', 'pep_sources', 'pep_aliases', 'pep_database',
     'pep_update_logs', 'pep_duplicate_candidates', 'pep_corporate_links',
+    # dual-use control lists (optional trade_control pack): loaded centrally by scripts/dualuse, read by all
+    # tenants. The screenings, lines, decisions and remembered decisions (dualuse_screenings,
+    # dualuse_screening_lines, dualuse_decisions, dualuse_item_master) are tenant-owned (the default class).
+    'dualuse_lists', 'dualuse_list_versions', 'dualuse_items', 'dualuse_parameters', 'dualuse_hs_map',
+    'dualuse_chemicals', 'dualuse_terms',
 })
 # Platform-level tables that belong to no tenant (academy / talent pool of the operator,
 # backups taken by hand, the tenants table itself).

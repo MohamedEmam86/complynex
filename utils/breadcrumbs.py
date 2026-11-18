@@ -28,7 +28,7 @@ SEGMENT_TITLES = {
     'aml': _l('AML/CFT'), 'aml-assurance': _l('AML Assurance'), 'ekyc': _l('eKYC'), 'esg': _l('ESG'),
     'ai': _l('Compliance Copilot (AI)'), 'kris': _l('KRIs'), 'kyc': _l('KYC'), 'coi': _l('COI Declarations'),
     'ghe': _l('GHE Declarations'), 'cobec': _l('Code of Ethics'), 'pep': _l('PEP'), 'sars': _l('SARs'),
-    'sar': _l('SAR'), 'fra': _l('FRA'), 'fra-nbfi': _l('FRA NBFI'), 'mfa': _l('Multi-Factor Auth'),
+    'sar': _l('SAR'), 'dual-use': _l('Dual-use goods'), 'fra': _l('FRA'), 'fra-nbfi': _l('FRA NBFI'), 'mfa': _l('Multi-Factor Auth'),
     'api-keys': _l('API Keys'), 'bcp': _l('Business Continuity'), 'it-risks': _l('IT Risks'),
     'tm-rules': _l('Transaction Monitoring Rules'), 'tm-dashboard': _l('Transaction Monitoring'),
     'tm-analytics': _l('TM Analytics'), 'tm-network': _l('TM Network'), 'tm-scenario': _l('Scenario Simulator'),
