@@ -1,0 +1,223 @@
+"""Dual-use goods module: parsers on excerpts of the REAL published sources, the importer's helpers, search
+quality rules and screening explanations (no database, no network).
+
+Fixtures (small excerpts, reusable):
+  eu_consolidated_excerpt.html  EUR-Lex consolidated text of Regulation (EU) 2021/821 as of 2026-09-21
+                                (Annex I entries 1C216, 1C225 and 5A002; reuse allowed under Decision 2011/833/EU)
+  us_ccl_excerpt.xml            eCFR Title 15 Part 774 Supplement No. 1 as of 2026-08-28 (1C010, 1C350, 5A002;
+                                US Government work, public domain)
+  chpl_tiers.txt                List of Common High Priority Items, version of February 2024 (pdftotext -layout)
+"""
+import importlib.util
+import os
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, ROOT)
+FIX = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures')
+
+import pytest
+
+from packs.trade_control import parsers as P
+from packs.trade_control import screening as SC
+from packs.trade_control import search as SE
+from packs.trade_control import service as S
+from packs.trade_control import text as T
+
+
+def _read(name, mode='r'):
+    with open(os.path.join(FIX, name), mode, **({} if 'b' in mode else {'encoding': 'utf-8'})) as f:
+        return f.read()
+
+
+@pytest.fixture(scope='module')
+def importer():
+    spec = importlib.util.spec_from_file_location('du_import_lists', os.path.join(ROOT, 'scripts', 'dualuse',
+                                                                                  'import_lists.py'))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+# ------------------------------------------------------------------ EU consolidated layout
+def test_eu_consolidated_entries_items_and_notes():
+    recs = {r['code']: r for r in P.parse_eu_annex1(_read('eu_consolidated_excerpt.html'))}
+    # the entry written as a paragraph and the one written as a lettered block (1C225) are both found
+    assert {'1C216', '1C225', '5A002', '5A002.a', '5A002.a.4.b', '5A002.e'} <= set(recs)
+    # notes and technical notes (printed in italics) never become control items
+    assert not any(c.startswith('5A002.a.1.') for c in recs)
+    assert recs['5A002']['text_en'].startswith('"Information security" systems')
+    assert any('cryptography for data confidentiality' in n for n in recs['5A002.a']['notes_en'])
+    assert recs['5A002.a']['parent'] == '5A002' and recs['5A002.a.4.b']['level'] == 3
+    # Annex II repeats codes: it is not read
+    assert 'ignored' not in recs['5A002']['text_en']
+    # superscript isotope and thresholds with a thousands space
+    assert '(10B)' in recs['1C225']['text_en']
+    p = recs['1C216']['parameters'][0]
+    assert p['operator'] == '>=' and p['value'] == 1950 and p['unit'] == 'MPa'
+
+
+def test_eu_label_from_consolidated_text(importer):
+    items, _, _, label = importer.build_items('eu_annex1', _read('eu_consolidated_excerpt.html').encode())
+    assert label == 'Annex I, consolidated text of 2026-09-21'
+    assert {i['code'] for i in items} >= {'5A002', '1C225'}
+    assert next(i for i in items if i['code'] == '1C225')['risk_level'] == 'high'      # nuclear dual-use (2)
+
+
+# ------------------------------------------------------------------ US CCL (eCFR XML)
+def test_ccl_real_excerpt():
+    recs = {r['code']: r for r in P.parse_ccl(_read('us_ccl_excerpt.xml'))}
+    assert set(recs) == {'1C010', '1C350', '5A002'}           # Supplement No. 2 is not read
+    r = recs['5A002']
+    assert r['reasons'] == ['AT', 'EI', 'NS', 'RS'] and r['category_title']
+    subs = {s['code']: s for s in r['sub_items']}
+    assert '5A002.a' in subs and '5A002.a.4.b' in subs
+    c = recs['1C350']
+    assert 'CB' in c['reasons'] and 'CW' in c['reasons']
+    assert '7719-09-7' in c['cas_numbers'] and len(c['cas_numbers']) >= 60
+    # superscripts are kept as powers of ten and still parsed as thresholds
+    params = [p for s in recs['1C010']['sub_items'] for p in s['parameters']]
+    assert any(p['value'] > 1e4 and p['unit'] == 'm' for p in params)
+
+
+def test_chemicals_register_reads_us_cas_format():
+    us = P.parse_ccl(_read('us_ccl_excerpt.xml'))
+    chem = {c['cas']: c for c in P.build_chemicals([], [], [{'code': r['code'], 'items_text_en': r['items_text_en']}
+                                                            for r in us])}
+    assert chem['7719-09-7']['names_en'][0] == 'Thionyl chloride'
+    assert any(l['ref'].startswith('1C350.') for l in chem['7719-09-7']['listings'])
+    assert all(T.cas_valid(c) for c in chem)
+
+
+# ------------------------------------------------------------------ CHPL
+def test_chpl_real_text():
+    recs = P.parse_chpl_text(_read('chpl_tiers.txt'))
+    assert len(recs) == 50
+    tiers = {}
+    for r in recs:
+        tiers[r['tier']] = tiers.get(r['tier'], 0) + 1
+    assert tiers == {'1': 4, '2': 5, '3.A': 16, '3.B': 9, '4.A': 11, '4.B': 5}
+    last = recs[-1]
+    assert last['hs6'] == '846693' and last['description_en'].endswith('8461, n.e.s.')
+
+
+# ------------------------------------------------------------------ importer helpers
+def test_content_digest_is_stable_and_order_independent(importer):
+    a = [{'code': '5A002', 'text_en': 'x', 'params': []}]
+    assert importer.content_digest(a) == importer.content_digest([dict(reversed(list(a[0].items())))])
+    assert importer.content_digest(a) != importer.content_digest([{'code': '5A002', 'text_en': 'y', 'params': []}])
+
+
+def test_risk_rules(importer):
+    assert importer.risk_eu('0B001') == 'high' and importer.risk_eu('9A120') == 'high'
+    assert importer.risk_eu('1C350.9') == 'high' and importer.risk_eu('5A002.a') == 'medium'
+    assert importer.risk_us('5A992', ['AT', 'RS'], False, False) == 'low'
+    assert importer.risk_us('9A515', ['NS'], False, True) == 'high'
+
+
+def test_latest_consolidated_date_is_discovered(importer, monkeypatch):
+    page = b'<a href="?uri=CELEX:02021R0821-20251115">x</a> 02021R0821-20260921 02021R0821-20241108'
+    monkeypatch.setattr(importer, 'fetch', lambda url, timeout=120: page)
+    assert importer.latest_eu_consolidated() == '20260921'
+
+
+def test_user_agent_is_generic(importer):
+    ua = importer.UA['User-Agent']
+    assert '@' not in ua and 'complynex' not in ua.lower()
+
+
+# ------------------------------------------------------------------ search quality
+def _ix():
+    docs = [
+        dict(id=1, list_code='eu_annex1', code='9A012', level=0, category='9', group='A',
+             title_en='"Unmanned aerial vehicles" ("UAVs"), unmanned airships, related equipment', text_en='x',
+             risk='high', kind='item'),
+        dict(id=2, list_code='eu_annex1', code='9A107', level=0, category='9', group='A',
+             title_en='Solid propellant rocket motors, usable in complete rocket systems or unmanned aerial vehicles',
+             text_en='y', risk='high', kind='item'),
+        dict(id=3, list_code='eu_annex1', code='0A981.b', level=1, category='0', group='A',
+             title_en=None, text_en='Electric chairs for the purpose of executing human beings.', kind='item'),
+        dict(id=4, list_code='us_ccl', code='3A001', level=0, category='3', group='A',
+             title_en='Electronic items as follows', text_en='a. ' + 'oscilloscope chair router ' * 40,
+             index_text='Electronic items as follows', kind='item'),
+        dict(id='c1', list_code='chemicals', code='7719-09-7', level=0, title_en='Thionyl chloride',
+             text_en='Thionyl chloride', cas=['7719-09-7'], kind='chemical', extra={'names': ['Thionyl chloride']}),
+    ]
+    return SE.Index(docs, [('drone', 'طائرة مسيرة')], synonyms=[['drone', 'UAV', 'unmanned aerial vehicle']])
+
+
+def test_synonyms_and_head_noun_ranking():
+    ix = _ix()
+    r = ix.search('drone')
+    assert r['results'][0]['doc'].code == '9A012' and 'synonym' in r['results'][0]['why']
+    assert ix.search('طائرة مسيرة')['results'][0]['doc'].code == '9A012'
+    assert 'unmanned aerial vehicle' in ' '.join(ix.search('drone')['expanded'])
+
+
+def test_entry_heading_only_indexed_for_long_us_entries():
+    assert ix_codes(_ix().search('oscilloscope')) == []
+
+
+def ix_codes(res):
+    return [r['doc'].code for r in res['results']]
+
+
+def test_cas_without_dashes_and_coverage():
+    ix = _ix()
+    r = ix.search('7719097')
+    assert r['exact'] == 'cas' and r['results'][0]['doc'].code == '7719-09-7'
+    r = ix.search('office chairs')
+    assert r['results'] and r['results'][0]['coverage'] < SC.MIN_TEXT_COVERAGE
+    assert ix.suggest('77190')[0]['value'] == '7719-09-7'
+
+
+def test_office_chairs_is_not_a_candidate():
+    res = SC.screen_line(_ix(), {'description': 'office chairs', 'hs_code': '9401.30'})
+    assert res['candidates'] == [] and res['suggested'] == 'clear'
+
+
+def test_chemical_named_in_description_without_cas():
+    ix = SE.Index([dict(id='c1', list_code='chemicals', code='7719-09-7', level=0, title_en='Thionyl chloride',
+                        text_en='Thionyl chloride', cas=['7719-09-7'], kind='chemical', risk='high',
+                        extra={'names': ['Thionyl chloride'], 'cwc_schedule': 3, 'ag_precursor': True})] +
+                  [dict(id=i, list_code='eu_annex1', code='9X%03d' % i, level=0, title_en='filler %d' % i,
+                        text_en='other text', kind='item') for i in range(10)])
+    res = SC.screen_line(ix, {'description': 'Thionyl chloride 99 percent, drums'})
+    assert {h['flag'] for h in res['hard']} == {'cwc', 'precursor'} and res['suggested'] == 'hold'
+
+
+def test_explanation_and_priority_outcome():
+    cands = [{'code': '3A002.d', 'title_en': 'Signal generators', 'state': 'open', 'why': ['Description matches: x'],
+              'reasons': ['text']}]
+    ex = SC.explain(cands, [{'flag': 'priority', 'code': '8543.20'}], 'review')
+    assert len(ex) == 2 and 'High-priority' in ex[0][0] and 'open' in ex[1][0] and ex[1][1]
+    assert SC.evaluate([], [{'flag': 'priority', 'code': '8543.20'}], [], {})[0] == 'review'
+    assert SC.evaluate([], [], [], {})[0] == 'clear'
+    assert SC.explain([], [], 'clear')[0][0].startswith('No control entry')
+
+
+def test_snippet_marks_whole_words():
+    s = T.snippet('Incorporating focal plane arrays &lt;', ['array', 'lt'])
+    assert '<mark>arrays</mark>' in s and '&<mark>' not in s
+
+
+def test_client_label_and_disclaimer_never_name_a_list():
+    for text in S.CLIENT_LIST_LABEL + S.DISCLAIMER:
+        for name in ('EU', 'US', 'CCL', 'Wassenaar', 'CWC', 'Australia', 'OPCW', 'EAR'):
+            assert name not in text.split()
+    assert S.CLIENT_LIST_LABEL == ('International control lists', 'قوائم الرقابة الدولية')
+    assert 'not a legal classification' in S.DISCLAIMER[0]
+
+
+def test_vessel_screening_degrades_without_engine_tables():
+    class FakeDB:
+        def execute(self, *a, **k):
+            class R:
+                def fetchone(self):
+                    return {'t': None}
+            return R()
+
+        def rollback(self):
+            pass
+    assert S.screen_vessel('', '', FakeDB()) == {}
+    assert S.screen_vessel('OCEAN STAR', '9074729', FakeDB())['error'] == 'unavailable'

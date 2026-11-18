@@ -275,7 +275,8 @@ def test_screening_cas_and_priority_are_hard_flags(idx):
     assert {'cwc', 'precursor'} <= flags and res['suggested'] == 'hold'
     res = SC.screen_line(idx, {'description': 'cpu', 'hs_code': '8542.31.10'})
     assert any(h['flag'] == 'priority' for h in res['hard'])
-    assert SC.batch_suggestion(res) == 'hold'
+    # a high-priority tariff heading is a risk indicator: review, never an automatic hold or clear
+    assert SC.batch_suggestion(res) == 'review' and res['suggested'] == 'review'
 
 
 def test_no_candidate_is_clear_and_key_is_stable(idx):
@@ -310,9 +311,14 @@ def test_batch_file_helpers():
 def test_same_code_in_two_lists_is_one_candidate_and_values_prefill(idx):
     res = SC.screen_line(idx, {'description': 'information security cryptography system', 'hs_code': '8517.62'})
     codes = [c['code'] for c in res['candidates']]
-    assert codes.count('5A002') == 1
-    c = next(c for c in res['candidates'] if c['code'] == '5A002')
-    assert set(c['lists']) == {'eu_annex1', 'us_ccl'}
+    # 5A002 (both lists) and its sub-item 5A002.a: one candidate, the more precise one, with every list
+    assert codes.count('5A002.a') == 1 and '5A002' not in codes
+    c = next(c for c in res['candidates'] if c['code'] == '5A002.a')
+    assert 'eu_annex1' in c['lists'] and {'hs', 'text'} <= set(c['reasons'])
+    merged = SC._drop_ancestors({'5a002': dict(code='5A002', reasons=['text'], strength=0.6, lists=['us_ccl']),
+                                 '5a002.a': dict(code='5A002.a', reasons=['hs'], strength=0.4, lists=['eu_annex1'])})
+    assert list(merged) == ['5a002.a'] and merged['5a002.a']['lists'] == ['eu_annex1', 'us_ccl']
+    assert merged['5a002.a']['reasons'] == ['hs', 'text'] and merged['5a002.a']['strength'] == 0.6
     res = SC.screen_line(idx, {'description': 'frequency synthesizer, output frequency 40 GHz'})
     q = next(q for q in res['questions'] if q['code'] == '3A002.d')
     assert res['answers'][q['id']]['auto'] and res['suggested'] == 'hold'

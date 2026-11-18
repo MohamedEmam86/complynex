@@ -1,0 +1,160 @@
+"""Dual-use goods module against a real database (skipped unless DUALUSE_TEST_DB names a scratch database with
+the 20261117_dualuse migration applied and POSTGRES_* pointing at it): pack registration and permissions,
+every page as a site administrator, a user with the permission (edit / view) and a user without it, a single
+and a batch screening, the mandatory reason and comment, the decision trail, exports, the generic list label
+for clients and the importer's version handling."""
+import io
+import json
+import os
+import re
+import sys
+
+import pytest
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, ROOT)
+DBNAME = os.environ.get('DUALUSE_TEST_DB', '')
+pytestmark = pytest.mark.skipif(not DBNAME or os.environ.get('POSTGRES_DB') != DBNAME,
+                                reason='needs DUALUSE_TEST_DB=<scratch db> and POSTGRES_DB set to it')
+
+LEAK = ('eu_annex1', 'us_ccl', 'chpl', 'EU 2021/821', 'US CCL', 'CWC schedules', 'Common High Priority', 'eCFR',
+        'consolidated text', 'OPCW', 'Chemicals register')
+PW = 'Str0ng!Passw0rd#x'
+
+
+@pytest.fixture(scope='module')
+def app():
+    from app import create_app
+    a = create_app()
+    a.config['WTF_CSRF_ENABLED'] = False
+    with a.app_context():
+        from database.db import get_db
+        from models.user import User
+        from regcontrols import packs
+        db = get_db()
+        ids = {}
+        for email, role, perm in (('du-admin@example.test', 'admin', None), ('du-edit@example.test', 'employee', 'edit'),
+                                  ('du-view@example.test', 'employee', 'view'), ('du-none@example.test', 'employee', None)):
+            u = User.get_by_email(email) or User.create_user(email, PW, 'Test', 'User', role=role)
+            ids[email.split('@')[0][3:]] = u.id
+            if perm:
+                packs.save_module_perms(u.id, {'modperm_dualuse': perm})
+        packs.enable('trade_control', ids['admin'])
+        a.du_ids = ids
+        yield a
+
+
+def _client(app, uid, lang='en'):
+    from models.user import User
+    c = app.test_client()
+    with c.session_transaction() as s:
+        s['_user_id'] = User.session_id_for_app(app, uid)
+        s['_fresh'] = True
+        s['language'] = lang
+    return c
+
+
+def test_pack_and_permission_are_registered(app):
+    from regcontrols import packs
+    assert 'trade_control' in packs.PACKS
+    assert any(m[0] == 'dualuse' for m in packs.permission_modules())
+    with app.app_context():
+        from models.user import User
+        assert User.get_by_id(app.du_ids['edit']).can_edit('dualuse')
+        v = User.get_by_id(app.du_ids['view'])
+        assert v.can_view('dualuse') and not v.can_edit('dualuse')
+        assert not User.get_by_id(app.du_ids['none']).can_view('dualuse')
+
+
+def test_screen_decide_and_pages(app):
+    ids = app.du_ids
+    adm = _client(app, ids['edit'])
+    r = adm.post('/dual-use/screen', data={'description': 'Thionyl chloride', 'cas': '7719-09-7', 'supplier': '',
+                                           'vessel_name': 'OCEAN STAR', 'vessel_imo': '9074729'})
+    assert r.status_code == 302
+    sid = int(re.search(r'/screenings/(\d+)', r.headers['Location']).group(1))
+    with app.app_context():
+        from database.db import get_db
+        db = get_db()
+        s = db.execute("SELECT * FROM dualuse_screenings WHERE id = %s", (sid,)).fetchone()
+        assert s['vessel_name'] == 'OCEAN STAR' and s['vessel_result']          # screened or 'unavailable'
+        line = db.execute("SELECT * FROM dualuse_screening_lines WHERE screening_id = %s", (sid,)).fetchone()
+    # the reason and the comment are mandatory
+    adm.post('/dual-use/lines/%d/decide' % line['id'], data={'decision': 'clear', 'reason': '', 'comment': ''})
+    with app.app_context():
+        from database.db import get_db
+        assert get_db().execute("SELECT decision FROM dualuse_screening_lines WHERE id = %s",
+                                (line['id'],)).fetchone()['decision'] is None
+    r = adm.post('/dual-use/lines/%d/decide' % line['id'],
+                 data={'decision': 'hold', 'reason': 'controlled_item', 'comment': 'Listed precursor: licence needed'})
+    assert r.status_code == 302
+    with app.app_context():
+        from database.db import get_db
+        trail = get_db().execute("SELECT * FROM dualuse_decisions WHERE line_id = %s", (line['id'],)).fetchall()
+        assert len(trail) == 1 and trail[0]['decision'] == 'hold' and trail[0]['decided_by'] == ids['edit']
+    # batch upload with column mapping
+    data = 'Description,HS,CAS\nThionyl chloride,2812.17,7719-09-7\noffice chairs,9401.30,\n'.encode()
+    r = adm.post('/dual-use/batch', data={'file': (io.BytesIO(data), 'invoice.csv')}, content_type='multipart/form-data')
+    tok = re.search(r'name="token" value="([0-9a-f]{32})"', r.get_data(as_text=True)).group(1)
+    r = adm.post('/dual-use/batch/run', data={'token': tok, 'col_description': '0', 'col_hs_code': '1', 'col_cas': '2'})
+    bid = int(re.search(r'/screenings/(\d+)', r.headers['Location']).group(1))
+    with app.app_context():
+        from database.db import get_db
+        lines = get_db().execute("SELECT * FROM dualuse_screening_lines WHERE screening_id = %s ORDER BY line_no",
+                                 (bid,)).fetchall()
+        assert [l['suggested'] if not l['decision'] else l['decision'] for l in lines] == ['hold', 'clear']
+        assert lines[0]['reused_from']          # the decision above was reused for the identical product
+    urls = ['/dual-use/', '/dual-use/?q=encryption', '/dual-use/?q=%D9%85%D8%AE%D8%B1%D8%B7%D8%A9',
+            '/dual-use/?category=1', '/dual-use/?q=7719097', '/dual-use/api/suggest?q=enc', '/dual-use/api/search?q=1C350',
+            '/dual-use/screenings', '/dual-use/screenings/%d' % sid, '/dual-use/screenings/%d' % bid,
+            '/dual-use/screenings/%d/export.xlsx' % bid, '/dual-use/screenings/%d/export.pdf' % sid]
+    for who, expect in (('admin', 200), ('edit', 200), ('view', 200), ('none', 403)):
+        for lang in ('en', 'ar'):
+            c = _client(app, ids[who], lang)
+            for u in urls:
+                r = c.get(u)
+                assert r.status_code == expect, (who, lang, u, r.status_code)
+                if who != 'admin' and r.mimetype in ('text/html', 'application/json'):
+                    body = r.get_data(as_text=True)
+                    assert not [w for w in LEAK if w in body], (who, u)
+    for who, code in (('admin', 200), ('edit', 403), ('view', 403), ('none', 403)):
+        assert _client(app, ids[who]).get('/dual-use/admin').status_code == code
+    for who, code in (('edit', 200), ('view', 403), ('none', 403)):
+        assert _client(app, ids[who]).get('/dual-use/screen').status_code == code
+    r = _client(app, ids['view']).get('/dual-use/screenings/%d/export.pdf' % sid)
+    assert r.mimetype == 'application/pdf' and r.data[:4] == b'%PDF'
+
+
+def test_versions_carry_arabic_and_mark_stale(app):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('du_imp', os.path.join(ROOT, 'scripts', 'dualuse', 'import_lists.py'))
+    imp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(imp)
+    conn = imp.connect()
+    cur = conn.cursor()
+    try:
+        cur.execute("INSERT INTO dualuse_lists (code, legal_name) VALUES ('zz_test', 'test') RETURNING id")
+        lid = cur.fetchone()['id']
+        items = [{'code': 'Z%d' % i, 'text_en': 'text %d' % i, 'params': []} for i in range(3)]
+        v1 = imp.new_version(cur, lid, 'v1', None, imp.content_digest(items), 3, {}, {}, 't')
+        imp.write_items(cur, v1, items, [])
+        imp.make_current(cur, lid, v1)
+        cur.execute("UPDATE dualuse_items SET text_ar = 'نص', ar_status = 'reviewed' WHERE version_id = %s", (v1,))
+        cur.execute("SELECT * FROM dualuse_items WHERE version_id = %s", (v1,))
+        old = cur.fetchall()
+        items2 = [dict(i) for i in items]
+        items2[0]['text_en'] = 'changed'
+        assert imp.content_digest(items2) != imp.content_digest(items)
+        v2 = imp.new_version(cur, lid, 'v2', None, imp.content_digest(items2), 3, {}, imp.diff_items(old, items2), 't')
+        imp.write_items(cur, v2, items2, old)
+        imp.make_current(cur, lid, v2)
+        cur.execute("SELECT code, ar_status, text_ar FROM dualuse_items WHERE version_id = %s ORDER BY code", (v2,))
+        rows = cur.fetchall()
+        assert [(r['code'], r['ar_status']) for r in rows] == [('Z0', 'stale'), ('Z1', 'reviewed'), ('Z2', 'reviewed')]
+        assert all(r['text_ar'] == 'نص' for r in rows)
+        cur.execute("SELECT id FROM dualuse_list_versions WHERE list_id = %s AND is_current", (lid,))
+        assert [r['id'] for r in cur.fetchall()] == [v2]
+        assert imp.diff_items(old, items2)['changed'] == 1
+    finally:
+        conn.rollback()
+        conn.close()
