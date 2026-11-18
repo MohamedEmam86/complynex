@@ -13,7 +13,8 @@ from what is stored:
     OFAC   details.sdn_type = 'Vessel'; IMO / MMSI / year of build / former flags from
            properties.identifiers, linked parties from the remarks (call sign, type and flag arrive with
            the next OFAC update)
-    EU     details.identifiers with an 'IMO (vessel ...)' identification
+    UN/EU  ENTITY rows with a ship IMO (check digit) or a 'Type of ship' remark and a non-company name
+           (the EU "IMO (vessel identification)" is mostly a shipping company's IMO company number)
 UK and OpenSanctions ships carry no ship marker in stored rows: they arrive with the next update of
 those lists (the UK ShipDetails block and the OpenSanctions 'Vessel' schema are now read).
 
@@ -40,7 +41,7 @@ def _j(v, d):
         return d
 
 
-def ofac_block(props, remarks):
+def ofac_block(props, remarks, aliases=()):
     from screening.format_handlers import vessel_block
     ids = props.get('identifiers') or []
 
@@ -57,39 +58,47 @@ def ofac_block(props, remarks):
                         measures=['asset_freeze'])
 
 
-def eu_block(details):
-    from screening.format_handlers import vessel_block
-    imos = []
-    for s in details.get('identifiers') or []:
-        s = str(s)
-        if 'vessel' in s.lower() and 'imo' in s.lower():
-            imos.append(s.split(':')[-1])
-    return vessel_block(imos=imos, measures=['asset_freeze']) if imos else None
+def entity_block(name, details, source):
+    """UN / EU ENTITY rows that are ships (format_handlers.ship_from_text: ship IMO check digit or a
+    'Type of ship' remark, and a name that is not a company's)."""
+    from screening.format_handlers import vessel_block, ship_from_text, vessel_measures
+    if source == 'un':
+        text = details.get('comments') or ''
+        imos = ship_from_text(name, text)
+    else:
+        text = ' '.join(str(x) for x in [details.get('reason')] if x)
+        ids = [str(s).split(':')[-1] for s in details.get('identifiers') or [] if 'imo' in str(s).lower()]
+        imos = ship_from_text(name, text, ids)
+    if imos is None:
+        return None
+    fm = re.search(r'Flag(?: State)?\s*:\s*([A-Za-z ,.\'()-]+?)(?:\.|;|$)', text, re.M)
+    return vessel_block(imos=imos, flag=fm.group(1).strip() if fm else None,
+                        measures=vessel_measures(text) or ['asset_freeze'])
 
 
 def backfill(conn, apply):
+    """Re-type ship rows stored before the handlers marked them (the next list update does the same)."""
     cur = conn.cursor()
-    cur.execute("""SELECT id, source, details, properties FROM screening_watchlist
-                   WHERE entity_type <> 'VESSEL' AND (
+    cur.execute("""SELECT id, source, full_name, details, properties FROM screening_watchlist
+                   WHERE coalesce(entity_type, '') <> 'VESSEL' AND (
                      (source = 'ofac' AND details LIKE '%%"sdn_type": "Vessel"%%')
-                     OR (source = 'eu' AND details ILIKE '%%vessel%%' AND details ILIKE '%%imo%%'))""")
+                     OR (source IN ('un', 'eu') AND (details ILIKE '%%imo%%' OR details ILIKE '%%type of ship%%')))""")
     rows = cur.fetchall()
-    changed = {'ofac': 0, 'eu': 0}
-    for wid, source, details, props in rows:
+    changed = {'ofac': 0, 'eu': 0, 'un': 0}
+    for wid, source, name, details, props in rows:
         d, p = _j(details, {}), _j(props, {})
+        if not isinstance(d, dict):
+            continue
         if source == 'ofac':
-            if (d or {}).get('sdn_type') != 'Vessel':
+            if d.get('sdn_type') != 'Vessel':
                 continue
-            block = ofac_block(p or {}, (p or {}).get('remarks'))
-            p = dict(p or {}, vessel=block)
+            p = dict(p or {}, vessel=ofac_block(p or {}, (p or {}).get('remarks')))
             if apply:
                 cur.execute("""UPDATE screening_watchlist SET entity_type = 'VESSEL', properties = %s,
                                updated_at = CURRENT_TIMESTAMP WHERE id = %s""",
                             (json.dumps(p, ensure_ascii=False), wid))
         else:
-            if not isinstance(d, dict):
-                continue
-            block = eu_block(d)
+            block = entity_block(name, d, source)
             if not block:
                 continue
             d = dict(d, vessel=block)
@@ -121,8 +130,7 @@ def main():
     if a.backfill:
         backfill(conn, a.apply)
         if a.apply:
-            for s in ('ofac', 'eu'):
-                print(VS.sync(conn, s, log=print))
+            print(VS.sync(conn, None, log=print))
     if a.sync:
         print(VS.sync(conn, a.source, log=print))
     if not (a.backfill or a.sync):
