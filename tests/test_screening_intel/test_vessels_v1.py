@@ -22,7 +22,9 @@ def test_name_normalisation_and_numbers():
     assert VU.norm_name('M/V "Ocean Star-1"') == 'OCEAN STAR 1'
     assert VU.norm_name('MT OCEANSTAR1') == 'OCEANSTAR 1'
     assert VU.name_numbers(VU.norm_name('STAR II')) == (2,)
-    assert VU.name_numbers(VU.norm_name('STAR I')) == ()          # a lone I stays a letter
+    assert VU.name_numbers(VU.norm_name('STAR I')) == (1,)        # a trailing lone I / V / X is a hull number
+    assert VU.name_numbers(VU.norm_name('PROGRESS V')) == (5,) and VU.norm_name('PROGRESS V') == 'PROGRESS V'
+    assert VU.name_numbers(VU.norm_name('I AM STAR')) == ()       # elsewhere it stays a letter
 
 
 def _c(wid, name, imo=None, **kw):
@@ -41,7 +43,7 @@ CANDS = [_c(1, 'OCEAN STAR 1', '9074729', prev=['SEA PEARL'], mmsi='273111111', 
          _c(3, 'AL NOUR', alt=['النور']),
          _c(4, 'OCEAN GLORY', '9387425'),
          _c(5, 'OCEAN STAR 1', '9074729', source='hmt', flag='Panama'),            # same ship, another list
-         _c(6, 'ATTICA', '9436941', parties=[{'name': 'Acme Shipping LLC', 'role': 'owner', 'party_listed': True}]),
+         _c(6, 'ATTICA STAR', '9436941', alt=['ATTICA'], parties=[{'name': 'Acme Shipping LLC', 'role': 'owner', 'party_listed': True}]),
          _c(7, 'UTAKI', '9262924'), _c(8, 'YATEEKA', '9191553')]
 IDX = {('IMO', '9074729'): [(1, True), (5, True)], ('IMO', '9074731'): [(2, True)], ('MMSI', '273111111'): [(1, True)],
        ('IMO', '9387425'): [(4, False)]}
@@ -117,7 +119,9 @@ def test_mmsi_alone_is_potential_not_confirmed():
 
 def test_risk_lines_never_create_a_match():
     r = run(name='UNKNOWN VESSEL XYZ', imo='9074728', flag='Panama')
-    assert r['tier'] == 'CLEAR' and r['risk']['score'] > 0
+    # 9074728 fails its check digit and is one keying error from the listed 9074729: review, never a match
+    assert VE.decision(r)[0] == 'review' and 'near_imo' in codes(r['hits'][0]['explanation'])
+    assert r['risk']['score'] > 0
     assert {'r_invalid_imo', 'r_foc'} <= set(codes(r['risk']['lines']))
     r = run(name='UNKNOWN VESSEL XYZ', flag='Iran', flags_past='Togo; Comoros; Panama')
     assert r['tier'] == 'CLEAR' and {'r_high_risk_flag', 'r_flag_changes'} <= set(codes(r['risk']['lines']))
@@ -250,7 +254,7 @@ def test_arabic_prefixes_and_digits():
 
 def test_cross_script_vowels_keep_lookalikes_apart():
     r = run(name='أتيكا')
-    assert r['hits'] and r['hits'][0]['name'] == 'ATTICA'
+    assert r['hits'] and r['hits'][0]['imo'] == '9436941'          # matched its alias ATTICA
     assert not any(h['name'] in ('UTAKI', 'YATEEKA') for h in r['hits'])
     assert not any(h['name'] in ('UTAKI', 'YATEEKA') for h in run(name='ATTICA')['hits'])
 
@@ -261,7 +265,7 @@ def test_mmsi_and_name_confirm():
 
 
 def test_declared_owner_supports_a_name_hit_but_never_confirms():
-    r = run(name='ATTICA', owner='ACME SHIPPING LLC')
+    r = run(name='ATTICA STAR', owner='ACME SHIPPING LLC')
     h = r['hits'][0]
     assert 'same_owner' in codes(h['explanation']) and 'owner_listed' in codes(h['explanation'])
     assert h['tier'] == 'POTENTIAL' and h['score'] <= VE.DEFAULTS['name_hit_max']
@@ -350,3 +354,41 @@ def test_db_real_ship_by_imo_and_name(conn):
     assert len(r['hits'][0]['sources']) >= 2
     r = VE.screen_vessel(conn=conn, name='HAO FAN 7', whitelist={})
     assert not any(h['name'].upper().startswith('HAO FAN') for h in r['hits'])
+
+
+def test_one_word_names_never_match():
+    r = run(name='ATTICA')                    # listed one-word name: review only
+    assert VE.decision(r)[0] == 'review' and 'single_word' in codes(r['hits'][0]['explanation'])
+    assert VE.decision(run(name='ATTICAS'))[0] == 'no_match'       # not the same word: nothing
+    assert VE.decision(run(name='OCEANSTAR 1'))[0] == 'match'      # joined form of a longer name
+
+
+def test_mistyped_imo_with_the_name_is_that_ship():
+    r = run(name='OCEAN STAR 1', imo='9074728')
+    assert VE.decision(r) [:2] == ('match', '9074729')
+    assert VE.decision(run(imo='9074728'))[0] == 'review'
+
+
+def test_same_name_unlisted_imo_goes_to_review():
+    assert VE.decision(run(name='OCEAN STAR 2', imo='9876543'))[0] in ('review',)   # 9876543: valid, unlisted
+    assert VE.decision(run(name='OCEAN STAR 2', imo='9074729'))[1] == '9074729'     # the IMO's own ship wins
+
+
+def test_arabic_sound_key():
+    assert VE.name_score('تشونغ تشون غانغ', 'CHONG CHON GANG')[0] >= 90
+    assert VE.name_score('ناقلة دال ليك', 'DAL LAKE')[0] >= 90
+    assert VE.name_score('أتيكا', 'UTAKI')[0] < 60
+
+
+def test_call_sign_label_stripped():
+    assert VU.norm_call_sign('C/S 3E2333') == '3E2333' and VU.norm_call_sign('CSAB1') == 'CSAB1'
+    assert '9420356' in VU.imo_neighbours('9420353') and VU.imo_neighbours('9420356') == []
+
+
+def test_owner_variants():
+    assert set(VE.owner_variants('Skadi Ltd.')) == {'SKADI LTD', 'SKADI LIMITED'}
+
+
+def test_decision_mapping():
+    assert VE.decision({'hits': [], 'owner_hits': []})[0] == 'no_match'
+    assert VE.decision({'hits': [], 'owner_hits': [{'tier': 'POTENTIAL'}], 'score': 90}) == ('match', None, 90.0)
