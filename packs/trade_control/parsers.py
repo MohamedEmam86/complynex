@@ -26,24 +26,49 @@ import os
 import re
 
 # ------------------------------------------------------------------ technical thresholds
-UNITS = (r"(?:Weighted TeraFLOPS|Weighted TeraOPS|TeraFLOPS|TeraOPS|W/kg|W/cm2|W/m2|MeV|keV|eV|mm/s|µm/s|m/s2|"
-         r"rad/s|°/h|degrees? per hour|arc seconds?|arc minutes?|lines per mm|dB/km|Ns/kg|N·m|kN·m|J/kg|%|GHz|MHz|"
-         r"kHz|THz|Hz|GW|MW|kW|mW|µW|W|kV|mV|V|kA|mA|µA|A|K|°C|°|Gbit/s|Mbit/s|kbit/s|bit/s|bits?|Gbyte|Mbyte|"
-         r"kbyte|TB|GB|MB|kB|byte|nm|µm|mm|cm|km|m|kg|mg|µg|g|tonnes|t|GPa|MPa|kPa|Pa|bar|psi|ps|ns|µs|ms|fs|s|"
-         r"min|h|rpm|MJ|kJ|J|dBm|dB|m/s|km/h|kN|N|Nm|ml|l|m3|m2|mrad|µrad|rad|degrees?|g/cm3|Gy|Sv|Bq|Ci|TOPS|"
-         r"TFLOPS|GFLOPS|FLOPS|channels|axes|Mach|g0)")
-_PRE = [(r'equal to or (?:more|greater) than|not less than|at least|≥|>=', '>='),
+_UNIT_LIST = [
+    'Weighted TeraFLOPS', 'Weighted TeraOPS', 'TeraFLOPS', 'TeraOPS', 'W/kg', 'W/cm2', 'W/m2', 'MeV', 'keV', 'eV',
+    'mm/s', 'µm/s', 'm/s2', 'rad/s', '°/h', r'degrees? per hour', r'arc seconds?', r'arc minutes?', 'lines per mm',
+    'dB/km', 'Ns/kg', 'N·m', 'kN·m', 'J/kg', '%', 'GHz', 'MHz', 'kHz', 'THz', 'Hz', 'GW', 'MW', 'kW', 'mW', 'µW',
+    'W', 'kV', 'mV', 'V', 'kA', 'mA', 'µA', 'A', 'K', '°C', '°', 'Gbit/s', 'Mbit/s', 'kbit/s', 'bit/s', 'Gb/s',
+    'Mb/s', r'bits?', 'Gbyte', 'Mbyte', 'kbyte', 'TB', 'GB', 'MB', 'kB', 'byte', 'nm', 'µm', 'mm', 'cm', 'km', 'm',
+    'kg', 'mg', 'µg', 'g', 'tonnes', 't', 'GPa', 'MPa', 'kPa', 'Pa', 'bar', 'psi', 'ps', 'ns', 'µs', 'ms', 'fs',
+    r'seconds?', r'minutes?', r'hours?', 's', 'min', 'h', 'rpm', 'MJ', 'kJ', 'J', 'dBm', 'dB', 'm/s', 'km/h',
+    r'knots?', 'kn', 'kN', 'N', 'Nm', 'ml', 'l', 'm3', 'm2', 'mrad', 'µrad', 'rad', r'degrees?', 'g/cm3', 'Gy/s',
+    'Gy', 'Sv', 'Bq', 'Ci', 'n/cm2', 'TOPS', 'TFLOPS', 'GFLOPS', 'FLOPS', 'GSPS', 'MSPS', 'kSPS', 'SPS',
+    r'GSample/s', r'MSample/s', r'samples? per second', r'frames? per second', 'frames/s', 'fps', 'channels', 'axes',
+    'Mach', 'g0']
+# longest first, so "km/h" is not read as "km" and "Gy/s" not as "Gy"
+UNITS = '(?:' + '|'.join(sorted(_UNIT_LIST, key=lambda u: -len(u.replace('?', '')))) + ')'
+_UNIT_CANON = [(r'seconds?', 's'), (r'minutes?', 'min'), (r'hours?', 'h'), (r'knots?', 'kn'),
+               (r'samples? per second', 'SPS'), (r'GSample/s', 'GSPS'), (r'MSample/s', 'MSPS'),
+               (r'frames? per second|frames/s', 'fps'), (r'Gb/s', 'Gbit/s'), (r'Mb/s', 'Mbit/s')]
+_PRE = [(r'equal to or (?:more|greater) than|(?:greater|more) than or equal to|equal to or exceeding|not less than|'
+         r'at least|≥|>=', '>='),
         (r'equal to or less than|not (?:more|greater) than|not exceeding|less than or equal to|up to and including|≤|<=',
          '<='),
         (r'exceeding|more than|greater than|in excess of|higher than|above|over|>', '>'),
         (r'less than|lower than|below|under|<', '<')]
 _POST = [(r'or (?:more|higher|greater|above)', '>='), (r'or (?:less|lower|below)', '<=')]
-_NUM = r"(\d[\d ,]*(?:[.,]\d+)?(?:\s*[x×]\s*10\s*\^?\s*[-−]?\s*\d+)?)"
+# a thousands comma has exactly three digits after it ("12,000"); an EU decimal comma has one or two ("1,25")
+_NUM = r"(\d{1,3}(?:[ ,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?(?:\s*[x×]\s*10\s*\^?\s*[-−]?\s*\d+)?)"
 _pre = '|'.join('(?:%s)' % o for o, _ in _PRE)
 _post = '|'.join('(?:%s)' % o for o, _ in _POST)
 _P1 = re.compile(r"(?P<op>" + _pre + r")\s*" + _NUM + r"\s*(?P<unit>" + UNITS + r")(?![A-Za-z])", re.I)
 _P2 = re.compile(_NUM + r"\s*(?P<unit>" + UNITS + r")(?![A-Za-z])(?:\s*\([^)]{1,20}\))?\s*,?\s+(?P<op>" + _post + r")\b",
                  re.I)
+# unitless thresholds of a named quantity: "a 'total processing performance' of 4800 or more"
+_P3 = re.compile(r"[\"'“‘]([^\"'”’]{3,60})[\"'”’]\s+(?:of\s+)?(?:(?P<op>" + _pre + r")\s*)?" +
+                 r"(\d+(?:[.,]\d+)?)(?!\s*(?:" + UNITS + r")(?![A-Za-z]))(?:\s+(?P<post>" + _post + r"))?(?![\d]|[.,]\d)", re.I)
+
+
+def _canon_unit(u):
+    for pat, c in _UNIT_CANON:
+        if re.fullmatch(pat, u, re.I):
+            return c
+    return u
+
+
 _CASW = r'(?:CAS|C\.A\.S\.)\s*(?:No\.?|Registry Number)?\s*#?\s*'
 _CAS = re.compile(r'(?<![A-Za-z])' + _CASW + r'(\d{2,7}-\d{2}-\d)\b')
 
@@ -68,11 +93,16 @@ _PN_CUT = re.compile(r'.*\b(?:having|with|where|whose|in which|of which|of|at|fo
 _PN_LEAD = re.compile(r'^(?:an?|the|its|their|any|all|each|total|both)\s+', re.I)
 
 
+_QUOTED_NOT_A_QUANTITY = {'capable of', 'specially designed', 'required', 'use', 'production', 'development',
+                          'technology', 'software', 'components', 'equipment', 'parts'}
+
+
 def _param_name(text, start):
     """The quantity a threshold applies to, from the words just before it ('a "peak power" exceeding 1 kW'
     -> 'peak power'; 'systems having transmit pulse widths 100 ns or less' -> 'transmit pulse widths')."""
     seg = re.split(r'[;:]|, (?=[a-z])|\band\b|\bor\b', text[max(0, start - 120):start])[-1]
-    q = re.findall(r'["\'“‘]([^"\'”’]{3,60})["\'”’]', seg)
+    q = [x for x in re.findall(r'["\'“‘]([^"\'”’]{3,60})["\'”’]', seg)
+         if x.strip().lower() not in _QUOTED_NOT_A_QUANTITY]
     if q:
         return q[-1].lower()
     w = re.sub(r'\([^)]*\)', ' ', seg)
@@ -89,18 +119,49 @@ def _param_name(text, start):
 
 
 def extract_parameters(text, dec='.'):
-    """Thresholds written in a control entry -> [{parameter, operator, value, unit, raw}]."""
+    """Thresholds written in a control entry -> [{parameter, operator, value, unit, raw}]; a range
+    ("equal to or greater than 30 minutes but less than 1 hour") is one parameter with an upper bound
+    (upper_op, upper_value, upper_unit)."""
     out = []
     text = (text or '').replace('μ', 'µ')
     text = re.sub(r'\s*\((?:better|worse|lower|higher)\)\s*', ' ', text)
+    found = []
     for pat, table in ((_P1, _PRE), (_P2, _POST)):
         for m in pat.finditer(text):
             try:
                 val = _num(m.group(2) if pat is _P1 else m.group(1), dec)
             except ValueError:
                 continue
-            out.append({'parameter': _param_name(text, m.start()), 'operator': _sym(m.group('op'), table),
-                        'value': val, 'unit': m.group('unit'), 'raw': re.sub(r'\s+', ' ', m.group(0)).strip()[:200]})
+            found.append((m.start(), m.end(), _sym(m.group('op'), table), val, _canon_unit(m.group('unit')),
+                          re.sub(r'\s+', ' ', m.group(0)).strip()[:200]))
+    taken = [(a, b) for a, b, *_ in found]
+    for m in _P3.finditer(text):
+        if not (m.group('op') or m.group('post')) or any(a <= m.start(3) < b for a, b in taken):
+            continue
+        op = _sym(m.group('op'), _PRE) if m.group('op') else _sym(m.group('post'), _POST)
+        try:
+            val = _num(m.group(3), dec)
+        except ValueError:
+            continue
+        found.append((m.start(), m.end(), op, val, None, re.sub(r'\s+', ' ', m.group(0)).strip()[:200],
+                      m.group(1).lower()))
+    found.sort(key=lambda f: f[0])
+    for f in found:
+        start, end, op, val, unit, raw = f[:6]
+        name = f[6] if len(f) > 6 else _param_name(text, start)
+        prev = out[-1] if out else None
+        between = text[prev['_end']:start] if prev else ''
+        if prev and prev.get('upper_op') is None and re.fullmatch(r'\s*(?:,\s*)?(?:but|and)\s*', between, re.I) \
+                and prev['operator'] in ('>', '>=') and op in ('<', '<='):
+            prev.update(upper_op=op, upper_value=val, upper_unit=unit, raw=(prev['raw'] + ' but ' + raw)[:200])
+            prev['_end'] = end
+            continue
+        if name in (None, 'but', 'and', 'or') and prev and start - prev['_end'] < 40:
+            name = prev['parameter']
+        out.append({'parameter': name, 'operator': op, 'value': val, 'unit': unit, 'raw': raw, '_end': end,
+                    'upper_op': None, 'upper_value': None, 'upper_unit': None})
+    for p in out:
+        p.pop('_end', None)
     return out
 
 
@@ -141,6 +202,14 @@ def _eu_annex1_slice(html_text):
         return s
     e = re.search(r'<p[^>]*class="title-annex-1"[^>]*>\s*ANNEX II\s*</p>', s[m.end():])
     return s[m.start(): m.end() + e.start() if e else len(s)]
+
+
+def _next_label(lab):
+    if lab.isdigit():
+        return str(int(lab) + 1)
+    if len(lab) == 1 and lab < 'z':
+        return chr(ord(lab) + 1)
+    return None
 
 
 def parse_eu_consolidated(html_text):
@@ -192,11 +261,26 @@ def parse_eu_consolidated(html_text):
 
     def walk(children, code, entry):
         """children of an item (or of the entry block) in document order."""
-        own, in_note = [], False
+        own, in_note, last, kind = [], False, None, None
+        # Sub-lists are lettered or numbered by depth (5A002 > a. > 1. > a. ...), but some entries number
+        # their items directly (1C350.1 to .90). A label of the other kind than the paragraphs already
+        # found at this level is a sub-list that EUR-Lex printed as a sibling: it continues the parent's
+        # own numbering (1C010.e.1 ... then "2." = 1C010.e.2) or belongs to the previous paragraph.
+        # After a note heading such a label is part of the note (4E001's "APP" calculation steps).
+        up_last = None
+        in_table = False                 # a table and its notes (2E503 "Deposition techniques") end the items
         for ch in children:
             if getattr(ch, 'name', None) is None:
                 continue
             cls = ch.get('class') or []
+            if not is_grid(ch) and (ch.name == 'table' or 'centered' in cls or ch.find('table') is not None):
+                in_table = True
+                add_note(code, text(ch)[:4000])
+                continue
+            if in_table:
+                if text(ch):
+                    add_note(code, text(ch)[:4000])
+                continue
             if is_grid(ch):
                 c1, c2 = col(ch, 1), col(ch, 2)
                 if c2 is None:
@@ -205,11 +289,30 @@ def parse_eu_consolidated(html_text):
                 m = _EU_LABEL.match(lab)
                 first = next((x for x in c2.children if getattr(x, 'name', None) and not is_grid(x)), None)
                 if m and not (c1 and italic(c1)) and not (first is not None and italic(first)):
+                    label = m.group(1)
+                    k = label.isdigit()
+                    parent = code
+                    if kind is not None and k != kind:
+                        if in_note:
+                            add_note(code, (lab + ' ' + text(c2)).strip())
+                            continue
+                        prev = (up_last or code).rsplit('.', 1)
+                        if '.' in code and len(prev) == 2 and prev[1].isdigit() == k and _next_label(prev[1]) == label:
+                            parent = prev[0]                  # continues the parent's own list
+                        elif last is not None:
+                            parent = last                     # a sub-list of the previous paragraph
                     in_note = False                  # a roman lettered / numbered paragraph ends a note
-                    c = code + '.' + m.group(1)
-                    items[c] = {'code': c, 'entry': entry, 'parent': code, 'level': c.count('.'),
+                    c = parent + '.' + label
+                    if c in items:
+                        add_note(code, (lab + ' ' + text(c2)).strip())
+                        continue
+                    items[c] = {'code': c, 'entry': entry, 'parent': parent, 'level': c.count('.'),
                                 'text_en': '', 'notes_en': []}
                     items[c]['text_en'] = walk(list(c2.children), c, entry)
+                    if parent == code:
+                        last, kind = c, k if kind is None else kind
+                    elif parent != last:
+                        up_last = c
                 else:
                     add_note(code, (lab + ' ' + text(c2)).strip())
                 continue
@@ -278,7 +381,39 @@ def parse_eu_consolidated(html_text):
     return _finish_eu({k: v for k, v in items.items() if v})
 
 
+_FOR_PURPOSES = re.compile(r'^(?:\d+\.\s*)?(?:For the purposes? of|In)\s+(\d[A-E]\d{3}(?:\.?[a-z0-9]{1,2})*)\.?[,:\s]')
+
+
+def _norm_ref(ref):
+    """'3A001.a.10.b.' / '2E503g' -> '3A001.a.10.b' / '2E503.g'."""
+    m = re.match(r'(\d[A-E]\d{3})(.*)$', ref)
+    if not m:
+        return ref
+    return m.group(1) + ''.join('.' + p for p in re.findall(r'[a-z]+|\d+', m.group(2)))
+
+
+def _move_notes(items):
+    """A note that says which paragraph it explains ("For the purposes of 3A001.a.10.b ...") is attached
+    to that paragraph when the document printed it under another one."""
+    for code, r in items.items():
+        keep, moving = [], None
+        for n in r.get('notes_en') or []:
+            m = _FOR_PURPOSES.match(n)
+            if m:
+                target = _norm_ref(m.group(1))
+                moving = target if (target != code and target in items and target.split('.')[0] == code.split('.')[0]
+                                    and not code.startswith(target + '.')) else None
+            elif moving and not re.match(r'^\d+\.\s', n):
+                moving = None                       # the numbered definitions under that heading end here
+            if moving:
+                items[moving].setdefault('notes_en', []).append(n)
+            else:
+                keep.append(n)
+        r['notes_en'] = keep
+
+
 def _finish_eu(items):
+    _move_notes(items)
     recs = []
     for c, r in items.items():
         if 'text_en' not in r:
@@ -485,33 +620,44 @@ def parse_ccl(xml_text):
     cat = {}
     for m in re.finditer(r'<HD1>Category (\d)\W+([^<]+)', sup):
         cat[m.group(1)] = re.sub(r'^(?:x[0-9a-fA-F]+;|[^A-Za-z])+', '', _html.unescape(m.group(2))).strip()
-    hdr = re.compile(r'<FP-2><B>\s*(\d[A-E]\d{3}(?:\.[a-z])?)\s+(.*?)</B>', re.S)
-    ms = list(hdr.finditer(sup))
+    # An ECCN heading is a bold code at the start of an FP-2 (or FP-1 / P) element; the title may be split
+    # over several bold runs ("<FP-2><B>3D006</B> <E>'</E><B>Electronic ...").
+    hdr = re.compile(r'<(FP-\d|FP|P)><B>\s*(\d[A-E]\d{3})(?=[\s<])', re.S)
+    ms = []
+    for m in hdr.finditer(sup):
+        end = sup.find('</%s>' % m.group(1), m.end())
+        end = end if end > 0 else m.end()
+        ms.append((m.start(), end + len(m.group(1)) + 3, m.group(2), txt(sup[m.end():end])))
     recs = []
     note_blk = re.compile(r'<NOTE>.*?</NOTE>|<P>\s*<I>(?:(?!</?P>).)*?</I>\s*</P>', re.S)
-    sub_re = re.compile(r'(?m)^([a-z]\.(?:(?:\d{1,2}|[a-z])\.)*)\s+(.{3,})$')
-    for i, m in enumerate(ms):
-        body = sup[m.end(): ms[i + 1].start() if i + 1 < len(ms) else len(sup)]
-        t, title = txt(body), txt(m.group(2))
+    # paragraph labels with or without the trailing dot ("a.1.", "z.1.b Commodities ...")
+    sub_re = re.compile(r'(?m)^(?!e\.g\.|i\.e\.)([a-z](?:\.(?:\d{1,2}|[a-z]))*)\.?\s+(.{3,})$')
+    for i, (start, hend, ecode, title) in enumerate(ms):
+        body = sup[hend: ms[i + 1][0] if i + 1 < len(ms) else len(sup)]
+        t = txt(body)
         rc = re.search(r'Reason for Control:\s*([^\n]+)', t)
         reasons = sorted(set(re.findall(r'\b(NS|MT|NP|CB|CW|AT|RS|CC|EI|SI|SL|FC|UN)\b', rc.group(1)))) if rc else []
         ib = re.search(r'<I>\s*Items:\s*</I>', body)
+        if not ib:
+            # no "Items:" marker (5A001, 1C230 ...): the items start at the first "a." paragraph after the
+            # "List of Items Controlled" heading
+            li = body.find('List of Items Controlled')
+            ib = re.compile(r'<P>\s*(?=a\.\s)').search(body, li if li >= 0 else 0)
         items_raw = body[ib.end():] if ib else ''
         notes = [txt(x) for x in note_blk.findall(items_raw)]
         items = txt(note_blk.sub('\n', items_raw)) if ib else ''
-        if not ib:
-            im = re.search(r'Items:\s*(.*)', t, re.S)
-            items = im.group(1).strip() if im else ''
         subs, seen = [], set()
         for sm in sub_re.finditer(items):
-            code = m.group(1) + '.' + sm.group(1).rstrip('.')
+            code = ecode + '.' + sm.group(1)
             if code in seen:
                 continue
             seen.add(code)
             tx = sm.group(2).strip()[:2000]
             subs.append({'code': code, 'parent': code.rsplit('.', 1)[0], 'text_en': tx,
+                         'not_used': bool(re.search(r'\[reserved\]', tx, re.I)) and len(tx) < 80,
                          'parameters': extract_parameters(tx, '.'), 'cas_numbers': cas_numbers(tx)})
-        e = m.group(1)
+        m = re.match(r'(.)', ecode)
+        e = ecode
         empty = bool(re.search(r'No items currently are in this ECCN', t)) or bool(
             re.match(r'\[?reserved\]?', title, re.I))
         recs.append({'code': e, 'category': e[0], 'category_title': cat.get(e[0]), 'group': e[1],

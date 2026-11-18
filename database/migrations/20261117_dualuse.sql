@@ -4,6 +4,7 @@
 -- (قوائم الرقابة الدولية); the real list name (dualuse_lists.legal_name) is shown to site administrators only.
 -- Idempotent: safe to run more than once.
 BEGIN;
+SET LOCAL lock_timeout = '5s';
 
 CREATE TABLE IF NOT EXISTS dualuse_lists (
     id              SERIAL PRIMARY KEY,
@@ -70,6 +71,11 @@ CREATE TABLE IF NOT EXISTS dualuse_parameters (
     reviewed        BOOLEAN NOT NULL DEFAULT FALSE
 );
 CREATE INDEX IF NOT EXISTS idx_du_params_item ON dualuse_parameters(item_id);
+-- a range ("30 minutes or more but less than 1 hour") is one parameter with an upper bound
+ALTER TABLE dualuse_parameters ADD COLUMN IF NOT EXISTS upper_op TEXT;
+ALTER TABLE dualuse_parameters ADD COLUMN IF NOT EXISTS upper_value DOUBLE PRECISION;
+ALTER TABLE dualuse_parameters ADD COLUMN IF NOT EXISTS upper_unit TEXT;
+ALTER TABLE dualuse_parameters ADD COLUMN IF NOT EXISTS upper_base DOUBLE PRECISION;
 
 CREATE TABLE IF NOT EXISTS dualuse_hs_map (
     id              SERIAL PRIMARY KEY,
@@ -177,6 +183,13 @@ ALTER TABLE dualuse_screenings ADD COLUMN IF NOT EXISTS transport_doc TEXT;
 ALTER TABLE dualuse_screenings ADD COLUMN IF NOT EXISTS vessel_name TEXT;
 ALTER TABLE dualuse_screenings ADD COLUMN IF NOT EXISTS vessel_imo TEXT;
 ALTER TABLE dualuse_screenings ADD COLUMN IF NOT EXISTS vessel_result JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+-- Decision reuse (an identical product decided before): the candidate set and the suggestion the decision
+-- was made on, and the proposal shown on a new line until a user confirms it under their own name.
+ALTER TABLE dualuse_item_master ADD COLUMN IF NOT EXISTS candidate_codes TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE dualuse_item_master ADD COLUMN IF NOT EXISTS suggested TEXT;
+ALTER TABLE dualuse_screening_lines ADD COLUMN IF NOT EXISTS proposal JSONB;
+ALTER TABLE dualuse_screening_lines ADD COLUMN IF NOT EXISTS hs_warning TEXT;
 
 -- Every decision ever recorded on a line (the line keeps only the latest): the audit trail of the module.
 CREATE TABLE IF NOT EXISTS dualuse_decisions (

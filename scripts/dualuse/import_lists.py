@@ -226,7 +226,8 @@ def build_items(code, data):
                 items.append({'code': s['code'], 'parent_code': s['parent'], 'entry_code': r['code'],
                               'level': s['code'].count('.'), 'category': r['category'], 'grp': r['group'],
                               'title_en': None, 'text_en': s['text_en'], 'notes_en': [], 'reasons': r['reasons'],
-                              'not_used': bool(re.match(r'\[?reserved\]?', s['text_en'], re.I)), 'risk_level': rl,
+                              'not_used': bool(s.get('not_used') or re.match(r'\[?reserved\]?', s['text_en'], re.I)),
+                              'risk_level': rl,
                               'extra': {'cas': s['cas_numbers']}, 'params': s['parameters']})
         # sub-item codes can repeat inside notes: keep the first
         seen, uniq = set(), []
@@ -352,12 +353,18 @@ def write_items(cur, vid, items, previous):
     prow = []
     for it in items:
         for p in it.get('params') or []:
-            bv, bu = T.to_base(p.get('value'), p.get('unit'))
+            if p.get('unit'):
+                bv, bu = T.to_base(p.get('value'), p.get('unit'))
+                ub, _ = T.to_base(p.get('upper_value'), p.get('upper_unit') or p.get('unit'))
+            else:                       # a named unitless quantity ("total processing performance")
+                bv, bu, ub = p.get('value'), T.UNITLESS, p.get('upper_value')
             prow.append((by_code[it['code']], p.get('parameter'), p['operator'], p.get('value'), p.get('unit'),
-                         bv, bu, p.get('raw')))
+                         bv, bu, p.get('raw'), p.get('upper_op'), p.get('upper_value'),
+                         p.get('upper_unit') or (p.get('unit') if p.get('upper_op') else None), ub))
     if prow:
         execute_values(cur, """INSERT INTO dualuse_parameters (item_id, parameter, operator, value, unit, base_value,
-                       base_unit, raw) VALUES %s""", prow, page_size=1000)
+                       base_unit, raw, upper_op, upper_value, upper_unit, upper_base) VALUES %s""", prow,
+                       page_size=1000)
     return len(rows), len(prow)
 
 
