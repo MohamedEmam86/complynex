@@ -84,6 +84,43 @@ from .db_pool import db_pool
 from .internal_blacklist_service import InternalBlacklistService
 from .internal_pep_service import InternalPEPService
 
+# Ships (entity_type VESSEL) in name screening (vessel screening V1). Ships are screened by their own module
+# (screening/vessel_engine.py); name screening keeps exactly what it had before ships got their own type:
+#   person screening   never returns a ship
+#   company screening  keeps the ships of the official lists (they were company-type records before), but not
+#                      the aggregated databases' ships, which were never loaded into name screening
+# Set per screening in a context variable (greenlet-local under gevent), read by the ES / SQL recall.
+import contextvars as _cv
+_VESSEL_SCOPE = _cv.ContextVar('cx_vessel_scope', default='aggregated')
+_AGGREGATED_SOURCES = ('opensanctions', 'opensanctions_pep')
+
+
+def _vessel_scope_for(entity_type):
+    return 'aggregated' if str(entity_type or '').upper() in ('ENTITY', 'COMPANY', 'ORGANIZATION',
+                                                              'ORGANISATION', 'VESSEL') else 'all'
+
+
+def _vessel_sql():
+    if _VESSEL_SCOPE.get() == 'all':
+        return " AND COALESCE(entity_type, '') <> 'VESSEL'"
+    return (" AND NOT (COALESCE(entity_type, '') = 'VESSEL' AND source IN (%s))"
+            % ', '.join("'%s'" % x for x in _AGGREGATED_SOURCES))
+
+
+def _vessel_es_must_not():
+    if _VESSEL_SCOPE.get() == 'all':
+        return {"term": {"entity_type": "VESSEL"}}
+    return {"bool": {"filter": [{"term": {"entity_type": "VESSEL"}},
+                                {"terms": {"source": list(_AGGREGATED_SOURCES)}}]}}
+
+
+def _vessel_allowed(c):
+    if str((c or {}).get('entity_type') or '').upper() != 'VESSEL':
+        return True
+    if _VESSEL_SCOPE.get() == 'all':
+        return False
+    return str(c.get('source') or '').lower() not in _AGGREGATED_SOURCES
+
 # --- CONSTANTS ---
 
 COMMON_ARABIC_NAMES = {
@@ -1192,6 +1229,7 @@ class ComplyNexScreeningEngine:
                 _tenancy.bind(getattr(self.db_conn, '_conn', self.db_conn), _tid)
         except Exception as _e:
             logger.warning(f'tenant bind skipped: {_e}')
+        _VESSEL_SCOPE.set(_vessel_scope_for(entity_type))
         # tier thresholds in force (screening_config, set by the MLRO; cached 60 s)
         try:
             from screening import thresholds as _thr
@@ -1580,6 +1618,9 @@ class ComplyNexScreeningEngine:
             arabic_variants=arabic_variants
         )
         
+        # ships: same scope as the ES / SQL recall, also for the semantic recall and any other path
+        candidates = [c for c in candidates if _vessel_allowed(c)]
+
         # Regulatory-measures lists (supervisory sanctions on financial institutions / staff) are
         # searched only in the scope the compliance officer chose (screening/regulatory.py)
         try:
@@ -1935,7 +1976,8 @@ class ComplyNexScreeningEngine:
                         # and duplicate hits. Inactive / delisted records never match.
                         "must_not": [
                             {"terms": {"source": ["internal_blacklist", "internal_pep"]}},
-                            {"term": {"is_active": 0}}
+                            {"term": {"is_active": 0}},
+                            _vessel_es_must_not()
                         ]
                     }
                 }
@@ -2440,7 +2482,7 @@ class ComplyNexScreeningEngine:
                         similarity(COALESCE(original_name, ''), {self.placeholder})
                     ) AS trgm_score
                 FROM screening_watchlist
-                WHERE is_active = 1 AND source NOT IN ('internal_blacklist', 'internal_pep')
+                WHERE is_active = 1 AND source NOT IN ('internal_blacklist', 'internal_pep'){_vessel_sql()}
                 AND COALESCE(LENGTH(name_normalized), 0) BETWEEN {self.placeholder} AND {self.placeholder}
                 AND ({where_clause})
                 ORDER BY trgm_score DESC
@@ -2603,7 +2645,7 @@ class ComplyNexScreeningEngine:
                     source_url, risk_level, aliases, entity_type, properties, details, source,
                     original_name
                 FROM screening_watchlist
-                WHERE is_active = 1 AND source NOT IN ('internal_blacklist', 'internal_pep')
+                WHERE is_active = 1 AND source NOT IN ('internal_blacklist', 'internal_pep'){_vessel_sql()}
                 AND ({where_clause})
                 ORDER BY {order_by_clause}
                 LIMIT 5000
