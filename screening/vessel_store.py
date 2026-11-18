@@ -71,6 +71,40 @@ def list_label(source, lang='en', user=None):
     return GENERIC_LIST_LABEL_AR if lang == 'ar' else GENERIC_LIST_LABEL
 
 
+# list categories a client may see (the category of a list, never its name); anything else -> the generic label
+CATEGORIES = {
+    'SANCTIONS': ('Sanctions', 'عقوبات'), 'TERROR': ('Terrorism', 'إرهاب'),
+    'SANCTION_LINKED': ('Linked to a sanctioned party', 'مرتبط بجهة معاقبة'),
+    'COUNTER_SANCTIONS': ('Counter-sanctions', 'عقوبات مضادة'), 'CRIME': ('Criminal / wanted', 'جرائم / مطلوب'),
+    'PEP': ('Politically exposed person', 'شخص سياسي ممثل للمخاطر'), 'EXPORT_CONTROL': ('Export control', 'قيود تصدير'),
+    'DEBARMENT': ('Debarment', 'حرمان'), 'REG_ACTION': ('Regulatory action', 'إجراء رقابي'),
+    'TRADE_RISK': ('Trade risk', 'مخاطر تجارية'),
+}
+
+
+def list_category(list_type):
+    """Generic category code of a record's list_type ('UN_Sanctions' -> 'SANCTIONS'), None when unknown.
+    The raw list_type can carry a list's name, so clients only ever get this code."""
+    lt = str(list_type or '').strip().upper()
+    if lt in CATEGORIES:
+        return lt
+    if 'SANCTION' in lt:
+        return 'SANCTIONS'
+    if 'TERROR' in lt:
+        return 'TERROR'
+    return None
+
+
+def category_label(list_type, lang='en', user=None):
+    """What a page shows for a hit's list type: the raw value for the superadmin, else the generic category."""
+    if can_see_sources(user):
+        return str(list_type or '')
+    code = list_category(list_type)
+    if code:
+        return CATEGORIES[code][1 if lang == 'ar' else 0]
+    return GENERIC_LIST_LABEL_AR if lang == 'ar' else GENERIC_LIST_LABEL
+
+
 def risk_band(score):
     for name, lo in RISK_BANDS:
         if (score or 0) >= lo and (name != 'low' or (score or 0) > 0):
@@ -98,19 +132,69 @@ def vessel_block(row):
     return None
 
 
+def config_value(conn, key):
+    """screening_config value through either connection type (the app's get_db() wrapper or a raw psycopg2
+    connection). Runs inside a savepoint, so a failure never discards the caller's uncommitted work."""
+    if conn is None:
+        return None
+    try:
+        cur = conn.cursor()
+        cur.execute('SAVEPOINT vessel_cfg')
+    except Exception:
+        return None
+    try:
+        cur.execute('SELECT config_value FROM screening_config WHERE config_key = %s', (key,))
+        r = cur.fetchone()
+        cur.execute('RELEASE SAVEPOINT vessel_cfg')
+        if not r:
+            return None
+        return r['config_value'] if isinstance(r, dict) or hasattr(r, 'keys') else r[0]
+    except Exception as e:
+        logger.warning(f'[VESSELS] screening_config {key} unreadable: {e}')
+        try:
+            cur.execute('ROLLBACK TO SAVEPOINT vessel_cfg')
+        except Exception:
+            pass
+        return None
+
+
+def read_rows(conn, sql, params=()):
+    """Rows of a read-only query inside a savepoint: on failure (e.g. a table not migrated yet) returns None and
+    leaves the caller's transaction usable, without rolling back work that is not ours."""
+    cur = conn.cursor()
+    try:
+        cur.execute('SAVEPOINT vessel_read')
+    except Exception:
+        return None
+    try:
+        cur.execute(sql, params)
+        rows = _rows(cur)
+        cur.execute('RELEASE SAVEPOINT vessel_read')
+        return rows
+    except Exception as e:
+        logger.warning(f'[VESSELS] read failed: {e}')
+        try:
+            cur.execute('ROLLBACK TO SAVEPOINT vessel_read')
+        except Exception:
+            pass
+        return None
+
+
+def config_json(conn, key):
+    v = config_value(conn, key)
+    try:
+        d = json.loads(v) if v else {}
+    except Exception:
+        logger.warning(f'[VESSELS] screening_config {key} is not JSON: ignored')
+        return {}
+    return d if isinstance(d, dict) else {}
+
+
 def include_opensanctions(conn):
     """screening_config 'vessels_include_opensanctions': 'on' (default) / 'off' - switch the
     aggregator's vessels out of screening and the database page without touching the data."""
-    try:
-        from screening.list_versions import _cfg_raw
-        v = str(_cfg_raw(conn, CFG_INCLUDE_OS) or 'on').strip().lower()
-        return v != 'off'
-    except Exception:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-        return True
+    v = str(config_value(conn, CFG_INCLUDE_OS) or 'on').strip().lower()
+    return v != 'off'
 
 
 def _rows(cur):
@@ -404,20 +488,12 @@ def flag_risk(conn, force=False):
     if not force and 'flags' in _CACHE and time.time() - _CACHE['flags'][0] < _TTL:
         return _CACHE['flags'][1]
     out = {}
-    try:
-        cur = conn.cursor()
-        cur.execute('SELECT * FROM flag_risk')
-        for r in _rows(cur):
-            v = {'foc': bool(r.get('flag_of_convenience')), 'high_risk': bool(r.get('high_risk')),
-                 'note': r.get('note')}
-            out[str(r['country']).lower()] = v
-            if r.get('iso2'):
-                out[str(r['iso2']).lower()] = v
-    except Exception:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
+    for r in read_rows(conn, 'SELECT * FROM flag_risk') or []:
+        v = {'foc': bool(r.get('flag_of_convenience')), 'high_risk': bool(r.get('high_risk')),
+             'note': r.get('note')}
+        out[str(r['country']).lower()] = v
+        if r.get('iso2'):
+            out[str(r['iso2']).lower()] = v
     _CACHE['flags'] = (time.time(), out)
     return out
 
@@ -443,15 +519,11 @@ def query_fingerprint(q):
 
 def whitelist_for(conn, qkey):
     """{listed_key: entry} of the whitelist entries of a screened ship (active and re-opened)."""
-    cur = conn.cursor()
-    cur.execute("""SELECT w.*, TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS by_name
-                   FROM vessel_whitelist w LEFT JOIN users u ON u.id = w.created_by
-                   WHERE w.query_key = %s AND w.status IN ('active', 'reopened')
-                   ORDER BY w.created_at""", (qkey,))
-    out = {}
-    for r in _rows(cur):
-        out[r['listed_key']] = r
-    return out
+    rows = read_rows(conn, """SELECT w.*, TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS by_name
+                              FROM vessel_whitelist w LEFT JOIN users u ON u.id = w.created_by
+                              WHERE w.query_key = %s AND w.status IN ('active', 'reopened')
+                              ORDER BY w.created_at""", (qkey,)) or []
+    return {r['listed_key']: r for r in rows}
 
 
 def check_whitelist(conn):

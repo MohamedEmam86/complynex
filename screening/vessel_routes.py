@@ -127,6 +127,7 @@ def _vessel_helpers():
             'vessel_reasons': [(c, _pick((en, ar)), d) for c, en, ar, d in REASONS],
             'vessel_reason_label': lambda c: _pick(next(((en, ar) for cc, en, ar, _ in REASONS if cc == c), (c, c))),
             'vessel_text': lambda items: VE.text(items, _lang()),
+            'vessel_category': lambda lt: VS.category_label(lt, _lang()),
             'vessel_flag': lambda f: VF.name(f, _lang()) if f else '',
             'vessel_risk_line': lambda c: _pick(RISK_LINE_LABELS.get(c, (c, c))),
             'vessel_risk_band': lambda s: VS.risk_band(s),
@@ -572,7 +573,8 @@ def _export_rows(rows, lang='en'):
                     '; '.join(VE.text(top.get('explanation'), lang)), oh.get('name') or '',
                     res['risk']['score'], '; '.join(VE.text(res['risk']['lines'], lang)),
                     '; '.join(VE.text(res.get('warnings'), lang)), r['id']])
-    return out
+    from utils.sheet_safe import row as safe_row      # formula injection: file and list text is untrusted
+    return [safe_row(r) for r in out]
 
 
 @vessels_bp.route('/bulk/<int:job_id>.csv')
@@ -662,8 +664,10 @@ def database():
         where.append('p.measures LIKE %s')
         params.append('%"' + f['measure'].replace('%', '').replace('"', '') + '"%')
     if f['list_type'] in LIST_TYPES:
-        where.append('upper(w.list_type) = %s')
-        params.append(f['list_type'])
+        # stored list types can be per list ('UN_Sanctions'): filter on the generic category
+        where.append("(upper(w.list_type) = %s OR (%s = 'SANCTIONS' AND upper(w.list_type) LIKE '%%SANCTION%%'"
+                     " AND upper(w.list_type) <> 'COUNTER_SANCTIONS'))")
+        params += [f['list_type'], f['list_type']]
     if f['source']:
         where.append('w.source = %s')
         params.append(f['source'])

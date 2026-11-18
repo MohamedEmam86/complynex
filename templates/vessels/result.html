@@ -44,7 +44,7 @@
     <h6 class="fw-bold text-danger"><i class="bi bi-building-exclamation me-1"></i>{{ _('Owner / operator matches a listed party') }}</h6>
     {% for o in res.owner_hits %}{% set ok = owner_key(o) %}{% set d = decisions.get('owner:' ~ ok) %}
     <div class="border-bottom py-2">
-      <div class="d-flex justify-content-between small"><span><strong>{{ o.name }}</strong> <span class="text-muted">({{ _('entered') }}: {{ o.query }}) · {{ vessel_list_label(o.source) }}{% if o.list_type %} · {{ o.list_type }}{% endif %}</span></span>
+      <div class="d-flex justify-content-between small"><span><strong>{{ o.name }}</strong> <span class="text-muted">({{ _('entered') }}: {{ o.query }}) · {{ vessel_list_label(o.source) }}{% if o.list_type or o.list_type_raw %} · {{ vessel_category(o.list_type_raw or o.list_type) }}{% endif %}</span></span>
         <span>{{ tier_badge(o.tier) }} <span class="text-muted">{{ o.score }}</span></span></div>
       {% if d %}{{ decision_box(d) }}{% endif %}
       {% if can_decide %}{{ decide_form(sid, 'owner', ok, false) }}{% endif %}

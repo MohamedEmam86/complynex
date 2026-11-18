@@ -35,6 +35,12 @@ def _en(items):
     return text(items, 'en')
 
 
+def _category(o):
+    """The generic category of an owner hit (SANCTIONS, TERROR ...), never the list's own list_type."""
+    from screening.vessel_store import list_category
+    return list_category(o.get('list_type_raw') or o.get('list_type'))
+
+
 def _view(sid, res, customer_ref, sandbox=False):
     """API body of a vessel screening; no list names, no internal ids beyond the ship's own record id."""
     return {
@@ -55,7 +61,7 @@ def _view(sid, res, customer_ref, sandbox=False):
                   'reopened': bool(h.get('reopened'))}
                  for h in res['hits']],
         'owner_hits': [{'name': o['name'], 'entered': o.get('query'), 'score': o['score'], 'tier': o['tier'],
-                        'list_type': o.get('list_type'), 'lists': LABEL} for o in res['owner_hits']],
+                        'category': _category(o), 'lists': LABEL} for o in res['owner_hits']],
         'cleared_before': [{'name': s['name'], 'imo': s.get('imo'), 'score': s['score']}
                            for s in res.get('suppressed') or []],
         'risk': {'score': res['risk']['score'], 'indicators': _en(res['risk']['lines']),

@@ -66,8 +66,8 @@ def config(conn=None, override=None):
     cfg = json.loads(json.dumps(DEFAULTS))
     if conn is not None:
         try:
-            from screening.list_versions import _cfg_json
-            stored = _cfg_json(conn, 'vessel_engine')
+            from screening.vessel_store import config_json
+            stored = config_json(conn, 'vessel_engine')
             _merge(cfg, stored)
         except Exception:
             pass
@@ -623,7 +623,9 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
                 s = float(ph.get('score') or 0)
                 if s >= low:
                     owner_hits.append({'query': query['owner'], 'name': ph.get('name'), 'score': round(s, 1),
-                                       'tier': ph.get('tier') or tier_of(s, th), 'list_type': ph.get('list_type'),
+                                       'tier': ph.get('tier') or tier_of(s, th),
+                                       'list_type': list_category(ph.get('list_type_raw') or ph.get('list_type')),
+                                       'list_type_raw': ph.get('list_type_raw') or ph.get('list_type'),
                                        'source': ph.get('source'), 'watchlist_id': ph.get('watchlist_id')})
         except Exception as e:
             logger.warning(f'[VESSELS] owner screening failed: {e}')
@@ -661,6 +663,8 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
                                            'mmsi', 'call_sign', 'flag', 'flags_past', 'type', 'year_built',
                                            'gross_tonnage', 'measures', 'parties', 'previous_names',
                                            'risk_score', 'list_type')})
+        h['list_type'] = list_category(h.get('list_type'))          # categories only, never a list's name
+        h['list_types'] = sorted({list_category(x) or 'OTHER' for x in h.get('list_types') or []})
         h['watchlist_id'] = best_c['watchlist_id']
         h['source'] = best_c['source']
         h['names'] = view.get('names')
@@ -677,14 +681,7 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
     qkey = VU.query_key(q_name, q_imo, q_mmsi, query['flag'])
     qfp = VS.query_fingerprint(query)
     if whitelist is None and conn is not None:
-        try:
-            whitelist = VS.whitelist_for(conn, qkey)
-        except Exception:
-            try:
-                conn.rollback()
-            except Exception:
-                pass
-            whitelist = {}
+        whitelist = VS.whitelist_for(conn, qkey)
     suppressed = []
     for h in merged:
         w = (whitelist or {}).get(h['listed_key'])
@@ -794,21 +791,15 @@ def exact_owner_records(conn, name, limit=5):
         return []
     key_sql = ("upper(btrim(regexp_replace(regexp_replace(regexp_replace(full_name, '[(][^)]*[)]', ' ', 'g'), "
                "'[^A-Za-z0-9\u0600-\u06ff]+', ' ', 'g'), '\\s+', ' ', 'g')))")
-    try:
-        cur = conn.cursor()
-        cur.execute(f"""SELECT id, full_name, source, list_type FROM screening_watchlist
-                        WHERE is_active = 1 AND coalesce(entity_type, '') NOT IN ('VESSEL', 'INDIVIDUAL')
-                          AND {key_sql} = ANY(%s) ORDER BY id LIMIT %s""", (keys, limit))
-        rows = cur.fetchall()
-        return [dict(r) if isinstance(r, dict) else dict(zip(('id', 'full_name', 'source', 'list_type'), r))
-                for r in rows]
-    except Exception as e:
-        logger.warning(f'[VESSELS] exact owner lookup failed: {e}')
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-        return []
+    from screening.vessel_store import read_rows
+    return read_rows(conn, f"""SELECT id, full_name, source, list_type FROM screening_watchlist
+                               WHERE is_active = 1 AND coalesce(entity_type, '') NOT IN ('VESSEL', 'INDIVIDUAL')
+                                 AND {key_sql} = ANY(%s) ORDER BY id LIMIT %s""", (keys, limit)) or []
+
+
+def list_category(lt):
+    from screening.vessel_store import list_category as _lc
+    return _lc(lt)
 
 
 def party_screener(conn=None):
@@ -823,7 +814,8 @@ def party_screener(conn=None):
             if str(m.get('entity_type') or '').upper() == 'VESSEL':
                 continue        # a ship is not an owner; vessel hits come from layers 1-2
             out.append({'name': m.get('full_name') or m.get('name'), 'score': m.get('match_score') or 0,
-                        'tier': (m.get('decision') or {}).get('tier'), 'list_type': m.get('list_type'),
+                        'tier': (m.get('decision') or {}).get('tier'), 'list_type': list_category(m.get('list_type')),
+                        'list_type_raw': m.get('list_type'),
                         'source': m.get('source') or m.get('list_source'),
                         'watchlist_id': m.get('id') or m.get('entity_id')})
         db = conn
@@ -836,7 +828,8 @@ def party_screener(conn=None):
         have = {o['watchlist_id'] for o in out}
         for r in exact_owner_records(db, name):
             if r['id'] not in have:
-                out.append({'name': r['full_name'], 'score': 100.0, 'tier': None, 'list_type': r.get('list_type'),
+                out.append({'name': r['full_name'], 'score': 100.0, 'tier': None,
+                            'list_type': list_category(r.get('list_type')), 'list_type_raw': r.get('list_type'),
                             'source': r.get('source'), 'watchlist_id': r['id'], 'exact': True})
         out.sort(key=lambda o: -float(o.get('score') or 0))
         return out[:10]

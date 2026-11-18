@@ -427,10 +427,6 @@ def workbook(users=None, breakdown=None, meta=None, tr=None):
 
 
 def _cell(v):
-    if v is None:
-        return ''
-    if isinstance(v, (int, float)):
-        return v
-    s = str(v)
-    # spreadsheet formula injection: a cell must never start with = + - @
-    return "'" + s if s[:1] in ('=', '+', '-', '@', '\t', '\r') else s
+    # spreadsheet formula injection: a cell must never start with = + - @ (shared rule: utils/sheet_safe.py)
+    from utils.sheet_safe import cell
+    return cell(v)
