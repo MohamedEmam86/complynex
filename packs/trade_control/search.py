@@ -238,6 +238,9 @@ class Index:
             if not known and len(t) >= 3 and len(g) == 1:      # a word still being typed ("encryp")
                 voc = self.vocab['ar' if lang == 'ar' else 'en']
                 g += [((v,), HOW_W['prefix'], 'prefix') for v in voc if v.startswith(t)][:5]
+                if len(g) == 1 and len(t) >= 5:     # a known stem plus a typo at the end ("imagin" -> imag)
+                    g += [((v,), HOW_W['prefix'], 'prefix') for v in voc
+                          if len(v) >= 4 and t.startswith(v) and len(t) - len(v) <= 3][:3]
             # the same concept typed twice ("quadcopter drone", "drone UAV") counts once
             alts = {a for a, _, _ in g}
             if any((t,) in {a for a, _, _ in prev} or alts & {a for a, _, _ in prev} - {()} and
