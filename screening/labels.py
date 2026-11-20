@@ -117,6 +117,16 @@ def label(value, kind='status'):
         return value
     table = _KINDS.get(kind, STATUS)
     v = str(value)
+    if kind == 'source' and v.strip().lower() not in ('adverse media', 'unknown', 'screening adjudication', '-', '—'):
+        # users see our list names (screening.list_display); the platform superadmin the real list
+        try:
+            from flask import has_request_context
+            if has_request_context():
+                from screening import list_display as LD
+                if not LD.can_see_sources():
+                    return LD.display(v)
+        except Exception:
+            pass
     hit = table.get(v)
     if hit is None:
         k = v.strip().lower()

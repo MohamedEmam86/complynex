@@ -59,6 +59,125 @@ def _scr_label_filter(value, kind='status'):
     return label(value, kind)
 
 
+from screening.limits import DailyLimitReached as _DailyLimitReached  # noqa: E402
+
+
+@screening_bp.app_errorhandler(_DailyLimitReached)
+def _daily_limit_reached(e):
+    """Any screening module: the daily limit is reached -> a clear bilingual message, nothing screened."""
+    from flask_babel import get_locale
+    lang = str(get_locale() or 'en')[:2]
+    msg = e.message(lang)
+    try:
+        from models.audit import AuditLog
+        AuditLog.log(getattr(current_user, 'id', None), 'Screening Limit Reached', 'Screening', None,
+                     f'limit {e.limit}, used {e.used}, requested {e.wanted}: {request.path[:120]}', request.remote_addr)
+    except Exception:
+        pass
+    wants_json = (request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+                  or request.accept_mimetypes.best == 'application/json' or '/api/' in request.path)
+    if wants_json:
+        return jsonify({'success': False, 'error': 'daily_limit_reached', 'message': msg,
+                        'message_en': e.message('en'), 'message_ar': e.message('ar'),
+                        'limit': e.limit, 'used': e.used, 'remaining': e.remaining}), 429
+    flash(msg, 'danger')
+    ref = request.referrer or ''
+    return redirect(ref if ref.startswith(request.host_url) else url_for('index'))
+
+
+@screening_bp.app_template_global('screenings_left')
+def _screenings_left():
+    """Screenings the signed-in user may still run today (None = unlimited) — shown before a bulk run."""
+    try:
+        from screening.limits import remaining
+        return remaining(current_user) if getattr(current_user, 'is_authenticated', False) else None
+    except Exception:
+        return None
+
+
+@screening_bp.app_template_global('list_display_groups')
+def _list_display_groups():
+    from screening import list_display as LD
+    o = LD.overrides(force=True)
+    return [{'code': g, 'help': LD.GROUP_HELP.get(g, ''), 'en_default': en, 'ar_default': ar,
+             'en_override': (o.get(g) or {}).get('en', ''), 'ar_override': (o.get(g) or {}).get('ar', '')}
+            for g, (en, ar) in LD.GROUPS.items()]
+
+
+@screening_bp.route('/list-display-names', methods=['POST'])
+@login_required
+def list_display_names():
+    """The platform superadmin names the list groups users see (display only, audited)."""
+    from flask import abort
+    from screening import list_display as LD
+    if getattr(current_user, 'role', '') != 'superadmin':
+        abort(403)
+    values = {g: {'en': request.form.get(f'en__{g}', ''), 'ar': request.form.get(f'ar__{g}', '')} for g in LD.GROUPS}
+    clean = LD.save_overrides(values, current_user.id)
+    try:
+        from models.audit import AuditLog
+        AuditLog.log(current_user.id, 'Update List Display Names', 'Screening', None,
+                     json.dumps(clean, ensure_ascii=False)[:1000], request.remote_addr)
+    except Exception:
+        pass
+    flash(gettext('The list names users see were saved.'), 'success')
+    return redirect(url_for('screening.data_sources'))
+
+
+@screening_bp.route('/lists/status')
+@login_required
+@permission_required('screening', level='view')
+def lists_status():
+    """Lists status for clients: the lists we screen against under our names, their size, last update and
+    freshness (the 'Lists searched' panel data) — no provider, publisher, URL or file."""
+    from screening import result_view as rv
+    rows = []
+    now = datetime.utcnow()
+    for r in rv.coverage(names=True) or []:
+        r = dict(r)
+        upd, age = r.get('updated'), None
+        try:
+            d = upd if isinstance(upd, datetime) else (datetime.fromisoformat(str(upd)[:19]) if upd else None)
+            if d is not None:
+                age = max(0, (now - d.replace(tzinfo=None)).days)
+        except Exception:
+            age = None
+        r['age_days'] = age
+        rows.append(r)
+    return render_template('screening/lists_status.html', rows=rows)
+
+
+@screening_bp.app_template_global('local_category')
+def _local_category(raw):
+    """A local list's category (often a sheet name): generic for everyone but the platform superadmin."""
+    from screening import source_mask as SM
+    return raw if SM.can_see_sources() else SM.public_category(raw)
+
+
+@screening_bp.app_template_global('list_name')
+def _list_name(m=None, source=None, dataset=None, list_type=None):
+    """{{ list_name(hit) }}: the list a record comes from under our names (screening.list_display); the
+    platform superadmin sees the real list."""
+    from screening import list_display as LD
+    from screening.result_view import source_label
+    m = m if isinstance(m, dict) else {'source': m if m is not None else source, 'dataset': dataset,
+                                       'list_type': list_type}
+    if LD.can_see_sources():
+        return source_label(m)
+    return LD.display(m.get('source') or m.get('list_source'), m.get('dataset'), m.get('list_type'))
+
+
+@screening_bp.app_template_global('profile_url')
+def _profile_url(rid, source=None, record=None, ref=None):
+    """Link to a listed record's profile: an opaque reference, never the internal source code.
+    ``ref`` is a 'SOURCE:record' pair (grouped hits)."""
+    from screening import list_display as LD
+    if ref and not source and ':' in str(ref):
+        source, record = str(ref).split(':', 1)
+    tok = LD.profile_ref(source, record)
+    return url_for('screening.match_profile', rid=rid, p=tok) if tok else ''
+
+
 def _is_safe_external_url(url):
     """Reject URLs that could be used for SSRF against internal infrastructure —
     only plain http(s) URLs that resolve to a public IP address are allowed.
@@ -601,6 +720,22 @@ def dashboard():
             })
     except Exception as _e:
         logger.warning(f"source freshness panel failed: {_e}")
+    from screening import list_display as _LD
+    if source_freshness and not _LD.can_see_sources():
+        # one row per list under our names (the worst state of its sources), no versions or providers
+        _rank = {'danger': 0, 'warning': 1, 'success': 2}
+        _grp = {}
+        for _s in source_freshness:
+            _n = _LD.display(_s['source'])
+            _o = _grp.get(_n)
+            if _o is None:
+                _grp[_n] = dict(_s, name=_n, source=None, version=None)
+                continue
+            _o['failures'] += _s['failures']
+            _o['records'] += _s['records']
+            if _rank.get(_s['badge'], 2) < _rank.get(_o['badge'], 2):
+                _o.update(status=_s['status'], badge=_s['badge'], last=_s['last'], age_h=_s['age_h'], max_h=_s['max_h'])
+        source_freshness = list(_grp.values())
 
     return render_template('screening/dashboard.html',
                           stats=stats,
@@ -642,6 +777,8 @@ def manual_screen():
         dob = formatted_dob.isoformat() if formatted_dob else None
         national_id = cleaned['national_id']
 
+        from screening.limits import consume as _consume_limit
+        _consume_limit(1, 'name')            # daily screening limit (refused with a message when reached)
         engine = get_engine()
         engine.active_threshold = slider_val
         
@@ -912,7 +1049,16 @@ def match_profile(rid):
     from screening import result_view as rv
     from screening import entity_links as EL
     from config import Config
-    src, rec = request.args.get('src', ''), request.args.get('rec', '')
+    from screening import list_display as _LD
+    if request.args.get('p'):
+        src, rec = _LD.resolve_profile_ref(request.args.get('p'))
+        if not src:
+            abort(404)
+    else:
+        src, rec = request.args.get('src', ''), request.args.get('rec', '')
+        if src and not _LD.can_see_sources():
+            # old links: the same record under an opaque reference (no internal source code in the URL)
+            return redirect(url_for('screening.match_profile', rid=rid, p=_LD.profile_ref(src, rec)))
     result = query_db(f"SELECT * FROM screening_results WHERE id = {get_param_style()}", (rid,), one=True)
     if not result:
         flash(gettext('Screening result not found'), 'error')
@@ -1007,6 +1153,23 @@ def match_profile(rid):
         pass
     for g in group:
         g['label'] = rv.SOURCE_LABEL.get(str(g.get('source') or '').lower(), g.get('label'))
+    # our list names for everyone but the platform superadmin (screening.list_display): no provider,
+    # publisher, dataset code or official-profile link
+    from screening import list_display as _LD
+    if not _LD.can_see_sources():
+        lst = dict(p.get('listing') or {})
+        src_ = row.get('source') or table
+        lst['source_label'] = _LD.display(src_, row.get('dataset'), row.get('list_type'))
+        lst['dataset'] = _LD.category(dict(row, source=src_))
+        lst['source_url'] = None
+        if isinstance(lst.get('nature'), dict):
+            from screening import list_category as _lc
+            lst['nature'] = _lc.nature(row, with_source=False) or lst['nature']
+        p = dict(p, listing=lst, related=[dict(r, label=_LD.display(r.get('source'), r.get('dataset')), dataset=None)
+                                          for r in (p.get('related') or []) if isinstance(r, dict)])
+        for g in group:
+            g['label'] = _LD.display(g.get('source'), g.get('dataset'), g.get('list_type'))
+            g['dataset'] = None
     return render_template('screening/match_profile.html', result=result, p=p, v=v, extra_rows=extra_rows,
                            group=group, group_diffs=group_diffs, pep_rel=pep_rel,
                            pep_rel_record=row if table == 'screening_watchlist' else None,
@@ -1990,6 +2153,8 @@ def api_screen_person():
         except ValueError:
              pass
 
+    from screening.limits import consume as _consume_limit
+    _consume_limit(1, 'name')                # daily screening limit
     engine = get_engine()
     result = engine.screen_person(
         name=name,
@@ -2046,6 +2211,10 @@ def api_screen_person():
 
     result['success'] = True
     result['history_id'] = history_id
+    from screening import list_display as _LD
+    if not _LD.can_see_sources():               # our list names, no provider / dataset / sheet
+        from screening.source_mask import mask_tree as _mt
+        result = _LD.public_tree(_mt(result))
     return jsonify(result)
 
 @screening_bp.route('/api/adverse_media/<int:result_id>', methods=['GET'])
@@ -2492,6 +2661,11 @@ def bulk_start(job_id):
             flash(gettext('%(n)s bulk files are being screened now (the limit is %(max)s). Start this one when one of them has finished.',
                           n=len(_busy), max=BJ.MAX_CONCURRENT), 'warning')
         elif st in ('READY', 'PAUSED', 'RUNNING', 'DONE_WITH_GAP'):
+            # daily screening limit: the whole file or nothing (rows already counted are not counted again)
+            from screening.limits import consume_job as _consume_job
+            _p = BJ.progress_of(store, job_id)
+            _consume_job(f'name:{job_id}', int(_p.get('done') or 0) + int(_p.get('failed') or 0)
+                         + int(_p.get('pending') or 0), 'name')
             if st == 'DONE_WITH_GAP':
                 _n = store.retry_failed(job_id)       # resume = screen the failed rows again
                 st = 'PAUSED'
@@ -4150,7 +4324,9 @@ def api_run_screening():
         except (ValueError, TypeError):
             pass
 
-    # Run screening engine
+    # Run screening engine (daily screening limit first)
+    from screening.limits import consume as _consume_limit
+    _consume_limit(1, 'name')
     engine = get_engine()
     result = engine.screen_person(
         name=name,
@@ -5919,6 +6095,9 @@ def list_report():
         return redirect(url_for('screening.team_report'))
     df, dt, dt_x = UR.period(request.args.get('date_from'), request.args.get('date_to'))
     bd = UR.list_breakdown(_rep_q, df, dt_x)
+    from screening import list_display as _LD
+    if not _LD.can_see_sources():                  # our list names, no source codes in drill-down links
+        bd = dict(bd, by_list=_LD.regroup_rows(bd.get('by_list')))
     if request.args.get('export') == 'excel':
         data = UR.workbook(breakdown=bd, tr=gettext, meta=_rep_meta('Hits by list and country', df, dt, True))
         _audit('Screening list report exported', None, f'period {df}..{dt}; {bd["total"]} hit(s)')
@@ -6151,6 +6330,16 @@ def drift_report():
             prev, _ = D.load(conn, D.month_before(month))
         finally:
             conn.close()
+    from screening import list_display as _LD
+    if not _LD.can_see_sources():                  # per-list figures under our list names
+        names = set((metrics or {}).get('lists') or {}) | set((metrics or {}).get('hits_by_list') or {})
+        alerts = _LD.public_alerts(alerts, names)
+        if metrics:
+            metrics = dict(metrics, lists=_LD.regroup_counts(metrics.get('lists')),
+                           hits_by_list=_LD.regroup_counts(metrics.get('hits_by_list')))
+        if prev:
+            prev = dict(prev, lists=_LD.regroup_counts(prev.get('lists')),
+                        hits_by_list=_LD.regroup_counts(prev.get('hits_by_list')))
     if metrics and request.args.get('export') == 'excel':
         data = D.workbook(month, metrics, alerts or [], tr=gettext)
         _audit('Screening drift report exported', None, f'month {month}; {len(alerts or [])} alert(s)')

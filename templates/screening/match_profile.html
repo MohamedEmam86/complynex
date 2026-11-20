@@ -160,7 +160,7 @@
               <td class="small">{{ _(g.basis_label) }}</td>
               <td class="small no-print">
                 {% if g.is_self %}<span class="text-muted">{{ _('this record') }}</span>
-                {% elif not (g.source or '').startswith('internal') %}<a href="{{ url_for('screening.match_profile', rid=result.id, src=g.source, rec=g.watchlist_id) }}">{{ _('profile') }}</a>{% endif %}
+                {% elif not (g.source or '').startswith('internal') %}<a href="{{ profile_url(result.id, g.source, g.watchlist_id) }}">{{ _('profile') }}</a>{% endif %}
                 {% if can_unlink and group|length > 1 %}
                 <details class="mt-1"><summary class="text-danger" style="cursor:pointer">{{ _('Unlink') }}</summary>
                   <form method="post" action="{{ url_for('screening.entity_unlink', wid=g.watchlist_id) }}" class="mt-1">
@@ -192,7 +192,7 @@
             <tr><td class="small">{{ _(r.label) }}{% if r.dataset %}<div class="text-muted">{{ r.dataset }}</div>{% endif %}</td>
               <td class="ar small">{{ r.full_name_arabic or r.full_name }}</td><td class="small">{{ r.date_of_birth or '—' }}</td>
               <td class="small">{% if r.legal_status == 'LIFTED' %}<span class="badge bg-warning text-dark">{{ _('lifted') }}</span>{% endif %}
-                <a class="no-print" href="{{ url_for('screening.match_profile', rid=result.id, src=('INTERNAL_BLACKLIST' if r.table == 'internal_blacklist' else r.source), rec=r.id) }}">{{ _('profile') }}</a></td></tr>
+                <a class="no-print" href="{{ profile_url(result.id, ('INTERNAL_BLACKLIST' if r.table == 'internal_blacklist' else r.source), r.id) }}">{{ _('profile') }}</a></td></tr>
           {% endfor %}</tbody></table>
           <div class="small text-muted mt-1">{{ _('Same written name; compare the date of birth and identifiers before treating them as one person.') }}</div>
           {% else %}<span class="text-muted small">{{ _('No other list carries exactly this name.') }}</span>{% endif %}

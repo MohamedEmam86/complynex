@@ -2,6 +2,7 @@
 {% import 'trade_control/_nav.html' as dn with context %}
 {% block title %}{{ rc_loc('Batch screening', 'الفحص المجمّع') }} - ComplyNex CMS{% endblock %}
 {% block content %}
+{% include 'partials/screenings_left.html' %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
 <div class="container-fluid du-page">
   <h3><i class="bi bi-file-earmark-spreadsheet me-2"></i>{{ rc_loc('Batch screening', 'الفحص المجمّع') }} · {{ file_name }}</h3>

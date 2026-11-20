@@ -54,7 +54,7 @@
       <tr><td><a class="fw-bold text-decoration-none" href="{{ url_for('vessels.profile', wid=v.id) }}">{{ v.name }}</a>
           {% if v.previous_names %}<div class="text-muted">{{ _('ex') }} {{ v.previous_names[:3] | join(', ') }}</div>{% endif %}</td>
         <td>{{ v.imo or '' }}{% if v.imo and v.imo_valid == false %} <i class="bi bi-exclamation-circle text-warning" title="{{ _('IMO check digit fails') }}"></i>{% endif %}</td>
-        <td>{{ v.mmsi or '' }}</td><td>{{ v.vessel_type or '' }}</td>
+        <td>{{ v.mmsi or '' }}</td><td>{{ vessel_type(v.vessel_type) }}</td>
         <td>{{ vessel_flag(v.flag) }}{% if v.flag_history %}<div class="text-muted">{{ _('ex') }} {% for x in v.flag_history[:3] %}{{ vessel_flag(x) }}{{ ', ' if not loop.last }}{% endfor %}</div>{% endif %}</td>
         <td>{{ v.year_built or '' }}</td>
         <td>{% for m in v.measures %}<span class="badge bg-light text-dark border me-1">{{ vessel_measure_label(m) }}</span>{% endfor %}</td>

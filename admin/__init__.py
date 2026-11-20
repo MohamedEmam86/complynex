@@ -77,3 +77,4 @@ def ip_whitelist_guard():
 
 from admin import routes
 from admin import security_p6  # Phase 6: access review, unlock, audit-trail integrity
+from admin import screening_limits  # noqa: E402,F401 — daily screening limits (screening/limits.py)

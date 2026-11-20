@@ -328,6 +328,8 @@ def v1_get_screening(sid):
     body = row['response'] if isinstance(row['response'], dict) else json.loads(row['response'] or '{}')
     from screening.source_mask import mask_tree
     body = mask_tree(body, force=True)          # responses stored before masking existed
+    from screening.list_display import public_tree
+    body = public_tree(body)                    # and before our list names existed
     body['review'] = _review_of(row.get('history_id'))
     body['request_id'] = g.request_id
     return ok(body)

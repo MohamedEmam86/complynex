@@ -119,7 +119,7 @@
                             <td>{{ m.watchlist_name_ar or m.get('full_name_arabic', '-') }}</td>
                             <td><span class="badge bg-light text-dark">{{ (m.entity_type or '-')|scr_label('entity') }}</span></td>
                             <td>
-                                <span class="badge bg-info text-dark">{{ m.source or m.dataset or '-' }}</span>
+                                <span class="badge bg-info text-dark">{{ list_name(m) }}</span>
                                 {% if m.list_type %}
                                 <br><small class="text-muted">{{ m.category if m.list_category_code else m.list_type }}</small>
                                 {% endif %}

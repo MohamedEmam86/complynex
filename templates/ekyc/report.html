@@ -253,7 +253,7 @@
         {% for m in screening_matches %}
         <tr>
             <td>{{ m.match_name or '-' }}</td>
-            <td>{{ m.list_source or '-' }}</td>
+            <td>{{ (m.list_source or '-')|scr_label('source') }}</td>
             <td>{{ m.match_score }}%</td>
             <td><span class="badge {{ 'badge-resolved' if m.status == 'Resolved' else 'badge-pending' }}">{{ m.status|label }}</span></td>
             <td>{{ m.resolution or '-' }}{% if m.resolution_notes %} — {{ m.resolution_notes }}{% endif %}</td>

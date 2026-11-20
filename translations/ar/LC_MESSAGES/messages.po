@@ -46185,3 +46185,275 @@ msgstr "جارٍ إعادة بناء جداول السفن..."
 
 msgid "Sync started..."
 msgstr "بدأت المزامنة..."
+
+#: screening limits / list names
+msgid "Daily screening limit"
+msgstr "الحد اليومي لعمليات الفحص"
+
+#: screening limits / list names
+msgid "Screenings per day in all screening modules (names, vessels, dual-use). Empty = the default limit, 0 = unlimited."
+msgstr "عدد عمليات الفحص يومياً في كل وحدات الفحص (الأسماء، السفن، السلع مزدوجة الاستخدام). فارغ = الحد الافتراضي، 0 = بلا حد."
+
+#: screening limits / list names
+msgid "Default now"
+msgstr "الافتراضي حالياً"
+
+#: screening limits / list names
+msgid "unlimited"
+msgstr "بلا حد"
+
+#: screening limits / list names
+msgid "Screening limits"
+msgstr "حدود الفحص"
+
+#: screening limits / list names
+msgid "Real source: visible to the platform superadmin only"
+msgstr "المصدر الفعلي: يظهر لمدير المنصة الأعلى فقط"
+
+#: screening limits / list names
+msgid "Names users see for the lists"
+msgstr "أسماء القوائم التي يراها المستخدمون"
+
+#: screening limits / list names
+msgid "Only the platform superadmin sees the real sources. Leave a field empty to use the default."
+msgstr "مدير المنصة الأعلى وحده يرى المصادر الفعلية. اترك الحقل فارغاً لاستخدام الاسم الافتراضي."
+
+#: screening limits / list names
+msgid "List group"
+msgstr "مجموعة القوائم"
+
+#: screening limits / list names
+msgid "English name"
+msgstr "الاسم بالإنجليزية"
+
+#: screening limits / list names
+msgid "Arabic name"
+msgstr "الاسم بالعربية"
+
+#: screening limits / list names
+msgid "Save names"
+msgstr "حفظ الأسماء"
+
+#: screening limits / list names
+msgid "Enter a whole number (0 = unlimited)."
+msgstr "أدخل عدداً صحيحاً (0 = بلا حد)."
+
+#: screening limits / list names
+msgid "The default daily screening limit was saved."
+msgstr "تم حفظ الحد اليومي الافتراضي لعمليات الفحص."
+
+#: screening limits / list names
+msgid "Today's usage was reset (%(n)s screenings were counted)."
+msgstr "تمت إعادة ضبط استخدام اليوم (كان قد احتُسب %(n)s عملية فحص)."
+
+#: screening limits / list names
+msgid "Enter a whole number (0 = unlimited), or leave it empty for the default."
+msgstr "أدخل عدداً صحيحاً (0 = بلا حد)، أو اتركه فارغاً لاستخدام الحد الافتراضي."
+
+#: screening limits / list names
+msgid "The user's daily screening limit was saved."
+msgstr "تم حفظ الحد اليومي لعمليات الفحص لهذا المستخدم."
+
+#: screening limits / list names
+msgid "Screenings per user per day in every screening module (names and companies, vessels, dual-use goods), bulk rows included. The day follows Cairo time."
+msgstr "عدد عمليات الفحص لكل مستخدم يومياً في كل وحدات الفحص (الأسماء والشركات، السفن، السلع مزدوجة الاستخدام)، بما في ذلك صفوف الفحص الجماعي. اليوم وفق توقيت القاهرة."
+
+#: screening limits / list names
+msgid "Default daily limit per user"
+msgstr "الحد اليومي الافتراضي لكل مستخدم"
+
+#: screening limits / list names
+msgid "0 = unlimited. A user's own limit (below, or on the user page) replaces the default. The platform superadmin has no limit; API keys keep their own rate limits."
+msgstr "0 = بلا حد. الحد الخاص بالمستخدم (أدناه أو في صفحة المستخدم) يحل محل الافتراضي. لا حد لمدير المنصة الأعلى؛ ومفاتيح API تحتفظ بحدود معدلها الخاصة."
+
+#: screening limits / list names
+msgid "Usage today"
+msgstr "الاستخدام اليوم"
+
+#: screening limits / list names
+msgid "Used today"
+msgstr "المستخدم اليوم"
+
+#: screening limits / list names
+msgid "Left"
+msgstr "المتبقي"
+
+#: screening limits / list names
+msgid "Own limit"
+msgstr "الحد الخاص"
+
+#: screening limits / list names
+msgid "dual-use"
+msgstr "مزدوجة الاستخدام"
+
+#: screening limits / list names
+msgid "No limit (superadmin)"
+msgstr "بلا حد (مدير المنصة الأعلى)"
+
+#: screening limits / list names
+msgid "Reset this user's usage for today?"
+msgstr "إعادة ضبط استخدام هذا المستخدم لليوم؟"
+
+#: screening limits / list names
+msgid "Reset today"
+msgstr "إعادة ضبط اليوم"
+
+#: screening limits / list names
+msgid "Recent changes"
+msgstr "آخر التغييرات"
+
+#: screening limits / list names
+msgid "Usage reset"
+msgstr "إعادة ضبط الاستخدام"
+
+#: screening limits / list names
+msgid "Default limit"
+msgstr "الحد الافتراضي"
+
+#: screening limits / list names
+msgid "You reached your daily screening limit. Contact your administrator to reset it."
+msgstr "لقد وصلت إلى الحد اليومي لعمليات الفحص. تواصل مع مسؤول النظام لإعادة ضبطه."
+
+#: screening limits / list names
+msgid "Screenings left today under your daily limit"
+msgstr "عمليات الفحص المتبقية لك اليوم ضمن حدك اليومي"
+
+#: screening limits / list names
+msgid "A file with more rows is refused as a whole."
+msgstr "يُرفض الملف الذي يحتوي على صفوف أكثر بالكامل."
+
+#: lists status
+msgid "Lists status"
+msgstr "حالة القوائم"
+
+#: lists status
+msgid "The lists every screening is checked against, their size and when they were last updated. Lists refresh automatically."
+msgstr "القوائم التي يُفحص مقابلها كل اسم، وحجمها وآخر تحديث لها. تُحدَّث القوائم تلقائياً."
+
+#: lists status
+msgid "Update due"
+msgstr "التحديث مستحق"
+
+#: lists status
+msgid "Needs attention"
+msgstr "تحتاج إلى متابعة"
+
+#: lists status
+msgid "No list information yet."
+msgstr "لا توجد معلومات عن القوائم بعد."
+msgid "Vessel BIO"
+msgstr "السيرة الذاتية للسفينة"
+
+msgid "Renamed"
+msgstr "تغيّر اسمها"
+
+msgid "This ship has been renamed. A sanctioned ship keeps its IMO number when renamed: always screen the IMO number."
+msgstr "تغيّر اسم هذه السفينة. السفينة الخاضعة لعقوبات تحتفظ برقم IMO عند تغيير اسمها: افحص دائمًا رقم IMO."
+
+msgid "check digit valid"
+msgstr "رقم التحقق صحيح"
+
+msgid "Flag of convenience (open registry)"
+msgstr "علم مواءمة (سجل مفتوح)"
+
+msgid "Deadweight (DWT)"
+msgstr "الحمولة الساكنة (DWT)"
+
+msgid "years old"
+msgstr "سنة"
+
+msgid "Classification society"
+msgstr "هيئة التصنيف"
+
+msgid "Registration number"
+msgstr "رقم التسجيل"
+
+msgid "Sanctions status"
+msgstr "وضع العقوبات"
+
+msgid "Listing dates"
+msgstr "تواريخ الإدراج"
+
+msgid "Names and flags over time"
+msgstr "الأسماء والأعلام عبر الزمن"
+
+msgid "name on the lists"
+msgstr "الاسم في القوائم"
+
+msgid "other known name (not yet on the lists)"
+msgstr "اسم آخر معروف (لم يُدرج في القوائم بعد)"
+
+msgid "Ownership and management"
+msgstr "الملكية والإدارة"
+
+msgid "Screening status"
+msgstr "حالة الفحص"
+
+msgid "not listed"
+msgstr "غير مدرج"
+
+msgid "Indicators come from the lists and the flag-risk reference; they never create a match on their own."
+msgstr "المؤشرات مصدرها القوائم ومرجع مخاطر الأعلام؛ ولا تنشئ تطابقًا بمفردها أبدًا."
+
+msgid "Vessel BIO built from the lists and reference data held by ComplyNex; fields a list does not carry are not shown."
+msgstr "السيرة الذاتية للسفينة مبنية من القوائم والبيانات المرجعية لدى ComplyNex؛ ولا تُعرض الحقول التي لا تتضمنها القوائم."
+
+msgid "False flag"
+msgstr "علم مزيف"
+
+msgid "on record since"
+msgstr "مسجلة منذ"
+
+msgid "BIO as PDF"
+msgstr "السيرة الذاتية PDF"
+
+msgid "Back to the screening"
+msgstr "العودة إلى الفحص"
+
+msgid "ageing vessel"
+msgstr "سفينة متقادمة"
+
+msgid "risk record, not a listing"
+msgstr "سجل مخاطر، وليس إدراجًا"
+
+msgid "On record since"
+msgstr "مسجلة منذ"
+
+msgid "newer name known to ComplyNex"
+msgstr "اسم أحدث معروف لدى ComplyNex"
+
+msgid "Flags"
+msgstr "الأعلام"
+
+msgid "now"
+msgstr "حاليًا"
+
+msgid "before"
+msgstr "سابقًا"
+
+msgid "Several flag changes"
+msgstr "تغيير العلم عدة مرات"
+
+msgid "Former identifiers"
+msgstr "معرّفات سابقة"
+
+msgid "reported"
+msgstr "تم الإبلاغ في"
+
+msgid "\"listed\" = the party itself is on a sanctions, ban or other risk list held by ComplyNex. Screen the parties of your counterparty separately."
+msgstr "\"مدرج\" = الطرف نفسه مدرج في قائمة عقوبات أو حظر أو قائمة مخاطر أخرى لدى ComplyNex. افحص أطراف عميلك بشكل منفصل."
+
+msgid "The lists name no owner, operator or manager for this ship."
+msgstr "لا تذكر القوائم مالكًا أو مشغّلًا أو مديرًا لهذه السفينة."
+
+msgid "last seen"
+msgstr "آخر ظهور"
+
+msgid "Listed parties linked to the ship"
+msgstr "أطراف مدرجة مرتبطة بالسفينة"
+
+msgid "No risk indicator in the data held."
+msgstr "لا يوجد مؤشر مخاطر في البيانات المتاحة."
+
+msgid "Open BIO"
+msgstr "فتح السيرة الذاتية"

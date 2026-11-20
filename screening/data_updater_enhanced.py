@@ -489,6 +489,7 @@ class EnhancedDataUpdater:
                 import json as _json
                 entities = []
                 handler = OpenSanctionsHandler(rich=self._os_rich_enabled())
+                handler.party_marks = True      # ship parties: listed or only related (Vessel BIO)
                 raw_line_count = 0  # Count ALL lines, not just valid entities
                 for raw_line in response.iter_lines():
                     try:
@@ -515,7 +516,8 @@ class EnhancedDataUpdater:
                     logger.info(f"OpenSanctions: owners attached to {n_links} ships")
                 except Exception as e:
                     logger.warning(f"OpenSanctions: ship owners not attached: {e}")
-                logger.info(f"OpenSanctions streamed {handler.processed_count} entities")
+                logger.info(f"OpenSanctions streamed {handler.processed_count} entities "
+                            f"({getattr(handler, 'related_count', 0)} held only as related to a listed party)")
                 # Final download progress update
                 self._update_download_progress(
                     handler.processed_count,
@@ -641,7 +643,7 @@ class EnhancedDataUpdater:
             # Get existing records for this chunk
             placeholders = ','.join(['%s'] * len(source_ids))
             cursor.execute(
-                f"SELECT source_id, id, full_name, content_hash, entity_type FROM screening_watchlist "
+                f"SELECT source_id, id, full_name, content_hash, entity_type, list_type FROM screening_watchlist "
                 f"WHERE source = %s AND source_id IN ({placeholders})",
                 [source_name] + source_ids
             )
@@ -673,7 +675,10 @@ class EnhancedDataUpdater:
                         # reviewed by a person: a list record that changed between ship and company / person
                         logger.warning(f"[VESSELS] {source_name}: record {source_id} '{entity.get('full_name')}' "
                                        f"re-typed {existing.get('entity_type')} -> {entity.get('entity_type')}")
-                    if existing.get('full_name') != entity.get('full_name') or rich_changed or retyped:
+                    # a record that became / stopped being "related only" (not itself listed) is rewritten
+                    # so name screening stops / starts showing it as a sanctions hit
+                    relabel = (existing.get('list_type') == 'RELATED') != (entity.get('list_type') == 'RELATED')
+                    if existing.get('full_name') != entity.get('full_name') or rich_changed or retyped or relabel:
                         self._update_entity(entity, cursor)
                         self._store_rich(entity, cursor, source_name)
                         updated += 1

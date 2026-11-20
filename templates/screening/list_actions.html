@@ -8,7 +8,7 @@
       <h1 class="h3 mb-1"><i class="fas fa-table-list me-2"></i>{{ _('Action by list type') }}</h1>
       <p class="text-muted mb-0">{{ _('The score says how similar the names are, the identifiers say whether it is the same person, and this table says what to do: it depends on the kind of list the record is on. The MLRO maintains it; every change needs a reason and is audited.') }}</p>
     </div>
-    <a href="{{ url_for('screening.list_versions') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-code-branch me-1"></i>{{ _('List versions') }}</a>
+    {% if cx_can('screening.lists.sources') %}<a href="{{ url_for('screening.list_versions') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-code-branch me-1"></i>{{ _('List versions') }}</a>{% endif %}
   </div>
 
   <form method="post" action="{{ url_for('screening.list_actions_save') }}">

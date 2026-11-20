@@ -203,7 +203,7 @@
                     {% else %}
                     <p><strong>{{ _('Last Updated:') }}</strong> {{ last_update or 'Never' }}</p>
                     {% endif %}
-                    <p class="small text-muted mb-0">{{ _('Lists refresh automatically. Red rows need attention.') }} <a href="{{ url_for('screening.list_versions') }}">{{ _('List versions') }}</a></p>
+                    <p class="small text-muted mb-0">{{ _('Lists refresh automatically. Red rows need attention.') }} {% if cx_can('screening.lists.sources') %}<a href="{{ url_for('screening.list_versions') }}">{{ _('List versions') }}</a>{% else %}<a href="{{ url_for('screening.lists_status') }}">{{ _('Lists status') }}</a>{% endif %}</p>
                 </div>
             </div>
         </div>

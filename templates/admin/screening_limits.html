@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Screening limits') }} - {{ company_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-speedometer2 me-2"></i>{{ _('Screening limits') }}</h1>
+      <div class="text-muted small">{{ _('Screenings per user per day in every screening module (names and companies, vessels, dual-use goods), bulk rows included. The day follows Cairo time.') }} · {{ day }}</div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form method="post" action="{{ url_for('admin.screening_limits_default') }}" class="row g-2 align-items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-auto">
+          <label class="form-label small fw-bold" for="default">{{ _('Default daily limit per user') }}</label>
+          <input class="form-control form-control-sm" type="number" min="0" step="1" id="default" name="default" value="{{ default }}">
+        </div>
+        <div class="col-auto"><button class="btn btn-primary btn-sm" type="submit">{{ _('Save') }}</button></div>
+        <div class="col-12 small text-muted">{{ _('0 = unlimited. A user\'s own limit (below, or on the user page) replaces the default. The platform superadmin has no limit; API keys keep their own rate limits.') }}</div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">{{ _('Usage today') }}</div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th>{{ _('User') }}</th><th class="text-end">{{ _('Used today') }}</th><th class="text-end">{{ _('Limit') }}</th><th class="text-end">{{ _('Left') }}</th><th>{{ _('Own limit') }}</th><th></th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.name or r.email }}<div class="small text-muted">{{ r.email }} · {{ r.role|label }}</div></td>
+            <td class="text-end">{{ r.used }}{% if r.by_kind %}<div class="small text-muted">{% for k, n in r.by_kind.items() %}{{ {'name': _('names'), 'vessel': _('vessels'), 'dualuse': _('dual-use')}.get(k, k) }} {{ n }}{{ ' · ' if not loop.last }}{% endfor %}</div>{% endif %}</td>
+            <td class="text-end">{{ r.limit if r.limit is not none else _('unlimited') }}</td>
+            <td class="text-end {{ 'text-danger fw-bold' if r.left == 0 }}">{{ r.left if r.left is not none else '—' }}</td>
+            <td>
+              {% if r.role != 'superadmin' %}
+              <form method="post" action="{{ url_for('admin.screening_limit_user', user_id=r.id) }}" class="d-flex gap-1 align-items-center">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input class="form-control form-control-sm" style="max-width: 7rem" type="number" min="0" step="1" name="limit"
+                       value="{{ r.own_limit if r.own_limit is not none else '' }}" placeholder="{{ _('Default') }}" aria-label="{{ _('Own limit') }}">
+                <button class="btn btn-outline-primary btn-sm" type="submit" name="action" value="limit">{{ _('Save') }}</button>
+              </form>
+              {% else %}<span class="small text-muted">{{ _('No limit (superadmin)') }}</span>{% endif %}
+            </td>
+            <td>
+              {% if r.used and r.role != 'superadmin' %}
+              <form method="post" action="{{ url_for('admin.screening_limit_user', user_id=r.id) }}" data-confirm="{{ _('Reset this user\'s usage for today?') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-outline-secondary btn-sm" type="submit" name="action" value="reset"><i class="bi bi-arrow-counterclockwise"></i> {{ _('Reset today') }}</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if events %}
+  <div class="card shadow-sm">
+    <div class="card-header bg-white fw-bold">{{ _('Recent changes') }}</div>
+    <div class="table-responsive"><table class="table table-sm mb-0">
+      <thead><tr><th>{{ _('When') }}</th><th>{{ _('User') }}</th><th>{{ _('Change') }}</th><th>{{ _('By') }}</th></tr></thead>
+      <tbody>{% for e in events %}<tr><td class="small text-nowrap">{{ to_cairo(e.created_at) }}</td><td>{{ e.user_name or _('Default') }}</td>
+        <td>{{ {'reset': _('Usage reset'), 'limit_set': _('Own limit'), 'default_set': _('Default limit')}.get(e.action, e.action) }}: {{ e.old_value }} → {{ e.new_value }}{% if e.note %}<div class="small text-muted">{{ e.note }}</div>{% endif %}</td>
+        <td>{{ e.actor_name }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

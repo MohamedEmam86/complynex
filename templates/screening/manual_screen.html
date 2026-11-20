@@ -81,8 +81,8 @@
                 </div>
                 <div class="alert alert-info py-2">
                     <small><i class="fas fa-info-circle me-1"></i> {{ _('This screening includes:') }}
-                        <strong>{{ _('Sanctions Lists') }}</strong> {{ _('(OFAC, UN, EU, HMT),') }}
-                        <strong>{{ _('PEP Databases') }}</strong> {{ _('(Egypt & Global), and') }}
+                        <strong>{{ list_name('opensanctions') }}</strong>, {{ list_name('ofac') }}, {{ list_name('internal_blacklist') }},
+                        <strong>{{ list_name('opensanctions_pep') }}</strong> {{ _('and') }} {{ list_name('internal_pep') }},
                         <strong>{{ _('Adverse Media Monitoring') }}</strong> {{ _('(Egyptian News & International Sources).') }}
                     </small>
                 </div>

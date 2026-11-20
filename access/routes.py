@@ -119,7 +119,13 @@ def matrix_context(user=None):
                                      'desc': m.desc(lang), 'features': feats,
                                      'granted': sum(1 for f in feats if f['checked'])})
     others = [u for u in User.get_all() if (user is None or u.id != user.id) and not S.is_unrestricted(u)]
+    try:
+        from screening.limits import default_limit
+        limit_default = default_limit()
+    except Exception:
+        limit_default = 0
     return {'cx_user': user, 'cx_access': access, 'cx_areas': areas, 'cx_others': others, 'cx_self_locked': self_locked,
+            'cx_limit_default': limit_default,
             'cx_unrestricted': bool(user is not None and S.is_unrestricted(user)),
             'cx_history': S.history(user.id, limit=15) if user is not None else [],
             'cx_feature_labels': {k: f.label(lang) for k, f in R.FEATURES.items()},
@@ -145,6 +151,8 @@ def admin_save(user_id):
     except S.AccessError as e:
         flash(str(e), 'danger')
         return redirect(url_for('access.admin_user', user_id=user_id))
+    from screening.limits import apply_form as _limit_form
+    _limit_form(user.id, request.form, current_user.id, ip=request.remote_addr)
     flash(_('Access saved: %(a)s granted, %(r)s removed.', a=len(added), r=len(removed)), 'success')
     return redirect(_safe_next(request.form.get('next')) or url_for('access.admin_user', user_id=user_id))
 

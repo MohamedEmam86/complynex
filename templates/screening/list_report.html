@@ -12,7 +12,7 @@
       <tbody>
       {% for r in rows %}
         <tr>
-          <td class="fw-semibold">{% if link %}<a href="{{ url_for('screening.screening_queue', list_source=r.raw_source, date_from=date_from, date_to=date_to) }}">{{ r[key] }}</a>{% else %}{{ r[key] }}{% endif %}</td>
+          <td class="fw-semibold">{% if link and r.raw_source %}<a href="{{ url_for('screening.screening_queue', list_source=r.raw_source, date_from=date_from, date_to=date_to) }}">{{ r[key] }}</a>{% else %}{{ r[key] }}{% endif %}</td>
           <td class="text-end">{{ r.hits }}</td>
           <td class="text-end">{{ r.true_matches }}</td>
           <td class="text-end">{{ r.false_positives }}</td>

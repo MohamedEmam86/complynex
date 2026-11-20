@@ -830,7 +830,7 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
             for e in other['explanation']:
                 if e['code'] not in {x['code'] for x in expl}:
                     expl.append(e)
-        if any(p.get('party_listed') for p in view['parties']):
+        if any(p.get('party_listed') and p.get('role') not in VS.NOT_CONTROL_ROLES for p in view['parties']):
             expl.append(say('owner_listed'))
         if len(view['sources']) > 1:
             expl.append(say('several_lists', n=len(view['sources'])))

@@ -200,7 +200,7 @@ def test_opensanctions_ownership_and_former_name_in_caption():
     v = e['properties']['vessel']
     assert e['full_name'] == 'YI MENG SHAN' and set(v['names_past']) >= {'Attica II', 'ATTICA'}
     assert v['flag'] == 'Gabon' and v['flags_past'] == ['Malta', 'Panama']
-    assert v['owners'] == [{'name': None, 'role': 'owner', 'ref': 'OS-c1'}]
+    assert v['owners'] == [{'name': None, 'role': 'owner', 'ref': 'OS-c1', 'label': 'Owned or Controlled By'}]
 
 
 def test_ofac_former_names_are_kept():

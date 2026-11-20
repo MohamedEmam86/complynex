@@ -205,11 +205,14 @@ def hit_view(m):
     return {
         'listed_name': m.get('full_name') or m.get('original_name') or m.get('matched_name') or m.get('name'),
         'listed_name_ar': m.get('full_name_arabic') or m.get('watchlist_name_ar'),
-        'source': m.get('source') or m.get('list_source'),
+        # our list names (screening.list_display): an API client never sees the provider or publisher
+        'source': __import__('screening.list_display', fromlist=['x']).display(
+            m.get('source') or m.get('list_source'), m.get('dataset'), m.get('list_type')),
         'list_reference': m.get('source_id') or m.get('entity_id'),
         'list_type': act.get('list_type') or m.get('list_type'),
         # local / internal lists: the generic category (screening.source_mask), never the sheet or file name
-        'list_category': m.get('category') if m.get('list_category_code') else None,
+        'list_category': m.get('category') if m.get('list_category_code') else
+        __import__('screening.list_display', fromlist=['x']).category(m, 'en'),
         'score': round(float(m.get('match_score') or 0), 2),
         'tier': act.get('tier') or d.get('tier'),
         'identity': d.get('identity'),

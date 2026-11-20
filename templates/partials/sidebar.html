@@ -151,6 +151,11 @@
                 <span class="cnx-nav__label">{{ _('Screening Quality') }}</span>
               </a>
             </li>
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('screening.lists_status') }}">
+                <span class="cnx-nav__label">{{ _('Lists status') }}</span>
+              </a>
+            </li>
             {% endif %}
             {% if current_user.can_view('vessels') or current_user.is_admin() or current_user.role in ('superadmin', 'it_admin') %}
             <li class="cnx-nav__subitem">
@@ -1412,6 +1417,13 @@
               </a>
             </li>
             {% endif %}
+            {% endif %}
+            {% if current_user.is_admin() or current_user.role == 'superadmin' %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.screening_limits') }}">
+                <span class="cnx-nav__label">{{ _('Screening limits') }}</span>
+              </a>
+            </li>
             {% endif %}
             {% if current_user.is_admin() %}
             {% if current_user.can_view('config') %}

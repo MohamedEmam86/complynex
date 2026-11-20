@@ -7,7 +7,7 @@
   {% with st=status %}{% include 'vessels/_status_line.html' %}{% endwith %}
   <div class="alert alert-light border small d-flex justify-content-between align-items-center">
     <span>{{ _('Each refresh records the ships added, removed and changed since the previous one. The lists themselves, their status and Sync Now are on the list sources page.') }}</span>
-    {% if current_user.is_admin() or current_user.is_compliance_officer() %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('screening.data_sources', tab='vessels') }}"><i class="bi bi-cloud-arrow-down me-1"></i>{{ _('Sync & list sources') }}</a>{% endif %}
+    {% if cx_can('screening.lists.sources') %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('screening.data_sources', tab='vessels') }}"><i class="bi bi-cloud-arrow-down me-1"></i>{{ _('Sync & list sources') }}</a>{% endif %}
   </div>
 
   <div class="row g-3">

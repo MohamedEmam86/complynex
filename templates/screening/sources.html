@@ -20,6 +20,30 @@
         </div>
     </div>
 
+    {% if current_user.role == 'superadmin' %}
+    {# Names users see for the lists (screening.list_display): display only, the engine never changes #}
+    {% set _ld = list_display_groups() %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold"><i class="fas fa-tag me-2"></i>{{ _('Names users see for the lists') }}
+            <span class="small text-muted fw-normal ms-2">{{ _('Only the platform superadmin sees the real sources. Leave a field empty to use the default.') }}</span></div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('screening.list_display_names') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="table-responsive"><table class="table table-sm align-middle mb-2">
+                    <thead><tr><th>{{ _('List group') }}</th><th>{{ _('English name') }}</th><th>{{ _('Arabic name') }}</th></tr></thead>
+                    <tbody>
+                    {% for g in _ld %}
+                    <tr><td class="small"><code>{{ g.code }}</code><div class="text-muted">{{ g.help }}</div></td>
+                        <td><input class="form-control form-control-sm" name="en__{{ g.code }}" maxlength="120" value="{{ g.en_override }}" placeholder="{{ g.en_default }}"></td>
+                        <td><input class="form-control form-control-sm" dir="rtl" name="ar__{{ g.code }}" maxlength="120" value="{{ g.ar_override }}" placeholder="{{ g.ar_default }}"></td></tr>
+                    {% endfor %}
+                    </tbody></table></div>
+                <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-save me-1"></i>{{ _('Save names') }}</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
     {% if vessel_panel %}
     <ul class="nav nav-tabs mb-3" role="tablist">
         <li class="nav-item" role="presentation"><button class="nav-link {{ 'active' if tab != 'vessels' }}" data-bs-toggle="tab" data-bs-target="#tab-lists" type="button" role="tab"><i class="fas fa-list me-1"></i>{{ _('Sanctions lists') }}</button></li>

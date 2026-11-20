@@ -92,6 +92,8 @@ def test_old_rule_of_a_feature_never_refuses_what_a_page_guard_allows(reg):
     users = _grid(R)
     bad = []
     for f in R.FEATURES.values():
+        if f.platform:
+            continue    # platform-superadmin pages: never granted or backfilled; the gate refuses everyone else
         for ep in f.endpoints:
             spec = R.ENDPOINT_SPEC[ep]
             if spec == 'auth' and f.legacy is not None:

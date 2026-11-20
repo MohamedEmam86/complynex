@@ -135,6 +135,13 @@ def after_parent_screening(source_module, source_record_id, user_id, db=None):
                                          and x[1].get('screened_key') == logic.screen_key(x[1]))]
         order = need + [x for x in plist if x not in need]
         todo, later = order[:INLINE_CAP], order[INLINE_CAP:]
+        # daily screening limit of the signed-in user: parties count as screenings; when the limit is reached
+        # they are left for the KYB page (screened later) instead of failing the company's screening
+        from screening.limits import consume as _consume_limit, DailyLimitReached as _DLR
+        try:
+            _consume_limit(len(todo), 'name')
+        except _DLR:
+            todo, later = [], order
         try:
             for kind, p in todo:
                 service.screen_person(kind, p, user_id, db, release=False)

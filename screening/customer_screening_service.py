@@ -53,6 +53,9 @@ def screen_and_save(name, entity_type='INDIVIDUAL', dob=None, nationality=None,
     if user_id is None:
         user_id = current_user.id
 
+    # daily screening limit of the signed-in user (API-key and background calls have no session: not counted)
+    from screening.limits import consume as _consume_limit
+    _consume_limit(1, 'name')
     engine = get_engine()
     # Note: the canonical engine (ComplyNexScreeningEngine, via MultiSourceScreener)
     # has no `gender` parameter — unlike HybridScreeningEngine, which some callers

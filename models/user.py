@@ -570,6 +570,10 @@ class User(UserMixin):
         _u.auth_version = (row['auth_version'] if 'auth_version' in row.keys() else 0) or 0
         # cms | portal | restricted (per-user access control, access/service.py); None = old rule
         _u.access_mode = row['access_mode'] if 'access_mode' in row.keys() else None
+        # daily screening limit override (screening/limits.py): None = the default, 0 = unlimited
+        if 'screening_daily_limit' in row.keys():
+            _u.screening_daily_limit = row['screening_daily_limit']
+            _u._sdl_loaded = True
         # Organisation scope fields, so the edit form can pre-select what is saved
         # (otherwise re-saving the form silently widened the user to 'group').
         for _k in ('authority_level', 'authority_unit_id', 'org_unit_id'):

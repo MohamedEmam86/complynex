@@ -17,7 +17,7 @@
     <tr class="{{ 'table-danger' if r.confirmed }}">
       <td>{{ r.entity_name }}<div class="small text-muted">{{ r.source_module }} #{{ r.source_record_id }}</div></td>
       <td>{{ r.match_name }}</td>
-      <td class="small">{{ r.list_source }}</td>
+      <td class="small">{{ (r.list_source or '-')|scr_label('source') }}</td>
       <td>{{ '%.0f'|format(r.match_score or 0) }}</td>
       <td class="small">{{ r.status }}{% if r.resolution %}<div class="text-muted">{{ r.resolution }}</div>{% endif %}</td>
       <td>{% if r.escalation %}<a href="{{ url_for('aml.escalation_view', entry_id=r.escalation.id) }}">{{ r.escalation.reference }}</a><div class="small text-muted">{{ esc_labels.get(r.escalation.status, r.escalation.status) }}</div>

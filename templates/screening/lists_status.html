@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Lists status') }} - {{ company_name }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="mb-3">
+    <h1 class="h3 mb-0"><i class="fas fa-list-check me-2 text-primary"></i>{{ _('Lists status') }}</h1>
+    <div class="text-muted small">{{ _('The lists every screening is checked against, their size and when they were last updated. Lists refresh automatically.') }}</div>
+  </div>
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light"><tr><th>{{ _('List') }}</th><th class="text-end">{{ _('Records') }}</th><th>{{ _('Last update') }}</th><th class="text-end">{{ _('Age (days)') }}</th><th>{{ _('Status') }}</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+          <tr>
+            <td class="fw-semibold">{{ r.name }}</td>
+            <td class="text-end">{{ '{:,}'.format(r.records or 0) }}</td>
+            <td class="small">{{ to_cairo(r.updated) if r.updated else '—' }}</td>
+            <td class="text-end">{{ r.age_days if r.age_days is not none else '—' }}</td>
+            <td>{% set st = r.state or 'green' %}<span class="badge {{ {'green': 'bg-success', 'amber': 'bg-warning text-dark', 'yellow': 'bg-warning text-dark', 'red': 'bg-danger'}.get(st, 'bg-secondary') }}">{{ {'green': _('Current'), 'amber': _('Update due'), 'yellow': _('Update due'), 'red': _('Needs attention')}.get(st, st) }}</span></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="text-center text-muted py-3">{{ _('No list information yet.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

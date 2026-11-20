@@ -183,7 +183,13 @@ def _vessel_helpers():
             'vessel_verdict': lambda res: VG.verdict(res, _lang()),
             'vessel_next_steps': lambda res: VG.next_steps(res, _lang()),
             'vessel_field': lambda k: _pick(FIELD_LABELS.get(k, (k, k))),
+            'vessel_type': _type_label,
             'vessel_pick': _pick}
+
+
+def _type_label(t):
+    from screening import vessel_bio as VB
+    return VB.type_label(t, _lang()) if t else ''
 
 
 FIELD_LABELS = {'current_flag': ('Flag state', 'دولة العلم'), 'flag_history': ('Former flags', 'الأعلام السابقة'),
@@ -268,6 +274,8 @@ def screen():
         if not any((f.get(k) or '').strip() for k in ('name', 'imo', 'mmsi', 'call_sign', 'owner')):
             flash(gettext('Enter at least a ship name, IMO number, MMSI, call sign or owner.'), 'warning')
             return render_template('vessels/screen.html', form=f, status=_status_safe())
+        from screening.limits import consume as _consume_limit
+        _consume_limit(1, 'vessel')          # daily screening limit (all screening modules together)
         conn = _conn()
         try:
             res = _screen(f, conn)
@@ -658,6 +666,10 @@ def bulk():
         if len(rows) > BULK_MAX_ROWS:
             flash(gettext('Up to %(n)s rows per file.', n=BULK_MAX_ROWS), 'warning')
             return redirect(url_for('vessels.bulk'))
+        # daily screening limit: the whole file or nothing (rows with something to screen)
+        from screening.limits import consume as _consume_limit
+        _consume_limit(sum(1 for _n, r in rows if any((r.get(c) or '').strip()
+                                                       for c in ('name', 'imo', 'mmsi', 'call_sign', 'owner'))), 'vessel')
         conn = _conn()
         job = conn.execute("""INSERT INTO vessel_bulk_jobs (user_id, filename, row_count) VALUES (%s, %s, %s)
                               RETURNING id""", (current_user.id, fs.filename[:200], len(rows))).fetchone()
@@ -980,69 +992,64 @@ def profile(wid):
         if wid not in found and row['group_key'] not in {h.get('group_key') for h in
                                                           (res.get('hits') or []) + (res.get('ban_hits') or [])}:
             abort(403)
-    _audit('Vessel profile viewed', f'listed ship {wid}', wid)
+    fmt = request.args.get('format') or ''
     inc_os = VS.include_opensanctions(conn)
     recs = conn.execute("""SELECT w.id, w.full_name, w.aliases, w.full_name_arabic, w.source, w.source_id, w.is_active,
-                                  w.list_type, w.first_seen, w.properties, w.details, p.*
+                                  w.list_type, w.first_seen, w.last_seen, w.properties, w.details, w.topics AS w_topics, p.*
                            FROM screening_watchlist w JOIN vessel_profile p ON p.watchlist_id = w.id
                            WHERE p.group_key = %s ORDER BY (w.source = ANY(%s)), w.id""",
                         (row['group_key'], list(VS.OPENSANCTIONS_SOURCES))).fetchall()
-    recs = [r for r in recs if inc_os or r['source'] not in VS.OPENSANCTIONS_SOURCES]
+    recs = [dict(r) for r in recs if inc_os or r['source'] not in VS.OPENSANCTIONS_SOURCES]
     if not recs:
         abort(404)
     active = [r for r in recs if r['is_active']] or recs
-    base = active[0]
     ids = [r['id'] for r in active]
     idents = conn.execute("""SELECT kind, value_norm, bool_or(is_current) AS is_current, bool_and(check_ok) AS check_ok
                              FROM vessel_identifier WHERE watchlist_id = ANY(%s)
                              GROUP BY kind, value_norm ORDER BY kind, value_norm""", (ids,)).fetchall()
-    parties, seen = [], set()
-    for lst in VS.party_links(conn, ids).values():
-        for p in lst:
-            k = (VS.party_key(p['name']), p['role'])
-            if k not in seen:
-                seen.add(k)
-                parties.append(p)
-    names = []
-    for r in active:
-        names += [r['full_name']] + (VS._j(r['aliases'], []) or [])
-    prev = list(dict.fromkeys(x for r in active for x in VS._j(r['previous_names'], []) or []))
-    v = {'name': base['full_name'], 'is_active': any(r['is_active'] for r in recs),
-         'other_names': [n for n in dict.fromkeys(names) if n and n != base['full_name'] and n not in prev][:40],
-         'previous_names': prev, 'full_name_arabic': next((r['full_name_arabic'] for r in active if r['full_name_arabic']), None),
-         'imo': next((r['imo'] for r in active if r['imo']), None),
-         'imo_valid': next((r['imo_valid'] for r in active if r['imo']), None),
-         'mmsi': next((r['mmsi'] for r in active if r['mmsi']), None),
-         'call_sign': next((r['call_sign'] for r in active if r['call_sign']), None),
-         'flag': next((r['current_flag'] for r in active if r['current_flag']), None),
-         'flag_history': list(dict.fromkeys(x for r in active for x in VS._j(r['flag_history'], []) or [])),
-         'vessel_type': next((r['vessel_type'] for r in active if r['vessel_type']), None),
-         'gross_tonnage': next((r['gross_tonnage'] for r in active if r['gross_tonnage']), None),
-         'year_built': next((r['year_built'] for r in active if r['year_built']), None),
-         'measures': list(dict.fromkeys(x for r in active for x in VS._j(r['measures'], []) or [])),
-         'first_seen': min((str(r['first_seen']) for r in active if r['first_seen']), default=None),
-         'lists': len({r['source'] for r in active}),
-         'risk_score': max(int(r['risk_score'] or 0) for r in active),
-         'risk_lines': list(dict.fromkeys(x for r in active for x in VS._j(r['risk_lines'], []) or [])),
-         'regimes': sorted({x for r in active for x in VS._j(r.get('regimes'), []) or []}),
-         'provenance': max((r.get('provenance') or 'SANCTION' for r in active), key=lambda x: VP.ORDER.get(x, 0)),
-         'psc_records': len({x for r in active for x in VS._j(r.get('risk_datasets'), []) or []})}
-    internal = None
-    if VS.can_see_sources():
-        internal = []
-        for r in recs:
-            props = VS._j(r['properties'], {}) or {}
-            det = VS._j(r['details'], {}) or {}
-            if not isinstance(det, dict):          # OpenSanctions keeps its notes as a list
-                det = {'comments': det}
-            if not isinstance(props, dict):
-                props = {}
-            internal.append({'id': r['id'], 'source': r['source'], 'source_id': r['source_id'], 'active': r['is_active'],
-                             'programs': props.get('programs') or det.get('program') or props.get('regime'),
-                             'remarks': props.get('remarks') or det.get('comments') or det.get('reason')})
+    parties = [p for lst in VS.party_links(conn, [r['id'] for r in recs]).values() for p in lst]
     known = VS.known_names(conn, row['group_key'])
-    return render_template('vessels/profile.html', v=v, idents=idents, parties=parties, internal=internal, wid=wid,
-                           known=known, is_superadmin=is_superadmin(), group_key=row['group_key'])
+    psc = [r for r in recs if not VP.alerts(r.get('provenance') or VP.SANCTION)]
+    from screening import vessel_bio as VB
+    bio = VB.build(recs, idents, parties, flags=VS.flag_risk(conn), known=known, psc_recs=psc, lang=_lang())
+    if not VS.can_see_sources():
+        bio['internal'] = None          # the publishing lists, their links and texts: superadmin only
+    if not is_superadmin():
+        # people named only as crew (master, crew members): personal data, not needed by the client's officer
+        bio['ownership'] = [g for g in bio['ownership'] if g['role'] not in VB.PERSONAL_ROLES]
+    if fmt == 'news':
+        from flask import jsonify
+        from screening import vessel_news as VN
+        idn = bio['identity']
+        try:
+            out = VN.news_for(conn, name=idn['name'], imo=idn['imo'])
+        except Exception as e:
+            logger.warning(f'[VESSELS] news failed: {e}')
+            out = {'items': [], 'error': 'unavailable'}
+        why = {'imo': _pick(('IMO number in the article', 'رقم IMO مذكور في الخبر')),
+               'name': _pick(('Ship name with maritime context', 'اسم السفينة في سياق بحري'))}
+        for it in out.get('items') or []:
+            it['why_label'] = why.get(it.get('why'), '')
+        return jsonify(out)
+    ctx = dict(bio=bio, wid=wid, sid=request.args.get('sid'), is_superadmin=is_superadmin(),
+               group_key=row['group_key'], known=known)
+    if fmt == 'pdf':
+        from datetime import datetime
+        html = render_template('vessels/bio_pdf.html', generated_at=datetime.now(),
+                               generated_by=f'{current_user.first_name or ""} {current_user.last_name or ""}'.strip(),
+                               **ctx)
+        try:
+            from weasyprint import HTML
+            pdf = HTML(string=html, base_url=request.host_url).write_pdf()
+        except Exception as e:
+            logger.error(f'[VESSELS] BIO PDF failed: {e}')
+            flash(gettext('The PDF could not be produced.'), 'danger')
+            return redirect(url_for('vessels.profile', wid=wid, sid=ctx['sid']))
+        _audit('Vessel BIO PDF', f'listed ship {wid}', wid)
+        return send_file(io.BytesIO(pdf), mimetype='application/pdf', as_attachment=True,
+                         download_name=f"vessel_bio_{bio['identity']['imo'] or wid}.pdf")
+    _audit('Vessel profile viewed', f'listed ship {wid}', wid)
+    return render_template('vessels/profile.html', **ctx)
 
 
 # --------------------------------------------------------------------------- names known before the lists

@@ -3,6 +3,7 @@
 {% block title %}{{ _('Bulk Screening Report') }}{% endblock %}
 
 {% block content %}
+{% include 'partials/screenings_left.html' %}
 {% set res = prog.results or {} %}
 <div class="container mt-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">

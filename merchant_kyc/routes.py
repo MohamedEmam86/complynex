@@ -689,6 +689,9 @@ def run_screening(id):
     total_high_risk = 0
     results_summary = []
 
+    from screening.limits import consume as _consume_limit
+    _consume_limit(len(names_to_screen), 'name')   # daily screening limit: all the merchant's names or none
+
     for name in names_to_screen:
         try:
             # Reuse the app's shared, already-loaded screening engine (same

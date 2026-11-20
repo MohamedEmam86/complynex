@@ -243,6 +243,13 @@ def _profile_values(wid, source, block):
         'year_built': block.get('year_built') or None,
         'measures': json.dumps(list(dict.fromkeys(block.get('measures') or [])), ensure_ascii=False),
         'owners': json.dumps(block.get('owners') or [], ensure_ascii=False),
+        'deadweight': (str(block.get('deadweight'))[:40] if block.get('deadweight') else None),
+        'build_date': (str(block.get('build_date'))[:20] if block.get('build_date') else None),
+        'registration_number': (str(block.get('registration_number'))[:60] if block.get('registration_number') else None),
+        'listed_on': (str(block.get('listed_on'))[:20] if block.get('listed_on') else None),
+        'topics': json.dumps(block.get('topics')) if block.get('topics') else None,
+        'description': block.get('description') or None,
+        'source_urls': json.dumps(block.get('source_urls')) if block.get('source_urls') else None,
         # the same ship listed by several lists shares its (valid) IMO number
         'group_key': ('IMO:' + valid_imo) if valid_imo else ('WL:%d' % wid),
     }
@@ -256,7 +263,7 @@ def _resolve_parties(cur, links):
     """[(wid, ref, name, role, source)] -> [(wid, party_watchlist_id, party_name, role, source)].
     A ref is the party's source_id on the same list (OpenSanctions); a name is looked up among the active
     non-ship records, the same list first, then any list."""
-    refs = sorted({(src, ref) for _, ref, _, _, src in links if ref})
+    refs = sorted({(lk[4], lk[1]) for lk in links if lk[1]})
     by_ref = {}
     for i in range(0, len(refs), 1000):
         chunk = refs[i:i + 1000]
@@ -265,7 +272,7 @@ def _resolve_parties(cur, links):
                     ([c[0] for c in chunk], [c[1] for c in chunk]))
         for r in _rows(cur):
             by_ref[(r['source'], r['source_id'])] = (r['id'], r['full_name'])
-    names = sorted({party_key(n) for _, ref, n, _, _ in links if n and not ref} - {''})
+    names = sorted({party_key(lk[2]) for lk in links if lk[2] and not lk[1]} - {''})
     by_name = {}
     if names:
         # cx_party_key() mirrors party_key for Latin names and is indexed (20261120b_vessel_owner_index.sql)
@@ -275,18 +282,21 @@ def _resolve_parties(cur, links):
         for r in _rows(cur):
             by_name.setdefault(r['k'], []).append((r['id'], r['source']))
     out = []
-    for wid, ref, name, role, src in links:
+    for wid, ref, name, role, src, *extra in links:
         pid, pname = None, name
         if ref and (src, ref) in by_ref:
             pid, full = by_ref[(src, ref)]
             pname = pname or full
-        elif name:
+        elif name and not ref:
             cands = by_name.get(party_key(name)) or []
             same = [c for c in cands if c[1] == src]
             pick = (same or cands or [None])[0]
             pid = pick[0] if pick else None
         if pname or pid:
-            out.append((wid, pid, (pname or ref or '')[:500] or None, role, src))
+            ex = (extra[0] if extra else None) or {}
+            out.append((wid, pid, (pname or ref or '')[:500] or None, role, src,
+                        (ex.get('label') or None), (ex.get('start') or None), (ex.get('end') or None),
+                        (ex.get('country') or None), ex.get('target'), (ex.get('as_of') or None)))
     return out
 
 
@@ -421,6 +431,11 @@ def sync(conn, source=None, log=None, trigger='list_update', user_id=None):
             props_d.get('programs') or [], props_d.get('regime'), det.get('program'), det.get('regime'),
             re.findall(r'resolution\s+\d{4}', str(comments), re.I), topics=_j(row.get('topics'), []) or [])) or None
         prof['datasets'] = json.dumps(pv['datasets']) if pv['datasets'] else None
+        if not prof.get('listed_on'):
+            # the date the list published the ship: UK DateDesignated, UN LISTED_ON (kept on the record)
+            lo = props_d.get('date_designated') or det.get('date_designated') or det.get('listed_on') or \
+                props_d.get('listed_on')
+            prof['listed_on'] = str(lo)[:10] if lo else None
         prof['risk_datasets'] = json.dumps(pv['risk_datasets']) if pv['risk_datasets'] else None
         classes_n[pv['class']] = classes_n.get(pv['class'], 0) + 1
         unclassified.update(pv['unclassified'])
@@ -429,11 +444,13 @@ def sync(conn, source=None, log=None, trigger='list_update', user_id=None):
         if not VP.alerts(pv['class']):
             continue            # owners of a ship that never alerts are not needed
         for o in (block.get('owners') or []):
-            name = str(o.get('name') or '').strip()
+            name = str(o.get('name') or o.get('party_name') or '').strip()
             if not name and not o.get('ref'):
                 continue
             links.append((row['id'], o.get('ref'), name[:500] or None, (o.get('role') or 'owner')[:30],
-                          row['source']))
+                          row['source'], {'label': (o.get('label') or '')[:120], 'start': (o.get('start') or '')[:10],
+                                          'end': (o.get('end') or '')[:10], 'country': (o.get('country') or '')[:60],
+                                          'as_of': (o.get('as_of') or '')[:10], 'target': o.get('target')}))
     resolved = _resolve_parties(cur, links)
     # replace the source's materialised rows in one transaction (by source, and by the rows' ids, so rows of a
     # record that moved to another source go too); rows of records deleted from the list (orphans) go as well
@@ -449,7 +466,8 @@ def sync(conn, source=None, log=None, trigger='list_update', user_id=None):
     from psycopg2.extras import execute_values
     cols = ('watchlist_id', 'source', 'imo', 'imo_valid', 'mmsi', 'call_sign', 'vessel_type', 'current_flag',
             'flag_history', 'previous_names', 'gross_tonnage', 'year_built', 'measures', 'owners', 'group_key',
-            'provenance', 'datasets', 'risk_datasets', 'regimes')
+            'provenance', 'datasets', 'risk_datasets', 'regimes', 'deadweight', 'build_date', 'registration_number',
+            'listed_on', 'topics', 'description', 'source_urls')
     vals = []
     for p in profiles:
         p = dict(p, gross_tonnage=str(p['gross_tonnage'])[:40] if p['gross_tonnage'] else None,
@@ -462,7 +480,9 @@ def sync(conn, source=None, log=None, trigger='list_update', user_id=None):
                                VALUES %s ON CONFLICT (watchlist_id, kind, value_norm) DO NOTHING""", idents,
                        page_size=2000)
     if resolved:
-        execute_values(cur, """INSERT INTO vessel_party_link (watchlist_id, party_watchlist_id, party_name, role, source)
+        execute_values(cur, """INSERT INTO vessel_party_link (watchlist_id, party_watchlist_id, party_name, role, source,
+                                                            role_label, start_date, end_date, party_country,
+                                                            party_target, as_of)
                                VALUES %s ON CONFLICT DO NOTHING""", resolved, page_size=2000)
     after = _snapshot(cur, source)
     added, removed, changed = _change_log(cur, run_id, before, after)
@@ -487,6 +507,17 @@ def sync(conn, source=None, log=None, trigger='list_update', user_id=None):
     return out
 
 
+# who controls the ship (an owner, operator or manager that is listed makes the ship "owned / operated by a
+# listed party"); service providers (classification society, P&I club, recognised organisation), crew and
+# former owners are shown on the BIO but never make it
+NOT_CONTROL_ROLES = ('class_society', 'recognised_org', 'pi_club', 'master', 'crew', 'security_manager',
+                     'former_owner', 'former_owner_operator')
+# a party record counts as listed when it is active and is a real listing - not a context record of an
+# aggregated database (a company only known as linked to something)
+_LISTED = ("""(o.id IS NOT NULL AND o.is_active = 1 AND coalesce(o.list_type, '') NOT IN ('CONTEXT', 'UNCLASSIFIED')"""
+           """ AND coalesce(l.party_target, TRUE))""")
+
+
 def refresh_risk(conn):
     """Risk indicators of every listed ship, per ship (all list records of the same IMO): flags, renames,
     IMO check digit, port-state-control records. Every record of a ship gets the ship's score."""
@@ -495,9 +526,11 @@ def refresh_risk(conn):
     cur.execute("""SELECT p.watchlist_id, p.imo, p.imo_valid, p.current_flag, p.flag_history, p.previous_names,
                           p.group_key, p.provenance, p.risk_datasets, w.source, w.is_active,
                           EXISTS (SELECT 1 FROM vessel_party_link l JOIN screening_watchlist o
-                                    ON o.id = l.party_watchlist_id AND o.is_active = 1
-                                   WHERE l.watchlist_id = p.watchlist_id) AS owner_listed
-                   FROM vessel_profile p JOIN screening_watchlist w ON w.id = p.watchlist_id""")
+                                    ON o.id = l.party_watchlist_id
+                                   WHERE l.watchlist_id = p.watchlist_id AND """ + _LISTED + """
+                                     AND NOT (coalesce(l.role, '') = ANY(%s))) AS owner_listed
+                   FROM vessel_profile p JOIN screening_watchlist w ON w.id = p.watchlist_id""",
+                (list(NOT_CONTROL_ROLES),))
     groups = {}
     for r in _rows(cur):
         groups.setdefault(r['group_key'], []).append(r)
@@ -586,7 +619,7 @@ def load_candidates(conn, force=False):
                    WHERE w.is_active = 1 AND w.entity_type = 'VESSEL'""")
     rows = _rows(cur)
     cur.execute("""SELECT l.watchlist_id, l.party_name, l.role, l.party_watchlist_id,
-                          (o.id IS NOT NULL AND o.is_active = 1) AS party_listed
+                          """ + _LISTED + """ AS party_listed
                    FROM vessel_party_link l LEFT JOIN screening_watchlist o ON o.id = l.party_watchlist_id""")
     parties = {}
     for r in _rows(cur):
@@ -772,15 +805,20 @@ def party_links(conn, watchlist_ids):
     if not watchlist_ids:
         return {}
     cur = conn.cursor()
-    cur.execute("""SELECT l.watchlist_id, l.party_name, l.role, l.party_watchlist_id,
-                          (p.id IS NOT NULL AND p.is_active = 1) AS party_listed
-                   FROM vessel_party_link l LEFT JOIN screening_watchlist p ON p.id = l.party_watchlist_id
+    cur.execute("""SELECT l.watchlist_id, l.party_name, l.role, l.party_watchlist_id, l.role_label, l.start_date,
+                          l.end_date, l.as_of, coalesce(l.party_country, nullif(o.country, ''), nullif(o.nationality, '')) AS party_country,
+                          o.entity_type AS party_type, """ + _LISTED + """ AS party_listed
+                   FROM vessel_party_link l LEFT JOIN screening_watchlist o ON o.id = l.party_watchlist_id
                    WHERE l.watchlist_id = ANY(%s)""", (list(watchlist_ids),))
     out = {}
     for r in _rows(cur):
         out.setdefault(r['watchlist_id'], []).append({'name': r['party_name'], 'role': r['role'],
                                                       'party_watchlist_id': r['party_watchlist_id'],
-                                                      'party_listed': bool(r['party_listed'])})
+                                                      'party_listed': bool(r['party_listed']),
+                                                      'role_label': r.get('role_label'), 'start': r.get('start_date'),
+                                                      'end': r.get('end_date'), 'as_of': r.get('as_of'),
+                                                      'country': r.get('party_country'),
+                                                      'party_type': r.get('party_type')})
     return out
 
 

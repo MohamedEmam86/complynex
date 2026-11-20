@@ -67,6 +67,7 @@
       {% if v.ar_name and v.lat_name %}<div class="text-muted">{{ v.lat_name }}</div>{% endif %}
       <div class="small text-muted mt-1"><i class="fas fa-list-alt me-1"></i>{{ _(v.source) }}
         {% if v.category %} · {{ v.category }}{% endif %}</div>
+      {% if v.source_real %}<div class="small text-muted fst-italic opacity-75" title="{{ _('Real source: visible to the platform superadmin only') }}"><i class="fas fa-user-shield me-1"></i>{{ v.source_real }}</div>{% endif %}
       {% if v.also_listed_in %}
       <div class="small mt-1"><i class="fas fa-layer-group me-1 text-muted"></i>{{ _('Also listed in') }}: {{ v.also_listed_in|join(' | ') }}</div>
       {% endif %}
@@ -80,13 +81,13 @@
       <div class="small mt-1 text-muted">{{ _('Grouped hits of the same person') }}:
         {% for g in v.grouped_hits %}<div class="ms-3">{{ _(g.source_label) }}{% if g.dataset and g.dataset != g.source %} · {{ g.dataset }}{% endif %} — {{ "%.0f"|format(g.score or 0) }}/100
           {% if g.tier_label %}<span class="badge tier-badge tier-{{ g.tier }}">{{ _(g.tier_label) }}</span>{% endif %}
-          {% if g.ref and ':' in g.ref %}<a class="no-print ms-1" href="{{ url_for('screening.match_profile', rid=result.id, src=g.ref.split(':', 1)[0], rec=g.ref.split(':', 1)[1]) }}">{{ _('Profile (BIO)') }}</a>{% endif %}</div>{% endfor %}
+          {% if g.ref and ':' in g.ref %}<a class="no-print ms-1" href="{{ profile_url(result.id, ref=g.ref) }}">{{ _('Profile (BIO)') }}</a>{% endif %}</div>{% endfor %}
       </div>
       {% endif %}
     </div>
     <div class="d-flex flex-column gap-1 no-print">
     {% if v.profile_rec %}
-    <a href="{{ url_for('screening.match_profile', rid=result.id, src=v.profile_src, rec=v.profile_rec) }}" class="btn btn-sm btn-dark">{{ _('Profile (BIO)') }} <i class="fas fa-id-card ms-1"></i></a>
+    <a href="{{ profile_url(result.id, v.profile_src, v.profile_rec) }}" class="btn btn-sm btn-dark">{{ _('Profile (BIO)') }} <i class="fas fa-id-card ms-1"></i></a>
     {% endif %}
     {% if v.url %}
     <a href="{{ v.url|http_only }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-dark">{{ _('Official profile') }} <i class="fas fa-external-link-alt ms-1"></i></a>

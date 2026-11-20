@@ -158,8 +158,72 @@ def _aliases(m):
     return out[:12]
 
 
-def match_view(m, kind, inputs):
-    """Everything the card shows for one hit."""
+def match_view(m, kind, inputs, names=None, real=None):
+    """Everything the card shows for one hit. In a request, the list is shown under ComplyNex's own names
+    (screening.list_display); the platform superadmin also gets the real source in `source_real`.
+    names / real: override (pure use, tests)."""
+    v = _match_view(m, kind, inputs)
+    if names is None:
+        try:
+            from flask import has_request_context
+            names = has_request_context()
+        except Exception:
+            names = False
+    if not names:
+        return v
+    from screening import list_display as LD
+    if real is None:
+        real = LD.can_see_sources()
+    return public_view(v, m, real)
+
+
+def _short_ref(ref):
+    import hashlib
+    return 'REF-' + hashlib.sha1(str(ref).encode('utf-8')).hexdigest()[:10].upper() if ref else ref
+
+
+def public_view(v, m, real=False):
+    """The card under our list names: no provider, publisher or dataset code (the superadmin: real line)."""
+    from screening import list_display as LD
+    v = dict(v)
+    src, ds, lt = m.get('source'), m.get('dataset'), m.get('list_type')
+    real_line = ' · '.join(str(x) for x in (v.get('source'), ds if ds and str(ds) != str(src) else None,
+                                            v.get('category')) if x)
+    v['source'] = LD.display(src, ds, lt)
+    v['source_group'] = LD.group_of(src, ds, lt)
+    v['category'] = LD.category(m)
+    v['source_real'] = real_line if real else None
+    seen, also = {v['source']}, []
+    for a in v.get('also_listed_in') or []:
+        n = LD.text_display(a)
+        if n not in seen:
+            seen.add(n)
+            also.append(n)
+    v['also_listed_real'] = list(v.get('also_listed_in') or []) if real else None
+    v['also_listed_in'] = also
+    v['grouped_hits'] = [dict(g, source_label=LD.display(g.get('source'), g.get('dataset'), g.get('list_type')),
+                              dataset=None, dataset_real=(g.get('dataset') if real else None),
+                              source=(g.get('source') if real else None))
+                         for g in (v.get('grouped_hits') or [])]
+    if isinstance(v.get('cluster'), dict):
+        c = dict(v['cluster'])
+        c['members'] = [dict(x, label=LD.display(x.get('source'), x.get('dataset'), x.get('list_type')))
+                        for x in (c.get('members') or [])]
+        v['cluster'] = c
+    if not real:
+        v['url'] = None                     # the official profile page names the provider / publisher
+        v['ref'] = _short_ref(v.get('ref'))
+        if v.get('nature'):
+            try:
+                from screening import list_category as _lc
+                v['nature'] = _lc.nature(m, with_source=False) or v['nature']
+            except Exception:
+                pass
+    return v
+
+
+def _match_view(m, kind, inputs):
+    """Everything the card shows for one hit (real list names)."""
     # aggregated databases: what the record is (sanctions, PEP, debarment, background data ...);
     # its kind decides the card colour, the section and the default action
     _nat = None
@@ -378,10 +442,22 @@ AM_LEVEL = {
 _COVERAGE = {'t': 0, 'data': None}
 
 
-def coverage(ttl=600, at=None):
+def coverage(ttl=600, at=None, names=None):
     """Lists searched, their size, last update and version (cached for ten minutes).
-    With `at` (when the screening ran) each list also carries the version in force then."""
+    With `at` (when the screening ran) each list also carries the version in force then.
+    In a request, users other than the platform superadmin see one row per list group under ComplyNex's
+    own names (screening.list_display) — never the provider or publisher."""
     rows = _coverage_rows(ttl)
+    if names is None:
+        try:
+            from flask import has_request_context
+            names = has_request_context()
+        except Exception:
+            names = False
+    if names:
+        from screening import list_display as LD
+        if not LD.can_see_sources():
+            return LD.coverage_rows(rows)
     if not at or not rows:
         return rows
     try:

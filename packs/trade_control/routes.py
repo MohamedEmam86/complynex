@@ -238,6 +238,8 @@ def screen():
             flash(_rc('Enter at least a description, an HS code, a CAS number or a model.',
                       'أدخل الوصف أو كود HS أو رقم CAS أو الموديل على الأقل.'), 'warning')
             return render_template('trade_control/screen.html', form=request.form)
+        from screening.limits import consume as _consume_limit
+        _consume_limit(1, 'dualuse')         # daily screening limit (all screening modules together)
         try:
             sid = S.create_screening(_header_from_form(request.form), [line], current_user.id)
         except S.ListsUnavailable as e:
@@ -436,6 +438,8 @@ def batch_run():
                                n=len(up['rows']), mapping=mapping, columns=S.COLUMNS, file_name=up['name'],
                                preview=[])
     lines = S.lines_from(up['rows'], mapping)
+    from screening.limits import consume as _consume_limit
+    _consume_limit(len(lines), 'dualuse')    # daily screening limit: the whole batch or nothing
     try:
         sid = S.create_screening(_header_from_form(request.form), lines, current_user.id, batch=True,
                                  file_name=up['name'])

@@ -193,18 +193,8 @@
                     {{ match.risk_level }} RISK
                 </span>
                 <span class="ms-2 text-muted">|
-                    {% if match.dataset == 'wikidata' %}Egypt PEP - Wikidata (via OpenSanctions)
-                    {% elif match.dataset == 'opensanctions_peps' %}Global PEP Database
-                    {% elif match.source == 'opensanctions' %}OpenSanctions (Aggregated)
-                    {% elif match.source == 'un_consolidated' %}UN Security Council
-                    {% elif match.source == 'ofac_sdn' %}OFAC SDN List
-                    {% elif match.source == 'eu_sanctions' %}EU Financial Sanctions
-                    {% elif match.source == 'uk_hmt' %}UK HMT Consolidated
-                    {% elif match.source == 'emlcu_egypt' %}EMLCU Egyptian Terrorist List
-                    {% elif match.source == 'open_sanctions_pep_eg' %}Egypt PEP - OpenSanctions
-                    {% elif match.source == 'wikidata_pep_eg' %}Egypt PEP - Wikidata
-                    {% else %}{{ match.source_name or match.dataset or match.source }}{% endif %}
-                    | {{ match.category if match.list_category_code else match.list_type }}</span>
+                    {{ list_name(match) }}
+                    | {{ match.category if match.list_category_code else (match.list_type|scr_label('list_type')) }}</span>
             </div>
             {# P4-2 / P4-3 / G9 #}
             {% set _w = match.workflow %}

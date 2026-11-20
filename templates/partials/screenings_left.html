@@ -1,0 +1,9 @@
+{# Daily screening limit (screening/limits.py): how many screenings are left today, before a bulk run. #}
+{% set _left = screenings_left() if screenings_left is defined else none %}
+{% if _left is not none %}
+<div class="alert {{ 'alert-danger' if _left == 0 else 'alert-info' }} py-2 small" role="status">
+  <i class="bi bi-speedometer2 me-1"></i>
+  {% if _left == 0 %}{{ _('You reached your daily screening limit. Contact your administrator to reset it.') }}
+  {% else %}{{ _('Screenings left today under your daily limit') }}: <strong>{{ _left }}</strong>. {{ _('A file with more rows is refused as a whole.') }}{% endif %}
+</div>
+{% endif %}

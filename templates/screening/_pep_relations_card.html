@@ -8,9 +8,9 @@
     {% for r in pep_rel %}
       <tr><td class="small"><span class="ar">{{ r.other_name }}</span>{% if r.other_is_pep %} <span class="badge bg-info text-dark">PEP</span>{% endif %}</td>
         <td class="small">{% if r.role == 'relative_of' %}{{ _('This record is a') }} {{ _('family member' if r.type == 'family' else 'close associate') }}{% else %}{{ _('Their') }} {{ _('family member' if r.type == 'family' else 'close associate') }}{% endif %}{% if r.relationship %} — {{ r.relationship }}{% endif %}</td>
-        <td class="small">{{ _('OpenSanctions' if r.origin == 'opensanctions' else 'Added by the MLRO') }}</td>
+        <td class="small">{{ list_name('opensanctions_pep') if r.origin == 'opensanctions' else _('Added by the MLRO') }}</td>
         <td class="small no-print">
-          {% if r.other_source and r.other_watchlist_id %}<a href="{{ url_for('screening.match_profile', rid=result.id, src=r.other_source, rec=r.other_watchlist_id) }}">{{ _('profile') }}</a>{% endif %}
+          {% if r.other_source and r.other_watchlist_id %}<a href="{{ profile_url(result.id, r.other_source, r.other_watchlist_id) }}">{{ _('profile') }}</a>{% endif %}
           {% if can_unlink %}
           <details class="mt-1"><summary class="text-danger" style="cursor:pointer">{{ _('Remove') }}</summary>
             <form method="post" action="{{ url_for('screening.pep_relation_remove', relation_id=r.relation_id) }}" class="mt-1">
@@ -39,7 +39,7 @@
             <option value="relative_of">{{ _('This record is a relative / associate of') }}</option>
             <option value="has_relative">{{ _('This record is the PEP; their relative / associate is') }}</option></select></div>
           <div class="col-md-4"><select name="other_id" class="form-select form-select-sm" required>
-            {% for h in pep_rel_hits %}<option value="{{ h.id }}">{{ h.name }} ({{ h.source }})</option>{% endfor %}</select></div>
+            {% for h in pep_rel_hits %}<option value="{{ h.id }}">{{ h.name }} ({{ list_name(h.source) }})</option>{% endfor %}</select></div>
           <div class="col-md-2"><select name="relation_type" class="form-select form-select-sm">
             <option value="family">{{ _('Family member') }}</option><option value="associate">{{ _('Close associate') }}</option></select></div>
           <div class="col-md-2"><input type="text" name="relationship" maxlength="120" class="form-control form-control-sm" placeholder="{{ _('e.g. spouse') }}"></div>

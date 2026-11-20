@@ -112,7 +112,8 @@ def screening_check():
             'risk_level': res['screening_result'],
             'hit_count': res['total_matches'],
             # cap response size; local lists: generic category, never the sheet / file / dataset
-            'hits': mask_matches(res['matches'][:50], force=True),
+            'hits': __import__('screening.list_display', fromlist=['x']).public_tree(
+                mask_matches(res['matches'][:50], force=True)),       # our list names, no provider / dataset
         })
     except Exception as e:
         return _err(f'Screening engine error: {e}', 500)

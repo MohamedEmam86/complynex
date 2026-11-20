@@ -96,7 +96,7 @@
 {% if c.cleared_earlier %}
 <h2>6. {{ _('Cleared earlier, record unchanged (not raised)') }}</h2>
 <table><tr><th>{{ _('Listed record') }}</th><th>{{ _('List') }}</th><th>{{ _('Score') }}</th><th>{{ _('Cleared by / on') }}</th></tr>
-{% for x in c.cleared_earlier %}<tr><td dir="auto">{{ x.name }}</td><td>{{ x.source }}</td><td>{{ x.score }}</td><td>{{ (x.clearance or {}).by or '-' }} · {{ (x.clearance or {}).at or '-' }}</td></tr>{% endfor %}
+{% for x in c.cleared_earlier %}<tr><td dir="auto">{{ x.name }}</td><td>{{ list_name(x.source) }}</td><td>{{ x.score }}</td><td>{{ (x.clearance or {}).by or '-' }} · {{ (x.clearance or {}).at or '-' }}</td></tr>{% endfor %}
 </table>
 {% endif %}
 

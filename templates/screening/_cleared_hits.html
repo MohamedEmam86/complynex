@@ -6,7 +6,7 @@
   <div class="p-3"><table class="table table-sm mb-0">
     <thead><tr><th>{{ _('Listed record') }}</th><th>{{ _('List') }}</th><th>{{ _('Score') }}</th><th>{{ _('Cleared by') }}</th><th>{{ _('On') }}</th></tr></thead>
     <tbody>{% for c in cleared_hits %}<tr>
-      <td dir="auto">{{ c.full_name or c.watchlist_name_ar or '-' }}</td><td>{{ c.source }}</td><td>{{ c.match_score }}</td>
+      <td dir="auto">{{ c.full_name or c.watchlist_name_ar or '-' }}</td><td>{{ list_name(c) }}</td><td>{{ c.match_score }}</td>
       <td>{{ (c.clearance or {}).by or '-' }}</td><td>{{ (c.clearance or {}).at or '-' }}</td></tr>{% endfor %}</tbody>
   </table></div>
 </div>

@@ -59,10 +59,11 @@
             <tr><th>{{ _('IMO number') }}</th><td class="bg-primary-subtle">{{ q.imo or '-' }}</td>{% for h in ships[:4] %}<td class="{{ 'fw-bold text-danger' if q.imo and h.imo == q.imo }}">{{ h.imo or '-' }}</td>{% endfor %}</tr>
             <tr><th>MMSI</th><td class="bg-primary-subtle">{{ q.mmsi or '-' }}</td>{% for h in ships[:4] %}<td class="{{ 'fw-bold text-danger' if q.mmsi and h.mmsi == q.mmsi }}">{{ h.mmsi or '-' }}</td>{% endfor %}</tr>
             <tr><th>{{ _('Flag state') }}</th><td class="bg-primary-subtle">{{ vessel_flag(q.flag) or '-' }}</td>{% for h in ships[:4] %}<td>{{ vessel_flag(h.flag) or '-' }}{% if h.flags_past %}<div class="text-muted">{{ _('ex') }} {% for f in h.flags_past[:3] %}{{ vessel_flag(f) }}{{ ', ' if not loop.last }}{% endfor %}</div>{% endif %}</td>{% endfor %}</tr>
-            <tr><th>{{ _('Vessel type') }}</th><td class="bg-primary-subtle">{{ q.type or '-' }}</td>{% for h in ships[:4] %}<td>{{ h.type or '-' }}</td>{% endfor %}</tr>
+            <tr><th>{{ _('Vessel type') }}</th><td class="bg-primary-subtle">{{ q.type or '-' }}</td>{% for h in ships[:4] %}<td>{{ vessel_type(h.type) or '-' }}</td>{% endfor %}</tr>
             <tr><th>{{ _('Year built') }}</th><td class="bg-primary-subtle">-</td>{% for h in ships[:4] %}<td>{{ h.year_built or '-' }}</td>{% endfor %}</tr>
             <tr><th>{{ _('Former names') }}</th><td class="bg-primary-subtle">-</td>{% for h in ships[:4] %}<td>{{ (h.previous_names or [])[:3]|join(', ') or '-' }}</td>{% endfor %}</tr>
             <tr><th>{{ _('Owner / operator') }}</th><td class="bg-primary-subtle">{{ q.owner or '-' }}</td>{% for h in ships[:4] %}<td>{% for p in (h.parties or [])[:3] %}<div>{{ p.name }}{% if p.party_listed %} <span class="badge bg-danger">{{ _('listed') }}</span>{% endif %}</div>{% else %}-{% endfor %}</td>{% endfor %}</tr>
+            <tr><th>{{ _('Vessel BIO') }}</th><td class="bg-primary-subtle"></td>{% for h in ships[:4] %}<td><a class="btn btn-sm btn-outline-primary py-0" href="{{ url_for('vessels.profile', wid=h.watchlist_id, sid=sid) }}"><i class="bi bi-person-vcard me-1"></i>{{ _('Open BIO') }}</a></td>{% endfor %}</tr>
           </tbody></table></div>
         {% if ships|length > 4 %}<div class="small text-muted mt-1">{{ _('More candidates below.') }}</div>{% endif %}
       </div></div>
@@ -110,10 +111,11 @@
           <div>
             <a class="h6 fw-bold text-decoration-none" href="{{ url_for('vessels.profile', wid=h.watchlist_id, sid=sid) }}">{{ h.name }}</a>
             {% if h.matched_name and h.matched_name != h.name %}<span class="small text-muted ms-2">{{ _('matched') }}: {{ h.matched_name }}</span>{% endif %}
+            <a class="btn btn-sm btn-outline-primary py-0 ms-2" href="{{ url_for('vessels.profile', wid=h.watchlist_id, sid=sid) }}"><i class="bi bi-person-vcard me-1"></i>{{ _('Vessel BIO') }}</a>
             <div class="small text-muted">
               <span class="badge {{ 'bg-warning text-dark' if h.alert_type == 'ban' else 'bg-danger' }}">{{ vessel_status(h.provenance) }}</span>
               {% for r in h.regimes or [] %}<span class="badge rounded-pill bg-light text-dark border">{{ vessel_regime(r) }}</span>{% endfor %}
-              {% if h.imo %} · IMO {{ h.imo }}{% endif %}{% if h.flag %} · {{ vessel_flag(h.flag) }}{% endif %}{% if h.type %} · {{ h.type }}{% endif %}
+              {% if h.imo %} · IMO {{ h.imo }}{% endif %}{% if h.flag %} · {{ vessel_flag(h.flag) }}{% endif %}{% if h.type %} · {{ vessel_type(h.type) }}{% endif %}
               · {{ vessel_sources_label(h) }}{% if h.sources and h.sources|length > 1 %} ({{ h.sources|length }} {{ _('lists') }}){% endif %}
             </div>
             <div class="mt-1">{% for m in h.measures or [] %}<span class="badge bg-dark-subtle text-dark border me-1">{{ vessel_measure_label(m) }}</span>{% endfor %}</div>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+{% set _ar = get_locale()|string == 'ar' %}
+{% set idn = bio.identity %}{% set his = bio.history %}{% set san = bio.sanctions %}{% set rk = bio.risk %}
+<html lang="{{ 'ar' if _ar else 'en' }}" dir="{{ 'rtl' if _ar else 'ltr' }}">
+<head>
+<meta charset="UTF-8">
+<title>{{ _('Vessel BIO') }} - {{ idn.name }}</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm;
+    @bottom-right { content: "{{ _('Page') }} " counter(page) " / " counter(pages); font-size: 7pt; color: #666; } }
+  body { font-family: "DejaVu Sans", "Noto Sans Arabic", Arial, sans-serif; font-size: 8.5pt; color: #222; }
+  h1 { font-size: 16pt; margin: 0; }
+  h2 { font-size: 10pt; background: #eef2f6; border-inline-start: 3px solid #1f4e79; padding: 1.5mm 2mm; margin: 5mm 0 2mm 0; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }
+  th, td { border: 0.4pt solid #bbb; padding: 1.2mm 1.5mm; vertical-align: top; text-align: start; }
+  th { background: #f4f6f8; width: 22%; }
+  .muted { color: #666; } .bad { color: #a00; } .status { border: 1pt solid #888; padding: 2mm; margin: 3mm 0; font-size: 11pt; }
+  .SANCTION { border-color: #a00; color: #a00; } .BAN { border-color: #b37400; color: #8a5a00; }
+</style>
+</head>
+<body>
+<div class="muted">{{ _('Vessel BIO') }} · {{ _('Generated') }} {{ generated_at.strftime('%Y-%m-%d %H:%M') }} · {{ _('by') }} {{ generated_by }}</div>
+<h1>{{ idn.name }}</h1>
+<div class="muted">{{ idn.type_label or '' }}{% if idn.flag_label %} · {{ idn.flag_label }}{% endif %}{% if idn.imo %} · IMO {{ idn.imo }}{% endif %}</div>
+<div class="status {{ san.status }}"><strong>{{ san.status_label }}</strong>{% if san.regimes %} - {% for g in san.regimes %}{{ vessel_regime(g) }}{{ ', ' if not loop.last }}{% endfor %}{% endif %}
+  {% if his.renamed %}<br><span class="bad">{{ _('Renamed') }}: {{ _('This ship has been renamed. A sanctioned ship keeps its IMO number when renamed: always screen the IMO number.') }}</span>{% endif %}</div>
+
+<h2>{{ _('Identity') }}</h2>
+<table>
+  {% if idn.imo %}<tr><th>{{ _('IMO number') }}</th><td>{{ idn.imo }} {% if idn.imo_valid %}({{ _('check digit valid') }}){% else %}<span class="bad">({{ _('check digit fails') }})</span>{% endif %}</td></tr>{% endif %}
+  {% if idn.mmsi %}<tr><th>{{ _('MMSI') }}</th><td>{{ idn.mmsi }}</td></tr>{% endif %}
+  {% if idn.call_sign %}<tr><th>{{ _('Call sign') }}</th><td>{{ idn.call_sign }}</td></tr>{% endif %}
+  {% if idn.flag_label %}<tr><th>{{ _('Flag state') }}</th><td>{{ idn.flag_label }}{% if idn.flag_high_risk %} - <span class="bad">{{ _('High-risk flag') }}</span>{% elif idn.flag_foc %} - {{ _('Flag of convenience (open registry)') }}{% endif %}</td></tr>{% endif %}
+  {% if idn.type_label %}<tr><th>{{ _('Vessel type') }}</th><td>{{ idn.type_label }}</td></tr>{% endif %}
+  {% if idn.gross_tonnage %}<tr><th>{{ _('Gross tonnage') }}</th><td>{{ '{:,}'.format(idn.gross_tonnage) }}</td></tr>{% endif %}
+  {% if idn.deadweight %}<tr><th>{{ _('Deadweight (DWT)') }}</th><td>{{ '{:,}'.format(idn.deadweight) }} t</td></tr>{% endif %}
+  {% if idn.year_built %}<tr><th>{{ _('Year built') }}</th><td>{{ idn.build_date if idn.build_date and idn.build_date|length > 4 else idn.year_built }}{% if idn.age is not none %} ({{ idn.age }} {{ _('years old') }}){% endif %}</td></tr>{% endif %}
+  {% if idn.class_society %}<tr><th>{{ _('Classification society') }}</th><td>{{ idn.class_society }}</td></tr>{% endif %}
+  {% if idn.registration_number %}<tr><th>{{ _('Registration number') }}</th><td>{{ idn.registration_number }}</td></tr>{% endif %}
+</table>
+
+<h2>{{ _('Sanctions status') }}</h2>
+<table>
+  <tr><th>{{ _('Status') }}</th><td>{{ san.status_label }}</td></tr>
+  {% if san.regimes %}<tr><th>{{ _('Regime') }}</th><td>{% for g in san.regimes %}{{ vessel_regime(g) }}{{ ' · ' if not loop.last }}{% endfor %}</td></tr>{% endif %}
+  {% if san.measures %}<tr><th>{{ _('Measures') }}</th><td>{% for m in san.measures %}{{ vessel_measure_label(m) }}{{ ' · ' if not loop.last }}{% endfor %}</td></tr>{% endif %}
+  {% if san.lists %}<tr><th>{{ _('Lists') }}</th><td>{{ san.lists }}{% if not vessel_can_see_sources() %} · {{ vessel_list_label(none) }}{% endif %}</td></tr>{% endif %}
+  {% if san.listing_dates %}<tr><th>{{ _('Listing dates') }}</th><td>{{ san.listing_dates | join(' · ') }}</td></tr>{% endif %}
+</table>
+
+<h2>{{ _('Names and flags over time') }}</h2>
+<table>
+  {% for t in his.timeline %}<tr><th>{% if t.kind == 'current_name' %}{{ _('name on the lists') }}{% elif t.kind == 'known_name' %}{{ _('other known name (not yet on the lists)') }}{% else %}{{ _('former name') }}{% endif %}</th><td>{{ t.name }}{% if t.date %} ({{ _('since') }} {{ t.date }}){% endif %}</td></tr>{% endfor %}
+  {% if his.other_names %}<tr><th>{{ _('Other names') }}</th><td>{{ his.other_names | join(' · ') }}</td></tr>{% endif %}
+  {% if his.past_flags %}<tr><th>{{ _('Former flags') }}</th><td>{% for f in his.past_flags %}{{ f.label }}{{ ' · ' if not loop.last }}{% endfor %}</td></tr>{% endif %}
+</table>
+
+{% if bio.ownership %}<h2>{{ _('Ownership and management') }}</h2>
+<table>
+  <tr><th>{{ _('Role') }}</th><th style="width:40%">{{ _('Party') }}</th><th>{{ _('Screening status') }}</th><th>{{ _('Country') }}</th></tr>
+  {% for g in bio.ownership %}{% for p in g.parties %}<tr><td>{{ g.label }}</td><td>{{ p.name }}{% if p.since %} <span class="muted">({{ _('since') }} {{ p.since }})</span>{% endif %}</td>
+    <td class="{{ 'bad' if p.listed }}">{{ _('listed') if p.listed else _('not listed') }}</td><td>{{ p.country_label or '' }}</td></tr>{% endfor %}{% endfor %}
+</table>{% endif %}
+
+<h2>{{ _('Risk indicators') }} ({{ rk.score }} / 100)</h2>
+<ul>
+  {% for l in rk.lines %}<li>{{ vessel_risk_line(l) }}</li>{% endfor %}
+  {% for i in rk.indicators %}<li>{{ i.label }}</li>{% endfor %}
+  {% if rk.psc_records %}<li>{{ _('Port-state-control records') }}: {{ rk.psc_records }}{% if rk.psc_regions %} ({{ rk.psc_regions | join(', ') }}){% endif %}</li>{% endif %}
+</ul>
+<div class="muted">{{ _('Indicators come from the lists and the flag-risk reference; they never create a match on their own.') }}</div>
+<div class="muted" style="margin-top:4mm">{{ _('Vessel BIO built from the lists and reference data held by ComplyNex; fields a list does not carry are not shown.') }}</div>
+</body>
+</html>

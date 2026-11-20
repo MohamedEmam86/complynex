@@ -49,6 +49,11 @@ CATEGORY = {
                           'Counter-sanctions listing (e.g. Russia or China against Western persons): not binding in Egypt; record it and consider it in the risk assessment.'),
     'UNCLASSIFIED': ('SANCTIONS', 'غير مصنف - يعامل كعقوبات',
                      'السجل من غير تصنيف واضح في المصدر، فبيتعامل كعقوبات لحد ما يتراجع.', None),
+    # a party the aggregated database holds only because it is related to a listed one (owner, insurer,
+    # classification society of a sanctioned ship ...): no listing of its own - information, never a list hit
+    'RELATED': ('OTHER', 'مرتبط بجهة معاقبة - غير مدرج بنفسه',
+                'مش مدرج على أي قايمة. موجود في قاعدة OpenSanctions لأنه مرتبط بجهة مدرجة (مالك، مؤمّن، هيئة تصنيف، طرف في نفس الملف). ده مش إدراج ومش أمر تجميد.',
+                'Linked to a sanctioned party - not itself listed: information only, not a list hit; consider the relationship in due diligence.'),
     'CONTEXT': ('OTHER', 'بيانات خلفية - مش قايمة',
                 'بيانات مرجعية (سجل شركات، ملكية، سفن، ويكي بيانات) جت ضمن قاعدة OpenSanctions. مش إدراج على أي قايمة، وده مش أمر تجميد.',
                 'Background data, not a list hit: use it only as context for due diligence.'),
@@ -74,11 +79,18 @@ DATASET_NOTE = {
 }
 
 ORDER = ['SANCTIONS', 'TERROR', 'UNCLASSIFIED', 'SANCTION_LINKED', 'CRIME', 'PEP', 'EXPORT_CONTROL',
-         'COUNTER_SANCTIONS', 'DEBARMENT', 'REG_ACTION', 'TRADE_RISK', 'POI', 'CONTEXT']
+         'COUNTER_SANCTIONS', 'DEBARMENT', 'REG_ACTION', 'TRADE_RISK', 'POI', 'RELATED', 'CONTEXT']
+# set by the loader on a record that the database holds only as related to a listed one (see related_only)
+RELATED_MARK = 'cx.related'
+# datasets named like a sanctions list that are not a government's legal designations: the "War & Sanctions"
+# catalogue (targets proposed for sanctions and the parties around them)
+NOT_A_LISTING_DATASETS = ('ua_war_sanctions',)
 AGGREGATED_SOURCES = ('opensanctions', 'opensanctions_pep')
 
 
 def _topic_cat(t):
+    if t == RELATED_MARK:
+        return 'RELATED'
     if t in ('sanction', 'asset.frozen'):
         return 'SANCTIONS'
     if t == 'sanction.counter':
@@ -168,6 +180,8 @@ def categorize(topics, dataset=None):
     """Category code for an aggregated-database record (the most serious wins).
     `dataset` may be one dataset name or a list (an entity can be in several)."""
     cats = {_topic_cat(t) for t in topics_list(topics)}
+    if 'RELATED' in cats and not (cats - {'RELATED', 'CONTEXT'}):
+        return 'RELATED'          # related only: the dataset's name never makes it a listing
     dss = dataset if isinstance(dataset, (list, tuple)) else ([dataset] if dataset else [])
     dcats = {_dataset_cat(d) for d in dss}
     if not cats or cats == {'CONTEXT'}:
@@ -176,6 +190,30 @@ def categorize(topics, dataset=None):
         return 'CONTEXT' if cats else 'UNCLASSIFIED'
     # topics are the source's own classification; a dataset that is itself a sanctions list still counts
     return _worst(cats | ({c for c in dcats if c in ('SANCTIONS', 'TERROR')}))
+
+
+def official_dataset(ds):
+    """A dataset that is a government sanctions / terrorist list (its records are listings)."""
+    d = str(ds or '').strip().lower()
+    return _dataset_cat(d) in ('SANCTIONS', 'TERROR') and d not in NOT_A_LISTING_DATASETS
+
+
+def related_only(topics, datasets, target):
+    """True for an aggregated-database record the database holds only as related to a listed one: not a target
+    of the collection, no listing topic of its own (sanction, crime, terror, debarment, wanted, PEP ...), on no
+    government sanctions / terrorist list, and its dataset name alone would have shown it as a sanctions hit.
+    A record with a listing topic or an official-list dataset is never related-only."""
+    if target is not False:
+        return False
+    ts = topics_list(topics)
+    if any(_topic_cat(t) not in ('CONTEXT', 'RELATED') for t in ts):
+        return False
+    dss = datasets if isinstance(datasets, (list, tuple)) else ([datasets] if datasets else [])
+    # only datasets known not to be listings: an official list or an unclassified dataset keeps the strict side
+    if not dss or any(str(d).strip().lower() not in NOT_A_LISTING_DATASETS and _dataset_cat(d) != 'CONTEXT'
+                      for d in dss):
+        return False
+    return CATEGORY[categorize(ts, list(dss))][0] == 'SANCTIONS'
 
 
 def for_match(m):
@@ -200,14 +238,17 @@ def for_match(m):
     return code
 
 
-def nature(m):
-    """{'code', 'kind', 'label', 'note', 'action'} for a hit from an aggregated database, else None."""
+def nature(m, with_source=True):
+    """{'code', 'kind', 'label', 'note', 'action'} for a hit from an aggregated database, else None.
+    with_source=False: the note never names the dataset (what users other than the superadmin see)."""
     code = for_match(m)
     if not code:
         return None
     kind, label, note, action = CATEGORY[code]
     ds = str((m or {}).get('dataset') or '').strip().lower()
-    if ds in DATASET_NOTE:
+    if not with_source:
+        pass
+    elif ds in DATASET_NOTE:
         note = f'{note} المصدر: {DATASET_NOTE[ds]}.'
     elif ds:
         note = f'{note} المصدر داخل OpenSanctions: {ds}.'

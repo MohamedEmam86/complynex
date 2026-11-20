@@ -414,8 +414,18 @@ def _vessel_flag(v):
         return str(v).strip()
 
 
+def strip_party_meta(entities):
+    """Remove the parse-time party marks (_os_target, _os_country) from parsed OpenSanctions records."""
+    for e in entities or ():
+        if isinstance(e, dict):
+            e.pop('_os_target', None)
+            e.pop('_os_country', None)
+    return entities
+
+
 def vessel_block(imos=(), mmsi=(), call_sign=(), vtype=None, flag=None, flags_past=(), names_past=(),
-                 gross_tonnage=None, year_built=None, owners=(), measures=()):
+                 gross_tonnage=None, year_built=None, owners=(), measures=(), deadweight=None, build_date=None,
+                 registration_number=None, listed_on=None, topics=(), description=None, source_urls=()):
     raw_imos = [x for x in imos if x and str(x).strip()]
     d_imos = [_vessel_digits(x) for x in raw_imos]
     good = [d for d in dict.fromkeys(d_imos) if len(d) == 7]
@@ -428,7 +438,8 @@ def vessel_block(imos=(), mmsi=(), call_sign=(), vtype=None, flag=None, flags_pa
     bad += [str(x).strip() for x in raw_mmsi if len(_vessel_digits(x)) != 9]
     flag_c = _vessel_flag(flag)
     past = [f for f in dict.fromkeys(_vessel_flag(x) for x in flags_past if x and str(x).strip()) if f and f != flag_c]
-    yb = str(year_built).strip() if year_built else ''
+    yb = str(year_built or build_date or '').strip()
+    bd = str(build_date or '').strip()[:10]
     m = re.search(r'\b(1[89]\d\d|20\d\d)\b', yb)
     seen_o, own = set(), []
     for o in owners:
@@ -450,6 +461,17 @@ def vessel_block(imos=(), mmsi=(), call_sign=(), vtype=None, flag=None, flags_pa
         'owners': own,
         'measures': list(dict.fromkeys(measures)),
         **({'bad_identifiers': bad} if bad else {}),
+        # BIO particulars (round 5): only when the list carries them
+        **{k: v for k, v in (
+            ('deadweight', (str(deadweight).strip()[:40] or None) if deadweight else None),
+            ('build_date', bd if re.match(r'^\d{4}(-\d{2}(-\d{2})?)?$', bd) else None),
+            ('registration_number', (str(registration_number).strip()[:60] or None) if registration_number else None),
+            ('listed_on', (str(listed_on).strip()[:10] or None) if listed_on else None),
+            ('topics', sorted({str(t) for t in topics or () if t})),
+            ('description', (str(description).strip()[:3000] or None) if description else None),
+            ('source_urls', [u for u in dict.fromkeys(str(x).strip() for x in source_urls or ())
+                             if u.startswith(('http://', 'https://'))][:5]),
+        ) if v},
     }
 
 
@@ -1088,30 +1110,62 @@ class OpenSanctionsHandler(BaseFormatHandler):
         # temporary file during the stream (memory stays flat) and read back once the ship ids are known.
         self._link_file = None
         self.link_count = 0
+        # the list update turns this on: parsed parties carry _os_target / _os_country until
+        # attach_vessel_links reads and removes them (the Vessel BIO tells a listed owner from a related one)
+        self.party_marks = False
 
     _OS_LINK_ROLES = {'owned or controlled by': 'owner', 'owns, controls, or operates': 'owner',
                       'property in the interest of': 'beneficial_interest', '': 'owner'}
 
-    def _spool(self, asset, other, role):
+    @staticmethod
+    def link_role(text, schema='UnknownLink'):
+        """The ship-party role of a link, from the words the list uses ('Registered owner', 'ISM manager and
+        operator', 'Classification society' ...). Unknown wording: 'linked' (Ownership: 'owner')."""
+        t = ' '.join(str(text or '').lower().split())
+        if t in OpenSanctionsHandler._OS_LINK_ROLES:
+            return OpenSanctionsHandler._OS_LINK_ROLES[t] if schema == 'Ownership' or t else 'linked'
+        rules = (('former', 'former_owner'), ('beneficial', 'beneficial_owner'), ('registered owner', 'registered_owner'),
+                 ('ism', 'ism_manager'), ('commerc', 'commercial_manager'), ('security manager', 'security_manager'),
+                 ('technical manager', 'ship_manager'), ('ship manager', 'ship_manager'),
+                 ('owner and operator', 'owner_operator'), ('owner and manager', 'owner_operator'),
+                 ('operated or managed', 'operator'), ('registered vessel', 'operator'), ('operator', 'operator'),
+                 ('manager', 'ship_manager'), ('classification', 'class_society'),
+                 ('recognised organi', 'recognised_org'), ('recognized organi', 'recognised_org'),
+                 ('p&i', 'pi_club'), ('master', 'master'), ('crew', 'crew'), ('owner', 'owner'),
+                 ('associated', 'associated'), ('company', 'company'))
+        for needle, role in rules:
+            if needle in t:
+                return role
+        return 'owner' if schema == 'Ownership' else 'linked'
+
+    def _spool(self, asset, other, role, label='', start='', end='', as_of=''):
         if self._link_file is None:
             import tempfile
             self._link_file = tempfile.TemporaryFile(mode='w+', encoding='utf-8')
-        self._link_file.write(f'{asset}\t{other}\t{role}\n')
+        clean = lambda x: ' '.join(str(x or '').split())[:120]  # noqa: E731
+        self._link_file.write(f'{asset}\t{other}\t{role}\t{clean(label)}\t{clean(start)[:10]}\t{clean(end)[:10]}'
+                              f'\t{clean(as_of)[:10]}\n')
         self.link_count += 1
 
     def _collect_link(self, data):
         p = data.get('properties') or {}
-        role_txt = ((p.get('role') or [''])[0] or '').strip().lower()
+        label = ((p.get('role') or [''])[0] or '').strip()
+        start = min(p.get('startDate') or [''])
+        end = max(p.get('endDate') or [''])
+        as_of = max(p.get('date') or [''])
         if data.get('schema') == 'Ownership':
-            role = self._OS_LINK_ROLES.get(role_txt, 'linked')
+            role = self.link_role(label, 'Ownership')
+            if (p.get('ownershipType') or [''])[0].lower() == 'beneficial':
+                role = 'beneficial_owner'
             for a in p.get('asset') or []:
                 for o in p.get('owner') or []:
-                    self._spool(a, o, role)
+                    self._spool(a, o, role, label, start, end, as_of)
         else:       # UnknownLink: direction unknown - kept both ways, only ships are read
+            role = self.link_role(label)
             for a in p.get('subject') or []:
                 for o in p.get('object') or []:
-                    self._spool(a, o, 'linked')
-                    self._spool(o, a, 'linked')
+                    self._spool(a, o, role, label, start, end, as_of)
+                    self._spool(o, a, role, label, start, end, as_of)
 
     def _links_for(self, ids):
         """{ship id: [(party id, role)]} from the spooled links, for the given ship ids only."""
@@ -1123,8 +1177,8 @@ class OpenSanctionsHandler(BaseFormatHandler):
         for line in self._link_file:
             a, _, rest = line.rstrip('\n').partition('\t')
             if a in ids:
-                o, _, role = rest.partition('\t')
-                out.setdefault(a, []).append((o, role))
+                f = rest.split('\t') + ['', '', '', '', '']
+                out.setdefault(a, []).append(tuple(f[:6]))      # (party, role, label, start, end, as of)
         return out
 
     @property
@@ -1135,8 +1189,8 @@ class OpenSanctionsHandler(BaseFormatHandler):
             self._link_file.flush()
             self._link_file.seek(0)
             for line in self._link_file:
-                a, o, role = line.rstrip('\n').split('\t')
-                out.setdefault(a, []).append((o, role))
+                f = line.rstrip('\n').split('\t')
+                out.setdefault(f[0], []).append((f[1], f[2]))
         return out
 
     def attach_vessel_links(self, entities):
@@ -1144,7 +1198,15 @@ class OpenSanctionsHandler(BaseFormatHandler):
         properties.vessel.owners (ref = the party's source_id, resolved to its row by vessel_store)."""
         n = 0
         ships = [e for e in entities if e.get('entity_type') == 'VESSEL']
-        by_ship = self._links_for({str(e.get('source_id') or '')[3:] for e in ships})
+        party = {}
+        try:
+            by_ship = self._links_for({str(e.get('source_id') or '')[3:] for e in ships})
+            wanted = {f'OS-{lk[0]}' for links in by_ship.values() for lk in links}
+            for e in entities:
+                if '_os_target' in e and e.get('source_id') in wanted:
+                    party[e['source_id']] = (e.get('full_name'), e.get('_os_target'), e.get('_os_country'))
+        finally:
+            strip_party_meta(entities)
         for e in ships:
             links = by_ship.get(str(e.get('source_id') or '')[3:])
             if not links:
@@ -1153,8 +1215,17 @@ class OpenSanctionsHandler(BaseFormatHandler):
             props = dict(full.get('properties') or {})
             v = dict(props.get('vessel') or {})
             have = {(o.get('ref'), o.get('role')) for o in v.get('owners') or []}
-            add = [{'name': None, 'role': r, 'ref': f'OS-{o}'} for o, r in sorted(set(links))
-                   if (f'OS-{o}', r) not in have]
+            add = []
+            for o, r, label, start, end, *rest in sorted(set(links)):
+                if (f'OS-{o}', r) in have:
+                    continue
+                have.add((f'OS-{o}', r))
+                pname, target, country = party.get(f'OS-{o}', (None, None, None))
+                add.append({'name': None, 'role': r, 'ref': f'OS-{o}',
+                            **{k: x for k, x in (('label', label), ('start', start), ('end', end),
+                                                 ('as_of', rest[0] if rest else ''), ('party_name', pname),
+                                                 ('country', country)) if x},
+                            **({'target': bool(target)} if target is not None else {})})
             if not add:
                 continue
             v['owners'] = list(v.get('owners') or []) + add
@@ -1206,6 +1277,17 @@ class OpenSanctionsHandler(BaseFormatHandler):
     def _parse_line(self, line):
         """Parse single FTJSON line"""
         data = json.loads(line)
+        ent = self._parse_data(data)
+        if self.party_marks and ent is not None and data.get('schema') != 'Vessel':
+            # kept on the parsed record until attach_vessel_links (which removes them): whether the collection
+            # lists the party itself (target) or only as linked to something, and its country - the Vessel BIO
+            # tells a listed owner from a merely related one (a P&I club, a classification society)
+            ent['_os_target'] = bool(data.get('target', True))
+            ent['_os_country'] = ((data.get('properties') or {}).get('country') or
+                                  (data.get('properties') or {}).get('jurisdiction') or [None])[0]
+        return ent
+
+    def _parse_data(self, data):
         
         # Filter by schema (only relevant entity types)
         schema = data.get('schema')
@@ -1233,7 +1315,14 @@ class OpenSanctionsHandler(BaseFormatHandler):
         
         # Topics
         topics = props.get('topics', [])
-        
+        if schema != 'Vessel':
+            # held only as related to a listed party (a ship's insurer, an owner's parent ...): marked, so it is
+            # shown as "linked to a sanctioned party - not itself listed", never as a sanctions hit
+            from screening.list_category import related_only, RELATED_MARK
+            if related_only(topics, data.get('datasets') or [], data.get('target', True)):
+                topics = list(topics) + [RELATED_MARK]
+                self.related_count = getattr(self, 'related_count', 0) + 1
+
         # ships always get the profile record: IMO / MMSI / flags live there (a few thousand rows)
         if not self.rich and schema != 'Vessel':
             return self._legacy_entity(data, props, full_name, aliases, entity_type, countries, topics)
@@ -1327,6 +1416,12 @@ class OpenSanctionsHandler(BaseFormatHandler):
                 flags_past=_vals('pastFlags', 20, 60), names_past=pn,
                 gross_tonnage=(_vals('grossRegisteredTonnage', 1, 40) or _vals('tonnage', 1, 40) or [None])[0],
                 year_built=(_vals('buildDate', 1, 20) or [None])[0],
+                build_date=(_vals('buildDate', 1, 20) or [None])[0],
+                deadweight=(_vals('deadweightTonnage', 1, 40) or [None])[0],
+                registration_number=(_vals('registrationNumber', 1, 60) or [None])[0],
+                listed_on=(_vals('createdAt', 5, 20) or [None])[0], topics=topics,
+                description=' '.join(_vals('description', 3, 1500)) or None,
+                source_urls=_vals('sourceUrl', 5, 300),
                 owners=[{'name': None, 'role': r, 'ref': f'OS-{v}'}
                         for key, r in (('owner', 'owner'), ('operator', 'operator'))
                         for v in _vals(key, 10, 200)],

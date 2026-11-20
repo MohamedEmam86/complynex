@@ -266,6 +266,8 @@ def add_user():
                 _AS.save(new_user, cx_mode, cx_granted, actor_id=current_user.id, cms_level=cx_cms,
                          note=((request.form.get('cx_note') or '').strip()[:300] or 'account created'),
                          ip=request.remote_addr)
+            from screening.limits import apply_form as _limit_form
+            _limit_form(new_user.id, request.form, current_user.id, ip=request.remote_addr)
             # Permissions for modules added by optional content packs.
             from regcontrols.packs import save_module_perms
             save_module_perms(new_user.id, request.form)
@@ -610,6 +612,9 @@ def edit_user(id):
                     except _AS.AccessError as _e:
                         flash(str(_e), 'danger')
                         return redirect(url_for('admin.edit_user', id=id) + '#access')
+                if id != current_user.id or getattr(current_user, 'role', '') == 'superadmin':
+                    from screening.limits import apply_form as _limit_form
+                    _limit_form(id, request.form, current_user.id, ip=request.remote_addr)
 
             from services import org_service as _O
             from database.db import execute_db as _ex
