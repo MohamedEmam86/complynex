@@ -104,7 +104,7 @@ def _can_decide_stage(user, stage, author_id=None):
     if stage['approver_user_id']:
         return stage['approver_user_id'] == user.id
     # Unassigned stage: anyone holding the stage's role, or an administrator.
-    return user.role == 'admin' or (stage['approver_role'] and user.role == stage['approver_role'])
+    return user.role in ('admin', 'superadmin') or (stage['approver_role'] and user.role == stage['approver_role'])
 
 
 def allowed_file(filename):
@@ -958,7 +958,7 @@ def acknowledgment_dashboard():
         SELECT u.department, COUNT(a.id) as ack_count, COUNT(DISTINCT u.id) as user_count
         FROM users u
         LEFT JOIN policy_acknowledgments a ON u.id = a.employee_id
-        WHERE u.role != 'admin' AND u.is_active = 1
+        WHERE u.role NOT IN ('admin', 'superadmin') AND u.is_active = 1
         GROUP BY u.department
     ''').fetchall()
     

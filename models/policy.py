@@ -487,7 +487,7 @@ class Policy:
         rows = db.execute('''
             SELECT u.id, u.first_name || ' ' || u.last_name as employee_name, u.department, u.email
             FROM users u
-            WHERE u.role != 'admin' AND u.is_active = 1
+            WHERE u.role NOT IN ('admin', 'superadmin') AND u.is_active = 1
               AND u.id NOT IN (
                   SELECT employee_id FROM policy_acknowledgments WHERE policy_id = %s
               )

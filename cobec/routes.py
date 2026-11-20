@@ -108,7 +108,7 @@ def view_declaration(id):
     # Permission check
     is_owner = declaration.employee_id == current_user.id
     is_compliance = current_user.is_compliance_officer() if hasattr(current_user, 'is_compliance_officer') else current_user.role == 'compliance_officer'
-    is_admin = current_user.role == 'admin'
+    is_admin = current_user.is_admin()
     
     if not (is_owner or is_compliance or is_admin):
         flash(gettext('Access denied.'), 'danger')

@@ -79,4 +79,4 @@ def admin_required(f):
             flash(gettext('This action requires administrator privileges.'), 'danger')
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
-    return _mark(('role', ('admin',)))(decorated_function)
+    return _mark(('role', ('admin', 'superadmin')))(decorated_function)

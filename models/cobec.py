@@ -210,7 +210,7 @@ class COBECDeclaration:
             FROM users u
             LEFT JOIN cobec_declarations d 
                 ON u.id = d.employee_id AND d.declaration_year = %s
-            WHERE u.is_active = 1 AND u.role != 'admin'
+            WHERE u.is_active = 1 AND u.role NOT IN ('admin', 'superadmin')
             ORDER BY 
                 CASE WHEN d.id IS NULL THEN 0 ELSE 1 END, -- Pending first - No, User wanted "identify list of whom are pending"
                 u.department, 
@@ -252,7 +252,7 @@ class COBECDeclaration:
             SELECT COUNT(d.id) 
             FROM cobec_declarations d
             JOIN users u ON d.employee_id = u.id
-            WHERE d.declaration_year = %s AND u.is_active = 1 AND u.role != 'admin'
+            WHERE d.declaration_year = %s AND u.is_active = 1 AND u.role NOT IN ('admin', 'superadmin')
         ''', (current_year,)).fetchone()['count']
         
         # Not submitted

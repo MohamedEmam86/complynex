@@ -209,7 +209,7 @@ def report_conflict():
     
     if not adhoc_campaign:
         # Create it securely
-        if current_user.role == 'admin' or current_user.is_compliance_officer(): 
+        if current_user.is_admin() or current_user.is_compliance_officer(): 
              # Only admins/compliance normally create, but this is a system auto-creation.
              # Ideally this should be seeded, but we'll auto-create if missing for robustness
              # We need to simulate the data structure
@@ -356,12 +356,12 @@ def pending_review():
             declarations_dict[d.id] = d
             
     # 2. Get Compliance Pending (System-wide)
-    if current_user.is_compliance_officer() or current_user.role == 'admin':
+    if current_user.is_compliance_officer() or current_user.is_admin():
         compliance_results = COIDeclaration.get_pending_for_compliance()
         for d in compliance_results:
             declarations_dict[d.id] = d
             
-    if not declarations_dict and not (current_user.is_manager() or current_user.is_compliance_officer() or current_user.role == 'admin'):
+    if not declarations_dict and not (current_user.is_manager() or current_user.is_compliance_officer() or current_user.is_admin()):
         flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
     
@@ -464,7 +464,7 @@ def review_declaration(id):
 @permission_required('coi', level='edit')
 def create_mitigation_plan(declaration_id):
     """Create a mitigation plan for a declaration"""
-    if not (current_user.is_compliance_officer() or current_user.role == 'admin'):
+    if not (current_user.is_compliance_officer() or current_user.is_admin()):
         flash(gettext('Access denied.'), 'danger')
         return redirect(url_for('dashboard'))
         
@@ -513,7 +513,7 @@ def view_mitigation_plan(id):
     declaration = COIDeclaration.get_by_id(plan.declaration_id)
     
     if request.method == 'POST':
-        if not (current_user.is_compliance_officer() or current_user.role == 'admin'):
+        if not (current_user.is_compliance_officer() or current_user.is_admin()):
             flash(gettext('Only compliance can update status.'), 'danger')
         else:
             status = request.form.get('status')

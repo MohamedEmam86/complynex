@@ -162,11 +162,11 @@ class User(UserMixin):
     
     def is_admin(self):
         """Check if user has admin role."""
-        return self.role == 'admin'
+        return self.role in ('admin', 'superadmin')
     
     def is_compliance_officer(self):
         """Check if user can perform compliance officer actions (Approve, View Reports)."""
-        return self.role in ['admin', 'compliance_officer', 'compliance_manager']
+        return self.role in ['admin', 'superadmin', 'compliance_officer', 'compliance_manager']
 
     def can_manage_users(self):
         """Check if user can add/edit/delete other users."""

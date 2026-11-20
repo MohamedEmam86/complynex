@@ -164,7 +164,7 @@ def test_guards_record_their_rule():
     assert f._cx_access == [('perm', 'aml', 'edit')]
     g = permission_required('aml', 'admin')(lambda: None)
     assert g._cx_access[0][0] == 'role'
-    assert admin_required(lambda: None)._cx_access == [('role', ('admin',))]
+    assert admin_required(lambda: None)._cx_access == [('role', ('admin', 'superadmin'))]
 
 
 def test_matrix_template_is_csp_safe():

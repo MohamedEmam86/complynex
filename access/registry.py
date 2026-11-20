@@ -89,6 +89,8 @@ def allows(user, spec):
     """Evaluate an old-rule spec for a user (never consults the new grants)."""
     if spec is None or spec == 'auth':
         return True
+    if (getattr(user, 'role', '') or '') == 'superadmin':
+        return True     # the platform superadmin is unrestricted (and an admin wherever a page asks for one)
     kind = spec[0]
     if kind == 'perm':
         _k, module, level = spec
