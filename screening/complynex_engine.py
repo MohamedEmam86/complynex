@@ -1219,6 +1219,20 @@ class ComplyNexScreeningEngine:
         """
         Screen a person/entity using ensemble algorithm
         """
+        # which ships this screening may see (see _VESSEL_SCOPE): set for this call only and restored after,
+        # so a worker that serves the next request never inherits it
+        _tok = _VESSEL_SCOPE.set(_vessel_scope_for(entity_type))
+        try:
+            return self._screen_person_impl(name, date_of_birth=date_of_birth, nationality=nationality,
+                                            entity_type=entity_type, address=address, user_id=user_id,
+                                            include_media=include_media, is_internal_blacklist=is_internal_blacklist,
+                                            national_id=national_id, employer=employer, threshold=threshold,
+                                            screening_type=screening_type, include_regulatory=include_regulatory,
+                                            customer_id=customer_id, tenant_id=tenant_id)
+        finally:
+            _VESSEL_SCOPE.reset(_tok)
+
+    def _screen_person_impl(self: "ComplyNexScreeningEngine", name: str, date_of_birth=None, nationality=None, entity_type='INDIVIDUAL', address=None, user_id=1, include_media=True, is_internal_blacklist=False, national_id=None, employer=None, threshold=None, screening_type=None, include_regulatory=None, customer_id=None, tenant_id=None) -> dict:
         # P6-1 / P6-3: this screening sees the shared lists plus its tenant's private lists.
         # Web requests: the request's tenant; background jobs pass tenant_id explicitly.
         try:
@@ -1229,7 +1243,6 @@ class ComplyNexScreeningEngine:
                 _tenancy.bind(getattr(self.db_conn, '_conn', self.db_conn), _tid)
         except Exception as _e:
             logger.warning(f'tenant bind skipped: {_e}')
-        _VESSEL_SCOPE.set(_vessel_scope_for(entity_type))
         # tier thresholds in force (screening_config, set by the MLRO; cached 60 s)
         try:
             from screening import thresholds as _thr

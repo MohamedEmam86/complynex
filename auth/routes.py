@@ -32,6 +32,11 @@ from auth import guard
 auth_bp = Blueprint('auth', __name__)
 
 
+def _portal_login_template():
+    """The restricted workspace's sign-in page posts here with ws=1: answer with that page, not the portal's."""
+    return 'access/login.html' if request.values.get('ws') else 'auth/login_portal.html'
+
+
 @auth_bp.route('/portal/login', methods=['GET', 'POST'])
 @limiter.limit('10 per minute')
 def portal_login():
@@ -51,7 +56,7 @@ def portal_login():
         if user and guard.is_locked(user.id):
             AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'Portal Login: account locked', request.remote_addr)
             flash(_('Invalid email or password. Repeated failed attempts lock the account for a while.'), 'danger')
-            return render_template('auth/login_portal.html')
+            return render_template(_portal_login_template())
 
         if user and user.check_password(password):
             # Session fixation prevention - regenerate session on login
@@ -88,7 +93,7 @@ def portal_login():
                 AuditLog.log(failed_user.id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed attempts', request.remote_addr)
             flash(_('Invalid email or password. Repeated failed attempts lock the account for a while.'), 'danger')
             
-    return render_template('auth/login_portal.html')
+    return render_template(_portal_login_template())
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])

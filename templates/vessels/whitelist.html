@@ -12,7 +12,7 @@
     <thead class="table-light"><tr><th>{{ _('Screened ship') }}</th><th>{{ _('Listed ship') }}</th><th>{{ _('Reason') }}</th><th>{{ _('Comment') }}</th><th>{{ _('By') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
     <tbody>{% for w in items %}
       <tr><td>{{ w.query_label }}<div class="text-muted">{{ w.query_key }}</div></td>
-        <td>{% if w.watchlist_id %}<a href="{{ url_for('vessels.profile', wid=w.watchlist_id) }}">{{ w.listed_name }}</a>{% else %}{{ w.listed_name }}{% endif %}<div class="text-muted">{{ w.listed_key }}</div></td>
+        <td>{% if w.watchlist_id and vessel_can_db() %}<a href="{{ url_for('vessels.profile', wid=w.watchlist_id) }}">{{ w.listed_name }}</a>{% else %}{{ w.listed_name }}{% endif %}<div class="text-muted">{{ w.listed_key }}</div></td>
         <td>{{ vessel_reason_label(w.reason) }}</td><td>{{ w.comment }}</td>
         <td>{{ w.by_name }}<div class="text-muted">{{ w.created_at.strftime('%Y-%m-%d') if w.created_at else '' }}</div></td>
         <td>{% if w.status == 'active' %}<span class="badge bg-success">{{ _('Active') }}</span>

@@ -116,7 +116,9 @@ def norm_name(name):
     s = str(name or '').translate(_DIGITS)
     if is_arabic(s):
         s = re.sub('[ً-ٰٟـ]', '', s)          # diacritics, tatweel
-        s = s.translate(str.maketrans({'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ى': 'ي', 'ة': 'ه'}))
+        # Persian / Urdu letter forms -> Arabic (ی ک ۀ ے), then the usual Arabic folds
+        s = s.translate(str.maketrans({'ی': 'ي', 'ې': 'ي', 'ے': 'ي', 'ک': 'ك', 'ۀ': 'ه', 'ە': 'ه', 'ۃ': 'ه',
+                                       'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ٱ': 'ا', 'ى': 'ي', 'ة': 'ه'}))
         s = re.sub(r'[^\w\s]', ' ', s)
         s = re.sub(r'(?<=[\u0600-\u06ff])(?=\d)|(?<=\d)(?=[\u0600-\u06ff])', ' ', s)
         toks = s.split()

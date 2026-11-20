@@ -12,7 +12,8 @@
    area dumped every link at once and the headings read as top-level
    categories. That is what this fixes.
    =================================================================== #}
-<nav class="cnx-sidebar" id="cnxSidebar" aria-label="{{ _('Main navigation') }}">
+{# Links the user may not open (per-user access control) are removed by the cx_nav filter. #}
+{% filter cx_nav %}<nav class="cnx-sidebar" id="cnxSidebar" aria-label="{{ _('Main navigation') }}">
 
   <div class="cnx-sidebar__brand">
     <a href="{{ url_for('portal.dashboard') }}" class="cnx-brand-link">
@@ -84,7 +85,8 @@
     </li>
 
     {# ======== Screening & AML — 14 links ======== #}
-    {% if (current_user.can_view('screening') or current_user.can_view('aml')) or (current_user.can_view('reports')) or (current_user.is_admin()) %}
+    {# (vessel screening alone opens the area too: a vessels-only user had no menu entry) #}
+    {% if (current_user.can_view('screening') or current_user.can_view('aml')) or (current_user.can_view('reports')) or (current_user.is_admin()) or current_user.can_view('vessels') or current_user.role in ('superadmin', 'it_admin') or (vessel_can_db is defined and vessel_can_db()) %}
     <li class="cnx-nav__item" data-area="screening">
       <button class="cnx-nav__toggle" type="button" aria-expanded="false">
         <i class="bi bi-shield-check cnx-nav__icon"></i>
@@ -156,11 +158,13 @@
                 <span class="cnx-nav__label">{{ _('Vessel Screening') }}</span>
               </a>
             </li>
+            {% if vessel_can_db is defined and vessel_can_db() %}
             <li class="cnx-nav__subitem">
               <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('vessels.database') }}">
                 <span class="cnx-nav__label">{{ _('ComplyNex Vessels Database') }}</span>
               </a>
             </li>
+            {% endif %}
             {% endif %}
           </ul></div>
         </li>
@@ -1618,4 +1622,4 @@
       </span>
     </div>
   </div>
-</nav>
+</nav>{% endfilter %}

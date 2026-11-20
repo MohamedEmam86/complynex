@@ -34,6 +34,7 @@ from models.audit import AuditLog
 from . import ai_bp as bp
 from . import audit, catalog, extract, handlers, intake, nba, playbooks, service, settings, tasks
 from .netguard import NotLocalError
+from access.registry import mark as _mark
 
 RANK = {'none': 0, 'view': 1, 'use': 2, 'edit': 2, 'admin': 3}
 
@@ -58,7 +59,7 @@ def need(lvl):
                 flash(_('You do not have permission for the Compliance Copilot.'), 'danger')
                 return redirect(request.referrer or url_for('dashboard'))
             return f(*a, **kw)
-        return wrapped
+        return _mark(('perm', 'ai', lvl))(wrapped)
     return deco
 
 

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% import 'trade_control/_nav.html' as dn with context %}
+{% import 'trade_control/_guidance.html' as dg with context %}
 {% block title %}{{ s.ref }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
@@ -20,6 +21,7 @@
       {{ dn.outcome_badge('clear') }} {{ c.get('clear', 0) }} &nbsp; {{ dn.outcome_badge('review') }} {{ c.get('review', 0) }} &nbsp; {{ dn.outcome_badge('hold') }} {{ c.get('hold', 0) }}
       <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('dualuse.export_xlsx', sid=s.id) }}"><i class="bi bi-file-earmark-excel"></i> Excel</a>
       <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('dualuse.export_pdf', sid=s.id) }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+      <a class="btn btn-sm btn-primary" href="{{ url_for('dualuse.export_memo', sid=s.id) }}" title="{{ rc_loc('The screening, the guidance followed, your answers, checklist and decisions', 'الفحص والإرشادات المتبعة وإجاباتك وقائمة التحقق والقرارات') }}"><i class="bi bi-file-earmark-text"></i> {{ rc_loc('Decision memo', 'مذكرة القرار') }}</a>
     </div>
   </div>
   {{ dn.disclaimer('mb-3') }}
@@ -83,13 +85,15 @@
         <tbody>{% for c in ln.candidates %}{% set d = idx.get(c.list_code, c.code) %}
           <tr><td>{% if d %}<a class="du-code" href="{{ url_for('dualuse.entry', item_id=d.id) }}">{{ c.code }}</a>{% else %}<span class="du-code">{{ c.code }}</span> <span class="badge bg-light text-muted border" title="{{ rc_loc('Not in the current list version', 'غير موجود في الإصدار الحالي للقائمة') }}">{{ rc_loc('earlier version', 'إصدار سابق') }}</span>{% endif %}
               <span class="text-muted">{{ (c.title_ar if du_lang == 'ar' and c.title_ar else c.title_en)[:140] }}</span>{% if du_lang == 'ar' and c.title_ar %} {{ dn.ar_note() }}{% endif %}
-              {% if du_show_lists %}{% for l in c.lists or [c.list_code] %} <span class="badge bg-light text-dark border">{{ DU.LIST_SHORT.get(l, l) }}</span>{% endfor %}{% endif %}
+              {% if du_show_lists %}{% for l in c.lists or [c.list_code] %} <span class="badge bg-light text-dark border">{{ DU.LIST_SHORT.get(l, l) }}</span>{% endfor %}{% elif d %} {{ dn.list_label(d) }}{% endif %}
               {% for w in c.why or [] %}<div class="text-muted" dir="auto">{% if w is string %}{{ w }}{% else %}{{ rc_loc(w[0], w[1]) }}{% endif %}</div>{% endfor %}</td>
             <td>{% for r in c.reasons %}{{ dn.why_label(r) }}{% endfor %}</td>
             <td>{{ dn.risk_badge(c.risk) }}</td>
-            <td>{% set st = {'open': ('Open', 'مفتوح', 'secondary'), 'cleared': ('Below threshold / not this product', 'أقل من الحد / منتج مختلف', 'success'), 'controlled': ('Meets the entry', 'يستوفي البند', 'danger')}.get(c.state or 'open') %}<span class="badge bg-{{ st[2] }}-subtle text-dark border">{{ rc_loc(st[0], st[1]) }}</span></td></tr>{% endfor %}
+            <td>{{ dn.cand_state(c.state) }}</td></tr>{% endfor %}
         </tbody></table></div>
       {% endif %}
+
+      {% for gd in guides.get(ln.id) or [] %}{{ dg.panel(gd, ln) }}{% endfor %}
 
       <div class="row g-3">
       {% if ln.questions %}
@@ -140,4 +144,5 @@
   {% endfor %}
   {% if pages > 1 %}{{ pager() }}{% endif %}
 </div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/dualuse_guidance.js') }}"></script>
 {% endblock %}

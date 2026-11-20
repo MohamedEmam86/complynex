@@ -58,6 +58,18 @@ non-financial firms, under any regulator (CBE, FRA, EMLCU, PDPL, ITIDA, or forei
 - Sessions carry `'<user id>:<auth_version>'` (`User.get_id`); test clients use `User.session_id_for_app(app, 1)`, not `'1'`.
 - Templates are cached per worker in production; changes need a restart (handled by `deploy.sh`).
 
+## Per-user access control (access/)
+- Every module and feature a user can be granted is DATA: `access/catalog.py` (core) and each pack's manifest
+  `Pack(access_modules=[...])` (packs only — the core never names a pack). A feature lists the endpoints it covers.
+- One check for everything: `access.service.endpoint_allowed()` — used by the request gate (403 page / JSON), the
+  sidebar (`{% filter cx_nav %}` prunes links), the employee portal (`cx_can('portal.coi')`), the restricted
+  workspace and the matrix preview. Superadmin is unrestricted; `X-API-Key` requests keep their own scopes.
+- A NEW PAGE must belong to a feature (an existing module's `pattern`/`default`, or a new feature);
+  `tests/test_access/test_registry.py` fails on a page outside every module. Guards record their rule with
+  `access.registry.mark(...)` (`permission_required` does it already) so backfill/old-rule derivation stays exact.
+- Access types: `users.access_mode` = cms | portal | restricted. Grants: `user_access_grants`; changes:
+  `user_access_audit`. Saving the matrix writes the module levels through to `perm_*` / `user_module_permissions`.
+
 ## Checks to run before opening a PR
 ```bash
 python -m py_compile $(git diff --name-only origin/main -- '*.py')

@@ -1,0 +1,8 @@
+{# Companion form of the matrix's "copy from user" controls (they point here with form="cxCopyForm"). #}
+{% if cx_user and not cx_unrestricted %}
+<form id="cxCopyForm" method="post" action="{{ url_for('access.admin_copy', user_id=cx_user.id) }}" class="d-none">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="next" value="{{ request.path }}#access">
+</form>
+{% endif %}
+<script nonce="{{ csp_nonce }}" src="{{ static_v('js/access_matrix.js') }}"></script>

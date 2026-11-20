@@ -10,7 +10,8 @@
     {% if current_user.can_edit('vessels') or current_user.is_admin() or current_user.role in ('superadmin', 'it_admin') %}
     <li class="nav-item"><a class="nav-link {{ 'active' if active == 'whitelist' }}" href="{{ url_for('vessels.whitelist') }}"><i class="bi bi-shield-check me-1"></i>{{ _('Cleared ships') }}</a></li>
     {% endif %}
-    <li class="nav-item"><a class="nav-link {{ 'active' if active == 'database' }}" href="{{ url_for('vessels.database') }}"><i class="bi bi-database me-1"></i>{{ _('Vessels Database') }}</a></li>
+    {% if vessel_can_db() %}<li class="nav-item"><a class="nav-link {{ 'active' if active == 'database' }}" href="{{ url_for('vessels.database') }}"><i class="bi bi-database me-1"></i>{{ _('Vessels Database') }}</a></li>
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == 'updates' }}" href="{{ url_for('vessels.updates') }}"><i class="bi bi-arrow-repeat me-1"></i>{{ _('List updates') }}</a></li>{% endif %}
     <li class="nav-item"><a class="nav-link {{ 'active' if active == 'flags' }}" href="{{ url_for('vessels.flags') }}"><i class="bi bi-flag me-1"></i>{{ _('Flag risk') }}</a></li>
   </ul>
 </div>

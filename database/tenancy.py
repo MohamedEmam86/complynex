@@ -51,7 +51,12 @@ SHARED_TABLES = frozenset({
     # tenants. The screenings, lines, decisions and remembered decisions (dualuse_screenings,
     # dualuse_screening_lines, dualuse_decisions, dualuse_item_master) are tenant-owned (the default class).
     'dualuse_lists', 'dualuse_list_versions', 'dualuse_items', 'dualuse_parameters', 'dualuse_hs_map',
-    'dualuse_chemicals', 'dualuse_terms',
+    'dualuse_chemicals', 'dualuse_terms', 'dualuse_update_runs', 'dualuse_guidance',
+    # vessel reference data: materialised from the shared watchlist by screening/vessel_store.sync and read
+    # by all tenants. The screenings, decisions, whitelist and bulk jobs (vessel_screenings,
+    # vessel_hit_decisions, vessel_whitelist, vessel_bulk_jobs) are tenant-owned (the default class).
+    'vessel_profile', 'vessel_identifier', 'vessel_party_link', 'flag_risk', 'vessel_data_version',
+    'vessel_update_runs', 'vessel_change_log', 'vessel_news_cache',
 })
 # Platform-level tables that belong to no tenant (academy / talent pool of the operator,
 # backups taken by hand, the tenants table itself).

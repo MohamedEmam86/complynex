@@ -1,0 +1,86 @@
+{# Practical guidance next to a result: what it is, why controlled, threshold in plain words with a check,
+   next steps (ask, documents, Egyptian authority, red flags) and sources / confidence.
+   gd = routes._guide(doc): {doc, plain, g, thresholds}. The real source names and links: superadmin only. #}
+{% macro t(en, ar) %}{{ ar if du_lang == 'ar' and ar else en }}{% endmacro %}
+
+{% macro check_form(gd) %}{% set d = gd.doc %}
+{% if gd.thresholds %}
+<form class="du-check row g-1 align-items-center mt-1" data-url="{{ url_for('dualuse.api_check') }}" data-doc="{{ d.id }}" autocomplete="off">
+  <div class="col-12 col-md-5"><select class="form-select form-select-sm" name="n" aria-label="{{ rc_loc('Threshold', 'الحد') }}">{% for th in gd.thresholds %}<option value="{{ th.n }}" data-unit="{{ th.unit }}">{{ th.name }}</option>{% endfor %}</select></div>
+  <div class="col-5 col-md-3"><input class="form-control form-control-sm" name="v" dir="ltr" inputmode="decimal" required placeholder="{{ rc_loc('Your value', 'قيمتك') }}"></div>
+  <div class="col-4 col-md-2"><input class="form-control form-control-sm" name="u" dir="ltr" value="{{ gd.thresholds[0].unit }}" aria-label="{{ rc_loc('Unit', 'الوحدة') }}"></div>
+  <div class="col-3 col-md-2"><button class="btn btn-sm btn-outline-primary w-100" type="submit">{{ rc_loc('Check', 'تحقق') }}</button></div>
+  <div class="col-12 du-check-out small" aria-live="polite"></div>
+</form>
+{% endif %}
+{% endmacro %}
+
+{% macro panel(gd, ln=None, open=True) %}{% set g = gd.g %}{% set d = gd.doc %}
+{% if g %}
+{% set saved = ((ln.guidance or {}).get(g.category) or {}) if ln else {} %}
+<div class="du-guide card mb-2" id="guide-{{ d.id }}{% if ln %}-{{ ln.id }}{% endif %}">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-2">
+    <div><i class="bi bi-compass me-1 text-primary"></i><strong>{{ rc_loc('What to do', 'ماذا تفعل') }}</strong>
+      <span class="text-muted">· {% if du_show_lists %}{{ t(g.label, g.label_ar) }} <span class="badge bg-light text-muted border">v{{ g.version }}</span>{% else %}{{ t(*g.client_label) }}{% endif %}</span></div>
+    <span class="badge du-conf du-conf-{{ g.level[1] }}" title="{{ rc_loc('Confidence of the guidance', 'درجة الثقة في الإرشادات') }}"><i class="bi bi-patch-check me-1"></i>{{ rc_loc(*g.level[0]) }}</span>
+  </div>
+  <div class="card-body small">
+    <div class="du-guide-grid">
+      <section>
+        <h6 class="du-step"><span>1</span>{{ rc_loc('What it is', 'ما هذا الصنف') }}</h6>
+        <p class="mb-2" dir="auto">{{ rc_loc(*gd.plain) }}</p>
+        <h6 class="du-step"><span>2</span>{{ rc_loc('Why it is controlled', 'لماذا يخضع للرقابة') }}</h6>
+        <p class="mb-2" dir="auto">{{ g.why_it_matters }}</p>
+        <h6 class="du-step"><span>3</span>{{ rc_loc('Threshold in plain words', 'الحد الفني بكلمات بسيطة') }}</h6>
+        {% if gd.thresholds %}
+        <ul class="mb-1 ps-3">{% for th in gd.thresholds %}<li dir="auto">{{ rc_loc(th.en, th.ar) }}</li>{% endfor %}</ul>
+        {{ check_form(gd) }}
+        {% else %}
+        <p class="text-muted mb-2">{{ rc_loc('No numeric threshold is written in this entry: it applies when the entry describes the product (check the legal text and the datasheet).', 'لا يوجد حد رقمي في هذا البند: ينطبق متى كان البند يصف المنتج (راجع النص القانوني والنشرة الفنية).') }}</p>
+        {% endif %}
+      </section>
+      <section>
+        <h6 class="du-step"><span>4</span>{{ rc_loc('Next steps', 'الخطوات التالية') }}</h6>
+        <div class="du-authority {{ 'du-authority-none' if g.no_authority }} mb-2"><div class="fw-bold"><i class="bi bi-bank me-1"></i>{{ rc_loc('Egyptian authority', 'الجهة المصرية المختصة') }}</div>
+          {% if g.auth_prefix %}<div class="fw-semibold">{{ rc_loc('No specific Egyptian authority — apply international practice', 'لا توجد جهة مصرية محددة — طبّق الممارسة الدولية') }}</div>{% endif %}
+          <div dir="auto">{{ g.egyptian_authority }}</div></div>
+        {% if ln and du_can_edit %}
+        <form method="post" action="{{ url_for('dualuse.line_guidance', line_id=ln.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="category" value="{{ g.category }}">
+        {% endif %}
+        <div class="fw-bold mt-1">{{ rc_loc('Ask the customer', 'اسأل العميل') }}</div>
+        <ul class="list-unstyled mb-2 du-checklist">{% for x in g.ask_customer or [] %}<li>{% if ln and du_can_edit %}<label class="form-check"><input class="form-check-input" type="checkbox" name="asked" value="{{ loop.index0 }}" {{ 'checked' if loop.index0 in (saved.get('asked') or []) }}> <span dir="auto">{{ x }}</span></label>{% else %}<i class="bi {{ 'bi-check2-square text-success' if loop.index0 in (saved.get('asked') or []) else 'bi-question-circle text-muted' }} me-1"></i><span dir="auto">{{ x }}</span>{% endif %}</li>{% endfor %}</ul>
+        <div class="fw-bold">{{ rc_loc('Documents to collect', 'المستندات المطلوبة') }}</div>
+        <ul class="list-unstyled mb-2 du-checklist">{% for x in g.documents or [] %}<li>{% if ln and du_can_edit %}<label class="form-check"><input class="form-check-input" type="checkbox" name="docs" value="{{ loop.index0 }}" {{ 'checked' if loop.index0 in (saved.get('docs') or []) }}> <span dir="auto">{{ x }}</span></label>{% else %}<i class="bi {{ 'bi-check2-square text-success' if loop.index0 in (saved.get('docs') or []) else 'bi-file-earmark-text text-muted' }} me-1"></i><span dir="auto">{{ x }}</span>{% endif %}</li>{% endfor %}</ul>
+        <div class="fw-bold text-danger-emphasis">{{ rc_loc('Red flags', 'مؤشرات الخطر') }}</div>
+        <ul class="list-unstyled mb-2 du-checklist">{% for x in g.red_flags or [] %}<li>{% if ln and du_can_edit %}<label class="form-check"><input class="form-check-input" type="checkbox" name="flags" value="{{ loop.index0 }}" {{ 'checked' if loop.index0 in (saved.get('flags') or []) }}> <span dir="auto">{{ x }}</span></label>{% else %}<i class="bi {{ 'bi-exclamation-triangle-fill text-danger' if loop.index0 in (saved.get('flags') or []) else 'bi-flag text-muted' }} me-1"></i><span dir="auto">{{ x }}</span>{% endif %}</li>{% endfor %}</ul>
+        {% if ln and du_can_edit %}
+          <div class="text-muted mb-1">{{ rc_loc('Tick what you asked and received, and any red flag present. Saved with your name and shown in the decision memo.', 'ضع علامة على ما سألت عنه وما استلمته وأي مؤشر خطر قائم. يُحفظ باسمك ويظهر في مذكرة القرار.') }}</div>
+          <textarea name="notes" class="form-control form-control-sm mb-1" rows="2" maxlength="2000" placeholder="{{ rc_loc('Notes: customer answers, documents received…', 'ملاحظات: إجابات العميل والمستندات المستلمة…') }}">{{ saved.get('notes') or '' }}</textarea>
+          <button class="btn btn-sm btn-outline-primary">{{ rc_loc('Save checklist', 'حفظ قائمة التحقق') }}</button>
+          {% if saved.get('by_name') %}<span class="text-muted ms-2">{{ saved.by_name }} · {{ (saved.get('at') or '')[:16]|replace('T', ' ') }}</span>{% endif %}
+        </form>
+        {% elif saved.get('notes') %}<div class="du-explain" dir="auto">{{ saved.notes }}</div>{% endif %}
+      </section>
+    </div>
+    <details class="mt-2"><summary class="text-muted"><span class="du-step-sm">5</span>{{ rc_loc('Sources and confidence', 'المصادر ودرجة الثقة') }}</summary>
+      {% if du_show_lists %}
+        <div class="mt-1" dir="ltr">{{ g.confidence }}</div>
+        <ul class="mb-0">{% for u in g.sources %}<li dir="ltr"><a href="{{ u }}" target="_blank" rel="noopener noreferrer">{{ u }}</a></li>{% endfor %}</ul>
+        <div class="text-muted"><i class="bi bi-shield-lock me-1"></i>{{ rc_loc('Source names and links are visible to the site administrator only.', 'أسماء المصادر وروابطها تظهر لمسؤول النظام فقط.') }}</div>
+      {% else %}
+        <div class="mt-1">{{ rc_loc('Based on the official legal texts and on international good-practice guidance for trade controls.', 'مبنية على النصوص القانونية الرسمية وعلى إرشادات الممارسة الدولية الجيدة للرقابة التجارية.') }} {{ rc_loc('Confidence:', 'درجة الثقة:') }} {{ rc_loc(*g.level[0]) }}.</div>
+      {% endif %}
+      <div class="text-muted mt-1">{{ rc_loc('Guidance supports your own assessment; it is not legal advice, a licence decision or a clearance.', 'الإرشادات تدعم تقييمك الخاص، وليست رأيًا قانونيًا ولا قرار ترخيص ولا إفراجًا.') }}</div>
+    </details>
+  </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{# One line for a search result: the category, the authority in short and a link to the full guidance. #}
+{% macro compact(gd, href) %}{% set g = gd.g %}{% if g %}
+<div class="du-guide-line small mt-1"><i class="bi bi-compass text-primary me-1"></i><span class="fw-semibold">{{ rc_loc('What to do', 'ماذا تفعل') }}:</span>
+  {% if g.no_authority %}{{ rc_loc('no specific Egyptian authority — apply international practice', 'لا توجد جهة مصرية محددة — طبّق الممارسة الدولية') }}{% else %}<span dir="auto">{{ (g.egyptian_authority or '')[:150] }}{% if (g.egyptian_authority or '')|length > 150 %}…{% endif %}</span>{% endif %}
+  · <a href="{{ href }}">{{ rc_loc('Full guidance and threshold check', 'الإرشادات كاملة والتحقق من الحد') }}</a></div>
+{% endif %}{% endmacro %}

@@ -46,10 +46,13 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body class="{% block body_class %}{% endblock %}">
+{# Restricted workspace (per-user access control): no CMS sidebar or navbar, only the granted modules. #}
+{% set _cx_restricted = current_user.is_authenticated and cx_restricted is defined and cx_restricted() %}
+<body class="{% block body_class %}{% endblock %}{% if _cx_restricted %} cx-ws-body{% endif %}">
+    {% if _cx_restricted %}<link rel="stylesheet" href="{{ static_v('css/access.css') }}">{% endif %}
     <div class="app-wrapper">
         <!-- Sidebar Container -->
-        {% if current_user.is_authenticated %}
+        {% if current_user.is_authenticated and not _cx_restricted %}
         <div class="sidebar-container">
             {% include 'partials/sidebar.html' %}
         </div>
@@ -58,7 +61,7 @@
         <!-- Main Wrapper (Navbar + Content + Footer) -->
         <div class="main-wrapper">
             <!-- Navbar -->
-            {% include 'partials/navbar.html' %}
+            {% if _cx_restricted %}{% include 'access/_bar.html' %}{% else %}{% include 'partials/navbar.html' %}{% endif %}
 
             <!-- Main Content Area -->
             <main class="main-content">
@@ -68,7 +71,7 @@
                     <span>{{ _('Demo environment: every company, person and figure here is fictional.') }}</span>
                 </div>
                 {% endif %}
-                {% include 'partials/breadcrumbs.html' %}
+                {% if not _cx_restricted %}{% include 'partials/breadcrumbs.html' %}{% endif %}
                 
                 <!-- Flash Messages -->
                 {% with messages = get_flashed_messages(with_categories=true) %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Vessel list updates') }}{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4 px-lg-5">
+  {% with title=_('Vessel list updates'), active='updates' %}{% include 'vessels/_nav.html' %}{% endwith %}
+  <div class="alert alert-info small">{{ _('The vessel lists are updated automatically with the sanctions lists (daily schedule). Each refresh records the ships added, removed and changed since the previous one.') }}</div>
+
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+    <h6 class="fw-bold">{{ _('Lists with ships') }}</h6>
+    <div class="table-responsive"><table class="table table-sm small align-middle mb-0">
+      <thead class="table-light"><tr><th>{{ _('List') }}</th><th>{{ _('Last update') }}</th><th>{{ _('Active ship records') }}</th><th>{{ _('Sanctioned') }}</th><th>{{ _('Banned / excluded') }}</th><th>{{ _('Risk record only') }}</th><th>{{ _('Schedule') }}</th></tr></thead>
+      <tbody>{% for s in sources %}<tr>
+        <td>{% if is_superadmin %}{{ s.source }}{% else %}{{ _('List') }} {{ loop.index }}{% endif %}{% if s.error and is_superadmin %}<div class="text-danger">{{ s.error[:120] }}</div>{% endif %}</td>
+        <td>{{ (s.last_update|string)[:16] if s.last_update else '-' }}</td><td>{{ s.active }}</td><td>{{ s.sanction }}</td><td>{{ s.ban }}</td><td>{{ s.risk_only }}</td>
+        <td>{% if s.every_hours %}{{ _('every') }} {{ s.every_hours }} h{% else %}{{ _('daily') }}{% endif %}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% if is_superadmin %}
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <form method="post" action="{{ url_for('vessels.updates_check') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-cloud-arrow-down me-1"></i>{{ _('Check for updates now') }}</button></form>
+      <form method="post" action="{{ url_for('vessels.updates_rebuild') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="bi bi-arrow-repeat me-1"></i>{{ _('Rebuild the vessel tables (no download)') }}</button></form>
+    </div>
+    <form method="post" action="{{ url_for('vessels.updates_upload') }}" enctype="multipart/form-data" class="row g-2 align-items-end mt-2 small">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="col-md-3"><label class="form-label mb-0" for="uf">{{ _('Vessel list file (CSV, Excel or the page saved as HTML)') }}</label><input class="form-control form-control-sm" type="file" id="uf" name="file" accept=".csv,.xlsx,.html,.htm" required></div>
+      <div class="col-md-2"><label class="form-label mb-0" for="us">{{ _('List code (ends with _vessels)') }}</label><input class="form-control form-control-sm" id="us" name="source" pattern="[a-z][a-z0-9_]{2,40}_vessels" required></div>
+      <div class="col-md-3"><label class="form-label mb-0" for="ul">{{ _('List name') }}</label><input class="form-control form-control-sm" id="ul" name="label"></div>
+      <div class="col-md-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="apply" value="1" id="ua"><label class="form-check-label" for="ua">{{ _('Apply (else dry run)') }}</label></div></div>
+      <div class="col-md-2"><button class="btn btn-outline-primary btn-sm w-100" type="submit"><i class="bi bi-upload me-1"></i>{{ _('Upload') }}</button></div>
+    </form>
+    {% endif %}
+  </div></div>
+
+  <div class="row g-3">
+    <div class="col-lg-4"><div class="card border-0 shadow-sm"><div class="card-body small">
+      <h6 class="fw-bold">{{ _('Refreshes') }}</h6>
+      <table class="table table-sm mb-0"><thead><tr><th>{{ _('Date') }}</th><th>{{ _('Added') }}</th><th>{{ _('Removed') }}</th><th>{{ _('Changed') }}</th></tr></thead><tbody>
+        {% for r in runs %}<tr class="{{ 'table-primary' if r.id == run_id }}"><td><a href="{{ url_for('vessels.updates', run=r.id) }}">{{ r.started_at.strftime('%Y-%m-%d %H:%M') if r.started_at else '' }}</a>
+          <div class="text-muted">{{ r.trigger }}{% if is_superadmin and r.source %} · {{ r.source }}{% endif %}{% if r.by_name %} · {{ r.by_name }}{% endif %}{% if r.status != 'done' %} · {{ r.status }}{% endif %}{% if r.message %} · {{ r.message }}{% endif %}</div></td>
+          <td>{{ r.added }}</td><td>{{ r.removed }}</td><td>{{ r.changed }}</td></tr>
+        {% else %}<tr><td colspan="4" class="text-muted">{{ _('No refresh yet.') }}</td></tr>{% endfor %}</tbody></table>
+    </div></div></div>
+    <div class="col-lg-8"><div class="card border-0 shadow-sm"><div class="card-body small">
+      <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="fw-bold mb-0">{{ _('What changed') }}</h6>
+        <div>{% for ch, lbl in [('', _('All')), ('added', _('Added')), ('removed', _('Removed')), ('changed', _('Changed'))] %}
+          <a class="btn btn-sm {{ 'btn-secondary' if change == ch else 'btn-outline-secondary' }}" href="{{ url_for('vessels.updates', run=run_id, change=ch) }}">{{ lbl }}</a>{% endfor %}</div></div>
+      <table class="table table-sm table-hover mb-0"><thead><tr><th></th><th>{{ _('Ship') }}</th><th>{{ _('IMO number') }}</th><th>{{ _('Status') }}</th><th>{{ _('Details') }}</th></tr></thead><tbody>
+        {% for c in changes %}<tr><td><span class="badge {{ 'bg-success' if c.change == 'added' else 'bg-secondary' if c.change == 'removed' else 'bg-info text-dark' }}">{{ _(c.change|capitalize) }}</span></td>
+          <td>{% if c.watchlist_id %}<a href="{{ url_for('vessels.profile', wid=c.watchlist_id) }}">{{ c.name }}</a>{% else %}{{ c.name }}{% endif %}</td><td>{{ c.imo or '' }}</td><td>{{ vessel_status(c.provenance) }}</td>
+          <td>{% for f, v in c.detail.items() %}<div><span class="text-muted">{{ vessel_field(f) }}:</span> {{ v[0] or '-' }} → {{ v[1] or '-' }}</div>{% endfor %}</td></tr>
+        {% else %}<tr><td colspan="5" class="text-muted">{{ _('No change in this refresh.') }}</td></tr>{% endfor %}</tbody></table>
+    </div></div></div>
+  </div>
+</div>
+{% endblock %}

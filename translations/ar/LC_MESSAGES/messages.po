@@ -45548,3 +45548,355 @@ msgstr "الملف كبير جدًا: الحد الأقصى %(n)s صف و%(mb)s 
 
 msgid "Dual-use goods"
 msgstr "السلع مزدوجة الاستخدام"
+
+msgid "The update of the vessel lists has started in the background. Refresh this page in a few minutes."
+msgstr "بدأ تحديث قوائم السفن في الخلفية. أعد تحميل هذه الصفحة بعد بضع دقائق."
+
+msgid "Vessel tables rebuilt: %(n)s ships, %(a)s added, %(r)s removed, %(c)s changed."
+msgstr "أعيد بناء جداول السفن: %(n)s سفينة، أضيفت %(a)s، حذفت %(r)s، تغيرت %(c)s."
+
+msgid "Choose a file."
+msgstr "اختر ملفًا."
+
+msgid "The file is too large."
+msgstr "الملف كبير جدًا."
+
+msgid "%(mode)s: %(n)s ships read (%(i)s with IMO), %(d)s would be / were deactivated."
+msgstr "%(mode)s: قرئت %(n)s سفينة (%(i)s برقم IMO)، و%(d)s سيتم / تم إلغاء تفعيلها."
+
+msgid "Dry run, nothing saved"
+msgstr "تجربة، لم يُحفظ شيء"
+
+msgid "The file was refused: %(why)s"
+msgstr "رُفض الملف: %(why)s"
+
+msgid "The file could not be read."
+msgstr "تعذرت قراءة الملف."
+
+#: access (per-user access control)
+msgid "Access & permissions"
+msgstr "الوصول والصلاحيات"
+
+#: access (per-user access control)
+msgid "Access change log"
+msgstr "سجل تغييرات الوصول"
+
+#: access (per-user access control)
+msgid "Access copied from %(name)s: %(a)s granted, %(r)s removed."
+msgstr "تم نسخ الوصول من %(name)s: مُنح %(a)s وأُزيل %(r)s."
+
+#: access (per-user access control)
+msgid "Access saved: %(a)s granted, %(r)s removed."
+msgstr "تم حفظ الوصول: مُنح %(a)s وأُزيل %(r)s."
+
+#: access (per-user access control)
+msgid "Access type"
+msgstr "نوع الوصول"
+
+#: access (per-user access control)
+msgid "All access changes"
+msgstr "كل تغييرات الوصول"
+
+#: access (per-user access control)
+msgid "All features of"
+msgstr "كل خصائص"
+
+#: access (per-user access control)
+msgid "All users"
+msgstr "كل المستخدمين"
+
+#: access (per-user access control)
+msgid "Back to my home page"
+msgstr "العودة إلى صفحتي الرئيسية"
+
+#: access (per-user access control)
+msgid "CMS access level"
+msgstr "مستوى الوصول إلى النظام"
+
+#: access (per-user access control)
+msgid "CMS back-office"
+msgstr "النظام الخلفي (CMS)"
+
+#: access (per-user access control)
+msgid "CMS dashboard"
+msgstr "لوحة النظام الرئيسية"
+
+#: access (per-user access control)
+msgid "Change log"
+msgstr "سجل التغييرات"
+
+#: access (per-user access control)
+msgid "Changed by"
+msgstr "تم التغيير بواسطة"
+
+#: access (per-user access control)
+msgid "Choose another user to copy from."
+msgstr "اختر مستخدماً آخر للنسخ منه."
+
+#: access (per-user access control)
+msgid "Choose where this user works: CMS, employee portal or restricted workspace."
+msgstr "اختر مكان عمل هذا المستخدم: النظام الخلفي أو بوابة الموظفين أو مساحة العمل المقيدة."
+
+#: access (per-user access control)
+msgid "Clear all"
+msgstr "إلغاء الكل"
+
+#: access (per-user access control)
+msgid "Compliance staff: the CMS dashboard and menu, limited to the ticked modules."
+msgstr "فريق الالتزام: لوحة النظام وقائمته، مقصورة على الوحدات المحددة."
+
+#: access (per-user access control)
+msgid "Copied"
+msgstr "منسوخ"
+
+#: access (per-user access control)
+msgid "Copy access from user"
+msgstr "نسخ الوصول من مستخدم"
+
+#: access (per-user access control)
+msgid "Copy from user…"
+msgstr "نسخ من مستخدم…"
+
+#: access (per-user access control)
+msgid "Effective access preview"
+msgstr "معاينة الوصول الفعلي"
+
+#: access (per-user access control)
+msgid "Employee portal"
+msgstr "بوابة الموظفين"
+
+#: access (per-user access control)
+msgid "Every change to a user's access: who changed it, when, and exactly what was granted or removed."
+msgstr "كل تغيير في وصول المستخدم: من غيّره ومتى وما الذي مُنح أو أُزيل بالضبط."
+
+#: access (per-user access control)
+msgid "Existing access written as explicit grants"
+msgstr "تسجيل الوصول القائم كصلاحيات صريحة"
+
+#: access (per-user access control)
+msgid "External or limited users: a clean page with only the ticked modules. No CMS, no portal; every other address is refused."
+msgstr "للمستخدمين الخارجيين أو المحدودين: صفحة نظيفة بالوحدات المحددة فقط. بلا نظام خلفي ولا بوابة؛ وأي عنوان آخر يُرفض."
+
+#: access (per-user access control)
+msgid "General CMS pages: view & edit"
+msgstr "صفحات النظام العامة: عرض وتعديل"
+
+#: access (per-user access control)
+msgid "General CMS pages: view only"
+msgstr "صفحات النظام العامة: عرض فقط"
+
+#: access (per-user access control)
+msgid "Lands on"
+msgstr "يبدأ من"
+
+#: access (per-user access control)
+msgid "Migrated (no change)"
+msgstr "تم الترحيل (دون تغيير)"
+
+#: access (per-user access control)
+msgid "My modules"
+msgstr "وحداتي"
+
+#: access (per-user access control)
+msgid "My profile"
+msgstr "ملفي الشخصي"
+
+#: access (per-user access control)
+msgid "My workspace"
+msgstr "مساحة عملي"
+
+#: access (per-user access control)
+msgid "No CMS dashboard. The portal shows only the ticked portal items and modules."
+msgstr "بلا لوحة النظام. تعرض البوابة عناصر البوابة والوحدات المحددة فقط."
+
+#: access (per-user access control)
+msgid "No access change recorded yet."
+msgstr "لم يُسجل أي تغيير في الوصول بعد."
+
+#: access (per-user access control)
+msgid "No module is enabled for your account yet"
+msgstr "لم تُفعّل أي وحدة لحسابك بعد"
+
+#: access (per-user access control)
+msgid "No module or feature matches your search."
+msgstr "لا توجد وحدة أو خاصية مطابقة لبحثك."
+
+#: access (per-user access control)
+msgid "Nothing is ticked: the user will only see an empty workspace."
+msgstr "لم يُحدد شيء: سيرى المستخدم مساحة عمل فارغة فقط."
+
+#: access (per-user access control)
+msgid "Pages and actions allowed"
+msgstr "الصفحات والإجراءات المسموح بها"
+
+#: access (per-user access control)
+msgid "Pages and actions covered"
+msgstr "الصفحات والإجراءات المشمولة"
+
+#: access (per-user access control)
+msgid "Please contact your administrator to request access."
+msgstr "يرجى التواصل مع مسؤول النظام لطلب الوصول."
+
+#: access (per-user access control)
+msgid "Portal"
+msgstr "البوابة"
+
+#: access (per-user access control)
+msgid "Reason for the change (kept in the change log)"
+msgstr "سبب التغيير (يُحفظ في سجل التغييرات)"
+
+#: access (per-user access control)
+msgid "Recent access changes"
+msgstr "أحدث تغييرات الوصول"
+
+#: access (per-user access control)
+msgid "Replace this user's access with the chosen user's access?"
+msgstr "استبدال وصول هذا المستخدم بوصول المستخدم المختار؟"
+
+#: access (per-user access control)
+msgid "Restricted workspace"
+msgstr "مساحة عمل مقيدة"
+
+#: access (per-user access control)
+msgid "Restricted workspace (only the modules below)"
+msgstr "مساحة عمل مقيدة (الوحدات أدناه فقط)"
+
+#: access (per-user access control)
+msgid "Save access"
+msgstr "حفظ الوصول"
+
+#: access (per-user access control)
+msgid "Search modules and features"
+msgstr "البحث في الوحدات والخصائص"
+
+#: access (per-user access control)
+msgid "Search modules and features…"
+msgstr "ابحث في الوحدات والخصائص…"
+
+#: access (per-user access control)
+msgid "System (migration)"
+msgstr "النظام (الترحيل)"
+
+#: access (per-user access control)
+msgid "The superadmin is unrestricted; there is nothing to save."
+msgstr "المسؤول الأعلى غير مقيد؛ لا يوجد ما يُحفظ."
+
+#: access (per-user access control)
+msgid "These are the tools your administrator has enabled for your account."
+msgstr "هذه هي الأدوات التي فعّلها مسؤول النظام لحسابك."
+
+#: access (per-user access control)
+msgid "This account is the platform superadmin: it is unrestricted and has every module and feature."
+msgstr "هذا الحساب هو المسؤول الأعلى للمنصة: غير مقيد ويملك كل الوحدات والخصائص."
+
+#: access (per-user access control)
+msgid "This page is not available for your account"
+msgstr "هذه الصفحة غير متاحة لحسابك"
+
+#: access (per-user access control)
+msgid "Tick all"
+msgstr "تحديد الكل"
+
+#: access (per-user access control)
+msgid "Tick exactly what this user may see and do. Anything not ticked is hidden from the menus and refused by URL."
+msgstr "حدّد بدقة ما يمكن لهذا المستخدم رؤيته وفعله. أي شيء غير محدد يُخفى من القوائم ويُرفض عند فتحه برابط مباشر."
+
+#: access (per-user access control)
+msgid "User details"
+msgstr "بيانات المستخدم"
+
+#: access (per-user access control)
+msgid "Welcome"
+msgstr "مرحباً"
+
+#: access (per-user access control)
+msgid "What this user will see after saving."
+msgstr "ما سيراه هذا المستخدم بعد الحفظ."
+
+#: access (per-user access control)
+msgid "Where does this user work?"
+msgstr "أين يعمل هذا المستخدم؟"
+
+#: access (per-user access control)
+msgid "Workspace"
+msgstr "مساحة العمل"
+
+#: access (per-user access control)
+msgid "You cannot remove your own access to the CMS or to users and access rights."
+msgstr "لا يمكنك إزالة وصولك أنت إلى النظام أو إلى إدارة المستخدمين وصلاحيات الوصول."
+
+#: access (per-user access control)
+msgid "Your administrator has not enabled this feature for you. If you need it, please ask them to grant access."
+msgstr "لم يفعّل مسؤول النظام هذه الخاصية لك. إن كنت بحاجة إليها فاطلب منه منحك الوصول."
+
+#: access (per-user access control)
+msgid "Your modules"
+msgstr "وحداتك"
+
+#: access (per-user access control)
+msgid "Your workspace"
+msgstr "مساحة عملك"
+
+#: access (per-user access control)
+msgid "features"
+msgstr "خاصية"
+
+#: access (per-user access control)
+msgid "modules"
+msgstr "وحدة"
+
+#: access (per-user access control)
+msgid "E-mail the user a welcome message with their sign-in link"
+msgstr "إرسال رسالة ترحيب بالبريد الإلكتروني إلى المستخدم تتضمن رابط تسجيل الدخول"
+
+#: access (per-user access control)
+msgid "The link opens the right sign-in page for the access type (a restricted user lands on their workspace). The temporary password is never e-mailed: it is shown to you once after saving, to hand over through a separate channel."
+msgstr "يفتح الرابط صفحة تسجيل الدخول المناسبة لنوع الوصول (المستخدم المقيد يصل إلى مساحة عمله). لا تُرسل كلمة المرور المؤقتة بالبريد أبداً: تُعرض لك مرة واحدة بعد الحفظ لتسليمها عبر قناة منفصلة."
+
+#: access (per-user access control)
+msgid "Welcome e-mail with the sign-in link sent to %(email)s."
+msgstr "تم إرسال رسالة الترحيب ورابط تسجيل الدخول إلى %(email)s."
+
+#: access (per-user access control)
+msgid "The welcome e-mail could not be sent; give the user the sign-in link: %(url)s"
+msgstr "تعذّر إرسال رسالة الترحيب؛ أعطِ المستخدم رابط تسجيل الدخول: %(url)s"
+
+#: access (per-user access control)
+msgid "Sign-in link"
+msgstr "رابط تسجيل الدخول"
+
+#: access (per-user access control)
+msgid "Workspace sign-in"
+msgstr "تسجيل الدخول إلى مساحة العمل"
+
+#: access (per-user access control)
+msgid "Sign in to your workspace"
+msgstr "سجّل الدخول إلى مساحة عملك"
+
+#: access (per-user access control)
+msgid "Use the e-mail address and the temporary password your administrator gave you. You will choose your own password at the first sign-in."
+msgstr "استخدم البريد الإلكتروني وكلمة المرور المؤقتة التي أعطاك إياها مسؤول النظام. ستختار كلمة مرورك الخاصة عند أول تسجيل دخول."
+
+#: access (per-user access control)
+msgid "Sign in"
+msgstr "تسجيل الدخول"
+
+#: access (per-user access control)
+msgid "Nothing to do here yet"
+msgstr "لا يوجد ما تقوم به هنا بعد"
+
+#: access (per-user access control)
+msgid "No portal item or module is enabled for your account. If you need one, please ask your administrator."
+msgstr "لم يُفعّل أي عنصر من البوابة أو أي وحدة لحسابك. إن احتجت إلى أحدها فاطلبه من مسؤول النظام."
+
+#: access (per-user access control)
+msgid "This is your own account: your access is shown read-only. Another administrator must change it."
+msgstr "هذا حسابك أنت: يُعرض وصولك للقراءة فقط، ويجب أن يغيّره مسؤول آخر."
+
+#: access (per-user access control)
+msgid "Only the platform superadmin can change this."
+msgstr "يستطيع المسؤول الأعلى للمنصة وحده تغيير هذا."
+
+#: access (per-user access control)
+msgid "You cannot change your own access. Ask another administrator."
+msgstr "لا يمكنك تغيير وصولك أنت. اطلب ذلك من مسؤول آخر."

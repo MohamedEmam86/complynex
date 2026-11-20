@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ _('My workspace') }} - {{ company_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ static_v('css/access.css') }}">{% endblock %}
+{% block content %}
+<div class="cx-ws">
+  <section class="cx-ws-hero">
+    <p class="cx-ws-hero__eyebrow">{{ _('Welcome') }}, {{ current_user.first_name }}</p>
+    <h1 class="cx-ws-hero__title">{{ _('Your workspace') }}</h1>
+    <p class="cx-ws-hero__lead">{{ _('These are the tools your administrator has enabled for your account.') }}</p>
+  </section>
+
+  {% if tiles %}
+  <section class="cx-ws-grid" aria-label="{{ _('Your modules') }}">
+    {% for t in tiles %}
+    <a class="cx-ws-tile" href="{{ t.url }}">
+      <span class="cx-ws-tile__icon"><i class="bi {{ t.icon }}" aria-hidden="true"></i></span>
+      <span class="cx-ws-tile__body">
+        <span class="cx-ws-tile__title">{{ t.label }}</span>
+        {% if t.desc %}<span class="cx-ws-tile__desc">{{ t.desc }}</span>{% endif %}
+        <span class="cx-ws-tile__chips">
+          {% for f in t.features[:6] %}<span class="cx-chip">{{ f }}</span>{% endfor %}
+          {% if t.features|length > 6 %}<span class="cx-chip cx-chip--more">+{{ t.features|length - 6 }}</span>{% endif %}
+        </span>
+      </span>
+      <i class="bi bi-arrow-right cx-ws-tile__go" aria-hidden="true"></i>
+    </a>
+    {% endfor %}
+  </section>
+  {% else %}
+  <section class="cx-ws-empty">
+    <i class="bi bi-lock" aria-hidden="true"></i>
+    <h2>{{ _('No module is enabled for your account yet') }}</h2>
+    <p>{{ _('Please contact your administrator to request access.') }}</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

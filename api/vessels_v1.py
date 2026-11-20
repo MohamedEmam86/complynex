@@ -12,7 +12,8 @@ limit, Idempotency-Key, X-Request-Id, one error shape, sandbox keys):
 
 Body: {"name", "imo", "mmsi", "call_sign", "flag", "flags_past" (list or ";"-separated), "owner",
 "vessel_type", "customer_ref"} - at least one of name / imo / mmsi / call_sign / owner.
-The answer never names a list: hits are on "International approved lists" (owner decision, 17 Nov 2026).
+The answer never names a list: hits say what the ship is (alert_type, status), its generic regimes, and
+"Official sanctions lists" (owner decisions 17 and 19 Nov 2026).
 The system alerts and records; it never blocks or freezes anything.
 """
 import json
@@ -27,7 +28,8 @@ from database.db import get_db
 logger = logging.getLogger(__name__)
 FIELDS = ('name', 'imo', 'mmsi', 'call_sign', 'flag', 'owner', 'vessel_type')
 SCOPE = 'vessels:screen'
-LABEL = 'International approved lists'
+LABEL = 'Official sanctions lists'
+BAN_LABEL = 'Official ban / exclusion lists'
 
 
 def _en(items):
@@ -41,27 +43,42 @@ def _category(o):
     return list_category(o.get('list_type_raw') or o.get('list_type'))
 
 
+def _verdict(res):
+    from screening.vessel_guidance import verdict
+    v = verdict(res, 'en')
+    return {'code': v['code'], 'text': v['text']}
+
+
+def _hit(h):
+    return {'vessel_id': h['watchlist_id'], 'name': h['name'], 'matched_name': h.get('matched_name'),
+            'alert_type': h.get('alert_type') or 'sanction',
+            'imo': h.get('imo'), 'mmsi': h.get('mmsi'), 'call_sign': h.get('call_sign'), 'flag': h.get('flag'),
+            'former_flags': h.get('flags_past') or [], 'type': h.get('type'), 'year_built': h.get('year_built'),
+            'score': h['score'], 'tier': h['tier'], 'layer': h['layer'],
+            'explanation': _en(h.get('explanation')),
+            'explanation_codes': [e.get('code') for e in h.get('explanation') or [] if isinstance(e, dict)],
+            'fields': h.get('fields') or {}, 'measures': h.get('measures') or [],
+            'list_count': len(h.get('sources') or []) or 1,
+            'lists': BAN_LABEL if h.get('alert_type') == 'ban' else LABEL,
+            'status': h.get('provenance') or 'SANCTION', 'regimes': h.get('regimes') or [],
+            'parties': [{'name': p.get('name'), 'role': p.get('role'), 'listed': bool(p.get('party_listed'))}
+                        for p in (h.get('parties') or [])[:20]],
+            'reopened': bool(h.get('reopened'))}
+
+
 def _view(sid, res, customer_ref, sandbox=False):
     """API body of a vessel screening; no list names, no internal ids beyond the ship's own record id."""
     return {
         'id': sid, 'object': 'vessel_screening', 'sandbox': sandbox, 'customer_ref': customer_ref,
-        'status': res['tier'], 'score': res['score'],
-        'requires_review': bool(res['hits'] or res['owner_hits']),
+        'status': res['tier'], 'score': res['score'], 'verdict': _verdict(res),
+        'requires_review': bool(res['hits'] or res['owner_hits'] or res.get('ban_hits')),
         'query': res['query'], 'warnings': _en(res.get('warnings')),
-        'hits': [{'vessel_id': h['watchlist_id'], 'name': h['name'], 'matched_name': h.get('matched_name'),
-                  'imo': h.get('imo'), 'mmsi': h.get('mmsi'), 'call_sign': h.get('call_sign'), 'flag': h.get('flag'),
-                  'former_flags': h.get('flags_past') or [], 'type': h.get('type'), 'year_built': h.get('year_built'),
-                  'score': h['score'], 'tier': h['tier'], 'layer': h['layer'],
-                  'explanation': _en(h.get('explanation')),
-                  'explanation_codes': [e.get('code') for e in h.get('explanation') or [] if isinstance(e, dict)],
-                  'fields': h.get('fields') or {}, 'measures': h.get('measures') or [],
-                  'list_count': len(h.get('sources') or []) or 1, 'lists': LABEL,
-                  'parties': [{'name': p.get('name'), 'role': p.get('role'), 'listed': bool(p.get('party_listed'))}
-                              for p in (h.get('parties') or [])[:20]],
-                  'reopened': bool(h.get('reopened'))}
-                 for h in res['hits']],
+        'hits': [_hit(h) for h in res['hits']],
+        'ban_hits': [_hit(h) for h in res.get('ban_hits') or []],
         'owner_hits': [{'name': o['name'], 'entered': o.get('query'), 'score': o['score'], 'tier': o['tier'],
-                        'category': _category(o), 'lists': LABEL} for o in res['owner_hits']],
+                        'category': _category(o), 'lists': LABEL, 'records': o.get('records') or 1}
+                       for o in res['owner_hits']],
+        'related_hulls': [{'name': r['name'], 'imo': r.get('imo')} for r in res.get('related_hulls') or []],
         'cleared_before': [{'name': s['name'], 'imo': s.get('imo'), 'score': s['score']}
                            for s in res.get('suppressed') or []],
         'risk': {'score': res['risk']['score'], 'indicators': _en(res['risk']['lines']),

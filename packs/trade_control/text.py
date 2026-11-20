@@ -247,6 +247,23 @@ def number(s):
     return float(s.replace(',', '.'))
 
 
+# Ways of writing a mass fraction -> (factor to %): '34 % N', '% w/w', 'wt%', 'percent', '340 g/kg', 'ppm'.
+_PERCENT = re.compile(r'^(?:%|٪|pct|per\s*cent|percent)\s*(?:\(?\s*(?:w\s*/\s*w|m\s*/\s*m|wt|by\s+(?:weight|mass))\s*\)?)?'
+                      r'\s*(?:n|nitrogen|of\s+nitrogen)?\.?$|^(?:wt|w/w|mass)\s*\.?\s*(?:%|٪|percent)$', re.I)
+FRACTION_UNITS = {'g/kg': 0.1, 'g / kg': 0.1, 'mg/kg': 0.0001, 'ppm': 0.0001, 'ppmw': 0.0001, 'g/100 g': 1.0,
+                  'g/100g': 1.0}
+
+
+def percent_factor(unit):
+    """Factor that turns a value written with `unit` into % (mass fraction), or None when it is not one."""
+    u = re.sub(r'\s+', ' ', (unit or '').strip().lower())
+    if not u:
+        return None
+    if _PERCENT.match(u):
+        return 1.0
+    return FRACTION_UNITS.get(u)
+
+
 def _unit_key(u):
     u = (u or '').strip().replace('μ', 'µ')
     u = AR_UNITS.get(norm_ar(u), u)
@@ -266,6 +283,10 @@ def to_base(value, unit):
         return None, None
     u = _unit_key(unit)
     if not u:
+        pf = percent_factor(unit)
+        if pf is not None and '%' in UNIT_TABLE:
+            base, f = UNIT_TABLE['%']
+            return float(value) * pf * f, base
         return None, None
     base, f = UNIT_TABLE[u]
     return float(value) * f, base
@@ -318,15 +339,29 @@ def snippet(text, terms, width=220):
     start = max(0, pos - width // 3) if pos >= 0 else 0
     end = min(len(text), start + width)
     piece = text[start:end]
-    esc = _h.escape(piece)
+    # spans are found on the plain text, merged when they overlap, and the text is escaped piece by piece, so
+    # the marks never nest and never split an HTML entity
+    spans = []
     for t in sorted({t for t in terms if len(t) >= 2}, key=len, reverse=True):
         try:
             tail = r'[a-z]*' if re.fullmatch(r'[a-z]+', t) else ''      # a stem marks the whole word
-            esc = re.sub(r'(?<![a-z&#])(' + _fold_pattern(t) + tail + ')', r'<mark>\1</mark>', esc, flags=re.I)
+            spans += [(m.start(), m.end()) for m in re.finditer(r'(?<![a-z&#])(' + _fold_pattern(t) + tail + ')', piece,
+                                                                flags=re.I) if m.end() > m.start()]
         except re.error:
             continue
-    esc = re.sub(r'(<mark>)+', '<mark>', re.sub(r'(</mark>)+', '</mark>', esc))
-    return ('…' if start > 0 else '') + esc + ('…' if end < len(text) else '')
+    merged = []
+    for a, b in sorted(spans):
+        if merged and a <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], b)
+        else:
+            merged.append([a, b])
+    out, pos = [], 0
+    for a, b in merged:
+        out.append(_h.escape(piece[pos:a]))
+        out.append('<mark>' + _h.escape(piece[a:b]) + '</mark>')
+        pos = b
+    out.append(_h.escape(piece[pos:]))
+    return ('…' if start > 0 else '') + ''.join(out) + ('…' if end < len(text) else '')
 
 
 def _fold_pattern(t):

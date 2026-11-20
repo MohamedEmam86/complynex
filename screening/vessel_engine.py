@@ -51,13 +51,28 @@ DEFAULTS = {
     'owner_bonus': 4.0,            # the declared owner is the listed ship's owner, on a name hit
     'name_hit_max': 94.0,          # a name hit never reaches CONFIRMED by itself
     'single_word_min': 97.0,       # a one-word name (TRIUMPH, MARINA) alerts only when it is the same word ...
-    'single_word_max': 75.0,       # ... and then only for review (LOW): thousands of ships carry such names
+    'single_word_max': 75.0,       # ... and a COMMON one-word name stays review (LOW): many ships carry it
+    'single_word_rare_score': 85.0,  # an exact one-word name that is rare in the fleet sample: potential match
+    'common_name_hulls': 3,        # a one-word name carried now by this many distinct hulls (or more) across
+                                   # EVERY vessel record held (sanctions, bans, port-state control, analysis:
+                                   # a sample of the world fleet) is a common ship name: review, IMO needed
+    # common ship words: maritime vocabulary used as ship names the world over, common whatever the sample
+    # holds (editable in screening_config 'vessel_engine'). Names, mythology and virtues are NOT listed here:
+    # how common they are is measured from the data (common_name_hulls).
+    'common_ship_words': ['ADMIRAL', 'ANCHOR', 'ARCTIC', 'ATLANTIC', 'BALTIC', 'BREEZE', 'CAPTAIN', 'CARGO',
+                          'CARRIER', 'COMMODORE', 'CORAL', 'CRUISER', 'DOLPHIN', 'EXPLORER', 'EXPRESS', 'FERRY',
+                          'HARBOR', 'HARBOUR', 'HORIZON', 'ISLAND', 'LAGOON', 'MARINA', 'MARINE', 'MARINER',
+                          'MARITIME', 'NAVIGATOR', 'NEPTUNE', 'OCEAN', 'OCEANIC', 'PACIFIC', 'PEARL', 'PILOT',
+                          'PIONEER', 'PORT', 'POSEIDON', 'SAILOR', 'SEA', 'SEAWAY', 'SHIP', 'SKIPPER', 'STAR',
+                          'TANKER', 'TIDE', 'TRADER', 'TRITON', 'TUG', 'VOYAGER', 'WAVE'],
+    'typo_score': 85.0,            # a distinctive multi-word name with one keying error (ERERNAL 8): potential
     'near_imo_score': 75.0,        # an IMO failing its check digit one keying error from a listed IMO: review
     'near_imo_name_score': 90.0,   # ... with the same name as well: an obvious typo of that ship's IMO
     'conflict_review_score': 75.0, # same name, different valid IMO that no list knows (possible false IMO): review
     'owner_weight': 0.95,          # the screening's score from a listed owner
     'risk': {'invalid_imo': 20, 'invalid_mmsi': 10, 'foc': 15, 'high_risk_flag': 25, 'false_flag': 30,
-             'flag_changes': 15, 'listed_flag_changes': 10, 'listed_renamed': 5, 'owner_listed': 40},
+             'flag_changes': 15, 'listed_flag_changes': 10, 'listed_renamed': 5, 'owner_listed': 40,
+             'psc': 10, 'psc_repeated': 10, 'intel': 5},
 }
 
 
@@ -86,6 +101,9 @@ def _merge(cfg, upd):
                         cfg[k][k2] = float(v2)
                     except (TypeError, ValueError):
                         pass
+        elif isinstance(cfg[k], list):
+            if isinstance(v, list):
+                cfg[k] = [str(x) for x in v if str(x).strip()][:500]
         else:
             try:
                 cfg[k] = float(v)
@@ -146,7 +164,13 @@ _TEXT = {
     'whitelisted': ('Cleared before as a false match by {who} on {when}; nothing has changed since',
                     'تم استبعادها سابقًا كتطابق خاطئ بواسطة {who} بتاريخ {when}، ولم يتغير شيء منذ ذلك'),
     'reopened': ('Re-opened: cleared on {when}, but {why}', 'أُعيد فتحها: تم استبعادها بتاريخ {when}، لكن {why_ar}'),
+    'ban_record': ('Banned or excluded ship (port ban, exclusion or import ban): not a sanctions listing',
+                   'سفينة محظورة أو مستبعدة (حظر موانئ أو استبعاد أو حظر استيراد): ليست إدراجًا على قائمة عقوبات'),
     # risk lines
+    'r_psc': ('Port-state-control record: detained or inspected with deficiencies ({n} record(s)); a risk '
+              'factor, not a listing', 'سجل رقابة دولة الميناء: احتجاز أو تفتيش بملاحظات ({n} سجل)؛ عامل مخاطر وليس إدراجًا'),
+    'r_intel': ('Mentioned in analytical or press material about sanctions; a risk note, not a listing',
+                'مذكورة في مواد تحليلية أو صحفية عن العقوبات؛ ملاحظة مخاطر وليست إدراجًا'),
     'r_invalid_imo': ('IMO number fails its check digit (possibly false or mistyped)',
                       'رقم IMO لا يجتاز رقم التحقق (قد يكون مزيفًا أو خطأ في الإدخال)'),
     'r_invalid_mmsi': ('MMSI is not a ship station number (first digit not 2-7)', 'رقم MMSI ليس رقم محطة سفينة (الرقم الأول ليس 2-7)'),
@@ -163,8 +187,18 @@ _TEXT = {
     'w_nothing': ('Nothing to screen', 'لا توجد بيانات للفحص'),
     'near_imo': ('The IMO {q} fails its check digit; {l} (one keying error away) is listed: check the number',
                  'رقم IMO {q} لا يجتاز رقم التحقق؛ والرقم {l} (بفارق خطأ إدخال واحد) مدرج: تحقق من الرقم'),
-    'single_word': ('One-word name: many ships carry it, the name alone cannot identify the ship (review only)',
-                    'اسم من كلمة واحدة: تحمله سفن كثيرة، ولا يكفي الاسم وحده لتحديد السفينة (للمراجعة فقط)'),
+    'one_typo': ('One keying error away from the listed name', 'بفارق خطأ إدخال واحد عن الاسم المدرج'),
+    'single_word': ('Common ship name ({n} ship(s) carry it in the vessel records held): the name alone cannot '
+                    'identify the ship - IMO number needed (review)',
+                    'اسم سفينة شائع (تحمله {n} سفينة في سجلات السفن المتاحة): لا يكفي الاسم وحده لتحديد السفينة - '
+                    'يلزم رقم IMO (للمراجعة)'),
+    'single_word_word': ('Common ship word used as a name by many ships: the name alone cannot identify the ship '
+                         '- IMO number needed (review)',
+                         'كلمة شائعة في أسماء السفن: لا يكفي الاسم وحده لتحديد السفينة - يلزم رقم IMO (للمراجعة)'),
+    'single_word_rare': ('Exact one-word name, rare among the vessel records held ({n} ship(s) carry it): '
+                         'possible match - confirm with the IMO number, flag and owner',
+                         'اسم مطابق من كلمة واحدة ونادر في سجلات السفن المتاحة (تحمله {n} سفينة): تطابق محتمل - '
+                         'تأكد برقم IMO ودولة العلم والمالك'),
     'imo_conflict_review': ('Same name, but the IMO {q} differs from the listed {l} and is on no list: possibly a '
                             'same-name ship or a false IMO - compare the particulars',
                             'نفس الاسم، لكن رقم IMO {q} يختلف عن المدرج {l} وغير مدرج في أي قائمة: قد تكون سفينة '
@@ -271,6 +305,11 @@ def cross_script_score(qn, ln):
     if not a or not b:
         return 0.0
     s = fuzz.ratio(a, b)
+    # Latin V is written ف (Arabic) or و (Persian): try the other reading too
+    lat = ln if not VU.is_arabic(ln) else qn
+    if 'V' in lat.upper():
+        alt = _vkey(lat.upper().replace('V', 'W'))
+        s = max(s, fuzz.ratio(a if lat is ln else alt, alt if lat is ln else b))
     ca, cb = _consonants(a), _consonants(b)
     if min(len(ca), len(cb)) >= 5:
         s = max(s, fuzz.ratio(ca, cb) * 0.95)
@@ -395,6 +434,43 @@ def _prefilter_index(cands):
     return idx
 
 
+def _alerting(cands):
+    """The candidates that can produce a hit (sanctions and bans), cached with the candidate list."""
+    from screening import vessel_provenance as VP
+    hit = _PF.get('alerting')
+    if hit and hit[0] is cands and hit[1] == len(cands):
+        return hit[2]
+    out = [c for c in cands if VP.alerts(c.get('provenance') or VP.SANCTION)]
+    _PF['alerting'] = (cands, len(cands), out)
+    return out
+
+
+def hull_counts(cands, extra=None):
+    """{normalised one-word name: number of distinct hulls carrying it now} over EVERY vessel record held
+    (sanctions, bans, port-state control, analysis - not only the alerting ones): the current name and the
+    aliases count, former names do not. A hull is its IMO (valid) or its record group. Cached with the
+    candidate list. extra: {name: {hull keys}} from another fleet sample (Gold Set evaluation)."""
+    hit = _PF.get('hulls')
+    if hit and hit[0] is cands and hit[1] == len(cands) and hit[2] is extra:
+        return hit[3]
+    seen = {}
+    for c in cands:
+        imo = c.get('imo')
+        hull = ('IMO:' + imo) if imo and VU.imo_valid(imo) else (c.get('group_key') or 'WL:%s' % c.get('watchlist_id'))
+        prev = set(c.get('previous_names') or [])
+        for nm in [c.get('name')] + list(c.get('names') or []):
+            if not nm or nm in prev:
+                continue
+            k = VU.norm_name(nm)
+            if k and ' ' not in k:
+                seen.setdefault(k, set()).add(hull)
+    for k, hulls in (extra or {}).items():
+        seen.setdefault(k, set()).update(hulls)
+    out = {k: len(v) for k, v in seen.items()}
+    _PF['hulls'] = (cands, len(cands), extra, out)
+    return out
+
+
 def _prefilter(query, cands, limit=60, cfg=None):
     """Cheap recall over every listed name (rapidfuzz on normalised names + the cross-script skeleton)."""
     from rapidfuzz import fuzz, process
@@ -421,6 +497,13 @@ def _prefilter(query, cands, limit=60, cfg=None):
     return [cands[i] for i in picked]
 
 
+def _one_edit(a, b):
+    """One keying error between two names (spaces ignored): substitution, insertion, deletion or a swap."""
+    from rapidfuzz.distance import DamerauLevenshtein
+    a, b = a.replace(' ', ''), b.replace(' ', '')
+    return a != b and DamerauLevenshtein.distance(a, b) <= 1
+
+
 def _flag_eq(a, b):
     a, b = VU.clean_flag(a), VU.clean_flag(b)
     return bool(a) and a == b
@@ -443,7 +526,7 @@ def _party_match(owner, parties):
 # --------------------------------------------------------------------------- main
 def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, owner=None, vessel_type=None,
                   flags_past=None, *, conn=None, candidates=None, id_index=None, screen_party=None, flags=None,
-                  links=None, whitelist=None, config_override=None, max_hits=25):
+                  links=None, whitelist=None, config_override=None, max_hits=25, fleet_sample=None):
     """Screen one vessel. Returns
       {'query', 'warnings', 'tier', 'score', 'hits': [...], 'owner_hits': [...], 'risk': {'score','lines'},
        'near': [...] (below-threshold names shown for transparency), 'suppressed': [...] (whitelisted),
@@ -459,6 +542,8 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
     flags         {flag-name-lower or iso2: {'foc': bool, 'high_risk': bool}}
     whitelist     {listed_key: entry} (vessel_store.whitelist_for) - tests
     config_override  engine weights (see DEFAULTS), e.g. from the Gold Set evaluation
+    fleet_sample  {normalised one-word name: {hull keys}} added to the records held when measuring how common
+                  a one-word name is (Gold Set evaluation with a larger sample)
     """
     from screening import vessel_store as VS
     cfg = config(conn, config_override)
@@ -482,9 +567,27 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
                 'score': 0.0, 'hits': [], 'owner_hits': [], 'risk': {'score': 0, 'lines': []}, 'near': [],
                 'suppressed': [], 'thresholds': thresholds}
 
+    own_candidates = candidates is None
     if candidates is None:
         candidates = VS.load_candidates(conn) if conn is not None else []
     by_id = {c['watchlist_id']: c for c in candidates}
+    from screening import vessel_provenance as VP
+    risk_records = {}           # identifier matches on records that never alert (port-state control, analysis)
+
+    def cand(wid):
+        """The candidate of an identifier hit; a record listed after this worker's cache was filled reloads it."""
+        nonlocal candidates, by_id
+        c = by_id.get(wid)
+        if c is None and own_candidates and conn is not None and not cand.reloaded:
+            cand.reloaded = True
+            candidates = VS.load_candidates(conn, force=True)
+            by_id = {x['watchlist_id']: x for x in candidates}
+            c = by_id.get(wid)
+        if c is not None and not VP.alerts(c.get('provenance') or VP.SANCTION):
+            risk_records[wid] = c
+            return None
+        return c
+    cand.reloaded = False
 
     def ids_for(kind, value):
         if not value:
@@ -521,7 +624,7 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
     # ---- layer 1: identifiers
     for kind, val, label in (('IMO', q_imo, 'IMO number'), ('MMSI', q_mmsi, 'MMSI'), ('CALLSIGN', q_call, 'call sign')):
         for wid, is_current in ids_for(kind, val):
-            c = by_id.get(wid)
+            c = cand(wid)
             if c is None:
                 continue
             when = 'current' if is_current else 'former'
@@ -551,7 +654,7 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
         for n in VU.imo_neighbours(q_imo):
             for wid, is_current in ids_for('IMO', n):
                 c = by_id.get(wid)
-                if c is None:
+                if c is None or not VP.alerts(c.get('provenance') or VP.SANCTION):
                     continue
                 add(c, cfg['near_imo_score'], 'identifier', [say('near_imo', q=q_imo, l=n)],
                     fields={'IMO number': {'query': q_imo, 'listed': n, 'match': False}})
@@ -560,8 +663,12 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
     q_norm = VU.norm_name(q_name) if q_name else ''
     single_word = bool(q_norm) and len(q_norm.split()) == 1
     q_imo_listed = bool(q_imo_ok and ids_for('IMO', q_imo))
+    similar = []                # one-word names that are close but not the same word (shown, never alerted)
+    q_tokens = q_norm.split()
+    counts = hull_counts(candidates, fleet_sample) if single_word else {}
+    common_words = {VU.norm_name(w) for w in (cfg.get('common_ship_words') or [])} if single_word else set()
     if q_name:
-        for c in _prefilter(q_name, candidates, cfg=cfg):
+        for c in _prefilter(q_name, _alerting(candidates), cfg=cfg):
             ns, nm, nr = best_name(q_name, c['names'], cfg)
             if ns < cfg['name_min']:
                 continue
@@ -569,6 +676,9 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
             # of a two-word listed name such as SANSEVERUS / SAN SEVERUS is not)
             one_word = single_word and len(VU.norm_name(nm or '').split()) <= 1
             if one_word and ns < cfg['single_word_min']:
+                if ns >= 85:
+                    similar.append({'name': c['name'], 'matched_name': nm, 'imo': c.get('imo'), 'score': round(ns, 1),
+                                    'watchlist_id': c['watchlist_id']})
                 continue
             near = hits.get(c['watchlist_id'])
             near_imo = bool(near and any(e['code'] == 'near_imo' for e in near['explanation']))
@@ -610,10 +720,34 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
                 fields['type'] = {'query': query['type'], 'listed': c['type'], 'match': qt in lt or lt in qt}
             if near_imo and ns >= cfg['name_strong']:
                 sc = max(sc, cfg['near_imo_name_score'])      # mistyped IMO + the same name: that ship
+            elif (not one_word and 80 <= ns < cfg['name_strong'] and len(q_tokens) >= 2
+                  and len(''.join(q_tokens)) >= 7 and not imo_conflict(c)
+                  and _one_edit(q_norm, VU.norm_name(nm or '')) and
+                  VU.name_numbers(q_norm) == VU.name_numbers(VU.norm_name(nm or ''))):
+                # a distinctive name of several words with one keying error (letter wrong, missing, extra or
+                # two letters swapped): treated as that name, still never confirmed by the name alone
+                sc = max(sc, cfg['typo_score'])
+                expl.append(say('one_typo'))
             elif one_word:
-                sc = min(sc, cfg['single_word_max'])
-                expl.append(say('single_word'))
+                # an exact one-word name: a potential match when the name is rare among every ship record held,
+                # review when it is a common ship name (many hulls carry it, or a common ship word)
+                k = VU.norm_name(nm or '')
+                n = max(counts.get(k, 0), counts.get(q_norm, 0), 1)
+                if k in common_words or q_norm in common_words:
+                    sc = min(sc, cfg['single_word_max'])
+                    expl.append(say('single_word_word'))
+                elif n >= int(cfg['common_name_hulls']):
+                    sc = min(sc, cfg['single_word_max'])
+                    expl.append(say('single_word', n=n))
+                elif not imo_conflict(c):
+                    bonus = max(0.0, sc - ns * cfg['name_weight'])        # same flag / same owner
+                    sc = min(ns * cfg['name_weight'], cfg['single_word_rare_score']) + bonus
+                    expl.append(say('single_word_rare', n=n))
+                else:
+                    sc = min(sc, cfg['single_word_max'])
             add(c, min(sc, cfg['name_hit_max']), 'name', expl, matched_name=nm, fields=fields)
+            if c['watchlist_id'] in hits:
+                hits[c['watchlist_id']]['name_sim'] = max(hits[c['watchlist_id']].get('name_sim') or 0, ns)
 
     # ---- layer 3: owner / operator / manager
     owner_hits = []
@@ -630,6 +764,17 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
         except Exception as e:
             logger.warning(f'[VESSELS] owner screening failed: {e}')
             warnings.append(say('w_owner_unavailable'))
+        # one hit per listed owner: the same organisation on several lists (or under several spellings of the
+        # same name) is one decision, with the number of list records behind it
+        from screening.vessel_store import party_key as _pk
+        by_owner = {}
+        for o in sorted(owner_hits, key=lambda o: -o['score']):
+            k = _pk(o['name'])
+            if k in by_owner:
+                by_owner[k]['records'] += 1
+            else:
+                by_owner[k] = dict(o, records=1)
+        owner_hits = list(by_owner.values())
 
     # ---- one hit per ship: the same IMO on several lists
     groups = {}
@@ -645,7 +790,12 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
         for c in candidates:
             if c.get('group_key') == gk and c['watchlist_id'] not in {m['watchlist_id'] for m in members}:
                 members.append(c)
-        view = VS.merge_group(members)
+        view = VS.merge_group([m for m in members if VP.alerts(m.get('provenance') or VP.SANCTION)] or members)
+        for m in members:                       # port-state-control records of the same ship: risk, not a hit
+            if not VP.alerts(m.get('provenance') or VP.SANCTION):
+                risk_records[m['watchlist_id']] = m
+        gclass = max((m.get('provenance') or VP.SANCTION for m in members
+                      if VP.alerts(m.get('provenance') or VP.SANCTION)), key=lambda x: VP.ORDER[x], default=VP.SANCTION)
         if links is not None:
             view['parties'] = [p for m in members for p in links.get(m['watchlist_id'], [])] or view['parties']
         h = dict(best_h)
@@ -662,20 +812,28 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
         h.update({k: view.get(k) for k in ('group_key', 'sources', 'member_ids', 'list_types', 'name', 'imo',
                                            'mmsi', 'call_sign', 'flag', 'flags_past', 'type', 'year_built',
                                            'gross_tonnage', 'measures', 'parties', 'previous_names',
-                                           'risk_score', 'list_type')})
+                                           'risk_score', 'list_type', 'regimes')})
+        h['provenance'] = gclass
         h['list_type'] = list_category(h.get('list_type'))          # categories only, never a list's name
         h['list_types'] = sorted({list_category(x) or 'OTHER' for x in h.get('list_types') or []})
         h['watchlist_id'] = best_c['watchlist_id']
         h['source'] = best_c['source']
         h['names'] = view.get('names')
         h['flags_all'] = view.get('flags_all')
+        h['alert_type'] = 'ban' if gclass == VP.BAN else 'sanction'
+        if h['alert_type'] == 'ban':
+            h['explanation'].insert(0, say('ban_record'))
         h['listed_key'] = VS.listed_key(h)
         h['listed_fp'] = VS.listed_fingerprint(h)
         h.pop('names', None)
         h.pop('flags_all', None)
         merged.append(h)
     # equal scores: a ship whose own (primary) name matched before one matched through an alias
-    merged.sort(key=lambda h: (-h['score'], VU.norm_name(h.get('matched_name')) != VU.norm_name(h.get('name'))))
+    # equal scores, in order: the ship whose own IMO is the screened IMO (a record may also list another
+    # ship's IMO), the closer name, a ship whose own (primary) name matched before an alias, then a stable key
+    merged.sort(key=lambda h: (-h['score'], bool(q_imo) and h.get('imo') != q_imo, -(h.get('name_sim') or 0),
+                               VU.norm_name(h.get('matched_name')) != VU.norm_name(h.get('name')),
+                               str(h.get('group_key'))))
 
     # ---- whitelist (cleared false matches): suppressed while nothing changed on either side
     qkey = VU.query_key(q_name, q_imo, q_mmsi, query['flag'])
@@ -743,20 +901,45 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
     if owner_hits:
         lines.append(say('r_owner_listed'))
         risk += rw['owner_listed']
+    psc = sorted({d for c in risk_records.values() for d in (c.get('risk_datasets') or [])})
+    if psc:
+        lines.append(say('r_psc', n=len(psc)))
+        risk += rw['psc'] + (rw['psc_repeated'] if len(psc) >= 3 else 0)
+    if any((c.get('provenance') == VP.INTEL) for c in risk_records.values()):
+        lines.append(say('r_intel'))
+        risk += rw['intel']
 
     for h in merged + suppressed:
         h['tier'] = tier_of(h['score'], th)
-    alerts = [h for h in merged if h['score'] >= low][:max_hits]
+    alerts = [h for h in merged if h['score'] >= low and h['alert_type'] == 'sanction'][:max_hits]
+    ban_hits = [h for h in merged if h['score'] >= low and h['alert_type'] == 'ban'][:max_hits]
     near = [{'name': h['name'], 'matched_name': h['matched_name'], 'score': h['score'],
              'explanation': h['explanation'], 'watchlist_id': h['watchlist_id']}
             for h in merged if h['score'] < low][:5]
+    # the name given without a hull number (ADRIAN DARYA, DREAM): the numbered listed ships of that name are
+    # shown so the officer can ask which hull it is - never alerted (another number is another ship)
+    related = []
+    if q_name and not VU.name_numbers(q_norm):
+        qw = VU.name_words(q_norm)
+        for h in merged:
+            if h['score'] >= low:
+                continue
+            hn = VU.norm_name(h.get('matched_name') or h['name'])
+            if VU.name_numbers(hn) and VU.name_words(hn) == qw:
+                related.append({'name': h['name'], 'matched_name': h.get('matched_name'), 'imo': h.get('imo'),
+                                'flag': h.get('flag'), 'watchlist_id': h['watchlist_id'],
+                                'provenance': h.get('provenance'), 'regimes': h.get('regimes') or []})
     score = alerts[0]['score'] if alerts else 0.0
     if owner_hits:
         score = max(score, max(o['score'] for o in owner_hits) * cfg['owner_weight'])
     tier = tier_of(score, th) if (alerts or owner_hits) else 'CLEAR'
+    if tier in ('BELOW', 'CLEAR') and ban_hits:
+        # a ban / exclusion alerts for review, never as a sanctions match
+        tier, score = 'LOW', max(score, low)
     if tier == 'BELOW':
         tier = 'CLEAR'
     return {'query': query, 'warnings': warnings, 'tier': tier, 'score': round(score, 1), 'hits': alerts,
+            'ban_hits': ban_hits, 'related_hulls': related[:12], 'similar_names': similar[:8],
             'owner_hits': owner_hits, 'risk': {'score': int(min(risk, 100)), 'lines': lines}, 'near': near,
             'suppressed': [{'name': h['name'], 'imo': h.get('imo'), 'score': h['score'], 'tier': h['tier'],
                             'listed_key': h['listed_key'], 'watchlist_id': h['watchlist_id'],
@@ -773,11 +956,14 @@ def owner_variants(name):
     """Comparable forms of a company name with its legal form spelt both ways ('SKADI LTD' / 'SKADI LIMITED')."""
     from screening.vessel_store import party_key
     k = party_key(name)
-    out = {k}
-    for long_, short in _LEGAL_FORMS:
-        for a, b in ((long_, short), (short, long_)):
-            if re.search(r'\b%s$' % a, k):
-                out.add(re.sub(r'\b%s$' % a, b, k))
+    raw = re.sub(r'\s+', ' ', re.sub(r'[^A-Z0-9\u0600-\u06ff]+', ' ',
+                                      re.sub(r'[(][^)]*[)]', ' ', str(name or '')).upper())).strip()
+    out = {k, raw}                       # accents stripped / as the SQL key writes them
+    for base in list(out):
+        for long_, short in _LEGAL_FORMS:
+            for a, b in ((long_, short), (short, long_)):
+                if re.search(r'\b%s$' % a, base):
+                    out.add(re.sub(r'\b%s$' % a, b, base))
     return sorted(x for x in out if x)
 
 
@@ -789,12 +975,22 @@ def exact_owner_records(conn, name, limit=5):
     keys = owner_variants(name)
     if not keys:
         return []
-    key_sql = ("upper(btrim(regexp_replace(regexp_replace(regexp_replace(full_name, '[(][^)]*[)]', ' ', 'g'), "
-               "'[^A-Za-z0-9\u0600-\u06ff]+', ' ', 'g'), '\\s+', ' ', 'g')))")
     from screening.vessel_store import read_rows
-    return read_rows(conn, f"""SELECT id, full_name, source, list_type FROM screening_watchlist
-                               WHERE is_active = 1 AND coalesce(entity_type, '') NOT IN ('VESSEL', 'INDIVIDUAL')
-                                 AND {key_sql} = ANY(%s) ORDER BY id LIMIT %s""", (keys, limit)) or []
+    # cx_party_key() is the SQL twin of party_key and is indexed (20261120b_vessel_owner_index.sql)
+    rows = read_rows(conn, """SELECT id, full_name, source, list_type FROM screening_watchlist
+                              WHERE cx_party_key(full_name) = ANY(%s) AND is_active = 1
+                                AND coalesce(entity_type, '') NOT IN ('VESSEL', 'INDIVIDUAL')
+                              ORDER BY id LIMIT %s""", (keys, limit)) or []
+    # an acronym or other alias the list gives for the company (IRISL): exact alias, any case
+    # (aliases is a JSON list; the trigram index on aliases serves the ILIKE)
+    raw = re.sub(r'\s+', ' ', str(name or '')).strip()
+    if 2 <= len(raw) <= 120 and '%' not in raw and '_' not in raw:
+        rows += [r for r in read_rows(conn, """SELECT id, full_name, source, list_type FROM screening_watchlist
+                                               WHERE aliases ILIKE %s AND is_active = 1
+                                                 AND coalesce(entity_type, '') NOT IN ('VESSEL', 'INDIVIDUAL')
+                                               ORDER BY id LIMIT %s""", ('%"' + raw.replace('"', '') + '"%', limit)) or []
+                 if r['id'] not in {x['id'] for x in rows}]
+    return rows
 
 
 def list_category(lt):
@@ -844,6 +1040,9 @@ def decision(res):
     Returns (decision, imo of the top listed ship or None, score)."""
     hits = res.get('hits') or []
     owners = res.get('owner_hits') or []
+    if not hits and not owners and res.get('ban_hits'):
+        b = res['ban_hits'][0]
+        return 'review', b.get('imo'), float(res.get('score') or 0)
     top = hits[0] if hits else None
     best_t = top['tier'] if top else 'BELOW'
     owner_t = owners[0]['tier'] if owners else 'BELOW'

@@ -39,9 +39,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from import_lists import connect      # noqa: E402
+from packs.trade_control.loader import connect      # noqa: E402
 
 RANK = {'none': 0, 'stale': 0, 'draft': 1, 'verified': 2, 'reviewed': 3}
 AR = re.compile('[؀-ۿ]')

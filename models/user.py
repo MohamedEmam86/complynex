@@ -194,15 +194,24 @@ class User(UserMixin):
         return False
 
     def can_access_cms(self):
-        """Check if user is allowed to access the CMS backend."""
-        # Admins and Officers always have access
+        """Check if user is allowed to access the CMS backend.
+
+        users.access_mode (set by an administrator on the access matrix, or by the access-control
+        migration from the rule below) decides: 'cms' only. Not set yet: the original rule —
+        compliance roles always, others with a CMS access level."""
+        mode = getattr(self, 'access_mode', None)
+        if mode in ('cms', 'portal', 'restricted'):
+            return mode == 'cms'
+        if self.role == 'superadmin':
+            return True
         if self.is_compliance_officer():
             return True
-        # Others need explicit access level
         return self.cms_access_level in ['view', 'edit']
 
     def can_edit_cms(self):
         """Check if user has write access to CMS data."""
+        if getattr(self, 'access_mode', None) in ('portal', 'restricted'):
+            return False
         if self.is_compliance_officer():
             return True
         return self.cms_access_level == 'edit'
@@ -427,7 +436,7 @@ class User(UserMixin):
         # Permissions added after this INSERT was written (perm_ongoing_screening,
         # perm_academy, ...) are persisted here instead of being silently dropped.
         _late = {k: v for k, v in kwargs.items()
-                 if k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols', 'perm_prudential', 'perm_ai', 'perm_vessels') and v and v != 'none'}
+                 if k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols', 'perm_prudential', 'perm_ai', 'perm_vessels', 'perm_vessels_db') and v and v != 'none'}
         if _late:
             db.execute('UPDATE users SET ' + ', '.join(f'{k} = %s' for k in _late) + ' WHERE email = %s',
                        (*_late.values(), email))
@@ -437,6 +446,18 @@ class User(UserMixin):
         new_user = User.get_by_email(email)
         if not new_user:
             raise ValueError("User was created but could not be retrieved")
+        # Per-user access control: a new account never relies on the role defaults at run time — what the
+        # role and levels above allow is written as explicit grants now (the add-user form then replaces
+        # them with exactly the ticked matrix; CSV uploads and other creators keep these).
+        try:
+            from access import registry as _AR, service as _AS
+            if _AR.is_built():
+                _AS.backfill(db=db, only_user_ids={new_user.id}, note='account created')
+                new_user = User.get_by_email(email)
+        except Exception:
+            import logging as _lg
+            _lg.getLogger(__name__).warning('access grants for new user %s not written', email, exc_info=True)
+            db.rollback()
         return new_user
     
     @staticmethod
@@ -543,10 +564,12 @@ class User(UserMixin):
         )
         # Late-added module permissions are not constructor args; load them so
         # can_view()/can_edit() see the stored value instead of defaulting to 'none'.
-        for _k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols', 'perm_prudential', 'perm_ai', 'perm_vessels'):
+        for _k in ('perm_ongoing_screening', 'perm_academy', 'perm_regcontrols', 'perm_prudential', 'perm_ai', 'perm_vessels', 'perm_vessels_db'):
             if _k in row.keys():
                 setattr(_u, _k, row[_k] or 'none')
         _u.auth_version = (row['auth_version'] if 'auth_version' in row.keys() else 0) or 0
+        # cms | portal | restricted (per-user access control, access/service.py); None = old rule
+        _u.access_mode = row['access_mode'] if 'access_mode' in row.keys() else None
         # Organisation scope fields, so the edit form can pre-select what is saved
         # (otherwise re-saving the form silently widened the user to 'group').
         for _k in ('authority_level', 'authority_unit_id', 'org_unit_id'):

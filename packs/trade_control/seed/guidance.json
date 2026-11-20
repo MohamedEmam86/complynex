@@ -1,0 +1,1150 @@
+[
+ {
+  "category": "chemical_precursors",
+  "label_en": "Chemical precursors (CWC / Australia Group / narcotic precursors)",
+  "label_ar": "السلائف الكيميائية (اتفاقية الأسلحة الكيميائية / مجموعة أستراليا / سلائف المخدرات)",
+  "keys": [
+   "1C350",
+   "1C450",
+   "1C351",
+   "1C352",
+   "1C353",
+   "1C354",
+   "1C355",
+   "1C395",
+   "1C991",
+   "2B350",
+   "2B351",
+   "2B352",
+   "CWC-S1",
+   "CWC-S2",
+   "CWC-S3",
+   "AG-CHEM",
+   "HS28",
+   "HS29",
+   "HS38"
+  ],
+  "en": {
+   "why_it_matters": "Listed chemicals can be diverted to chemical-weapons or illicit-drug production. Egypt is not a State Party to the Chemical Weapons Convention, so there is no Egyptian CWC national authority or CWC import/export declaration regime; exporters in CWC States Parties may refuse or restrict Schedule 2/3 transfers to Egypt. Narcotic precursors are controlled in Egypt under Law 182/1960 schedules, which the Ministry of Health and Population replaced in 2026.",
+   "ask_customer": [
+    "Exact chemical name, CAS number, concentration and quantity; is it a mixture?",
+    "Stated end use and the end user's industrial activity (licensed factory? which production process?)",
+    "Is the substance on the Law 182/1960 schedules, the CWC schedules or the Australia Group list?",
+    "Has the foreign supplier received a pre-export notification (PEN) acknowledgement for precursors?",
+    "Storage site and Ministry of Environment / EEAA hazardous-substances licence, if hazardous"
+   ],
+   "documents": [
+    "Supplier Safety Data Sheet (SDS) and technical datasheet",
+    "Commercial invoice and packing list with CAS numbers and concentrations",
+    "End-user certificate / end-use statement signed by the importer",
+    "Import approval or permit from the competent authority (Egyptian Drug Authority / Ministry of Health for scheduled precursors; competent ministry under Environment Law 4/1994 Article 29 for hazardous substances)",
+    "Industrial licence / commercial register of the end user",
+    "Exporter's export licence where the exporting country requires one"
+   ],
+   "egyptian_authority": "Egyptian Drug Authority (EDA) / Ministry of Health and Population for substances in the Law 182/1960 schedules; Ministry of Environment / EEAA together with the competent sector ministry for hazardous substances (Law 4/1994 Art. 29); GOEIC and Customs at the border. No Egyptian CWC national authority (Egypt is not a CWC party).",
+   "red_flags": [
+    "Quantity or concentration out of line with the customer's stated activity",
+    "Buyer is a trading company with no factory, laboratory or licence",
+    "Request to describe the chemical generically (for example 'industrial solvent') on the invoice",
+    "Shipment routed via third countries or free zones with no commercial reason",
+    "Cash payment or payment by unrelated third parties",
+    "Customer refuses to give an end-use statement or SDS",
+    "Combinations of precursors that together enable a weapon or drug synthesis route"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "قد يتم تحويل المواد الكيميائية المدرجة إلى إنتاج أسلحة كيميائية أو مواد مخدرة. مصر ليست دولة طرفاً في اتفاقية حظر الأسلحة الكيميائية، ومن ثم لا توجد هيئة وطنية مصرية للاتفاقية ولا نظام إعلانات استيراد وتصدير وفقاً لها، وقد يرفض المصدرون في الدول الأطراف تصدير مواد الجدولين الثاني والثالث إلى مصر أو يقيدونه. وتخضع سلائف المخدرات في مصر لجداول القانون رقم 182 لسنة 1960، والتي استبدلتها وزارة الصحة والسكان في عام 2026.",
+   "ask_customer": [
+    "الاسم الكيميائي الدقيق ورقم CAS والتركيز والكمية، وهل المادة خليط؟",
+    "الاستخدام النهائي المعلن ونشاط المستخدم النهائي (هل هو مصنع مرخص؟ وما العملية الإنتاجية؟)",
+    "هل المادة مدرجة بجداول القانون 182 لسنة 1960 أو جداول اتفاقية الأسلحة الكيميائية أو قائمة مجموعة أستراليا؟",
+    "هل حصل المورد الأجنبي على إقرار بالإخطار المسبق بالتصدير (PEN) بالنسبة للسلائف؟",
+    "موقع التخزين وترخيص المواد الخطرة من وزارة البيئة / جهاز شئون البيئة إن كانت المادة خطرة"
+   ],
+   "documents": [
+    "صحيفة بيانات السلامة (SDS) والنشرة الفنية من المورد",
+    "الفاتورة التجارية وقائمة التعبئة متضمنة أرقام CAS والتركيزات",
+    "شهادة المستخدم النهائي / إقرار الاستخدام النهائي موقعاً من المستورد",
+    "موافقة أو تصريح الاستيراد من الجهة المختصة (هيئة الدواء المصرية / وزارة الصحة للسلائف المدرجة، والوزارة المختصة وفقاً للمادة 29 من قانون البيئة رقم 4 لسنة 1994 للمواد الخطرة)",
+    "الترخيص الصناعي / السجل التجاري للمستخدم النهائي",
+    "ترخيص التصدير الصادر للمصدر متى اشترطته دولة التصدير"
+   ],
+   "egyptian_authority": "هيئة الدواء المصرية / وزارة الصحة والسكان للمواد المدرجة بجداول القانون 182 لسنة 1960، ووزارة البيئة / جهاز شئون البيئة مع الوزارة القطاعية المختصة للمواد الخطرة (المادة 29 من القانون 4 لسنة 1994)، والهيئة العامة للرقابة على الصادرات والواردات والجمارك في المنافذ. لا توجد هيئة وطنية مصرية لاتفاقية الأسلحة الكيميائية لأن مصر ليست طرفاً فيها.",
+   "red_flags": [
+    "كمية أو تركيز لا يتناسب مع النشاط المعلن للعميل",
+    "المشتري شركة تجارية بلا مصنع أو معمل أو ترخيص",
+    "طلب وصف المادة بشكل عام في الفاتورة (مثل «مذيب صناعي»)",
+    "مسار شحن عبر دول ثالثة أو مناطق حرة دون مبرر تجاري",
+    "السداد نقداً أو من أطراف ثالثة غير ذات صلة",
+    "رفض العميل تقديم إقرار الاستخدام النهائي أو صحيفة بيانات السلامة",
+    "طلب مجموعات من السلائف تمكّن معاً من مسار تخليق سلاح أو مخدر"
+   ]
+  },
+  "sources": [
+   "https://www.armscontrol.org/factsheets/cwcglance",
+   "https://edaegypt.gov.eg/en/the-regulatory-reference-of-the-egyptian-drug-authority-eda/laws-and-executive-regulations/",
+   "https://faolex.fao.org/docs/pdf/egy4984E.pdf",
+   "https://treaties.un.org/doc/Publication/MTDSG/Volume%20I/Chapter%20VI/VI-19.en.pdf",
+   "https://www.bis.gov/articles/red-flag-indicators"
+  ],
+  "confidence": "CWC non-party status: secondary source. Law 182/1960 and 2026 schedule decrees: confirmed in primary source (EDA site). Law 4/1994 Art. 29: confirmed in primary text (FAOLEX translation). EDA as the issuing body for precursor import permits: unverified, inferred from EDA's mandate."
+ },
+ {
+  "category": "explosives_precursors_fertilisers",
+  "label_en": "Explosives precursors and nitrogen fertilisers",
+  "label_ar": "سلائف المتفجرات والأسمدة النيتروجينية",
+  "keys": [
+   "EU-2019/1148-ANNEX-I",
+   "EU-2019/1148-ANNEX-II",
+   "1C011",
+   "1C111",
+   "1C239",
+   "1C997",
+   "1A008",
+   "ML8",
+   "HS2807",
+   "HS2808",
+   "HS2829",
+   "HS2834",
+   "HS2847",
+   "HS2904",
+   "HS2914",
+   "HS2933",
+   "HS3102",
+   "HS3105",
+   "HS3601",
+   "HS3602",
+   "HS3603",
+   "HS3604",
+   "HS7603",
+   "HS8104",
+   "HS3824"
+  ],
+  "en": {
+   "why_it_matters": "Ammonium nitrate, chlorates, perchlorates, nitric acid, hydrogen peroxide, nitromethane and metal powders are used in improvised explosive devices. In Egypt, making, possessing or importing explosives or 'what is treated as explosives' without a licence is a serious offence under Penal Code Art. 102(a), and the Minister of Interior defines which materials count. After the 2020 Beirut blast, the Ministry of Environment ordered inspections of ammonium nitrate producers and the government reviewed dangerous goods held in ports.",
+   "ask_customer": [
+    "Substance, CAS number, concentration (for ammonium nitrate: nitrogen % by weight) and grade (fertiliser, technical or explosive grade)",
+    "Agricultural or industrial end use; is the customer a licensed fertiliser distributor, farm, mine or quarry?",
+    "Storage location and conditions; Civil Protection / Environment compliance",
+    "Is the material on the Minister of Interior list of explosive-related materials, and is there an import or possession licence?",
+    "Packaging (bags or bulk), transport route and transit ports"
+   ],
+   "documents": [
+    "SDS and certificate of analysis showing concentration / nitrogen content",
+    "End-use and end-user statement",
+    "Ministry of Interior licence for explosives or controlled materials, where applicable",
+    "Ministry of Agriculture fertiliser registration or approval for fertiliser imports (authority not confirmed; verify)",
+    "Mining or quarry licence for blasting agents",
+    "IMDG dangerous-goods declaration for sea shipments"
+   ],
+   "egyptian_authority": "Ministry of Interior (licensing of explosives and materials treated as explosives: Penal Code Art. 102(a); the Minister's list was reported as Decision 18722/2004, secondary source only); Ministry of Environment / EEAA (hazardous substances, Law 4/1994); Ministry of Agriculture for fertilisers (specific legal basis not found); Ministry of Trade and Industry (export duty on nitrogen fertilisers). No Egyptian list with EU-style concentration limits was found, so apply EU Regulation 2019/1148 as international practice.",
+   "red_flags": [
+    "Ammonium nitrate of 16% nitrogen or more, or chlorates/perchlorates of 40% or more, sold to a non-agricultural or non-industrial buyer",
+    "Small, repeated purchases or split orders",
+    "Request for unusual purity or concentration for the stated use",
+    "Customer unfamiliar with agronomy or the product's use",
+    "Combined orders of an oxidiser and fuel or metal powder (for example ammonium nitrate with aluminium powder)",
+    "Refusal of delivery to a registered site; request for pick-up in cash",
+    "Long port dwell or abandoned dangerous cargo"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "تُستخدم نترات الأمونيوم والكلورات والبيركلورات وحمض النيتريك وفوق أكسيد الهيدروجين والنيتروميثان والمساحيق المعدنية في تصنيع العبوات المتفجرة. وفي مصر يُعد إحراز المفرقعات أو ما في حكمها أو حيازتها أو استيرادها أو صنعها دون ترخيص جريمة جسيمة وفقاً للمادة 102 (أ) من قانون العقوبات، ويحدد وزير الداخلية المواد التي تُعتبر في حكم المفرقعات. وعقب انفجار بيروت عام 2020 وجهت وزارة البيئة بالتفتيش على منشآت إنتاج نترات الأمونيوم، وراجعت الحكومة المواد الخطرة الراكدة بالموانئ.",
+   "ask_customer": [
+    "المادة ورقم CAS والتركيز (ولنترات الأمونيوم: نسبة النيتروجين وزناً) والدرجة (سمادية، فنية، تفجيرية)",
+    "الاستخدام النهائي الزراعي أو الصناعي، وهل العميل موزع أسمدة مرخص أو مزرعة أو منجم أو محجر؟",
+    "موقع التخزين وظروفه ومدى الالتزام باشتراطات الحماية المدنية والبيئة",
+    "هل المادة مدرجة بقرار وزير الداخلية بشأن المواد التي في حكم المفرقعات، وهل يوجد ترخيص استيراد أو حيازة؟",
+    "طريقة التعبئة (أجولة أو صب) ومسار النقل وموانئ الترانزيت"
+   ],
+   "documents": [
+    "صحيفة بيانات السلامة وشهادة التحليل موضحاً بها التركيز / نسبة النيتروجين",
+    "إقرار الاستخدام النهائي والمستخدم النهائي",
+    "ترخيص وزارة الداخلية للمفرقعات أو المواد الخاضعة للرقابة متى انطبق",
+    "تسجيل أو موافقة وزارة الزراعة على استيراد الأسمدة (الجهة غير مؤكدة، يلزم التحقق)",
+    "ترخيص التعدين أو المحجر بالنسبة لمواد التفجير",
+    "إقرار البضائع الخطرة وفقاً للمدونة البحرية الدولية للبضائع الخطرة (IMDG) للشحنات البحرية"
+   ],
+   "egyptian_authority": "وزارة الداخلية (ترخيص المفرقعات وما في حكمها، المادة 102 (أ) من قانون العقوبات، وأفاد مصدر ثانوي فقط بأن القائمة صدرت بالقرار رقم 18722 لسنة 2004)، ووزارة البيئة / جهاز شئون البيئة (المواد الخطرة، القانون 4 لسنة 1994)، ووزارة الزراعة للأسمدة (لم يتم العثور على السند القانوني المحدد)، ووزارة التجارة والصناعة (رسم الصادر على الأسمدة النيتروجينية). لم يتم العثور على قائمة مصرية بحدود تركيز مماثلة للقائمة الأوروبية، ومن ثم تُطبق اللائحة الأوروبية 2019/1148 كممارسة دولية فضلى.",
+   "red_flags": [
+    "نترات أمونيوم بنسبة نيتروجين 16% أو أكثر، أو كلورات / بيركلورات بتركيز 40% أو أكثر، تُباع لمشترٍ غير زراعي أو غير صناعي",
+    "مشتريات صغيرة متكررة أو تجزئة الطلبات",
+    "طلب نقاوة أو تركيز غير معتاد للاستخدام المعلن",
+    "عدم إلمام العميل بالاستخدام الزراعي أو الفني للمنتج",
+    "طلبات مجمعة لمادة مؤكسدة مع وقود أو مسحوق معدني (مثل نترات الأمونيوم مع مسحوق الألومنيوم)",
+    "رفض التسليم في موقع مسجل وطلب الاستلام المباشر مع السداد نقداً",
+    "بقاء البضائع الخطرة بالميناء لفترات طويلة أو التخلي عنها"
+   ]
+  },
+  "sources": [
+   "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32019R1148",
+   "https://www.youm7.com/story/2026/2/23/البمب-والصواريخ-القانون-يعاقب-على-حيازتهما-بالإعدام-والمؤبد-فى-هذه/7313232",
+   "https://www.mohamah.net/law/?p=173531",
+   "https://www.dailynewsegypt.com/2020/08/11/environment-minister-reviews-safe-handling-of-ammonium-nitrate-in-egypt/",
+   "https://www.arabnews.com/middle-east/beirut-explosion-prompts-egypt-to-remove-dangerous-materials-from-its-ports-1721356",
+   "https://english.aawsat.com/node/5288478"
+  ],
+  "confidence": "EU 2019/1148 limits: confirmed in primary source (EUR-Lex). Penal Code Art. 102(a): secondary source. Minister of Interior Decision 18722/2004: unverified (single legal blog). Fertiliser import authority: not found. 2020 inspections: secondary (news)."
+ },
+ {
+  "category": "nuclear_radioactive",
+  "label_en": "Nuclear and radioactive items",
+  "label_ar": "المواد والمعدات النووية والمشعة",
+  "keys": [
+   "0A",
+   "0B",
+   "0C",
+   "0D",
+   "0E",
+   "1C012",
+   "1C230",
+   "1C231",
+   "1C232",
+   "1C233",
+   "1C234",
+   "1C235",
+   "1C236",
+   "1C237",
+   "1C239",
+   "1C240",
+   "2B225",
+   "2B226",
+   "2B227",
+   "2B228",
+   "2B229",
+   "2B230",
+   "2B231",
+   "2B232",
+   "3A228",
+   "3A229",
+   "3A230",
+   "3A231",
+   "3A232",
+   "6A203",
+   "NSG",
+   "HS2612",
+   "HS2844",
+   "HS2845",
+   "HS8401",
+   "HS9022",
+   "HS9030"
+  ],
+  "en": {
+   "why_it_matters": "Under Law 7/2010, importing, clearing through customs, exporting or transporting any radioactive material, source or component needs prior approval from the Egyptian Nuclear and Radiological Regulatory Authority (ENRRA). Parliament reinforced this in a March 2026 amendment to Article 55; medical X-ray machines are exempt from that approval. Egypt is an NPT party with IAEA safeguards but has not signed the Additional Protocol, so foreign suppliers often apply extra scrutiny to Egypt.",
+   "ask_customer": [
+    "Isotope, activity (Bq or Ci), sealed or unsealed source, IAEA source category",
+    "Facility licence number issued by ENRRA and the authorised user",
+    "Intended application (medical, industrial radiography, well logging, research)",
+    "Return or disposal arrangement for disused sources",
+    "For equipment (for example 2B225 manipulators or 3A228 triggered spark gaps): technical specifications and why that performance level is needed"
+   ],
+   "documents": [
+    "ENRRA prior approval or permit for import, export or transport",
+    "ENRRA facility or practice licence of the end user",
+    "Source certificate and technical datasheet",
+    "End-user certificate with non-proliferation and no-re-export assurances",
+    "Exporter's nuclear or dual-use export licence (NSG Part 1/Part 2 items)",
+    "Transport documents meeting IAEA transport rules (class 7 dangerous goods)"
+   ],
+   "egyptian_authority": "Egyptian Nuclear and Radiological Regulatory Authority (ENRRA), under Law 7/2010 and its Executive Regulations (PM Decree 1326/2011).",
+   "red_flags": [
+    "Activity level or number of sources out of line with the facility's licence",
+    "End user is not an ENRRA-licensed facility",
+    "Interest in isotope separation, hot-cell or high-precision balancing equipment without a declared nuclear programme",
+    "Trading intermediaries for radioactive sources",
+    "Refusal to accept return of disused sources",
+    "Diversion of shipments through free zones"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "وفقاً للقانون رقم 7 لسنة 2010، يشترط استيراد أي مواد أو مصادر أو مكونات مشعة أو الإفراج الجمركي عنها أو تصديرها أو نقلها الحصول على موافقة مسبقة من هيئة الرقابة النووية والإشعاعية. وقد عزز مجلس النواب ذلك بتعديل المادة 55 في مارس 2026، مع استثناء أجهزة الأشعة السينية الطبية من هذه الموافقة. ومصر طرف في معاهدة عدم الانتشار وتخضع لضمانات الوكالة الدولية للطاقة الذرية، إلا أنها لم توقع البروتوكول الإضافي، ولذلك كثيراً ما يطبق الموردون الأجانب تدقيقاً إضافياً على الشحنات المتجهة إلى مصر.",
+   "ask_customer": [
+    "النظير المشع والنشاط الإشعاعي (بيكريل أو كوري)، وهل المصدر مغلق أم مفتوح، وفئة المصدر وفقاً لتصنيف الوكالة",
+    "رقم ترخيص المنشأة الصادر من هيئة الرقابة النووية والإشعاعية والمستخدم المرخص له",
+    "التطبيق المستهدف (طبي، تصوير صناعي، تسجيل آبار، بحثي)",
+    "ترتيبات إعادة المصادر المستهلكة أو التخلص منها",
+    "بالنسبة للمعدات (مثل المناولات عن بعد 2B225 أو فجوات الشرر 3A228): المواصفات الفنية ومبرر الحاجة إلى مستوى الأداء المطلوب"
+   ],
+   "documents": [
+    "الموافقة المسبقة أو التصريح من هيئة الرقابة النووية والإشعاعية للاستيراد أو التصدير أو النقل",
+    "ترخيص المنشأة أو الممارسة الصادر للمستخدم النهائي من الهيئة",
+    "شهادة المصدر المشع والنشرة الفنية",
+    "شهادة المستخدم النهائي متضمنة تعهدات بعدم الانتشار وعدم إعادة التصدير",
+    "ترخيص التصدير النووي أو مزدوج الاستخدام الصادر للمصدر (بنود الجزء الأول والثاني لمجموعة الموردين النوويين)",
+    "مستندات النقل المتوافقة مع لائحة الوكالة لنقل المواد المشعة (الفئة 7 من البضائع الخطرة)"
+   ],
+   "egyptian_authority": "هيئة الرقابة النووية والإشعاعية، وفقاً للقانون رقم 7 لسنة 2010 ولائحته التنفيذية الصادرة بقرار رئيس مجلس الوزراء رقم 1326 لسنة 2011.",
+   "red_flags": [
+    "نشاط إشعاعي أو عدد مصادر لا يتناسب مع ترخيص المنشأة",
+    "المستخدم النهائي ليس منشأة مرخصة من الهيئة",
+    "الاهتمام بمعدات فصل النظائر أو الخلايا الساخنة أو الموازنة عالية الدقة دون برنامج نووي معلن",
+    "تداول المصادر المشعة عبر وسطاء تجاريين",
+    "رفض قبول إعادة المصادر المستهلكة",
+    "تحويل مسار الشحنات عبر المناطق الحرة"
+   ]
+  },
+  "sources": [
+   "https://gnssn.iaea.org/main/Knowledge%20Base%20Articles/ENRRA%20(Egypt)%20-%20Regulatory%20Infrastructure.pdf",
+   "https://digitallibrary.un.org/record/830945/files/S_AC.44_2016_3-EN.pdf",
+   "https://scenenow.com/News/Handling-of-Radioactive-Materials-Tightened-Under-New-Amendments",
+   "https://www.nti.org/analysis/articles/egypt-nuclear-facilities/"
+  ],
+  "confidence": "Law 7/2010, ENRRA and PM Decree 1326/2011: confirmed (IAEA GNSSN and Egypt's 1540 report). Article 55 amendment of March 2026: secondary (news). NPT 1981 and no Additional Protocol: secondary (NTI)."
+ },
+ {
+  "category": "telecom_encryption",
+  "label_en": "Telecommunications, encryption and surveillance equipment",
+  "label_ar": "معدات الاتصالات والتشفير والمراقبة",
+  "keys": [
+   "5A001",
+   "5A002",
+   "5A003",
+   "5A004",
+   "5A991",
+   "5A992",
+   "5B001",
+   "5D001",
+   "5D002",
+   "5E001",
+   "5E002",
+   "5A001.j",
+   "5A001.f",
+   "4A005",
+   "4D004",
+   "HS8517",
+   "HS8525",
+   "HS8526",
+   "HS8527",
+   "HS8529",
+   "HS8543",
+   "HS8471"
+  ],
+  "en": {
+   "why_it_matters": "Telecom Regulation Law 10/2003 Art. 44, as amended in 2022, bans importing, manufacturing, assembling, possessing, using, operating, installing or marketing telecom equipment without an NTRA permit. For equipment on a list set by the Minister of Defence, NTRA also needs the consent of the Armed Forces and national security bodies. Under Art. 64, using encryption equipment needs written consent. Under Ministry of Trade and Industry rules, tracking, GPS and surveillance equipment needs security approval, and covert recorders disguised as pens or watches are banned imports. Intrusion and interception tools (5A001.j, 4A005, 4D004) are high-risk human-rights items too.",
+   "ask_customer": [
+    "Make, model, frequency bands, output power and encryption functionality (algorithm, key length, mass-market status)",
+    "Does the item have an NTRA type-approval certificate? Which scheme (light, intermediate or tight)?",
+    "Is the item on the Minister of Defence list needing Armed Forces / national security consent?",
+    "End user: licensed operator, government body, private company? Network or deployment location",
+    "Does the item provide interception, lawful-intercept, monitoring, IMSI-catcher or tracking capability?"
+   ],
+   "documents": [
+    "NTRA type-approval certificate and NTRA import permit (Law 10/2003 Art. 44)",
+    "Written approval for encryption equipment (Art. 64) and security approval where required",
+    "Technical datasheet, operating description and encryption classification (for example the US 5A992 / 740.17 self-classification or EU Annex I Cat. 5 Part 2 note 3)",
+    "End-user certificate stating no re-export and no use for unlawful surveillance",
+    "Exporter's licence or licence-exception determination"
+   ],
+   "egyptian_authority": "National Telecom Regulatory Authority (NTRA), with Armed Forces and national security consent for listed equipment (Law 10/2003 Arts. 44 and 64); security authorities' approval for tracking, GPS and surveillance equipment (Ministry of Trade and Industry restricted-import rules).",
+   "red_flags": [
+    "Network or interception equipment ordered by a buyer with no operator licence",
+    "Request to remove or disable encryption markings, or to split shipments to avoid type approval",
+    "Satellite or long-range radio equipment for undefined use",
+    "Military-grade or government-grade encryption for a private buyer",
+    "Delivery to a freight forwarder or free zone and not to the user",
+    "End user linked to security services in a sanctioned or high-risk jurisdiction"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "تحظر المادة 44 من قانون تنظيم الاتصالات رقم 10 لسنة 2003، بعد تعديلها في 2022، استيراد أجهزة ومعدات الاتصالات أو تصنيعها أو تجميعها أو حيازتها أو استخدامها أو تشغيلها أو تركيبها أو تسويقها دون تصريح من الجهاز القومي لتنظيم الاتصالات. وبالنسبة للمعدات المدرجة بقائمة يحددها وزير الدفاع، يلزم الجهاز الحصول على موافقة القوات المسلحة وأجهزة الأمن القومي أيضاً. وتشترط المادة 64 موافقة كتابية لاستخدام أجهزة التشفير. ووفقاً لقواعد وزارة التجارة والصناعة، تخضع أجهزة التتبع وتحديد المواقع والمراقبة لموافقة الجهات الأمنية، ويُحظر استيراد أجهزة التسجيل المموهة في صورة أقلام أو ساعات. كما تُعد أدوات الاختراق والاعتراض (5A001.j و4A005 و4D004) عالية المخاطر من منظور حقوق الإنسان.",
+   "ask_customer": [
+    "الماركة والطراز ونطاقات التردد وقدرة الخرج ووظيفة التشفير (الخوارزمية وطول المفتاح ومدى كونه منتجاً للسوق العام)",
+    "هل يوجد شهادة اعتماد طراز من الجهاز القومي لتنظيم الاتصالات؟ وما نظام الاعتماد (خفيف، متوسط، مشدد)؟",
+    "هل الجهاز مدرج بقائمة وزير الدفاع التي تستلزم موافقة القوات المسلحة وأجهزة الأمن القومي؟",
+    "المستخدم النهائي: مشغل مرخص أم جهة حكومية أم شركة خاصة؟ وموقع الشبكة أو التركيب",
+    "هل يوفر الجهاز قدرات اعتراض أو اعتراض قانوني أو مراقبة أو التقاط هوية المشترك (IMSI catcher) أو تتبع؟"
+   ],
+   "documents": [
+    "شهادة اعتماد الطراز وتصريح الاستيراد من الجهاز القومي لتنظيم الاتصالات (المادة 44 من القانون 10 لسنة 2003)",
+    "الموافقة الكتابية على أجهزة التشفير (المادة 64) والموافقة الأمنية متى لزمت",
+    "النشرة الفنية ووصف التشغيل وتصنيف التشفير (مثل التصنيف الذاتي الأمريكي 5A992 / 740.17 أو الملاحظة 3 من الجزء الثاني بالفئة 5 من الملحق الأول الأوروبي)",
+    "شهادة المستخدم النهائي متضمنة التعهد بعدم إعادة التصدير وعدم الاستخدام في المراقبة غير المشروعة",
+    "ترخيص التصدير أو قرار الاستثناء الصادر للمصدر"
+   ],
+   "egyptian_authority": "الجهاز القومي لتنظيم الاتصالات، مع موافقة القوات المسلحة وأجهزة الأمن القومي للمعدات المدرجة (المادتان 44 و64 من القانون 10 لسنة 2003)، وموافقة الجهات الأمنية لأجهزة التتبع وتحديد المواقع والمراقبة (قواعد الواردات المقيدة لوزارة التجارة والصناعة).",
+   "red_flags": [
+    "طلب معدات شبكات أو اعتراض من مشترٍ لا يحمل ترخيص مشغل",
+    "طلب إزالة أو تعطيل بيانات التشفير، أو تجزئة الشحنات لتفادي اعتماد الطراز",
+    "معدات اتصالات فضائية أو لاسلكية بعيدة المدى لاستخدام غير محدد",
+    "تشفير بمستوى عسكري أو حكومي لمشترٍ من القطاع الخاص",
+    "التسليم إلى وكيل شحن أو منطقة حرة بدلاً من المستخدم",
+    "ارتباط المستخدم النهائي بأجهزة أمنية في دولة خاضعة للعقوبات أو عالية المخاطر"
+   ]
+  },
+  "sources": [
+   "https://hrlibrary.law.umn.edu/research/Egypt/Egypt Telecommunication Regulation Law.pdf",
+   "https://tra.gov.eg/rules/law-no-10-of-2003",
+   "https://masaar.net/en/amendments-to-the-telecommunications-law-new-restrictions-on-the-use-and-operation-of-telecommunications-equipment",
+   "https://www.tra.gov.eg/wp-content/uploads/2022/11/Doc-02-Tight-Type-Approval-Scheme-Procedure.pdf",
+   "https://cms.iatf.africa/sites/default/files/2023-10/restricted%20imports%20in%20Egypt%20-%20English.pdf"
+  ],
+  "confidence": "Law 10/2003 Arts. 44, 64 and 77: confirmed in the law's text (English translation). 2022 amendment: secondary (Masaar). Security approval for GPS and surveillance items: secondary (Afreximbank IATF summary of MoTI rules)."
+ },
+ {
+  "category": "drones_aerospace",
+  "label_en": "Drones (UAVs), aerospace and navigation",
+  "label_ar": "الطائرات بدون طيار والفضاء والملاحة",
+  "keys": [
+   "9A012",
+   "9A120",
+   "9A515",
+   "9A610",
+   "9A619",
+   "9A001",
+   "9A101",
+   "9B",
+   "9D",
+   "9E",
+   "7A003",
+   "7A005",
+   "7A103",
+   "7A994",
+   "MTCR",
+   "HS8806",
+   "HS8807",
+   "HS8802",
+   "HS8803",
+   "HS8411",
+   "HS8412",
+   "HS8526"
+  ],
+  "en": {
+   "why_it_matters": "Under Law 216/2017 (Executive Regulation 931/2018), using, possessing, importing, manufacturing or trading drones in Egypt needs a permit from the Ministry of Defence (Armed Forces Operations Authority). Penalties run from 1–7 years' imprisonment up to life imprisonment for terrorist purposes. Ministry of Trade and Industry rules also list drones and remote-controlled aircraft as prohibited imports. UAV engines, flight controllers and inertial or GNSS navigation parts are priority items under MTCR and CHPL diversion controls.",
+   "ask_customer": [
+    "Type (consumer, commercial or military), payload, range or endurance, autonomy and maximum take-off weight",
+    "Ministry of Defence permit number for import, possession or use",
+    "End use (survey, agriculture, media, security) and the operator's identity",
+    "Components: engines, flight controllers, IMU/INS, GNSS receivers, data links, cameras",
+    "Is the item for re-export or transit to a third country?"
+   ],
+   "documents": [
+    "Ministry of Defence (Armed Forces) permit under Law 216/2017",
+    "NTRA approval for radio links where applicable",
+    "Technical datasheet (range, endurance, payload, navigation accuracy)",
+    "End-user certificate with no-re-export and no-military-use clauses",
+    "Exporter's licence (MTCR Category I/II items, 9A012, 9A120, 9A610 / 600-series)"
+   ],
+   "egyptian_authority": "Ministry of Defence (Armed Forces Operations Authority), Law 216/2017 and Executive Regulation 931/2018; NTRA for radio frequencies; Customs enforcement of the Ministry of Trade and Industry import ban.",
+   "red_flags": [
+    "Long-range or heavy-payload UAVs for a civilian buyer",
+    "Requests for 'kits', engines or flight controllers without the airframe",
+    "Navigation components with high accuracy (INS, GNSS anti-jam) for undefined use",
+    "Shipping through countries known for UAV diversion to conflict zones",
+    "Buyer refuses to disclose the operator or the operating area"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "وفقاً للقانون رقم 216 لسنة 2017 (ولائحته التنفيذية رقم 931 لسنة 2018)، يشترط استخدام الطائرات بدون طيار أو حيازتها أو استيرادها أو تصنيعها أو الاتجار فيها في مصر الحصول على تصريح من وزارة الدفاع (هيئة عمليات القوات المسلحة). وتتراوح العقوبة بين الحبس من سنة إلى سبع سنوات والسجن المؤبد إذا كان الغرض إرهابياً. كما تدرج قواعد وزارة التجارة والصناعة الطائرات بدون طيار والطائرات الموجهة لاسلكياً ضمن الواردات المحظورة. وتُعد محركات الطائرات بدون طيار ووحدات التحكم في الطيران ومكونات الملاحة القصورية أو بالأقمار الصناعية من البنود ذات الأولوية في ضوابط نظام التحكم في تكنولوجيا القذائف وقائمة البنود ذات الأولوية القصوى لمنع التحويل.",
+   "ask_customer": [
+    "النوع (استهلاكي، تجاري، عسكري) والحمولة والمدى أو زمن التحليق ودرجة الاستقلالية وأقصى وزن للإقلاع",
+    "رقم تصريح وزارة الدفاع للاستيراد أو الحيازة أو الاستخدام",
+    "الاستخدام النهائي (مساحة، زراعة، إعلام، أمن) وهوية المشغل",
+    "المكونات: المحركات، وحدات التحكم في الطيران، وحدات القياس أو الملاحة القصورية، مستقبلات GNSS، وصلات البيانات، الكاميرات",
+    "هل البضاعة مخصصة لإعادة التصدير أو الترانزيت إلى دولة ثالثة؟"
+   ],
+   "documents": [
+    "تصريح وزارة الدفاع (القوات المسلحة) وفقاً للقانون 216 لسنة 2017",
+    "موافقة الجهاز القومي لتنظيم الاتصالات على وصلات الراديو متى انطبق",
+    "النشرة الفنية (المدى، زمن التحليق، الحمولة، دقة الملاحة)",
+    "شهادة المستخدم النهائي متضمنة شرط عدم إعادة التصدير وعدم الاستخدام العسكري",
+    "ترخيص التصدير الصادر للمصدر (بنود الفئة الأولى والثانية لنظام MTCR، و9A012 و9A120 و9A610 / سلسلة 600)"
+   ],
+   "egyptian_authority": "وزارة الدفاع (هيئة عمليات القوات المسلحة) وفقاً للقانون 216 لسنة 2017 ولائحته التنفيذية 931 لسنة 2018، والجهاز القومي لتنظيم الاتصالات للترددات، والجمارك لإنفاذ حظر الاستيراد الصادر عن وزارة التجارة والصناعة.",
+   "red_flags": [
+    "طائرات بدون طيار بعيدة المدى أو ذات حمولة كبيرة لمشترٍ مدني",
+    "طلب «أطقم» أو محركات أو وحدات تحكم في الطيران دون هيكل الطائرة",
+    "مكونات ملاحة عالية الدقة (INS أو GNSS مضاد للتشويش) لاستخدام غير محدد",
+    "مسار شحن عبر دول معروفة بتحويل الطائرات بدون طيار إلى مناطق النزاع",
+    "رفض المشتري الإفصاح عن المشغل أو نطاق التشغيل"
+   ]
+  },
+  "sources": [
+   "https://www.legal500.com/intelligence/egypt/transport/legal-controls-for-the-use-of-drones-in-egypt",
+   "https://cms.iatf.africa/sites/default/files/2023-10/restricted%20imports%20in%20Egypt%20-%20English.pdf",
+   "https://www.bis.gov/licensing/country-guidance/common-high-priority-items-list-chpl"
+  ],
+  "confidence": "Law 216/2017 and Executive Regulation 931/2018: secondary (law-firm article, Youssry Saleh & Partners, 19 Jan 2022). Import ban: secondary (Afreximbank IATF summary of MoTI rules)."
+ },
+ {
+  "category": "electronics_computers",
+  "label_en": "Electronics, semiconductors and computers",
+  "label_ar": "الإلكترونيات وأشباه الموصلات والحواسب",
+  "keys": [
+   "3A001",
+   "3A002",
+   "3A090",
+   "3B001",
+   "3B090",
+   "3C",
+   "3D",
+   "3E",
+   "4A003",
+   "4A090",
+   "4A994",
+   "3A991",
+   "3A992",
+   "CHPL-T1",
+   "CHPL-T2",
+   "CHPL-T3",
+   "HS8471",
+   "HS8473",
+   "HS8504",
+   "HS8532",
+   "HS8533",
+   "HS8536",
+   "HS8541",
+   "HS8542",
+   "HS8548"
+  ],
+  "en": {
+   "why_it_matters": "Integrated circuits, FPGAs, advanced computing chips (3A090/4A090) and electronic components are the main items diverted to Russia's and Iran's weapons programmes, and they appear in CHPL Tiers 1–3. Egypt has no national dual-use control list for them. GOEIC conformity and factory-registration rules may apply to consumer electronics, but no Egyptian strategic-trade authority for these items was found.",
+   "ask_customer": [
+    "Part numbers, manufacturer, ECCN or EU control entry, CHPL HS code",
+    "End user and end use (what product the components go into)",
+    "Is the buyer an authorised distributor of the manufacturer?",
+    "Destination of the finished product; any re-export?",
+    "For AI or advanced computing chips: data-centre location and ownership"
+   ],
+   "documents": [
+    "Manufacturer or distributor datasheet and ECCN / EU classification",
+    "End-user statement with a no-re-export clause, including a 'no Russia / Belarus' clause where relevant",
+    "Commercial invoice with part numbers; bill of lading or air waybill",
+    "Exporter's licence or licence-exception justification"
+   ],
+   "egyptian_authority": "No specific Egyptian strategic-trade authority found — apply international practice (EU 2021/821, US EAR, CHPL). GOEIC and Customs apply general import conformity rules.",
+   "red_flags": [
+    "CHPL Tier 1–2 items ordered by a newly established trading company",
+    "Payment from a third country unrelated to the deal (for example Hong Kong, UAE, Türkiye or Central Asia)",
+    "Order quantities far beyond local demand; brokers instead of OEMs",
+    "Removed or altered part markings; request for unmarked packaging",
+    "Customer address matches residential or virtual offices",
+    "Customer refuses an end-use check or after-sales support"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "تُعد الدوائر المتكاملة ومصفوفات البوابات القابلة للبرمجة (FPGA) ورقائق الحوسبة المتقدمة (3A090 / 4A090) والمكونات الإلكترونية أبرز البنود التي يتم تحويلها إلى برامج التسلح الروسية والإيرانية، وهي مدرجة بالمستويات من الأول إلى الثالث بقائمة البنود ذات الأولوية القصوى (CHPL). ولا توجد في مصر قائمة وطنية لضوابط السلع مزدوجة الاستخدام لهذه البنود. وقد تنطبق قواعد المطابقة وتسجيل المصانع لدى الهيئة العامة للرقابة على الصادرات والواردات على الإلكترونيات الاستهلاكية، إلا أنه لم يتم العثور على جهة مصرية مختصة بالرقابة على التجارة الاستراتيجية لهذه البنود.",
+   "ask_customer": [
+    "أرقام القطع والشركة المصنعة ورقم التصنيف ECCN أو البند الأوروبي والبند الجمركي في قائمة CHPL",
+    "المستخدم النهائي والاستخدام النهائي (المنتج الذي ستدخل فيه المكونات)",
+    "هل المشتري موزع معتمد من الشركة المصنعة؟",
+    "وجهة المنتج النهائي، وهل يوجد إعادة تصدير؟",
+    "بالنسبة لرقائق الذكاء الاصطناعي والحوسبة المتقدمة: موقع مركز البيانات وملكيته"
+   ],
+   "documents": [
+    "النشرة الفنية من المصنع أو الموزع والتصنيف وفقاً لـ ECCN أو القائمة الأوروبية",
+    "إقرار المستخدم النهائي متضمناً شرط عدم إعادة التصدير، وشرط «عدم التصدير إلى روسيا / بيلاروسيا» متى انطبق",
+    "الفاتورة التجارية بأرقام القطع وبوليصة الشحن البحري أو الجوي",
+    "ترخيص التصدير أو مبرر الاستثناء الصادر للمصدر"
+   ],
+   "egyptian_authority": "لم يتم العثور على جهة مصرية مختصة بالرقابة على التجارة الاستراتيجية، وتُطبق الممارسات الدولية (اللائحة الأوروبية 2021/821، ولوائح التصدير الأمريكية EAR، وقائمة CHPL). وتطبق الهيئة العامة للرقابة على الصادرات والواردات والجمارك قواعد المطابقة العامة للواردات.",
+   "red_flags": [
+    "طلب بنود من المستويين الأول والثاني بقائمة CHPL من شركة تجارية حديثة التأسيس",
+    "السداد من دولة ثالثة لا علاقة لها بالصفقة (مثل هونج كونج أو الإمارات أو تركيا أو آسيا الوسطى)",
+    "كميات تتجاوز الطلب المحلي بكثير، أو التعامل عبر وسطاء بدلاً من المصنعين",
+    "إزالة علامات القطع أو تعديلها، أو طلب تغليف بدون علامات",
+    "عنوان العميل سكني أو مكتب افتراضي",
+    "رفض العميل التحقق من الاستخدام النهائي أو خدمات ما بعد البيع"
+   ]
+  },
+  "sources": [
+   "https://www.bis.gov/licensing/country-guidance/common-high-priority-items-list-chpl",
+   "https://www.bis.gov/articles/red-flag-indicators",
+   "https://www.fincen.gov/sites/default/files/shared/FTA_Russian_Export_Controls_FINAL_508.pdf",
+   "https://www.un.org/ar/sc/1540/documents/Egypt%20revised%20matrix.pdf"
+  ],
+  "confidence": "No Egyptian dual-use list: secondary (1540 matrix and report show no dual-use list; absence cannot be confirmed in a primary source). CHPL and BIS red flags: confirmed in primary source."
+ },
+ {
+  "category": "machine_tools",
+  "label_en": "Machine tools and manufacturing equipment",
+  "label_ar": "العدد الآلية ومعدات التصنيع",
+  "keys": [
+   "2B001",
+   "2B002",
+   "2B003",
+   "2B005",
+   "2B006",
+   "2B007",
+   "2B008",
+   "2B009",
+   "2B201",
+   "2B204",
+   "2B206",
+   "2B207",
+   "2B209",
+   "2B991",
+   "2D",
+   "2E",
+   "CHPL-T4",
+   "HS8456",
+   "HS8457",
+   "HS8458",
+   "HS8459",
+   "HS8460",
+   "HS8461",
+   "HS8462",
+   "HS8463",
+   "HS8466",
+   "HS8480",
+   "HS9031"
+  ],
+  "en": {
+   "why_it_matters": "High-precision CNC machine tools, flow-forming machines, isostatic presses and measuring machines are used for missile, centrifuge and weapons production (2B001, 2B201, 2B209, 2B006). CNC machines and their parts are CHPL Tier 4. No Egyptian-specific control was found.",
+   "ask_customer": [
+    "Machine type, number of axes, positioning accuracy (µm), spindle specifications and CNC controller model",
+    "End product and industry sector; installation site",
+    "Will the manufacturer perform installation and servicing? Is there a geo-lock or relocation sensor?",
+    "Are spare parts, software or upgrades planned for a third party?"
+   ],
+   "documents": [
+    "Technical datasheet and accuracy certificate (ISO 230-2)",
+    "End-user certificate with installation address and no-re-export clause",
+    "Installation and acceptance protocol",
+    "Exporter's licence where required"
+   ],
+   "egyptian_authority": "No specific Egyptian authority found — apply international practice.",
+   "red_flags": [
+    "Accuracy or axis count beyond the stated product's needs",
+    "Buyer declines installation, training or warranty service",
+    "Machine to be relocated after installation, or delivery to a warehouse",
+    "End user connected to military-industrial entities on sanctions or Entity Lists",
+    "Purchase through intermediaries in transshipment hubs"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "تُستخدم العدد الآلية بالتحكم الرقمي عالية الدقة وماكينات التشكيل الانسيابي والمكابس المتساوية الضغط وماكينات القياس في إنتاج القذائف وأجهزة الطرد المركزي والأسلحة (2B001 و2B201 و2B209 و2B006). كما تندرج ماكينات التحكم الرقمي وأجزاؤها ضمن المستوى الرابع بقائمة CHPL. ولم يتم العثور على ضوابط مصرية خاصة بها.",
+   "ask_customer": [
+    "نوع الماكينة وعدد المحاور ودقة تحديد الموضع (ميكرومتر) ومواصفات عمود الدوران وطراز وحدة التحكم الرقمي",
+    "المنتج النهائي والقطاع الصناعي وموقع التركيب",
+    "هل سيتولى المصنع التركيب والصيانة؟ وهل يوجد قفل جغرافي أو حساس لنقل الماكينة؟",
+    "هل من المخطط توريد قطع غيار أو برمجيات أو ترقيات لطرف ثالث؟"
+   ],
+   "documents": [
+    "النشرة الفنية وشهادة الدقة (ISO 230-2)",
+    "شهادة المستخدم النهائي متضمنة عنوان التركيب وشرط عدم إعادة التصدير",
+    "محضر التركيب والاستلام",
+    "ترخيص التصدير الصادر للمصدر متى لزم"
+   ],
+   "egyptian_authority": "لم يتم العثور على جهة مصرية مختصة، وتُطبق الممارسات الدولية.",
+   "red_flags": [
+    "دقة أو عدد محاور يتجاوز احتياجات المنتج المعلن",
+    "رفض المشتري خدمات التركيب أو التدريب أو الضمان",
+    "نقل الماكينة بعد تركيبها أو التسليم إلى مخزن",
+    "ارتباط المستخدم النهائي بكيانات صناعية عسكرية مدرجة بقوائم العقوبات أو قائمة الكيانات",
+    "الشراء عبر وسطاء في مراكز إعادة الشحن"
+   ]
+  },
+  "sources": [
+   "https://www.bis.gov/licensing/country-guidance/common-high-priority-items-list-chpl",
+   "https://www.bis.gov/articles/red-flag-indicators",
+   "https://eur-lex.europa.eu/eli/reco/2019/1318/oj/eng"
+  ],
+  "confidence": "No Egyptian-specific control found (absence; secondary). International guidance: confirmed in primary source."
+ },
+ {
+  "category": "sensors_lasers_optics",
+  "label_en": "Sensors, lasers, optics, night vision and radar",
+  "label_ar": "أجهزة الاستشعار والليزر والبصريات والرؤية الليلية والرادار",
+  "keys": [
+   "6A001",
+   "6A002",
+   "6A003",
+   "6A004",
+   "6A005",
+   "6A006",
+   "6A007",
+   "6A008",
+   "6A102",
+   "6A203",
+   "6A993",
+   "6A995",
+   "0A504",
+   "0A919",
+   "CHPL-T2",
+   "HS8525",
+   "HS8526",
+   "HS9001",
+   "HS9002",
+   "HS9005",
+   "HS9013",
+   "HS9014",
+   "HS9015",
+   "HS9027",
+   "HS9031"
+  ],
+  "en": {
+   "why_it_matters": "Thermal and night-vision cameras, image intensifiers, focal-plane arrays, high-power lasers and radar are directly usable in weapons sights, targeting and surveillance. In Egypt, night-vision equipment for war or security use needs prior security approval, laser pens above 5 mW are banned imports, and surveillance or tracking equipment needs security approval.",
+   "ask_customer": [
+    "Sensor type, resolution, frame rate, spectral band; laser wavelength and output power",
+    "Civil application (industrial inspection, firefighting, medical) and the end user",
+    "Are the items integrated into a larger civilian system, or supplied loose as cores or modules?",
+    "Security approval reference for night-vision or surveillance items"
+   ],
+   "documents": [
+    "Technical datasheet with performance parameters",
+    "Prior security approval (night vision, surveillance, tracking) as required under MoTI restricted-import rules",
+    "End-user certificate with no military use or re-export",
+    "Exporter's licence (6A002/6A003 typically licensable)"
+   ],
+   "egyptian_authority": "Security authorities' prior approval for night-vision, surveillance and tracking equipment (Ministry of Trade and Industry restricted-import rules, enforced by Customs). The specific approving agency was not found in a primary source. No authority found for lasers beyond the 5 mW laser-pointer import ban.",
+   "red_flags": [
+    "Thermal cores or image intensifier tubes bought separately from a civilian host system",
+    "Military-specification sensors for 'hunting' or 'security' by an unlicensed buyer",
+    "High-power lasers with no medical or industrial licence",
+    "Radar modules or LiDAR for drones with undefined use",
+    "End-user or transit via conflict-adjacent countries"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "يمكن استخدام الكاميرات الحرارية وكاميرات الرؤية الليلية وأنابيب تكثيف الصورة ومصفوفات المستوى البؤري وأجهزة الليزر عالية القدرة والرادارات مباشرة في مناظير الأسلحة وتحديد الأهداف والمراقبة. وفي مصر تخضع أجهزة الرؤية الليلية المستخدمة في الأغراض الحربية أو الأمنية لموافقة أمنية مسبقة، ويُحظر استيراد أقلام الليزر التي تزيد قدرتها على 5 ميلي وات، وتخضع أجهزة المراقبة والتتبع لموافقة أمنية.",
+   "ask_customer": [
+    "نوع المستشعر ودرجة الوضوح ومعدل الإطارات والنطاق الطيفي، والطول الموجي وقدرة الخرج لأجهزة الليزر",
+    "التطبيق المدني (فحص صناعي، إطفاء حرائق، طبي) والمستخدم النهائي",
+    "هل البنود مدمجة في منظومة مدنية أكبر أم موردة منفصلة كوحدات أساسية؟",
+    "مرجع الموافقة الأمنية لأجهزة الرؤية الليلية أو المراقبة"
+   ],
+   "documents": [
+    "النشرة الفنية متضمنة معايير الأداء",
+    "الموافقة الأمنية المسبقة (للرؤية الليلية والمراقبة والتتبع) وفقاً لقواعد الواردات المقيدة لوزارة التجارة والصناعة",
+    "شهادة المستخدم النهائي متضمنة عدم الاستخدام العسكري وعدم إعادة التصدير",
+    "ترخيص التصدير الصادر للمصدر (البندان 6A002 و6A003 يخضعان غالباً للترخيص)"
+   ],
+   "egyptian_authority": "الموافقة المسبقة للجهات الأمنية على أجهزة الرؤية الليلية والمراقبة والتتبع (قواعد الواردات المقيدة لوزارة التجارة والصناعة، وتنفذها الجمارك). ولم يتم التحقق من الجهة المانحة للموافقة في مصدر أولي. ولم يتم العثور على جهة مختصة بأجهزة الليزر بخلاف حظر استيراد أقلام الليزر الأعلى من 5 ميلي وات.",
+   "red_flags": [
+    "شراء وحدات حرارية أساسية أو أنابيب تكثيف الصورة بمعزل عن منظومة مدنية",
+    "مستشعرات بمواصفات عسكرية بدعوى «الصيد» أو «الأمن» من مشترٍ غير مرخص",
+    "أجهزة ليزر عالية القدرة دون ترخيص طبي أو صناعي",
+    "وحدات رادار أو ليدار للطائرات بدون طيار لاستخدام غير محدد",
+    "مستخدم نهائي أو ترانزيت عبر دول مجاورة لمناطق النزاع"
+   ]
+  },
+  "sources": [
+   "https://cms.iatf.africa/sites/default/files/2023-10/restricted%20imports%20in%20Egypt%20-%20English.pdf",
+   "https://www.bis.gov/licensing/country-guidance/common-high-priority-items-list-chpl"
+  ],
+  "confidence": "Night-vision and surveillance security approval and the laser-pen ban: secondary (Afreximbank IATF summary of MoTI resolutions; no resolution numbers given)."
+ },
+ {
+  "category": "marine",
+  "label_en": "Marine and underwater equipment",
+  "label_ar": "المعدات البحرية وتحت الماء",
+  "keys": [
+   "8A001",
+   "8A002",
+   "8A620",
+   "8A609",
+   "8A992",
+   "8B",
+   "8D",
+   "8E",
+   "6A001",
+   "6A991",
+   "HS8901",
+   "HS8902",
+   "HS8903",
+   "HS8904",
+   "HS8905",
+   "HS8906",
+   "HS8907",
+   "HS8908",
+   "HS9014",
+   "HS9015",
+   "HS8408"
+  ],
+  "en": {
+   "why_it_matters": "Submersibles, unmanned underwater vehicles, sonar, underwater navigation and marine propulsion can have naval uses (8A001, 8A002, 6A001). Vessels themselves are also a sanctions-evasion vector: ship-to-ship transfers, AIS gaps and flag-hopping. No Egyptian dual-use control for marine items was found. Under the 1888 Constantinople Convention, the Suez Canal Authority states that the canal is open to all vessels regardless of flag.",
+   "ask_customer": [
+    "Item type and specifications (depth rating, sonar frequency or range, propulsion power)",
+    "End user (port authority, offshore oil and gas, research, navy?)",
+    "For vessel-related finance: IMO number, flag, registered owner, operator, beneficial owner and recent port calls",
+    "AIS history for the voyage; any ship-to-ship transfers?"
+   ],
+   "documents": [
+    "Technical datasheet",
+    "End-user certificate",
+    "For vessels: registry certificate, P&I certificate, charter party, bills of lading, AIS track report",
+    "Exporter's licence where required"
+   ],
+   "egyptian_authority": "No specific Egyptian authority found for marine dual-use items — apply international practice. For vessels: screen against UN, EU, OFAC and UK lists; the Suez Canal Authority applies freedom of transit under the 1888 Convention.",
+   "red_flags": [
+    "AIS switched off or position spoofing near sanctioned jurisdictions",
+    "Recent change of name, flag or ownership; flag of convenience with weak registry",
+    "Ship-to-ship transfers in open sea",
+    "Vessel age or insurance inconsistent with trade; no reputable P&I club",
+    "Bills of lading that do not match the vessel's track",
+    "Military-specification sonar or UUVs for civilian buyers"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "قد تكون للغواصات والمركبات غير المأهولة تحت الماء وأجهزة السونار والملاحة تحت الماء ومعدات الدفع البحري استخدامات بحرية عسكرية (8A001 و8A002 و6A001). كما تُعد السفن ذاتها وسيلة للتحايل على العقوبات، من خلال النقل من سفينة إلى أخرى والانقطاع في بيانات نظام التعرف الآلي (AIS) والتنقل بين الأعلام. ولم يتم العثور على ضوابط مصرية للمعدات البحرية مزدوجة الاستخدام. ووفقاً لاتفاقية القسطنطينية لعام 1888، تؤكد هيئة قناة السويس أن القناة مفتوحة لجميع السفن دون تمييز في العلم.",
+   "ask_customer": [
+    "نوع البند ومواصفاته (عمق التشغيل، تردد السونار أو مداه، قدرة الدفع)",
+    "المستخدم النهائي (هيئة موانئ، بترول وغاز بحري، بحث علمي، بحرية عسكرية؟)",
+    "بالنسبة لتمويل السفن: رقم المنظمة البحرية الدولية (IMO) والعلم والمالك المسجل والمشغل والمستفيد الحقيقي وموانئ التوقف الأخيرة",
+    "سجل نظام التعرف الآلي للرحلة، وهل تمت عمليات نقل من سفينة إلى أخرى؟"
+   ],
+   "documents": [
+    "النشرة الفنية",
+    "شهادة المستخدم النهائي",
+    "بالنسبة للسفن: شهادة التسجيل، شهادة نادي الحماية والتعويض، مشارطة الإيجار، بوالص الشحن، تقرير مسار AIS",
+    "ترخيص التصدير الصادر للمصدر متى لزم"
+   ],
+   "egyptian_authority": "لم يتم العثور على جهة مصرية مختصة بالمعدات البحرية مزدوجة الاستخدام، وتُطبق الممارسات الدولية. وبالنسبة للسفن: يتم الفحص مقابل قوائم الأمم المتحدة والاتحاد الأوروبي ومكتب مراقبة الأصول الأجنبية الأمريكي والمملكة المتحدة، وتطبق هيئة قناة السويس مبدأ حرية المرور وفقاً لاتفاقية 1888.",
+   "red_flags": [
+    "إغلاق نظام التعرف الآلي أو تزييف الموقع بالقرب من دول خاضعة للعقوبات",
+    "تغيير حديث في اسم السفينة أو علمها أو ملكيتها، أو علم مجاملة بسجل ضعيف",
+    "عمليات نقل من سفينة إلى أخرى في عرض البحر",
+    "عمر السفينة أو تأمينها لا يتسق مع طبيعة التجارة، أو عدم وجود نادي حماية وتعويض ذي سمعة",
+    "بوالص شحن لا تتطابق مع مسار السفينة",
+    "أجهزة سونار أو مركبات غير مأهولة تحت الماء بمواصفات عسكرية لمشترين مدنيين"
+   ]
+  },
+  "sources": [
+   "https://www.arabnews.com/middle-east/us-has-not-requested-suez-closure-to-russian-ships-egypt-2034811",
+   "https://en.yenisafak.com/world/suez-canal-authority-reaffirms-commitment-to-free-passage-for-all-vessels-3693843",
+   "https://www.fincen.gov/sites/default/files/shared/FTA_Russian_Export_Controls_FINAL_508.pdf"
+  ],
+  "confidence": "SCA position: secondary (news reporting SCA statements of Mar 2022 and Nov 2024). No Egyptian marine dual-use control: not found."
+ },
+ {
+  "category": "materials",
+  "label_en": "Special materials, alloys, composites and metal powders",
+  "label_ar": "المواد الخاصة والسبائك والمواد المركبة والمساحيق المعدنية",
+  "keys": [
+   "1A001",
+   "1A002",
+   "1A004",
+   "1A005",
+   "1C001",
+   "1C002",
+   "1C004",
+   "1C007",
+   "1C008",
+   "1C010",
+   "1C011",
+   "1C101",
+   "1C111",
+   "1C116",
+   "1C117",
+   "1C202",
+   "1C210",
+   "1C216",
+   "1C226",
+   "1C227",
+   "1C228",
+   "1C229",
+   "1C231",
+   "HS3901",
+   "HS3904",
+   "HS6815",
+   "HS7202",
+   "HS7218",
+   "HS7224",
+   "HS7601",
+   "HS7603",
+   "HS8101",
+   "HS8103",
+   "HS8104",
+   "HS8108",
+   "HS8109",
+   "HS8112"
+  ],
+  "en": {
+   "why_it_matters": "Maraging steel, high-strength aluminium and titanium alloys, carbon fibre, tungsten, zirconium, beryllium and fine metal powders are used in centrifuges, missile structures, propellants and armour. They are often ordered in forms (tubes, rods, prepregs) that reveal their intended use. No Egyptian-specific control was found. EU 2019/1148 Annex II covers aluminium and magnesium powders below 200 µm at 70% w/w or more as reportable explosives precursors.",
+   "ask_customer": [
+    "Material grade or alloy designation, tensile strength, form and dimensions (outside diameter, wall thickness)",
+    "Mill test certificate; particle size for powders",
+    "End product and production process",
+    "Quantity compared with historical orders"
+   ],
+   "documents": [
+    "Mill test certificate or certificate of analysis",
+    "Technical datasheet",
+    "End-user certificate",
+    "Exporter's licence where required"
+   ],
+   "egyptian_authority": "No specific Egyptian authority found — apply international practice. GOEIC applies general quality and conformity rules, for example to reinforcing steel.",
+   "red_flags": [
+    "Tubes or cylinders with dimensions typical of centrifuge rotors (1C116, 1C202)",
+    "Carbon-fibre prepregs or filament winding orders from non-aerospace buyers",
+    "Fine aluminium or magnesium powders with oxidisers in the same order",
+    "Request to certify a lower grade than supplied",
+    "Supplier or buyer linked to proliferation-network typologies (front companies, trading hubs)"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "تُستخدم سبائك الصلب المراجنج وسبائك الألومنيوم والتيتانيوم عالية المتانة وألياف الكربون والتنجستن والزركونيوم والبريليوم والمساحيق المعدنية الدقيقة في أجهزة الطرد المركزي وهياكل القذائف والوقود الدافع والتدريع. وكثيراً ما تُطلب بأشكال (أنابيب، قضبان، ألياف مشبعة) تكشف الغرض من استخدامها. ولم يتم العثور على ضوابط مصرية خاصة بها. ويدرج الملحق الثاني من اللائحة الأوروبية 2019/1148 مساحيق الألومنيوم والماغنسيوم الأقل من 200 ميكرومتر وبتركيز 70% وزناً أو أكثر كسلائف متفجرات واجبة الإبلاغ.",
+   "ask_customer": [
+    "درجة المادة أو تسمية السبيكة ومقاومة الشد والشكل والأبعاد (القطر الخارجي، سمك الجدار)",
+    "شهادة اختبار المصنع، وحجم الحبيبات بالنسبة للمساحيق",
+    "المنتج النهائي والعملية الإنتاجية",
+    "الكمية مقارنة بالطلبات السابقة"
+   ],
+   "documents": [
+    "شهادة اختبار المصنع أو شهادة التحليل",
+    "النشرة الفنية",
+    "شهادة المستخدم النهائي",
+    "ترخيص التصدير الصادر للمصدر متى لزم"
+   ],
+   "egyptian_authority": "لم يتم العثور على جهة مصرية مختصة، وتُطبق الممارسات الدولية. وتطبق الهيئة العامة للرقابة على الصادرات والواردات قواعد الجودة والمطابقة العامة (مثل حديد التسليح).",
+   "red_flags": [
+    "أنابيب أو أسطوانات بأبعاد مماثلة لدوارات أجهزة الطرد المركزي (1C116 و1C202)",
+    "طلبات ألياف كربون مشبعة أو لف خيوط من مشترين خارج قطاع الطيران والفضاء",
+    "مساحيق ألومنيوم أو ماغنسيوم دقيقة مع مواد مؤكسدة في الطلب ذاته",
+    "طلب إصدار شهادة بدرجة أقل من المورد فعلياً",
+    "ارتباط المورد أو المشتري بأنماط شبكات الانتشار (شركات واجهة، مراكز تجارية)"
+   ]
+  },
+  "sources": [
+   "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32019R1148",
+   "https://www.fatf-gafi.org/content/fatf-gafi/en/publications/Financingofproliferation/Proliferation-financing-risk-assessment-mitigation.html"
+  ],
+  "confidence": "Absence of Egyptian control: not found. EU 2019/1148 powder thresholds: confirmed in primary source."
+ },
+ {
+  "category": "arms_related",
+  "label_en": "Arms, ammunition and military items",
+  "label_ar": "الأسلحة والذخائر والمعدات العسكرية",
+  "keys": [
+   "ML1",
+   "ML2",
+   "ML3",
+   "ML4",
+   "ML5",
+   "ML6",
+   "ML7",
+   "ML8",
+   "ML9",
+   "ML10",
+   "ML11",
+   "ML12",
+   "ML13",
+   "ML14",
+   "ML15",
+   "ML16",
+   "ML17",
+   "ML18",
+   "ML19",
+   "ML20",
+   "ML21",
+   "ML22",
+   "0A501",
+   "0A502",
+   "0A503",
+   "0A504",
+   "0A505",
+   "0A6",
+   "1A6",
+   "9A610",
+   "USML",
+   "HS9301",
+   "HS9302",
+   "HS9303",
+   "HS9304",
+   "HS9305",
+   "HS9306",
+   "HS9307",
+   "HS8710",
+   "HS890610",
+   "HS6307"
+  ],
+  "en": {
+   "why_it_matters": "Under Law 394/1954 (as amended), importing, trading in, manufacturing or repairing weapons and ammunition needs a special licence from the Minister of Interior. Firearms imports also need Ministry of Defence approval, which also sets quantities (a 2014 amendment). Unlicensed import carries life imprisonment, or death if done for terrorist purposes. Bladed weapons need prior security approval, and camouflage fabrics and toy guns firing solid projectiles are banned imports. Banks should treat military-list items as outside normal trade-finance appetite unless the end user is a state body with documented approvals.",
+   "ask_customer": [
+    "Item description, Military List or USML category, calibre, quantity",
+    "Importer's Ministry of Interior licence and Ministry of Defence approval",
+    "End user (armed forces, police, licensed dealer, sport shooting club)",
+    "Exporting country's arms export licence and end-user certificate format",
+    "Broker involvement; transit countries"
+   ],
+   "documents": [
+    "Ministry of Interior special licence (Law 394/1954 Art. 12) and Ministry of Defence approval",
+    "Government end-user certificate (original, authenticated)",
+    "Exporter's arms export licence; brokering licence if a broker is involved",
+    "For vessels carrying arms or armed guards through Egyptian ports or the Suez Canal: advance declaration (48 hours) and sealing procedures"
+   ],
+   "egyptian_authority": "Ministry of Interior (licences, Law 394/1954), Ministry of Defence (import approval and quantities; military end users); Port Police and Military Police for weapons on vessels transiting the Suez Canal.",
+   "red_flags": [
+    "Private trading company importing military items without a Ministry of Interior licence",
+    "Dual-use items (body armour, night vision, drones) bundled with weapons",
+    "End-user certificate from a third country or unverifiable signatory",
+    "Payment through unrelated jurisdictions or in cash",
+    "Destination near arms-embargoed states (Libya, Sudan, Somalia, Yemen) — check UN arms embargoes",
+    "Mis-declared goods ('spare parts', 'hunting equipment')"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "وفقاً للقانون رقم 394 لسنة 1954 وتعديلاته، يشترط استيراد الأسلحة والذخائر أو الاتجار فيها أو صنعها أو إصلاحها الحصول على ترخيص خاص من وزير الداخلية. كما يستلزم استيراد الأسلحة النارية موافقة وزارة الدفاع التي تحدد الكميات أيضاً (تعديل 2014). ويُعاقب على الاستيراد بغير ترخيص بالسجن المؤبد، أو بالإعدام إذا ارتُكب لغرض إرهابي. وتخضع الأسلحة البيضاء لموافقة أمنية مسبقة، ويُحظر استيراد الأقمشة المموهة وألعاب الأطفال التي تطلق مقذوفات صلبة. وينبغي للبنوك اعتبار بنود القوائم العسكرية خارج نطاق شهية مخاطر تمويل التجارة المعتادة، ما لم يكن المستخدم النهائي جهة حكومية وبحوزتها موافقات موثقة.",
+   "ask_customer": [
+    "وصف البند وفئته بالقائمة العسكرية أو القائمة الأمريكية للذخائر (USML) والعيار والكمية",
+    "ترخيص وزارة الداخلية للمستورد وموافقة وزارة الدفاع",
+    "المستخدم النهائي (القوات المسلحة، الشرطة، تاجر مرخص، نادٍ للرماية)",
+    "ترخيص تصدير الأسلحة الصادر من دولة التصدير وشكل شهادة المستخدم النهائي",
+    "مدى مشاركة وسطاء، ودول الترانزيت"
+   ],
+   "documents": [
+    "الترخيص الخاص من وزير الداخلية (المادة 12 من القانون 394 لسنة 1954) وموافقة وزارة الدفاع",
+    "شهادة المستخدم النهائي الحكومية (أصل موثق)",
+    "ترخيص تصدير الأسلحة الصادر للمصدر، وترخيص الوساطة إن وجد وسيط",
+    "بالنسبة للسفن التي تحمل أسلحة أو حراساً مسلحين عبر الموانئ المصرية أو قناة السويس: الإخطار المسبق قبل 48 ساعة وإجراءات التشميع"
+   ],
+   "egyptian_authority": "وزارة الداخلية (التراخيص وفقاً للقانون 394 لسنة 1954)، ووزارة الدفاع (موافقة الاستيراد والكميات والمستخدمون العسكريون)، وشرطة الميناء والشرطة العسكرية بالنسبة للأسلحة على متن السفن العابرة لقناة السويس.",
+   "red_flags": [
+    "شركة تجارية خاصة تستورد بنوداً عسكرية دون ترخيص من وزارة الداخلية",
+    "تجميع بنود مزدوجة الاستخدام (دروع واقية، رؤية ليلية، طائرات بدون طيار) مع أسلحة",
+    "شهادة مستخدم نهائي صادرة من دولة ثالثة أو من موقّع لا يمكن التحقق منه",
+    "السداد عبر دول لا علاقة لها بالصفقة أو نقداً",
+    "وجهة مجاورة لدول خاضعة لحظر أسلحة (ليبيا، السودان، الصومال، اليمن)، مع مراجعة قرارات حظر الأسلحة الصادرة عن الأمم المتحدة",
+    "وصف غير صحيح للبضائع («قطع غيار»، «أدوات صيد»)"
+   ]
+  },
+  "sources": [
+   "https://eg.andersen.com/wp-content/uploads/2026/10/Law-No.-394-of-1954.pdf",
+   "https://www.dailynewsegypt.com/?p=242645",
+   "https://www.westpandi.com/publications/news/egypt-carriage-of-weapons-ammunition-and-armed-(1)",
+   "https://cms.iatf.africa/sites/default/files/2023-10/restricted%20imports%20in%20Egypt%20-%20English.pdf"
+  ],
+  "confidence": "Law 394/1954 Arts. 12, 26 bis: confirmed in the law's text (Andersen English translation). 2014 Ministry of Defence approval amendment: secondary (news; amending decree-law number not found). Suez arms declaration: secondary (P&I club, 2012)."
+ },
+ {
+  "category": "vessels_sanctions",
+  "label_en": "Vessels, shipping and sanctions (trade finance)",
+  "label_ar": "السفن والشحن والعقوبات (تمويل التجارة)",
+  "keys": [
+   "IMO",
+   "VESSEL",
+   "UNSC-1718",
+   "UNSC-2231",
+   "UNSC-1267",
+   "OFAC-SDN-VESSEL",
+   "EU-SHADOW-FLEET",
+   "HS27",
+   "HS2709",
+   "HS2710",
+   "HS72",
+   "HS26"
+  ],
+  "en": {
+   "why_it_matters": "EMLCU Decision 1/2024 binds Egyptian financial institutions and DNFBPs. They must check UN Security Council lists daily, freeze the funds of listed persons and entities without delay or prior notice, screen all parties to a transaction before dealing, and report immediately to their supervisor and EMLCU. It covers terrorism and WMD-proliferation regimes (1267/1989/2253, 1988, 1718 on DPRK, 2231 on Iran). Vessels named in UN 1718 designations are a direct TFS exposure for shipping finance. No published CBE instruction specific to vessel screening was found.",
+   "ask_customer": [
+    "Vessel name, IMO number, flag, registered owner, ship manager, operator and beneficial owner",
+    "Ports of loading and discharge, transhipment points, voyage dates",
+    "Cargo origin (for oil: certificate of origin, price-cap attestation if relevant)",
+    "Any ship-to-ship transfer during the voyage; AIS history",
+    "Charterer and all counterparties to the bills of lading"
+   ],
+   "documents": [
+    "Bills of lading, charter party, certificate of origin, inspection certificate",
+    "Vessel registry and P&I certificates",
+    "AIS or vessel-tracking report for the voyage",
+    "Screening evidence against UN, Egyptian (Law 8/2015 lists), EU, OFAC and UK lists"
+   ],
+   "egyptian_authority": "EMLCU (TFS mechanism, Decision 1/2024; Law 80/2002); sector supervisors (CBE for banks and PSPs; FRA for non-bank financial institutions); Egyptian terrorist entity lists under Law 8/2015 (as amended by Law 14/2020).",
+   "red_flags": [
+    "Match or partial match to a UN 1718 or 2231 designated vessel or entity",
+    "AIS dark periods; ship-to-ship transfers; flag changes",
+    "Vessel previously named in UN Panel of Experts reports",
+    "Goods description inconsistent with HS code or vessel type",
+    "Over- or under-invoicing; third-party payments (FATF/Egmont TBML indicators)",
+    "Shell companies as owners, managers or charterers registered in secrecy jurisdictions"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "يُلزم قرار وحدة مكافحة غسل الأموال وتمويل الإرهاب رقم 1 لسنة 2024 المؤسسات المالية والأعمال والمهن غير المالية المحددة في مصر بمراجعة قوائم مجلس الأمن يومياً، وتجميد أموال الأشخاص والكيانات المدرجة دون تأخير ودون إخطار مسبق، وفحص جميع أطراف المعاملة قبل التعامل، والإخطار الفوري للجهة الرقابية والوحدة. ويشمل القرار أنظمة الإرهاب وانتشار أسلحة الدمار الشامل (القرارات 1267/1989/2253، و1988، و1718 بشأن كوريا الشمالية، و2231 بشأن إيران). وتمثل السفن المدرجة بموجب القرار 1718 تعرضاً مباشراً للعقوبات المالية المستهدفة في تمويل الشحن. ولم يتم العثور على تعليمات منشورة من البنك المركزي المصري خاصة بفحص السفن.",
+   "ask_customer": [
+    "اسم السفينة ورقم IMO والعلم والمالك المسجل ومدير السفينة والمشغل والمستفيد الحقيقي",
+    "موانئ الشحن والتفريغ ونقاط إعادة الشحن وتواريخ الرحلة",
+    "منشأ البضاعة (وبالنسبة للنفط: شهادة المنشأ وإقرار سقف السعر متى انطبق)",
+    "هل تمت أي عملية نقل من سفينة إلى أخرى أثناء الرحلة؟ وما سجل نظام التعرف الآلي؟",
+    "المستأجر وجميع الأطراف المقابلة في بوالص الشحن"
+   ],
+   "documents": [
+    "بوالص الشحن ومشارطة الإيجار وشهادة المنشأ وشهادة الفحص",
+    "شهادات تسجيل السفينة ونادي الحماية والتعويض",
+    "تقرير تتبع السفينة أو مسار AIS للرحلة",
+    "ما يثبت الفحص مقابل قوائم الأمم المتحدة والقوائم المصرية (القانون 8 لسنة 2015) وقوائم الاتحاد الأوروبي ومكتب مراقبة الأصول الأجنبية الأمريكي والمملكة المتحدة"
+   ],
+   "egyptian_authority": "وحدة مكافحة غسل الأموال وتمويل الإرهاب (آلية العقوبات المالية المستهدفة، القرار 1 لسنة 2024، والقانون 80 لسنة 2002)، والجهات الرقابية القطاعية (البنك المركزي المصري للبنوك ومقدمي خدمات الدفع، والهيئة العامة للرقابة المالية للمؤسسات المالية غير المصرفية)، وقوائم الكيانات الإرهابية والإرهابيين وفقاً للقانون 8 لسنة 2015 المعدل بالقانون 14 لسنة 2020.",
+   "red_flags": [
+    "تطابق كلي أو جزئي مع سفينة أو كيان مدرج بموجب القرار 1718 أو 2231",
+    "فترات انقطاع في بيانات AIS، أو نقل من سفينة إلى أخرى، أو تغيير العلم",
+    "ورود اسم السفينة سابقاً في تقارير فريق خبراء الأمم المتحدة",
+    "وصف البضاعة لا يتسق مع البند الجمركي أو نوع السفينة",
+    "المغالاة أو التقليل في قيمة الفواتير، أو السداد من أطراف ثالثة (مؤشرات مجموعة العمل المالي ومجموعة إجمونت لغسل الأموال القائم على التجارة)",
+    "شركات صورية كملاك أو مديرين أو مستأجرين مسجلة في ولايات قضائية تتسم بالسرية"
+   ]
+  },
+  "sources": [
+   "https://fra.gov.eg/wp-content/uploads/2025/05/قرار-رقم-1-لسنة-2024.pdf",
+   "https://english.legal-agenda.com/?p=23378",
+   "https://www.fatf-gafi.org/en/publications/Mutualevaluations/fur-egypt-2025.html",
+   "https://www.regulationtomorrow.com/2021/03/the-fatf-and-egmont-group-publishes-updated-trade-based-money-laundering-risk-indicators/"
+  ],
+  "confidence": "EMLCU Decision 1/2024: confirmed in primary source (Official Gazette text hosted by FRA). Law 14/2020 amendment: secondary. CBE vessel-specific instruction: not found."
+ },
+ {
+  "category": "general",
+  "label_en": "Other controlled items (international practice)",
+  "label_ar": "أصناف خاضعة للرقابة أخرى (الممارسة الدولية)",
+  "keys": [],
+  "en": {
+   "why_it_matters": "Items on international export-control lists can be diverted to weapons programmes or to military, surveillance or other unauthorised end uses. No specific Egyptian authority or list was found for this kind of item: apply international practice and rely on the exporter's licence.",
+   "ask_customer": [
+    "Manufacturer's datasheet and the manufacturer's own export classification (control code)",
+    "Stated end use and the end user's business: does the product fit it?",
+    "Quantity, delivery address and final destination; any re-export planned?",
+    "Who pays, from which country and account?"
+   ],
+   "documents": [
+    "Technical datasheet / specification sheet",
+    "Commercial invoice and packing list with part numbers",
+    "Signed end-user certificate or end-use statement (no re-export, no weapons or military use)",
+    "Exporter's export licence, or written confirmation that none is needed and why",
+    "Transport document (bill of lading / airway bill)"
+   ],
+   "egyptian_authority": "No specific Egyptian authority found — apply international practice (enhanced due diligence, end-use statement, exporter's licence).",
+   "red_flags": [
+    "Vague or implausible end use",
+    "Product does not fit the buyer's business",
+    "New company, residential or virtual address",
+    "Freight forwarder named as the consignee",
+    "Unusual routing through transshipment hubs",
+    "Payment by unrelated third parties or from third countries",
+    "Refusal of installation, training or warranty",
+    "Documents inconsistent with each other (invoice, transport document, HS code)"
+   ]
+  },
+  "ar": {
+   "why_it_matters": "قد يتم تحويل الأصناف المدرجة في قوائم الرقابة الدولية على الصادرات إلى برامج تسليح أو استخدامات عسكرية أو للمراقبة أو غيرها من الاستخدامات غير المصرح بها. لم يتم العثور على جهة أو قائمة مصرية محددة لهذا النوع من الأصناف: طبّق الممارسة الدولية واعتمد على ترخيص المصدّر.",
+   "ask_customer": [
+    "النشرة الفنية للمصنّع وتصنيف الرقابة على الصادرات الخاص به (كود الرقابة)",
+    "الاستخدام النهائي المعلن ونشاط المستخدم النهائي: هل يتناسب المنتج معه؟",
+    "الكمية وعنوان التسليم والوجهة النهائية؛ هل توجد نية لإعادة التصدير؟",
+    "من يسدد القيمة، ومن أي دولة وأي حساب؟"
+   ],
+   "documents": [
+    "النشرة الفنية / المواصفات",
+    "الفاتورة التجارية وقائمة التعبئة بأرقام القطع",
+    "شهادة المستخدم النهائي أو إقرار الاستخدام النهائي موقعًا (بلا إعادة تصدير ولا استخدام في التسليح أو الأغراض العسكرية)",
+    "ترخيص التصدير الصادر للمصدّر، أو تأكيد كتابي بعدم الحاجة إليه مع السبب",
+    "مستند النقل (بوليصة الشحن / بوليصة الشحن الجوي)"
+   ],
+   "egyptian_authority": "لم يتم العثور على جهة مصرية محددة — طبّق الممارسة الدولية (العناية الواجبة المعززة، وإقرار الاستخدام النهائي، وترخيص المصدّر).",
+   "red_flags": [
+    "استخدام نهائي غامض أو غير منطقي",
+    "المنتج لا يتناسب مع نشاط المشتري",
+    "شركة حديثة أو عنوان سكني أو افتراضي",
+    "وكيل الشحن مذكور كمرسل إليه",
+    "مسار شحن غير معتاد عبر مراكز إعادة الشحن",
+    "السداد من أطراف ثالثة غير ذات صلة أو من دول أخرى",
+    "رفض التركيب أو التدريب أو الضمان",
+    "تعارض المستندات فيما بينها (الفاتورة ومستند النقل وكود HS)"
+   ]
+  },
+  "sources": [
+   "https://www.bis.gov/articles/red-flag-indicators",
+   "https://eur-lex.europa.eu/eli/reco/2019/1318/oj/eng"
+  ],
+  "confidence": "Workflow and red flags: international good practice (primary sources). Absence of a specific Egyptian authority: not found in the research, check before relying on it."
+ }
+]

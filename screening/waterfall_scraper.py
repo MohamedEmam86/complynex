@@ -148,7 +148,10 @@ class GoogleNewsRSSSource(NewsSource):
     def __init__(self, config: dict):
         super().__init__(config)
         self.timeout = config.get('timeout', 8)
-        
+        # Google News editions searched (hl, gl, ceid); default: the Egyptian Arabic edition, as always.
+        # Vessel news (screening/vessel_news.py) adds the international English edition.
+        self.editions = [tuple(e) for e in (config.get('editions') or [('ar', 'EG', 'EG:ar')])]
+
     async def search(self, query: str, **kwargs) -> List[Dict]:
         from urllib.parse import quote_plus
         import requests
@@ -158,8 +161,8 @@ class GoogleNewsRSSSource(NewsSource):
         # the screened person is judged afterwards (adverse_relevance).
         loop = asyncio.get_event_loop()
         articles, errors = [], []
-        for q in (f'"{query}"', query):
-            url = f"https://news.google.com/rss/search?q={quote_plus(q)}&hl=ar&gl=EG&ceid=EG:ar"
+        for q, (hl, gl, ceid) in [(q, e) for e in self.editions for q in (f'"{query}"', query)]:
+            url = f"https://news.google.com/rss/search?q={quote_plus(q)}&hl={hl}&gl={gl}&ceid={ceid}"
             def do_fetch(url=url):
                 resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}, timeout=self.timeout)
                 resp.raise_for_status()

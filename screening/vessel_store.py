@@ -42,16 +42,25 @@ from screening import vessel_utils as VU
 logger = logging.getLogger(__name__)
 
 # what clients see instead of a list's name (owner decision, 17 Nov 2026)
-GENERIC_LIST_LABEL = 'International approved lists'
-GENERIC_LIST_LABEL_AR = 'قوائم دولية معتمدة'
+# (round 3: "International approved lists" told the officer nothing; the result now says what the ship is and
+#  under which kind of regime, and the lists are named generically by what they are)
+GENERIC_LIST_LABEL = 'Official sanctions lists'
+GENERIC_LIST_LABEL_AR = 'قوائم العقوبات الرسمية'
+GENERIC_BAN_LABEL = 'Official ban / exclusion lists'
+GENERIC_BAN_LABEL_AR = 'قوائم الحظر والاستبعاد الرسمية'
 
 OPENSANCTIONS_SOURCES = ('opensanctions',)
 CFG_INCLUDE_OS = 'vessels_include_opensanctions'
 
 # risk indicators of a listed ship (the Vessels Database "risk" filter); weights add up, capped at 100
-RISK_WEIGHTS = {'foc': 15, 'high_risk_flag': 25, 'false_flag': 30, 'flag_changes': 15, 'renamed': 10,
-                'invalid_imo': 20, 'owner_listed': 25, 'multi_list': 10}
-RISK_BANDS = (('high', 50), ('medium', 25), ('low', 0))
+# Risk indicators of a listed ship: signs of evasion or poor standing, each counted once. Being on a list, on
+# several lists, or owned by a listed party is a FACT shown with the ship, not part of this score (almost every
+# listed ship has it, so it would make every ship "high").
+RISK_WEIGHTS = {'false_flag': 30, 'high_risk_flag': 20, 'invalid_imo': 20, 'flag_changes': 15, 'foc': 10,
+                'renamed': 10, 'psc_detained': 10, 'psc_repeated': 10,
+                'owner_listed': 0, 'multi_list': 0}
+# high = several independent indicators (or one severe one with another), medium = one or two, low = minor only
+RISK_BANDS = (('high', 45), ('medium', 20), ('low', 0))
 
 
 def can_see_sources(user=None):
@@ -259,12 +268,10 @@ def _resolve_parties(cur, links):
     names = sorted({party_key(n) for _, ref, n, _, _ in links if n and not ref} - {''})
     by_name = {}
     if names:
-        # one pass over the list records (the key expression mirrors party_key for Latin names)
-        key_sql = ("upper(btrim(regexp_replace(regexp_replace(regexp_replace(full_name, '[(][^)]*[)]', ' ', 'g'), "
-                   "'[^A-Za-z0-9\u0600-\u06ff]+', ' ', 'g'), '\\s+', ' ', 'g')))")
-        cur.execute(f"""SELECT id, source, {key_sql} AS k FROM screening_watchlist
-                        WHERE is_active = 1 AND coalesce(entity_type, '') <> 'VESSEL' AND {key_sql} = ANY(%s)""",
-                    (names,))
+        # cx_party_key() mirrors party_key for Latin names and is indexed (20261120b_vessel_owner_index.sql)
+        cur.execute("""SELECT id, source, cx_party_key(full_name) AS k FROM screening_watchlist
+                       WHERE cx_party_key(full_name) = ANY(%s) AND is_active = 1
+                         AND coalesce(entity_type, '') <> 'VESSEL'""", (names,))
         for r in _rows(cur):
             by_name.setdefault(r['k'], []).append((r['id'], r['source']))
     out = []
@@ -283,52 +290,144 @@ def _resolve_parties(cur, links):
     return out
 
 
-def _listed_risk(prof, n_lists, owner_listed, flags):
+def _listed_risk(prof, n_lists, owner_listed, flags, psc=0):
+    """(score, indicator codes) of a listed ship; facts (owner listed, several lists) carry no weight."""
     lines = []
     fl = (prof.get('current_flag') or '')
     fr = flags.get(fl.lower()) or flags.get((VU.flag_code(fl) or '-').lower()) or {}
     if '(false flag)' in fl:
         lines.append('false_flag')
-    if fr.get('foc'):
-        lines.append('foc')
     if fr.get('high_risk'):
         lines.append('high_risk_flag')
+    elif fr.get('foc'):
+        lines.append('foc')
     if len(_j(prof.get('flag_history'), []) or []) >= 2:
         lines.append('flag_changes')
     if _j(prof.get('previous_names'), []):
         lines.append('renamed')
     if prof.get('imo') and prof.get('imo_valid') is False:
         lines.append('invalid_imo')
+    if psc >= 1:
+        lines.append('psc_detained')
+    if psc >= 3:
+        lines.append('psc_repeated')
     if owner_listed:
         lines.append('owner_listed')
     if n_lists >= 2:
         lines.append('multi_list')
-    return min(100, sum(RISK_WEIGHTS[x] for x in lines)), lines
+    return min(100, sum(RISK_WEIGHTS.get(x, 0) for x in lines)), lines
 
 
-def sync(conn, source=None, log=None):
+_CHANGE_FIELDS = ('name', 'imo', 'mmsi', 'current_flag', 'flag_history', 'previous_names', 'provenance', 'regimes',
+                  'measures', 'vessel_type', 'is_active')
+
+
+def _snapshot(cur, source):
+    """{watchlist_id: {fields}} of the materialised ships of a source (or all), for the change log."""
+    w = 'WHERE p.source = %s' if source else ''
+    cur.execute(f"""SELECT p.watchlist_id, p.group_key, p.imo, p.mmsi, p.current_flag, p.flag_history, p.previous_names,
+                           p.provenance, p.regimes, p.measures, p.vessel_type, w.full_name AS name, w.is_active, p.source
+                    FROM vessel_profile p LEFT JOIN screening_watchlist w ON w.id = p.watchlist_id {w}""",
+                (source,) if source else ())
+    return {r['watchlist_id']: r for r in _rows(cur)}
+
+
+def _change_log(cur, run_id, before, after, log=None):
+    """Write the added / removed / changed ships between two snapshots. Returns (added, removed, changed)."""
+    if not before:          # first load of these lists: counts only, no row per ship
+        return sum(1 for r in after.values() if r.get('is_active')), 0, 0
+    added = removed = changed = 0
+    rows = []
+    for wid, new in after.items():
+        old = before.get(wid)
+        if new.get('is_active') and (old is None or not old.get('is_active')):
+            added += 1
+            rows.append(('added', new, None))
+        elif old is not None and old.get('is_active') and not new.get('is_active'):
+            removed += 1
+            rows.append(('removed', new, None))
+        elif old is not None and new.get('is_active'):
+            # a column filled for the first time (old value NULL after a migration) is not a change of the ship
+            diff = {f: [old.get(f), new.get(f)] for f in _CHANGE_FIELDS
+                    if f != 'is_active' and str(old.get(f) or '') != str(new.get(f) or '')
+                    and not (f == 'regimes' and old.get(f) is None)}
+            if diff:
+                changed += 1
+                rows.append(('changed', new, diff))
+    for wid, old in before.items():
+        if wid not in after and old.get('is_active'):
+            removed += 1
+            rows.append(('removed', old, None))
+    if rows:
+        from psycopg2.extras import execute_values
+        execute_values(cur, """INSERT INTO vessel_change_log (run_id, source, change, watchlist_id, group_key, imo, name,
+                                                           provenance, detail) VALUES %s""",
+                       [(run_id, r.get('source'), ch, r.get('watchlist_id'), r.get('group_key'), r.get('imo'),
+                         (r.get('name') or '')[:300], r.get('provenance'),
+                         json.dumps(d, ensure_ascii=False, default=str) if d else None) for ch, r, d in rows],
+                       page_size=1000)
+    return added, removed, changed
+
+
+def _start_run(conn, source, trigger, user_id):
+    rows = read_rows(conn, """INSERT INTO vessel_update_runs (source, trigger, user_id) VALUES (%s, %s, %s)
+                              RETURNING id""", (source, trigger, user_id))
+    conn.commit()
+    return (rows or [{}])[0].get('id')
+
+
+def sync(conn, source=None, log=None, trigger='list_update', user_id=None):
     """Rebuild vessel_profile / vessel_identifier / vessel_party_link for one source (or all) from the
-    VESSEL rows of screening_watchlist, then refresh the cross-list risk of every ship and re-check the
-    whitelist. Idempotent; commits. Returns counts."""
+    VESSEL rows of screening_watchlist (no download), classify each record's provenance
+    (screening/vessel_provenance.py), refresh the risk of every ship, re-check the whitelist and bump the
+    data version (every worker drops its cache). Idempotent; commits. Returns counts."""
+    from screening import vessel_provenance as VP
+    from screening import vessel_regimes as VR
     log = log or logger.info
     t0 = time.time()
+    table = VP.classes(conn)
+    run_id = _start_run(conn, source, trigger, user_id)
     cur = conn.cursor()
+    try:
+        before = _snapshot(cur, source)
+    except Exception:
+        conn.rollback()
+        cur = conn.cursor()
+        before = {}
     params = []
     where = "entity_type = 'VESSEL'"
     if source:
         where += ' AND source = %s'
         params.append(source)
-    cur.execute(f"SELECT id, source, source_id, properties, details FROM screening_watchlist WHERE {where}",
+    cur.execute(f"SELECT id, source, source_id, properties, details, topics FROM screening_watchlist WHERE {where}",
                 params)
     rows = _rows(cur)
     profiles, idents, links = [], [], []
+    classes_n, unclassified = {}, set()
     for row in rows:
         block = vessel_block(row)
         if not block:
             continue
         prof, ids = _profile_values(row['id'], row['source'], block)
+        props = _j(row.get('properties'), {}) or {}
+        pv = VP.classify(row['source'], props.get('datasets') if isinstance(props, dict) else None,
+                         _j(row.get('topics'), []) or [], table)
+        prof['provenance'] = pv['class']
+        det = _j(row.get('details'), {}) or {}
+        det = det if isinstance(det, dict) else {}
+        props_d = props if isinstance(props, dict) else {}
+        comments = det.get('comments') or ''
+        prof['regimes'] = json.dumps(VR.regimes_of(
+            props_d.get('programs') or [], props_d.get('regime'), det.get('program'), det.get('regime'),
+            re.findall(r'resolution\s+\d{4}', str(comments), re.I), topics=_j(row.get('topics'), []) or [])) or None
+        prof['datasets'] = json.dumps(pv['datasets']) if pv['datasets'] else None
+        prof['risk_datasets'] = json.dumps(pv['risk_datasets']) if pv['risk_datasets'] else None
+        classes_n[pv['class']] = classes_n.get(pv['class'], 0) + 1
+        unclassified.update(pv['unclassified'])
         profiles.append(prof)
         idents += ids
+        if not VP.alerts(pv['class']):
+            continue            # owners of a ship that never alerts are not needed
         for o in (block.get('owners') or []):
             name = str(o.get('name') or '').strip()
             if not name and not o.get('ref'):
@@ -336,17 +435,21 @@ def sync(conn, source=None, log=None):
             links.append((row['id'], o.get('ref'), name[:500] or None, (o.get('role') or 'owner')[:30],
                           row['source']))
     resolved = _resolve_parties(cur, links)
-    # replace the source's materialised rows in one transaction
+    # replace the source's materialised rows in one transaction (by source, and by the rows' ids, so rows of a
+    # record that moved to another source go too); rows of records deleted from the list (orphans) go as well
     if source:
-        sub = '(SELECT id FROM screening_watchlist WHERE source = %s)'
         for t in ('vessel_identifier', 'vessel_party_link', 'vessel_profile'):
-            cur.execute(f'DELETE FROM {t} WHERE watchlist_id IN {sub}', (source,))
+            cur.execute(f'DELETE FROM {t} WHERE source = %s OR watchlist_id IN '
+                        f'(SELECT id FROM screening_watchlist WHERE source = %s)', (source, source))
     else:
         for t in ('vessel_identifier', 'vessel_party_link', 'vessel_profile'):
             cur.execute(f'DELETE FROM {t}')
+    for t in ('vessel_identifier', 'vessel_party_link', 'vessel_profile'):
+        cur.execute(f'DELETE FROM {t} x WHERE NOT EXISTS (SELECT 1 FROM screening_watchlist w WHERE w.id = x.watchlist_id)')
     from psycopg2.extras import execute_values
     cols = ('watchlist_id', 'source', 'imo', 'imo_valid', 'mmsi', 'call_sign', 'vessel_type', 'current_flag',
-            'flag_history', 'previous_names', 'gross_tonnage', 'year_built', 'measures', 'owners', 'group_key')
+            'flag_history', 'previous_names', 'gross_tonnage', 'year_built', 'measures', 'owners', 'group_key',
+            'provenance', 'datasets', 'risk_datasets', 'regimes')
     vals = []
     for p in profiles:
         p = dict(p, gross_tonnage=str(p['gross_tonnage'])[:40] if p['gross_tonnage'] else None,
@@ -361,11 +464,20 @@ def sync(conn, source=None, log=None):
     if resolved:
         execute_values(cur, """INSERT INTO vessel_party_link (watchlist_id, party_watchlist_id, party_name, role, source)
                                VALUES %s ON CONFLICT DO NOTHING""", resolved, page_size=2000)
+    after = _snapshot(cur, source)
+    added, removed, changed = _change_log(cur, run_id, before, after)
     conn.commit()
     risk = refresh_risk(conn)
     reopened = check_whitelist(conn)
-    _CACHE.clear()
-    out = {'source': source or 'all', 'vessels': len(profiles),
+    bump_version(conn, f'sync {source or "all"}')
+    read_rows(conn, """UPDATE vessel_update_runs SET finished_at = now(), status = 'done', vessels = %s, added = %s,
+                              removed = %s, changed = %s, by_class = %s, message = %s WHERE id = %s RETURNING id""",
+              (len(profiles), added, removed, changed, json.dumps(classes_n),
+               'initial load' if not before else None, run_id))
+    conn.commit()
+    out = {'source': source or 'all', 'run_id': run_id, 'added': added, 'removed': removed, 'changed': changed,
+           'vessels': len(profiles), 'by_class': classes_n,
+           'unclassified_datasets': sorted(unclassified),
            'with_imo': sum(1 for p in profiles if p['imo']),
            'imo_check_fails': sum(1 for p in profiles if p['imo'] and p['imo_valid'] is False),
            'identifiers': len(idents), 'parties': len(resolved),
@@ -376,22 +488,32 @@ def sync(conn, source=None, log=None):
 
 
 def refresh_risk(conn):
-    """Risk indicators of every listed ship (needs all lists: 'on several lists', 'owner listed')."""
+    """Risk indicators of every listed ship, per ship (all list records of the same IMO): flags, renames,
+    IMO check digit, port-state-control records. Every record of a ship gets the ship's score."""
     cur = conn.cursor()
     flags = flag_risk(conn, force=True)
     cur.execute("""SELECT p.watchlist_id, p.imo, p.imo_valid, p.current_flag, p.flag_history, p.previous_names,
-                          p.group_key,
-                          (SELECT count(DISTINCT w2.source) FROM vessel_profile p2
-                             JOIN screening_watchlist w2 ON w2.id = p2.watchlist_id AND w2.is_active = 1
-                            WHERE p2.group_key = p.group_key) AS n_lists,
+                          p.group_key, p.provenance, p.risk_datasets, w.source, w.is_active,
                           EXISTS (SELECT 1 FROM vessel_party_link l JOIN screening_watchlist o
                                     ON o.id = l.party_watchlist_id AND o.is_active = 1
                                    WHERE l.watchlist_id = p.watchlist_id) AS owner_listed
-                   FROM vessel_profile p""")
-    upd = []
+                   FROM vessel_profile p JOIN screening_watchlist w ON w.id = p.watchlist_id""")
+    groups = {}
     for r in _rows(cur):
-        score, lines = _listed_risk(r, int(r['n_lists'] or 0), bool(r['owner_listed']), flags)
-        upd.append((score, json.dumps(lines), r['watchlist_id']))
+        groups.setdefault(r['group_key'], []).append(r)
+    upd = []
+    for gk, recs in groups.items():
+        active = [r for r in recs if r['is_active']] or recs
+        lists = {r['source'] for r in active if r['provenance'] == 'SANCTION'}
+        psc = len({d for r in active for d in (_j(r['risk_datasets'], []) or [])})
+        merged = {'current_flag': next((r['current_flag'] for r in active if r['current_flag']), None),
+                  'flag_history': json.dumps(sorted({x for r in active for x in _j(r['flag_history'], []) or []})),
+                  'previous_names': json.dumps(sorted({x for r in active for x in _j(r['previous_names'], []) or []})),
+                  'imo': next((r['imo'] for r in active if r['imo']), None),
+                  'imo_valid': next((r['imo_valid'] for r in active if r['imo']), None)}
+        score, lines = _listed_risk(merged, len(lists), any(r['owner_listed'] for r in active), flags, psc)
+        for r in recs:
+            upd.append((score, json.dumps(lines), r['watchlist_id']))
     if upd:
         from psycopg2.extras import execute_batch
         execute_batch(cur, 'UPDATE vessel_profile SET risk_score = %s, risk_lines = %s WHERE watchlist_id = %s',
@@ -402,7 +524,46 @@ def refresh_risk(conn):
 
 # --------------------------------------------------------------------------- engine data
 _CACHE = {}
-_TTL = 600
+_TTL = 600                     # upper bound; the data-version stamp normally invalidates much sooner
+STAMP_EVERY = 3.0              # seconds between two reads of the stamp in one process
+_STAMP = {'at': 0.0, 'value': None}
+
+
+def bump_version(conn, reason=''):
+    """Tell every worker that the vessel data or settings changed (their caches are dropped on their next
+    screening). Runs in the caller's transaction; the caller commits."""
+    rows = read_rows(conn, """UPDATE vessel_data_version SET version = version + 1, updated_at = now(), reason = %s
+                              WHERE id = 1 RETURNING version""", (str(reason or '')[:200],))
+    _CACHE.clear()
+    _STAMP['at'] = 0.0
+    return (rows or [{}])[0].get('version')
+
+
+def data_stamp(conn):
+    """The data version + a digest of the vessel settings in screening_config (one indexed single-row read)."""
+    rows = read_rows(conn, """SELECT (SELECT version FROM vessel_data_version WHERE id = 1) AS v,
+                                     (SELECT md5(coalesce(string_agg(config_key || '=' || coalesce(config_value, ''), ';'
+                                                                     ORDER BY config_key), ''))
+                                        FROM screening_config WHERE left(config_key, 6) = 'vessel') AS c""")
+    if not rows:
+        return None
+    return f"{rows[0].get('v')}|{rows[0].get('c')}"
+
+
+def check_stamp(conn, force=False):
+    """Drop this process's caches when another process changed the vessel data or settings."""
+    now = time.time()
+    if not force and now - _STAMP['at'] < STAMP_EVERY:
+        return
+    _STAMP['at'] = now
+    try:
+        st = data_stamp(conn)
+    except Exception:
+        return
+    if st is not None and st != _STAMP['value']:
+        if _STAMP['value'] is not None:
+            _CACHE.clear()
+        _STAMP['value'] = st
 
 
 def load_candidates(conn, force=False):
@@ -410,6 +571,7 @@ def load_candidates(conn, force=False):
     [{watchlist_id, group_key, source, list_type, name, names[], imo, mmsi, call_sign, flag, flags_past[],
       type, year_built, measures[], owners[], parties[], risk_score}]"""
     key = 'cands'
+    check_stamp(conn)
     now = time.time()
     if not force and key in _CACHE and now - _CACHE[key][0] < _TTL:
         return _CACHE[key][1]
@@ -419,7 +581,7 @@ def load_candidates(conn, force=False):
                           w.aliases_arabic, w.original_name,
                           p.imo, p.imo_valid, p.mmsi, p.call_sign, p.vessel_type, p.current_flag, p.flag_history,
                           p.previous_names, p.year_built, p.measures, p.owners, p.gross_tonnage, p.group_key,
-                          p.risk_score
+                          p.risk_score, p.provenance, p.risk_datasets, p.regimes
                    FROM screening_watchlist w JOIN vessel_profile p ON p.watchlist_id = w.id
                    WHERE w.is_active = 1 AND w.entity_type = 'VESSEL'""")
     rows = _rows(cur)
@@ -449,6 +611,9 @@ def load_candidates(conn, force=False):
             'gross_tonnage': row.get('gross_tonnage'),
             'measures': _j(row['measures'], []) or [], 'owners': _j(row['owners'], []) or [],
             'parties': parties.get(row['id'], []), 'risk_score': row.get('risk_score') or 0,
+            'provenance': row.get('provenance') or 'SANCTION',
+            'risk_datasets': _j(row.get('risk_datasets'), []) or [],
+            'regimes': _j(row.get('regimes'), []) or [],
         })
     _CACHE[key] = (now, out)
     return out
@@ -485,6 +650,7 @@ def party_links(conn, watchlist_ids):
 
 def flag_risk(conn, force=False):
     """{lower-case flag name or ISO2: {foc, high_risk, note}} (reference table, editable)."""
+    check_stamp(conn)
     if not force and 'flags' in _CACHE and time.time() - _CACHE['flags'][0] < _TTL:
         return _CACHE['flags'][1]
     out = {}
@@ -589,4 +755,5 @@ def merge_group(members):
     base['member_ids'] = [m['watchlist_id'] for m in members]
     base['list_types'] = sorted({m.get('list_type') for m in members if m.get('list_type')})
     base['risk_score'] = max(int(m.get('risk_score') or 0) for m in members)
+    base['regimes'] = sorted({r for m in members for r in m.get('regimes') or []})
     return base

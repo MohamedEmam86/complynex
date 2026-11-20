@@ -33,11 +33,41 @@ from . import search as SE
 log = logging.getLogger(__name__)
 MODULE = 'dualuse'
 # Owner decision: clients never see the source lists, only this generic label (real names: site admins only).
-CLIENT_LIST_LABEL = ('International control lists', 'قوائم الرقابة الدولية')
+CLIENT_LIST_LABEL = ('International export-control lists (dual-use items, controlled chemicals, explosives '
+                     'precursors, high-priority diversion items)',
+                     'قوائم الرقابة الدولية على الصادرات (الأصناف مزدوجة الاستخدام، والمواد الكيميائية الخاضعة '
+                     'للرقابة، وسلائف المتفجرات، والأصناف عالية الأولوية لخطر التحويل)')
+# What clients see on each result instead of the source list's name (owner decision, round 3).
+CLIENT_LABELS = {
+    'item': ('Controlled item – international export-control list',
+             'صنف خاضع للرقابة – قائمة دولية للرقابة على الصادرات'),
+    'chemical': ('Controlled chemical – international chemical-weapons control list',
+                 'مادة كيميائية خاضعة للرقابة – قائمة دولية لحظر الأسلحة الكيميائية'),
+    'precursor_I': ('Restricted explosives precursor', 'سليفة متفجرات مقيدة'),
+    'precursor_II': ('Reportable explosives precursor', 'سليفة متفجرات واجبة الإبلاغ'),
+    'priority': ('High-priority diversion item', 'صنف عالي الأولوية لخطر التحويل'),
+    'hs_map': ('Customs-code correlation (indicative)', 'ربط أكواد التعريفة الجمركية (استرشادي)'),
+}
+
+
+def client_label_key(list_code, extra=None):
+    if list_code == 'eu_expl_precursors':
+        return 'precursor_%s' % ((extra or {}).get('annex') or 'I')
+    if list_code in ('cwc', 'chemicals'):
+        return 'chemical'
+    if list_code == 'chpl':
+        return 'priority'
+    if list_code == 'eu_cn_correlation':
+        return 'hs_map'
+    return 'item'
+
+
+def client_label(list_code, extra=None):
+    return CLIENT_LABELS[client_label_key(list_code, extra)]
 # Short real names of the lists - shown to site administrators only.
 LIST_SHORT = {'eu_annex1': 'EU 2021/821 Annex I', 'us_ccl': 'US CCL (EAR Part 774)', 'cwc': 'CWC schedules',
               'chemicals': 'Chemicals register', 'eu_cn_correlation': 'EU CN / dual-use correlation',
-              'chpl': 'Common High Priority List'}
+              'chpl': 'Common High Priority List', 'eu_expl_precursors': 'EU 2019/1148 explosives precursors'}
 CHEM_LEVEL = {1: ('Listed toxic chemical - highest concern', 'مادة كيميائية سامة مدرجة - أعلى درجة خطورة'),
               2: ('Listed toxic chemical or precursor - high concern', 'مادة سامة أو سليفة مدرجة - خطورة مرتفعة'),
               3: ('Listed toxic chemical or precursor - elevated concern', 'مادة سامة أو سليفة مدرجة - خطورة ملحوظة')}
@@ -108,8 +138,10 @@ def install_defaults(db):
             db.execute("""INSERT INTO dualuse_terms (term_en, term_ar, source) VALUES (%s,%s,'seed')
                           ON CONFLICT (term_en, term_ar) DO NOTHING""", (r['term_en'].strip(), r['term_ar'].strip()))
             n += 1
+    from . import guidance as G
+    g = G.install(db)
     db.commit()
-    return {'terms': n}
+    return {'terms': n, 'guidance': g}
 
 
 # ------------------------------------------------------------------ index
@@ -127,7 +159,7 @@ def _code_stamp():
     import hashlib
     h = hashlib.sha256()
     base = os.path.dirname(os.path.abspath(__file__))
-    for name in (os.path.join('seed', 'synonyms.csv'), 'search.py', 'text.py'):
+    for name in (os.path.join('seed', 'synonyms.csv'), 'search.py', 'text.py', 'service.py'):
         try:
             with open(os.path.join(base, name), 'rb') as f:
                 h.update(f.read())
@@ -174,10 +206,13 @@ def load_docs(db):
                      'context_en': entry[0][:300] if r['level'] else None,
                      'context_ar': entry[1][:300] if r['level'] else None,
                      'text_en': r['text_en'], 'text_ar': r['text_ar'],
-                     'notes': ' '.join(r['notes_en'] or [])[:3000], 'hs': sorted(hs.get(r['code'], ())),
+                     'notes': ' '.join(r['notes_en'] or [])[:3000],
+                     'hs': sorted(hs.get(r['code'], set()) | set(extra.get('hs') or [])),
                      'cas': extra.get('cas') or [], 'risk': r['risk_level'], 'reasons': r['reasons'],
                      'params': params.get(r['id'], []), 'kind': kind, 'ar_status': r['ar_status'],
-                     'extra': {k: extra.get(k) for k in ('schedule', 'category_title', 'common_name')}})
+                     'extra': {k: extra.get(k) for k in ('schedule', 'category_title', 'common_name', 'annex',
+                                                         'complete', 'regime', 'limit_text', 'upper_text', 'cn')
+                               if extra.get(k) is not None}})
     for r in db.execute("""SELECT c.*, l.code AS list_code FROM dualuse_chemicals c
                            JOIN dualuse_list_versions v ON v.id = c.version_id AND v.is_current
                            JOIN dualuse_lists l ON l.id = v.list_id AND l.is_active""").fetchall():
@@ -305,18 +340,17 @@ def get_index(db=None, force=False):
 
 
 def coverage_lines(list_versions, lang='en', db=None):
-    """The list versions a screening used, without naming a list: 'International control lists - version 21 of
-    2026-11-18' (the audit trail needs the versions; the source names stay with the superadmin)."""
+    """The list versions a screening used, without naming a list: 'List versions used: #21 of 2026-11-18, ...'
+    (the audit trail needs the versions; the source names stay with the superadmin)."""
     ids = [v for v in (list_versions or {}).values() if v]
     if not ids:
         return []
     db = db or get_db()
     rows = db.execute("""SELECT v.id, v.loaded_at FROM dualuse_list_versions v WHERE v.id = ANY(%s) ORDER BY v.id""",
                       (ids,)).fetchall()
-    label = CLIENT_LIST_LABEL[1] if lang == 'ar' else CLIENT_LIST_LABEL[0]
-    word = ('الإصدار', 'بتاريخ') if lang == 'ar' else ('version', 'of')
-    return ['%s - %s %s %s %s' % (label, word[0], r['id'], word[1], r['loaded_at'].strftime('%Y-%m-%d') if r['loaded_at'] else '')
-            for r in rows]
+    word = ('إصدارات القوائم المستخدمة', 'بتاريخ') if lang == 'ar' else ('List versions used', 'of')
+    return ['%s: %s' % (word[0], ', '.join('#%s %s %s' % (r['id'], word[1], r['loaded_at'].strftime('%Y-%m-%d')
+                                                          if r['loaded_at'] else '') for r in rows))]
 
 
 def current_versions(db=None):
@@ -339,6 +373,101 @@ def list_status(db=None):
                                    AND i.ar_status = 'stale') AS ar_stale
                          FROM dualuse_lists l LEFT JOIN dualuse_list_versions v ON v.list_id = l.id AND v.is_current
                          ORDER BY l.display_order""").fetchall()
+
+
+# ------------------------------------------------------------------ list updates
+# A list not confirmed against its publisher for this many days is flagged as stale (superadmin view).
+STALE_DAYS = int(os.getenv('DUALUSE_STALE_DAYS') or 45)
+RUN_STATUS = {'running': ('Running', 'قيد التنفيذ'), 'ok': ('Completed', 'اكتمل'),
+              'blocked': ('Source blocked the download', 'المصدر منع التنزيل'), 'failed': ('Failed', 'فشل')}
+RESULT_STATUS = {'loaded': ('New version loaded', 'تم تحميل إصدار جديد'), 'unchanged': ('No change', 'لا تغيير'),
+                 'blocked': ('Blocked by the source - upload the file manually', 'منعه المصدر - ارفع الملف يدويًا'),
+                 'refused': ('Refused by the safety checks', 'رفضته فحوص الأمان'), 'failed': ('Failed', 'فشل'),
+                 'dry-run': ('Dry run', 'تجربة')}
+MODE_LABELS = {'scheduled': ('Scheduled check', 'فحص مجدول'), 'manual': ('"Check now" button', 'زر «افحص الآن»'),
+               'upload': ('Uploaded file', 'ملف مرفوع'), 'command': ('Command line', 'سطر الأوامر')}
+
+
+def update_runs(db=None, limit=15):
+    db = db or get_db()
+    try:
+        db.execute("SAVEPOINT du_runs")
+        rows = db.execute("""SELECT *, (status = 'running' AND started_at < now() - interval '45 minutes') AS stuck
+                             FROM dualuse_update_runs ORDER BY id DESC LIMIT %s""", (limit,)).fetchall()
+        db.execute("RELEASE SAVEPOINT du_runs")
+        return rows
+    except Exception:
+        db.execute("ROLLBACK TO SAVEPOINT du_runs")
+        return []
+
+
+def list_overview(db=None):
+    """Per list: current version, counts, the last check that reached the publisher, the last result and the
+    stale flag (no confirmed check for STALE_DAYS days)."""
+    from datetime import timezone
+    db = db or get_db()
+    rows = [dict(r) for r in list_status(db)]
+    runs = update_runs(db, 200)
+    last_ok, last = {}, {}
+    for run in reversed(runs):                       # oldest first: the newest result wins
+        for res in run['summary'] or []:
+            c = res.get('code')
+            if not c:
+                continue
+            last[c] = dict(res, at=run['finished_at'] or run['started_at'], mode=run['mode'])
+            if res.get('status') in ('loaded', 'unchanged'):
+                last_ok[c] = run['finished_at'] or run['started_at']
+    now = datetime.now(timezone.utc)
+    for r in rows:
+        ok = last_ok.get(r['code']) or r.get('loaded_at')
+        r['last_ok'] = ok
+        r['last'] = last.get(r['code'])
+        r['age_days'] = (now - ok).days if ok else None
+        r['stale'] = r['code'] != 'chemicals' and (ok is None or (now - ok).days > STALE_DAYS)
+    return rows
+
+
+def version_changes(vid, db=None):
+    db = db or get_db()
+    v = db.execute("""SELECT v.*, l.code AS list_code, l.legal_name FROM dualuse_list_versions v
+                      JOIN dualuse_lists l ON l.id = v.list_id WHERE v.id = %s""", (vid,)).fetchone()
+    if not v:
+        return None, None
+    prev = db.execute("""SELECT id, version_label, loaded_at FROM dualuse_list_versions WHERE list_id = %s AND id < %s
+                         ORDER BY id DESC LIMIT 1""", (v['list_id'], vid)).fetchone()
+    return v, prev
+
+
+def versions(list_code, db=None, limit=12):
+    db = db or get_db()
+    return db.execute("""SELECT v.id, v.version_label, v.loaded_at, v.loaded_by, v.record_count, v.is_current, v.diff,
+                                v.source_url FROM dualuse_list_versions v JOIN dualuse_lists l ON l.id = v.list_id
+                         WHERE l.code = %s ORDER BY v.id DESC LIMIT %s""", (list_code, limit)).fetchall()
+
+
+def start_check(who, db=None):
+    """'Check for updates now': record a run and start the importer in the background (it downloads only from
+    the official publishers). -> run id, or None when a check is already running."""
+    import subprocess
+    import sys
+    db = db or get_db()
+    if db.execute("""SELECT id FROM dualuse_update_runs WHERE status = 'running'
+                     AND started_at > now() - interval '45 minutes'""").fetchone():
+        return None
+    rid = db.execute("""INSERT INTO dualuse_update_runs (mode, triggered_by, status) VALUES ('manual', %s, 'running')
+                        RETURNING id""", ((who or '')[:80],)).fetchone()['id']
+    db.commit()
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    cmd = [sys.executable, os.path.join(root, 'scripts', 'dualuse', 'import_lists.py'), '--apply',
+           '--run-id', str(rid), '--who', (who or 'manual')[:60]]
+    _spawn(cmd, root)
+    return rid
+
+
+def _spawn(cmd, cwd):
+    import subprocess
+    subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     start_new_session=True, close_fds=True)
 
 
 # ------------------------------------------------------------------ parties
@@ -524,6 +653,23 @@ def get_screening(sid, db=None):
                           FROM dualuse_screening_lines l LEFT JOIN users u ON u.id = l.decided_by
                           WHERE l.screening_id = %s ORDER BY l.line_no, l.id""", (sid,)).fetchall()
     return s, lines
+
+
+def save_line_guidance(line_id, category, data, db=None):
+    """The user's checklist against the guidance of one category (asked / documents / red flags / notes)."""
+    db = db or get_db()
+    db.execute("""UPDATE dualuse_screening_lines SET guidance = coalesce(guidance, '{}'::jsonb) || jsonb_build_object(%s, %s::jsonb)
+                  WHERE id = %s""", (category, json.dumps(data, ensure_ascii=False), line_id))
+    db.commit()
+
+
+def recent(user_id=None, limit=6, db=None):
+    db = db or get_db()
+    try:
+        return history({}, limit=limit, db=db, user_id=user_id)[:limit]
+    except Exception:
+        db.rollback()
+        return []
 
 
 def get_line(line_id, db=None):

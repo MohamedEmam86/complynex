@@ -34,6 +34,7 @@ from functools import wraps
 from flask import (abort, flash, redirect, render_template, request, url_for, Response)
 from flask_babel import gettext as _
 from flask_login import current_user, login_required
+from access.registry import mark as _mark
 
 from database.db import get_db
 from models.audit import AuditLog
@@ -59,7 +60,7 @@ def rc_required(level='view'):
                 flash(_('You do not have permission for this Regulatory Compliance action.'), 'danger')
                 return redirect(request.referrer or url_for('dashboard'))
             return f(*args, **kwargs)
-        return wrapped
+        return _mark(('perm', MODULE, level))(wrapped)
     return decorator
 
 

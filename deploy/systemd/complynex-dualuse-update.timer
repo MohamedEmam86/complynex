@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly check of the dual-use control lists (Monday 03:41)
+
+[Timer]
+OnCalendar=Mon *-*-* 03:41:00
+RandomizedDelaySec=900
+Persistent=true
+
+[Install]
+WantedBy=timers.target

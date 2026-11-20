@@ -20,6 +20,7 @@ from flask_login import current_user, login_required
 from models.audit import AuditLog
 
 from . import service as S
+from access.registry import mark as _mark
 
 bp = Blueprint('talent', __name__, url_prefix='/talent')
 MODULE = S.MODULE
@@ -35,7 +36,7 @@ def perm(level='view'):
             if not ok:
                 abort(403)
             return f(*a, **kw)
-        return wrapped
+        return _mark(('perm', MODULE, level))(wrapped)
     return deco
 
 

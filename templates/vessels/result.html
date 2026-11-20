@@ -3,108 +3,188 @@
 {% from 'vessels/_decide.html' import decide_form, decision_box with context %}
 {% block title %}{{ _('Vessel Screening Result') }}{% endblock %}
 {% block content %}
-<div class="container mt-4">
+{% set q = res.query %}
+{% set ships = (res.hits or []) + (res.ban_hits or []) %}
+{% set vd = vessel_verdict(res) %}
+{% set ns = vessel_next_steps(res) %}
+{% set all_regimes = [] %}{% for h in ships %}{% for r in h.regimes or [] %}{% if r not in all_regimes %}{% if all_regimes.append(r) %}{% endif %}{% endif %}{% endfor %}{% endfor %}
+<div class="container-fluid mt-4 px-lg-5 vessel-result">
   {% with title=_('Vessel Screening Result'), active='' %}{% include 'vessels/_nav.html' %}{% endwith %}
-  {% set q = res.query %}
-  <div class="card border-0 shadow-sm mb-3"><div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+
+  {# ---- verdict: what was found, in one line #}
+  <div class="alert alert-{{ vd.level }} border-0 shadow-sm d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3" role="status">
     <div>
-      <div class="h5 mb-1">{{ q.name or ('IMO ' ~ q.imo if q.imo else q.mmsi or q.call_sign or q.owner) }}</div>
-      <div class="small text-muted">
-        {% if q.imo %}<span class="me-3">{{ _('IMO') }}: <strong>{{ q.imo }}</strong></span>{% endif %}
-        {% if q.mmsi %}<span class="me-3">{{ _('MMSI') }}: {{ q.mmsi }}</span>{% endif %}
-        {% if q.call_sign %}<span class="me-3">{{ _('Call sign') }}: {{ q.call_sign }}</span>{% endif %}
-        {% if q.flag %}<span class="me-3">{{ _('Flag') }}: {{ vessel_flag(q.flag) }}</span>{% endif %}
-        {% if q.flags_past %}<span class="me-3">{{ _('Former flags') }}: {% for f in q.flags_past %}{{ vessel_flag(f) }}{{ ', ' if not loop.last }}{% endfor %}</span>{% endif %}
-        {% if q.owner %}<span class="me-3">{{ _('Owner') }}: {{ q.owner }}</span>{% endif %}
-        {% if q.type %}<span class="me-3">{{ _('Type') }}: {{ q.type }}</span>{% endif %}
-        {% if row.customer_ref %}<span class="me-3">{{ _('Reference') }}: {{ row.customer_ref }}</span>{% endif %}
-        <span class="me-3">#{{ sid }} · {{ row.created_at.strftime('%Y-%m-%d %H:%M') if row.created_at else '' }}</span>
+      <div class="fs-5 fw-bold"><i class="bi {{ 'bi-shield-exclamation' if vd.level == 'danger' else 'bi-exclamation-triangle' if vd.level == 'warning' else 'bi-shield-check' }} me-2"></i>{{ vd.text }}</div>
+      <div class="small mt-1">
+        {% if ships %}{{ ships|length }} {{ _('listed ship(s)') }}{% endif %}
+        {% if res.owner_hits %}{% if ships %} · {% endif %}{{ res.owner_hits|length }} {{ _('listed owner(s) / operator(s)') }}{% endif %}
+        {% for r in all_regimes %}<span class="badge rounded-pill bg-dark bg-opacity-75 ms-1">{{ vessel_regime(r) }}</span>{% endfor %}
       </div>
     </div>
     <div class="text-end">
-      <div class="fs-5">{{ tier_badge(res.tier) }}</div>
-      {% if res.hits or res.owner_hits %}<div class="small text-muted">{{ _('Top score') }}: {{ res.score }}
-        {% if open_n %} · <span class="text-danger">{{ open_n }} {{ _('to validate') }}</span>{% else %} · {{ _('all validated') }}{% endif %}</div>{% endif %}
-      <a class="btn btn-outline-secondary btn-sm mt-1" href="{{ url_for('vessels.result_pdf', sid=sid) }}"><i class="bi bi-file-earmark-pdf me-1"></i>{{ _('PDF report') }}</a>
+      {% if ships or res.owner_hits %}<div class="small">{{ _('Top score') }}: <strong>{{ res.score }}</strong>
+        {% if open_n %} · <span class="fw-bold">{{ open_n }} {{ _('to validate') }}</span>{% else %} · {{ _('all validated') }}{% endif %}</div>{% endif %}
+      <a class="btn btn-light btn-sm mt-1" href="{{ url_for('vessels.result_pdf', sid=sid) }}"><i class="bi bi-file-earmark-pdf me-1"></i>{{ _('PDF report') }}</a>
     </div>
-  </div></div>
-  {% for w in vessel_text(res.warnings) %}<div class="alert alert-warning py-2 small">{{ w }}</div>{% endfor %}
+  </div>
 
-  {% if res.risk.lines %}
-  <div class="card border-0 shadow-sm mb-3"><div class="card-body">
-    <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle me-1 text-warning"></i>{{ _('Risk indicators') }}
-      <span class="badge bg-light text-dark border ms-2">{{ res.risk.score }} / 100</span></h6>
-    <ul class="small mb-0">{% for l in vessel_text(res.risk.lines) %}<li>{{ l }}</li>{% endfor %}</ul>
-    <div class="form-text">{{ _('Risk indicators never create a sanctions match on their own.') }}</div>
-  </div></div>
-  {% endif %}
+  <div class="row g-3">
+    <div class="col-xl-8">
+      {# ---- what was screened #}
+      <div class="card border-0 shadow-sm mb-3"><div class="card-body py-2 small">
+        <span class="fw-bold me-3">{{ q.name or ('IMO ' ~ q.imo if q.imo else q.mmsi or q.call_sign or q.owner) }}</span>
+        {% if q.imo %}<span class="me-3">{{ _('IMO number') }}: <strong>{{ q.imo }}</strong></span>{% endif %}
+        {% if q.mmsi %}<span class="me-3">MMSI: {{ q.mmsi }}</span>{% endif %}
+        {% if q.call_sign %}<span class="me-3">{{ _('Call sign') }}: {{ q.call_sign }}</span>{% endif %}
+        {% if q.flag %}<span class="me-3">{{ _('Flag state') }}: {{ vessel_flag(q.flag) }}</span>{% endif %}
+        {% if q.flags_past %}<span class="me-3">{{ _('Former flags') }}: {% for f in q.flags_past %}{{ vessel_flag(f) }}{{ ', ' if not loop.last }}{% endfor %}</span>{% endif %}
+        {% if q.owner %}<span class="me-3">{{ _('Owner / operator') }}: {{ q.owner }}</span>{% endif %}
+        {% if q.type %}<span class="me-3">{{ _('Vessel type') }}: {{ q.type }}</span>{% endif %}
+        {% if row.customer_ref %}<span class="me-3">{{ _('Reference') }}: {{ row.customer_ref }}</span>{% endif %}
+        <span class="text-muted">#{{ sid }} · {{ row.created_at.strftime('%Y-%m-%d %H:%M') if row.created_at else '' }}</span>
+      </div></div>
+      {% for w in vessel_text(res.warnings) %}<div class="alert alert-warning py-2 small">{{ w }}</div>{% endfor %}
 
-  {% if res.owner_hits %}
-  <div class="card border-danger mb-3"><div class="card-body">
-    <h6 class="fw-bold text-danger"><i class="bi bi-building-exclamation me-1"></i>{{ _('Owner / operator matches a listed party') }}</h6>
-    {% for o in res.owner_hits %}{% set ok = owner_key(o) %}{% set d = decisions.get('owner:' ~ ok) %}
-    <div class="border-bottom py-2">
-      <div class="d-flex justify-content-between small"><span><strong>{{ o.name }}</strong> <span class="text-muted">({{ _('entered') }}: {{ o.query }}) · {{ vessel_list_label(o.source) }}{% if o.list_type or o.list_type_raw %} · {{ vessel_category(o.list_type_raw or o.list_type) }}{% endif %}</span></span>
-        <span>{{ tier_badge(o.tier) }} <span class="text-muted">{{ o.score }}</span></span></div>
-      {% if d %}{{ decision_box(d) }}{% endif %}
-      {% if can_decide %}{{ decide_form(sid, 'owner', ok, false) }}{% endif %}
-    </div>{% endfor %}
-  </div></div>
-  {% endif %}
+      {# ---- side by side: the screened ship and the listed candidates #}
+      {% if ships %}
+      <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+        <h6 class="fw-bold mb-2"><i class="bi bi-layout-three-columns me-1"></i>{{ _('Screened ship and listed candidates') }}</h6>
+        <div class="table-responsive"><table class="table table-sm table-bordered small align-middle mb-0">
+          <thead class="table-light"><tr><th></th><th class="bg-primary-subtle">{{ _('Screened') }}</th>
+            {% for h in ships[:4] %}<th>{{ h.name }}{% if h.matched_name and h.matched_name != h.name %}<div class="fw-normal text-muted">{{ _('matched') }}: {{ h.matched_name }}</div>{% endif %}</th>{% endfor %}</tr></thead>
+          <tbody>
+            <tr><th>{{ _('Status') }}</th><td>-</td>{% for h in ships[:4] %}<td><span class="badge {{ 'bg-warning text-dark' if h.alert_type == 'ban' else 'bg-danger' }}">{{ vessel_status(h.provenance) }}</span>
+              {% for r in h.regimes or [] %}<div><span class="badge rounded-pill bg-light text-dark border mt-1">{{ vessel_regime(r) }}</span></div>{% endfor %}</td>{% endfor %}</tr>
+            <tr><th>{{ _('Result') }}</th><td>-</td>{% for h in ships[:4] %}<td>{{ tier_badge(h.tier) }} <span class="text-muted">{{ h.score }}</span></td>{% endfor %}</tr>
+            <tr><th>{{ _('IMO number') }}</th><td class="bg-primary-subtle">{{ q.imo or '-' }}</td>{% for h in ships[:4] %}<td class="{{ 'fw-bold text-danger' if q.imo and h.imo == q.imo }}">{{ h.imo or '-' }}</td>{% endfor %}</tr>
+            <tr><th>MMSI</th><td class="bg-primary-subtle">{{ q.mmsi or '-' }}</td>{% for h in ships[:4] %}<td class="{{ 'fw-bold text-danger' if q.mmsi and h.mmsi == q.mmsi }}">{{ h.mmsi or '-' }}</td>{% endfor %}</tr>
+            <tr><th>{{ _('Flag state') }}</th><td class="bg-primary-subtle">{{ vessel_flag(q.flag) or '-' }}</td>{% for h in ships[:4] %}<td>{{ vessel_flag(h.flag) or '-' }}{% if h.flags_past %}<div class="text-muted">{{ _('ex') }} {% for f in h.flags_past[:3] %}{{ vessel_flag(f) }}{{ ', ' if not loop.last }}{% endfor %}</div>{% endif %}</td>{% endfor %}</tr>
+            <tr><th>{{ _('Vessel type') }}</th><td class="bg-primary-subtle">{{ q.type or '-' }}</td>{% for h in ships[:4] %}<td>{{ h.type or '-' }}</td>{% endfor %}</tr>
+            <tr><th>{{ _('Year built') }}</th><td class="bg-primary-subtle">-</td>{% for h in ships[:4] %}<td>{{ h.year_built or '-' }}</td>{% endfor %}</tr>
+            <tr><th>{{ _('Former names') }}</th><td class="bg-primary-subtle">-</td>{% for h in ships[:4] %}<td>{{ (h.previous_names or [])[:3]|join(', ') or '-' }}</td>{% endfor %}</tr>
+            <tr><th>{{ _('Owner / operator') }}</th><td class="bg-primary-subtle">{{ q.owner or '-' }}</td>{% for h in ships[:4] %}<td>{% for p in (h.parties or [])[:3] %}<div>{{ p.name }}{% if p.party_listed %} <span class="badge bg-danger">{{ _('listed') }}</span>{% endif %}</div>{% else %}-{% endfor %}</td>{% endfor %}</tr>
+          </tbody></table></div>
+        {% if ships|length > 4 %}<div class="small text-muted mt-1">{{ _('More candidates below.') }}</div>{% endif %}
+      </div></div>
+      {% endif %}
 
-  {% if not res.hits and not res.owner_hits %}
-  <div class="alert alert-success"><i class="bi bi-check-circle me-1"></i>{{ _('No listed vessel matches this ship.') }}</div>
-  {% endif %}
+      {# ---- owner hits #}
+      {% if res.owner_hits %}
+      <div class="card border-danger mb-3"><div class="card-body">
+        <h6 class="fw-bold text-danger"><i class="bi bi-building-exclamation me-1"></i>{{ _('Owner / operator matches a listed party') }}</h6>
+        {% for o in res.owner_hits %}{% set ok = owner_key(o) %}{% set d = decisions.get('owner:' ~ ok) %}
+        <div class="border-bottom py-2">
+          <div class="d-flex justify-content-between small"><span><strong>{{ o.name }}</strong> <span class="text-muted">({{ _('entered') }}: {{ o.query }}) · {{ vessel_category(o.list_type_raw or o.list_type) }}{% if o.records and o.records > 1 %} · {{ o.records }} {{ _('list records') }}{% endif %}</span></span>
+            <span>{{ tier_badge(o.tier) }} <span class="text-muted">{{ o.score }}</span></span></div>
+          {% if d %}{{ decision_box(d) }}{% endif %}
+          {% if can_decide %}{{ decide_form(sid, 'owner', ok, false) }}{% endif %}
+        </div>{% endfor %}
+      </div></div>
+      {% endif %}
 
-  {% for h in res.hits %}
-  {% set d = decisions.get('ship:' ~ h.listed_key) %}
-  <div class="card border-0 shadow-sm mb-3"><div class="card-body">
-    <div class="d-flex flex-wrap justify-content-between gap-2">
-      <div>
-        <a class="h6 fw-bold text-decoration-none" href="{{ url_for('vessels.profile', wid=h.watchlist_id) }}">{{ h.name }}</a>
-        {% if h.matched_name and h.matched_name != h.name %}<span class="small text-muted ms-2">{{ _('matched') }}: {{ h.matched_name }}</span>{% endif %}
-        <div class="small text-muted">
-          {% if h.imo %}IMO {{ h.imo }} · {% endif %}{% if h.flag %}{{ vessel_flag(h.flag) }} · {% endif %}{% if h.type %}{{ h.type }} · {% endif %}{% if h.year_built %}{{ _('built') }} {{ h.year_built }} · {% endif %}{{ vessel_sources_label(h) }}
-          {% if h.sources and h.sources|length > 1 %} ({{ h.sources|length }} {{ _('lists') }}){% endif %}
+      {% if not ships and not res.owner_hits %}
+      <div class="card border-0 shadow-sm mb-3"><div class="card-body"><i class="bi bi-check-circle text-success me-1"></i>{{ _('No listed vessel matches this ship.') }}</div></div>
+      {% endif %}
+
+      {# ---- the name without its hull number / close one-word names #}
+      {% if res.related_hulls %}
+      <div class="card border-warning mb-3"><div class="card-body small">
+        <h6 class="fw-bold"><i class="bi bi-123 me-1"></i>{{ _('Listed ships with this name and a hull number') }}</h6>
+        <div class="text-muted mb-1">{{ _('Not alerted: another number is another ship. Ask for the full name and the IMO number.') }}</div>
+        {% for r in res.related_hulls %}<div>{{ r.name }}{% if r.imo %} · IMO {{ r.imo }}{% endif %}{% if r.flag %} · {{ vessel_flag(r.flag) }}{% endif %}{% for g in r.regimes or [] %} <span class="badge rounded-pill bg-light text-dark border">{{ vessel_regime(g) }}</span>{% endfor %}</div>{% endfor %}
+      </div></div>
+      {% endif %}
+      {% if res.similar_names %}
+      <div class="card border-0 bg-light mb-3"><div class="card-body small">
+        <h6 class="fw-bold">{{ _('Listed one-word names close to this one') }}</h6>
+        <div class="text-muted mb-1">{{ _('Not alerted: a one-word name must be the same word. Check the spelling with the customer.') }}</div>
+        {% for r in res.similar_names %}<div>{{ r.matched_name or r.name }}{% if r.imo %} · IMO {{ r.imo }}{% endif %}</div>{% endfor %}
+      </div></div>
+      {% endif %}
+
+      {# ---- each listed ship: why, and the officer's decision #}
+      {% for h in ships %}
+      {% set d = decisions.get('ship:' ~ h.listed_key) %}
+      <div class="card border-0 shadow-sm mb-3 border-start border-4 {{ 'border-warning' if h.alert_type == 'ban' else 'border-danger' }}"><div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between gap-2">
+          <div>
+            <a class="h6 fw-bold text-decoration-none" href="{{ url_for('vessels.profile', wid=h.watchlist_id, sid=sid) }}">{{ h.name }}</a>
+            {% if h.matched_name and h.matched_name != h.name %}<span class="small text-muted ms-2">{{ _('matched') }}: {{ h.matched_name }}</span>{% endif %}
+            <div class="small text-muted">
+              <span class="badge {{ 'bg-warning text-dark' if h.alert_type == 'ban' else 'bg-danger' }}">{{ vessel_status(h.provenance) }}</span>
+              {% for r in h.regimes or [] %}<span class="badge rounded-pill bg-light text-dark border">{{ vessel_regime(r) }}</span>{% endfor %}
+              {% if h.imo %} · IMO {{ h.imo }}{% endif %}{% if h.flag %} · {{ vessel_flag(h.flag) }}{% endif %}{% if h.type %} · {{ h.type }}{% endif %}
+              · {{ vessel_sources_label(h) }}{% if h.sources and h.sources|length > 1 %} ({{ h.sources|length }} {{ _('lists') }}){% endif %}
+            </div>
+            <div class="mt-1">{% for m in h.measures or [] %}<span class="badge bg-dark-subtle text-dark border me-1">{{ vessel_measure_label(m) }}</span>{% endfor %}</div>
+          </div>
+          <div class="text-end">{{ tier_badge(h.tier) }}<div class="small text-muted">{{ _('Score') }} {{ h.score }}</div></div>
         </div>
-        <div class="mt-1">{% for m in h.measures or [] %}<span class="badge bg-dark-subtle text-dark border me-1">{{ vessel_measure_label(m) }}</span>{% endfor %}</div>
-      </div>
-      <div class="text-end">{{ tier_badge(h.tier) }}<div class="small text-muted">{{ _('Score') }} {{ h.score }}</div></div>
+        <ul class="small mt-2 mb-2">{% for e in vessel_text(h.explanation) %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% if h.fields %}
+        <table class="table table-sm small mb-2"><thead><tr><th>{{ _('Field') }}</th><th>{{ _('Entered') }}</th><th>{{ _('Listed') }}</th><th></th></tr></thead><tbody>
+          {% for k, fd in h.fields.items() %}<tr><td>{{ vessel_field(k) }}</td><td>{{ vessel_flag(fd.query) if k == 'flag' else fd.query }}</td><td>{{ (vessel_flag(fd.listed) if k == 'flag' else fd.listed) or '' }}</td>
+            <td>{% if fd.match %}<i class="bi bi-check-circle-fill text-danger"></i> {{ _('same') }}{% else %}<i class="bi bi-dash-circle text-muted"></i> {{ _('different') }}{% endif %}</td></tr>{% endfor %}
+        </tbody></table>
+        {% endif %}
+        {% if h.reopened %}<div class="alert alert-warning py-1 small mb-2"><i class="bi bi-arrow-repeat me-1"></i>{{ _('This hit was cleared before and has been re-opened: validate it again.') }}</div>{% endif %}
+        {% if d %}{{ decision_box(d) }}{% endif %}
+        {% if can_decide %}{{ decide_form(sid, 'ship', h.listed_key, true) }}{% endif %}
+      </div></div>
+      {% endfor %}
+
+      {% if res.suppressed %}
+      <div class="card border-0 bg-light mb-3"><div class="card-body small">
+        <h6 class="fw-bold"><i class="bi bi-shield-check me-1"></i>{{ _('Cleared before (not alerted)') }}</h6>
+        {% for s in res.suppressed %}<div>{{ s.name }}{% if s.imo %} · IMO {{ s.imo }}{% endif %} · {{ s.score }} - {{ vessel_text(s.explanation)[-1] }}</div>{% endfor %}
+      </div></div>
+      {% endif %}
+      {% if res.near %}
+      <details class="small text-muted mb-3"><summary>{{ _('Similar listed names below the alert threshold') }}</summary>
+        <ul class="mt-2">{% for n in res.near %}<li>{{ n.name }} ({{ n.score }}) - {{ vessel_text(n.explanation) | join('; ') }}</li>{% endfor %}</ul></details>
+      {% endif %}
+      {% if history %}
+      <details class="small mb-4"><summary>{{ _('Decision history') }} ({{ history|length }})</summary>
+        <table class="table table-sm mt-2"><thead><tr><th>{{ _('Date') }}</th><th>{{ _('Hit') }}</th><th>{{ _('Decision') }}</th><th>{{ _('Reason') }}</th><th>{{ _('Comment') }}</th><th>{{ _('By') }}</th></tr></thead><tbody>
+          {% for x in history %}<tr><td>{{ x.decided_at.strftime('%Y-%m-%d %H:%M') if x.decided_at else '' }}</td><td>{{ x.hit_kind }} {{ x.listed_key or '' }}</td>
+            <td>{{ _('True match') if x.decision == 'true_match' else _('False match') }}</td><td>{{ vessel_reason_label(x.reason) }}</td><td>{{ x.comment }}</td><td>{{ x.decided_by_name }}</td></tr>{% endfor %}
+        </tbody></table></details>
+      {% endif %}
     </div>
-    <ul class="small mt-2 mb-2">{% for e in vessel_text(h.explanation) %}<li>{{ e }}</li>{% endfor %}</ul>
-    {% if h.fields %}
-    <table class="table table-sm small mb-2"><thead><tr><th>{{ _('Field') }}</th><th>{{ _('Entered') }}</th><th>{{ _('Listed') }}</th><th></th></tr></thead><tbody>
-      {% for k, fd in h.fields.items() %}<tr><td>{{ _(k) }}</td><td>{{ vessel_flag(fd.query) if k == 'flag' else fd.query }}</td><td>{{ (vessel_flag(fd.listed) if k == 'flag' else fd.listed) or '' }}</td>
-        <td>{% if fd.match %}<i class="bi bi-check-circle-fill text-danger" title="{{ _('same') }}"></i> {{ _('same') }}{% else %}<i class="bi bi-dash-circle text-muted" title="{{ _('different') }}"></i> {{ _('different') }}{% endif %}</td></tr>{% endfor %}
-    </tbody></table>
-    {% endif %}
-    {% if h.parties %}<div class="small mb-2"><strong>{{ _('Owners and linked parties of the listed ship') }}:</strong>
-      {% for p in h.parties[:12] %}<span class="me-2">{{ p.name }} <span class="text-muted">({{ vessel_role(p.role) }})</span>{% if p.party_listed %} <span class="badge bg-danger">{{ _('listed') }}</span>{% endif %}</span>{% endfor %}</div>{% endif %}
-    {% if h.reopened %}<div class="alert alert-warning py-1 small mb-2"><i class="bi bi-arrow-repeat me-1"></i>{{ _('This hit was cleared before and has been re-opened: validate it again.') }}</div>{% endif %}
-    {% if d %}{{ decision_box(d) }}{% endif %}
-    {% if can_decide %}{{ decide_form(sid, 'ship', h.listed_key, true) }}{% endif %}
-  </div></div>
-  {% endfor %}
 
-  {% if res.suppressed %}
-  <div class="card border-0 bg-light mb-3"><div class="card-body small">
-    <h6 class="fw-bold"><i class="bi bi-shield-check me-1"></i>{{ _('Cleared before (not alerted)') }}</h6>
-    {% for s in res.suppressed %}<div>{{ s.name }}{% if s.imo %} · IMO {{ s.imo }}{% endif %} · {{ s.score }} - {{ vessel_text(s.explanation)[-1] }}</div>{% endfor %}
-  </div></div>
-  {% endif %}
+    <div class="col-xl-4">
+      {# ---- next steps (screening/guidance/vessel_next_steps.json) #}
+      <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+        <h6 class="fw-bold"><i class="bi bi-signpost-split me-1"></i>{{ _('Next steps') }}</h6>
+        {% for g in ns %}
+        <div class="mb-3">
+          <div class="fw-semibold small">{{ g.title }}</div>
+          <ol class="small ps-3 mb-1">{% for st in g.steps %}<li>{{ st }}</li>{% endfor %}</ol>
+          {% if g.documents %}<div class="small text-muted">{{ _('Documents to request') }}:</div>
+          <ul class="small ps-3 mb-0">{% for dd in g.documents %}<li>{{ dd }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        {% endfor %}
+      </div></div>
 
-  {% if res.near %}
-  <details class="small text-muted mb-3"><summary>{{ _('Similar listed names below the alert threshold') }}</summary>
-    <ul class="mt-2">{% for n in res.near %}<li>{{ n.name }} ({{ n.score }}) - {{ vessel_text(n.explanation) | join('; ') }}</li>{% endfor %}</ul></details>
-  {% endif %}
+      {% if res.risk.lines %}
+      <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+        <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle me-1 text-warning"></i>{{ _('Risk indicators') }}
+          <span class="badge bg-light text-dark border ms-2">{{ res.risk.score }} / 100</span></h6>
+        <ul class="small mb-0">{% for l in vessel_text(res.risk.lines) %}<li>{{ l }}</li>{% endfor %}</ul>
+        <div class="form-text">{{ _('Risk indicators never create a sanctions match on their own.') }}</div>
+      </div></div>
+      {% endif %}
 
-  {% if history %}
-  <details class="small mb-4"><summary>{{ _('Decision history') }} ({{ history|length }})</summary>
-    <table class="table table-sm mt-2"><thead><tr><th>{{ _('Date') }}</th><th>{{ _('Hit') }}</th><th>{{ _('Decision') }}</th><th>{{ _('Reason') }}</th><th>{{ _('Comment') }}</th><th>{{ _('By') }}</th></tr></thead><tbody>
-      {% for x in history %}<tr><td>{{ x.decided_at.strftime('%Y-%m-%d %H:%M') if x.decided_at else '' }}</td><td>{{ x.hit_kind }} {{ x.listed_key or '' }}</td>
-        <td>{{ _('True match') if x.decision == 'true_match' else _('False match') }}</td><td>{{ vessel_reason_label(x.reason) }}</td><td>{{ x.comment }}</td><td>{{ x.decided_by_name }}</td></tr>{% endfor %}
-    </tbody></table></details>
-  {% endif %}
+      {# ---- news about the ship (adverse media pipeline, cached; loaded after the page) #}
+      <div class="card border-0 shadow-sm mb-3"><div class="card-body">
+        <h6 class="fw-bold"><i class="bi bi-newspaper me-1"></i>{{ _('News about this ship') }}</h6>
+        <div id="vessel-news" class="small text-muted" data-url="{{ url_for('vessels.result_news', sid=sid) }}"
+             data-empty="{{ _('No relevant news found.') }}" data-error="{{ _('News sources are not available now; try again later.') }}"
+             data-loading="{{ _('Searching news sources...') }}">{{ _('Searching news sources...') }}</div>
+      </div></div>
+    </div>
+  </div>
   <p class="small text-muted">{{ _('ComplyNex alerts and records. Any action on a confirmed match (freezing, rejecting, reporting) is taken outside the system under your procedures.') }}</p>
 </div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/vessel_news.js') }}"></script>
 {% endblock %}

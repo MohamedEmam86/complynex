@@ -1,0 +1,29 @@
+{# Top bar of the restricted workspace: brand, the granted modules only, language, account. #}
+{% set _tiles = cx_modules() %}
+<header class="cx-ws-bar" role="banner">
+  <div class="cx-ws-bar__inner">
+    <a class="cx-ws-brand" href="{{ url_for('access.workspace') }}">
+      <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
+      <span>{{ company_name or 'ComplyNex' }}</span>
+      <span class="cx-ws-brand__sub">{{ _('Workspace') }}</span>
+    </a>
+    <nav class="cx-ws-menu" aria-label="{{ _('Your modules') }}">
+      {% for t in _tiles %}
+      <a class="cx-ws-menu__link{% if request.path.startswith(t.url.rstrip('/')) and t.url != '/' %} is-active{% endif %}" href="{{ t.url }}">
+        <i class="bi {{ t.icon }}" aria-hidden="true"></i><span>{{ t.label }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+    <div class="cx-ws-tools">
+      {% if get_locale() == 'ar' %}
+      <a class="cx-ws-tool" href="{{ url_for('set_language', lang='en') }}" lang="en">English</a>
+      {% else %}
+      <a class="cx-ws-tool" href="{{ url_for('set_language', lang='ar') }}" lang="ar">العربية</a>
+      {% endif %}
+      <a class="cx-ws-tool" href="{{ url_for('users.profile') }}" title="{{ _('My profile') }}">
+        <i class="bi bi-person-circle" aria-hidden="true"></i><span class="cx-ws-tool__name">{{ current_user.get_full_name() }}</span>
+      </a>
+      <a class="cx-ws-tool cx-ws-tool--out" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>{{ _('Sign out') }}</span></a>
+    </div>
+  </div>
+</header>

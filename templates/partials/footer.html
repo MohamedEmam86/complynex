@@ -13,6 +13,7 @@
                     &copy; 2026 <strong>ComplyNex</strong>. {{ _('All rights reserved.') }}
                 </span>
             </div>
+            {% if not _cx_restricted %}{# restricted workspace: no links outside the granted modules #}
             <div class="col-md-6 text-center text-md-end">
                 <a href="{{ url_for('whistleblowing.anonymous_info') }}" class="site-footer__link site-footer__link--report">
                     <i class="bi bi-shield-lock-fill"></i>{{ _('Report Misconduct') }}
@@ -20,6 +21,7 @@
                 <a href="{{ url_for('policies.list_policies') }}" class="site-footer__link">{{ _('Policies') }}</a>
                 <a href="{{ url_for('support') }}" class="site-footer__link">{{ _('Support') }}</a>
             </div>
+            {% endif %}
         </div>
     </div>
 </footer>

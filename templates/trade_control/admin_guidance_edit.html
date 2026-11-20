@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ c.label_en }} - {{ rc_loc('Guidance', 'الإرشادات') }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+{% set names = {'why_it_matters': ('Why it matters', 'سبب الأهمية'), 'ask_customer': ('Ask the customer (one per line)', 'اسأل العميل (سطر لكل بند)'), 'documents': ('Documents (one per line)', 'المستندات (سطر لكل بند)'), 'egyptian_authority': ('Egyptian authority', 'الجهة المصرية المختصة'), 'red_flags': ('Red flags (one per line)', 'مؤشرات الخطر (سطر لكل بند)')} %}
+<div class="container-fluid du-page">
+  {{ dn.nav('guidance') }}
+  <nav class="small mb-2"><a href="{{ url_for('dualuse.admin_guidance') }}">{{ rc_loc('Guidance', 'الإرشادات') }}</a> / <strong>{{ c.category }}</strong> · v{{ c.version }}</nav>
+  <form method="post" class="card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="card-body">
+      <div class="row g-2 mb-2">
+        <div class="col-md-6"><label class="form-label small">{{ rc_loc('Name (English)', 'الاسم (بالإنجليزية)') }}</label><input name="label_en" class="form-control" dir="ltr" maxlength="200" required value="{{ c.label_en }}"></div>
+        <div class="col-md-6"><label class="form-label small">{{ rc_loc('Name (Arabic)', 'الاسم (بالعربية)') }}</label><input name="label_ar" class="form-control" dir="rtl" maxlength="200" value="{{ c.label_ar or '' }}"></div>
+        {% if c.category != 'general' %}<div class="col-12"><label class="form-label small">{{ rc_loc('Keys: control-code prefixes (5A002, 0A), HS<digits> (HS8517), CHPL-T<tier>, CWC-S<schedule>, AG-CHEM, EU-2019/1148-ANNEX-I / -II', 'المفاتيح: بدايات أكواد الرقابة (5A002، 0A)، HS<أرقام> (HS8517)، CHPL-T<فئة>، CWC-S<جدول>، AG-CHEM، EU-2019/1148-ANNEX-I / -II') }}</label><textarea name="keys" class="form-control font-monospace" dir="ltr" rows="2">{{ c['keys']|join(' ') }}</textarea></div>{% endif %}
+      </div>
+      <div class="row g-3">
+        {% for lang, dir_, head in [('en', 'ltr', ('English', 'الإنجليزية')), ('ar', 'rtl', ('Arabic', 'العربية'))] %}
+        <div class="col-lg-6"><h6>{{ rc_loc(*head) }}</h6>
+          {% for f in fields %}{% set v = c[lang].get(f) %}
+          <label class="form-label small mb-0">{{ rc_loc(*names[f]) }}</label>
+          <textarea name="{{ lang }}_{{ f }}" class="form-control form-control-sm mb-2" dir="{{ dir_ }}" rows="{{ 5 if v is not string else 3 }}">{{ v|join('\n') if v is not string and v else (v or '') }}</textarea>
+          {% endfor %}
+        </div>{% endfor %}
+      </div>
+      <div class="row g-2">
+        <div class="col-lg-6"><label class="form-label small">{{ rc_loc('Sources (links, one per line)', 'المصادر (روابط، سطر لكل رابط)') }}</label><textarea name="sources" class="form-control form-control-sm" dir="ltr" rows="4">{{ c.sources|join('\n') }}</textarea></div>
+        <div class="col-lg-6"><label class="form-label small">{{ rc_loc('Confidence (say what is confirmed in a primary source, a secondary source, or unverified)', 'درجة الثقة (ما المؤكد من مصدر أولي أو ثانوي أو غير المؤكد)') }}</label><textarea name="confidence" class="form-control form-control-sm" dir="ltr" rows="4">{{ c.confidence or '' }}</textarea></div>
+        <div class="col-12"><input name="note" class="form-control form-control-sm" maxlength="300" placeholder="{{ rc_loc('What you changed and why (kept with the version)', 'ما الذي غيرته ولماذا (يُحفظ مع الإصدار)') }}"></div>
+      </div>
+    </div>
+    <div class="card-footer d-flex gap-2"><button class="btn btn-primary">{{ rc_loc('Save as a new version', 'حفظ كإصدار جديد') }}</button><a class="btn btn-outline-secondary" href="{{ url_for('dualuse.admin_guidance') }}">{{ rc_loc('Cancel', 'إلغاء') }}</a></div>
+  </form>
+  <div class="card mt-3"><div class="card-header small fw-bold">{{ rc_loc('Versions', 'الإصدارات') }}</div>
+    <ul class="list-group list-group-flush small">{% for h in history %}<li class="list-group-item">v{{ h.version }} · {{ h.created_at.strftime('%Y-%m-%d %H:%M') if h.created_at }} · {{ rc_loc('seed', 'أصلية') if h.origin == 'seed' else rc_loc('edited', 'معدلة') }}{% if h.note %} — <span dir="auto">{{ h.note }}</span>{% endif %}</li>{% endfor %}</ul></div>
+</div>
+{% endblock %}

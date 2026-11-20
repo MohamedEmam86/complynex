@@ -11,6 +11,7 @@ Fixtures (small excerpts, reusable):
 import importlib.util
 import io
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -33,11 +34,8 @@ def _read(name, mode='r'):
 
 @pytest.fixture(scope='module')
 def importer():
-    spec = importlib.util.spec_from_file_location('du_import_lists', os.path.join(ROOT, 'scripts', 'dualuse',
-                                                                                  'import_lists.py'))
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    from packs.trade_control import loader
+    return loader
 
 
 # ------------------------------------------------------------------ EU consolidated layout
@@ -59,7 +57,7 @@ def test_eu_consolidated_entries_items_and_notes():
 
 
 def test_eu_label_from_consolidated_text(importer):
-    items, _, _, label = importer.build_items('eu_annex1', _read('eu_consolidated_excerpt.html').encode())
+    items, _, label = importer.build_items('eu_annex1', _read('eu_consolidated_excerpt.html').encode())
     assert label == 'Annex I, consolidated text of 2026-09-21'
     assert {i['code'] for i in items} >= {'5A002', '1C225'}
     assert next(i for i in items if i['code'] == '1C225')['risk_level'] == 'high'      # nuclear dual-use (2)
@@ -116,10 +114,54 @@ def test_risk_rules(importer):
     assert importer.risk_us('9A515', ['NS'], False, True) == 'high'
 
 
-def test_latest_consolidated_date_is_discovered(importer, monkeypatch):
-    page = b'<a href="?uri=CELEX:02021R0821-20251115">x</a> 02021R0821-20260921 02021R0821-20241108'
-    monkeypatch.setattr(importer, 'fetch', lambda url, timeout=120: page)
-    assert importer.latest_eu_consolidated() == '20260921'
+def test_eu_texts_come_from_cellar_newest_consolidation(importer, monkeypatch):
+    seen = []
+    monkeypatch.setattr(importer, 'latest_celex', lambda prefix: prefix + '-20260921')
+    monkeypatch.setattr(importer, 'fetch', lambda url, timeout=120, accept=None: seen.append((url, accept)) or b'x' * 500)
+    data, label, url = importer.get_raw('eu_annex1')
+    assert url == 'https://publications.europa.eu/resource/celex/02021R0821-20260921'
+    assert 'xhtml' in seen[0][1]
+    # SPARQL down: the base act is used, not EUR-Lex
+    def down(prefix):
+        raise OSError('timeout')
+    monkeypatch.setattr(importer, 'latest_celex', down)
+    assert importer.get_raw('eu_expl_precursors')[2].endswith('/celex/32019R1148')
+
+
+@pytest.mark.parametrize('status,body', [(202, b''), (200, b''), (200, b'<html><script src="/awswaf/challenge.js">'
+                                                                            + b' ' * 400 + b'</script></html>')])
+def test_blocked_or_empty_answers_are_named_as_such(importer, status, body):
+    with pytest.raises(importer.SourceBlocked) as e:
+        importer.check_answer('https://eur-lex.europa.eu/x', status, body)
+    assert 'upload the file manually' in str(e.value)
+    importer.check_answer('https://x', 200, b'<html>' + b'a' * 500)        # a real page passes
+
+
+def test_explosives_precursors_annexes():
+    recs = P.parse_expl_precursors(_read('expl_precursors_excerpt.html'))
+    by = {r['cas']: r for r in recs}
+    an = by['6484-52-2']
+    assert an['annex'] == 'I' and an['limit'] == 16 and 'nitrogen' in an['limit_text']
+    assert by['7722-84-1']['limit'] == 12 and by['67-64-1']['annex'] == 'II'
+    from packs.trade_control import loader
+    items = {i['code']: i for i in loader.precursor_items(recs)}
+    it = items['XP-I.6484-52-2']
+    assert it['extra']['complete'] and it['params'][0]['parameter'] == 'nitrogen content (w/w)'
+    assert it['params'][0]['operator'] == '>' and '310230' in it['extra']['hs']
+    assert not items['XP-II.67-64-1']['extra']['complete']
+
+
+def test_upload_refuses_wrong_or_empty_files(importer):
+    assert importer.load_uploaded('us_ccl', b'x', 'a.xml', 'su')['status'] == 'refused'        # not uploadable
+    assert importer.load_uploaded('chpl', b'x' * 600, 'a.html', 'su')['status'] == 'refused'   # wrong type
+    assert importer.load_uploaded('eu_annex1', b'', 'a.html', 'su')['status'] == 'refused'     # empty page
+    big = b'x' * (importer.MAX_UPLOAD + 1)
+    assert 'larger' in importer.load_uploaded('eu_annex1', big, 'a.html', 'su')['message']
+
+
+def test_chpl_pdf_is_read_without_pdftotext():
+    from packs.trade_control.pdftext import text_layout
+    assert text_layout(b'%PDF-1.4 nothing') == ''
 
 
 def test_user_agent_is_generic(importer):
@@ -203,10 +245,16 @@ def test_snippet_marks_whole_words():
 
 
 def test_client_label_and_disclaimer_never_name_a_list():
-    for text in S.CLIENT_LIST_LABEL + S.DISCLAIMER:
-        for name in ('EU', 'US', 'CCL', 'Wassenaar', 'CWC', 'Australia', 'OPCW', 'EAR'):
-            assert name not in text.split()
-    assert S.CLIENT_LIST_LABEL == ('International control lists', 'قوائم الرقابة الدولية')
+    texts = list(S.CLIENT_LIST_LABEL + S.DISCLAIMER)
+    for pair in S.CLIENT_LABELS.values():
+        texts += list(pair)
+    for text in texts:
+        for name in ('EU', 'US', 'CCL', 'Wassenaar', 'CWC', 'Australia', 'OPCW', 'EAR', 'CHPL', '2019/1148', '2021/821'):
+            assert name not in text.replace('(', ' ').replace(')', ' ').replace(',', ' ').split()
+    # the clear wording the owner asked for (round 3)
+    assert S.client_label('eu_annex1')[0] == 'Controlled item – international export-control list'
+    assert S.client_label('eu_expl_precursors', {'annex': 'I'})[0] == 'Restricted explosives precursor'
+    assert S.client_label('chpl')[0] == 'High-priority diversion item'
     assert 'not a legal classification' in S.DISCLAIMER[0]
 
 
@@ -322,3 +370,120 @@ def test_range_and_unitless_thresholds():
     assert SC._threshold_result(q, {'value': '25', 'unit': 'min'}) == 'no'
     assert SC._threshold_result(q, {'value': '2', 'unit': 'h'}) == 'no'
     assert T.quantities('12,000 rpm')[0][0] == 12000.0
+
+
+# ------------------------------------------------------------------ review r4: exclusions, units, limits
+def test_thresholds_in_exclusion_clauses_are_tagged():
+    t = ('Ammonium Nitrate, Including Fertilizers and Fertilizer Blends Containing More Than 15% by Weight Ammonium '
+         'Nitrate, Except Liquid Fertilizers (Containing Any Amount of Ammonium Nitrate) or Dry Fertilizers Containing '
+         'Less Than 15% Ammonium Nitrate.')
+    roles = [(p['operator'], p['value'], p['role']) for p in P.extract_parameters(t)]
+    assert roles == [('>', 15.0, 'control'), ('<', 15.0, 'exclusion')]
+    assert P.extract_parameters("'Maximum thrust value' greater than 400 N excluding civil certified engines with a "
+                                "'maximum thrust value' greater than 8 890 N;")[-1]['role'] == 'exclusion'
+    # not exclusions: "other than" scoping, a closed parenthesis, a closed comma clause, "not controlled by"
+    for t in ('Lasers, other than those specified in 6A005.a, having an output power greater than 1 W',
+              'CW output power (excluding output power transmitted through the core) exceeding 1 000 W',
+              'having total metallic impurities, excluding intentional additions, of less than 5 000 ppm, an average '
+              'particle size equal to or less than 5 µm',
+              'Other charges not controlled by 1C992.a through .k containing less than or equal to 1.0 kg'):
+        assert {p['role'] for p in P.extract_parameters(t)} == {'control'}, t
+
+
+def test_percent_units_and_fractions():
+    for v, u in ((34, '%'), (34, '% N'), (34, '%w/w'), (34, '% w/w'), (34, 'wt%'), (34, 'percent'), (340, 'g/kg'),
+                 (34, '% by weight')):
+        assert T.to_base(v, u) == (34.0, '%'), (v, u)
+    assert abs(T.to_base(3400, 'ppm')[0] - 0.34) < 1e-9
+    assert T.percent_factor('kg') is None
+
+
+def _precursor_doc():
+    from packs.trade_control.search import Doc
+    p = {'parameter': 'nitrogen content (w/w)', 'operator': '>', 'value': 16.0, 'unit': '%', 'base_value': 16.0,
+         'base_unit': '%', 'role': 'control'}
+    return Doc(id=1, list_code='eu_expl_precursors', code='XP-I.6484-52-2', kind='item', params=[p],
+               extra={'annex': 'I', 'complete': True})
+
+
+def _ccl_1c997():
+    from packs.trade_control.search import Doc
+    ps = [{'parameter': 'fertilizer blends containing', 'operator': '>', 'value': 15.0, 'unit': '%', 'base_value': 15.0,
+           'base_unit': '%', 'role': 'control'},
+          {'parameter': 'dry fertilizers containing', 'operator': '<', 'value': 15.0, 'unit': '%', 'base_value': 15.0,
+           'base_unit': '%', 'role': 'exclusion'}]
+    return Doc(id=2, list_code='us_ccl', code='1C997', kind='item', params=ps, extra={})
+
+
+@pytest.mark.parametrize('n,value,expected', [(0, '10', 'below'), (0, '20', 'above'), (1, '10', 'excluded'),
+                                              (1, '20', 'not_excluded')])
+def test_1c997_exclusion_is_answered_as_an_exclusion(n, value, expected):
+    from packs.trade_control import guidance as G
+    assert G.check(_ccl_1c997(), n, value, '%')['result'] == expected
+    th = G.thresholds(_ccl_1c997())
+    assert th[1]['en'].startswith('Not covered by this entry (exclusion)') and th[1]['role'] == 'exclusion'
+    assert 'containing is' not in th[0]['en']
+
+
+@pytest.mark.parametrize('value,unit,expected', [('15', '%', 'below'), ('16', '%', 'below'), ('20', '%', 'above'), ('34 % N', '', 'above'),
+                          ('34', '% w/w', 'above'), ('340', 'g/kg', 'above'), ('0.34', '%', 'ask'),
+                          ('0.34', '', 'ask'), ('5', 'kg', 'unknown')])
+def test_ammonium_nitrate_limit_and_units(value, unit, expected):
+    from packs.trade_control import guidance as G
+    r = G.check(_precursor_doc(), 0, value, unit)
+    assert r['result'] == expected, r
+    if expected == 'ask':
+        assert 'did you mean 34 %' in r['en']
+
+
+def test_screening_answers_exclusion_questions():
+    q = [{'id': 'q1', 'type': 'threshold', 'list_code': 'us_ccl', 'code': '1C997', 'operator': '>', 'base_value': 15.0,
+          'base_unit': '%', 'unit': '%', 'role': 'control'},
+         {'id': 'q2', 'type': 'threshold', 'list_code': 'us_ccl', 'code': '1C997', 'operator': '<', 'base_value': 15.0,
+          'base_unit': '%', 'unit': '%', 'role': 'exclusion'}]
+    cands = [{'list_code': 'us_ccl', 'code': '1C997'}]
+    ten = {'value': '10', 'unit': '%'}
+    assert SC.evaluate(cands, [], q, {'q1': ten, 'q2': ten}, {'hs_code': '310230'})[1][('us_ccl', '1C997')] == 'excluded'
+    twenty = {'value': '20', 'unit': '% w/w'}
+    sug, st = SC.evaluate(cands, [], q, {'q1': twenty, 'q2': twenty}, {'hs_code': '310230'})
+    assert st[('us_ccl', '1C997')] == 'controlled' and sug == 'hold'
+
+
+def test_arabic_snippet_marks_never_nest():
+    s = T.snippet('نترات الأمونيوم والأمونيوم <b>', ['امونيوم', 'الامونيوم', 'نترات'])
+    assert '<mark><mark>' not in s and s.count('<mark>') == s.count('</mark>')
+    assert '&lt;b&gt;' in s and not re.search(r'<mark>[^<]*<mark>', s)
+
+
+def test_pdf_reader_caps_decompression(monkeypatch):
+    import zlib
+    from packs.trade_control import pdftext
+    monkeypatch.setattr(pdftext, 'MAX_STREAM', 1000)
+    bomb = b'%PDF-1.4\nstream\n' + zlib.compress(b'BT (x) Tj ET' + b' ' * 100000) + b'\nendstream\n'
+    assert pdftext.text_layout(bomb) == ''
+
+
+def test_download_is_capped(monkeypatch):
+    import requests
+    from packs.trade_control import loader
+
+    class Resp:
+        status_code, ok, headers = 200, True, {'Content-Type': 'text/html'}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def iter_content(self, n):
+            while True:
+                yield b'x' * n
+
+        def raise_for_status(self):
+            pass
+    monkeypatch.setattr(loader, 'MAX_DOWNLOAD', 1 << 20)
+    monkeypatch.setattr(requests, 'get', lambda *a, **k: Resp())
+    with pytest.raises(RuntimeError) as e:
+        loader.fetch('https://publications.europa.eu/resource/celex/x')
+    assert 'limit' in str(e.value)

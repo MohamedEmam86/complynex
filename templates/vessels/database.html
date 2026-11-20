@@ -10,7 +10,8 @@
       <div class="small text-muted">{{ _('on international approved lists') }}{% if vessel_can_see_sources() %} · {{ '{:,}'.format(stats.records) }} {{ _('list records') }}{% endif %}</div></div></div></div>
     <div class="col-6 col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body">
       <div class="small text-muted">{{ _('With an IMO number') }}</div><div class="fs-3 fw-bold">{{ '{:,}'.format(stats.with_imo) }}</div>
-      <div class="small text-muted">{{ '{:,}'.format(stats.high_risk) }} {{ _('high-risk') }}</div></div></div></div>
+      <div class="small text-muted">{{ '{:,}'.format(stats.high_risk) }} {{ _('high-risk') }}
+        <i class="bi bi-info-circle" title="{{ _('High risk = several independent warning signs: false or high-risk flag, flag changes, renaming, IMO check digit, port-state-control detentions. Being listed or owned by a listed party is shown as a fact, not counted.') }}"></i></div></div></div></div>
     <div class="col-md-3"><div class="card border-0 shadow-sm h-100"><div class="card-body small">
       <div class="text-muted mb-1">{{ _('Top flags') }}</div>
       {% for fl in stats.flags[:6] %}<a class="d-flex justify-content-between text-decoration-none" href="{{ url_for('vessels.database', flag=fl.flag) }}"><span>{{ vessel_flag(fl.flag) }}</span><span class="fw-bold">{{ fl.n }}</span></a>{% endfor %}</div></div></div>
@@ -21,7 +22,7 @@
   <form class="card border-0 shadow-sm mb-3" method="get"><div class="card-body row g-2 align-items-end">
     <div class="col-md-3"><label class="form-label small mb-0" for="dq">{{ _('Search') }}</label>
       <input class="form-control form-control-sm" id="dq" name="q" value="{{ f.q }}" placeholder="{{ _('Name in Arabic or English, IMO or MMSI') }}"></div>
-    <div class="col-md-2"><label class="form-label small mb-0" for="df">{{ _('Flag') }}</label>
+    <div class="col-md-2"><label class="form-label small mb-0" for="df">{{ _('Flag state') }}</label>
       <select class="form-select form-select-sm" id="df" name="flag"><option value="">{{ _('All') }}</option>
         {% for fl in stats.flags %}<option value="{{ fl.flag }}" {{ 'selected' if fl.flag == f.flag }}>{{ vessel_flag(fl.flag) }} ({{ fl.n }})</option>{% endfor %}</select></div>
     <div class="col-md-2"><label class="form-label small mb-0" for="dt">{{ _('Vessel type') }}</label>
@@ -29,9 +30,12 @@
     <div class="col-md-2"><label class="form-label small mb-0" for="dm">{{ _('Measure') }}</label>
       <select class="form-select form-select-sm" id="dm" name="measure"><option value="">{{ _('All') }}</option>
         {% for m, n in stats.measures %}<option value="{{ m }}" {{ 'selected' if m == f.measure }}>{{ vessel_measure_label(m) }}</option>{% endfor %}</select></div>
-    <div class="col-md-1"><label class="form-label small mb-0" for="dl">{{ _('List type') }}</label>
-      <select class="form-select form-select-sm" id="dl" name="list_type"><option value="">{{ _('All') }}</option>
-        {% for t in list_types %}<option value="{{ t }}" {{ 'selected' if t == f.list_type }}>{{ _(t.replace('_', ' ').title()) }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label small mb-0" for="dst">{{ _('Ships') }}</label>
+      <select class="form-select form-select-sm" id="dst" name="status">
+        {% for code, lbl in statuses %}<option value="{{ code }}" {{ 'selected' if code == f.status }}>{{ vessel_pick(lbl) }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label small mb-0" for="drg">{{ _('Regime') }}</label>
+      <select class="form-select form-select-sm" id="drg" name="regime"><option value="">{{ _('All') }}</option>
+        {% for code, n in stats.regimes %}<option value="{{ code }}" {{ 'selected' if code == f.regime }}>{{ vessel_regime(code) }} ({{ n }})</option>{% endfor %}</select></div>
     <div class="col-md-1"><label class="form-label small mb-0" for="dr">{{ _('Risk') }}</label>
       <select class="form-select form-select-sm" id="dr" name="risk"><option value="">{{ _('All') }}</option>
         {% for b in ('high', 'medium', 'low') %}<option value="{{ b }}" {{ 'selected' if b == f.risk }}>{{ vessel_risk_band_label(b) }}</option>{% endfor %}</select></div>
@@ -45,7 +49,7 @@
   </div></form>
   <div class="small text-muted mb-2">{{ '{:,}'.format(total) }} {{ _('vessels') }}{% if ranked %} · {{ _('ranked by name similarity') }}{% endif %}</div>
   <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle small mb-0">
-    <thead class="table-light"><tr><th>{{ _('Vessel') }}</th><th>{{ _('IMO') }}</th><th>{{ _('MMSI') }}</th><th>{{ _('Type') }}</th><th>{{ _('Flag') }}</th><th>{{ _('Built') }}</th><th>{{ _('Measures') }}</th><th>{{ _('Risk') }}</th><th>{{ _('Lists') }}</th></tr></thead>
+    <thead class="table-light"><tr><th>{{ _('Vessel') }}</th><th>{{ _('IMO') }}</th><th>{{ _('MMSI') }}</th><th>{{ _('Type') }}</th><th>{{ _('Flag state') }}</th><th>{{ _('Built') }}</th><th>{{ _('Measures') }}</th><th>{{ _('Risk') }}</th><th>{{ _('Regime') }}</th></tr></thead>
     <tbody>{% for v in items %}
       <tr><td><a class="fw-bold text-decoration-none" href="{{ url_for('vessels.profile', wid=v.id) }}">{{ v.name }}</a>
           {% if v.previous_names %}<div class="text-muted">{{ _('ex') }} {{ v.previous_names[:3] | join(', ') }}</div>{% endif %}</td>
@@ -55,14 +59,15 @@
         <td>{{ v.year_built or '' }}</td>
         <td>{% for m in v.measures %}<span class="badge bg-light text-dark border me-1">{{ vessel_measure_label(m) }}</span>{% endfor %}</td>
         <td>{{ risk_badge(v.risk_score) }}</td>
-        <td>{% if vessel_can_see_sources() %}{{ v.sources | join(', ') }}{% else %}{{ vessel_list_label(none) }}{% endif %}</td></tr>
+        <td>{% for g in v.regimes %}<span class="badge rounded-pill bg-light text-dark border me-1">{{ vessel_regime(g) }}</span>{% endfor %}
+          {% if vessel_can_see_sources() %}<div class="text-muted">{{ v.sources | join(', ') }}</div>{% endif %}</td></tr>
     {% else %}<tr><td colspan="9" class="text-center text-muted py-4">{{ _('No vessel found.') }}</td></tr>{% endfor %}</tbody>
   </table></div></div>
   {% if total > page_size %}
   <nav class="mt-3"><ul class="pagination pagination-sm justify-content-center">
-    {% if page > 1 %}<li class="page-item"><a class="page-link" href="{{ url_for('vessels.database', q=f.q, flag=f.flag, type=f.type, measure=f.measure, list_type=f.list_type, risk=f.risk, source=f.source, page=page-1) }}">&laquo;</a></li>{% endif %}
+    {% if page > 1 %}<li class="page-item"><a class="page-link" href="{{ url_for('vessels.database', q=f.q, flag=f.flag, type=f.type, measure=f.measure, status=f.status, regime=f.regime, risk=f.risk, source=f.source, page=page-1) }}">&laquo;</a></li>{% endif %}
     <li class="page-item disabled"><span class="page-link">{{ page }} / {{ ((total - 1) // page_size) + 1 }}</span></li>
-    {% if page * page_size < total %}<li class="page-item"><a class="page-link" href="{{ url_for('vessels.database', q=f.q, flag=f.flag, type=f.type, measure=f.measure, list_type=f.list_type, risk=f.risk, source=f.source, page=page+1) }}">&raquo;</a></li>{% endif %}
+    {% if page * page_size < total %}<li class="page-item"><a class="page-link" href="{{ url_for('vessels.database', q=f.q, flag=f.flag, type=f.type, measure=f.measure, status=f.status, regime=f.regime, risk=f.risk, source=f.source, page=page+1) }}">&raquo;</a></li>{% endif %}
   </ul></nav>
   {% endif %}
 </div>

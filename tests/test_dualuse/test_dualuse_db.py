@@ -146,10 +146,7 @@ def test_screen_decide_and_pages(app):
 
 
 def test_versions_carry_arabic_and_mark_stale(app):
-    import importlib.util
-    spec = importlib.util.spec_from_file_location('du_imp', os.path.join(ROOT, 'scripts', 'dualuse', 'import_lists.py'))
-    imp = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(imp)
+    from packs.trade_control import loader as imp
     conn = imp.connect()
     cur = conn.cursor()
     try:

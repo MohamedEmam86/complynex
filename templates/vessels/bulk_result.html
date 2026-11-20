@@ -11,7 +11,7 @@
       <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('vessels.bulk_xlsx', job_id=job.id) }}"><i class="bi bi-file-earmark-excel me-1"></i>{{ _('Export Excel') }}</a></div>
   </div>
   <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle small mb-0">
-    <thead class="table-light"><tr><th>{{ _('Row') }}</th><th>{{ _('Reference') }}</th><th>{{ _('Vessel') }}</th><th>{{ _('IMO') }}</th><th>{{ _('Flag') }}</th><th>{{ _('Result') }}</th><th>{{ _('Top hit') }}</th><th>{{ _('Risk') }}</th><th>{{ _('Validated') }}</th><th></th></tr></thead>
+    <thead class="table-light"><tr><th>{{ _('Row') }}</th><th>{{ _('Reference') }}</th><th>{{ _('Vessel') }}</th><th>{{ _('IMO') }}</th><th>{{ _('Flag state') }}</th><th>{{ _('Result') }}</th><th>{{ _('Top hit') }}</th><th>{{ _('Risk') }}</th><th>{{ _('Validated') }}</th><th></th></tr></thead>
     <tbody>{% for r in rows %}{% set top = (r.res.hits or [{}])[0] %}
       <tr><td>{{ r.row_no or '' }}</td><td>{{ r.ref or '' }}</td><td>{{ r.q.get('name') or r.q.get('owner') or '' }}</td><td>{{ r.q.get('imo') or '' }}</td><td>{{ vessel_flag(r.q.get('flag')) }}</td>
         <td>{{ tier_badge(r.tier) }}{% for w in vessel_text(r.res.warnings) %}<div class="text-warning">{{ w }}</div>{% endfor %}</td>

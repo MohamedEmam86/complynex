@@ -76,6 +76,19 @@ def parse_html(path):
     return out
 
 
+class ImportStop(Exception):
+    """The import refused the file (nothing was written)."""
+
+
+def run(path, source, label=None, url=None, measure='port_ban', html=False, allow_shrink=False, apply=False,
+        out=print, user_id=None, conn=None):
+    """Import one vessel list file (also used by the vessel update page's upload). Raises ImportStop when the
+    file is refused. Returns a summary dict."""
+    a = argparse.Namespace(path=path, source=source, label=label, url=url, measure=measure, html=html,
+                           allow_shrink=allow_shrink, apply=apply)
+    return _run(a, out, user_id, conn)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('path')
@@ -87,8 +100,16 @@ def main():
     ap.add_argument('--allow-shrink', action='store_true')
     ap.add_argument('--apply', action='store_true')
     a = ap.parse_args()
+    try:
+        _run(a, print, None, None)
+    except ImportStop as e:
+        print(f'STOP: {e}')
+        sys.exit(2)
+
+
+def _run(a, print, user_id, conn):
     if not re.fullmatch(r'[a-z][a-z0-9_]{2,40}', a.source) or not a.source.endswith('_vessels'):
-        raise SystemExit('STOP: --source must be lower-case and end with _vessels (e.g. eu_xlii_vessels)')
+        raise ImportStop('the source must be lower-case and end with _vessels (e.g. eu_xlii_vessels)')
     label = a.label or a.source
     from screening.format_handlers import vessel_block, vessel_measures
     from screening.vessel_utils import norm_imo, imo_valid
@@ -106,27 +127,25 @@ def main():
         if not s['name'] and name:
             s['name'] = name
     if problems and not ships:
-        print('STOP:\n  ' + '\n  '.join(problems[:30]))
-        sys.exit(2)
+        raise ImportStop('; '.join(problems[:30]))
     bad_imo = [k for k, s in ships.items() if s['imo'] and not imo_valid(s['imo'])]
 
-    import psycopg2
-    from config import Config
-    conn = psycopg2.connect(**Config.POSTGRES_CONFIG)
+    if conn is None:
+        import psycopg2
+        from config import Config
+        conn = psycopg2.connect(**Config.POSTGRES_CONFIG)
     cur = conn.cursor()
     cur.execute('SELECT count(*) FROM screening_watchlist WHERE source=%s AND is_active=1', (a.source,))
     active_now = cur.fetchone()[0]
     if active_now and len(ships) < 0.5 * active_now and not a.allow_shrink:
-        print(f'STOP: the file has {len(ships)} ships but {active_now} are active today (--allow-shrink)')
-        sys.exit(2)
+        raise ImportStop(f'the file has {len(ships)} ships but {active_now} are active today (allow shrink to accept)')
     LV = vid = None
     if a.apply:
         from screening import list_versions as LV
         try:
             LV.hold_source_lock(conn, a.source)
         except LV.SourceBusy as e:
-            print(f'STOP: {e}')
-            sys.exit(2)
+            raise ImportStop(str(e))
         with open(a.path, 'rb') as fh:
             vid = LV.begin(conn, a.source, LV.file_sha256(fh.read()), 'file', len(ships), trigger='import')
         cur = conn.cursor()
@@ -174,15 +193,20 @@ def main():
     print(f'{label}: {len(ships)} ships ({sum(1 for s in ships.values() if s["imo"])} with IMO, '
           f'{len(bad_imo)} IMO failing the check digit - kept and flagged); deactivated {removed}; '
           f'{len(problems)} rows skipped')
+    summary = {'source': a.source, 'ships': len(ships), 'with_imo': sum(1 for s in ships.values() if s['imo']),
+               'imo_check_fails': len(bad_imo), 'deactivated': removed, 'rows_skipped': len(problems),
+               'applied': bool(a.apply)}
     if a.apply:
         conn.commit()
         LV.applied(conn, vid, {'updated': len(ids), 'delisted': removed})
         from screening import vessel_store as VS
-        print(VS.sync(conn, a.source, log=print))
+        summary['sync'] = VS.sync(conn, a.source, log=print, trigger='import', user_id=user_id)
+        print(summary['sync'])
         print('APPLIED')
     else:
         conn.rollback()
         print('DRY RUN (nothing saved)')
+    return summary
 
 
 if __name__ == '__main__':

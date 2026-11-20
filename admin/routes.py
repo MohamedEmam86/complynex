@@ -30,6 +30,13 @@ from models.audit import AuditLog
 import csv
 import io
 
+_LEGACY_PERM_FIELDS = {
+    'perm_governance', 'perm_aml', 'perm_policies', 'perm_reports', 'perm_pdpl', 'perm_training', 'perm_screening',
+    'perm_config', 'perm_cyber', 'perm_consumer_protection', 'perm_whistleblowing', 'perm_phishing', 'perm_ghe',
+    'perm_coi', 'perm_cobec', 'perm_merchant_kyc', 'perm_tm', 'perm_ekyc', 'perm_risk_management',
+    'perm_internal_audit', 'perm_esg', 'perm_carbon', 'perm_ongoing_screening', 'perm_academy', 'perm_regcontrols',
+    'perm_prudential', 'perm_ai', 'perm_vessels', 'perm_vessels_db'}
+
 ALLOWED_ROLES = {'employee', 'viewer', 'analyst', 'compliance_officer',
                  'compliance_manager', 'manager', 'admin'}
 
@@ -230,44 +237,12 @@ def add_user():
         department = dept_obj.name if dept_obj else request.form.get('department', '')
         job_title = request.form.get('job_title')
         
-        # Granular permissions
-        perms = {
-            'perm_governance': request.form.get('perm_governance', 'none'),
-            'perm_aml': request.form.get('perm_aml', 'none'),
-            'perm_policies': request.form.get('perm_policies', 'none'),
-            'perm_reports': request.form.get('perm_reports', 'none'),
-            'perm_pdpl': request.form.get('perm_pdpl', 'none'),
-            'perm_training': request.form.get('perm_training', 'none'),
-            'perm_screening': request.form.get('perm_screening', 'none'),
-            'perm_config': request.form.get('perm_config', 'none'),
-            'perm_cyber': request.form.get('perm_cyber', 'none'),
-            'perm_ghe': request.form.get('perm_ghe', 'none'),
-            'perm_coi': request.form.get('perm_coi', 'none'),
-            'perm_cobec': request.form.get('perm_cobec', 'none'),
-            'perm_merchant_kyc': request.form.get('perm_merchant_kyc', 'none'),
-            'perm_tm': request.form.get('perm_tm', 'none'),
-            'perm_whistleblowing': request.form.get('perm_whistleblowing', 'none'),
-            # perm_phishing existed in the schema and was enforced by the
-            # sidebar, but was never offered in the form nor saved here, so it
-            # could never be granted to a non-admin.
-            'perm_phishing': request.form.get('perm_phishing', 'none'),
-            'perm_consumer_protection': request.form.get('perm_consumer_protection', 'none'),
-            'perm_ekyc': request.form.get('perm_ekyc', 'none'),
-            'perm_risk_management': request.form.get('perm_risk_management', 'none'),
-            'perm_internal_audit': request.form.get('perm_internal_audit', 'none'),
-            'perm_esg': request.form.get('perm_esg', 'none'),
-            'perm_carbon': request.form.get('perm_carbon', 'none'),
-            # Running a re-screen and adjudicating its findings is a
-            # separate duty from clearing a match, so it is granted
-            # separately rather than riding on perm_screening.
-            'perm_ongoing_screening': request.form.get('perm_ongoing_screening', 'none'),
-            'perm_academy': request.form.get('perm_academy', 'none'),
-            'perm_regcontrols': request.form.get('perm_regcontrols', 'none'),
-            'perm_prudential': request.form.get('perm_prudential', 'none'),
-            'perm_ai': request.form.get('perm_ai', 'none'),
-            'perm_vessels': request.form.get('perm_vessels', 'none'),
-        }
-        
+        # Module levels come from the access matrix below (written through by access/service.py); a client that
+        # still posts the old perm_* fields keeps working.
+        perms = {k: (request.form.get(k) or 'none') for k in request.form if k in _LEGACY_PERM_FIELDS}
+        from access import service as _AS
+        cx_mode, cx_granted, cx_cms = _AS.form_to_access(request.form)
+
         # Handle temporary user
         is_temporary = 1 if request.form.get('is_temporary') else 0
         expires_at = None
@@ -286,6 +261,11 @@ def add_user():
         try:
             new_user = User.create_user(email, password, first_name, last_name, role, employee_id, department, job_title,
                                         manager_id=manager_id, is_active=is_active, **perms)
+            # Exactly the ticked access (create_user wrote the role's defaults as explicit grants; this replaces them).
+            if cx_mode and not _AS.is_unrestricted(new_user):
+                _AS.save(new_user, cx_mode, cx_granted, actor_id=current_user.id, cms_level=cx_cms,
+                         note=((request.form.get('cx_note') or '').strip()[:300] or 'account created'),
+                         ip=request.remote_addr)
             # Permissions for modules added by optional content packs.
             from regcontrols.packs import save_module_perms
             save_module_perms(new_user.id, request.form)
@@ -353,17 +333,24 @@ def add_user():
                          f'Created user {email} ({role}); ' + ('one-time password issued' if issued_password
                                                                else 'password set by administrator') +
                          '; password change required at first login', request.remote_addr)
+            signin = _AS.signin_url(User.get_by_id(new_user.id))
+            if request.form.get('cx_welcome'):
+                if _AS.send_welcome(User.get_by_id(new_user.id), signin):
+                    flash(gettext('Welcome e-mail with the sign-in link sent to %(email)s.', email=email), 'info')
+                else:
+                    flash(gettext('The welcome e-mail could not be sent; give the user the sign-in link: %(url)s', url=signin), 'warning')
             if issued_password:
                 return _credentials_page([{'email': email, 'first_name': first_name, 'last_name': last_name,
-                                           'password': issued_password}])
+                                           'password': issued_password, 'signin_url': signin}])
             return redirect(url_for('admin.list_users'))
         except ValueError as e:
             flash(str(e), 'danger')
         except Exception as e:
             flash(f'Error creating user: {str(e)}', 'danger')
             
+    from access.routes import matrix_context
     return render_template('admin/users/add.html', departments=departments,
-                           managers=managers, **_authority_context())
+                           managers=managers, **_authority_context(), **matrix_context(None))
 
 @admin_bp.route('/users/delete/<int:user_id>', methods=['POST'])
 @login_required
@@ -530,6 +517,9 @@ def edit_user(id):
         job_title = request.form.get('job_title')
         _role_raw = request.form.get('role', '')
         role = _role_raw if _role_raw in ALLOWED_ROLES else 'viewer'
+        if user.role not in ALLOWED_ROLES:
+            # platform roles (superadmin, it_admin) are not offered by this form: never change them from here
+            role = user.role
         if id == current_user.id and role != user.role:
             flash(gettext('You cannot change your own role.'), 'danger')
             return redirect(request.url)
@@ -555,39 +545,15 @@ def edit_user(id):
                 'cms_access_level': cms_access_level,
                 'is_active': 1 if is_active else 0,
                 'accessible_departments': accessible_departments, # New list
-                'perm_governance': request.form.get('perm_governance', 'none'),
-                'perm_aml': request.form.get('perm_aml', 'none'),
-                'perm_policies': request.form.get('perm_policies', 'none'),
-                'perm_reports': request.form.get('perm_reports', 'none'),
-                'perm_pdpl': request.form.get('perm_pdpl', 'none'),
-                'perm_training': request.form.get('perm_training', 'none'),
-                'perm_screening': request.form.get('perm_screening', 'none'),
-                'perm_config': request.form.get('perm_config', 'none'),
-                'perm_cyber': request.form.get('perm_cyber', 'none'),
-                'perm_consumer_protection': request.form.get('perm_consumer_protection', 'none'),
-                'perm_whistleblowing': request.form.get('perm_whistleblowing', 'none'),
-                'perm_phishing': request.form.get('perm_phishing', 'none'),
-                'perm_ghe': request.form.get('perm_ghe', 'none'),
-                'perm_coi': request.form.get('perm_coi', 'none'),
-                'perm_cobec': request.form.get('perm_cobec', 'none'),
-                'perm_merchant_kyc': request.form.get('perm_merchant_kyc', 'none'),
-                'perm_tm': request.form.get('perm_tm', 'none'),
-                'perm_ekyc': request.form.get('perm_ekyc', 'none'),
-                'perm_risk_management': request.form.get('perm_risk_management', 'none'),
-                'perm_internal_audit': request.form.get('perm_internal_audit', 'none'),
-                'perm_esg': request.form.get('perm_esg', 'none'),
-                'perm_carbon': request.form.get('perm_carbon', 'none'),
-            # Running a re-screen and adjudicating its findings is a
-            # separate duty from clearing a match, so it is granted
-            # separately rather than riding on perm_screening.
-            'perm_ongoing_screening': request.form.get('perm_ongoing_screening', 'none'),
-            'perm_academy': request.form.get('perm_academy', 'none'),
-            'perm_regcontrols': request.form.get('perm_regcontrols', 'none'),
-            'perm_prudential': request.form.get('perm_prudential', 'none'),
-            'perm_ai': request.form.get('perm_ai', 'none'),
-            'perm_vessels': request.form.get('perm_vessels', 'none'),
                 'can_assign_training': bool(request.form.get('can_assign_training'))
             }
+            # Module levels and the CMS level come from the access matrix (access/service.py writes them
+            # through); a form that still posts the old fields (e.g. an API client) keeps working.
+            for _k in [k for k in request.form if k.startswith('perm_')]:
+                if _k in _LEGACY_PERM_FIELDS:
+                    update_data[_k] = request.form.get(_k) or 'none'
+            if cms_access_level is None:
+                update_data.pop('cms_access_level', None)
 
             if new_password:
                 _ok, _msg = User.validate_password_strength(new_password)
@@ -628,9 +594,22 @@ def edit_user(id):
                 _db.execute('UPDATE users SET auth_version = COALESCE(auth_version, 0) + 1, '
                             'failed_login_count = 0, locked_until = NULL WHERE id = %s', (id,))
                 _db.commit()
-            # Permissions for modules added by optional content packs.
+            # Permissions for modules added by optional content packs (old form fields, if posted).
             from regcontrols.packs import save_module_perms
             save_module_perms(id, request.form)
+            # Per-user access matrix: access type + every feature (writes the module levels through).
+            if request.form.get('cx_mode'):
+                from access import service as _AS
+                _mode, _granted, _cms = _AS.form_to_access(request.form)
+                _fresh = User.get_by_id(id)
+                if not _AS.is_unrestricted(_fresh):
+                    try:
+                        _AS.save(_fresh, _mode, _granted, actor_id=current_user.id, cms_level=_cms,
+                                 note=(request.form.get('cx_note') or '').strip()[:300] or None,
+                                 ip=request.remote_addr)
+                    except _AS.AccessError as _e:
+                        flash(str(_e), 'danger')
+                        return redirect(url_for('admin.edit_user', id=id) + '#access')
 
             from services import org_service as _O
             from database.db import execute_db as _ex
@@ -656,9 +635,9 @@ def edit_user(id):
             changes = []
             if role != old_role:
                 changes.append(f"Role: {old_role}→{role}")
-            if cms_access_level != old_cms:
+            if cms_access_level is not None and cms_access_level != old_cms:
                 changes.append(f"CMS Access: {old_cms}→{cms_access_level}")
-            perm_screening_new = update_data.get('perm_screening', 'none')
+            perm_screening_new = update_data.get('perm_screening', old_screening)
             if perm_screening_new != old_screening:
                 changes.append(f"Screening Permission: {old_screening}→{perm_screening_new}")
             change_detail = '; '.join(changes) if changes else 'User details updated'
@@ -676,10 +655,11 @@ def edit_user(id):
         except Exception as e:
             flash(f'Error updating user: {str(e)}', 'danger')
             
+    from access.routes import matrix_context
     return render_template('admin/users/edit.html', user=user, departments=departments,
                            user_accessible_depts=user_accessible_depts, managers=managers,
                            excluded_ids=_excluded_unit_ids(user.id),
-                           **_authority_context(user.id))
+                           **_authority_context(user.id), **matrix_context(user))
 
 @admin_bp.route('/audit-logs')
 @login_required
@@ -1344,7 +1324,8 @@ def superadmin_required(f):
         if role not in ('superadmin', 'admin', 'it_admin'):
             abort(403)
         return f(*args, **kwargs)
-    return decorated
+    from access.registry import mark
+    return mark(('role', ('superadmin', 'admin', 'it_admin')))(decorated)
 
 # ── Safe Audited Dispatcher (replaces free-text terminal) ─────────────────────
 #

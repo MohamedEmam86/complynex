@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}#{{ v.id }} - {{ rc_loc('List updates', 'تحديثات القوائم') }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+{% macro codes(items, cls) %}{% for c in items %}{% set u = link(c) %}{% if u %}<a class="badge du-chg du-chg-{{ cls }} text-decoration-none" href="{{ u }}">{{ c }}</a>{% else %}<span class="badge du-chg du-chg-{{ cls }}">{{ c }}</span>{% endif %} {% endfor %}{% endmacro %}
+<div class="container-fluid du-page">
+  {{ dn.nav('updates') }}
+  <nav class="small mb-2"><a href="{{ url_for('dualuse.admin_lists') }}">{{ rc_loc('List updates', 'تحديثات القوائم') }}</a> / <strong>{{ DU.LIST_SHORT.get(v.list_code, v.list_code) }} #{{ v.id }}</strong></nav>
+  <div class="card mb-3"><div class="card-body">
+    <h4 class="mb-1">{{ DU.LIST_SHORT.get(v.list_code, v.list_code) }} — {{ v.version_label or '' }} {% if v.is_current %}<span class="badge bg-primary">{{ rc_loc('current', 'الحالي') }}</span>{% endif %}</h4>
+    <div class="small text-muted">{{ v.legal_name }} · {{ rc_loc('loaded', 'تم التحميل') }} {{ v.loaded_at.strftime('%Y-%m-%d %H:%M') if v.loaded_at }} {{ rc_loc('by', 'بواسطة') }} {{ v.loaded_by or '' }} · {{ '{:,}'.format(v.record_count or 0) }} {{ rc_loc('records', 'سجل') }}{% if v.source_url %} · <span dir="ltr">{{ v.source_url }}</span>{% endif %}</div>
+    <div class="small text-muted">{% if prev %}{{ rc_loc('Compared with version', 'مقارنة بالإصدار') }} #{{ prev.id }} {{ prev.version_label or '' }} ({{ prev.loaded_at.strftime('%Y-%m-%d') if prev.loaded_at }}){% else %}{{ rc_loc('First version of this list.', 'أول إصدار لهذه القائمة.') }}{% endif %}</div>
+  </div></div>
+  <div class="row g-3">
+    {% for key, cls, en, ar in [('added_codes', 'add', 'Entries added', 'بنود مضافة'), ('removed_codes', 'del', 'Entries removed', 'بنود محذوفة'), ('changed_codes', 'chg', 'Entries whose text changed', 'بنود تغيّر نصها'), ('threshold_codes', 'thr', 'Entries whose thresholds changed', 'بنود تغيّرت حدودها الفنية')] %}
+    {% set items = diff.get(key) or [] %}{% set n = diff.get({'added_codes': 'added', 'removed_codes': 'removed', 'changed_codes': 'changed', 'threshold_codes': 'thresholds_changed'}[key]) %}
+    {% if n is not none %}
+    <div class="col-lg-6"><div class="card h-100"><div class="card-header fw-bold small">{{ rc_loc(en, ar) }} <span class="badge bg-secondary-subtle text-dark">{{ n }}</span></div>
+      <div class="card-body small du-chg-box">{% if items %}{{ codes(items, cls) }}{% if n > items|length %}<div class="text-muted mt-1">{{ rc_loc('First', 'أول') }} {{ items|length }}.</div>{% endif %}{% else %}<span class="text-muted">—</span>{% endif %}
+        {% if key == 'removed_codes' and items %}<div class="text-muted mt-1">{{ rc_loc('Removed entries no longer have a page; past screenings keep them.', 'البنود المحذوفة لم تعد لها صفحة؛ وعمليات الفحص السابقة تحتفظ بها.') }}</div>{% endif %}</div></div></div>
+    {% endif %}{% endfor %}
+  </div>
+  {% if not diff %}<div class="alert alert-light border mt-3">{{ rc_loc('No comparison was recorded for this version (it was loaded before change tracking).', 'لم تُسجَّل مقارنة لهذا الإصدار (تم تحميله قبل تتبع التغييرات).') }}</div>{% endif %}
+</div>
+{% endblock %}

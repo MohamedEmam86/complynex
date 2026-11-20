@@ -33,6 +33,7 @@ from models.audit import AuditLog
 
 from . import lending_bp as bp  # noqa: F401 — also exported as `bp` for the pack manifest
 from . import importer, logic, service
+from access.registry import mark as _mark
 
 MODULE = 'lending'
 DOC_TYPES = ('national_id', 'contract', 'receipt_acknowledgement', 'credit_study', 'guarantor_id', 'project_photo',
@@ -49,7 +50,7 @@ def perm(level='view'):
                 flash(_('You do not have permission for this Lending action.'), 'danger')
                 return redirect(request.referrer or url_for('dashboard'))
             return f(*a, **kw)
-        return wrapped
+        return _mark(('perm', MODULE, 'edit' if level == 'edit' else 'view'))(wrapped)
     return deco
 
 

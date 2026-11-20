@@ -19,6 +19,7 @@ from functools import wraps
 from flask_babel import gettext
 from flask import flash, redirect, url_for, request, abort
 from flask_login import current_user
+from access.registry import mark as _mark
 
 def permission_required(module, level='view'):
     """
@@ -58,7 +59,14 @@ def permission_required(module, level='view'):
                     return redirect(request.referrer or url_for('dashboard'))
 
             return f(*args, **kwargs)
-        return decorated_function
+        # the rule this guard applies, read by the access registry (access/registry.py)
+        if level == 'edit':
+            _spec = ('perm', module, 'edit')
+        elif level == 'admin':
+            _spec = ('role', ('admin', 'superadmin', 'it_admin'))
+        else:
+            _spec = ('perm', module, 'view')
+        return _mark(_spec)(decorated_function)
     return decorator
 
 def admin_required(f):
@@ -71,4 +79,4 @@ def admin_required(f):
             flash(gettext('This action requires administrator privileges.'), 'danger')
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
-    return decorated_function
+    return _mark(('role', ('admin',)))(decorated_function)

@@ -7,6 +7,9 @@
   <div class="card border-0 shadow-sm mb-3"><div class="card-body">
     <div class="d-flex flex-wrap justify-content-between gap-2">
       <div><div class="h4 mb-1">{{ v.name }}</div>
+        <div class="mb-1"><span class="badge {{ 'bg-danger' if v.provenance == 'SANCTION' else 'bg-warning text-dark' if v.provenance == 'BAN' else 'bg-secondary' }}">{{ vessel_status(v.provenance) }}</span>
+          {% for g in v.regimes %}<span class="badge rounded-pill bg-light text-dark border">{{ vessel_regime(g) }}</span>{% endfor %}
+          {% if v.psc_records %}<span class="badge bg-light text-dark border">{{ _('Port-state-control records') }}: {{ v.psc_records }}</span>{% endif %}</div>
         <div class="text-muted small">{{ vessel_list_label(none) }}{% if v.lists > 1 %} · {{ v.lists }} {{ _('lists') }}{% endif %}{% if not v.is_active %} · <span class="badge bg-secondary">{{ _('No longer listed') }}</span>{% endif %}</div></div>
       <div>{% for m in v.measures %}<span class="badge bg-danger me-1">{{ vessel_measure_label(m) }}</span>{% endfor %}</div>
     </div>
@@ -14,7 +17,7 @@
       <div class="col-md-3"><div class="text-muted">{{ _('IMO number') }}</div><div class="fw-bold">{{ v.imo or '-' }}{% if v.imo and v.imo_valid == false %} <span class="badge bg-warning text-dark">{{ _('check digit fails') }}</span>{% endif %}</div></div>
       <div class="col-md-3"><div class="text-muted">{{ _('MMSI') }}</div><div class="fw-bold">{{ v.mmsi or '-' }}</div></div>
       <div class="col-md-3"><div class="text-muted">{{ _('Call sign') }}</div><div class="fw-bold">{{ v.call_sign or '-' }}</div></div>
-      <div class="col-md-3"><div class="text-muted">{{ _('Flag') }}</div><div class="fw-bold">{{ vessel_flag(v.flag) or '-' }}</div></div>
+      <div class="col-md-3"><div class="text-muted">{{ _('Flag state') }}</div><div class="fw-bold">{{ vessel_flag(v.flag) or '-' }}</div></div>
       <div class="col-md-3"><div class="text-muted">{{ _('Vessel type') }}</div><div>{{ v.vessel_type or '-' }}</div></div>
       <div class="col-md-3"><div class="text-muted">{{ _('Gross tonnage') }}</div><div>{{ v.gross_tonnage or '-' }}</div></div>
       <div class="col-md-3"><div class="text-muted">{{ _('Year built') }}</div><div>{{ v.year_built or '-' }}</div></div>

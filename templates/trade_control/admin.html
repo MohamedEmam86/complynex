@@ -10,15 +10,24 @@
     <div class="table-responsive"><table class="table table-sm small mb-0">
       <thead><tr><th>{{ rc_loc('List', 'القائمة') }}</th><th>{{ rc_loc('Version', 'الإصدار') }}</th><th>{{ rc_loc('Records', 'السجلات') }}</th><th>{{ rc_loc('Last change', 'آخر تغيير') }}</th><th>{{ rc_loc('Arabic texts', 'النصوص العربية') }}</th><th>{{ rc_loc('Loaded', 'تاريخ التحميل') }}</th></tr></thead>
       <tbody>{% for l in lists %}
-        <tr><td>{% if du_show_lists %}<strong>{{ DU.LIST_SHORT.get(l.code, l.code) }}</strong><div class="text-muted">{{ l.legal_name }}</div>{% else %}{{ rc_loc(*DU.CLIENT_LIST_LABEL) }} · {{ loop.index }}{% endif %}</td>
+        <tr><td>{% if du_show_lists %}<strong>{{ DU.LIST_SHORT.get(l.code, l.code) }}</strong><div class="text-muted">{{ l.legal_name }}</div>{% else %}{{ rc_loc(*DU.client_label(l.code)) }}{% endif %}</td>
           <td>{% if du_show_lists %}{{ l.version_label or '—' }}{% elif l.version_id %}{{ rc_loc('Version', 'الإصدار') }} {{ l.version_id }}{% else %}—{% endif %}{% if du_show_lists and l.source_url %}<div><a class="text-muted" href="{{ l.source_url }}" rel="noopener noreferrer" target="_blank">{{ rc_loc('source', 'المصدر') }}</a></div>{% endif %}</td>
           <td>{{ l.record_count or 0 }}</td>
           <td>{% set df = l.diff or {} %}{% if df.get('added') is not none %}+{{ df.get('added', 0) }} / −{{ df.get('removed', 0) }} / ~{{ df.get('changed', 0) }}{% endif %}</td>
           <td>{% if l.ar_done or l.ar_draft or l.ar_stale %}{{ l.ar_done }} {{ rc_loc('reviewed', 'مراجَع') }} · {{ l.ar_draft }} {{ rc_loc('draft', 'مبدئي') }}{% if l.ar_stale %} · <span class="text-danger">{{ l.ar_stale }} {{ rc_loc('to update', 'تحتاج تحديثًا') }}</span>{% endif %}{% else %}—{% endif %}</td>
           <td>{{ l.loaded_at.strftime('%Y-%m-%d') if l.loaded_at else rc_loc('not loaded', 'غير محمّلة') }}</td></tr>
       {% endfor %}</tbody></table></div>
+    {% if du_show_lists %}<div class="card-body small pb-0"><a class="btn btn-sm btn-primary" href="{{ url_for('dualuse.admin_lists') }}"><i class="bi bi-arrow-repeat me-1"></i>{{ rc_loc('List updates: status, check now, upload, what changed', 'تحديثات القوائم: الحالة، الفحص الآن، الرفع، ما الذي تغيّر') }}</a></div>{% endif %}
     <div class="card-body small text-muted">{{ rc_loc('Lists are refreshed by a server job (dry run first, then apply); an unchanged list is skipped. Each change is a new version: past screenings keep the versions they used.', 'يتم تحديث القوائم بمهمة على الخادم (تشغيل تجريبي ثم تطبيق) وتُتخطى القائمة التي لم تتغير. كل تغيير إصدار جديد، وعمليات الفحص السابقة تحتفظ بالإصدارات التي استخدمتها.') }}</div>
   </div>
+
+  <div class="card mb-3"><div class="card-header fw-bold"><i class="bi bi-people me-1"></i>{{ rc_loc('Who can use this module', 'من يمكنه استخدام هذه الوحدة') }}</div><div class="card-body small">
+    <p class="mb-1">{{ rc_loc('The module is switched on for this installation. Each user needs the "Dual-use goods" module permission:', 'الوحدة مفعّلة في هذا النظام. يحتاج كل مستخدم إلى صلاحية وحدة «السلع مزدوجة الاستخدام»:') }}</p>
+    <ol class="mb-1"><li>{{ rc_loc('Administration → Users → edit the user.', 'الإدارة ← المستخدمون ← تعديل المستخدم.') }}</li>
+      <li>{{ rc_loc('Module permissions → "Dual-use goods": View (search, browse, see screenings), Edit (screen and decide) or Admin.', 'صلاحيات الوحدات ← «السلع مزدوجة الاستخدام»: عرض (البحث والتصفح ورؤية عمليات الفحص)، أو تعديل (الفحص واتخاذ القرار)، أو إدارة.') }}</li>
+      <li>{{ rc_loc('Save: the "Dual-use goods" menu appears for that user.', 'احفظ: تظهر قائمة «السلع مزدوجة الاستخدام» لهذا المستخدم.') }}</li></ol>
+    <div class="text-muted">{{ rc_loc('If the menu is missing for everyone, the content pack is switched off: Compliance Controls → Content packs → Dual-use goods screening → Enable.', 'إذا لم تظهر القائمة لأي مستخدم فالحزمة متوقفة: الضوابط الرقابية ← حزم المحتوى ← فحص السلع مزدوجة الاستخدام ← تفعيل.') }}</div>
+  </div></div>
 
   <div class="card"><div class="card-header fw-bold">{{ rc_loc('Bilingual dictionary', 'القاموس ثنائي اللغة') }} ({{ terms|length }})</div><div class="card-body">
     {% if du_show_lists %}

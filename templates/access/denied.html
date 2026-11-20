@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Not available') }} - {{ company_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ static_v('css/access.css') }}">{% endblock %}
+{% block content %}
+<div class="cx-denied">
+  <div class="cx-denied__card">
+    <span class="cx-denied__icon"><i class="bi bi-shield-lock" aria-hidden="true"></i></span>
+    <h1>{{ _('This page is not available for your account') }}</h1>
+    <p>{{ _('Your administrator has not enabled this feature for you. If you need it, please ask them to grant access.') }}</p>
+    <a class="btn btn-primary" href="{{ url_for(home) }}"><i class="bi bi-house me-1" aria-hidden="true"></i>{{ _('Back to my home page') }}</a>
+  </div>
+</div>
+{% endblock %}

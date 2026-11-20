@@ -32,6 +32,18 @@ Deploy gate (proposal for deploy.sh, next to the names Gold Set gate; not wired 
     fi
   First time / after a new Gold Set on purpose: scripts/vessel_gold_eval.py --write-baseline.
   The gate reads the lists from the live database, so run it after the list tables are current.
+
+Owner policy decision (round 3, recorded here because it changes what the Gold Set expects):
+  a name-only search must return the applicable matches. An EXACT one-word name of a sanctioned ship is a
+  POTENTIAL match (alert, "confirm with the IMO number, flag and owner") unless it is a common ship name:
+  carried now by >= common_name_hulls (default 3) distinct hulls across every vessel record held (sanctions,
+  bans, port-state control, analysis: ~10k hulls in production), or a common ship word (common_ship_words,
+  maritime vocabulary such as ADMIRAL, MARINA, STAR). Common names stay review ("IMO needed").
+  The Gold Set labels every listed one-word name (generic_name_listed) "review"; the cases whose name is rare
+  now come out "match". That is the owner's policy, not an engine error: such a category may score below the
+  v1 baseline, and the round-3 baseline (written with --write-baseline) records the new reference. With a
+  local database that holds only the sanctions lists, pass --fleet-sample <ship CSV> to measure name
+  frequency against a world-fleet sample as production does.
 """
 import argparse
 import importlib.util
@@ -43,8 +55,9 @@ import sys
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
 GOLD_DIR = os.path.join(BASE, 'screening', 'data', 'gold')
-DEFAULT_GOLD = os.path.join(GOLD_DIR, 'vessel_gold_v1.jsonl')
-DEFAULT_BASELINE = os.path.join(GOLD_DIR, 'vessel_baseline.json')
+# deploy gate: VESSEL_GOLD / VESSEL_GOLD_BASELINE point at the server's copies (data never in git)
+DEFAULT_GOLD = os.environ.get('VESSEL_GOLD') or os.path.join(GOLD_DIR, 'vessel_gold_v1.jsonl')
+DEFAULT_BASELINE = os.environ.get('VESSEL_GOLD_BASELINE') or os.path.join(GOLD_DIR, 'vessel_baseline.json')
 
 
 def _runner(gold_path, runner_path=None):
@@ -57,7 +70,29 @@ def _runner(gold_path, runner_path=None):
     return mod
 
 
-def make_screen(conn, with_owner=True):
+def fleet_sample(path):
+    """{normalised one-word name: {hull keys}} from a CSV of ships (columns name or caption, imo, optional
+    type: only VESSEL rows). Measures how common a one-word name is the way production does (production holds
+    ~10k ship records of every class); the file is data, never in git. Only the ship's current name counts
+    (alias columns of exports mix in former names), and only rows with a valid IMO (a row without one cannot
+    be told apart from the same hull listed elsewhere)."""
+    import csv
+    from screening import vessel_utils as VU
+    out = {}
+    with open(path, encoding='utf-8', newline='') as f:
+        for r in csv.DictReader(f):
+            if (r.get('type') or 'VESSEL').upper() != 'VESSEL':
+                continue
+            imo = VU.norm_imo(r.get('imo'))
+            if not (imo and VU.imo_valid(imo)):
+                continue
+            k = VU.norm_name(r.get('name') or r.get('caption') or '')
+            if k and ' ' not in k:
+                out.setdefault(k, set()).add('IMO:' + imo)
+    return out
+
+
+def make_screen(conn, with_owner=True, sample=None):
     """screen(query) -> {decision, vessel_imo, score} for the Gold Set runner."""
     from screening import vessel_engine as VE
     party = VE.party_screener() if with_owner else None
@@ -65,7 +100,8 @@ def make_screen(conn, with_owner=True):
     def screen(q):
         res = VE.screen_vessel(name=q.get('name'), imo=q.get('imo'), mmsi=q.get('mmsi'), call_sign=q.get('call_sign'),
                                flag=q.get('flag'), owner=q.get('owner'), conn=conn, whitelist={},
-                               screen_party=party if (q.get('owner') or '').strip() else None)
+                               screen_party=party if (q.get('owner') or '').strip() else None,
+                               fleet_sample=sample)
         dec, imo, score = VE.decision(res)
         return {'decision': dec, 'vessel_imo': imo, 'score': score}
     return screen
@@ -80,6 +116,8 @@ def main():
     ap.add_argument('--json', metavar='FILE')
     ap.add_argument('--show-failures', type=int, default=25)
     ap.add_argument('--no-owner', action='store_true', help='skip the owner layer (no person / entity engine)')
+    ap.add_argument('--fleet-sample', metavar='CSV', help='more ship records to measure how common a one-word '
+                                                          'name is (see fleet_sample)')
     a = ap.parse_args()
     if not os.path.exists(a.gold):
         print(f'vessel Gold Set not found: {a.gold} (skipped)')
@@ -94,7 +132,8 @@ def main():
     with app.app_context():
         from database.db import get_db
         conn = get_db()
-        res = ev.evaluate(make_screen(conn, with_owner=not a.no_owner), a.gold)
+        sample = fleet_sample(a.fleet_sample) if a.fleet_sample else None
+        res = ev.evaluate(make_screen(conn, with_owner=not a.no_owner, sample=sample), a.gold)
         try:
             from screening.routes import get_engine
             from api.screening_v1 import _release_engine_conn

@@ -2,6 +2,8 @@
 
 {% block title %}{{ _('Add User') }}{% endblock %}
 
+{% block extra_css %}<link rel="stylesheet" href="{{ static_v('css/access.css') }}">{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">{{ _('Add New User') }}</h1>
@@ -13,7 +15,7 @@
 </div>
 
 <div class="row">
-    <div class="col-md-8 offset-md-2">
+    <div class="col-xl-10 offset-xl-1">
         <div class="card shadow-sm">
             <div class="card-body">
                 <form method="POST">
@@ -105,46 +107,14 @@
                         <div class="form-text">{{ _('Used to route COI, GHE and COBEC declarations to this employee\'s manager for review.') }}</div>
                     </div>
 
-                    <h5 class="card-title mt-4 mb-3">{{ _('Module Permissions') }}</h5>
-                    <div class="row g-3 mb-4">
-                        {% for module in [('governance', 'Corporate Governance'), ('aml', 'AML/CFT'), ('policies', 'Policies'), ('reports', 'Regulatory Reports'), ('pdpl', 'Data Protection'), ('training', 'Training'), ('screening', 'Sanction Screening'), ('ongoing_screening', 'Ongoing Screening'), ('vessels', 'Vessel Screening'), ('config', 'System Configuration'), ('cyber', 'Cyber Incidents Hub'), ('phishing', 'Phishing Awareness'), ('ghe', 'GHE Declarations'), ('coi', 'COI Declarations'), ('cobec', 'Code of Ethics'), ('merchant_kyc', 'Merchant KYC'), ('tm', 'Transaction Monitoring'), ('whistleblowing', 'Whistleblowing'), ('consumer_protection', 'Consumer Protection'), ('ekyc', 'eKYC'), ('risk_management', 'Risk Management'), ('internal_audit', 'Internal Audit'), ('esg', 'ESG Management'), ('carbon', 'Carbon Footprint'), ('academy', 'Integrys Academy (learners)'), ('regcontrols', 'Compliance Controls'), ('prudential', 'Prudential & Governance'), ('ai', 'Compliance Copilot (AI)')] %}
-                        <div class="col-md-4">
-                            <div class="card bg-light border-0">
-                                <div class="card-body p-2">
-                                    <label class="form-label small fw-bold">{{ _(module[1]) }}</label>
-                                    <select class="form-select form-select-sm" name="perm_{{ module[0] }}">
-                                        <option value="none" selected>{{ _('None') }}</option>
-                                        <option value="view">{{ _('View Only') }}</option>
-                                        {% if module[0] == 'ai' %}
-                                        <option value="use">{{ _('Use (submit, confirm, drafts)') }}</option>
-                                        <option value="admin">{{ _('Admin (settings, catalogs)') }}</option>
-                                        {% else %}
-                                        <option value="edit">{{ _('View &amp; Edit') }}</option>
-                                        {% endif %}
-                                        {% if module[0] == 'regcontrols' %}
-                                        <option value="admin">{{ _('Admin (approve parameters, edit library)') }}</option>
-                                        {% endif %}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
+                    {# Access: the same per-user matrix as the edit page. The new user gets exactly what is ticked. #}
+                    {% include 'access/_matrix.html' %}
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="cx_welcome" name="cx_welcome" value="1" checked>
+                        <label class="form-check-label fw-bold" for="cx_welcome">{{ _('E-mail the user a welcome message with their sign-in link') }}</label>
+                        <div class="form-text">{{ _('The link opens the right sign-in page for the access type (a restricted user lands on their workspace). The temporary password is never e-mailed: it is shown to you once after saving, to hand over through a separate channel.') }}</div>
                     </div>
-                    {% set _pack_perms = rc_pack_permission_modules() %}
-                    {% if _pack_perms %}
-                    <h6 class="mt-2 mb-2">{{ _('Content pack modules') }}</h6>
-                    <div class="row g-3 mb-4">
-                        {% for module, label_en, label_ar, levels in _pack_perms %}
-                        {% set pv = 'none' %}
-                        <div class="col-md-4"><div class="card bg-light border-0"><div class="card-body p-2">
-                            <label class="form-label small fw-bold">{{ rc_loc(label_en, label_ar) }}</label>
-                            <select class="form-select form-select-sm" name="modperm_{{ module }}">
-                                {% for lv, ll in [('none', _('None')), ('view', _('View Only')), ('edit', _('View &amp; Edit')), ('admin', _('Admin'))] if lv in levels %}
-                                <option value="{{ lv }}" {{ 'selected' if pv == lv }}>{{ ll|label }}</option>{% endfor %}
-                            </select></div></div></div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
 
                     <div class="card bg-light border-0 mb-4">
                         <div class="card-body p-3">
@@ -300,6 +270,7 @@
                         <button type="submit" class="btn btn-primary">{{ _('Create User') }}</button>
                     </div>
                 </form>
+                <script nonce="{{ csp_nonce }}" src="{{ static_v('js/access_matrix.js') }}"></script>
             </div>
         </div>
     </div>

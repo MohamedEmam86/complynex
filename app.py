@@ -834,6 +834,11 @@ Message:
         )
         return response
 
+    # Per-user access control (modules x features registry, request gate, menus, restricted workspace).
+    # Last, so the registry resolves the complete URL map and the gate runs after the session checks.
+    from access import init_app as _access_init
+    _access_init(app)
+
     return app
 
 

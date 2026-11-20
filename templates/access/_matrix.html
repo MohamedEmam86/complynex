@@ -1,0 +1,178 @@
+{# Per-user access matrix (access/routes.py matrix_context). Rendered inside the user's form: the fields are
+   cx_mode, cx_cms_level and cx_feature (one per ticked feature). The "copy from user" controls belong to
+   the separate form #cxCopyForm (access/_copy_form.html), placed after the main form. #}
+{# On the add-user page there is no user yet (cx_user is None): the preview is computed for the role chosen in
+   the form, and "copy from user" ticks the boxes in the page instead of saving. #}
+<section class="cx-acc" id="access" data-cx-matrix
+         data-preview-url="{{ url_for('access.admin_preview', user_id=cx_user.id) if cx_user else url_for('access.admin_preview_new') }}"
+         {% if not cx_user %}data-copy-url="{{ url_for('access.admin_grants', user_id=0) }}"{% endif %}>
+  <header class="cx-acc__head">
+    <div>
+      <h2 class="cx-acc__title"><i class="bi bi-key" aria-hidden="true"></i> {{ _('Access & permissions') }}</h2>
+      <p class="cx-acc__sub">{{ _('Tick exactly what this user may see and do. Anything not ticked is hidden from the menus and refused by URL.') }}</p>
+    </div>
+    <div class="cx-acc__stats" aria-live="polite">
+      <span class="cx-stat"><strong data-cx-count-modules>0</strong> {{ _('modules') }}</span>
+      <span class="cx-stat"><strong data-cx-count-features>0</strong> / {{ cx_total }} {{ _('features') }}</span>
+      {% if cx_user %}<a class="cx-stat cx-stat--link" href="{{ url_for('access.admin_audit', user=cx_user.id) }}"><i class="bi bi-clock-history" aria-hidden="true"></i> {{ _('Change log') }}</a>{% endif %}
+    </div>
+  </header>
+
+  {% if cx_self_locked %}
+  <div class="cx-note cx-note--info mb-3"><i class="bi bi-lock" aria-hidden="true"></i>
+    {{ _('This is your own account: your access is shown read-only. Another administrator must change it.') }}</div>
+  {% endif %}
+  {% set _dis = 'disabled' if cx_self_locked else '' %}
+  {% if cx_unrestricted %}
+  <div class="cx-note cx-note--info"><i class="bi bi-stars" aria-hidden="true"></i>
+    {{ _('This account is the platform superadmin: it is unrestricted and has every module and feature.') }}</div>
+  {% else %}
+
+  <fieldset class="cx-modes">
+    <legend class="cx-label">{{ _('Where does this user work?') }}</legend>
+    {% set _m = cx_access.mode %}
+    <label class="cx-mode">
+      <input type="radio" name="cx_mode" value="cms" {{ 'checked' if _m == 'cms' }} {{ _dis }}>
+      <span class="cx-mode__card">
+        <i class="bi bi-window-sidebar" aria-hidden="true"></i>
+        <span class="cx-mode__title">{{ _('CMS back-office') }}</span>
+        <span class="cx-mode__desc">{{ _('Compliance staff: the CMS dashboard and menu, limited to the ticked modules.') }}</span>
+        <select class="form-select form-select-sm cx-mode__extra" name="cx_cms_level" {{ _dis }} aria-label="{{ _('CMS access level') }}">
+          <option value="view" {{ 'selected' if not cx_user or cx_user.cms_access_level != 'edit' }}>{{ _('General CMS pages: view only') }}</option>
+          <option value="edit" {{ 'selected' if cx_user and cx_user.cms_access_level == 'edit' }}>{{ _('General CMS pages: view & edit') }}</option>
+        </select>
+      </span>
+    </label>
+    <label class="cx-mode">
+      <input type="radio" name="cx_mode" value="portal" {{ 'checked' if _m == 'portal' }} {{ _dis }}>
+      <span class="cx-mode__card">
+        <i class="bi bi-house-heart" aria-hidden="true"></i>
+        <span class="cx-mode__title">{{ _('Employee portal') }}</span>
+        <span class="cx-mode__desc">{{ _('No CMS dashboard. The portal shows only the ticked portal items and modules.') }}</span>
+      </span>
+    </label>
+    <label class="cx-mode">
+      <input type="radio" name="cx_mode" value="restricted" {{ 'checked' if _m == 'restricted' }} {{ _dis }}>
+      <span class="cx-mode__card">
+        <i class="bi bi-door-closed" aria-hidden="true"></i>
+        <span class="cx-mode__title">{{ _('Restricted workspace') }}</span>
+        <span class="cx-mode__desc">{{ _('External or limited users: a clean page with only the ticked modules. No CMS, no portal; every other address is refused.') }}</span>
+      </span>
+    </label>
+  </fieldset>
+
+  <div class="cx-toolbar">
+    <div class="cx-search">
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <input type="search" class="form-control form-control-sm" data-cx-search autocomplete="off"
+             placeholder="{{ _('Search modules and features…') }}" aria-label="{{ _('Search modules and features') }}">
+    </div>
+    <div class="cx-toolbar__btns">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-cx-act="expand">{{ _('Expand all') }}</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-cx-act="collapse">{{ _('Collapse all') }}</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-cx-act="all">{{ _('Tick all') }}</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-cx-act="none">{{ _('Clear all') }}</button>
+    </div>
+    <div class="cx-copy">
+      {% if cx_user %}
+      <select class="form-select form-select-sm" name="source_user_id" form="cxCopyForm" aria-label="{{ _('Copy access from user') }}" required>
+        <option value="">{{ _('Copy from user…') }}</option>
+        {% for o in cx_others %}<option value="{{ o.id }}">{{ o.get_full_name() }} — {{ o.email }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn-sm btn-outline-primary" form="cxCopyForm" data-confirm="{{ _('Replace this user\'s access with the chosen user\'s access?') }}">
+        <i class="bi bi-files" aria-hidden="true"></i> {{ _('Copy') }}</button>
+      {% else %}
+      <select class="form-select form-select-sm" data-cx-copy-src aria-label="{{ _('Copy access from user') }}">
+        <option value="">{{ _('Copy from user…') }}</option>
+        {% for o in cx_others %}<option value="{{ o.id }}">{{ o.get_full_name() }} — {{ o.email }}</option>{% endfor %}
+      </select>
+      <button type="button" class="btn btn-sm btn-outline-primary" data-cx-act="copy"><i class="bi bi-files" aria-hidden="true"></i> {{ _('Copy') }}</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="cx-layout">
+    <div class="cx-areas">
+      {% for a in cx_areas %}
+      <div class="cx-area" data-cx-area>
+        <h3 class="cx-area__title">{{ a.label }}</h3>
+        {% for m in a.modules %}
+        <div class="cx-mod{% if m.surface == 'portal' %} cx-mod--portal{% endif %}" data-cx-mod data-surface="{{ m.surface }}"
+             data-search="{{ (m.label ~ ' ' ~ m.key ~ ' ' ~ m.desc)|lower }}">
+          <div class="cx-mod__head">
+            <input class="form-check-input cx-mod__all" type="checkbox" data-cx-modall aria-label="{{ _('All features of') }} {{ m.label }}">
+            <button type="button" class="cx-mod__toggle" aria-expanded="false" data-cx-toggle>
+              <i class="bi {{ m.icon }} cx-mod__icon" aria-hidden="true"></i>
+              <span class="cx-mod__name">{{ m.label }}
+                {% if m.surface == 'portal' %}<span class="cx-tag cx-tag--portal">{{ _('Portal') }}</span>{% endif %}
+              </span>
+              <span class="cx-mod__count"><span data-cx-modcount>{{ m.granted }}</span>/{{ m.features|length }}</span>
+              <i class="bi bi-chevron-down cx-mod__caret" aria-hidden="true"></i>
+            </button>
+          </div>
+          <ul class="cx-mod__body" hidden>
+            {% for f in m.features %}
+            <li class="cx-feat" data-cx-feat data-search="{{ (f.label ~ ' ' ~ f.key)|lower }}">
+              <label class="cx-feat__label">
+                <input class="form-check-input" type="checkbox" name="cx_feature" value="{{ f.key }}"
+                       data-requires="{{ f.requires|join(' ') }}" {{ 'checked' if f.checked }}
+                       {% if f.locked or cx_self_locked %}disabled data-locked="1"{% endif %}
+                       {% if not f.workspace %}data-noworkspace="1"{% endif %}>
+                <span class="cx-feat__text">{{ f.label }}
+                  {% if f.locked %}<i class="bi bi-lock-fill text-muted" title="{{ _('Only the platform superadmin can change this.') }}" aria-label="{{ _('Only the platform superadmin can change this.') }}"></i>{% endif %}
+                  {% if f.hint %}<small class="cx-feat__hint">{{ f.hint }}</small>{% endif %}</span>
+                <span class="cx-kind cx-kind--{{ f.kind }}">{{ {'view': _('View'), 'action': _('Action'), 'admin': _('Admin')}[f.kind] }}</span>
+                {% if f.pages %}<span class="cx-pages" title="{{ _('Pages and actions covered') }}">{{ f.pages }}</span>{% endif %}
+              </label>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      <p class="cx-empty" data-cx-nomatch hidden>{{ _('No module or feature matches your search.') }}</p>
+    </div>
+
+    <aside class="cx-preview" aria-live="polite">
+      <h3 class="cx-preview__title"><i class="bi bi-eye" aria-hidden="true"></i> {{ _('Effective access preview') }}</h3>
+      <p class="cx-preview__hint">{{ _('What this user will see after saving.') }}</p>
+      <dl class="cx-preview__facts">
+        <dt>{{ _('Lands on') }}</dt><dd data-cx-pv-home>—</dd>
+        <dt>{{ _('Pages and actions allowed') }}</dt><dd data-cx-pv-pages>—</dd>
+      </dl>
+      <ul class="cx-preview__mods" data-cx-pv-mods></ul>
+      <p class="cx-preview__none" data-cx-pv-none hidden>{{ _('Nothing is ticked: the user will only see an empty workspace.') }}</p>
+      <label class="cx-label mt-3" for="cx_note">{{ _('Reason for the change (kept in the change log)') }}</label>
+      <input class="form-control form-control-sm" id="cx_note" name="cx_note" maxlength="300">
+    </aside>
+  </div>
+
+  {% if cx_history %}
+  <details class="cx-history">
+    <summary>{{ _('Recent access changes') }} ({{ cx_history|length }})</summary>
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>{{ _('When') }}</th><th>{{ _('By') }}</th><th>{{ _('Change') }}</th></tr></thead>
+      <tbody>
+      {% for h in cx_history %}
+        <tr>
+          <td class="text-nowrap">{{ to_cairo(h.created_at) if to_cairo is defined else h.created_at }}</td>
+          <td>{{ h.actor_name or h.actor_email or _('System (migration)') }}</td>
+          <td>
+            <span class="cx-tag">{{ {'save': _('Saved'), 'copy': _('Copied'), 'backfill': _('Migrated (no change)')}.get(h.action, h.action) }}</span>
+            {% if h.mode_before != h.mode_after %}<span class="cx-tag">{{ h.mode_before }} → {{ h.mode_after }}</span>{% endif %}
+            {% if h.action != 'backfill' %}
+            {% for k in h.added[:8] %}<span class="cx-chip cx-chip--add">+ {{ cx_feature_labels.get(k, k) }}</span>{% endfor %}
+            {% for k in h.removed[:8] %}<span class="cx-chip cx-chip--del">− {{ cx_feature_labels.get(k, k) }}</span>{% endfor %}
+            {% if (h.added|length) + (h.removed|length) > 16 %}<span class="cx-chip">…</span>{% endif %}
+            {% endif %}
+            {% if h.note %}<div class="small text-muted">{{ h.note }}</div>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </details>
+  {% endif %}
+  {% endif %}
+</section>

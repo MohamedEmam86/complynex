@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% import 'trade_control/_nav.html' as dn with context %}
+{% import 'trade_control/_guidance.html' as dg with context %}
 {% block title %}CAS {{ d.code }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
@@ -18,6 +19,7 @@
       {% if d.extra.get('ag_precursor') %}<span class="badge bg-danger">{{ rc_loc('Chemical-weapons precursor', 'سلائف أسلحة كيميائية') }}</span>{% endif %}
     </div>
   </div></div>
+  {{ dg.panel(gd) }}
   {% if items %}
   <div class="card mb-3"><div class="card-header fw-bold">{{ rc_loc('Control entries listing this chemical', 'بنود الرقابة التي تدرج هذه المادة') }}</div>
     <div class="list-group list-group-flush small">
@@ -30,4 +32,5 @@
   {% endif %}
   {{ dn.disclaimer() }}
 </div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/dualuse_guidance.js') }}"></script>
 {% endblock %}

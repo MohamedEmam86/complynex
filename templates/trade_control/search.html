@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
 {% import 'trade_control/_nav.html' as dn with context %}
+{% import 'trade_control/_guidance.html' as dg with context %}
 {% block title %}{{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }} - ComplyNex CMS{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
 <div class="container-fluid du-page">
   <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
     <h3 class="mb-0"><i class="bi bi-box-seam me-2"></i>{{ rc_loc('Dual-use goods screening', 'فحص السلع مزدوجة الاستخدام') }}</h3>
-    <div class="small text-muted">{{ rc_loc(*DU.CLIENT_LIST_LABEL) }} · {{ '{:,}'.format(entries) }} {{ rc_loc('entries', 'بند') }}</div>
+    <div class="small text-muted">{{ '{:,}'.format(entries) }} {{ rc_loc('searchable entries', 'بند قابل للبحث') }}</div>
   </div>
   {{ dn.nav('search') }}
 
@@ -65,6 +66,7 @@
         {% if d.context_en and d.level %}<div class="small text-muted">{{ rc_loc('Under', 'ضمن') }} {{ d.entry_code }}: {{ (d.context_ar if du_lang == 'ar' and d.context_ar else d.context_en)[:140] }}</div>{% endif %}
         <div class="small du-snippet" dir="ltr">{{ r.snippet_en|safe }}</div>
         {% if r.snippet_ar %}<div class="small du-snippet" dir="rtl">{{ r.snippet_ar|safe }} {{ dn.ar_note(d.ar_status) }}</div>{% elif du_lang == 'ar' and d.title_ar %}<div>{{ dn.ar_note(d.ar_status) }}</div>{% endif %}
+        {{ dg.compact(r.guide, r.guide_url) }}
         <div class="small mt-1">
           <span class="text-muted me-1">{{ rc_loc('Matched by', 'سبب الظهور') }}:</span>{% for w in r.why %}{{ dn.why_label(w) }}{% endfor %}
           {% if d.list_code == 'chemicals' and d.extra.get('cwc_schedule') %}{{ dn.chem_level(d.extra.cwc_schedule) }}{% endif %}
@@ -81,18 +83,65 @@
     </div>
   </div>
   {% else %}
+  <div class="du-hero mb-3">
+    <div class="row g-3 align-items-stretch">
+      <div class="col-lg-7">
+        <h5 class="mb-2">{{ rc_loc('Know before you ship, finance or clear goods', 'اعرف قبل الشحن أو التمويل أو الإفراج عن البضائع') }}</h5>
+        <p class="mb-2">{{ rc_loc('This module tells you whether a product may be a controlled item — a dual-use good, a controlled chemical, an explosives precursor or a high-priority diversion item — and what to do next: what to ask the customer, which documents to collect, which Egyptian authority is competent, and the red flags to watch.', 'تخبرك هذه الوحدة ما إذا كان المنتج قد يكون صنفًا خاضعًا للرقابة — سلعة مزدوجة الاستخدام أو مادة كيميائية خاضعة للرقابة أو سليفة متفجرات أو صنفًا عالي الأولوية لخطر التحويل — وماذا تفعل بعد ذلك: ماذا تسأل العميل، وما المستندات المطلوبة، وما الجهة المصرية المختصة، ومؤشرات الخطر الواجب مراقبتها.') }}</p>
+        <ol class="du-how small mb-0">
+          <li><strong>{{ rc_loc('Search or screen', 'ابحث أو افحص') }}</strong> — {{ rc_loc('by product name (Arabic or English), HS code, CAS number, control code or model; or upload an invoice.', 'باسم المنتج (بالعربية أو الإنجليزية) أو كود HS أو رقم CAS أو كود الرقابة أو الموديل؛ أو ارفع فاتورة.') }}</li>
+          <li><strong>{{ rc_loc('Check the threshold', 'تحقق من الحد الفني') }}</strong> — {{ rc_loc('enter the product value (e.g. 15 % nitrogen, 40 GHz) and see at once whether it is above or below.', 'أدخل قيمة المنتج (مثل 15% نيتروجين أو 40 جيجاهرتز) واعرف فورًا هل هي أعلى أم أقل من الحد.') }}</li>
+          <li><strong>{{ rc_loc('Follow the guidance and decide', 'اتبع الإرشادات وقرر') }}</strong> — {{ rc_loc('tick the checklist, record your decision with its reason, download the decision memo.', 'ضع علامات قائمة التحقق، وسجّل قرارك مع سببه، ونزّل مذكرة القرار.') }}</li>
+        </ol>
+      </div>
+      <div class="col-lg-5">
+        <div class="d-grid gap-2">
+          {% if du_can_edit %}
+          <a class="btn btn-primary btn-lg text-start" href="{{ url_for('dualuse.screen') }}"><i class="bi bi-upc-scan me-2"></i>{{ rc_loc('Screen a product', 'فحص منتج') }}<div class="small opacity-75">{{ rc_loc('One product, with parties and vessel', 'منتج واحد مع الأطراف والسفينة') }}</div></a>
+          <a class="btn btn-outline-primary text-start" href="{{ url_for('dualuse.batch') }}"><i class="bi bi-file-earmark-spreadsheet me-2"></i>{{ rc_loc('Screen an invoice or packing list', 'فحص فاتورة أو قائمة تعبئة') }}</a>
+          {% endif %}
+          <a class="btn btn-outline-secondary text-start" href="{{ url_for('dualuse.browse') }}"><i class="bi bi-diagram-3 me-2"></i>{{ rc_loc('Browse the catalogue by category', 'تصفح الفهرس حسب الفئة') }}</a>
+        </div>
+        {% if status %}
+        <div class="du-status mt-3 small {{ 'du-status-stale' if status.stale }}">
+          <i class="bi {{ 'bi-exclamation-triangle' if status.stale or not ready else 'bi-shield-check' }} me-1"></i>
+          {% if not ready %}{{ rc_loc('Control lists are not fully loaded: no product can be cleared yet.', 'قوائم الرقابة غير محمّلة بالكامل: لا يمكن اعتبار أي منتج سليمًا بعد.') }}
+          {% elif status.checked %}{{ rc_loc('Control lists checked against the official publishers on', 'تمت مطابقة قوائم الرقابة مع الجهات الناشرة الرسمية في') }} <strong dir="ltr">{{ status.checked.strftime('%Y-%m-%d') }}</strong>{% if status.stale and du_show_lists %} · <a href="{{ url_for('dualuse.admin_lists') }}">{{ rc_loc('update needed', 'يلزم التحديث') }}</a>{% endif %}
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
   <div class="row g-3">
     {% for k, n, en, ar, icon in [('screenings', stats.get('screenings', 0), 'Screenings', 'عمليات فحص', 'bi-clock-history'), ('open', stats.get('open_lines', 0), 'Lines waiting for a decision', 'بنود تنتظر قرارًا', 'bi-hourglass-split'), ('held', stats.get('held', 0), 'Lines on hold', 'بنود موقوفة', 'bi-sign-stop'), ('known', stats.get('known_items', 0), 'Products with a recorded decision', 'منتجات لها قرار مسجل', 'bi-bookmark-check')] %}
-    <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body py-3"><i class="bi {{ icon }} fs-4 text-primary"></i><div class="fs-4">{{ n }}</div><div class="small text-muted">{{ rc_loc(en, ar) }}</div></div></div></div>
+    <div class="col-6 col-md-3"><div class="card text-center h-100 du-stat"><div class="card-body py-3"><i class="bi {{ icon }} fs-4 text-primary"></i><div class="fs-4">{{ n }}</div><div class="small text-muted">{{ rc_loc(en, ar) }}</div></div></div></div>
     {% endfor %}
   </div>
-  <div class="row g-2 mt-2">
-    {% for c, labels in DU.CATEGORY_LABELS.items() %}
-    <div class="col-6 col-md-4 col-xl-2"><a class="card text-decoration-none h-100 du-cat" href="{{ url_for('dualuse.index', category=c) }}"><div class="card-body py-2"><div class="fs-5 fw-bold">{{ c }}</div><div class="small text-dark">{{ rc_loc(*labels) }}</div></div></a></div>
-    {% endfor %}
+  <div class="row g-3 mt-1">
+    <div class="col-lg-7">
+      <div class="card h-100"><div class="card-header fw-bold d-flex justify-content-between"><span><i class="bi bi-clock-history me-1"></i>{{ rc_loc('Recent screenings', 'أحدث عمليات الفحص') }}</span><a class="small" href="{{ url_for('dualuse.screenings') }}">{{ rc_loc('All', 'الكل') }}</a></div>
+        <div class="list-group list-group-flush small">
+        {% for r in recent %}{% set c = r.counts or {} %}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between gap-2 flex-wrap" href="{{ url_for('dualuse.screening', sid=r.id) }}">
+            <span><strong>{{ r.ref }}</strong> <span class="text-muted">{{ r.title or r.file_name or '' }}</span></span>
+            <span>{% if c.get('hold') %}{{ dn.outcome_badge('hold') }} {{ c.hold }}{% endif %} {% if c.get('review') %}{{ dn.outcome_badge('review') }} {{ c.review }}{% endif %} {% if c.get('clear') %}{{ dn.outcome_badge('clear') }} {{ c.clear }}{% endif %} <span class="text-muted ms-1">{{ r.created_at.strftime('%Y-%m-%d') if r.created_at }}</span></span></a>
+        {% else %}
+          <div class="list-group-item text-muted">{{ rc_loc('No screening yet.', 'لا توجد عمليات فحص بعد.') }}{% if du_can_edit %} <a href="{{ url_for('dualuse.screen') }}">{{ rc_loc('Screen your first product', 'افحص أول منتج') }}</a>{% endif %}</div>
+        {% endfor %}
+        </div></div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card h-100"><div class="card-header fw-bold"><i class="bi bi-diagram-3 me-1"></i>{{ rc_loc('Browse by category', 'تصفح حسب الفئة') }}</div>
+        <div class="list-group list-group-flush small">
+        {% for c, labels in DU.CATEGORY_LABELS.items() %}<a class="list-group-item list-group-item-action" href="{{ url_for('dualuse.browse_category', cat=c) }}"><span class="du-catno">{{ c }}</span>{{ rc_loc(*labels) }}</a>{% endfor %}
+        <a class="list-group-item list-group-item-action" href="{{ url_for('dualuse.browse_category', cat='precursors') }}"><i class="bi bi-fire du-catno"></i>{{ rc_loc('Explosives precursors', 'سلائف المتفجرات') }}</a>
+        </div></div>
+    </div>
   </div>
   {% endif %}
   {{ dn.disclaimer('mt-3') }}
 </div>
 <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/dualuse.js') }}"></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/dualuse_guidance.js') }}"></script>
 {% endblock %}

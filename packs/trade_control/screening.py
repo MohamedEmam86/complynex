@@ -259,7 +259,8 @@ def questions_for(index, candidates, line=None, limit=MAX_QUESTIONS):
         d = index.get(c['list_code'], c['code'])
         if d is None:
             continue
-        if any(r in ('cas', 'name') for r in c['reasons']):
+        complete = bool(d.extra.get('complete'))   # an explosives precursor: its limit value decides
+        if any(r in ('cas', 'name') for r in c['reasons']) and not complete:
             ck = 'cas:' + ','.join(sorted(d.cas)) if d.cas else 'd:' + c['code']
             if ck in seen:
                 continue                    # the same chemical listed under another code: asked once
@@ -282,7 +283,9 @@ def questions_for(index, candidates, line=None, limit=MAX_QUESTIONS):
             words = {t for t, _ in T.tokens((p.get('parameter') or '') + ' ' + (owner.text_en or '')[:300])}
             return len(words & desc_tokens)
         scored = sorted(((rel(it), n, it) for n, it in enumerate(pool)), key=lambda x: (-x[0], x[1]))
-        if not scored or scored[0][0] == 0:
+        if complete:
+            scored = [(1, n, (p, d)) for n, p in enumerate(d.params) if p.get('parameter')]
+        elif not scored or scored[0][0] == 0:
             scored = []                     # no threshold relates to the product: ask about the entry itself
         taken = 0
         for _, _, (p, owner) in scored:
@@ -303,20 +306,26 @@ def questions_for(index, candidates, line=None, limit=MAX_QUESTIONS):
                 uu = p.get('upper_unit') or unit
                 text_en += ' and %s %g %s' % (uen, p['upper_value'], uu)
                 text_ar += ' و%s %g %s' % (uar, p['upper_value'], uu)
+            excl = p.get('role') == 'exclusion'
+            if excl:        # a threshold of an exclusion clause: "yes" takes the product OUT of the entry
+                text_en = 'Exclusion — %s (if yes, this entry does not apply)' % text_en
+                text_ar = 'استثناء — %s (إذا كانت الإجابة نعم فلا ينطبق هذا البند)' % text_ar
             text_en, text_ar = re.sub(r'\s+', ' ', text_en).strip() + '?', re.sub(r'\s+', ' ', text_ar).strip() + '؟'
             k = text_en.lower()
             if k in seen:
                 continue
             seen.add(k)
             qs.append({'id': 'q%d' % (len(qs) + 1), 'type': 'threshold', 'list_code': c['list_code'], 'code': c['code'],
+                       'complete': complete, 'role': 'exclusion' if excl else 'control',
                        'item_code': owner.code, 'text_en': text_en, 'text_ar': text_ar,
                        'context': (owner.text_en or '')[:240], 'context_ar': (owner.text_ar or '')[:240],
                        'operator': p['operator'], 'value': p['value'], 'unit': unit,
                        'base_value': p.get('base_value'), 'base_unit': p.get('base_unit'), 'raw': p.get('raw'),
                        'upper_op': p.get('upper_op'), 'upper_base': p.get('upper_base'),
                        'param_words': sorted({t for t, _ in T.tokens(p.get('parameter') or '')})})
-            taken += 1
-        if len(qs) < limit and ('d:' + c['code']) not in seen:
+            if not excl:
+                taken += 1          # an exclusion is asked next to the control threshold, not instead of it
+        if len(qs) < limit and ('d:' + c['code']) not in seen and not complete:
             # every candidate also gets the entry-level question: only "this entry does not describe the
             # product" can rule a candidate out
             seen.add('d:' + c['code'])
@@ -376,6 +385,9 @@ def evaluate(candidates, hard, questions, answers, line=None, ready=True):
       cleared      the user says the entry does NOT describe the product (the only way to rule it out)
       below        the user's answers are below the asked thresholds: "below threshold - declared by the
                    user"; the parsed thresholds cover only part of an entry, so this stays REVIEW
+      excluded     the user's value meets a threshold of an exclusion clause ("except ... less than 15 %")
+      outside      below the single limit value of an entry that has nothing else (explosives precursors:
+                   'nitrogen content 15 %' -> outside the restriction, based on the declared value)
       open         not answered
     Line:
       hold    a listed chemical / precursor, a control code on the document, or a controlled candidate
@@ -385,21 +397,28 @@ def evaluate(candidates, hard, questions, answers, line=None, ready=True):
               a screening made while a list is not loaded"""
     answers = answers or {}
     state = {(c['list_code'], c['code']): 'open' for c in candidates}
-    thr, desc = {}, {}
+    thr, desc, complete, excluded = {}, {}, set(), set()
     for q in questions:
         k = (q['list_code'], q['code'])
-        if q.get('type') == 'threshold':
+        if q.get('type') == 'threshold' and q.get('role') == 'exclusion':
+            if _threshold_result(q, answers.get(q['id'])) == 'yes':
+                excluded.add(k)         # the product meets an exclusion of the entry
+        elif q.get('type') == 'threshold':
             thr.setdefault(k, []).append(_threshold_result(q, answers.get(q['id'])))
+            if q.get('complete'):
+                complete.add(k)
         else:
             desc[k] = answers.get(q['id']) if answers.get(q['id']) in ('yes', 'no', 'unknown') else None
     for k in state:
         rs, d = thr.get(k, []), desc.get(k)
-        if 'yes' in rs or (d == 'yes' and not rs):
+        if k in excluded:
+            state[k] = 'excluded'
+        elif 'yes' in rs or (d == 'yes' and not rs):
             state[k] = 'controlled'
         elif d == 'no':
             state[k] = 'cleared'
         elif rs and all(r == 'no' for r in rs):
-            state[k] = 'below'
+            state[k] = 'outside' if k in complete else 'below'
     hold = any(h.get('flag') in HOLD_FLAGS for h in hard or [])
     soft = any(h.get('flag') not in HOLD_FLAGS for h in hard or [])
     identified = bool(line and (T.normalize_hs((line or {}).get('hs_code'))[0] or T.find_cas((line or {}).get('cas') or '')))
@@ -407,7 +426,7 @@ def evaluate(candidates, hard, questions, answers, line=None, ready=True):
         suggested = 'hold'
     elif not ready or soft:
         suggested = 'review'
-    elif candidates and all(s == 'cleared' for s in state.values()):
+    elif candidates and all(s in ('cleared', 'outside', 'excluded') for s in state.values()):
         suggested = 'clear'
     elif not candidates and (identified or line is None):
         suggested = 'clear'
@@ -435,6 +454,12 @@ def explain(candidates, hard, suggested, line=None, ready=True):
         elif st == 'cleared':
             out.append(('%s: the user declared that the entry does not describe the product' % head,
                         '%s: قرر المستخدم أن البند لا يصف المنتج' % head_ar))
+        elif st == 'excluded':
+            out.append(('%s: the product falls in an exclusion of this entry (declared by the user)' % head,
+                        '%s: المنتج يندرج تحت استثناء من هذا البند (بإقرار المستخدم)' % head_ar))
+        elif st == 'outside':
+            out.append(('%s: at or below the limit value declared by the user - outside this restriction' % head,
+                        '%s: عند القيمة الحدية أو أقل منها بإقرار المستخدم - خارج هذا القيد' % head_ar))
         elif st == 'below':
             out.append(('%s: below the asked thresholds - declared by the user; the entry is not ruled out' % head,
                         '%s: أقل من الحدود المسؤول عنها - بإقرار المستخدم؛ ولم يُستبعد البند' % head_ar))

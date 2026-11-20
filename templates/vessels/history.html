@@ -23,5 +23,12 @@
         <td>{{ i.user_name }}</td><td>{% if i.bulk_id %}<a href="{{ url_for('vessels.bulk_result', job_id=i.bulk_id) }}">{{ _('bulk') }}</a>{% else %}{{ i.kind }}{% endif %}</td></tr>
     {% else %}<tr><td colspan="10" class="text-center text-muted py-4">{{ _('No vessel screenings yet.') }}</td></tr>{% endfor %}
     </tbody></table></div></div>
+  {% if page > 1 or more %}
+  <nav class="d-flex justify-content-between mt-2 small">
+    <span>{% if page > 1 %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('vessels.history', status=status, tier=tier, page=page - 1) }}">{{ _('Newer') }}</a>{% endif %}</span>
+    <span class="text-muted align-self-center">{{ _('Page') }} {{ page }}</span>
+    <span>{% if more %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('vessels.history', status=status, tier=tier, page=page + 1) }}">{{ _('Older') }}</a>{% endif %}</span>
+  </nav>
+  {% endif %}
 </div>
 {% endblock %}

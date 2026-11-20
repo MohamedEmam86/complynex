@@ -1,0 +1,76 @@
+<!doctype html>
+{% set ar = du_lang == 'ar' %}
+<html lang="{{ 'ar' if ar else 'en' }}" dir="{{ 'rtl' if ar else 'ltr' }}"><head><meta charset="utf-8"><title>{{ s.ref }}</title>
+<style>
+  @page { size: A4; margin: 15mm 14mm; @bottom-right { content: "{{ s.ref }} · " counter(page) " / " counter(pages); font-size: 7pt; color: #777; } }
+  body { font-family: 'DejaVu Sans', 'Noto Naskh Arabic', Arial, sans-serif; font-size: 8.5pt; color: #1b2733; line-height: 1.4; }
+  h1 { font-size: 15pt; margin: 0 0 4px; color: #1F3A5F; }
+  h2 { font-size: 11pt; margin: 14px 0 4px; color: #1F3A5F; border-bottom: 2px solid #1F3A5F; padding-bottom: 2px; }
+  h3 { font-size: 9pt; margin: 8px 0 2px; color: #1F3A5F; }
+  .meta { color: #555; margin-bottom: 6px; }
+  .note { border-inline-start: 3px solid #0d6efd; background: #f3f6fb; padding: 5px 8px; margin: 6px 0 10px; }
+  .box { border: 1px solid #d5dbe3; border-radius: 4px; padding: 6px 8px; margin: 4px 0 8px; }
+  h2, h3 { page-break-after: avoid; } li, tr { page-break-inside: avoid; }
+  .auth { background: #eef5ee; border-inline-start: 3px solid #198754; padding: 4px 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #1F3A5F; color: #fff; text-align: start; padding: 3px 4px; font-size: 7.5pt; }
+  td { border-bottom: 1px solid #ddd; padding: 3px 4px; vertical-align: top; text-align: start; }
+  .clear { color: #146c43; font-weight: bold; } .hold { color: #b02a37; font-weight: bold; } .review { color: #997404; font-weight: bold; }
+  .bidi { unicode-bidi: plaintext; } .muted { color: #666; }
+  ul.check { list-style: none; margin: 2px 0; padding: 0; } ul.check li { margin: 1px 0; }
+  .yes { color: #146c43; font-weight: bold; } .no { color: #999; } .flag { color: #b02a37; font-weight: bold; }
+  .line { page-break-inside: auto; }
+</style></head><body>
+{% macro L(en, ar_) %}{{ ar_ if ar and ar_ else en }}{% endmacro %}
+{% macro outcome(o) %}{{ L(*DU.OUTCOME_LABELS[o]) if o in DU.OUTCOME_LABELS else '' }}{% endmacro %}
+{% set states = {'open': ('Open', 'مفتوح'), 'cleared': ('Not this product (declared)', 'منتج مختلف (بإقرار المستخدم)'), 'below': ('Below the asked thresholds (declared)', 'أقل من الحدود المسؤول عنها (بإقرار المستخدم)'), 'outside': ('Below the limit value: outside the restriction (declared)', 'أقل من القيمة الحدية: خارج القيد (بإقرار المستخدم)'), 'excluded': ('Excluded from this entry (declared)', 'مستثنى من هذا البند (بإقرار المستخدم)'), 'controlled': ('Meets the entry', 'يستوفي البند')} %}
+<h1>{{ L('Decision memo — dual-use goods screening', 'مذكرة قرار — فحص السلع مزدوجة الاستخدام') }}</h1>
+<div class="meta"><b>{{ s.ref }}</b>{% if s.title %} · {{ s.title }}{% endif %}{% if s.file_name %} · {{ s.file_name }}{% endif %} · {{ L('screened', 'تاريخ الفحص') }} {{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at }} {{ L('by', 'بواسطة') }} {{ s.created_by_name or '' }}<br>
+{{ L('Screened against', 'تم الفحص مقابل') }}: {{ L(*DU.CLIENT_LIST_LABEL) }}{% for c in coverage %}<br>{{ c }}{% endfor %}</div>
+<div class="note">{{ L(*DU.DISCLAIMER) }} {{ L('The guidance below records what the user followed; it is not legal advice, a licence decision or a clearance.', 'تسجل الإرشادات أدناه ما اتبعه المستخدم؛ وهي ليست رأيًا قانونيًا ولا قرار ترخيص ولا إفراجًا.') }}</div>
+
+{% set c = s.counts or {} %}
+<table><tbody><tr><td>{{ L('Lines', 'البنود') }}: <b>{{ lines|length }}</b></td><td class="clear">{{ outcome('clear') }}: {{ c.get('clear', 0) }}</td><td class="review">{{ outcome('review') }}: {{ c.get('review', 0) }}</td><td class="hold">{{ outcome('hold') }}: {{ c.get('hold', 0) }}</td><td>{{ L('Decisions pending', 'قرارات معلقة') }}: <b>{{ lines|selectattr('decision', 'none')|list|length }}</b></td></tr></tbody></table>
+
+{% if s.party_results %}<h2>{{ L('Parties', 'الأطراف') }}</h2><table><tbody>
+{% set roles = {'supplier': ('Supplier', 'المورد'), 'consignee': ('Consignee', 'المرسل إليه'), 'end_user': ('End user', 'المستخدم النهائي')} %}
+{% for p in s.party_results %}<tr><td>{{ L(*roles.get(p.role, (p.role, p.role))) }}</td><td class="bidi">{{ p.name }}</td><td>{{ L('Sanctions screening', 'الفحص على قوائم العقوبات') }}: {{ p.result or (L('not completed', 'لم يكتمل') if p.error else '—') }}</td></tr>{% endfor %}
+</tbody></table>{% endif %}
+
+{% for ln in lines[:100] %}
+<div class="line">
+<h2>#{{ ln.line_no }} · <span class="bidi">{{ (ln.description or ln.model or ln.hs_code or ln.cas or '')[:200] }}</span></h2>
+<div class="muted">{% if ln.hs_code %}HS {{ ln.hs_code }} {% endif %}{% if ln.cas %}· CAS {{ ln.cas }} {% endif %}{% if ln.model %}· {{ ln.model }} {% endif %}{% if ln.origin %}· {{ ln.origin }} {% endif %}{% if ln.quantity %}· {{ ln.quantity }}{% endif %}</div>
+<div class="box">
+  <b>{{ L('Screening result', 'نتيجة الفحص') }}:</b> <span class="{{ ln.suggested }}">{{ outcome(ln.suggested) }}</span>
+  <ul>{% for en, ar_ in (explain.get(ln.id) or [])[:6] %}<li class="bidi">{{ L(en, ar_)[:400] }}</li>{% endfor %}</ul>
+  {% if ln.candidates %}<table><thead><tr><th>{{ L('Possible entry', 'البند المحتمل') }}</th><th>{{ L('Classification', 'التصنيف') }}</th><th>{{ L('Status', 'الحالة') }}</th></tr></thead><tbody>
+  {% for cd in ln.candidates %}<tr><td>{{ cd.code }} — <span class="bidi">{{ L(cd.title_en or '', cd.title_ar)[:160] }}</span></td><td>{{ L(*DU.client_label(cd.list_code, {'annex': 'II' if cd.code.startswith('XP-II') else 'I'})) }}</td><td>{{ L(*states.get(cd.state or 'open', states['open'])) }}</td></tr>{% endfor %}
+  </tbody></table>{% endif %}
+  {% set qs = ln.questions or [] %}{% set ans = ln.answers or {} %}
+  {% if qs %}<h3>{{ L('Questions and the user\'s answers', 'الأسئلة وإجابات المستخدم') }}</h3><ul>
+  {% for q in qs %}{% set a = ans.get(q.id) %}<li class="bidi">{{ L(q.text_en, q.text_ar) }} — <b>{% if a is mapping %}{{ a.value }} {{ a.unit }}{% elif a %}{{ L(*({'yes': ('Yes', 'نعم'), 'no': ('No', 'لا'), 'unknown': ("Don't know", 'لا أعرف')}.get(a, (a, a)))) }}{% else %}{{ L('not answered', 'لم تتم الإجابة') }}{% endif %}</b></li>{% endfor %}</ul>{% endif %}
+</div>
+{% for gd in guides.get(ln.id) or [] %}{% set g = gd.g %}{% set saved = (ln.guidance or {}).get(g.category) or {} %}
+<div class="box">
+  <b>{{ L('Guidance followed', 'الإرشادات المتبعة') }}:</b> {% if du_show_lists %}{{ L(g.label, g.label_ar) }} (v{{ g.version }}){% else %}{{ L(*g.client_label) }}{% endif %} · {{ L('confidence', 'درجة الثقة') }}: {{ L(*g.level[0]) }}
+  <div class="bidi">{{ L(*gd.plain) }}</div>
+  {% if gd.thresholds %}<div>{% for th in gd.thresholds %}<div class="bidi">• {{ L(th.en, th.ar) }}</div>{% endfor %}</div>{% endif %}
+  <div class="auth"><b>{{ L('Egyptian authority', 'الجهة المصرية المختصة') }}:</b> {% if g.auth_prefix %}{{ L('No specific Egyptian authority — apply international practice.', 'لا توجد جهة مصرية محددة — طبّق الممارسة الدولية.') }} {% endif %}<span class="bidi">{{ g.egyptian_authority }}</span></div>
+  <h3>{{ L('Asked the customer', 'تم سؤال العميل') }}</h3><ul class="check">{% for x in g.ask_customer or [] %}<li class="bidi">{% if loop.index0 in (saved.get('asked') or []) %}<span class="yes">☑</span>{% else %}<span class="no">☐</span>{% endif %} {{ x }}</li>{% endfor %}</ul>
+  <h3>{{ L('Documents collected', 'المستندات المستلمة') }}</h3><ul class="check">{% for x in g.documents or [] %}<li class="bidi">{% if loop.index0 in (saved.get('docs') or []) %}<span class="yes">☑</span>{% else %}<span class="no">☐</span>{% endif %} {{ x }}</li>{% endfor %}</ul>
+  {% set fl = saved.get('flags') or [] %}
+  <h3>{{ L('Red flags present', 'مؤشرات الخطر القائمة') }}</h3>{% if fl %}<ul class="check">{% for x in g.red_flags or [] %}{% if loop.index0 in fl %}<li class="bidi flag">⚑ {{ x }}</li>{% endif %}{% endfor %}</ul>{% else %}<div class="muted">{{ L('None ticked by the user.', 'لم يحدد المستخدم أيًا منها.') }}</div>{% endif %}
+  {% if saved.get('notes') %}<div><b>{{ L('Notes', 'ملاحظات') }}:</b> <span class="bidi">{{ saved.notes }}</span></div>{% endif %}
+  {% if saved.get('by_name') %}<div class="muted">{{ L('Checklist by', 'قائمة التحقق بواسطة') }} {{ saved.by_name }} · {{ (saved.get('at') or '')[:16]|replace('T', ' ') }}</div>{% else %}<div class="muted">{{ L('Checklist not completed.', 'لم تُستكمل قائمة التحقق.') }}</div>{% endif %}
+</div>
+{% endfor %}
+<div class="box">
+  <b>{{ L('Decision', 'القرار') }}:</b> {% if ln.decision %}<span class="{{ ln.decision }}">{{ outcome(ln.decision) }}</span> · {{ L(*reasons.get(ln.reason, (ln.reason or '', ln.reason or ''))) }} · {{ ln.decided_by_name or '' }} · {{ ln.decided_at.strftime('%Y-%m-%d %H:%M') if ln.decided_at }}{% if ln.comment %}<div class="bidi">“{{ ln.comment[:1500] }}”</div>{% endif %}{% else %}<span class="review">{{ L('Pending', 'معلق') }}</span>{% endif %}
+  {% set tr = trail.get(ln.id) or [] %}{% if tr|length > 1 %}<div class="muted">{{ L('Earlier decisions', 'قرارات سابقة') }}: {% for t in tr[:-1] %}{{ t.decided_at.strftime('%Y-%m-%d') }} {{ outcome(t.decision) }} ({{ t.decided_by_name or '' }}){{ '; ' if not loop.last }}{% endfor %}</div>{% endif %}
+</div>
+</div>
+{% endfor %}
+{% if lines|length > 100 %}<p class="muted">{{ L('The first 100 lines are detailed; every line is in the Excel export.', 'تم تفصيل أول 100 بند؛ كل البنود موجودة في ملف Excel.') }}</p>{% endif %}
+<p class="muted">ComplyNex · {{ L('memo generated', 'تاريخ إنشاء المذكرة') }} {{ now.strftime('%Y-%m-%d %H:%M') if now else '' }}</p>
+</body></html>

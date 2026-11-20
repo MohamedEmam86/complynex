@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% import 'trade_control/_nav.html' as dn with context %}
+{% import 'trade_control/_guidance.html' as dg with context %}
 {% block title %}{{ dn.dcode(d) }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
@@ -39,6 +40,7 @@
     {% if d.notes %}<details class="mt-2"><summary class="small">{{ rc_loc('Notes', 'ملاحظات') }}</summary><div class="small du-legal" dir="ltr">{{ d.notes }}</div></details>{% endif %}
   </div></div>
 
+  {{ dg.panel(gd) }}
   <div class="row g-3">
     <div class="col-lg-6">
       {% if d.params %}
@@ -70,4 +72,5 @@
     </div>
   </div>
 </div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/dualuse_guidance.js') }}"></script>
 {% endblock %}

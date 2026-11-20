@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ rc_loc('List updates', 'تحديثات القوائم') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+    <h3 class="mb-0"><i class="bi bi-arrow-repeat me-2"></i>{{ rc_loc('Control list updates', 'تحديثات قوائم الرقابة') }}</h3>
+    <form method="post" action="{{ url_for('dualuse.admin_check') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-primary"><i class="bi bi-cloud-download me-1"></i>{{ rc_loc('Check for updates now', 'افحص التحديثات الآن') }}</button>
+    </form>
+  </div>
+  {{ dn.nav('updates') }}
+  <div class="alert alert-light border small"><i class="bi bi-shield-lock me-1"></i>{{ rc_loc('Site administrator page: the real list names, versions and sources are shown here only. A scheduled check runs every week; a list not confirmed for', 'صفحة مسؤول النظام: أسماء القوائم الحقيقية وإصداراتها ومصادرها تظهر هنا فقط. يعمل فحص مجدول كل أسبوع؛ وتُعلَّم القائمة غير المؤكدة لمدة') }} {{ stale_days }} {{ rc_loc('days is flagged as stale.', 'يومًا بأنها قديمة.') }}</div>
+
+  <div class="card mb-3"><div class="table-responsive"><table class="table table-sm align-middle small mb-0">
+    <thead><tr><th>{{ rc_loc('List', 'القائمة') }}</th><th>{{ rc_loc('Current version', 'الإصدار الحالي') }}</th><th class="text-end">{{ rc_loc('Records', 'السجلات') }}</th><th>{{ rc_loc('What changed in this version', 'ما الذي تغيّر في هذا الإصدار') }}</th><th>{{ rc_loc('Last confirmed with the publisher', 'آخر تأكيد مع الجهة الناشرة') }}</th><th>{{ rc_loc('Last check', 'آخر فحص') }}</th></tr></thead>
+    <tbody>{% for r in rows %}{% set df = r.diff or {} %}
+      <tr class="{{ 'table-warning' if r.stale }}">
+        <td><strong>{{ DU.LIST_SHORT.get(r.code, r.code) }}</strong><div class="text-muted">{{ r.legal_name }}</div><div class="text-muted">{{ rc_loc('Clients see:', 'يراها العملاء:') }} {{ rc_loc(*DU.client_label(r.code)) }}</div></td>
+        <td>{% if r.version_id %}<a href="{{ url_for('dualuse.admin_version', vid=r.version_id) }}">#{{ r.version_id }}</a> {{ r.version_label or '' }}<div class="text-muted">{{ r.loaded_at.strftime('%Y-%m-%d %H:%M') if r.loaded_at }}</div>{% if r.source_url %}<div class="text-truncate du-src" dir="ltr">{% if r.source_url.startswith('http') %}<a href="{{ r.source_url }}" target="_blank" rel="noopener noreferrer">{{ r.source_url }}</a>{% else %}{{ r.source_url }}{% endif %}</div>{% endif %}{% else %}<span class="badge bg-danger">{{ rc_loc('not loaded', 'غير محمّلة') }}</span>{% endif %}</td>
+        <td class="text-end">{{ '{:,}'.format(r.record_count or 0) }}</td>
+        <td>{% if r.version_id and df.get('added') is not none %}<span class="text-success">+{{ df.get('added', 0) }}</span> · <span class="text-danger">−{{ df.get('removed', 0) }}</span> · <span>~{{ df.get('changed', 0) }}</span>{% if df.get('thresholds_changed') %} · <span class="text-warning-emphasis"><i class="bi bi-speedometer2"></i> {{ df.thresholds_changed }}</span>{% endif %} <a href="{{ url_for('dualuse.admin_version', vid=r.version_id) }}">{{ rc_loc('details', 'التفاصيل') }}</a>{% else %}—{% endif %}</td>
+        <td>{% if r.last_ok %}{{ r.last_ok.strftime('%Y-%m-%d') }} <span class="text-muted">({{ r.age_days }} {{ rc_loc('days', 'يوم') }})</span>{% else %}—{% endif %}{% if r.stale %} <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> {{ rc_loc('stale', 'قديمة') }}</span>{% endif %}</td>
+        <td>{% if r.last %}{% set ls = DU.RESULT_STATUS.get(r.last.status, (r.last.status, r.last.status)) %}<span class="badge {{ {'loaded': 'bg-success', 'unchanged': 'bg-secondary', 'blocked': 'bg-danger', 'refused': 'bg-danger', 'failed': 'bg-danger'}.get(r.last.status, 'bg-light text-dark') }}">{{ rc_loc(*ls) }}</span> <span class="text-muted">{{ r.last.at.strftime('%Y-%m-%d') if r.last.at }}</span>{% if r.last.message %}<div class="text-muted du-msg" dir="ltr">{{ r.last.message }}</div>{% endif %}{% else %}—{% endif %}</td>
+      </tr>{% endfor %}</tbody></table></div></div>
+
+  <div class="row g-3">
+    <div class="col-xl-6">
+      <div class="card h-100"><div class="card-header fw-bold"><i class="bi bi-upload me-1"></i>{{ rc_loc('Upload a list file manually', 'رفع ملف قائمة يدويًا') }}</div><div class="card-body small">
+        <p class="text-muted">{{ rc_loc('Use this when a publisher blocks the automated download. The file goes through the same steps: parse, safety checks (minimum records, no shrink of more than 40 %), comparison with the current version, and a new version only when the content changed.', 'استخدم هذا عندما تمنع الجهة الناشرة التنزيل الآلي. يمر الملف بالخطوات نفسها: القراءة، وفحوص الأمان (حد أدنى للسجلات وعدم النقص بأكثر من 40%)، والمقارنة مع الإصدار الحالي، وإصدار جديد فقط عند تغيّر المحتوى.') }}</p>
+        <form method="post" action="{{ url_for('dualuse.admin_upload') }}" enctype="multipart/form-data" class="row g-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="col-md-6"><select name="list" class="form-select form-select-sm" required>{% for code, spec in uploadable.items() %}<option value="{{ code }}">{{ DU.LIST_SHORT.get(code, code) }} — {{ spec[0]|join(' ') }}</option>{% endfor %}</select></div>
+          <div class="col-md-6"><input type="file" name="file" class="form-control form-control-sm" required accept=".html,.htm,.xhtml,.xml,.xlsx,.pdf"></div>
+          <div class="col-12"><ul class="text-muted mb-1">{% for code, spec in uploadable.items() %}<li>{{ DU.LIST_SHORT.get(code, code) }}: {{ spec[1] }}</li>{% endfor %}</ul>
+            <div class="text-muted">{{ rc_loc('Maximum size', 'الحد الأقصى للحجم') }}: {{ max_mb }} MB</div></div>
+          <div class="col-12"><button class="btn btn-sm btn-outline-primary">{{ rc_loc('Upload and load', 'رفع وتحميل') }}</button></div>
+        </form>
+      </div></div>
+    </div>
+    <div class="col-xl-6">
+      <div class="card h-100"><div class="card-header fw-bold"><i class="bi bi-list-check me-1"></i>{{ rc_loc('Recent checks', 'آخر عمليات الفحص') }}</div>
+        <div class="list-group list-group-flush small">
+        {% for run in runs %}{% set st = 'failed' if run.stuck else run.status %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between flex-wrap gap-1"><span><strong>#{{ run.id }}</strong> {{ rc_loc(*DU.MODE_LABELS.get(run.mode, (run.mode, run.mode))) }} · {{ run.triggered_by or '' }}</span>
+              <span><span class="badge {{ {'ok': 'bg-success', 'running': 'bg-info text-dark', 'blocked': 'bg-danger', 'failed': 'bg-danger'}.get(st, 'bg-secondary') }}">{{ rc_loc(*DU.RUN_STATUS.get(st, (st, st))) }}</span> <span class="text-muted">{{ run.started_at.strftime('%Y-%m-%d %H:%M') if run.started_at }}</span></span></div>
+            {% for res in run.summary or [] %}<div class="text-muted">{{ DU.LIST_SHORT.get(res.code, res.code) }}: {{ rc_loc(*DU.RESULT_STATUS.get(res.status, (res.status, res.status))) }}{% if res.version_id and res.status == 'loaded' %} → <a href="{{ url_for('dualuse.admin_version', vid=res.version_id) }}">#{{ res.version_id }}</a>{% endif %}{% if res.message %} — <span dir="ltr">{{ res.message[:220] }}</span>{% endif %}</div>{% endfor %}
+            {% if run.stuck %}<div class="text-danger">{{ rc_loc('No result after 45 minutes: the check stopped. Look at the server log.', 'لا نتيجة بعد 45 دقيقة: توقف الفحص. راجع سجل الخادم.') }}</div>{% endif %}
+          </div>
+        {% else %}<div class="list-group-item text-muted">{{ rc_loc('No check recorded yet.', 'لم يُسجَّل أي فحص بعد.') }}</div>{% endfor %}
+        </div></div>
+    </div>
+  </div>
+
+  <h5 class="mt-4">{{ rc_loc('Version history', 'سجل الإصدارات') }}</h5>
+  <div class="row g-3">{% for r in rows %}{% set hs = hist.get(r.code) or [] %}{% if hs %}
+    <div class="col-lg-6 col-xxl-4"><div class="card h-100"><div class="card-header small fw-bold">{{ DU.LIST_SHORT.get(r.code, r.code) }}</div>
+      <ul class="list-group list-group-flush small">{% for v in hs %}{% set df = v.diff or {} %}
+        <li class="list-group-item d-flex justify-content-between gap-2"><span><a href="{{ url_for('dualuse.admin_version', vid=v.id) }}">#{{ v.id }}</a> {{ v.version_label or '' }}{% if v.is_current %} <span class="badge bg-primary">{{ rc_loc('current', 'الحالي') }}</span>{% endif %}<div class="text-muted">{{ v.loaded_at.strftime('%Y-%m-%d') if v.loaded_at }} · {{ v.loaded_by or '' }}</div></span>
+          <span class="text-nowrap">{% if df.get('added') is not none %}+{{ df.get('added', 0) }} −{{ df.get('removed', 0) }} ~{{ df.get('changed', 0) }}{% endif %} · {{ '{:,}'.format(v.record_count or 0) }}</span></li>{% endfor %}</ul></div></div>
+  {% endif %}{% endfor %}</div>
+</div>
+{% endblock %}

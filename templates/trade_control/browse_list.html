@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ rc_loc(*title) }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  {{ dn.nav('browse') }}
+  <nav class="small mb-2"><a href="{{ url_for('dualuse.browse') }}">{{ rc_loc('Catalogue', 'الفهرس') }}</a> / <strong>{% if groups is not none %}{{ cat }} — {% endif %}{{ rc_loc(*title) }}</strong>{% if grp %} / {{ grp }} — {{ rc_loc(*DU.GROUP_LABELS[grp]) }}{% endif %}</nav>
+  {% if groups %}
+  <div class="d-flex flex-wrap gap-1 mb-3">
+    <a class="btn btn-sm {{ 'btn-primary' if not grp else 'btn-outline-secondary' }}" href="{{ url_for('dualuse.browse_category', cat=cat) }}">{{ rc_loc('All groups', 'كل المجموعات') }}</a>
+    {% for g, n in groups|dictsort %}<a class="btn btn-sm {{ 'btn-primary' if grp == g else 'btn-outline-secondary' }}" href="{{ url_for('dualuse.browse_category', cat=cat, group=g) }}">{{ g }} · {{ rc_loc(*DU.GROUP_LABELS.get(g, (g, g))) }} ({{ n }})</a>{% endfor %}
+  </div>
+  {% endif %}
+  <div class="list-group du-browse">
+    {% for d in docs %}
+    <a class="list-group-item list-group-item-action" href="{{ url(d) }}">
+      <div class="d-flex justify-content-between gap-2 flex-wrap"><span class="du-code fw-bold">{{ dn.dcode(d) }}</span><span>{{ dn.risk_badge(d.risk) }} {{ dn.list_label(d) }}</span></div>
+      <div class="small" dir="auto">{{ dn.title(d)[:220] }}</div>
+      {% if d.params %}<div class="small text-muted"><i class="bi bi-speedometer2 text-warning me-1"></i>{{ rc_loc('has technical thresholds', 'له حدود فنية') }}</div>{% endif %}
+    </a>
+    {% else %}
+    <div class="list-group-item text-muted">{{ rc_loc('No entry in this part of the catalogue (the list may not be loaded yet).', 'لا توجد بنود في هذا الجزء من الفهرس (قد لا تكون القائمة محمّلة بعد).') }}</div>
+    {% endfor %}
+  </div>
+  {{ dn.disclaimer('mt-3') }}
+</div>
+{% endblock %}

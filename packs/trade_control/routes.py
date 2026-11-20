@@ -30,9 +30,11 @@ from flask_login import current_user, login_required
 
 from models.audit import AuditLog
 
+from . import guidance as G
 from . import screening as SC
 from . import service as S
 from . import text as T
+from access.registry import mark as _mark
 
 bp = Blueprint('dualuse', __name__, url_prefix='/dual-use')
 MODULE = S.MODULE
@@ -58,14 +60,16 @@ def perm(level='view'):
             if not can(level):
                 abort(403)
             return f(*a, **kw)
-        return wrapped
+        return _mark(('any', [('role', S.BYPASS_ROLES), ('perm', MODULE, level)]))(wrapped)
     return deco
 
 
 def sees_all():
-    """Editors and module administrators work on every screening; a view-only user sees only their own
-    (the vessel module's rule)."""
-    return can('edit')
+    """Colleagues' screenings ('dualuse.team' in the access matrix). Old rule: editors and module
+    administrators see every screening, a view-only user only their own (the vessel module's rule); a
+    restricted (external) user only ever sees their own."""
+    from access import service as AS
+    return AS.team_view(current_user, 'dualuse.team', can('edit'))
 
 
 def _load(sid):
@@ -125,7 +129,7 @@ def _public(r):
 
 def _entry_url(d):
     if d.kind == 'priority':
-        return url_for('dualuse.index', q=d.code)
+        return url_for('dualuse.guide', did=d.id)
     if d.list_code == 'chemicals':
         return url_for('dualuse.chemical', cas=d.code)
     return url_for('dualuse.entry', item_id=d.id)
@@ -140,14 +144,19 @@ def index():
     if q or _filters(request.args):
         idx = S.get_index()
         res = idx.search(q, _filters(request.args), limit=PAGE, offset=(page - 1) * PAGE, show_lists=show_lists())
+        cats = G.categories()
         for r in res['results']:
             r['url'] = _entry_url(r['doc'])
+            r['guide'] = _guide(r['doc'], cats)
+            r['guide_url'] = url_for('dualuse.guide', did=r['doc'].id) + '#guide-%s' % r['doc'].id
         if q:
             _audit('dualuse_search', None, q[:200])
     idx = S.get_index()
+    own = None if sees_all() else current_user.id
     return render_template('trade_control/search.html', q=q, res=res, page=page, pages=((res or {}).get('total', 0)
                            + PAGE - 1) // PAGE, args=_safe_args(), entries=len(idx.docs),
-                           stats=S.stats(user_id=None if sees_all() else current_user.id))
+                           stats=S.stats(user_id=own), recent=[] if res else S.recent(own),
+                           status=None if res else _status_summary(), ready=getattr(idx, 'ready', False))
 
 
 def _safe_args():
@@ -187,7 +196,7 @@ def entry(item_id):
     chems = [c for c in idx.docs if c.list_code == 'chemicals' and d.code in (c.extra.get('item_codes') or [])]
     _audit('dualuse_view_entry', item_id, d.code)
     return render_template('trade_control/entry.html', d=d, family=family, parent=parent, entry_doc=entry_doc,
-                           others=others, chems=chems)
+                           others=others, chems=chems, gd=_guide(d))
 
 
 @bp.route('/chemical/<cas>')
@@ -202,7 +211,7 @@ def chemical(cas):
     items = [x for x in idx.docs if x.kind == 'item' and x.code in (d.extra.get('item_codes') or [])]
     _audit('dualuse_view_chemical', None, cas)
     return render_template('trade_control/chemical.html', d=d, items=items,
-                           listings=d.extra.get('listings') or [])
+                           listings=d.extra.get('listings') or [], gd=_guide(d))
 
 
 # ------------------------------------------------------------------ single screening
@@ -281,6 +290,7 @@ def screening(sid):
     return render_template('trade_control/screening.html', s=s, lines=lines, open_line=open_line, page=page,
                            pages=pages, only=only,
                            reasons=S.DECISION_REASONS, idx=idx, trail=S.decisions(sid),
+                           guides={ln['id']: _line_guides(idx, ln) for ln in lines},
                            explain={ln['id']: SC.explain(ln['candidates'] or [], ln['hard_flags'] or [],
                                                          ln['suggested'], ln) for ln in lines})
 
@@ -560,3 +570,304 @@ def admin():
         return redirect(url_for('dualuse.admin'))
     return render_template('trade_control/admin.html', lists=S.list_status(), terms=S.terms(),
                            entries=len(S.get_index().docs))
+
+
+# ------------------------------------------------------------------ guidance
+def _lang():
+    return 'ar' if _rc('en', 'ar') == 'ar' else 'en'
+
+
+def _guide(d, cats=None):
+    """Everything the guidance panel shows for one result (no external call)."""
+    if d is None:
+        return None
+    cat = G.for_doc(d, cats if cats is not None else G.categories())
+    return {'doc': d, 'plain': G.plain(d), 'g': G.view(cat, _lang(), sources=show_lists()),
+            'thresholds': G.thresholds(d)}
+
+
+def _line_guides(idx, ln):
+    """Guidance for a screening line: its candidates and flagged chemicals / tariff codes, one panel per
+    guidance category (at most three)."""
+    cats, out, seen = G.categories(), [], set()
+    docs = [idx.get(c['list_code'], c['code']) for c in (ln['candidates'] or [])]
+    for h in ln['hard_flags'] or []:
+        if h.get('flag') in ('cwc', 'precursor'):
+            docs.append(idx.get('chemicals', h.get('code')))
+        elif h.get('flag') == 'priority':
+            docs.append(idx.get('chpl', h.get('code')))
+    for d in docs:
+        if d is None:
+            continue
+        gd = _guide(d, cats)
+        key = gd['g']['category'] if gd and gd['g'] else None
+        if key and key not in seen:
+            seen.add(key)
+            out.append(gd)
+        if len(out) >= 3:
+            break
+    return out
+
+
+def _status_summary():
+    """List status for the landing page: clients get one generic line, the superadmin each list."""
+    try:
+        rows = S.list_overview()
+    except Exception:
+        current_app.logger.warning('dual-use list status failed', exc_info=True)
+        return None
+    live = [r for r in rows if r.get('version_id')]
+    dates = [r['last_ok'] for r in live if r.get('last_ok')]
+    return {'rows': rows if show_lists() else [], 'checked': min(dates) if dates else None,
+            'stale': any(r['stale'] for r in rows if r['code'] in S.REQUIRED_LISTS),
+            'loaded': len(live), 'total': len(rows)}
+
+
+def _doc_by_did(did):
+    idx = S.get_index()
+    if not re.fullmatch(r'[cp]?\d{1,9}', did or ''):
+        abort(404)
+    d = idx.by_id(int(did) if did.isdigit() else did)
+    if d is None:
+        abort(404)
+    return d
+
+
+@bp.route('/guide/<did>')
+@perm('view')
+def guide(did):
+    d = _doc_by_did(did)
+    _audit('dualuse_view_guidance', None, d.code)
+    return render_template('trade_control/guide.html', d=d, gd=_guide(d), url=_entry_url(d))
+
+
+@bp.route('/api/check')
+@perm('view')
+def api_check():
+    """The user's value against one threshold of an entry -> above / below / unknown (computed here)."""
+    d = _doc_by_did(request.args.get('d') or '')
+    n = request.args.get('n', type=int)
+    out = G.check(d, n if n is not None else -1, (request.args.get('v') or '').strip()[:30],
+                  (request.args.get('u') or '').strip()[:20])
+    return jsonify(out)
+
+
+@bp.route('/lines/<int:line_id>/guidance', methods=['POST'])
+@perm('edit')
+def line_guidance(line_id):
+    ln = S.get_line(line_id)
+    if not ln:
+        abort(404)
+    s, _ = _load(ln['screening_id'])
+    cat = (request.form.get('category') or '')[:60]
+    if not re.fullmatch(r'[a-z0-9_]{2,60}', cat):
+        abort(400)
+
+    def ints(name):
+        return sorted({int(v) for v in request.form.getlist(name) if v.isdigit() and int(v) < 60})
+    name = ('%s %s' % (getattr(current_user, 'first_name', '') or '', getattr(current_user, 'last_name', '') or '')).strip()
+    from datetime import datetime
+    data = {'asked': ints('asked'), 'docs': ints('docs'), 'flags': ints('flags'),
+            'notes': (request.form.get('notes') or '').strip()[:2000], 'by': current_user.id,
+            'by_name': name or getattr(current_user, 'username', ''), 'at': datetime.now().isoformat(timespec='minutes')}
+    S.save_line_guidance(line_id, cat, data)
+    _audit('dualuse_guidance_checklist', line_id, '%s: asked %s, documents %s, red flags %s' % (
+        cat, data['asked'], data['docs'], data['flags']))
+    flash(_rc('Checklist saved.', 'تم حفظ قائمة التحقق.'), 'success')
+    return redirect(url_for('dualuse.screening', sid=s['id'], line=line_id) + '#line-%d' % line_id)
+
+
+@bp.route('/screenings/<int:sid>/export_memo.pdf')
+@perm('view')
+def export_memo(sid):
+    """Decision memo: per line the result, the guidance followed, the user's answers, checklist and decision."""
+    s, lines = _load(sid)
+    idx = S.get_index()
+    html = render_template('trade_control/memo_pdf.html', s=s, lines=lines, reasons=dict(
+        (r[0], (r[1], r[2])) for r in S.DECISION_REASONS), trail=S.decisions(sid),
+        coverage=S.coverage_lines(s['list_versions'], _lang()), now=__import__('datetime').datetime.now(),
+        guides={ln['id']: _line_guides(idx, ln) for ln in lines[:100]},
+        explain={ln['id']: SC.explain(ln['candidates'] or [], ln['hard_flags'] or [], ln['suggested'], ln)
+                 for ln in lines})
+    try:
+        from weasyprint import HTML
+        pdf = HTML(string=html, base_url=request.url_root).write_pdf()
+    except Exception:
+        current_app.logger.warning('dual-use memo PDF failed', exc_info=True)
+        return html
+    _audit('dualuse_export', sid, 'decision memo pdf')
+    return send_file(io.BytesIO(pdf), as_attachment=True, download_name='%s-decision-memo.pdf' % s['ref'],
+                     mimetype='application/pdf')
+
+
+# ------------------------------------------------------------------ catalogue
+SPECIAL = {'chemicals': ('Controlled chemicals (by CAS number)', 'المواد الكيميائية الخاضعة للرقابة (برقم CAS)'),
+           'precursors': ('Explosives precursors', 'سلائف المتفجرات'),
+           'priority': ('High-priority diversion items (by HS code)', 'الأصناف عالية الأولوية لخطر التحويل (بكود HS)')}
+
+
+def _entries(idx, cat=None):
+    """Level-0 entries of the control lists, one per code (an entry published by two lists is shown once)."""
+    seen, out = set(), []
+    for d in idx.docs:
+        if d.kind != 'item' or d.level or d.list_code not in ('eu_annex1', 'us_ccl'):
+            continue
+        if cat and d.category != cat:
+            continue
+        k = (d.code or '').upper()
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append(d)
+    return out
+
+
+@bp.route('/browse')
+@perm('view')
+def browse():
+    idx = S.get_index()
+    counts = {}
+    for d in _entries(idx):
+        counts.setdefault(d.category, {}).setdefault(d.group, 0)
+        counts[d.category][d.group] += 1
+    special = {'chemicals': sum(1 for d in idx.docs if d.list_code == 'chemicals'),
+               'precursors': sum(1 for d in idx.docs if d.list_code == 'eu_expl_precursors'),
+               'priority': sum(1 for d in idx.docs if d.kind == 'priority')}
+    return render_template('trade_control/browse.html', counts=counts, special=special)
+
+
+@bp.route('/browse/<cat>')
+@perm('view')
+def browse_category(cat):
+    idx = S.get_index()
+    grp = request.args.get('group') if (request.args.get('group') or '') in S.GROUP_LABELS else None
+    if cat in SPECIAL:
+        if cat == 'chemicals':
+            docs = sorted((d for d in idx.docs if d.list_code == 'chemicals'), key=lambda d: (d.title_en or '').lower())
+        elif cat == 'precursors':
+            docs = sorted((d for d in idx.docs if d.list_code == 'eu_expl_precursors'), key=lambda d: d.code)
+        else:
+            docs = sorted((d for d in idx.docs if d.kind == 'priority'), key=lambda d: (d.extra.get('tier') or '', d.code))
+        return render_template('trade_control/browse_list.html', cat=cat, title=SPECIAL[cat], docs=docs, groups=None,
+                               grp=None, url=_entry_url)
+    if cat not in S.CATEGORY_LABELS:
+        abort(404)
+    docs = sorted(_entries(idx, cat), key=lambda d: (d.group or '', d.code))
+    groups = {}
+    for d in docs:
+        groups[d.group] = groups.get(d.group, 0) + 1
+    if grp:
+        docs = [d for d in docs if d.group == grp]
+    return render_template('trade_control/browse_list.html', cat=cat, title=S.CATEGORY_LABELS[cat], docs=docs,
+                           groups=groups, grp=grp, url=_entry_url)
+
+
+# ------------------------------------------------------------------ list updates (superadmin)
+def superadmin(f):
+    """Shared reference data (every tenant): the real lists, their sources and the guidance are managed by the
+    platform superadmin only."""
+    @wraps(f)
+    @login_required
+    def wrapped(*a, **kw):
+        if not show_lists():
+            abort(403)
+        return f(*a, **kw)
+    return _mark(('role', S.SOURCE_ROLES))(wrapped)
+
+
+@bp.route('/admin/lists')
+@superadmin
+def admin_lists():
+    from . import loader as LD
+    rows = S.list_overview()
+    hist = {r['code']: S.versions(r['code']) for r in rows}
+    return render_template('trade_control/admin_lists.html', rows=rows, runs=S.update_runs(), hist=hist,
+                           uploadable=LD.UPLOADABLE, max_mb=LD.MAX_UPLOAD // (1024 * 1024), stale_days=S.STALE_DAYS)
+
+
+@bp.route('/admin/lists/check', methods=['POST'])
+@superadmin
+def admin_check():
+    rid = S.start_check(getattr(current_user, 'username', None) or str(current_user.id))
+    if rid is None:
+        flash(_rc('A check is already running: its result appears below in a few minutes.',
+                  'يوجد فحص قيد التنفيذ: ستظهر نتيجته أدناه خلال دقائق.'), 'info')
+    else:
+        _audit('dualuse_lists_check', rid, 'manual check started')
+        flash(_rc('Checking the official publishers for updates. Refresh this page in a few minutes.',
+                  'جارٍ فحص التحديثات لدى الجهات الناشرة الرسمية. حدّث هذه الصفحة بعد بضع دقائق.'), 'success')
+    return redirect(url_for('dualuse.admin_lists'))
+
+
+@bp.route('/admin/lists/upload', methods=['POST'])
+@superadmin
+def admin_upload():
+    from . import loader as LD
+    code = request.form.get('list') or ''
+    f = request.files.get('file')
+    if code not in LD.UPLOADABLE or not f:
+        flash(_rc('Choose the list and the file.', 'اختر القائمة والملف.'), 'warning')
+        return redirect(url_for('dualuse.admin_lists'))
+    data = f.stream.read(LD.MAX_UPLOAD + 1)
+    name = os.path.basename(f.filename or '')[:200]
+    res = LD.load_uploaded(code, data, name, 'upload:%s' % (getattr(current_user, 'username', None) or current_user.id))
+    _audit('dualuse_lists_upload', res.get('version_id'), '%s: %s (%s, %d bytes) %s' % (
+        code, res['status'], name, len(data), (res.get('message') or '')[:200]))
+    d = res.get('diff') or {}
+    if res['status'] == 'loaded':
+        flash(_rc('New version loaded: %d added, %d removed, %d changed, %d with changed thresholds.',
+                  'تم تحميل إصدار جديد: %d مضاف، %d محذوف، %d معدل، %d بحدود معدلة.') % (
+            d.get('added', 0), d.get('removed', 0), d.get('changed', 0), d.get('thresholds_changed', 0)), 'success')
+        S.get_index(force=True)
+    elif res['status'] == 'unchanged':
+        flash(_rc('The file has the same content as the current version: nothing to load.',
+                  'محتوى الملف مطابق للإصدار الحالي: لا يوجد ما يُحمَّل.'), 'info')
+    else:
+        flash(_rc('Not loaded: ', 'لم يتم التحميل: ') + (res.get('message') or ''), 'danger')
+    return redirect(url_for('dualuse.admin_lists'))
+
+
+@bp.route('/admin/versions/<int:vid>')
+@superadmin
+def admin_version(vid):
+    v, prev = S.version_changes(vid)
+    if not v:
+        abort(404)
+    idx = S.get_index()
+
+    def link(code):
+        code = str(code).split(' ')[0]
+        d = idx.get(v['list_code'], code) if v['list_code'] not in ('chpl', 'eu_cn_correlation') else None
+        if v['list_code'] == 'chemicals':
+            d = idx.get('chemicals', code)
+        return _entry_url(d) if d is not None else None
+    return render_template('trade_control/admin_version.html', v=v, prev=prev, diff=v['diff'] or {}, link=link)
+
+
+@bp.route('/admin/guidance')
+@superadmin
+def admin_guidance():
+    return render_template('trade_control/admin_guidance.html', cats=G.categories(force=True))
+
+
+@bp.route('/admin/guidance/<category>', methods=['GET', 'POST'])
+@superadmin
+def admin_guidance_edit(category):
+    from database.db import get_db
+    cur = next((c for c in G.categories(force=True) if c['category'] == category), None)
+    if cur is None:
+        abort(404)
+    if request.method == 'POST':
+        data, errs = G.from_form(request.form, cur)
+        if errs:
+            for e in errs:
+                flash(_rc(*e), 'danger')
+            return render_template('trade_control/admin_guidance_edit.html', c=dict(cur, **data), fields=G.FIELDS,
+                                   history=G.history(category, get_db()))
+        ver = G.save(get_db(), category, data, current_user.id, (request.form.get('note') or '').strip()[:300])
+        _audit('dualuse_guidance_edit', None, '%s -> version %s' % (category, ver))
+        flash(_rc('Saved as version %d. The previous versions are kept.', 'تم الحفظ كإصدار %d. الإصدارات السابقة محفوظة.')
+              % ver, 'success')
+        return redirect(url_for('dualuse.admin_guidance_edit', category=category))
+    return render_template('trade_control/admin_guidance_edit.html', c=cur, fields=G.FIELDS,
+                           history=G.history(category, get_db()))

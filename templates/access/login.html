@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+{# Sign-in page of the restricted workspace (external / limited users). Posts to the portal sign-in, which
+   lands every restricted user on /workspace. #}
+<html lang="{{ get_locale() }}" dir="{{ 'rtl' if get_locale() == 'ar' else 'ltr' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ _('Workspace sign-in') }} - {{ company_name }}</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+  <link href="{{ url_for('static', filename='vendor/fonts/quicksand/quicksand.css') }}" rel="stylesheet">
+  {% if get_locale() == 'ar' %}
+  <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+  {% else %}
+  <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+  {% endif %}
+  <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ static_v('css/access.css') }}">
+</head>
+<body class="cx-ws-body">
+  <header class="cx-ws-bar"><div class="cx-ws-bar__inner">
+    <span class="cx-ws-brand"><i class="bi bi-shield-lock-fill" aria-hidden="true"></i><span>{{ company_name or 'ComplyNex' }}</span>
+      <span class="cx-ws-brand__sub">{{ _('Workspace') }}</span></span>
+    <div class="cx-ws-tools" style="margin-inline-start:auto">
+      {% if get_locale() == 'ar' %}<a class="cx-ws-tool" href="{{ url_for('access.workspace_login', lang='en') }}" lang="en">English</a>
+      {% else %}<a class="cx-ws-tool" href="{{ url_for('access.workspace_login', lang='ar') }}" lang="ar">العربية</a>{% endif %}
+    </div>
+  </div></header>
+  <main class="cx-denied">
+    <div class="cx-denied__card" style="text-align:start; width:100%; max-width:420px">
+      <h1 class="mb-1">{{ _('Sign in to your workspace') }}</h1>
+      <p class="mb-4">{{ _('Use the e-mail address and the temporary password your administrator gave you. You will choose your own password at the first sign-in.') }}</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}
+      <div class="alert alert-{{ category }} py-2 small" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
+      <form method="post" action="{{ url_for('auth.portal_login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="ws" value="1">
+        <label class="form-label small fw-bold" for="email">{{ _('E-mail') }}</label>
+        <input class="form-control mb-3" type="email" id="email" name="email" autocomplete="username" required value="{{ request.form.get('email', '') }}">
+        <label class="form-label small fw-bold" for="password">{{ _('Password') }}</label>
+        <input class="form-control mb-4" type="password" id="password" name="password" autocomplete="current-password" required>
+        <button class="btn btn-primary w-100" type="submit"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>{{ _('Sign in') }}</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

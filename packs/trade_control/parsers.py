@@ -118,6 +118,33 @@ def _param_name(text, start):
     return ' '.join(words).lower()
 
 
+# A threshold written inside an exclusion clause ("except ... dry fertilizers containing less than 15 %",
+# "does not control ... with a power below 1 W") describes what is NOT controlled. 'other than' is not in the
+# list: "lasers, other than those specified in 6A005, having an output > 1 W" is a control threshold.
+_EXCL = re.compile(r'\b(?:except(?:\s+for)?|excepting|excluding|with\s+the\s+exception\s+of|not\s+including|'
+                   r'(?:does|do|shall)\s+not\s+(?:control|apply\s+to)|'
+                   r'(?:is|are)\s+not\s+controlled(?!\s+(?:by|under|in)\b)|'
+                   r'(?:is|are)\s+excluded|exempt(?:ed)?\s+from)\b', re.I)
+# "not controlled by 1C992.a through .k", "not controlled under 7A" only say which items the entry covers.
+_CLAUSE_END = re.compile(r'(?<!\d)[.;:](?=\s|$)|\n|\b(?:and|or)\s+(?=having|with|containing)', re.I)
+
+
+def param_role(text, start):
+    """'exclusion' when the threshold at `start` sits in an exclusion clause of its sentence, else 'control'."""
+    window = text[max(0, start - 400):start]
+    ends = [m.end() for m in _CLAUSE_END.finditer(window)]
+    clause = window[ends[-1]:] if ends else window
+    excl = list(_EXCL.finditer(clause))
+    if not excl:
+        return 'control'
+    after = clause[excl[-1].end():]
+    # the exclusion is closed before the threshold: "excluding intentional additions, of less than 5 000 ppm",
+    # "(excluding output power transmitted ...) exceeding 1 000 W", "except X, having a power > 1 W"
+    if ',' in after or after.count(')') > after.count('('):
+        return 'control'
+    return 'exclusion'
+
+
 def extract_parameters(text, dec='.'):
     """Thresholds written in a control entry -> [{parameter, operator, value, unit, raw}]; a range
     ("equal to or greater than 30 minutes but less than 1 hour") is one parameter with an upper bound
@@ -159,7 +186,7 @@ def extract_parameters(text, dec='.'):
         if name in (None, 'but', 'and', 'or') and prev and start - prev['_end'] < 40:
             name = prev['parameter']
         out.append({'parameter': name, 'operator': op, 'value': val, 'unit': unit, 'raw': raw, '_end': end,
-                    'upper_op': None, 'upper_value': None, 'upper_unit': None})
+                    'upper_op': None, 'upper_value': None, 'upper_unit': None, 'role': param_role(text, start)})
     for p in out:
         p.pop('_end', None)
     return out
@@ -524,9 +551,9 @@ def parse_chpl_text(text):
     """Text of the CHPL PDF (pdftotext -layout) -> [{tier, hs6, hs_display, description_en}]."""
     recs, tier, pending, cur = [], None, [], None
     for ln in (text or '').splitlines():
-        t = re.match(r'^\s*TIER\s+([0-9](?:\.[AB])?)\s*$', ln)
+        t = re.match(r'^\s*TIER\s+([0-9])(?:\s*\.\s*([AB]))?\s*$', ln)
         if t:
-            tier, pending, cur = t.group(1), [], None
+            tier, pending, cur = t.group(1) + ('.' + t.group(2) if t.group(2) else ''), [], None
             continue
         if tier is None or re.match(r'^\s*HS code', ln) or not ln.strip() or re.match(r'^\s*\d+\s*$', ln):
             continue
@@ -716,4 +743,66 @@ def build_chemicals(eu, cwc, us):
         r['ag_precursor'] = any(l['source'] == 'eu_annex1' and l['ref'].startswith('1C350') for l in r['listings'])
         r['cwc_schedule'] = min([l['schedule'] for l in r['listings'] if l['source'] == 'cwc'], default=None)
         out.append(r)
+    return out
+
+
+# ------------------------------------------------------------------ explosives precursors (Regulation (EU) 2019/1148)
+_XP_NAME = re.compile(r'^(.+?)\s*\(\s*CAS\s*RN\s*(\d{2,7}-\d{2}-\d)\s*\)\s*$', re.I)
+
+
+def _cn_codes(txt):
+    """'ex 2808 00 00' / '3102 30 10 (in aqueous solution)' -> ['28080000', '31023010']."""
+    return [re.sub(r'\D', '', m) for m in re.findall(r'(?:ex\s+)?(\d{4}\s?\d{2}\s?\d{2})', txt or '')]
+
+
+def parse_expl_precursors(html_text):
+    """Annexes I (restricted, with a concentration limit) and II (reportable) of Regulation (EU) 2019/1148 ->
+    [{annex, name, cas, limit, limit_text, upper_text, cn, notes}]. Works on the EUR-Lex / CELLAR XHTML
+    (one table per annex)."""
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html_text or '', 'lxml')
+    for t in soup.select('span.superscript a, a.footnote'):
+        t.decompose()
+    text_all = _clean(soup.get_text(' '))
+    notes = {}
+    for m in re.finditer(r'\(\s*(\d)\s*\)\s*((?:(?!\(\s*\d\s*\)).){10,300}?(?:impurities|particle size[^.]*?µm|'
+                         r'70 % w/w[^.]*)\.)', text_all.replace('μ', 'µ')):
+        notes.setdefault(m.group(1), _clean(m.group(2)))
+    out = []
+    annex = None
+    for el in soup.find_all(['p', 'tr']):
+        if el.name == 'p':
+            t = _clean(el.get_text(' '))
+            m = re.fullmatch(r'ANNEX\s+(I{1,3})', t)
+            if m:
+                annex = m.group(1)
+            continue
+        if annex not in ('I', 'II'):
+            continue
+        cells = [_clean(td.get_text(' ')) for td in el.find_all('td', recursive=False)]
+        if not cells:
+            continue
+        m = _XP_NAME.match(re.sub(r'(\s*\(\s*\d\s*\))+\s*$', '', cells[0]))
+        if not m:
+            continue
+        name, cas = m.group(1).strip(), m.group(2)
+        rec = {'annex': annex, 'name': name, 'cas': cas, 'cn': [], 'limit': None, 'limit_text': '',
+               'upper_text': '', 'notes': []}
+        if annex == 'I' and len(cells) >= 3:
+            rec['limit_text'], rec['upper_text'] = cells[1], cells[2]
+            lv = re.match(r'(\d+(?:[.,]\d+)?)\s*%', cells[1])
+            rec['limit'] = float(lv.group(1).replace(',', '.')) if lv else None
+            rec['cn'] = _cn_codes(' '.join(cells[3:]))
+        else:
+            rec['cn'] = _cn_codes(' '.join(cells[1:]))
+        for n in re.findall(r'\(\s*(\d)\s*\)', ' '.join(cells)):
+            if n in notes and notes[n] not in rec['notes']:
+                rec['notes'].append(notes[n])
+        if 'powder' in name.lower():           # the powder notes of Annex II: particle size and content
+            for pat in (r'[Ww]ith a particle size (?:of )?less than \d+\s*[µμ]m\.', r'As a substance or in mixtures containing '
+                        r'70 % w/w or more of aluminium or magnesium\.'):
+                f = re.search(pat, text_all)
+                if f and _clean(f.group(0)) not in rec['notes']:
+                    rec['notes'].append(_clean(f.group(0)).replace('μ', 'µ'))
+        out.append(rec)
     return out

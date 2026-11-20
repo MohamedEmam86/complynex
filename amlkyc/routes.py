@@ -31,6 +31,7 @@ from models.audit import AuditLog
 
 from . import amlkyc_bp as bp
 from . import logic, service, subjects
+from access.registry import mark as _mark
 
 
 def perm(level='view', module='aml'):
@@ -43,7 +44,7 @@ def perm(level='view', module='aml'):
                 flash(_('You do not have permission for this AML assurance action.'), 'danger')
                 return redirect(request.referrer or url_for('dashboard'))
             return f(*a, **kw)
-        return wrapped
+        return _mark(('perm', module, 'edit' if level == 'edit' else 'view'))(wrapped)
     return deco
 
 

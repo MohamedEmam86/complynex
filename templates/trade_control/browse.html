@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ rc_loc('Browse catalogue', 'تصفح الفهرس') }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  <h3 class="mb-2"><i class="bi bi-diagram-3 me-2"></i>{{ rc_loc('Browse the catalogue', 'تصفح الفهرس') }}</h3>
+  {{ dn.nav('browse') }}
+  <p class="text-muted small">{{ rc_loc('Controlled items are organised in ten categories (what the item is used for) and five groups (equipment, test equipment, materials, software, technology). Open a category to see its entries; each entry shows its legal text, thresholds and what to do.', 'الأصناف الخاضعة للرقابة مرتبة في عشر فئات (مجال استخدام الصنف) وخمس مجموعات (المعدات، ومعدات الاختبار، والمواد، والبرمجيات، والتقنية). افتح فئة لترى بنودها؛ ويعرض كل بند نصه القانوني وحدوده الفنية وماذا تفعل.') }}</p>
+  <div class="row g-3">
+    {% for c, labels in DU.CATEGORY_LABELS.items() %}{% set g = counts.get(c, {}) %}
+    <div class="col-sm-6 col-lg-4 col-xxl-3">
+      <div class="card h-100 du-cat">
+        <a class="card-body text-decoration-none text-reset" href="{{ url_for('dualuse.browse_category', cat=c) }}">
+          <div class="d-flex align-items-center gap-2"><span class="du-catno du-catno-lg">{{ c }}</span><div><div class="fw-bold">{{ rc_loc(*labels) }}</div><div class="small text-muted">{{ g.values()|sum }} {{ rc_loc('entries', 'بند') }}</div></div></div>
+        </a>
+        <div class="card-footer bg-transparent small d-flex flex-wrap gap-1">
+          {% for grp, gl in DU.GROUP_LABELS.items() %}{% if g.get(grp) %}<a class="badge bg-light text-dark border text-decoration-none" href="{{ url_for('dualuse.browse_category', cat=c, group=grp) }}" title="{{ rc_loc(*gl) }}">{{ grp }} · {{ rc_loc(*gl) }} ({{ g[grp] }})</a>{% endif %}{% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <h5 class="mt-4">{{ rc_loc('Other controlled goods', 'سلع أخرى خاضعة للرقابة') }}</h5>
+  <div class="row g-3">
+    {% for key, icon, en, ar, den, dar in [('chemicals', 'bi-droplet-half', 'Controlled chemicals', 'المواد الكيميائية الخاضعة للرقابة', 'Toxic chemicals and precursors, by CAS number', 'المواد السامة والسلائف حسب رقم CAS'), ('precursors', 'bi-fire', 'Explosives precursors', 'سلائف المتفجرات', 'Restricted (with a concentration limit) and reportable chemicals', 'مواد مقيدة (بحد تركيز) ومواد واجبة الإبلاغ'), ('priority', 'bi-exclamation-diamond', 'High-priority diversion items', 'الأصناف عالية الأولوية لخطر التحويل', 'Customs codes most at risk of diversion to weapons programmes', 'الأكواد الجمركية الأكثر عرضة للتحويل إلى برامج التسليح')] %}
+    <div class="col-md-4"><a class="card h-100 text-decoration-none text-reset du-cat" href="{{ url_for('dualuse.browse_category', cat=key) }}"><div class="card-body"><i class="bi {{ icon }} fs-3 text-primary"></i><div class="fw-bold mt-1">{{ rc_loc(en, ar) }} <span class="badge bg-secondary-subtle text-dark">{{ special.get(key, 0) }}</span></div><div class="small text-muted">{{ rc_loc(den, dar) }}</div></div></a></div>
+    {% endfor %}
+  </div>
+  {{ dn.disclaimer('mt-3') }}
+</div>
+{% endblock %}

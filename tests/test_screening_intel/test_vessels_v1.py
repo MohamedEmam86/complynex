@@ -312,7 +312,7 @@ def test_api_view_never_names_a_list():
     r = run(name='SOMETHING', imo='9074729', owner='x',
             screen_party=lambda n: [{'name': 'ACME', 'score': 90.0, 'source': 'ofac'}])
     body = json.dumps(_view(1, r, 'ref'))
-    assert 'ofac' not in body and 'hmt' not in body and 'International approved lists' in body
+    assert 'ofac' not in body and 'hmt' not in body and 'Official sanctions lists' in body
 
 
 def test_people_and_companies_unchanged():
@@ -356,9 +356,20 @@ def test_db_real_ship_by_imo_and_name(conn):
     assert not any(h['name'].upper().startswith('HAO FAN') for h in r['hits'])
 
 
-def test_one_word_names_never_match():
-    r = run(name='ATTICA')                    # listed one-word name: review only
+def test_one_word_names():
+    # an exact one-word name rare among the records held: potential match, confirm with IMO / flag / owner
+    r = run(name='ATTICA')
+    assert VE.decision(r)[0] == 'match' and r['tier'] == 'POTENTIAL'
+    assert 'single_word_rare' in codes(r['hits'][0]['explanation'])
+    # the same name carried by 3 hulls in the fleet sample (port-state control, other records): review
+    VE._PF.clear()
+    r = run(name='ATTICA', fleet_sample={'ATTICA': {'IMO:9074729', 'IMO:9387425', 'IMO:9191553'}})
     assert VE.decision(r)[0] == 'review' and 'single_word' in codes(r['hits'][0]['explanation'])
+    VE._PF.clear()
+    # a common ship word stays review whatever the sample holds
+    r = run(name='ATTICA', config_override={'common_ship_words': ['ATTICA']})
+    assert VE.decision(r)[0] == 'review' and 'single_word_word' in codes(r['hits'][0]['explanation'])
+    VE._PF.clear()
     assert VE.decision(run(name='ATTICAS'))[0] == 'no_match'       # not the same word: nothing
     assert VE.decision(run(name='OCEANSTAR 1'))[0] == 'match'      # joined form of a longer name
 

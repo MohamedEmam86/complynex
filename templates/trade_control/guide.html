@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% import 'trade_control/_guidance.html' as dg with context %}
+{% block title %}{{ dn.dcode(d) }} - {{ rc_loc('Dual-use goods', 'السلع مزدوجة الاستخدام') }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  {{ dn.nav('search') }}
+  <div class="card mb-3"><div class="card-body">
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <h4 class="mb-1"><span class="du-code">{{ dn.dcode(d) }}</span> {{ dn.risk_badge(d.risk) }}</h4>
+      <div>{{ dn.list_label(d) }}</div>
+    </div>
+    <div class="du-title" dir="auto">{{ dn.title(d) }}</div>
+    {% if d.kind == 'priority' and d.extra.get('tier') %}<div class="small text-muted">{{ rc_loc('Priority tier', 'فئة الأولوية') }} {{ d.extra.tier }}</div>{% endif %}
+    {% if url and url != request.path %}<a class="small" href="{{ url }}">{{ rc_loc('Full entry', 'البند كاملًا') }}</a>{% endif %}
+  </div></div>
+  {{ dg.panel(gd) }}
+  {{ dn.disclaimer() }}
+</div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/dualuse_guidance.js') }}"></script>
+{% endblock %}

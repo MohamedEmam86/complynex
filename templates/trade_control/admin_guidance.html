@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% import 'trade_control/_nav.html' as dn with context %}
+{% block title %}{{ rc_loc('Guidance', 'الإرشادات') }} - ComplyNex CMS{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dualuse.css') }}">
+<div class="container-fluid du-page">
+  <h3><i class="bi bi-compass me-2"></i>{{ rc_loc('Guidance shown with the results', 'الإرشادات المعروضة مع النتائج') }}</h3>
+  {{ dn.nav('guidance') }}
+  <p class="small text-muted">{{ rc_loc('Each category gives users why the item is controlled, what to ask the customer, documents, the competent Egyptian authority, red flags and sources. A result is linked to the category whose key matches it most precisely (control-code prefix, HS code, chemical schedule, priority tier, explosives-precursor annex); anything else gets the general category. Every edit is a new version; earlier versions are kept.', 'كل فئة تعطي المستخدم سبب خضوع الصنف للرقابة، وماذا يسأل العميل، والمستندات، والجهة المصرية المختصة، ومؤشرات الخطر، والمصادر. ترتبط النتيجة بالفئة التي يطابقها مفتاحها بأكبر دقة (بداية كود الرقابة أو كود HS أو جدول المادة الكيميائية أو فئة الأولوية أو ملحق سلائف المتفجرات)؛ وما عدا ذلك يأخذ الفئة العامة. كل تعديل إصدار جديد، والإصدارات السابقة محفوظة.') }}</p>
+  <div class="card"><div class="table-responsive"><table class="table table-sm align-middle small mb-0">
+    <thead><tr><th>{{ rc_loc('Category', 'الفئة') }}</th><th>{{ rc_loc('Egyptian authority', 'الجهة المصرية') }}</th><th>{{ rc_loc('Keys', 'المفاتيح') }}</th><th>{{ rc_loc('Version', 'الإصدار') }}</th><th></th></tr></thead>
+    <tbody>{% for c in cats %}
+      <tr><td><strong>{{ rc_loc(c.label_en, c.label_ar) }}</strong><div class="text-muted">{{ c.category }}</div></td>
+        <td dir="auto">{{ (c.ar.egyptian_authority if du_lang == 'ar' and c.ar.get('egyptian_authority') else c.en.egyptian_authority)[:160] }}</td>
+        <td class="du-keys" dir="ltr">{{ c['keys'][:12]|join(' ') }}{% if c['keys']|length > 12 %} … (+{{ c['keys']|length - 12 }}){% endif %}{% if not c['keys'] %}<span class="text-muted">{{ rc_loc('fallback', 'افتراضية') }}</span>{% endif %}</td>
+        <td>v{{ c.version }} <span class="badge bg-light text-muted border">{{ rc_loc('seed', 'أصلية') if c.origin == 'seed' else rc_loc('edited', 'معدلة') }}</span></td>
+        <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('dualuse.admin_guidance_edit', category=c.category) }}">{{ rc_loc('Edit', 'تعديل') }}</a></td></tr>
+    {% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

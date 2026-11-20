@@ -30,6 +30,7 @@ from models.audit import AuditLog
 
 from . import logic, providers, service
 from . import prudential_bp as bp
+from access.registry import mark as _mark
 
 MODULE = 'prudential'
 
@@ -56,7 +57,7 @@ def perm(level='view'):
             if request.method == 'POST' and not current_user.can_edit(MODULE):
                 abort(403)
             return f(*a, **kw)
-        return wrapped
+        return _mark(('perm', MODULE, 'edit' if level == 'edit' else 'view'))(wrapped)
     return deco
 
 

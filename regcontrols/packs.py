@@ -63,6 +63,9 @@ class Pack:
     menu_icon: str = 'bi-box-seam'
     permissions: list = field(default_factory=list)  # [(module, label_en, label_ar, levels)]
     badges: object = None                            # callable(user) -> {endpoint: count} shown in the sidebar
+    # Per-user access control (access/registry.py): [{'key', 'label_en', 'label_ar', 'area', 'features': [...]}].
+    # A pack that declares none gets one module per `permissions` entry over its guarded blueprints.
+    access_modules: list = field(default_factory=list)
 
 
 PACKS = {}

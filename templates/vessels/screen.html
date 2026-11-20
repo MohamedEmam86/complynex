@@ -18,7 +18,7 @@
               <input class="form-control" id="v_mmsi" name="mmsi" value="{{ form.get('mmsi', '') }}" inputmode="numeric"></div>
             <div class="col-md-4"><label class="form-label" for="v_call">{{ _('Call sign') }}</label>
               <input class="form-control" id="v_call" name="call_sign" value="{{ form.get('call_sign', '') }}"></div>
-            <div class="col-md-4"><label class="form-label" for="v_flag">{{ _('Flag') }}</label>
+            <div class="col-md-4"><label class="form-label" for="v_flag">{{ _('Flag state') }}</label>
               <input class="form-control" id="v_flag" name="flag" value="{{ form.get('flag', '') }}" placeholder="{{ _('e.g. Panama') }}"></div>
             <div class="col-md-12"><label class="form-label" for="v_fpast">{{ _('Former flags (optional)') }}</label>
               <input class="form-control" id="v_fpast" name="flags_past" value="{{ form.get('flags_past', '') }}" placeholder="{{ _('e.g. Togo; Comoros') }}">
@@ -45,7 +45,7 @@
           <li class="mb-1">{{ _('Name: current and former names in any script; every number in the name must be the same (STAR 1 is not STAR 2). A name alone never confirms a match.') }}</li>
           <li class="mb-1">{{ _('Owner: the owner / operator you enter is screened against all lists.') }}</li>
           <li class="mb-1">{{ _('Risk: flag of convenience, high-risk or false flag, flag changes, invalid IMO - shown as risk lines, never as a match.') }}</li>
-          <li>{{ _('The same ship on several lists is shown once. Clients see the lists as "International approved lists".') }}</li>
+          <li>{{ _('The same ship on several lists is shown once, with what it is (sanctioned, banned) and under which kind of regime.') }}</li>
         </ol>
       </div></div>
     </div>

@@ -1,13 +1,18 @@
 {% macro nav(active) %}
 <ul class="nav nav-tabs mb-3 du-nav">
-  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'search' }}" href="{{ url_for('dualuse.index') }}"><i class="bi bi-search me-1"></i>{{ rc_loc('Search control lists', 'البحث في قوائم الرقابة') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'search' }}" href="{{ url_for('dualuse.index') }}"><i class="bi bi-house me-1"></i>{{ rc_loc('Overview & search', 'نظرة عامة وبحث') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'browse' }}" href="{{ url_for('dualuse.browse') }}"><i class="bi bi-diagram-3 me-1"></i>{{ rc_loc('Browse catalogue', 'تصفح الفهرس') }}</a></li>
   {% if du_can_edit %}
   <li class="nav-item"><a class="nav-link {{ 'active' if active == 'screen' }}" href="{{ url_for('dualuse.screen') }}"><i class="bi bi-upc-scan me-1"></i>{{ rc_loc('Screen a product', 'فحص منتج') }}</a></li>
   <li class="nav-item"><a class="nav-link {{ 'active' if active == 'batch' }}" href="{{ url_for('dualuse.batch') }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>{{ rc_loc('Batch screening', 'الفحص المجمّع') }}</a></li>
   {% endif %}
   <li class="nav-item"><a class="nav-link {{ 'active' if active == 'history' }}" href="{{ url_for('dualuse.screenings') }}"><i class="bi bi-clock-history me-1"></i>{{ rc_loc('Screenings', 'عمليات الفحص') }}</a></li>
+  {% if du_show_lists %}
+  <li class="nav-item ms-auto"><a class="nav-link {{ 'active' if active == 'updates' }}" href="{{ url_for('dualuse.admin_lists') }}"><i class="bi bi-arrow-repeat me-1"></i>{{ rc_loc('List updates', 'تحديثات القوائم') }}</a></li>
+  <li class="nav-item"><a class="nav-link {{ 'active' if active == 'guidance' }}" href="{{ url_for('dualuse.admin_guidance') }}"><i class="bi bi-compass me-1"></i>{{ rc_loc('Guidance', 'الإرشادات') }}</a></li>
+  {% endif %}
   {% if du_can_admin %}
-  <li class="nav-item ms-auto"><a class="nav-link {{ 'active' if active == 'admin' }}" href="{{ url_for('dualuse.admin') }}"><i class="bi bi-gear me-1"></i>{{ rc_loc('Lists & dictionary', 'القوائم والقاموس') }}</a></li>
+  <li class="nav-item {{ '' if du_show_lists else 'ms-auto' }}"><a class="nav-link {{ 'active' if active == 'admin' }}" href="{{ url_for('dualuse.admin') }}"><i class="bi bi-gear me-1"></i>{{ rc_loc('Lists & dictionary', 'القوائم والقاموس') }}</a></li>
   {% endif %}
 </ul>
 {% endmacro %}
@@ -17,16 +22,19 @@
 {% macro outcome_badge(o) %}{% set l = DU.OUTCOME_LABELS.get(o) %}{% if l %}<span class="badge du-out du-out-{{ o }}" title="{{ rc_loc(*DU.OUTCOME_HELP[o]) }}">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
 
 {# Source lists: the real name for site administrators only, the generic label for everyone else. #}
-{% macro list_name(code) %}{% if du_show_lists %}{{ DU.LIST_SHORT.get(code, code) }}{% else %}{{ rc_loc(*DU.CLIENT_LIST_LABEL) }}{% endif %}{% endmacro %}
+{% macro list_name(code, extra=None) %}{% if du_show_lists %}{{ DU.LIST_SHORT.get(code, code) }}{% else %}{{ rc_loc(*DU.client_label(code, extra)) }}{% endif %}{% endmacro %}
 
-{% macro list_label(d, also=[]) %}{% if du_show_lists %}<span class="badge bg-light text-dark border" title="{{ rc_loc('Visible to site administrators only', 'يظهر لمسؤولي النظام فقط') }}"><i class="bi bi-shield-lock me-1"></i>{{ DU.LIST_SHORT.get(d.list_code, d.list_code) }}{% for a in also %}, {{ DU.LIST_SHORT.get(a, a) }}{% endfor %}</span>{% else %}<span class="badge bg-light text-muted border">{{ rc_loc(*DU.CLIENT_LIST_LABEL) }}</span>{% endif %}{% endmacro %}
+{% macro list_label(d, also=[]) %}{% if du_show_lists %}<span class="badge bg-light text-dark border" title="{{ rc_loc('Visible to site administrators only', 'يظهر لمسؤولي النظام فقط') }}"><i class="bi bi-shield-lock me-1"></i>{{ DU.LIST_SHORT.get(d.list_code, d.list_code) }}{% for a in also %}, {{ DU.LIST_SHORT.get(a, a) }}{% endfor %}</span>{% else %}{% set k = DU.client_label_key(d.list_code, d.extra) %}<span class="badge du-label du-label-{{ k }}">{{ rc_loc(*DU.CLIENT_LABELS[k]) }}</span>{% endif %}{% endmacro %}
 
 {# The code shown for an entry. Chemical-schedule rows use internal codes: clients see a neutral label. #}
 {% macro dcode(d) %}{% if d.list_code == 'cwc' %}{% if du_show_lists %}CWC {{ d.code }}{% else %}{{ rc_loc('Listed chemical family', 'فئة كيميائية مدرجة') }}{% endif %}{% elif d.list_code == 'chemicals' %}CAS {{ d.code }}{% elif d.kind == 'priority' %}HS {{ d.code }}{% else %}{{ d.code }}{% endif %}{% endmacro %}
 
 {% macro chem_level(level) %}{% set l = DU.CHEM_LEVEL.get(level) %}{% if l %}<span class="badge bg-danger">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
 
-{% macro kind_label(k) %}{% set l = DU.KIND_LABELS.get(k) %}{% if l %}<span class="small text-muted">{{ rc_loc(*l) }}</span>{% endif %}{% endmacro %}
+{% macro kind_label(k) %}{% if du_show_lists %}{% set l = DU.KIND_LABELS.get(k) %}{% if l %}<span class="small text-muted">{{ rc_loc(*l) }}</span>{% endif %}{% endif %}{% endmacro %}
+
+{# The state of a candidate entry on a screening line. #}
+{% macro cand_state(state) %}{% set st = {'open': ('Open', 'مفتوح', 'secondary'), 'cleared': ('Not this product', 'منتج مختلف', 'success'), 'below': ('Below the asked thresholds (declared)', 'أقل من الحدود المسؤول عنها (بإقرار المستخدم)', 'warning'), 'outside': ('Below the limit value: outside the restriction', 'أقل من القيمة الحدية: خارج القيد', 'success'), 'excluded': ('Excluded from this entry (exclusion clause)', 'مستثنى من هذا البند (بند استثناء)', 'success'), 'controlled': ('Meets the entry', 'يستوفي البند', 'danger')}.get(state or 'open') or ('Open', 'مفتوح', 'secondary') %}<span class="badge bg-{{ st[2] }}-subtle text-dark border">{{ rc_loc(st[0], st[1]) }}</span>{% endmacro %}
 
 {% macro why_label(w) %}{% set wl = {'code': ('Control code', 'كود الرقابة'), 'cas': ('CAS number', 'رقم CAS'), 'hs': ('Tariff code', 'كود التعريفة'), 'exact': ('Words', 'كلمات'), 'translated': ('Arabic / English dictionary', 'القاموس العربي / الإنجليزي'), 'synonym': ('Related term', 'مصطلح مرادف'), 'fuzzy': ('Spelling corrected', 'تصحيح الإملاء'), 'prefix': ('Partial word', 'كلمة جزئية'), 'phrase': ('Phrase', 'عبارة'), 'threshold': ('Threshold', 'حد فني'), 'text': ('Description', 'الوصف'), 'name': ('Chemical name', 'اسم المادة')}.get(w) %}{% if wl %}<span class="badge bg-light text-muted border me-1">{{ rc_loc(*wl) }}</span>{% endif %}{% endmacro %}
 

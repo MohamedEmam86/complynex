@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Access & permissions') }} - {{ cx_user.get_full_name() }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ static_v('css/access.css') }}">{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <div>
+      <h1 class="h3 mb-0">{{ cx_user.get_full_name() }}</h1>
+      <div class="text-muted small">{{ cx_user.email }} · {{ cx_user.role|label }}</div>
+    </div>
+    <div class="d-flex gap-2">
+      {% if current_user.is_admin() %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.edit_user', id=cx_user.id) }}"><i class="bi bi-person-gear"></i> {{ _('User details') }}</a>{% endif %}
+      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('access.admin_audit') }}"><i class="bi bi-clock-history"></i> {{ _('All access changes') }}</a>
+    </div>
+  </div>
+  <form method="post" action="{{ url_for('access.admin_save', user_id=cx_user.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% include 'access/_matrix.html' %}
+    {% if not cx_unrestricted %}
+    <div class="d-flex justify-content-end gap-2 mb-4">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> {{ _('Save access') }}</button>
+    </div>
+    {% endif %}
+  </form>
+  {% include 'access/_copy_form.html' %}
+</div>
+{% endblock %}
