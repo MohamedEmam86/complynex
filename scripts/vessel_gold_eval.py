@@ -44,6 +44,13 @@ Owner policy decision (round 3, recorded here because it changes what the Gold S
   v1 baseline, and the round-3 baseline (written with --write-baseline) records the new reference. With a
   local database that holds only the sanctions lists, pass --fleet-sample <ship CSV> to measure name
   frequency against a world-fleet sample as production does.
+
+Re-verifying the labels on production-like data (round 4): the Gold Set was built from fewer lists than
+production holds (production adds ua_war_sanctions, ch / ca / au lists, the ban and port-inspection datasets of
+the OpenSanctions DEFAULT collection). Build a local database with production's vessel data - the public DEFAULT
+collection's Vessel / Ownership / UnknownLink entities merged with the sanctions collection - load it through
+the normal list update, then run this script with --label-audit: every failure is reported as "coverage" (the
+ship or exact name IS listed there: the label must follow the policy for listed ships) or "engine".
 """
 import argparse
 import importlib.util
@@ -92,6 +99,42 @@ def fleet_sample(path):
     return out
 
 
+def label_audit(conn, failures):
+    """For each failure: is it a LABEL COVERAGE question (the ship / name IS on the lists this database holds,
+    e.g. production lists the Gold Set builder did not use) or an ENGINE question? Printed next to the report.
+    coverage: the screened IMO is a listed ship's IMO, or the screened name is exactly a listed name (current
+    name or alias) of a sanctioned / banned ship - the label must then follow the policy for listed ships."""
+    from screening import vessel_store as VS
+    from screening import vessel_utils as VU
+    from screening import vessel_provenance as VP
+    cands = [c for c in VS.load_candidates(conn) if VP.alerts(c.get('provenance') or VP.SANCTION)]
+    by_name, by_imo = {}, {}
+    for c in cands:
+        for n in c.get('names') or []:
+            by_name.setdefault(VU.norm_name(n), []).append(c)
+        if c.get('imo'):
+            by_imo.setdefault(c['imo'], []).append(c)
+    out = []
+    for f in failures:
+        q = f.get('query') or {}
+        imo = VU.norm_imo(q.get('imo'))
+        hits = by_imo.get(imo, []) if imo else []
+        why = 'IMO listed' if hits else ''
+        if not hits and q.get('name'):
+            hits = by_name.get(VU.norm_name(q['name']), [])
+            why = 'name listed exactly' if hits else ''
+        verdict = 'coverage' if hits else 'engine'
+        detail = sorted({f"{c['name']} IMO {c.get('imo') or '-'} {c.get('provenance')}"
+                         + ('' if VU.norm_name(q.get('name') or '') == VU.norm_name(c['name']) else ' (alias)')
+                         for c in hits})[:3]
+        out.append((f['id'], f.get('category'), f.get('expected'), f.get('got'), verdict, why, detail))
+    print('\nlabel audit (coverage = the ship / name is on the lists held here; engine = look at the engine):')
+    for row in out:
+        print('   %s %-26s expected %-8s got %-8s -> %-8s %s %s' % (row[0], row[1], row[2], row[3], row[4], row[5],
+                                                                  '; '.join(row[6])))
+    return out
+
+
 def make_screen(conn, with_owner=True, sample=None):
     """screen(query) -> {decision, vessel_imo, score} for the Gold Set runner."""
     from screening import vessel_engine as VE
@@ -116,6 +159,8 @@ def main():
     ap.add_argument('--json', metavar='FILE')
     ap.add_argument('--show-failures', type=int, default=25)
     ap.add_argument('--no-owner', action='store_true', help='skip the owner layer (no person / entity engine)')
+    ap.add_argument('--label-audit', action='store_true', help='tell label coverage from engine questions '
+                                                                 'for each failure (see label_audit)')
     ap.add_argument('--fleet-sample', metavar='CSV', help='more ship records to measure how common a one-word '
                                                           'name is (see fleet_sample)')
     a = ap.parse_args()
@@ -141,6 +186,10 @@ def main():
         except Exception:
             pass
     ev.print_report(res, a.show_failures)
+    if a.label_audit and res.get('failures'):
+        with app.app_context():
+            from database.db import get_db
+            label_audit(get_db(), res['failures'])
     if a.json:
         with open(a.json, 'w') as f:
             json.dump(res, f, indent=1, ensure_ascii=False)

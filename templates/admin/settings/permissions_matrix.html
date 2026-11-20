@@ -3,10 +3,11 @@
 {% block title %}{{ _('Permissions Matrix') }} - {{ company_name }} CMS{% endblock %}
 
 {% macro lvl_badge(lv) -%}
-{%- if lv == 'approve' -%}<span class="badge bg-success" title="{{ _('Approve') }}"><i class="bi bi-check2-all"></i> {{ _('Approve') }}</span>
-{%- elif lv == 'edit' -%}<span class="badge bg-primary" title="{{ _('Edit') }}"><i class="bi bi-pencil"></i> {{ _('Edit') }}</span>
-{%- elif lv == 'view' -%}<span class="badge bg-info text-dark" title="{{ _('View') }}"><i class="bi bi-eye"></i> {{ _('View') }}</span>
-{%- else -%}<span class="text-muted">—</span>{%- endif -%}
+{#- one vocabulary for levels: access.registry.LEVEL_LABELS (No access / View / View & Edit / Admin) -#}
+{%- if lv == 'approve' -%}<span class="badge bg-success" title="{{ level_label('admin') }}"><i class="bi bi-check2-all"></i> {{ level_label('admin') }}</span>
+{%- elif lv == 'edit' -%}<span class="badge bg-primary" title="{{ level_label('edit') }}"><i class="bi bi-pencil"></i> {{ level_label('edit') }}</span>
+{%- elif lv == 'view' -%}<span class="badge bg-info text-dark" title="{{ level_label('view') }}"><i class="bi bi-eye"></i> {{ level_label('view') }}</span>
+{%- else -%}<span class="text-muted" title="{{ level_label('none') }}">—</span>{%- endif -%}
 {%- endmacro %}
 
 {% block content %}
@@ -113,6 +114,6 @@
     {{ lvl_badge('approve') }} {{ _('Approve: administrators, the module\'s administrator level, or edit rights held by a compliance officer or manager.') }}<br>
     {{ lvl_badge('edit') }} {{ _('Create and change records.') }}
     {{ lvl_badge('view') }} {{ _('Read only.') }}
-    <span class="text-muted">—</span> {{ _('No access') }}
+    <span class="text-muted">—</span> {{ level_label('none') }}
 </div>
 {% endblock %}

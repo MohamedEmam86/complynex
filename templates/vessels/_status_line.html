@@ -1,0 +1,12 @@
+{# One line: when the vessel lists were last updated and when the next scheduled update runs.
+   Context: st = vessel_store.update_status() (or None). #}
+{% if st %}
+<div class="small text-muted mb-3 d-flex flex-wrap align-items-center gap-3 vessel-status-line">
+  <span><i class="bi bi-arrow-repeat me-1"></i>{{ _('Vessel lists last updated') }}:
+    {% if st.last_update %}<strong class="{{ 'text-danger' if st.stale else 'text-success' }}">{{ st.last_update.strftime('%Y-%m-%d %H:%M') }}</strong>
+    {% else %}<strong class="text-danger">{{ _('never') }}</strong>{% endif %}
+    {% if st.stale %}<span class="badge bg-warning text-dark ms-1">{{ _('older than 48 hours') }}</span>{% endif %}</span>
+  <span><i class="bi bi-calendar-event me-1"></i>{{ _('Next scheduled update') }}: <strong>{{ st.next_update.strftime('%Y-%m-%d %H:%M') }}</strong></span>
+  {% if st.last_run %}<span>{{ _('Last refresh') }}: +{{ st.last_run.added or 0 }} / −{{ st.last_run.removed or 0 }} / ~{{ st.last_run.changed or 0 }}</span>{% endif %}
+</div>
+{% endif %}

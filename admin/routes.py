@@ -983,7 +983,9 @@ def settings_permissions_matrix():
     if request.args.get('format') == 'csv':
         buf = io.StringIO()
         w = csv.writer(buf)
-        lv_name = {lv: gettext({'none': 'No access', 'view': 'View', 'edit': 'Edit', 'approve': 'Approve'}[lv]) for lv in PERM_LEVELS}
+        from access.registry import level_label as _ll
+        from flask_babel import get_locale as _gl
+        lv_name = {lv: _ll(lv, str(_gl() or 'en')) for lv in PERM_LEVELS}
         if view == 'users':
             w.writerow([gettext('User'), gettext('Email'), gettext('Role'), gettext('Active')] + [module_label(m) for m in shown_modules])
             for u in users:

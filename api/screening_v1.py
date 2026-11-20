@@ -326,6 +326,8 @@ def v1_get_screening(sid):
     if not row:
         return err('not_found', 'No such screening for this client', 404)
     body = row['response'] if isinstance(row['response'], dict) else json.loads(row['response'] or '{}')
+    from screening.source_mask import mask_tree
+    body = mask_tree(body, force=True)          # responses stored before masking existed
     body['review'] = _review_of(row.get('history_id'))
     body['request_id'] = g.request_id
     return ok(body)

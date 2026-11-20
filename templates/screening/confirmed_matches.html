@@ -89,7 +89,7 @@
         <td><strong>{{ r.entity_name }}</strong></td>
         <td class="small">{{ (r.matched_name or '—')[:38] }}</td>
         <td><span class="badge bg-dark">{{ (r.list_source or '—')|scr_label('source') }}</span></td>
-        <td><span class="badge bg-{{ 'danger' if r.list_type=='sanctions' else ('warning text-dark' if r.list_type=='pep' else 'secondary') }}">{{ r.list_type or '—' }}</span></td>
+        <td><span class="badge bg-{{ 'danger' if r.list_type=='sanctions' else ('warning text-dark' if r.list_type=='pep' else 'secondary') }}">{{ (r.category if r.list_category_code else r.list_type) or "—" }}</span></td>
         <td>{% if r.match_score %}<span class="badge bg-secondary">{{ '%.0f'|format(r.match_score) }}%</span>{% else %}—{% endif %}</td>
         <td class="small">
           {{ r.confirmed_at.strftime('%d %b %Y') if r.confirmed_at else '—' }}

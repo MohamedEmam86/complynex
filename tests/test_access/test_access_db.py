@@ -499,3 +499,29 @@ def test_superadmin_is_cms_and_unrestricted(app):
     with app.app_context():
         sup = _user(app, 'super')
         assert S.mode_of(sup) == 'cms' and sup.can_access_cms() and S.compute(sup).unrestricted
+
+
+@pytest.mark.parametrize('lang', ['en', 'ar'])
+def test_permission_pages_have_clean_labels(app, lang):
+    """Every page that shows or chooses a permission level: no double escaping, no broken '& &' / '&&', and the
+    one level vocabulary (View & Edit / عرض وتعديل)."""
+    import re
+    bad = re.compile(r'&amp;(amp|lt|gt|quot|#\d+);|(?<![&\w])& &|&&')
+    c = _client(app, app.ids['admin'])
+    with c.session_transaction() as s:
+        s['lang'] = lang
+        s['dir'] = 'rtl' if lang == 'ar' else 'ltr'
+    uid = app.ids['r_viewer']
+    pages = [f'/admin/users/edit/{uid}', '/admin/users/add', f'/admin/access/users/{uid}', '/admin/access/audit',
+             '/admin/settings/permissions-matrix', '/admin/settings/permissions-matrix?view=users',
+             '/admin/security/access-review', '/admin/users']
+    for url in pages:
+        r = c.get(url)
+        assert r.status_code == 200, (url, r.status_code)
+        html = re.sub(r'(?is)<(script|style)\b.*?</\1>', ' ', r.get_data(as_text=True))
+        m = bad.search(html)
+        assert not m, (url, html[max(0, m.start() - 80):m.end() + 40])
+    page = c.get('/admin/settings/permissions-matrix').get_data(as_text=True)
+    assert ('View &amp; Edit' in page) if lang == 'en' else ('عرض وتعديل' in page)
+    csv = c.get('/admin/settings/permissions-matrix?format=csv').get_data(as_text=True)
+    assert not bad.search(csv) and (('View & Edit' in csv) if lang == 'en' else ('عرض وتعديل' in csv))

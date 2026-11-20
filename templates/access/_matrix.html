@@ -121,7 +121,7 @@
                 <span class="cx-feat__text">{{ f.label }}
                   {% if f.locked %}<i class="bi bi-lock-fill text-muted" title="{{ _('Only the platform superadmin can change this.') }}" aria-label="{{ _('Only the platform superadmin can change this.') }}"></i>{% endif %}
                   {% if f.hint %}<small class="cx-feat__hint">{{ f.hint }}</small>{% endif %}</span>
-                <span class="cx-kind cx-kind--{{ f.kind }}">{{ {'view': _('View'), 'action': _('Action'), 'admin': _('Admin')}[f.kind] }}</span>
+                <span class="cx-kind cx-kind--{{ f.kind }}">{{ level_label({'view': 'view', 'action': 'edit', 'admin': 'admin'}[f.kind]) }}</span>
                 {% if f.pages %}<span class="cx-pages" title="{{ _('Pages and actions covered') }}">{{ f.pages }}</span>{% endif %}
               </label>
             </li>

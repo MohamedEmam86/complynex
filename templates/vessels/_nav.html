@@ -11,7 +11,13 @@
     <li class="nav-item"><a class="nav-link {{ 'active' if active == 'whitelist' }}" href="{{ url_for('vessels.whitelist') }}"><i class="bi bi-shield-check me-1"></i>{{ _('Cleared ships') }}</a></li>
     {% endif %}
     {% if vessel_can_db() %}<li class="nav-item"><a class="nav-link {{ 'active' if active == 'database' }}" href="{{ url_for('vessels.database') }}"><i class="bi bi-database me-1"></i>{{ _('Vessels Database') }}</a></li>
-    <li class="nav-item"><a class="nav-link {{ 'active' if active == 'updates' }}" href="{{ url_for('vessels.updates') }}"><i class="bi bi-arrow-repeat me-1"></i>{{ _('List updates') }}</a></li>{% endif %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == 'updates' }}" href="{{ url_for('vessels.updates') }}"><i class="bi bi-arrow-repeat me-1"></i>{{ _('Change log') }}</a></li>{% endif %}
     <li class="nav-item"><a class="nav-link {{ 'active' if active == 'flags' }}" href="{{ url_for('vessels.flags') }}"><i class="bi bi-flag me-1"></i>{{ _('Flag risk') }}</a></li>
+    {% if current_user.is_admin() or current_user.is_compliance_officer() %}
+    <li class="nav-item"><a class="nav-link" href="{{ url_for('screening.data_sources', tab='vessels') }}"><i class="bi bi-cloud-arrow-down me-1"></i>{{ _('Sync & list sources') }}</a></li>
+    {% endif %}
+    {% if current_user.role == 'superadmin' %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if active == 'names' }}" href="{{ url_for('vessels.names') }}"><i class="bi bi-tags me-1"></i>{{ _('Ship names') }}</a></li>
+    {% endif %}
   </ul>
 </div>

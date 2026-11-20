@@ -1,0 +1,113 @@
+{# The "Vessel lists" tab of the list sources page (screening/sources.html): same look and behaviour as the
+   sanctions lists. Context: vessel_panel = vessel_routes.vessel_sources_panel(); is_superadmin.
+   The platform superadmin sees the lists by name and acts (Sync Now, rebuild, upload); other administrators see
+   the status only, without list names. #}
+{% set st = vessel_panel.status %}
+{% include 'vessels/_status_line.html' %}
+
+<div class="row mb-4">
+  {% for cls, label, color, icon in [('SANCTION', _('Sanctioned ships'), 'danger', 'fa-ban'), ('BAN', _('Banned / excluded ships'), 'warning', 'fa-anchor'), ('RISK', _('Port-inspection records (risk only)'), 'info', 'fa-clipboard-list'), ('INTEL', _('Mentions in analysis (risk only)'), 'secondary', 'fa-newspaper')] %}
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card border-left-{{ color }} shadow h-100 py-2"><div class="card-body">
+      <div class="text-xs font-weight-bold text-{{ color }} text-uppercase mb-1">{{ label }}</div>
+      <div class="h5 mb-0 font-weight-bold text-gray-800"><i class="fas {{ icon }} me-2 text-{{ color }}"></i>{{ '{:,}'.format(st.ships.get(cls, 0)) }}</div>
+    </div></div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-ship me-2"></i>{{ _('Lists with ships') }}</h6>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('vessels.updates') }}"><i class="fas fa-history me-1"></i>{{ _('Change log') }}</a>
+      {% if is_superadmin %}
+      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('vessels.names') }}"><i class="fas fa-tags me-1"></i>{{ _('Ship names to review') }}</a>
+      <form method="post" action="{{ url_for('vessels.updates_rebuild') }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="back" value="sources">
+        <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="fas fa-redo me-1"></i>{{ _('Rebuild the ship tables (no download)') }}</button></form>
+      <form method="post" action="{{ url_for('vessels.updates_check') }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="back" value="sources">
+        <button class="btn btn-sm btn-outline-success" type="submit"><i class="fas fa-sync-alt me-1"></i>{{ _('Sync All') }}</button></form>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle" id="vesselSourcesTable">
+        <thead class="table-light"><tr>
+          <th style="width:3%">#</th><th style="width:20%">{{ _('Source') }}</th><th style="width:13%">{{ _('Last Updated') }}</th>
+          <th style="width:8%">{{ _('Ships') }}</th><th style="width:22%">{{ _('By class') }}</th>
+          <th style="width:16%">{{ _('Last result') }}</th>{% if is_superadmin %}<th style="width:18%">{{ _('Actions') }}</th>{% endif %}
+        </tr></thead>
+        <tbody>
+        {% for s in vessel_panel.sources %}
+          <tr data-vessel-source="{{ s.source if is_superadmin else loop.index }}">
+            <td class="text-center">{{ loop.index }}</td>
+            <td>
+              {% if is_superadmin %}<div class="fw-bold">{{ s.source }}</div>{% else %}<div class="fw-bold">{{ _('List') }} {{ loop.index }}</div>{% endif %}
+              {% if s.source.endswith('_vessels') %}<span class="badge bg-light text-dark" style="font-size:0.65rem">{{ _('file upload') }}</span>{% endif %}
+              {% if s.error and is_superadmin %}<div class="small text-danger">{{ s.error[:160] }}</div>{% endif %}
+            </td>
+            <td>
+              {% if s.last_update %}<small class="text-success"><i class="fas fa-check-circle me-1"></i>{{ (s.last_update|string)[:16] }}</small>
+              {% else %}<small class="text-warning"><i class="fas fa-exclamation-circle me-1"></i>{{ _('Never') }}</small>{% endif %}
+              <br><small class="text-muted">{% if s.every_hours %}{{ _('every') }} {{ s.every_hours }} h{% else %}{{ _('daily') }}{% endif %}</small>
+            </td>
+            <td class="text-center"><span class="fw-bold">{{ s.active }}</span></td>
+            <td>
+              {% if s.sanction %}<span class="badge bg-danger me-1">{{ _('Sanctioned') }} {{ s.sanction }}</span>{% endif %}
+              {% if s.ban %}<span class="badge bg-warning text-dark me-1">{{ _('Banned / excluded') }} {{ s.ban }}</span>{% endif %}
+              {% if s.risk_only %}<span class="badge bg-info text-dark">{{ _('Risk record only') }} {{ s.risk_only }}</span>{% endif %}
+            </td>
+            <td>
+              {% set r = s.last_run %}
+              {% if r %}
+                <small>{{ r.started_at.strftime('%Y-%m-%d %H:%M') if r.started_at else '' }}{% if r.status != 'done' %} · <span class="text-danger">{{ r.status }}</span>{% endif %}</small><br>
+                <a class="small" href="{{ url_for('vessels.updates', run=r.id, change='added') }}"><span class="text-success">+{{ r.added or 0 }} {{ _('newly added') }}</span></a>
+                <small class="text-muted"> · −{{ r.removed or 0 }} · ~{{ r.changed or 0 }}</small>
+              {% else %}<small class="text-muted">-</small>{% endif %}
+            </td>
+            {% if is_superadmin %}
+            <td>
+              <div class="source-status mb-1 d-none" id="v-status-{{ loop.index }}">
+                <div class="d-flex align-items-center gap-1"><div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                  <small class="fw-semibold text-primary" id="v-statusText-{{ loop.index }}">{{ _('Syncing...') }}</small></div>
+                <div class="progress mt-1" style="height: 4px;"><div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="v-progressBar-{{ loop.index }}" style="width: 5%"></div></div>
+              </div>
+              <div class="alert alert-success py-1 px-2 small mb-1 d-none" id="v-success-{{ loop.index }}"></div>
+              <div class="alert alert-danger py-1 px-2 small mb-1 d-none" id="v-error-{{ loop.index }}"></div>
+              <div class="btn-group btn-group-sm" role="group">
+                <button class="btn btn-outline-success" type="button" title="{{ _('Sync Now') }}" id="v-syncBtn-{{ loop.index }}"
+                        data-vessel-sync="{{ s.source }}" data-row="{{ loop.index }}"><i class="fas fa-sync-alt"></i></button>
+                <a class="btn btn-outline-secondary" title="{{ _('Change log') }}" href="{{ url_for('vessels.updates', run=(s.last_run.id if s.last_run else None)) }}"><i class="fas fa-history"></i></a>
+              </div>
+            </td>
+            {% endif %}
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center text-muted py-4">{{ _('No list with ships loaded yet.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% if is_superadmin %}
+<div class="card shadow mb-4">
+  <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-upload me-2"></i>{{ _('Upload a vessel list') }}</h6></div>
+  <div class="card-body">
+    <p class="small text-muted">{{ _('For a list of ships published without a machine-readable feed: a CSV or Excel file (name, imo, flag, type, measure, listed_on, reference, aliases, owner) or the list page saved as HTML. Run it as a dry run first.') }}</p>
+    <form method="post" action="{{ url_for('vessels.updates_upload') }}" enctype="multipart/form-data" class="row g-2 align-items-end small">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="back" value="sources">
+      <div class="col-md-3"><label class="form-label mb-0" for="vuf">{{ _('Vessel list file (CSV, Excel or the page saved as HTML)') }}</label><input class="form-control form-control-sm" type="file" id="vuf" name="file" accept=".csv,.xlsx,.html,.htm" required></div>
+      <div class="col-md-2"><label class="form-label mb-0" for="vus">{{ _('List code (ends with _vessels)') }}</label><input class="form-control form-control-sm" id="vus" name="source" pattern="[a-z][a-z0-9_]{2,40}_vessels" required></div>
+      <div class="col-md-3"><label class="form-label mb-0" for="vul">{{ _('List name') }}</label><input class="form-control form-control-sm" id="vul" name="label"></div>
+      <div class="col-md-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="apply" value="1" id="vua"><label class="form-check-label" for="vua">{{ _('Apply (else dry run)') }}</label></div></div>
+      <div class="col-md-2"><button class="btn btn-outline-primary btn-sm w-100" type="submit"><i class="fas fa-upload me-1"></i>{{ _('Upload') }}</button></div>
+    </form>
+  </div>
+</div>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/vessel_sources.js') }}"
+        data-task-url="{{ url_for('screening.get_task_status', task_id='TASK') }}" data-sync-url="{{ url_for('vessels.sync_source') }}"
+        data-msg-failed="{{ _('Sync failed') }}" data-msg-done="{{ _('Sync completed') }}" data-msg-start="{{ _('Connecting...') }}"></script>
+{% endif %}

@@ -13,6 +13,7 @@
       <a href="{{ url_for('screening.data_sources') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-database me-1"></i>{{ _('Watchlist Data Sources') }}</a>
       <a href="{{ url_for('screening.quality') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-bullseye me-1"></i>{{ _('Screening Quality') }}</a>
       <a href="{{ url_for('screening.list_actions') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-table-list me-1"></i>{{ _('Action by list type') }}</a>
+      {% if current_user.role == 'superadmin' %}<a href="{{ url_for('screening.list_local_import') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-file-import me-1"></i>{{ _('Local lists workbook') }}</a>{% endif %}
     </div>
   </div>
 

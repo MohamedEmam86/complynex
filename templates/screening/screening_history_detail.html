@@ -121,7 +121,7 @@
                             <td>
                                 <span class="badge bg-info text-dark">{{ m.source or m.dataset or '-' }}</span>
                                 {% if m.list_type %}
-                                <br><small class="text-muted">{{ m.list_type }}</small>
+                                <br><small class="text-muted">{{ m.category if m.list_category_code else m.list_type }}</small>
                                 {% endif %}
                             </td>
                             <td>

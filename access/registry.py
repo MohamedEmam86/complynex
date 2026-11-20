@@ -42,6 +42,22 @@ RANK = {'none': 0, 'view': 1, 'use': 2, 'edit': 2, 'admin': 3}
 ADMIN_ROLES = ('admin', 'superadmin', 'it_admin')
 MODES = ('cms', 'portal', 'restricted')
 
+# The one vocabulary for permission levels, wherever a level is shown (matrix, permissions matrix, exports, access
+# review). Data, not gettext: 'Admin' in the message catalogue is the ROLE ("system administrator").
+LEVEL_LABELS = {
+    'none': ('No access', 'لا وصول'),
+    'view': ('View', 'عرض'),
+    'edit': ('View & Edit', 'عرض وتعديل'),
+    'admin': ('Admin', 'إدارة الوحدة'),
+}
+LEVEL_ALIASES = {'use': 'edit', 'approve': 'admin', 'action': 'edit', '': 'none', None: 'none'}
+
+
+def level_label(code, lang='en'):
+    code = LEVEL_ALIASES.get(code, code)
+    en, ar = LEVEL_LABELS.get(code, LEVEL_LABELS['none'])
+    return ar if str(lang).startswith('ar') else en
+
 
 # ------------------------------------------------------------------ old-rule specs
 # 'auth' | ('perm', module, level) | ('role', (roles,)) | ('cms',) | ('col', column, (values,))
@@ -201,7 +217,7 @@ def area(key, label_en, label_ar, order=100):
     AREAS[key] = (label_en, label_ar, order)
 
 
-def pair(prefix, label_en, label_ar, patterns, view=('View', 'عرض'), manage=('Create & edit', 'إنشاء وتعديل'),
+def pair(prefix, label_en, label_ar, patterns, view=LEVEL_LABELS['view'], manage=LEVEL_LABELS['edit'],
          hint_en='', hint_ar=''):
     """Two features over the same pages: '<prefix>.view' for read pages, '<prefix>.manage' for
     the pages and actions that change data (picked from each view's own guard)."""

@@ -31,6 +31,28 @@
       {% if v.previous_names %}<div class="mb-2"><span class="text-muted">{{ _('Former names') }}:</span> {{ v.previous_names | join(' · ') }}</div>{% endif %}
       {% if v.other_names %}<div class="mb-2"><span class="text-muted">{{ _('Other names') }}:</span> {{ v.other_names | join(' · ') }}</div>{% endif %}
       {% if v.full_name_arabic %}<div class="mb-2" dir="rtl">{{ v.full_name_arabic }}</div>{% endif %}
+      {% if known %}<div class="mb-2 p-2 rounded border border-info-subtle bg-info-subtle">
+        <div class="fw-semibold"><i class="bi bi-lightbulb me-1"></i>{% if is_superadmin %}{{ _('ComplyNex intelligence: names not yet on the lists') }}{% else %}{{ _('Other names known for this ship (not yet on the official lists)') }}{% endif %}</div>
+        {% for k in known %}<div class="d-flex flex-wrap align-items-center gap-2 mt-1"><strong>{{ k.name }}</strong>
+          <span class="badge bg-light text-dark border">{{ {'new_name': _('new name'), 'alias': _('other name'), 'former_name': _('former name')}.get(k.kind, k.kind) }}</span>
+          {% if k.effective_date %}<span class="text-muted">{{ _('since') }} {{ k.effective_date }}</span>{% endif %}
+          {% if is_superadmin %}<span class="text-muted">· {{ k.source_note }} · {{ k.created_at.strftime('%Y-%m-%d') if k.created_at else '' }}</span>
+          <form method="post" action="{{ url_for('vessels.known_name_revoke', kid=k.id) }}" class="d-inline-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input class="form-control form-control-sm" name="reason" placeholder="{{ _('reason') }}" required minlength="5" style="width:10rem">
+            <button class="btn btn-sm btn-outline-danger" type="submit">{{ _('Remove') }}</button></form>{% endif %}
+        </div>{% endfor %}
+      </div>{% endif %}
+      {% if is_superadmin %}
+      <details class="mb-2"><summary class="text-primary">{{ _('Add a name the lists have not published (renamed ship)') }}</summary>
+        <form method="post" action="{{ url_for('vessels.known_name_add', wid=wid) }}" class="row g-2 mt-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="col-md-4"><input class="form-control form-control-sm" name="name" placeholder="{{ _('Name') }}" required minlength="2" maxlength="200"></div>
+          <div class="col-md-3"><select class="form-select form-select-sm" name="kind"><option value="new_name">{{ _('new name') }}</option><option value="alias">{{ _('other name') }}</option><option value="former_name">{{ _('former name') }}</option></select></div>
+          <div class="col-md-3"><input class="form-control form-control-sm" type="date" name="effective_date" title="{{ _('since') }}"></div>
+          <div class="col-md-10"><input class="form-control form-control-sm" name="source_note" placeholder="{{ _('Source (registry, AIS, press, regulator notice...) and date seen') }}" required minlength="5" maxlength="1000"></div>
+          <div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit">{{ _('Add') }}</button></div>
+        </form></details>
+      {% endif %}
       {% if v.flag_history %}<div class="mb-2"><span class="text-muted">{{ _('Former / other flags') }}:</span> {% for x in v.flag_history %}{{ vessel_flag(x) }}{{ ' · ' if not loop.last }}{% endfor %}</div>{% endif %}
       <table class="table table-sm mb-0"><thead><tr><th>{{ _('Identifier') }}</th><th>{{ _('Value') }}</th><th></th></tr></thead><tbody>
         {% for i in idents %}<tr><td>{{ i.kind }}</td><td>{{ i.value_norm }}</td><td>{{ _('current') if i.is_current else _('former') }}{% if i.check_ok == false %} <span class="badge bg-warning text-dark">{{ _('invalid') }}</span>{% endif %}</td></tr>{% endfor %}

@@ -47,6 +47,8 @@ DEFAULTS = {
     'conflict_cap': 60.0,          # a different valid IMO on both sides: another ship
     'number_cap': 60.0,            # different numbers in the names (STAR 1 / STAR 2)
     'partial_word_cap': 60.0,      # one word of a longer listed name (OCEAN vs OCEAN GLORY)
+    'word_mismatch_cap': 70.0,     # names of several words where a word has no counterpart (BALTIC / ATLANTIC DAWN)
+    'word_match_min': 75.0,        # ... a counterpart: a word of the other name at least this similar
     'flag_bonus': 3.0,             # same flag (current or former) on a name hit
     'owner_bonus': 4.0,            # the declared owner is the listed ship's owner, on a name hit
     'name_hit_max': 94.0,          # a name hit never reaches CONFIRMED by itself
@@ -72,7 +74,9 @@ DEFAULTS = {
     'owner_weight': 0.95,          # the screening's score from a listed owner
     'risk': {'invalid_imo': 20, 'invalid_mmsi': 10, 'foc': 15, 'high_risk_flag': 25, 'false_flag': 30,
              'flag_changes': 15, 'listed_flag_changes': 10, 'listed_renamed': 5, 'owner_listed': 40,
-             'psc': 10, 'psc_repeated': 10, 'intel': 5},
+             'psc': 10, 'psc_repeated': 10, 'intel': 5, 'name_differs': 20},
+    'renamed_below': 80.0,         # an identifier hit whose listed names all score below this against the
+                                   # entered name: "listed under another name" (renaming is a red flag)
 }
 
 
@@ -143,7 +147,14 @@ _TEXT = {
     'same_callsign': ('Same call sign ({v}, {when})', 'نفس نداء الاتصال ({v}، {when_ar})'),
     'mmsi_changes': ('MMSI and call sign change when a ship is re-flagged: not decisive alone',
                      'رقم MMSI ونداء الاتصال يتغيران عند تغيير علم السفينة: لا يكفيان وحدهما'),
-    'renamed': ('The name differs: the ship may have been renamed', 'الاسم مختلف: ربما تغيّر اسم السفينة'),
+    'renamed': ('Listed under the name "{l}"; the name you entered ("{q}") may be a new or unofficial name - '
+                'renaming is a red flag: get the ship\'s current registry documents',
+                'مدرجة باسم "{l}"؛ والاسم الذي أدخلته ("{q}") قد يكون اسمًا جديدًا أو غير رسمي - تغيير الاسم مؤشر '
+                'خطر: اطلب مستندات التسجيل الحالية للسفينة'),
+    'known_name': ('Matched a name ComplyNex has recorded for this ship that the lists have not published yet',
+                   'التطابق مع اسم سجّلته ComplyNex لهذه السفينة ولم تنشره القوائم بعد'),
+    'r_name_differs': ('The identifier matches a listed ship that is listed under another name: possible renaming '
+                       'to hide the listing', 'المعرّف يطابق سفينة مدرجة باسم آخر: احتمال تغيير الاسم لإخفاء الإدراج'),
     'imo_conflict': ('Different IMO number ({q} / {l}): a different ship', 'رقم IMO مختلف ({q} / {l}): سفينة أخرى'),
     'name_match': ('Name match {s}% with "{n}"', 'تطابق الاسم بنسبة {s}% مع "{n}"'),
     'former_name': ('Matched a former name of the ship', 'التطابق مع اسم سابق للسفينة'),
@@ -187,6 +198,8 @@ _TEXT = {
     'w_nothing': ('Nothing to screen', 'لا توجد بيانات للفحص'),
     'near_imo': ('The IMO {q} fails its check digit; {l} (one keying error away) is listed: check the number',
                  'رقم IMO {q} لا يجتاز رقم التحقق؛ والرقم {l} (بفارق خطأ إدخال واحد) مدرج: تحقق من الرقم'),
+    'word_mismatch': ('A word of the name has no counterpart in the listed name: probably another ship',
+                      'كلمة في الاسم لا يقابلها مثيل في الاسم المدرج: غالبًا سفينة أخرى'),
     'one_typo': ('One keying error away from the listed name', 'بفارق خطأ إدخال واحد عن الاسم المدرج'),
     'single_word': ('Common ship name ({n} ship(s) carry it in the vessel records held): the name alone cannot '
                     'identify the ship - IMO number needed (review)',
@@ -377,6 +390,15 @@ def name_score(query, listed, cfg=None):
                         _vkey(qn)[:1] == _vkey(ln)[:1]:
                     s = 88.0
                     reasons.append('spelling')
+            if s < 95 and len(qw) >= 2 and len(lw) >= 2 and fuzz.ratio(a.replace(' ', ''), b.replace(' ', '')) < 95:
+                # every distinctive word must have a counterpart in the other name: BALTIC DAWN is not ATLANTIC
+                # DAWN, SINAI SPIRIT is not NAVIG8 SPIRIT (the shared word carries the character similarity)
+                def _orphan(xs, ys):
+                    return any(len(x) > 2 and not any(fuzz.ratio(x, y) >= cfg['word_match_min'] or _one_edit(x, y)
+                                                          for y in ys) for x in xs)
+                if _orphan(qw, lw) or _orphan(lw, qw):
+                    s = min(s, cfg['word_mismatch_cap'])
+                    reasons.append('word_mismatch')
             if len(qw) == 1 and len(lw) > 1 and fuzz.ratio(a.replace(' ', ''), b.replace(' ', '')) < 95:
                 # one word against a longer listed name ("OCEAN" vs "OCEAN GLORY", "ATLANTIC" vs
                 # "HS ATLANTICA") is not that ship; the joined form of the whole name (SANSEVERUS) is
@@ -635,8 +657,6 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
             if kind == 'IMO':
                 sc = 100.0
                 expl = [say('same_imo', v=val, when=when)]
-                if q_name and ns < 70:
-                    expl.append(say('renamed'))
             else:
                 same_name = bool(q_name) and ns >= cfg['name_strong']
                 sc = cfg['mmsi_name_score' if kind == 'MMSI' else 'callsign_name_score'] if same_name else \
@@ -662,7 +682,10 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
     # ---- layer 2: names
     q_norm = VU.norm_name(q_name) if q_name else ''
     single_word = bool(q_norm) and len(q_norm.split()) == 1
-    q_imo_listed = bool(q_imo_ok and ids_for('IMO', q_imo))
+    # the screened IMO belongs to a listed (alerting) ship; an IMO known only from port-inspection records is a
+    # real ship, but not a listed one
+    q_imo_listed = bool(q_imo_ok and any(VP.alerts((by_id.get(w) or {}).get('provenance') or VP.SANCTION)
+                                         for w, _ in ids_for('IMO', q_imo) if w in by_id))
     similar = []                # one-word names that are close but not the same word (shown, never alerted)
     q_tokens = q_norm.split()
     counts = hull_counts(candidates, fleet_sample) if single_word else {}
@@ -690,8 +713,11 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
             if q_imo and c.get('imo'):
                 fields['IMO number'] = {'query': q_imo, 'listed': c['imo'], 'match': q_imo == c['imo']}
                 if imo_conflict(c):
-                    if ns >= cfg['name_strong'] and not q_imo_listed and not one_word:
-                        # the screened IMO is on no list: a same-name ship, or a falsified IMO (shadow fleet)
+                    primary = VU.norm_name(nm or '') == VU.norm_name(c.get('name') or '')
+                    if ns >= cfg['name_strong'] and not q_imo_listed and not one_word and primary:
+                        # the screened IMO is on no list and the name is the listed ship's own (current) name:
+                        # a same-name ship, or a falsified IMO (shadow fleet). A former name or alias with another
+                        # IMO is another ship now carrying that name (the IMO stays with the hull).
                         sc = min(sc, cfg['conflict_review_score'])
                         expl.append(say('imo_conflict_review', q=q_imo, l=c['imo']))
                     else:
@@ -808,6 +834,21 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
             expl.append(say('owner_listed'))
         if len(view['sources']) > 1:
             expl.append(say('several_lists', n=len(view['sources'])))
+        if q_name and best_h.get('layer') == 'identifier' and h['score'] >= cfg['mmsi_score'] - 1:
+            # the ship is confirmed by its identifier: is the entered name one of its names (official or known)?
+            gns, _gnm, _ = best_name(q_name, view.get('names') or [view.get('name')], cfg)
+            if gns < cfg['renamed_below']:
+                expl.append(say('renamed', l=view.get('name') or '', q=q_name))
+                kind = next((k for k, code in (('IMO', 'same_imo'), ('MMSI', 'same_mmsi'), ('CALLSIGN', 'same_callsign'))
+                             if any(e['code'] == code for e in expl)), 'IMO')
+                h['entered_name_differs'] = {'entered': q_name, 'listed': view.get('name'), 'identifier': kind}
+        if best_h.get('layer') == 'identifier' and h['score'] >= th[2]:
+            # confirmed by the identifier: the name-only caveats (one-word names) do not apply
+            expl = [e for e in expl if not e['code'].startswith('single_word')]
+        kn = {n for m in members for n in m.get('known_names') or []}
+        if kn and h.get('matched_name') in kn:
+            expl.append(say('known_name'))
+            h['known_name'] = h.get('matched_name')
         h['explanation'] = expl
         h.update({k: view.get(k) for k in ('group_key', 'sources', 'member_ids', 'list_types', 'name', 'imo',
                                            'mmsi', 'call_sign', 'flag', 'flags_past', 'type', 'year_built',
@@ -898,6 +939,9 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
         if top.get('previous_names'):
             lines.append(say('r_listed_renamed'))
             risk += rw['listed_renamed']
+        if top.get('entered_name_differs'):
+            lines.append(say('r_name_differs'))
+            risk += rw['name_differs']
     if owner_hits:
         lines.append(say('r_owner_listed'))
         risk += rw['owner_listed']
@@ -912,10 +956,15 @@ def screen_vessel(name=None, imo=None, mmsi=None, call_sign=None, flag=None, own
     for h in merged + suppressed:
         h['tier'] = tier_of(h['score'], th)
     alerts = [h for h in merged if h['score'] >= low and h['alert_type'] == 'sanction'][:max_hits]
-    ban_hits = [h for h in merged if h['score'] >= low and h['alert_type'] == 'ban'][:max_hits]
+    # a ban / exclusion reached only through a common one-word name (ATLANTIC, MARINA) is too weak to alert:
+    # it is not a sanctions listing, and many ships carry the name - shown with the names below the threshold
+    def _generic_ban(h):
+        return h.get('layer') == 'name' and any(e['code'] in ('single_word', 'single_word_word')
+                                                for e in h['explanation'])
+    ban_hits = [h for h in merged if h['score'] >= low and h['alert_type'] == 'ban' and not _generic_ban(h)][:max_hits]
     near = [{'name': h['name'], 'matched_name': h['matched_name'], 'score': h['score'],
              'explanation': h['explanation'], 'watchlist_id': h['watchlist_id']}
-            for h in merged if h['score'] < low][:5]
+            for h in merged if h['score'] < low or (h['alert_type'] == 'ban' and _generic_ban(h))][:5]
     # the name given without a hull number (ADRIAN DARYA, DREAM): the numbered listed ships of that name are
     # shown so the officer can ask which hull it is - never alerted (another number is another ship)
     related = []

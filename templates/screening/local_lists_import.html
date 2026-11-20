@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Local lists workbook') }}{% endblock %}
+{% block extra_css %}{% if job and job.state == 'running' %}<meta http-equiv="refresh" content="5">{% endif %}{% endblock %}
+{% block content %}
+{% set chg = ['added', 'adopted', 'changed', 'lifted', 'relisted', 'removed', 'unchanged'] %}
+{% set chg_label = {'added': _('Added'), 'adopted': _('Taken over'), 'changed': _('Changed'), 'lifted': _('Lifted'),
+                    'relisted': _('Listed again'), 'removed': _('Removed'), 'unchanged': _('Unchanged')} %}
+{% set st_badge = {'APPLIED':'bg-success','BLOCKED':'bg-danger','FAILED':'bg-danger','RUNNING':'bg-secondary'} %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h1 class="h3 mb-1"><i class="fas fa-file-import me-2"></i>{{ _('Local lists workbook') }}</h1>
+      <p class="text-muted mb-0">{{ _('Imports the local negative-lists workbook: asset-freeze orders, local terrorist lists and entities, and the UN sheets. Each sheet is recognised by its columns and shown to users under a generic category; a new edition gives an exact list of what was added, lifted, changed or removed. Nothing is ever deleted.') }}</p>
+      <p class="text-muted small mb-0" dir="rtl" lang="ar">استيراد ملف القوائم السلبية المحلية: أوامر المنع من التصرف، قوائم الإرهابيين والكيانات الإرهابية، وقوائم مجلس الأمن. كل شيت بيتعرف من أعمدته ويظهر للمستخدمين تحت تصنيف عام، وأي نسخة جديدة بتطلع بالظبط إيه اللي اتضاف أو اتنهى أثره أو اتعدل أو اتشال. مفيش حاجة بتتمسح.</p>
+    </div>
+    <div>
+      <a href="{{ url_for('screening.list_versions') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-code-branch me-1"></i>{{ _('List versions') }}</a>
+      <a href="{{ url_for('screening.data_sources') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-database me-1"></i>{{ _('Watchlist Data Sources') }}</a>
+    </div>
+  </div>
+
+  <div class="alert alert-secondary small"><i class="fas fa-user-shield me-1"></i>{{ _('Superadmin only. Sheet and file names appear on this page only; every other user sees the generic category of a hit.') }}</div>
+
+  {# ---------------- In force ---------------- #}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold"><i class="fas fa-layer-group me-2"></i>{{ _('Records in force by category') }}</div>
+    <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+      <thead><tr><th>{{ _('Category') }}</th><th class="text-end">{{ _('Listed') }}</th><th class="text-end">{{ _('Lifted (kept for history)') }}</th><th class="text-end">{{ _('Removed') }}</th></tr></thead>
+      <tbody>
+      {% for c in in_force %}
+        <tr><td>{{ c.label_en }}<div class="text-muted small" dir="rtl" lang="ar">{{ c.label_ar }}</div></td>
+            <td class="text-end">{{ '{:,}'.format(c.LISTED) }}</td><td class="text-end">{{ '{:,}'.format(c.LIFTED) }}</td>
+            <td class="text-end">{{ '{:,}'.format(c.REMOVED) }}</td></tr>
+      {% else %}
+        <tr><td colspan="4" class="text-muted">{{ _('Nothing imported yet.') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+
+  {# ---------------- Upload ---------------- #}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold"><i class="fas fa-upload me-2"></i>{{ _('1. Upload a new edition (preview only)') }}</div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('screening.list_local_import_upload') }}" enctype="multipart/form-data" class="row g-2 align-items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-6"><label class="form-label small">{{ _('Workbook (.xlsx)') }}</label>
+          <input type="file" name="file" accept=".xlsx,.xlsm" class="form-control form-control-sm" required></div>
+        <div class="col-md-4"><div class="form-check">
+          <input class="form-check-input" type="checkbox" name="allow_unknown" value="1" id="ll-unknown">
+          <label class="form-check-label small" for="ll-unknown">{{ _('Accept sheets that look like data but are not recognised') }}</label></div></div>
+        <div class="col-md-2"><button class="btn btn-primary btn-sm w-100" type="submit"><i class="fas fa-search me-1"></i>{{ _('Preview') }}</button></div>
+      </form>
+      <div class="form-text">{{ _('The preview reads the file and compares it with the lists in force. Nothing is written until you apply it. The preview shows counts only.') }}</div>
+    </div>
+  </div>
+
+  {# ---------------- Job ---------------- #}
+  {% if job %}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold"><i class="fas fa-clipboard-check me-2"></i>{{ _('2. Result') }} <span class="text-muted small">{{ job.file_name }}</span></div>
+    <div class="card-body">
+    {% if job.state == 'running' %}
+      <div class="d-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm"></div>
+        {{ _('Importing… this page refreshes by itself.') if job.mode == 'apply' else _('Reading the workbook… this page refreshes by itself.') }}</div>
+    {% elif job.state == 'error' %}
+      <div class="alert alert-danger mb-0">{{ _('Another import is running; try again in a few minutes.') if job.error == 'busy' else _('The file could not be processed. Nothing was written. See the application log.') }}</div>
+    {% else %}
+      {% set r = job.result %}
+      <p class="mb-2">
+        {% if r.result == 'APPLIED' %}<span class="badge bg-success">{{ _('Applied') }}</span> {{ _('Import') }} #{{ r.import_id }}
+        {% elif r.result == 'BLOCKED' %}<span class="badge bg-danger">{{ _('Blocked') }}</span> {{ _('Nothing was written; the lists in force stay.') }}
+        {% else %}<span class="badge bg-info text-dark">{{ _('Preview') }}</span>{% endif %}
+        · {{ _('Edition date') }}: {{ r.edition_date or '—' }}
+      </p>
+      <div class="table-responsive mb-3"><table class="table table-sm align-middle small">
+        <thead><tr><th>#</th><th>{{ _('Sheet (internal)') }}</th><th>{{ _('Recognised as') }}</th><th class="text-end">{{ _('Rows') }}</th><th class="text-end">{{ _('Records') }}</th><th>{{ _('Category: listed / lifted') }}</th><th>{{ _('Notes') }}</th></tr></thead>
+        <tbody>
+        {% for s in r.sheets %}
+          <tr class="{{ 'text-muted' if not s.kind }}">
+            <td>{{ loop.index }}</td><td dir="auto">{{ s.sheet }}</td>
+            <td>{{ _(kind_label[s.kind]) if s.kind else (_('Not a list sheet') ~ (' — ' ~ _('looks like data') if s.looks_like_data else '')) }}</td>
+            <td class="text-end">{{ '{:,}'.format(s.data_rows if s.kind else s.rows) }}</td>
+            <td class="text-end">{{ '{:,}'.format(s.records) }}</td>
+            <td>{% for code, v in (s.categories or {}).items() %}{{ ll_label(code, 'en') }}: {{ '{:,}'.format(v.listed) }} / {{ '{:,}'.format(v.lifted) }}{{ '; ' if not loop.last }}{% endfor %}</td>
+            <td>{% if s.skipped_rows %}{{ s.skipped_rows }} {{ _('rows skipped') }}. {% endif %}{% if s.lift_unmatched %}{{ s.lift_unmatched }} {{ _('lifts not tied to one order (kept listed)') }}. {% endif %}{% if s.duplicates %}{{ s.duplicates }} {{ _('duplicates') }}.{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      <div class="table-responsive mb-3"><table class="table table-sm align-middle small">
+        <thead><tr><th>{{ _('Category') }}</th>{% for k in chg %}<th class="text-end">{{ chg_label[k] }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for code, v in r.counts.items() %}
+          <tr><td>{{ ll_label(code, 'en') }}<div class="text-muted" dir="rtl" lang="ar">{{ ll_label(code, 'ar') }}</div></td>{% for k in chg %}<td class="text-end {{ 'fw-bold' if v[k] and k != 'unchanged' }}">{{ '{:,}'.format(v[k]) }}</td>{% endfor %}</tr>
+        {% endfor %}
+        <tr class="table-light fw-bold"><td>{{ _('Total') }}</td>{% for k in chg %}<td class="text-end">{{ '{:,}'.format(r.totals[k]) }}</td>{% endfor %}</tr>
+        </tbody>
+      </table></div>
+      {% if r.dob_linked %}<p class="small text-muted mb-1">{{ _('Dates of birth taken from a matching full national ID for records published with a masked ID') }}: {{ '{:,}'.format(r.dob_linked) }}</p>{% endif %}
+      {% if r.legacy_unmatched %}<p class="small text-muted mb-1">{{ _('Older internal-list rows of the same lists that the workbook does not back') }}: {{ '{:,}'.format(r.legacy_unmatched) }}</p>{% endif %}
+      {% for reason in r.reasons %}
+        <div class="alert {{ 'alert-danger' if reason in r.blocking else 'alert-warning' }} py-1 small mb-1">{{ reason }}</div>
+      {% endfor %}
+      {% if r.sync %}<p class="small text-muted mb-0">{{ _('After the import') }}: {% for k, v in r.sync.items() %}{{ k }} {{ v }}{{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+
+      {% if r.result == 'DRY_RUN' %}
+      <hr>
+      <h2 class="h6">{{ _('3. Apply') }}</h2>
+      <form method="post" action="{{ url_for('screening.list_local_import_apply', token=token) }}" class="row g-2 align-items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-4"><label class="form-label small">{{ _('Lifted records') }}</label>
+          <select name="lifted" class="form-select form-select-sm">
+            <option value="history">{{ _('Keep visible, labelled lifted (recommended)') }}</option>
+            <option value="inactive">{{ _('Deactivate (no hit any more)') }}</option>
+          </select></div>
+        {% if r.legacy_unmatched %}
+        <div class="col-md-4"><div class="form-check">
+          <input class="form-check-input" type="checkbox" name="retire_legacy" value="1" id="ll-retire">
+          <label class="form-check-label small" for="ll-retire">{{ _('Deactivate the older rows the workbook does not back') }} ({{ r.legacy_unmatched }})</label></div></div>
+        {% endif %}
+        {% if r.blocked %}
+        <div class="col-md-4"><div class="form-check">
+          <input class="form-check-input" type="checkbox" name="allow_shrink" value="1" id="ll-shrink">
+          <label class="form-check-label small" for="ll-shrink">{{ _('The shrink is genuine: apply anyway') }}</label></div>
+          <input type="text" name="reason" class="form-control form-control-sm mt-1" maxlength="500" placeholder="{{ _('Why (recorded in the audit log)') }}"></div>
+        {% endif %}
+        <div class="col-md-2"><button class="btn btn-success btn-sm w-100" type="submit"><i class="fas fa-check me-1"></i>{{ _('Apply') }}</button></div>
+      </form>
+      {% endif %}
+    {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ---------------- History ---------------- #}
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white fw-bold"><i class="fas fa-history me-2"></i>{{ _('Imports') }}</div>
+    <div class="table-responsive"><table class="table table-sm mb-0 align-middle small">
+      <thead><tr><th>#</th><th>{{ _('Status') }}</th><th>{{ _('When') }}</th><th>{{ _('By') }}</th><th>{{ _('File (internal)') }}</th><th>{{ _('Edition date') }}</th>{% for k in chg[:-1] %}<th class="text-end">{{ chg_label[k] }}</th>{% endfor %}<th>{{ _('Reason') }}</th></tr></thead>
+      <tbody>
+      {% for h in history %}
+        {% set t = h.totals or {} %}
+        <tr><td>{{ h.id }}</td><td><span class="badge {{ st_badge.get(h.status, 'bg-secondary') }}">{{ h.status|scr_label }}</span></td>
+          <td>{{ h.started_at.strftime('%Y-%m-%d %H:%M') if h.started_at else '' }}</td><td>{{ h.user_email or '—' }}</td>
+          <td dir="auto">{{ h.file_name or '' }}</td><td>{{ h.edition_date or '—' }}</td>
+          {% for k in chg[:-1] %}<td class="text-end">{{ '{:,}'.format(t.get(k, 0)) }}</td>{% endfor %}
+          <td class="text-muted">{{ h.reason or '' }}</td></tr>
+      {% else %}
+        <tr><td colspan="13" class="text-muted">{{ _('No import yet.') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

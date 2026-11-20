@@ -208,6 +208,8 @@ def hit_view(m):
         'source': m.get('source') or m.get('list_source'),
         'list_reference': m.get('source_id') or m.get('entity_id'),
         'list_type': act.get('list_type') or m.get('list_type'),
+        # local / internal lists: the generic category (screening.source_mask), never the sheet or file name
+        'list_category': m.get('category') if m.get('list_category_code') else None,
         'score': round(float(m.get('match_score') or 0), 2),
         'tier': act.get('tier') or d.get('tier'),
         'identity': d.get('identity'),
@@ -227,6 +229,8 @@ def screening_view(public_id, res, query, request_id, versions, sandbox=False, c
     reasons = (res or {}).get('incomplete_reasons') or []
     incomplete = str(status).upper() == 'INCOMPLETE' or bool(reasons and str(status).upper() in ('CLEAR', 'LOW_MATCH'))
     matches = (res or {}).get('matches') or []
+    from screening.source_mask import mask_matches
+    matches = mask_matches(matches, force=True)      # API clients never see a local list's sheet / file / dataset
     hits = [hit_view(m) for m in matches[:100]]
     review = any((h['tier'] in ('CONFIRMED', 'POTENTIAL')) for h in hits) or incomplete
     return {

@@ -45900,3 +45900,288 @@ msgstr "يستطيع المسؤول الأعلى للمنصة وحده تغيي�
 #: access (per-user access control)
 msgid "You cannot change your own access. Ask another administrator."
 msgstr "لا يمكنك تغيير وصولك أنت. اطلب ذلك من مسؤول آخر."
+
+msgid "Sync & list sources"
+msgstr "المزامنة ومصادر القوائم"
+
+msgid "Ship names"
+msgstr "أسماء السفن"
+
+msgid "Sanctioned ships"
+msgstr "السفن الخاضعة لعقوبات"
+
+msgid "Banned / excluded ships"
+msgstr "السفن المحظورة / المستبعدة"
+
+msgid "Port-inspection records (risk only)"
+msgstr "سجلات تفتيش الموانئ (مخاطر فقط)"
+
+msgid "Mentions in analysis (risk only)"
+msgstr "إشارات في تحليلات (مخاطر فقط)"
+
+msgid "Lists with ships"
+msgstr "القوائم التي تتضمن سفنًا"
+
+msgid "Ship names to review"
+msgstr "أسماء سفن للمراجعة"
+
+msgid "Rebuild the ship tables (no download)"
+msgstr "إعادة بناء جداول السفن (بدون تنزيل)"
+
+msgid "Ships"
+msgstr "السفن"
+
+msgid "By class"
+msgstr "حسب الفئة"
+
+msgid "file upload"
+msgstr "رفع ملف"
+
+msgid "every"
+msgstr "كل"
+
+msgid "daily"
+msgstr "يوميًا"
+
+msgid "Sanctioned"
+msgstr "خاضعة لعقوبات"
+
+msgid "Banned / excluded"
+msgstr "محظورة / مستبعدة"
+
+msgid "Risk record only"
+msgstr "سجل مخاطر فقط"
+
+msgid "newly added"
+msgstr "أضيفت حديثًا"
+
+msgid "No list with ships loaded yet."
+msgstr "لم يتم تحميل أي قائمة تتضمن سفنًا بعد."
+
+msgid "Upload a vessel list"
+msgstr "رفع قائمة سفن"
+
+msgid "For a list of ships published without a machine-readable feed: a CSV or Excel file (name, imo, flag, type, measure, listed_on, reference, aliases, owner) or the list page saved as HTML. Run it as a dry run first."
+msgstr "لقائمة سفن منشورة بدون ملف قابل للقراءة آليًا: ملف CSV أو Excel (name, imo, flag, type, measure, listed_on, reference, aliases, owner) أو صفحة القائمة محفوظة بصيغة HTML. شغّلها كتجربة أولًا."
+
+msgid "Vessel list file (CSV, Excel or the page saved as HTML)"
+msgstr "ملف قائمة السفن (CSV أو Excel أو الصفحة محفوظة بصيغة HTML)"
+
+msgid "List code (ends with _vessels)"
+msgstr "رمز القائمة (ينتهي بـ _vessels)"
+
+msgid "List name"
+msgstr "اسم القائمة"
+
+msgid "Apply (else dry run)"
+msgstr "تطبيق (وإلا فتجربة)"
+
+msgid "Sync failed"
+msgstr "فشلت المزامنة"
+
+msgid "Sync completed"
+msgstr "اكتملت المزامنة"
+
+msgid "Connecting..."
+msgstr "جارٍ الاتصال..."
+
+msgid "Vessel lists last updated"
+msgstr "آخر تحديث لقوائم السفن"
+
+msgid "older than 48 hours"
+msgstr "أقدم من 48 ساعة"
+
+msgid "Next scheduled update"
+msgstr "التحديث المجدول التالي"
+
+msgid "Last refresh"
+msgstr "آخر تحديث"
+
+msgid "Possible match - check"
+msgstr "تطابق محتمل - يحتاج تحققًا"
+
+msgid "High risk = several independent warning signs: false or high-risk flag, flag changes, renaming, IMO check digit, port-state-control detentions. Being listed or owned by a listed party is shown as a fact, not counted."
+msgstr "مخاطر مرتفعة = عدة مؤشرات تحذير مستقلة: علم مزيف أو عالي المخاطر، تغييرات العلم، تغيير الاسم، رقم تحقق IMO، احتجازات رقابة دولة الميناء. الإدراج أو ملكية طرف مدرج يُعرض كحقيقة ولا يُحتسب."
+
+msgid "Regime"
+msgstr "نظام العقوبات"
+
+msgid "Newer"
+msgstr "الأحدث"
+
+msgid "Older"
+msgstr "الأقدم"
+
+msgid "A ship renamed after its listing keeps its IMO number, but the lists may take weeks to publish the new name. Names entered in screenings for a ship its IMO / MMSI confirmed, that the lists do not carry, are queued here. Confirm one (with the source that confirms it) and name screening finds the ship under it at once; it is shown to clients as another known name of the ship."
+msgstr "السفينة التي يتغير اسمها بعد إدراجها تحتفظ برقم IMO، لكن القوائم قد تتأخر أسابيع في نشر الاسم الجديد. الأسماء التي أُدخلت في عمليات الفحص لسفينة أكدها رقم IMO / MMSI ولا تحملها القوائم تظهر هنا. أكّد الاسم (مع المصدر الذي يؤكده) وسيجد الفحص بالاسم السفينة به فورًا؛ ويُعرض للعملاء كاسم آخر معروف للسفينة."
+
+msgid "Names seen in screenings"
+msgstr "أسماء ظهرت في عمليات الفحص"
+
+msgid "To review"
+msgstr "للمراجعة"
+
+msgid "Name entered"
+msgstr "الاسم المُدخل"
+
+msgid "Confirmed by"
+msgstr "تم التأكيد بواسطة"
+
+msgid "Seen"
+msgstr "مرات الظهور"
+
+msgid "Last seen"
+msgstr "آخر ظهور"
+
+msgid "Source that confirms the name (to confirm)"
+msgstr "المصدر الذي يؤكد الاسم (للتأكيد)"
+
+msgid "new name"
+msgstr "اسم جديد"
+
+msgid "other name"
+msgstr "اسم آخر"
+
+msgid "Dismiss"
+msgstr "استبعاد"
+
+msgid "Nothing here."
+msgstr "لا يوجد شيء هنا."
+
+msgid "Names known to ComplyNex (in use by name screening)"
+msgstr "أسماء معروفة لدى ComplyNex (مستخدمة في الفحص بالاسم)"
+
+msgid "Ship"
+msgstr "السفينة"
+
+msgid "former name"
+msgstr "اسم سابق"
+
+msgid "No name recorded yet."
+msgstr "لم يُسجل أي اسم بعد."
+
+msgid "Port-state-control records"
+msgstr "سجلات رقابة دولة الميناء"
+
+msgid "ComplyNex intelligence: names not yet on the lists"
+msgstr "معلومات ComplyNex: أسماء لم تُدرج في القوائم بعد"
+
+msgid "Other names known for this ship (not yet on the official lists)"
+msgstr "أسماء أخرى معروفة لهذه السفينة (لم تُدرج في القوائم الرسمية بعد)"
+
+msgid "Add a name the lists have not published (renamed ship)"
+msgstr "إضافة اسم لم تنشره القوائم (سفينة تغيّر اسمها)"
+
+msgid "Source (registry, AIS, press, regulator notice...) and date seen"
+msgstr "المصدر (سجل السفن، AIS، الصحافة، إشعار جهة رقابية...) وتاريخ الرصد"
+
+msgid "Banned / excluded - not a sanctions listing"
+msgstr "محظورة / مستبعدة - ليست إدراجًا على قائمة عقوبات"
+
+msgid "Next steps"
+msgstr "الخطوات التالية"
+
+msgid "Documents to request"
+msgstr "المستندات المطلوبة"
+
+msgid "listed ship(s)"
+msgstr "سفينة (سفن) مدرجة"
+
+msgid "listed owner(s) / operator(s)"
+msgstr "مالك (ملاك) / مشغّل (مشغّلون) مدرجون"
+
+msgid "Screened ship and listed candidates"
+msgstr "السفينة التي تم فحصها والسفن المدرجة المرشحة"
+
+msgid "More candidates below."
+msgstr "مرشحون آخرون أدناه."
+
+msgid "Listed ships with this name and a hull number"
+msgstr "سفن مدرجة بهذا الاسم مع رقم بدن"
+
+msgid "Not alerted: another number is another ship. Ask for the full name and the IMO number."
+msgstr "بدون تنبيه: الرقم المختلف يعني سفينة أخرى. اطلب الاسم الكامل ورقم IMO."
+
+msgid "Listed one-word names close to this one"
+msgstr "أسماء مدرجة من كلمة واحدة قريبة من هذا الاسم"
+
+msgid "Not alerted: a one-word name must be the same word. Check the spelling with the customer."
+msgstr "بدون تنبيه: يجب أن يكون الاسم من كلمة واحدة هو نفس الكلمة. تحقق من الكتابة مع العميل."
+
+msgid "News about this ship"
+msgstr "أخبار عن هذه السفينة"
+
+msgid "No relevant news found."
+msgstr "لم يتم العثور على أخبار ذات صلة."
+
+msgid "News sources are not available now; try again later."
+msgstr "مصادر الأخبار غير متاحة الآن؛ حاول لاحقًا."
+
+msgid "Searching news sources..."
+msgstr "جارٍ البحث في مصادر الأخبار..."
+
+msgid "The same ship on several lists is shown once, with what it is (sanctioned, banned) and under which kind of regime."
+msgstr "تظهر السفينة المدرجة في عدة قوائم مرة واحدة، مع وضعها (خاضعة لعقوبات، محظورة) ونوع نظام العقوبات."
+
+msgid "Vessel list change log"
+msgstr "سجل تغييرات قوائم السفن"
+
+msgid "Each refresh records the ships added, removed and changed since the previous one. The lists themselves, their status and Sync Now are on the list sources page."
+msgstr "كل تحديث يسجل السفن المضافة والمحذوفة والمتغيرة منذ التحديث السابق. القوائم نفسها وحالتها وزر \"مزامنة الآن\" موجودة في صفحة مصادر القوائم."
+
+msgid "Refreshes"
+msgstr "التحديثات"
+
+msgid "Removed"
+msgstr "محذوفة"
+
+msgid "Changed"
+msgstr "متغيرة"
+
+msgid "No refresh yet."
+msgstr "لا يوجد تحديث بعد."
+
+msgid "What changed"
+msgstr "ما الذي تغيّر"
+
+msgid "No change in this refresh."
+msgstr "لا تغيير في هذا التحديث."
+
+msgid "Sanctions lists"
+msgstr "قوائم العقوبات"
+
+msgid "Vessel lists"
+msgstr "قوائم السفن"
+
+msgid "Give the name and where it comes from (source note)."
+msgstr "أدخل الاسم ومصدره (ملاحظة المصدر)."
+
+msgid "Name recorded: name screening finds the ship under it from now on."
+msgstr "تم تسجيل الاسم: سيجد الفحص بالاسم السفينة به من الآن."
+
+msgid "This name is already recorded for the ship."
+msgstr "هذا الاسم مسجل بالفعل للسفينة."
+
+msgid "Give the reason."
+msgstr "أدخل السبب."
+
+msgid "Name removed."
+msgstr "تم حذف الاسم."
+
+msgid "Give the source that confirms the name."
+msgstr "أدخل المصدر الذي يؤكد الاسم."
+
+msgid "Unknown vessel list."
+msgstr "قائمة سفن غير معروفة."
+
+msgid "Downloading the list..."
+msgstr "جارٍ تنزيل القائمة..."
+
+msgid "Done: %(a)s added, %(u)s updated; %(v)s ships."
+msgstr "تم: أضيف %(a)s، وحُدّث %(u)s؛ %(v)s سفينة."
+
+msgid "Rebuilding the ship tables..."
+msgstr "جارٍ إعادة بناء جداول السفن..."
+
+msgid "Sync started..."
+msgstr "بدأت المزامنة..."

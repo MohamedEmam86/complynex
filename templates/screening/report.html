@@ -204,7 +204,7 @@
                     {% elif match.source == 'open_sanctions_pep_eg' %}Egypt PEP - OpenSanctions
                     {% elif match.source == 'wikidata_pep_eg' %}Egypt PEP - Wikidata
                     {% else %}{{ match.source_name or match.dataset or match.source }}{% endif %}
-                    | {{ match.list_type }}</span>
+                    | {{ match.category if match.list_category_code else match.list_type }}</span>
             </div>
             {# P4-2 / P4-3 / G9 #}
             {% set _w = match.workflow %}

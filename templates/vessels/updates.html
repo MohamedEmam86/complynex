@@ -1,36 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Vessel list updates') }}{% endblock %}
+{% block title %}{{ _('Vessel list change log') }}{% endblock %}
 {% block content %}
 <div class="container-fluid mt-4 px-lg-5">
-  {% with title=_('Vessel list updates'), active='updates' %}{% include 'vessels/_nav.html' %}{% endwith %}
-  <div class="alert alert-info small">{{ _('The vessel lists are updated automatically with the sanctions lists (daily schedule). Each refresh records the ships added, removed and changed since the previous one.') }}</div>
+  {% with title=_('Vessel list change log'), active='updates' %}{% include 'vessels/_nav.html' %}{% endwith %}
 
-  <div class="card border-0 shadow-sm mb-3"><div class="card-body">
-    <h6 class="fw-bold">{{ _('Lists with ships') }}</h6>
-    <div class="table-responsive"><table class="table table-sm small align-middle mb-0">
-      <thead class="table-light"><tr><th>{{ _('List') }}</th><th>{{ _('Last update') }}</th><th>{{ _('Active ship records') }}</th><th>{{ _('Sanctioned') }}</th><th>{{ _('Banned / excluded') }}</th><th>{{ _('Risk record only') }}</th><th>{{ _('Schedule') }}</th></tr></thead>
-      <tbody>{% for s in sources %}<tr>
-        <td>{% if is_superadmin %}{{ s.source }}{% else %}{{ _('List') }} {{ loop.index }}{% endif %}{% if s.error and is_superadmin %}<div class="text-danger">{{ s.error[:120] }}</div>{% endif %}</td>
-        <td>{{ (s.last_update|string)[:16] if s.last_update else '-' }}</td><td>{{ s.active }}</td><td>{{ s.sanction }}</td><td>{{ s.ban }}</td><td>{{ s.risk_only }}</td>
-        <td>{% if s.every_hours %}{{ _('every') }} {{ s.every_hours }} h{% else %}{{ _('daily') }}{% endif %}</td></tr>{% endfor %}</tbody>
-    </table></div>
-    {% if is_superadmin %}
-    <div class="d-flex flex-wrap gap-2 mt-3">
-      <form method="post" action="{{ url_for('vessels.updates_check') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-cloud-arrow-down me-1"></i>{{ _('Check for updates now') }}</button></form>
-      <form method="post" action="{{ url_for('vessels.updates_rebuild') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="bi bi-arrow-repeat me-1"></i>{{ _('Rebuild the vessel tables (no download)') }}</button></form>
-    </div>
-    <form method="post" action="{{ url_for('vessels.updates_upload') }}" enctype="multipart/form-data" class="row g-2 align-items-end mt-2 small">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="col-md-3"><label class="form-label mb-0" for="uf">{{ _('Vessel list file (CSV, Excel or the page saved as HTML)') }}</label><input class="form-control form-control-sm" type="file" id="uf" name="file" accept=".csv,.xlsx,.html,.htm" required></div>
-      <div class="col-md-2"><label class="form-label mb-0" for="us">{{ _('List code (ends with _vessels)') }}</label><input class="form-control form-control-sm" id="us" name="source" pattern="[a-z][a-z0-9_]{2,40}_vessels" required></div>
-      <div class="col-md-3"><label class="form-label mb-0" for="ul">{{ _('List name') }}</label><input class="form-control form-control-sm" id="ul" name="label"></div>
-      <div class="col-md-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="apply" value="1" id="ua"><label class="form-check-label" for="ua">{{ _('Apply (else dry run)') }}</label></div></div>
-      <div class="col-md-2"><button class="btn btn-outline-primary btn-sm w-100" type="submit"><i class="bi bi-upload me-1"></i>{{ _('Upload') }}</button></div>
-    </form>
-    {% endif %}
-  </div></div>
+  {% with st=status %}{% include 'vessels/_status_line.html' %}{% endwith %}
+  <div class="alert alert-light border small d-flex justify-content-between align-items-center">
+    <span>{{ _('Each refresh records the ships added, removed and changed since the previous one. The lists themselves, their status and Sync Now are on the list sources page.') }}</span>
+    {% if current_user.is_admin() or current_user.is_compliance_officer() %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('screening.data_sources', tab='vessels') }}"><i class="bi bi-cloud-arrow-down me-1"></i>{{ _('Sync & list sources') }}</a>{% endif %}
+  </div>
 
   <div class="row g-3">
     <div class="col-lg-4"><div class="card border-0 shadow-sm"><div class="card-body small">

@@ -69,6 +69,12 @@ ENDPOINT_RULES.update({
     'vessels.updates_check': ('role', ('superadmin',)),
     'vessels.updates_rebuild': ('role', ('superadmin',)),
     'vessels.updates_upload': ('role', ('superadmin',)),
+    'vessels.sync_source': ('role', ('superadmin',)),
+    # names known for a listed ship before the lists publish them, and the queue of names seen in screenings
+    'vessels.names': ('role', ('superadmin',)),
+    'vessels.names_decide': ('role', ('superadmin',)),
+    'vessels.known_name_add': ('role', ('superadmin',)),
+    'vessels.known_name_revoke': ('role', ('superadmin',)),
 })
 
 
@@ -165,7 +171,8 @@ register_module(Module(
           perms=[('vessels', 'view')], requires=('vessels.view',)),
         F('vessels.lists', 'List update status, checks & uploads (platform superadmin)',
           'حالة تحديث القوائم والفحص والرفع (المسؤول الأعلى للمنصة)',
-          ['vessels.updates_check', 'vessels.updates_rebuild', 'vessels.updates_upload'],
+          ['vessels.updates_check', 'vessels.updates_rebuild', 'vessels.updates_upload', 'vessels.sync_source',
+           'vessels.names', 'vessels.names_decide', 'vessels.known_name_add', 'vessels.known_name_revoke'],
           legacy=('role', ('superadmin',)), perms=[], kind='admin', platform=True),
         F('vessels.updates', 'List update status & change log', 'حالة تحديث القوائم وسجل التغييرات', ['vessels.updates'],
           legacy=('any', [('role', ('superadmin',)), ('col', 'perm_vessels_db', ('view', 'use', 'edit', 'admin'))]),

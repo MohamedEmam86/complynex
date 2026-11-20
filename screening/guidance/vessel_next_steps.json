@@ -1,86 +1,227 @@
 {
   "_about": "Next steps shown to the officer on a vessel screening result. Data, not code: edit the texts here (English and Arabic); screening/vessel_guidance.py picks the situations that apply. Version: 2026-11-19. TODO(compliance-review): wording to be confirmed by the compliance owner.",
-  "version": "2026-11-19",
+  "version": "2026-11-20",
   "situations": {
     "confirmed": {
-      "title": {"en": "The ship is a listed sanctioned vessel", "ar": "السفينة مدرجة على قوائم العقوبات"},
+      "title": {
+        "en": "The ship is a listed sanctioned vessel",
+        "ar": "السفينة مدرجة على قوائم العقوبات"
+      },
       "steps": [
-        {"en": "Do not proceed with the transaction, service or port call linked to this ship until the compliance decision is taken.", "ar": "لا تستكمل المعاملة أو الخدمة أو أي تعامل مرتبط بهذه السفينة حتى يصدر قرار الامتثال."},
-        {"en": "Escalate to the MLRO / compliance officer with this report attached.", "ar": "صعّد الأمر إلى مسؤول الإبلاغ عن غسل الأموال / مسؤول الامتثال مع إرفاق هذا التقرير."},
-        {"en": "Check which parties are involved (owner, manager, charterer, cargo owner, consignee) and screen each of them.", "ar": "حدد الأطراف المعنية (المالك، المدير، المستأجر، مالك الشحنة، المرسل إليه) وافحص كل طرف."},
-        {"en": "Any freezing, rejection or report to the authorities is decided and done outside ComplyNex, under your procedures and the applicable law.", "ar": "أي تجميد أو رفض أو إبلاغ للجهات المختصة يتم تقريره وتنفيذه خارج ComplyNex وفق إجراءاتكم والقانون المطبق."}
+        {
+          "en": "Do not proceed with the transaction, service or port call linked to this ship until the compliance decision is taken.",
+          "ar": "لا تستكمل المعاملة أو الخدمة أو أي تعامل مرتبط بهذه السفينة حتى يصدر قرار الامتثال."
+        },
+        {
+          "en": "Escalate to the MLRO / compliance officer with this report attached.",
+          "ar": "صعّد الأمر إلى مسؤول الإبلاغ عن غسل الأموال / مسؤول الامتثال مع إرفاق هذا التقرير."
+        },
+        {
+          "en": "Check which parties are involved (owner, manager, charterer, cargo owner, consignee) and screen each of them.",
+          "ar": "حدد الأطراف المعنية (المالك، المدير، المستأجر، مالك الشحنة، المرسل إليه) وافحص كل طرف."
+        },
+        {
+          "en": "Any freezing, rejection or report to the authorities is decided and done outside ComplyNex, under your procedures and the applicable law.",
+          "ar": "أي تجميد أو رفض أو إبلاغ للجهات المختصة يتم تقريره وتنفيذه خارج ComplyNex وفق إجراءاتكم والقانون المطبق."
+        }
       ],
       "documents": [
-        {"en": "Certificate of registry (to confirm the IMO number and the registered owner)", "ar": "شهادة تسجيل السفينة (لتأكيد رقم IMO والمالك المسجل)"},
-        {"en": "Contract / charter party and bill of lading of the transaction", "ar": "العقد أو مشارطة الإيجار وبوليصة الشحن الخاصة بالمعاملة"}
+        {
+          "en": "Certificate of registry (to confirm the IMO number and the registered owner)",
+          "ar": "شهادة تسجيل السفينة (لتأكيد رقم IMO والمالك المسجل)"
+        },
+        {
+          "en": "Contract / charter party and bill of lading of the transaction",
+          "ar": "العقد أو مشارطة الإيجار وبوليصة الشحن الخاصة بالمعاملة"
+        }
       ]
     },
     "name_only": {
-      "title": {"en": "Name match only: confirm which ship it is", "ar": "تطابق في الاسم فقط: تأكد من هوية السفينة"},
+      "title": {
+        "en": "Name match only: confirm which ship it is",
+        "ar": "تطابق في الاسم فقط: تأكد من هوية السفينة"
+      },
       "steps": [
-        {"en": "Ask for the ship's IMO number (7 digits) and screen again with it: the IMO number identifies a ship for life.", "ar": "اطلب رقم IMO للسفينة (7 أرقام) وأعد الفحص به: رقم IMO يعرّف السفينة طوال عمرها."},
-        {"en": "Compare flag, ship type, year built and gross tonnage with the listed ship(s) shown side by side.", "ar": "قارن العلم ونوع السفينة وسنة البناء والحمولة الإجمالية مع السفن المدرجة المعروضة جنبًا إلى جنب."},
-        {"en": "Compare the registered owner and the manager with the owners of the listed ship.", "ar": "قارن المالك المسجل والمدير مع ملاك السفينة المدرجة."},
-        {"en": "If the IMO number is the listed ship's, record a true match; if it is another ship's, record a false match with the IMO as the reason.", "ar": "إذا كان رقم IMO هو رقم السفينة المدرجة فسجّل تطابقًا صحيحًا، وإذا كان لسفينة أخرى فسجّل تطابقًا خاطئًا واذكر رقم IMO كسبب."}
+        {
+          "en": "Ask for the ship's IMO number (7 digits) and screen again with it: the IMO number identifies a ship for life.",
+          "ar": "اطلب رقم IMO للسفينة (7 أرقام) وأعد الفحص به: رقم IMO يعرّف السفينة طوال عمرها."
+        },
+        {
+          "en": "Compare flag, ship type, year built and gross tonnage with the listed ship(s) shown side by side.",
+          "ar": "قارن العلم ونوع السفينة وسنة البناء والحمولة الإجمالية مع السفن المدرجة المعروضة جنبًا إلى جنب."
+        },
+        {
+          "en": "Compare the registered owner and the manager with the owners of the listed ship.",
+          "ar": "قارن المالك المسجل والمدير مع ملاك السفينة المدرجة."
+        },
+        {
+          "en": "If the IMO number is the listed ship's, record a true match; if it is another ship's, record a false match with the IMO as the reason.",
+          "ar": "إذا كان رقم IMO هو رقم السفينة المدرجة فسجّل تطابقًا صحيحًا، وإذا كان لسفينة أخرى فسجّل تطابقًا خاطئًا واذكر رقم IMO كسبب."
+        }
       ],
       "documents": [
-        {"en": "Certificate of registry or class certificate showing the IMO number", "ar": "شهادة التسجيل أو شهادة التصنيف موضحًا بها رقم IMO"},
-        {"en": "Ship particulars sheet (for tankers: the Q88 questionnaire)", "ar": "بيان مواصفات السفينة (للناقلات: استبيان Q88)"}
+        {
+          "en": "Certificate of registry or class certificate showing the IMO number",
+          "ar": "شهادة التسجيل أو شهادة التصنيف موضحًا بها رقم IMO"
+        },
+        {
+          "en": "Ship particulars sheet (for tankers: the Q88 questionnaire)",
+          "ar": "بيان مواصفات السفينة (للناقلات: استبيان Q88)"
+        }
       ]
     },
     "several_ships": {
-      "title": {"en": "Several listed ships carry this name", "ar": "عدة سفن مدرجة تحمل هذا الاسم"},
+      "title": {
+        "en": "Several listed ships carry this name",
+        "ar": "عدة سفن مدرجة تحمل هذا الاسم"
+      },
       "steps": [
-        {"en": "Use the comparison table: the IMO number, flag, type and year built tell the ships apart.", "ar": "استخدم جدول المقارنة: رقم IMO والعلم والنوع وسنة البناء تميز بين السفن."},
-        {"en": "Validate each listed ship separately; a ship that is clearly different is a false match with the facts as the reason.", "ar": "اعتمد كل سفينة مدرجة على حدة؛ والسفينة المختلفة بوضوح تطابق خاطئ مع ذكر البيانات كسبب."}
+        {
+          "en": "Use the comparison table: the IMO number, flag, type and year built tell the ships apart.",
+          "ar": "استخدم جدول المقارنة: رقم IMO والعلم والنوع وسنة البناء تميز بين السفن."
+        },
+        {
+          "en": "Validate each listed ship separately; a ship that is clearly different is a false match with the facts as the reason.",
+          "ar": "اعتمد كل سفينة مدرجة على حدة؛ والسفينة المختلفة بوضوح تطابق خاطئ مع ذكر البيانات كسبب."
+        }
       ],
       "documents": []
     },
-    "hull_number": {
-      "title": {"en": "The name was given without a hull number", "ar": "تم إدخال الاسم بدون رقم البدن"},
+    "renamed": {
+      "title": {
+        "en": "Listed under another name: possible renaming",
+        "ar": "مدرجة باسم آخر: احتمال تغيير الاسم"
+      },
       "steps": [
-        {"en": "Listed ships of this name carry a number (shown below). Ask for the full name and the IMO number: another number is another ship.", "ar": "السفن المدرجة بهذا الاسم تحمل رقمًا (موضح أدناه). اطلب الاسم الكامل ورقم IMO: الرقم المختلف يعني سفينة أخرى."}
+        {
+          "en": "The IMO / MMSI identifies a listed ship whose listed name differs from the name you entered. A sanctioned ship keeps its IMO number when it is renamed: treat the ship as the listed ship.",
+          "ar": "رقم IMO / MMSI يحدد سفينة مدرجة باسم مختلف عن الاسم الذي أدخلته. السفينة الخاضعة لعقوبات تحتفظ برقم IMO عند تغيير اسمها: تعامل معها على أنها السفينة المدرجة."
+        },
+        {
+          "en": "Ask when and why the ship was renamed, and who owned and managed it before and after.",
+          "ar": "اسأل متى ولماذا تغيّر اسم السفينة، ومن كان يملكها ويديرها قبل التغيير وبعده."
+        },
+        {
+          "en": "Do not proceed until the compliance officer has decided; escalate as for a confirmed match.",
+          "ar": "لا تتابع قبل قرار مسؤول الامتثال؛ صعّد كما في التطابق المؤكد."
+        }
+      ],
+      "documents": [
+        {
+          "en": "Current certificate of registry and the deletion certificate from the previous registry",
+          "ar": "شهادة التسجيل الحالية وشهادة الشطب من السجل السابق"
+        },
+        {
+          "en": "Continuous Synopsis Record (CSR) showing the name, flag and owner history",
+          "ar": "سجل الملخص المستمر (CSR) الذي يبين تاريخ الاسم والعلم والمالك"
+        }
+      ]
+    },
+    "hull_number": {
+      "title": {
+        "en": "The name was given without a hull number",
+        "ar": "تم إدخال الاسم بدون رقم البدن"
+      },
+      "steps": [
+        {
+          "en": "Listed ships of this name carry a number (shown below). Ask for the full name and the IMO number: another number is another ship.",
+          "ar": "السفن المدرجة بهذا الاسم تحمل رقمًا (موضح أدناه). اطلب الاسم الكامل ورقم IMO: الرقم المختلف يعني سفينة أخرى."
+        }
       ],
       "documents": []
     },
     "ban": {
-      "title": {"en": "The ship is banned or excluded (not a sanctions listing)", "ar": "السفينة محظورة أو مستبعدة (ليست إدراجًا على قائمة عقوبات)"},
+      "title": {
+        "en": "The ship is banned or excluded (not a sanctions listing)",
+        "ar": "السفينة محظورة أو مستبعدة (ليست إدراجًا على قائمة عقوبات)"
+      },
       "steps": [
-        {"en": "Check whether the ban concerns your relationship (port calls, financing, insurance, supply chain).", "ar": "تحقق مما إذا كان الحظر يمس تعاملكم (دخول الموانئ، التمويل، التأمين، سلسلة الإمداد)."},
-        {"en": "Apply enhanced due diligence and record the decision with its reason.", "ar": "طبّق العناية الواجبة المعززة وسجّل القرار مع سببه."}
+        {
+          "en": "Check whether the ban concerns your relationship (port calls, financing, insurance, supply chain).",
+          "ar": "تحقق مما إذا كان الحظر يمس تعاملكم (دخول الموانئ، التمويل، التأمين، سلسلة الإمداد)."
+        },
+        {
+          "en": "Apply enhanced due diligence and record the decision with its reason.",
+          "ar": "طبّق العناية الواجبة المعززة وسجّل القرار مع سببه."
+        }
       ],
       "documents": [
-        {"en": "Evidence that the ban was lifted, if the customer claims so", "ar": "ما يثبت رفع الحظر إذا ادعى العميل ذلك"}
+        {
+          "en": "Evidence that the ban was lifted, if the customer claims so",
+          "ar": "ما يثبت رفع الحظر إذا ادعى العميل ذلك"
+        }
       ]
     },
     "owner": {
-      "title": {"en": "The owner / operator matches a listed party", "ar": "المالك أو المشغّل يطابق طرفًا مدرجًا"},
+      "title": {
+        "en": "The owner / operator matches a listed party",
+        "ar": "المالك أو المشغّل يطابق طرفًا مدرجًا"
+      },
       "steps": [
-        {"en": "Confirm the identity of the owner / operator (registration number, address) against the listed party.", "ar": "تأكد من هوية المالك أو المشغّل (رقم القيد، العنوان) مقارنة بالطرف المدرج."},
-        {"en": "Obtain the ownership chain (registered owner, beneficial owner, commercial manager, ISM manager) and assess ownership and control: a ship owned or controlled by a listed party can be subject to the same measures.", "ar": "احصل على سلسلة الملكية (المالك المسجل، المالك المستفيد، المدير التجاري، مدير السلامة ISM) وقيّم الملكية والسيطرة: السفينة المملوكة أو الخاضعة لسيطرة طرف مدرج قد تخضع لنفس الإجراءات."},
-        {"en": "Escalate to the MLRO / compliance officer with the evidence.", "ar": "صعّد الأمر إلى مسؤول الإبلاغ / الامتثال مع الأدلة."}
+        {
+          "en": "Confirm the identity of the owner / operator (registration number, address) against the listed party.",
+          "ar": "تأكد من هوية المالك أو المشغّل (رقم القيد، العنوان) مقارنة بالطرف المدرج."
+        },
+        {
+          "en": "Obtain the ownership chain (registered owner, beneficial owner, commercial manager, ISM manager) and assess ownership and control: a ship owned or controlled by a listed party can be subject to the same measures.",
+          "ar": "احصل على سلسلة الملكية (المالك المسجل، المالك المستفيد، المدير التجاري، مدير السلامة ISM) وقيّم الملكية والسيطرة: السفينة المملوكة أو الخاضعة لسيطرة طرف مدرج قد تخضع لنفس الإجراءات."
+        },
+        {
+          "en": "Escalate to the MLRO / compliance officer with the evidence.",
+          "ar": "صعّد الأمر إلى مسؤول الإبلاغ / الامتثال مع الأدلة."
+        }
       ],
       "documents": [
-        {"en": "Ownership structure chart and register extracts of the owner / manager", "ar": "هيكل الملكية ومستخرجات السجل التجاري للمالك أو المدير"}
+        {
+          "en": "Ownership structure chart and register extracts of the owner / manager",
+          "ar": "هيكل الملكية ومستخرجات السجل التجاري للمالك أو المدير"
+        }
       ]
     },
     "risk": {
-      "title": {"en": "Risk indicators: enhanced due diligence", "ar": "مؤشرات مخاطر: عناية واجبة معززة"},
+      "title": {
+        "en": "Risk indicators: enhanced due diligence",
+        "ar": "مؤشرات مخاطر: عناية واجبة معززة"
+      },
       "steps": [
-        {"en": "Ask for the flag and name history of the ship and the reason of recent changes.", "ar": "اطلب تاريخ أعلام السفينة وأسمائها وسبب التغييرات الأخيرة."},
-        {"en": "Check the ship's recent port calls and voyage records with your maritime data provider (AIS gaps, ship-to-ship transfers).", "ar": "راجع موانئ التوقف الأخيرة وسجل الرحلات لدى مزود البيانات البحرية (انقطاع إشارة AIS، النقل من سفينة إلى أخرى)."},
-        {"en": "Confirm insurance (P&I) and classification with recognised providers.", "ar": "تأكد من التأمين (P&I) وهيئة التصنيف لدى جهات معترف بها."}
+        {
+          "en": "Ask for the flag and name history of the ship and the reason of recent changes.",
+          "ar": "اطلب تاريخ أعلام السفينة وأسمائها وسبب التغييرات الأخيرة."
+        },
+        {
+          "en": "Check the ship's recent port calls and voyage records with your maritime data provider (AIS gaps, ship-to-ship transfers).",
+          "ar": "راجع موانئ التوقف الأخيرة وسجل الرحلات لدى مزود البيانات البحرية (انقطاع إشارة AIS، النقل من سفينة إلى أخرى)."
+        },
+        {
+          "en": "Confirm insurance (P&I) and classification with recognised providers.",
+          "ar": "تأكد من التأمين (P&I) وهيئة التصنيف لدى جهات معترف بها."
+        }
       ],
       "documents": [
-        {"en": "P&I insurance certificate and class certificate", "ar": "شهادة تأمين الحماية والتعويض (P&I) وشهادة التصنيف"},
-        {"en": "Flag and name history (continuous synopsis record)", "ar": "سجل الأعلام والأسماء (سجل الملخص المستمر CSR)"}
+        {
+          "en": "P&I insurance certificate and class certificate",
+          "ar": "شهادة تأمين الحماية والتعويض (P&I) وشهادة التصنيف"
+        },
+        {
+          "en": "Flag and name history (continuous synopsis record)",
+          "ar": "سجل الأعلام والأسماء (سجل الملخص المستمر CSR)"
+        }
       ]
     },
     "clear": {
-      "title": {"en": "No listed ship found", "ar": "لم يتم العثور على سفينة مدرجة"},
+      "title": {
+        "en": "No listed ship found",
+        "ar": "لم يتم العثور على سفينة مدرجة"
+      },
       "steps": [
-        {"en": "Keep the PDF report as evidence of the screening.", "ar": "احتفظ بتقرير PDF كدليل على إجراء الفحص."},
-        {"en": "Screen again with the IMO number when you have it, and whenever the name, flag or owner changes.", "ar": "أعد الفحص برقم IMO عند توفره، وكلما تغير الاسم أو العلم أو المالك."}
+        {
+          "en": "Keep the PDF report as evidence of the screening.",
+          "ar": "احتفظ بتقرير PDF كدليل على إجراء الفحص."
+        },
+        {
+          "en": "Screen again with the IMO number when you have it, and whenever the name, flag or owner changes.",
+          "ar": "أعد الفحص برقم IMO عند توفره، وكلما تغير الاسم أو العلم أو المالك."
+        }
       ],
       "documents": []
     }

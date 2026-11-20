@@ -3,6 +3,7 @@
 {% block content %}
 <div class="container mt-4">
   {% with title=_('Vessel Screening'), active='screen' %}{% include 'vessels/_nav.html' %}{% endwith %}
+  {% with st=status %}{% include 'vessels/_status_line.html' %}{% endwith %}
   <div class="row g-4">
     <div class="col-lg-8">
       <div class="card border-0 shadow-sm"><div class="card-body p-4">

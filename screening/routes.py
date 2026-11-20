@@ -771,7 +771,10 @@ def view_result(id):
         return redirect(url_for('screening.dashboard'))
         
     matches = json.loads(result['matches']) if isinstance(result['matches'], str) else result['matches']
-    
+    # local / internal lists: a generic category instead of the sheet / file / dataset (superadmin: real)
+    from screening.source_mask import mask_matches as _mask_matches
+    matches = _mask_matches(matches)
+
     # Ensure matches are always strictly sorted by match_score descending
     if matches:
         matches = sorted(matches, key=lambda x: x.get('match_score', 0) if isinstance(x, dict) else 0, reverse=True)
@@ -958,6 +961,11 @@ def match_profile(rid):
         pep_rel = _PR.for_record(cur, row) if table == 'screening_watchlist' else []
     finally:
         conn.close()
+    from screening import source_mask as _SM
+    if table != 'screening_watchlist' or _SM.is_local(row):      # local list: no sheet / file / dataset for clients
+        row = _SM.mask_match(dict(row, source=row.get('source') or table))
+        group = _SM.mask_matches(group) if isinstance(group, list) else group
+    rel = _SM.mask_tree(rel) if isinstance(rel, (list, dict)) else rel
     p = pv.build(table, row, rel, labels={k.lower(): v for k, v in rv.SOURCE_LABEL.items()})
     matches = result['matches']
     matches = json.loads(matches) if isinstance(matches, str) else (matches or [])
@@ -1222,7 +1230,8 @@ def config():
 @login_required
 @permission_required('screening', level='view')
 def data_sources():
-    if not current_user.is_admin() and not current_user.is_compliance_officer():
+    if not current_user.is_admin() and not current_user.is_compliance_officer() and \
+            getattr(current_user, 'role', '') != 'superadmin':
          flash(gettext('Access denied'), 'error')
          return redirect(url_for('screening.dashboard'))
          
@@ -1268,10 +1277,21 @@ def data_sources():
     except Exception:
         watchlist_count = 0
     
-    return render_template('screening/sources.html', 
+    # the vessel lists (vessel screening): their own tab, same look; actions for the platform superadmin only
+    vessel_panel = None
+    try:
+        from database.db import get_db
+        from screening.vessel_routes import vessel_sources_panel
+        vessel_panel = vessel_sources_panel(get_db())
+    except Exception as e:
+        logger.warning(f'vessel lists panel unavailable: {e}')
+    return render_template('screening/sources.html',
                          data_sources=sources,
                          recent_audits=recent_audits,
-                         watchlist_count=watchlist_count)
+                         watchlist_count=watchlist_count,
+                         vessel_panel=vessel_panel,
+                         tab=request.args.get('tab') or 'lists',
+                         is_superadmin=getattr(current_user, 'role', '') == 'superadmin')
 
 @screening_bp.route('/whitelist', methods=['GET', 'POST'])
 @login_required
@@ -2156,6 +2176,8 @@ def download_report(id):
         return redirect(url_for('screening.dashboard'))
         
     matches = json.loads(result['matches']) if isinstance(result['matches'], str) else result['matches']
+    from screening.source_mask import mask_matches as _mask_matches
+    matches = _mask_matches(matches)
     if matches:
         matches = sorted(matches, key=lambda x: x.get('match_score', 0) if isinstance(x, dict) else 0, reverse=True)
 
@@ -4364,7 +4386,9 @@ def screening_history_detail(id):
                 matches = data
         except (json.JSONDecodeError, TypeError):
             pass
-    
+    from screening.source_mask import mask_matches as _mask_matches
+    matches = _mask_matches(matches)            # local lists: generic category (superadmin: the real source)
+
     return render_template('screening/screening_history_detail.html',
         record=record, matches=matches, adverse_media=adverse_media)
 
@@ -5191,6 +5215,8 @@ def confirmed_matches():
                         FROM confirmed_matches c
                         LEFT JOIN users u ON u.id = c.confirmed_by
                         {clause} ORDER BY {order} LIMIT 500""", tuple(params))
+    from screening.source_mask import mask_matches as _mask_matches
+    rows = _mask_matches([dict(r) for r in rows])     # local lists: generic category (superadmin: the real one)
 
     return render_template('screening/confirmed_matches.html',
                            rows=rows, sort=sort_key, dir=sort_dir,
@@ -5257,7 +5283,7 @@ def quality():
     return render_template('screening/quality.html', fresh=fresh, internal=qs.internal_lists(),
                            coverage=qs.index_coverage(fresh), runs=runs, latest=latest,
                            misses=misses, false_alerts=false_alerts, targets=qs.TARGETS,
-                           delta=qs.delta_overview())
+                           delta=__import__('screening.source_mask', fromlist=['m']).mask_tree(qs.delta_overview()))
 
 
 @screening_bp.route('/quality/delta/run', methods=['POST'])
@@ -6172,3 +6198,6 @@ def drift_report_run():
 
 _DRIFT_RUNNING = {}   # month -> True while a build-now runs in this worker
 # ==== end P5-5 ==================================================================================
+
+# Local negative-lists workbook import (superadmin page): routes live in screening/local_lists/routes.py
+from screening.local_lists import routes as _local_lists_routes  # noqa: E402,F401

@@ -615,8 +615,144 @@ def load_candidates(conn, force=False):
             'risk_datasets': _j(row.get('risk_datasets'), []) or [],
             'regimes': _j(row.get('regimes'), []) or [],
         })
+    add_known_names(out, known_names(conn))
     _CACHE[key] = (now, out)
     return out
+
+
+# --------------------------------------------------------------------------- names known before the lists
+def known_names(conn, group_key=None):
+    """Active names ComplyNex knows for listed ships that the lists have not published yet (a ship renamed
+    after its listing), entered or confirmed by the platform superadmin. [{id, group_key, name, kind, ...}]"""
+    sql = 'SELECT * FROM vessel_known_names WHERE status = %s'
+    params = ['active']
+    if group_key:
+        sql += ' AND group_key = %s'
+        params.append(group_key)
+    return read_rows(conn, sql + ' ORDER BY id', tuple(params)) or []
+
+
+def add_known_names(cands, rows):
+    """Add the known names to every record of their ship (same group), marked as ComplyNex intelligence."""
+    by_group = {}
+    for r in rows or []:
+        by_group.setdefault(r['group_key'], []).append(r)
+    if not by_group:
+        return cands
+    for c in cands:
+        for r in by_group.get(c.get('group_key')) or []:
+            if r['name'] not in c['names']:
+                c['names'] = c['names'] + [r['name']]
+            if r.get('kind') == 'former_name' and r['name'] not in c['previous_names']:
+                c['previous_names'] = c['previous_names'] + [r['name']]
+            c.setdefault('known_names', [])
+            if r['name'] not in c['known_names']:
+                c['known_names'] = c['known_names'] + [r['name']]
+    return cands
+
+
+def add_known_name(conn, group_key, name, source_note, user_id, imo=None, kind='new_name', effective_date=None,
+                   observation_id=None):
+    """Record a name for a listed ship (superadmin). Returns the new row id, or None when it is already known.
+    The caller commits; every worker reloads its ship names on its next screening."""
+    from screening import vessel_utils as VU
+    nm = ' '.join(str(name or '').split())[:200]
+    norm = VU.norm_name(nm)
+    if not nm or not norm or not group_key:
+        return None
+    rows = read_rows(conn, """INSERT INTO vessel_known_names (group_key, imo, name, name_norm, kind, source_note,
+                                                               effective_date, observation_id, created_by)
+                              VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                              ON CONFLICT (group_key, name_norm) WHERE status = 'active' DO NOTHING
+                              RETURNING id""",
+                     (group_key, imo, nm, norm, kind if kind in ('new_name', 'alias', 'former_name') else 'new_name',
+                      str(source_note or '')[:1000], effective_date or None, observation_id, user_id))
+    if not rows:
+        return None
+    bump_version(conn, 'known name added')
+    return rows[0]['id']
+
+
+def revoke_known_name(conn, kid, user_id, reason):
+    rows = read_rows(conn, """UPDATE vessel_known_names SET status = 'revoked', revoked_by = %s, revoked_at = now(),
+                                     revoke_reason = %s WHERE id = %s AND status = 'active' RETURNING group_key, name""",
+                     (user_id, str(reason or '')[:500], kid))
+    if rows:
+        bump_version(conn, 'known name revoked')
+    return (rows or [None])[0]
+
+
+def record_name_observations(conn, res, screening_id=None):
+    """Queue for the superadmin the names entered in a screening that differ from the listed name of a ship the
+    IMO / MMSI / call sign confirmed (possibly a new name the lists have not published). One row per ship and
+    entered name, counted on repeats. Never fails the screening."""
+    from screening import vessel_utils as VU
+    n = 0
+    for h in res.get('hits') or []:
+        d = h.get('entered_name_differs')
+        if not d or not h.get('group_key'):
+            continue
+        norm = VU.norm_name(d.get('entered'))
+        if not norm:
+            continue
+        rows = read_rows(conn, """INSERT INTO vessel_name_observations (group_key, imo, listed_name, entered_name,
+                                                                      entered_norm, identifier, last_screening_id)
+                                  VALUES (%s, %s, %s, %s, %s, %s, %s)
+                                  ON CONFLICT (group_key, entered_norm) DO UPDATE SET seen_count =
+                                    vessel_name_observations.seen_count + 1, last_seen = now(),
+                                    last_screening_id = EXCLUDED.last_screening_id
+                                  RETURNING id""",
+                         (h['group_key'], h.get('imo'), h.get('name'), str(d.get('entered'))[:200], norm,
+                          d.get('identifier') or 'IMO', screening_id))
+        n += bool(rows)
+    return n
+
+
+# --------------------------------------------------------------------------- update status and schedule
+DEFAULT_UPDATE_TIME = '03:30'      # the daily list update (deploy/systemd/complynex-sanctions-update.timer.d)
+
+
+def update_schedule(conn=None):
+    """(hour, minute) of the daily list update: screening_config 'lists_update_time' ('HH:MM'), else 03:30,
+    the time the server's timer runs it."""
+    raw = config_value(conn, 'lists_update_time') if conn is not None else None
+    m = re.match(r'^\s*(\d{1,2}):(\d{2})\s*$', str(raw or DEFAULT_UPDATE_TIME))
+    if not m or int(m.group(1)) > 23 or int(m.group(2)) > 59:
+        m = re.match(r'(\d+):(\d+)', DEFAULT_UPDATE_TIME)
+    return int(m.group(1)), int(m.group(2))
+
+
+def next_update(conn=None, now=None):
+    from datetime import datetime, timedelta
+    now = now or datetime.now()
+    h, mi = update_schedule(conn)
+    nxt = now.replace(hour=h, minute=mi, second=0, microsecond=0)
+    return nxt if nxt > now else nxt + timedelta(days=1)
+
+
+def update_status(conn):
+    """{'last_update', 'last_run', 'next_update', 'stale', 'ships': {class: n}} for the status lines."""
+    from datetime import datetime, timedelta
+    run = (read_rows(conn, """SELECT id, trigger, status, started_at, finished_at, added, removed, changed, message
+                               FROM vessel_update_runs WHERE status = 'done' ORDER BY id DESC LIMIT 1""") or [None])[0]
+    src = (read_rows(conn, """SELECT max(d.last_successful_update) AS at FROM screening_data_sources d
+                               WHERE d.source_name IN (SELECT DISTINCT source FROM vessel_profile)""") or [{}])[0]
+    cands = [x for x in (run and (run.get('finished_at') or run.get('started_at')), src.get('at')) if x]
+    last = None
+    for x in cands:
+        if isinstance(x, str):
+            try:
+                x = datetime.fromisoformat(x[:19])
+            except ValueError:
+                continue
+        x = x.astimezone().replace(tzinfo=None) if getattr(x, 'tzinfo', None) else x
+        last = x if last is None or x > last else last
+    ships = {r['provenance']: r['n'] for r in read_rows(
+        conn, """SELECT p.provenance, count(DISTINCT p.group_key) AS n FROM vessel_profile p
+                  JOIN screening_watchlist w ON w.id = p.watchlist_id WHERE w.is_active = 1
+                  GROUP BY p.provenance""") or []}
+    return {'last_update': last, 'last_run': run, 'next_update': next_update(conn),
+            'stale': last is None or datetime.now() - last > timedelta(hours=48), 'ships': ships}
 
 
 def identifier_hits(conn, kind, value):

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Ship names') }}{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4 px-lg-5">
+  {% with title=_('Ship names'), active='names' %}{% include 'vessels/_nav.html' %}{% endwith %}
+  <div class="alert alert-info small">{{ _('A ship renamed after its listing keeps its IMO number, but the lists may take weeks to publish the new name. Names entered in screenings for a ship its IMO / MMSI confirmed, that the lists do not carry, are queued here. Confirm one (with the source that confirms it) and name screening finds the ship under it at once; it is shown to clients as another known name of the ship.') }}</div>
+
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body small">
+    <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="fw-bold mb-0">{{ _('Names seen in screenings') }}</h6>
+      <div>{% for stt, lbl in [('pending', _('To review')), ('confirmed', _('Confirmed')), ('dismissed', _('Dismissed'))] %}
+        <a class="btn btn-sm {{ 'btn-secondary' if status == stt else 'btn-outline-secondary' }}" href="{{ url_for('vessels.names', status=stt) }}">{{ lbl }} <span class="badge bg-light text-dark">{{ counts.get(stt, 0) }}</span></a>{% endfor %}</div></div>
+    <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+      <thead class="table-light"><tr><th>{{ _('Name entered') }}</th><th>{{ _('Listed name') }}</th><th>{{ _('IMO number') }}</th><th>{{ _('Confirmed by') }}</th><th>{{ _('Seen') }}</th><th>{{ _('Last seen') }}</th><th></th></tr></thead>
+      <tbody>{% for o in obs %}<tr>
+        <td class="fw-semibold">{{ o.entered_name }}</td>
+        <td>{% if o.wid %}<a href="{{ url_for('vessels.profile', wid=o.wid) }}">{{ o.listed_name }}</a>{% else %}{{ o.listed_name }}{% endif %}</td>
+        <td>{{ o.imo or '' }}</td><td>{{ o.identifier }}</td><td>{{ o.seen_count }}</td><td>{{ o.last_seen.strftime('%Y-%m-%d %H:%M') if o.last_seen else '' }}</td>
+        <td>{% if o.status == 'pending' %}
+          <form method="post" action="{{ url_for('vessels.names_decide', oid=o.id) }}" class="d-flex flex-wrap gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input class="form-control form-control-sm" name="note" placeholder="{{ _('Source that confirms the name (to confirm)') }}" style="min-width:16rem">
+            <select class="form-select form-select-sm" name="kind" style="width:auto"><option value="new_name">{{ _('new name') }}</option><option value="alias">{{ _('other name') }}</option></select>
+            <button class="btn btn-sm btn-success" name="action" value="confirm" type="submit">{{ _('Confirm') }}</button>
+            <button class="btn btn-sm btn-outline-secondary" name="action" value="dismiss" type="submit">{{ _('Dismiss') }}</button></form>
+          {% else %}<span class="text-muted">{{ o.note or '' }}</span>{% endif %}</td></tr>
+      {% else %}<tr><td colspan="7" class="text-muted">{{ _('Nothing here.') }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div></div>
+
+  <div class="card border-0 shadow-sm"><div class="card-body small">
+    <h6 class="fw-bold">{{ _('Names known to ComplyNex (in use by name screening)') }}</h6>
+    <table class="table table-sm align-middle mb-0"><thead class="table-light"><tr><th>{{ _('Name') }}</th><th>{{ _('Kind') }}</th><th>{{ _('Ship') }}</th><th>{{ _('Source') }}</th><th>{{ _('By') }}</th><th>{{ _('Date') }}</th><th></th></tr></thead>
+      <tbody>{% for k in known %}<tr><td class="fw-semibold">{{ k.name }}</td><td>{{ {'new_name': _('new name'), 'alias': _('other name'), 'former_name': _('former name')}.get(k.kind, k.kind) }}</td>
+        <td>{% if k.wid %}<a href="{{ url_for('vessels.profile', wid=k.wid) }}">{{ k.imo or k.group_key }}</a>{% else %}{{ k.imo or k.group_key }}{% endif %}</td>
+        <td>{{ k.source_note }}</td><td>{{ k.by_name }}</td><td>{{ k.created_at.strftime('%Y-%m-%d') if k.created_at else '' }}</td>
+        <td><form method="post" action="{{ url_for('vessels.known_name_revoke', kid=k.id) }}" class="d-inline-flex gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input class="form-control form-control-sm" name="reason" placeholder="{{ _('reason') }}" required minlength="5" style="width:9rem"><button class="btn btn-sm btn-outline-danger" type="submit">{{ _('Remove') }}</button></form></td></tr>
+      {% else %}<tr><td colspan="7" class="text-muted">{{ _('No name recorded yet.') }}</td></tr>{% endfor %}</tbody></table>
+  </div></div>
+</div>
+{% endblock %}

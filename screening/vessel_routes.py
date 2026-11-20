@@ -17,6 +17,7 @@ The system alerts and records; it never freezes or blocks anything (actions happ
 import csv
 import io
 import json
+import re
 import logging
 from functools import wraps
 
@@ -227,6 +228,12 @@ def save_screening(conn, res, user_id, kind='single', bulk_id=None, customer_ref
                        (user_id, kind, bulk_id, customer_ref,
                         json.dumps(res['query'], ensure_ascii=False), json.dumps(res, ensure_ascii=False, default=str),
                         res['tier'], len(res['hits']) + len(res['owner_hits']) + len(res.get('ban_hits') or []))).fetchone()
+    try:
+        # a name entered for a ship its identifier confirmed, that the lists do not carry: queued for the
+        # superadmin (possibly a new name the lists have not published yet)
+        VS.record_name_observations(conn, res, row['id'])
+    except Exception as e:
+        logger.warning(f'[VESSELS] name observation not recorded: {e}')
     conn.commit()
     return row['id']
 
@@ -260,7 +267,7 @@ def screen():
         f = request.form
         if not any((f.get(k) or '').strip() for k in ('name', 'imo', 'mmsi', 'call_sign', 'owner')):
             flash(gettext('Enter at least a ship name, IMO number, MMSI, call sign or owner.'), 'warning')
-            return render_template('vessels/screen.html', form=f)
+            return render_template('vessels/screen.html', form=f, status=_status_safe())
         conn = _conn()
         try:
             res = _screen(f, conn)
@@ -271,7 +278,7 @@ def screen():
         _audit('Vessel screened', f"{_query_label(res['query'])} - {res['tier']} "
                                   f"({len(res['hits'])} ship hits, {len(res['owner_hits'])} owner hits)", sid)
         return redirect(url_for('vessels.result', sid=sid))
-    return render_template('vessels/screen.html', form={})
+    return render_template('vessels/screen.html', form={}, status=_status_safe())
 
 
 def _load_screening(sid):
@@ -1033,7 +1040,116 @@ def profile(wid):
             internal.append({'id': r['id'], 'source': r['source'], 'source_id': r['source_id'], 'active': r['is_active'],
                              'programs': props.get('programs') or det.get('program') or props.get('regime'),
                              'remarks': props.get('remarks') or det.get('comments') or det.get('reason')})
-    return render_template('vessels/profile.html', v=v, idents=idents, parties=parties, internal=internal, wid=wid)
+    known = VS.known_names(conn, row['group_key'])
+    return render_template('vessels/profile.html', v=v, idents=idents, parties=parties, internal=internal, wid=wid,
+                           known=known, is_superadmin=is_superadmin(), group_key=row['group_key'])
+
+
+# --------------------------------------------------------------------------- names known before the lists
+def _ship_of(conn, wid):
+    r = conn.execute("""SELECT p.group_key, p.imo, w.full_name FROM screening_watchlist w
+                         JOIN vessel_profile p ON p.watchlist_id = w.id WHERE w.id = %s""", (wid,)).fetchone()
+    if not r:
+        abort(404)
+    return r
+
+
+@vessels_bp.route('/database/<int:wid>/names', methods=['POST'])
+@login_required
+def known_name_add(wid):
+    """Superadmin: record a name of this ship that the lists have not published yet (renamed after its listing,
+    or another name it trades under), with where it comes from. Used by name screening at once."""
+    _superadmin_only()
+    conn = _conn()
+    ship = _ship_of(conn, wid)
+    name = ' '.join((request.form.get('name') or '').split())
+    note = (request.form.get('source_note') or '').strip()
+    kind = request.form.get('kind') or 'new_name'
+    eff = (request.form.get('effective_date') or '').strip() or None
+    if eff and not re.match(r'^\d{4}-\d{2}-\d{2}$', eff):
+        eff = None
+    if len(name) < 2 or len(note) < 5:
+        flash(gettext('Give the name and where it comes from (source note).'), 'warning')
+        return redirect(url_for('vessels.profile', wid=wid))
+    kid = VS.add_known_name(conn, ship['group_key'], name, note, current_user.id, imo=ship['imo'], kind=kind,
+                            effective_date=eff)
+    conn.commit()
+    if kid:
+        _audit('Vessel known name added', f"{ship['full_name']} ({ship['group_key']}): {kind} '{name}' - {note[:300]}", wid)
+        flash(gettext('Name recorded: name screening finds the ship under it from now on.'), 'success')
+    else:
+        flash(gettext('This name is already recorded for the ship.'), 'info')
+    return redirect(url_for('vessels.profile', wid=wid))
+
+
+@vessels_bp.route('/names/<int:kid>/revoke', methods=['POST'])
+@login_required
+def known_name_revoke(kid):
+    _superadmin_only()
+    conn = _conn()
+    reason = (request.form.get('reason') or '').strip()
+    if len(reason) < 5:
+        flash(gettext('Give the reason.'), 'warning')
+        return redirect(request.referrer or url_for('vessels.names'))
+    r = VS.revoke_known_name(conn, kid, current_user.id, reason)
+    conn.commit()
+    if r:
+        _audit('Vessel known name revoked', f"{r['group_key']}: '{r['name']}' - {reason[:300]}", kid)
+        flash(gettext('Name removed.'), 'success')
+    return redirect(request.referrer or url_for('vessels.names'))
+
+
+@vessels_bp.route('/names')
+@login_required
+def names():
+    """Superadmin: names entered in screenings for ships their IMO / MMSI confirmed, that the lists do not
+    carry (possibly new names), to confirm as known names or dismiss; and every known name."""
+    _superadmin_only()
+    conn = _conn()
+    status = request.args.get('status') or 'pending'
+    if status not in ('pending', 'confirmed', 'dismissed'):
+        status = 'pending'
+    obs = conn.execute("""SELECT o.*, (SELECT min(p.watchlist_id) FROM vessel_profile p WHERE p.group_key = o.group_key) AS wid
+                           FROM vessel_name_observations o WHERE o.status = %s
+                           ORDER BY o.last_seen DESC LIMIT 300""", (status,)).fetchall()
+    known = conn.execute("""SELECT k.*, (SELECT min(p.watchlist_id) FROM vessel_profile p WHERE p.group_key = k.group_key) AS wid,
+                                    TRIM(COALESCE(u.first_name,'') || ' ' || COALESCE(u.last_name,'')) AS by_name
+                             FROM vessel_known_names k LEFT JOIN users u ON u.id = k.created_by
+                             WHERE k.status = 'active' ORDER BY k.id DESC LIMIT 300""").fetchall()
+    counts = {r['status']: r['n'] for r in conn.execute(
+        'SELECT status, count(*) AS n FROM vessel_name_observations GROUP BY status').fetchall()}
+    return render_template('vessels/names.html', obs=obs, known=known, status=status, counts=counts)
+
+
+@vessels_bp.route('/names/observations/<int:oid>', methods=['POST'])
+@login_required
+def names_decide(oid):
+    """Superadmin: confirm a queued name as a known name of the ship (with a source note), or dismiss it."""
+    _superadmin_only()
+    conn = _conn()
+    o = conn.execute('SELECT * FROM vessel_name_observations WHERE id = %s', (oid,)).fetchone()
+    if not o:
+        abort(404)
+    action = request.form.get('action')
+    note = (request.form.get('note') or '').strip()
+    if action == 'confirm':
+        if len(note) < 5:
+            flash(gettext('Give the source that confirms the name.'), 'warning')
+            return redirect(url_for('vessels.names'))
+        VS.add_known_name(conn, o['group_key'], o['entered_name'], note, current_user.id, imo=o['imo'],
+                          kind=request.form.get('kind') or 'new_name', observation_id=oid)
+        new = 'confirmed'
+    elif action == 'dismiss':
+        new = 'dismissed'
+    else:
+        abort(400)
+    conn.execute("""UPDATE vessel_name_observations SET status = %s, decided_by = %s, decided_at = now(), note = %s
+                    WHERE id = %s""", (new, current_user.id, note[:1000] or None, oid))
+    conn.commit()
+    _audit('Vessel name observation ' + new, f"{o['group_key']}: '{o['entered_name']}' (listed '{o['listed_name']}')"
+                                            f" - {note[:300]}", oid)
+    flash(gettext('Saved.'), 'success')
+    return redirect(url_for('vessels.names'))
 
 
 # --------------------------------------------------------------------------- flag risk reference
@@ -1137,7 +1253,93 @@ def updates():
     sources = _vessel_sources(conn)
     _audit('Vessel list updates viewed', f'run {run_id}')
     return render_template('vessels/updates.html', runs=runs, run_id=run_id, changes=items, change=change,
-                           sources=sources, is_superadmin=getattr(current_user, 'role', '') == 'superadmin')
+                           sources=sources, is_superadmin=getattr(current_user, 'role', '') == 'superadmin',
+                           status=_status_safe())
+
+
+def _status_safe():
+    """The vessel lists' update status for the page headers (never breaks a page)."""
+    try:
+        return VS.update_status(_conn())
+    except Exception as e:
+        logger.warning(f'[VESSELS] update status unavailable: {e}')
+        return None
+
+
+def _back():
+    """Where the list actions return: the vessel tab of the list sources page when they came from it."""
+    if request.form.get('back') == 'sources':
+        return url_for('screening.data_sources', tab='vessels')
+    return url_for('vessels.updates')
+
+
+def vessel_sources_panel(conn):
+    """Everything the 'Vessel lists' tab of the list sources page shows: per list its last update, ships by
+    class, the last refresh of its ships (added / removed / changed) and, for the superadmin, its actions."""
+    sources = _vessel_sources(conn)
+    last = {}
+    for r in conn.execute("""SELECT DISTINCT ON (source) source, id, started_at, added, removed, changed, status, trigger
+                              FROM vessel_update_runs WHERE source IS NOT NULL ORDER BY source, id DESC""").fetchall():
+        last[r['source']] = r
+    any_run = conn.execute("""SELECT id, started_at, added, removed, changed, status, trigger FROM vessel_update_runs
+                               WHERE source IS NULL ORDER BY id DESC LIMIT 1""").fetchone()
+    for s_ in sources:
+        s_['last_run'] = last.get(s_['source'])
+    return {'sources': sources, 'all_run': any_run, 'status': VS.update_status(conn)}
+
+
+@vessels_bp.route('/updates/sync-source', methods=['POST'])
+@login_required
+def sync_source():
+    """Superadmin, 'Sync Now' of one vessel list (the list sources page): download and apply that list in the
+    background (its ships are refreshed and logged with it); a list loaded by file upload has nothing to
+    download, so its ship tables are rebuilt. JSON {success, task_id} polled through /screening/api/task_status."""
+    _superadmin_only()
+    import threading
+    import uuid
+    from config import get_config
+    from flask import jsonify
+    data = request.get_json(silent=True) or {}
+    source = str(data.get('source') or request.form.get('source') or '').strip()
+    conn = _conn()
+    src = next((x for x in _vessel_sources(conn) if x['source'] == source), None)
+    if not src:
+        return jsonify({'success': False, 'error': gettext('Unknown vessel list.')}), 404
+    db_config = dict(get_config().POSTGRES_CONFIG)
+    uid = current_user.id
+    tid = str(uuid.uuid4())
+    from screening.routes import update_task_status
+
+    def run():
+        try:
+            if src.get('source_id') and not source.endswith('_vessels'):
+                update_task_status(tid, 'processing', gettext('Downloading the list...'), 5, 100)
+                from screening.data_updater_enhanced import EnhancedDataUpdater
+                u = EnhancedDataUpdater(db_config, task_id=tid)
+                u.version_trigger = 'manual'
+                res = u.update_watchlist(source_id=src['source_id'], user_id=uid)
+                msg = gettext('Done: %(a)s added, %(u)s updated; %(v)s ships.', a=res.get('added', 0),
+                              u=res.get('updated', 0), v=res.get('vessels') if res.get('vessels') is not None else '-')
+            else:
+                update_task_status(tid, 'processing', gettext('Rebuilding the ship tables...'), 20, 100)
+                from screening import list_versions as LV
+                c = LV.connect()
+                try:
+                    out = VS.sync(c, source, trigger='manual', user_id=uid)
+                finally:
+                    c.close()
+                res = {k: out.get(k) for k in ('vessels', 'added', 'removed', 'changed')}
+                msg = gettext('Vessel tables rebuilt: %(n)s ships, %(a)s added, %(r)s removed, %(c)s changed.',
+                              n=out['vessels'], a=out['added'], r=out['removed'], c=out['changed'])
+            update_task_status(tid, 'completed', msg, 100, 100, result=res)
+        except Exception as e:
+            logger.error(f'[VESSELS] sync of {source} failed: {e}')
+            update_task_status(tid, 'failed', str(e)[:300])
+
+    from flask import copy_current_request_context
+    threading.Thread(target=copy_current_request_context(run), daemon=True).start()
+    _audit('Vessel list sync started', source)
+    return jsonify({'success': True, 'task_id': tid, 'message': gettext('Sync started...')})
 
 
 @vessels_bp.route('/updates/check', methods=['POST'])
@@ -1166,7 +1368,7 @@ def updates_check():
     _audit('Vessel lists update started', f'{len(ids)} lists')
     flash(gettext('The update of the vessel lists has started in the background. Refresh this page in a few minutes.'),
           'success')
-    return redirect(url_for('vessels.updates'))
+    return redirect(_back())
 
 
 @vessels_bp.route('/updates/rebuild', methods=['POST'])
@@ -1183,6 +1385,8 @@ def updates_rebuild():
     _audit('Vessel tables rebuilt', json.dumps({k: out.get(k) for k in ('vessels', 'added', 'removed', 'changed')}))
     flash(gettext('Vessel tables rebuilt: %(n)s ships, %(a)s added, %(r)s removed, %(c)s changed.', n=out['vessels'],
                   a=out['added'], r=out['removed'], c=out['changed']), 'success')
+    if request.form.get('back') == 'sources':
+        return redirect(_back())
     return redirect(url_for('vessels.updates', run=out.get('run_id')))
 
 
@@ -1200,13 +1404,13 @@ def updates_upload():
     apply = request.form.get('apply') == '1'
     if not fs or not fs.filename:
         flash(gettext('Choose a file.'), 'warning')
-        return redirect(url_for('vessels.updates'))
+        return redirect(_back())
     name = fs.filename.lower()
     suffix = '.xlsx' if name.endswith('.xlsx') else '.html' if name.endswith(('.html', '.htm')) else '.csv'
     raw = fs.stream.read(BULK_MAX_BYTES + 1)
     if len(raw) > BULK_MAX_BYTES:
         flash(gettext('The file is too large.'), 'warning')
-        return redirect(url_for('vessels.updates'))
+        return redirect(_back())
     fd, path = tempfile.mkstemp(suffix=suffix)
     with os.fdopen(fd, 'wb') as f:
         f.write(raw)
@@ -1236,4 +1440,4 @@ def updates_upload():
             os.remove(path)
         except OSError:
             pass
-    return redirect(url_for('vessels.updates'))
+    return redirect(_back())

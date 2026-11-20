@@ -40,7 +40,7 @@
         <tr class="{{ '' if r.active else 'text-muted' }}">
           <td><a href="{{ url_for('admin.edit_user', id=r.id) }}">{{ r.name }}</a><div class="small text-muted">{{ r.email }}</div></td>
           <td><span class="badge bg-{{ 'danger' if r.role == 'admin' else ('info' if r.role in ('compliance_officer','compliance_manager') else 'secondary') }}">{{ r.role }}</span></td>
-          <td>{{ r.cms_access_level or '—' }}</td>
+          <td>{{ level_label(r.cms_access_level) if r.cms_access_level else '—' }}</td>
           <td class="small">
             {% for k, v in r.perms|dictsort %}<span class="badge bg-light text-dark border me-1">{{ k }}: {{ v }}</span>{% else %}—{% endfor %}
           </td>

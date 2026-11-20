@@ -262,6 +262,13 @@ def _gettable(ep):
     return any('GET' in r.methods for r in current_app.url_map.iter_rules(ep))
 
 
+def _level_label(code):
+    """{{ level_label('edit') }} -> 'View & Edit' / 'عرض وتعديل' (registry.LEVEL_LABELS)."""
+    from flask_babel import get_locale
+    from .registry import level_label
+    return level_label(code, str(get_locale() or 'en'))
+
+
 def install(app):
     if getattr(app, '_cx_access_installed', False):
         return
@@ -269,4 +276,4 @@ def install(app):
     app.before_request(check_request)
     app.jinja_env.filters['cx_nav'] = prune_nav
     app.jinja_env.globals.update(cx_can=cx_can, cx_ok=cx_ok, cx_mode=cx_mode, cx_restricted=cx_restricted,
-                                 cx_modules=cx_modules)
+                                 cx_modules=cx_modules, level_label=_level_label)

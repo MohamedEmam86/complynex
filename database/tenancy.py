@@ -56,7 +56,7 @@ SHARED_TABLES = frozenset({
     # by all tenants. The screenings, decisions, whitelist and bulk jobs (vessel_screenings,
     # vessel_hit_decisions, vessel_whitelist, vessel_bulk_jobs) are tenant-owned (the default class).
     'vessel_profile', 'vessel_identifier', 'vessel_party_link', 'flag_risk', 'vessel_data_version',
-    'vessel_update_runs', 'vessel_change_log', 'vessel_news_cache',
+    'vessel_update_runs', 'vessel_change_log', 'vessel_news_cache', 'vessel_known_names', 'vessel_name_observations',
 })
 # Platform-level tables that belong to no tenant (academy / talent pool of the operator,
 # backups taken by hand, the tenants table itself).

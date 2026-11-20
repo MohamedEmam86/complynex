@@ -37,6 +37,7 @@ from flask_wtf.csrf import validate_csrf, ValidationError as CSRFValidationError
 from api import api_v1_bp
 from api.auth import require_api_key
 from database.db import get_db
+from screening.source_mask import mask_matches
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -110,7 +111,8 @@ def screening_check():
             'query': {'name': name, 'entity_type': entity_type},
             'risk_level': res['screening_result'],
             'hit_count': res['total_matches'],
-            'hits': res['matches'][:50],  # cap response size
+            # cap response size; local lists: generic category, never the sheet / file / dataset
+            'hits': mask_matches(res['matches'][:50], force=True),
         })
     except Exception as e:
         return _err(f'Screening engine error: {e}', 500)

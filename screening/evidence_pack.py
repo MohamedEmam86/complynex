@@ -128,6 +128,8 @@ def build(result_id):
     md = _j(r.get('match_details'), {}) or {}
     inputs = md.get('inputs') or {}
     matches = _j(r.get('matches'), []) or []
+    from screening.source_mask import mask_matches
+    matches = mask_matches(matches)            # local lists: generic category for every user but the superadmin
     matches = sorted([m for m in matches if isinstance(m, dict)],
                      key=lambda m: m.get('match_score') or 0, reverse=True)
 

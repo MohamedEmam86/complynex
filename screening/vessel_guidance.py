@@ -42,6 +42,8 @@ def situations(res):
         out.append('name_only')
     if len(hits) > 1:
         out.append('several_ships')
+    if any(h.get('entered_name_differs') for h in hits + bans):
+        out.append('renamed')
     if res.get('related_hulls') and not hits:
         out.append('hull_number')
     if bans:
