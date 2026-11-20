@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _('Screening drift report') }}{% endblock %}
 {% macro delta(cur, old, unit='', invert=False) -%}
-  {%- if cur is not none and old is not none -%}
+  {%- if cur is number and old is number -%}
     {%- set d = (cur - old)|round(2) -%}
     {%- if d != 0 -%}<small class="ms-1 {{ ('text-danger' if (d > 0) != invert else 'text-success') }}">({{ '%+g'|format(d) }}{{ unit }})</small>{%- endif -%}
   {%- endif -%}

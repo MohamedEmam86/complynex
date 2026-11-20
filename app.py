@@ -174,6 +174,8 @@ def create_app(config_name=None):
     from utils.labels import register_filters as _register_label_filters
     _register_label_filters(app)
     app.jinja_env.add_extension('jinja2.ext.do')
+    # Never print the word 'None' for a missing value in a page (route crawl, Nov 2026)
+    app.jinja_env.finalize = lambda v: '' if v is None else v
     
     # Initialize Flask-Login
     login_manager = LoginManager()
