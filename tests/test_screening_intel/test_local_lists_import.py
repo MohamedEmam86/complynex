@@ -272,7 +272,7 @@ def test_superadmin_page_preview_and_refusal(tmp_path):
     assert r.status_code == 200 and 'Local lists workbook' in r.get_data(as_text=True)
     path = _workbook(str(tmp_path / 'up.xlsx'), BASE_PP)
     with open(path, 'rb') as fh:
-        r = sup.post('/screening/lists/local-import/upload', data={'file': (fh, 'up.xlsx')},
+        r = sup.post('/screening/lists/local-import/upload', data={'file': (fh, 'up.xlsx'), 'add_new_only': '1'},
                      content_type='multipart/form-data')
     assert r.status_code == 302
     token = r.headers['Location'].split('job=')[-1]
@@ -284,7 +284,69 @@ def test_superadmin_page_preview_and_refusal(tmp_path):
     assert job['state'] == 'done' and job['result']['result'] == 'DRY_RUN'
     page = sup.get(f'/screening/lists/local-import?job={token}').get_data(as_text=True)
     assert 'اختبار' not in page                       # counts only: no listed name on the page
-    assert 'Apply' in page
+    assert 'Apply' in page and 'New persons' in page          # add-new-only preview table
     for f in os.listdir(R.LL_DIR):
         if f.startswith(token):
             os.remove(os.path.join(R.LL_DIR, f))
+
+
+# ----------------------------------------------------------------------------- add-new-only mode
+def test_screenable_duplicate_rules():
+    from screening.local_lists.importer import Screenable
+    idx = Screenable()
+    idx.add(['اختبار الف باء'], [NID_A], dob='1990-01-01')
+    idx.add(['اختبار ميم نون'], ['**********9999'])
+    idx.add(['TEST PERSON'], [], ['A1234567'])
+    rec = {'name': 'اختبار الف باء', 'national_id': '', 'listings': []}
+    assert idx.duplicate(dict(rec, national_id=NID_A)) == 'national_id'
+    assert idx.duplicate(rec) == 'name'                                          # same name, nothing conflicts
+    assert idx.duplicate(dict(rec, national_id=NID_B)) is None                   # same name, other person
+    assert idx.duplicate(dict(rec, dob='1991-02-02')) is None                    # same name, other date of birth
+    assert idx.duplicate({'name': 'اختبار ميم نون', 'national_id': NID_C}) is None      # masked digits differ
+    assert idx.duplicate({'name': 'اختبار ميم نون', 'national_id': '9999**********'}) == 'name'
+    assert idx.duplicate({'name': 'x', 'national_id': '', 'passport': 'A1234567'}) == 'passport'
+
+
+@needs_db
+def test_add_new_only_leaves_existing_rows_untouched(tmp_path):
+    import psycopg2
+    from config import Config
+    from screening.local_lists import importer as I
+    conn = psycopg2.connect(**Config.POSTGRES_CONFIG)
+    try:
+        c = conn.cursor()
+        c.execute("SELECT count(*) FROM local_list_records")
+        if c.fetchone()[0]:
+            pytest.skip('the scratch database already holds imported records')
+        c.execute("""INSERT INTO internal_blacklist (full_name, original_name, entity_type, national_id, reason,
+                         category, aliases, source, source_id, is_active) VALUES ('X', 'اختبار تاء ثاء', 'INDIVIDUAL', %s,
+                         'old reason', 'old sheet', '[]', 'INTERNAL_BULK_UPLOAD', 'IBL-TESTLEGACY02', 1) RETURNING id""",
+                  (NID_B,))
+        bid = c.fetchone()[0]
+        c.execute("""INSERT INTO screening_watchlist (full_name, original_name, entity_type, source, source_id,
+                         national_id_numbers, is_active) VALUES
+                         ('اختبار جيم دال', 'اختبار جيم دال', 'PERSON', 'emlcu', 'emlcu_test_1', '["**********4321"]', 1),
+                         ('اختبار جيم حاء', 'اختبار جيم حاء', 'PERSON', 'emlcu', 'emlcu_test_2', '["**********0000"]', 1),
+                         ('TESTONE ALPHA', 'TESTONE ALPHA', 'PERSON', 'un', 'UN-TEST-1', NULL, 1)""")
+        p = W.parse(_workbook(str(tmp_path / 'wb.xlsx'), BASE_PP))
+        base = I.plan(conn, p)
+        pl = I.plan_add_new(conn, p, base)
+        cnt = pl['counts']
+        assert cnt['EG_FREEZE_ORDER']['adopted_linked'] == 1                       # the existing row: linked only
+        assert cnt['EG_FREEZE_ORDER']['skipped_lifted'] == 2                       # lifted records never added
+        assert cnt['EG_FREEZE_ORDER']['new_persons'] == 1                          # C: the EMLCU namesake has other digits
+        assert cnt['EG_TERROR_PERSONS']['dup_name'] == 1                           # already on the EMLCU site list
+        assert cnt['EG_TERROR_ENTITIES']['new_entities'] == 1
+        assert cnt['UN_DPRK']['un_skipped'] == 2 and not pl['blocked']
+        I.apply(conn, p, pl, 'wb.xlsx', 'z' * 64, commit=False)
+        c.execute("SELECT full_name, reason, category, aliases, source FROM internal_blacklist WHERE id = %s", (bid,))
+        assert c.fetchone() == ('X', 'old reason', 'old sheet', '[]', 'INTERNAL_BULK_UPLOAD')
+        c.execute("SELECT count(*) FROM internal_blacklist WHERE source = 'LOCAL_LISTS'")
+        assert c.fetchone()[0] == 2
+        again = I.plan_add_new(conn, p, I.plan(conn, p))
+        assert again['totals']['changes'] == 0                                    # idempotent
+        un = I.plan_add_new(conn, p, I.plan(conn, p), include_un=True)
+        assert un['counts']['UN_DPRK']['dup_name'] == 1 and un['counts']['UN_DPRK']['new_entities'] == 1
+    finally:
+        conn.rollback()
+        conn.close()

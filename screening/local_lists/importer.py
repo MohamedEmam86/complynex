@@ -47,6 +47,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 
@@ -277,6 +278,211 @@ def plan(conn, parsed, allow_shrink=False, allow_unknown=False, shrink_pct=SHRIN
             '_prev_sig': {k: (p['status'], p['content_sha256']) for k, p in prev.items()}}
 
 
+# ----------------------------------------------------------------------------- add-new-only mode
+# The owner's default for an installation whose lists were already loaded: the database is NOT rewritten from
+# the workbook. Existing rows are only linked to their identity (no content change), lifted records are not
+# added, and a record already screenable (internal list, EMLCU site list, UN feed, by national ID, passport,
+# UN reference or the same name with no conflicting ID / date of birth) is not added again.
+DUP_REASONS = ('national_id', 'passport', 'un_reference', 'name', 'in_workbook')
+SCREENABLE_SOURCES = ('emlcu', 'un', 'internal_blacklist')
+ADD_KEYS = ('new_persons', 'new_entities', 'skipped_lifted') + tuple(f'dup_{r}' for r in DUP_REASONS) + \
+    ('adopted_linked', 'un_skipped', 'unchanged', 'tracked_changes_not_applied')
+_REF_KEYS = ('un_reference', 'reference_number', 'reference', 'un_ref', 'ref')
+
+
+def _json_list(v):
+    if isinstance(v, (list, tuple)):
+        return [str(x) for x in v if x not in (None, '')]
+    s = str(v or '').strip()
+    if s.startswith('['):
+        try:
+            return [str(x) for x in json.loads(s) if x not in (None, '')]
+        except ValueError:
+            pass
+    return [p.strip() for p in s.split(',') if p.strip()] if s else []
+
+
+def _json_dict(v):
+    if isinstance(v, dict):
+        return v
+    try:
+        d = json.loads(v) if str(v or '').strip().startswith('{') else {}
+        return d if isinstance(d, dict) else {}
+    except ValueError:
+        return {}
+
+
+class Screenable:
+    """What screening can already find: national IDs, passports, UN references and names (with the IDs / date
+    of birth that tell two people with one name apart)."""
+
+    def __init__(self):
+        self.nid, self.pp, self.ref, self.name = set(), set(), set(), {}
+
+    def add(self, names, nids=(), pps=(), dob='', refs=()):
+        ent = {'nid': '', 'masked': [], 'dob': str(dob or '')[:10]}
+        for n in nids:
+            full = W.valid_nid(n)
+            if full:
+                self.nid.add(full)
+                ent['nid'] = ent['nid'] or full
+            elif len(W.digits(n)) >= 3:
+                ent['masked'].append(W.digits(n))
+        for p in pps:
+            d = W.digits(p)
+            if len(d) >= 6:
+                self.pp.add(d)
+        for r in refs:
+            r = re.sub(r'\s+', '', str(r or '')).upper()
+            if r:
+                self.ref.add(r)
+        for n in names:
+            k = W.name_key(n)
+            if k and len(k) > 2:
+                self.name.setdefault(k, []).append(ent)
+
+    @staticmethod
+    def consistent(rec_nid, rec_masked, rec_dob, ent):
+        if rec_nid and ent['nid'] and rec_nid != ent['nid']:
+            return False
+        if rec_nid and ent['masked'] and not any(rec_nid.endswith(m) or rec_nid.startswith(m) for m in ent['masked']):
+            return False
+        if rec_masked and ent['nid'] and not (ent['nid'].endswith(rec_masked) or ent['nid'].startswith(rec_masked)):
+            return False
+        if rec_masked and ent['masked'] and rec_masked not in ent['masked']:
+            return False
+        if len(rec_dob) == 10 and len(ent['dob']) == 10 and rec_dob != ent['dob']:
+            return False
+        return True
+
+    def duplicate(self, rec):
+        """The reason the record is already screenable, or None."""
+        nid = W.valid_nid(rec.get('national_id'))
+        if nid and nid in self.nid:
+            return 'national_id'
+        pp = W.digits(rec.get('passport'))
+        if len(pp) >= 6 and pp in self.pp:
+            return 'passport'
+        for o in rec.get('listings') or []:
+            r = re.sub(r'\s+', '', str(o.get('ref') or '')).upper()
+            if r and r in self.ref:
+                return 'un_reference'
+        masked = '' if nid else W.digits(rec.get('national_id')) if '*' in str(rec.get('national_id') or '') else ''
+        dob = str(rec.get('dob') or rec.get('_dob_linked') or '')[:10]
+        for n in {rec.get('name'), rec.get('name_latin')}:
+            for ent in self.name.get(W.name_key(n), []):
+                if self.consistent(nid, masked, dob, ent):
+                    return 'name'
+        return None
+
+    def add_record(self, rec):
+        self.add([rec.get('name'), rec.get('name_latin')], [rec.get('national_id') or ''], [rec.get('passport') or ''],
+                 rec.get('dob') or rec.get('_dob_linked') or '', [o.get('ref') for o in rec.get('listings') or []])
+
+
+def screenable_index(conn):
+    idx = Screenable()
+    c = _cur(conn)
+    c.execute("""SELECT original_name, full_name, national_id, passport_number, date_of_birth
+                 FROM internal_blacklist WHERE COALESCE(is_active, 1) <> 0""")
+    for r in c.fetchall():
+        idx.add([r['original_name'], r['full_name']], [r['national_id'] or ''], [r['passport_number'] or ''],
+                r['date_of_birth'])
+    c.execute("""SELECT full_name, original_name, full_name_arabic, national_id_numbers, passport_numbers, date_of_birth,
+                        properties, details
+                 FROM screening_watchlist WHERE is_active = 1 AND source = ANY(%s)""", (list(SCREENABLE_SOURCES),))
+    for r in c.fetchall():
+        refs = []
+        for d in (_json_dict(r['properties']), _json_dict(r['details'])):
+            refs += [d[k] for k in _REF_KEYS if isinstance(d.get(k), str)]
+        idx.add([r['full_name'], r['original_name'], r['full_name_arabic']], _json_list(r['national_id_numbers']),
+                _json_list(r['passport_numbers']), r['date_of_birth'], refs)
+    return idx
+
+
+def plan_add_new(conn, parsed, base, include_un=False):
+    """Turn a full plan into the add-new-only plan (writes nothing)."""
+    idx = screenable_index(conn)
+    batch = Screenable()
+    items, counts = [], {}
+
+    def bump(cat, k):
+        counts.setdefault(cat, {x: 0 for x in ADD_KEYS})[k] += 1
+    for it in base['items']:
+        rec, ch = it['rec'], it['change']
+        cat = rec['category'] if rec else it.get('category')
+        if rec is not None and rec['kind'] == 'UN' and ch in ('ADDED', 'ADOPTED') and not include_un:
+            bump(cat, 'un_skipped')
+            continue
+        if ch == 'ADOPTED':
+            items.append(dict(it, change='LINK'))
+            bump(cat, 'adopted_linked')
+        elif ch == 'ADDED':
+            if rec['status'] != 'LISTED':
+                bump(cat, 'skipped_lifted')
+                continue
+            why = idx.duplicate(rec) or ('in_workbook' if batch.duplicate(rec) else None)
+            if why:
+                bump(cat, f'dup_{why}')
+                continue
+            batch.add_record(rec)
+            items.append(it)
+            bump(cat, 'new_entities' if rec['entity_type'] == 'ENTITY' else 'new_persons')
+        elif ch == 'UNCHANGED':
+            items.append(it)
+            bump(cat, 'unchanged')
+        else:
+            bump(cat, 'tracked_changes_not_applied')
+    totals = {k: sum(c[k] for c in counts.values()) for k in ADD_KEYS}
+    totals['new'] = totals['new_persons'] + totals['new_entities']
+    totals['skipped_duplicate'] = sum(totals[f'dup_{r}'] for r in DUP_REASONS)
+    totals['records'] = len(parsed['records'])
+    totals['added'], totals['adopted'] = totals['new'], totals['adopted_linked']
+    totals['changes'] = totals['new'] + totals['adopted_linked']
+    blocking = [r for r in base['reasons'] if not any(r.startswith(f"{W.KIND_LABEL.get(s['kind'], s['kind'])} / ")
+                                                       for s in base['shrink'])]
+    blocking = [r for r in blocking if r in base['blocking']]     # nothing is removed in this mode: no shrink stop
+    return dict(base, items=items, counts=counts, totals=totals, mode='add_new_only', blocking=blocking,
+                blocked=bool(blocking), include_un=bool(include_un))
+
+
+def verify_new(conn, import_id, n=10):
+    """Screen up to n random names added by an import through the real engine, in Arabic and in the stored Latin
+    form; counts only: how many come back as a hit on the added record."""
+    c = _cur(conn)
+    c.execute("""SELECT b.id, b.source_id, b.original_name, b.full_name FROM local_list_changes ch
+                 JOIN internal_blacklist b ON b.id = ch.blacklist_id
+                 WHERE ch.import_id = %s AND ch.change = 'ADDED' ORDER BY random() LIMIT %s""", (import_id, n))
+    rows = c.fetchall()
+    conn.rollback()
+    out = {'checked': len(rows), 'arabic_hit': 0, 'arabic_no_hit': 0, 'latin_hit': 0, 'latin_no_hit': 0, 'errors': 0}
+    if not rows:
+        return out
+    from screening.routes import get_engine
+    from screening import match_intel as mi
+    engine = get_engine()
+    try:
+        engine.local_engine.metrics.log = lambda *x, **k: None     # a check, not a screening of a customer
+    except Exception:
+        return dict(out, errors=len(rows), note='screening metrics logging could not be switched off')
+    for r in rows:
+        for q, k in ((r['original_name'], 'arabic'), (r['full_name'], 'latin')):
+            if not q:
+                out[f'{k}_no_hit'] += 1
+                continue
+            try:
+                res = engine.screen_person(q, include_media=False)
+            except Exception:
+                out['errors'] += 1
+                continue
+            hit = any(str(m.get('source') or '').lower().startswith('internal') and
+                      (str(m.get('watchlist_id') or m.get('source_id') or '') == r['source_id'] or
+                       str(m.get('entity_id') or '') == str(r['id'])) and
+                      float(m.get('match_score') or 0) >= mi.POTENTIAL for m in res.get('matches') or [])
+            out[f'{k}_hit' if hit else f'{k}_no_hit'] += 1
+    return out
+
+
 # ----------------------------------------------------------------------------- row building
 _TRANSLIT = None
 
@@ -446,6 +652,19 @@ def apply(conn, parsed, pl, file_name, sha, user_id=None, trigger='cli', allow_s
         if ch == 'UNCHANGED':
             unchanged.append(key)
             continue
+        if ch == 'LINK':        # add-new-only: an existing row is tied to its identity, its content is not touched
+            prov = {'sheet': rec.get('_sheet'), 'rows': (rec.get('_rows') or [])[:50], 'import': vid, 'linked_only': True}
+            c.execute("""INSERT INTO local_list_records (record_key, kind, category, status, blacklist_id,
+                             content_sha256, content, provenance, first_import, last_import, last_change_import)
+                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (record_key) DO NOTHING""",
+                      (key, rec['kind'], rec['category'], rec['status'], it['blacklist_id'], it['sha'],
+                       json.dumps(W.content_of(rec), ensure_ascii=False), json.dumps(prov, ensure_ascii=False),
+                       vid, vid, vid))
+            c.execute("""INSERT INTO local_list_changes (import_id, record_key, category, change, blacklist_id,
+                             old_status, new_status, fields) VALUES (%s, %s, %s, 'ADOPTED', %s, NULL, %s, %s)""",
+                      (vid, key, rec['category'], it['blacklist_id'], rec['status'], json.dumps(['linked_only'])))
+            written['ADOPTED'] += 1
+            continue
         if ch == 'REMOVED':
             if it['blacklist_id']:
                 c.execute("""UPDATE internal_blacklist SET is_active = 0, modified_by = %s, modified_date = %s,
@@ -600,15 +819,22 @@ def post_sync(link=True):
 # ----------------------------------------------------------------------------- one call
 def run(conn, path, do_apply=False, user_id=None, trigger='cli', allow_shrink=False, allow_unknown=False,
         shrink_pct=SHRINK_PCT, shrink_min=SHRINK_MIN, lifted_mode='history', retire_legacy=False,
-        adopt_legacy=True, sync=True, file_name=None, commit=True):
-    """Parse, plan and (when do_apply) write. Returns a summary made of counts only (no names)."""
+        adopt_legacy=True, sync=True, file_name=None, commit=True, add_new_only=False, include_un=False,
+        verify=10):
+    """Parse, plan and (when do_apply) write. Returns a summary made of counts only (no names).
+    add_new_only: existing rows are only linked, lifted and already-screenable records are not added, UN
+    sheets are skipped unless include_un; after the import `verify` added names are screened (counts)."""
     parsed = W.parse(path)
     linked = link_masked_dobs(parsed['records'])
     sha = file_sha256(path)
     pl = plan(conn, parsed, allow_shrink=allow_shrink, allow_unknown=allow_unknown, shrink_pct=shrink_pct,
               shrink_min=shrink_min, adopt_legacy=adopt_legacy)
+    if add_new_only:
+        pl = plan_add_new(conn, parsed, pl, include_un=include_un)
+        retire_legacy = False
     conn.rollback()
     out = summary(parsed, pl)
+    out['mode'] = 'add_new_only' if add_new_only else 'full'
     out['dob_linked'] = linked
     out['file_sha256'] = sha
     if not do_apply:
@@ -633,6 +859,12 @@ def run(conn, path, do_apply=False, user_id=None, trigger='cli', allow_shrink=Fa
     out['result'] = 'APPLIED'
     if sync and commit and pl['totals']['changes']:
         out['sync'] = post_sync()
+        if add_new_only and verify and pl['totals'].get('new'):
+            try:
+                out['verify'] = verify_new(conn, vid, verify)
+            except Exception as e:
+                logger.warning('verification screening failed: %s', e)
+                out['verify'] = {'errors': 1, 'note': e.__class__.__name__}
     return out
 
 

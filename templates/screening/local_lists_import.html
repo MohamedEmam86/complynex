@@ -47,6 +47,12 @@
         <div class="col-md-6"><label class="form-label small">{{ _('Workbook (.xlsx)') }}</label>
           <input type="file" name="file" accept=".xlsx,.xlsm" class="form-control form-control-sm" required></div>
         <div class="col-md-4"><div class="form-check">
+          <input class="form-check-input" type="checkbox" name="add_new_only" value="1" id="ll-addnew" checked>
+          <label class="form-check-label small" for="ll-addnew"><strong>{{ _('Add new names only') }}</strong> — {{ _('existing rows are only linked, never changed; lifted records and names already screenable are not added') }}</label></div>
+          <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="include_un" value="1" id="ll-un">
+          <label class="form-check-label small" for="ll-un">{{ _('Also add UN-sheet records missing from the UN feed') }}</label></div>
+          <div class="form-check">
           <input class="form-check-input" type="checkbox" name="allow_unknown" value="1" id="ll-unknown">
           <label class="form-check-label small" for="ll-unknown">{{ _('Accept sheets that look like data but are not recognised') }}</label></div></div>
         <div class="col-md-2"><button class="btn btn-primary btn-sm w-100" type="submit"><i class="fas fa-search me-1"></i>{{ _('Preview') }}</button></div>
@@ -88,6 +94,25 @@
         {% endfor %}
         </tbody>
       </table></div>
+      {% if r.mode == 'add_new_only' %}
+      {% set ak = [('new_persons', _('New persons')), ('new_entities', _('New entities')), ('skipped_lifted', _('Skipped: lifted')),
+                   ('dup_national_id', _('Duplicate: national ID')), ('dup_passport', _('Duplicate: passport')),
+                   ('dup_un_reference', _('Duplicate: UN reference')), ('dup_name', _('Duplicate: same name')),
+                   ('dup_in_workbook', _('Duplicate: within the file')), ('adopted_linked', _('Existing rows linked')),
+                   ('un_skipped', _('UN sheet skipped')), ('unchanged', _('Already imported')),
+                   ('tracked_changes_not_applied', _('Changes not applied'))] %}
+      <p class="small mb-1"><span class="badge bg-primary">{{ _('Add new names only') }}</span> {{ _('Existing rows are not changed.') }}</p>
+      <div class="table-responsive mb-3"><table class="table table-sm align-middle small">
+        <thead><tr><th>{{ _('Category') }}</th>{% for k, l in ak %}<th class="text-end">{{ l }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for code, v in r.counts.items() %}
+          <tr><td>{{ ll_label(code, 'en') }}<div class="text-muted" dir="rtl" lang="ar">{{ ll_label(code, 'ar') }}</div></td>{% for k, l in ak %}<td class="text-end {{ 'fw-bold' if v[k] and k in ('new_persons', 'new_entities') }}">{{ '{:,}'.format(v[k]) }}</td>{% endfor %}</tr>
+        {% endfor %}
+        <tr class="table-light fw-bold"><td>{{ _('Total') }}</td>{% for k, l in ak %}<td class="text-end">{{ '{:,}'.format(r.totals[k]) }}</td>{% endfor %}</tr>
+        </tbody>
+      </table></div>
+      {% if r.verify %}<p class="small mb-1">{{ _('Screening check of added names') }}: {{ _('Arabic') }} {{ r.verify.arabic_hit }}/{{ r.verify.checked }}, {{ _('Latin') }} {{ r.verify.latin_hit }}/{{ r.verify.checked }}</p>{% endif %}
+      {% else %}
       <div class="table-responsive mb-3"><table class="table table-sm align-middle small">
         <thead><tr><th>{{ _('Category') }}</th>{% for k in chg %}<th class="text-end">{{ chg_label[k] }}</th>{% endfor %}</tr></thead>
         <tbody>
@@ -97,8 +122,9 @@
         <tr class="table-light fw-bold"><td>{{ _('Total') }}</td>{% for k in chg %}<td class="text-end">{{ '{:,}'.format(r.totals[k]) }}</td>{% endfor %}</tr>
         </tbody>
       </table></div>
+      {% endif %}
       {% if r.dob_linked %}<p class="small text-muted mb-1">{{ _('Dates of birth taken from a matching full national ID for records published with a masked ID') }}: {{ '{:,}'.format(r.dob_linked) }}</p>{% endif %}
-      {% if r.legacy_unmatched %}<p class="small text-muted mb-1">{{ _('Older internal-list rows of the same lists that the workbook does not back') }}: {{ '{:,}'.format(r.legacy_unmatched) }}</p>{% endif %}
+      {% if r.legacy_unmatched and r.mode != 'add_new_only' %}<p class="small text-muted mb-1">{{ _('Older internal-list rows of the same lists that the workbook does not back') }}: {{ '{:,}'.format(r.legacy_unmatched) }}</p>{% endif %}
       {% for reason in r.reasons %}
         <div class="alert {{ 'alert-danger' if reason in r.blocking else 'alert-warning' }} py-1 small mb-1">{{ reason }}</div>
       {% endfor %}
@@ -109,12 +135,14 @@
       <h2 class="h6">{{ _('3. Apply') }}</h2>
       <form method="post" action="{{ url_for('screening.list_local_import_apply', token=token) }}" class="row g-2 align-items-end">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if r.mode != 'add_new_only' %}
         <div class="col-md-4"><label class="form-label small">{{ _('Lifted records') }}</label>
           <select name="lifted" class="form-select form-select-sm">
             <option value="history">{{ _('Keep visible, labelled lifted (recommended)') }}</option>
             <option value="inactive">{{ _('Deactivate (no hit any more)') }}</option>
           </select></div>
-        {% if r.legacy_unmatched %}
+        {% endif %}
+        {% if r.legacy_unmatched and r.mode != 'add_new_only' %}
         <div class="col-md-4"><div class="form-check">
           <input class="form-check-input" type="checkbox" name="retire_legacy" value="1" id="ll-retire">
           <label class="form-check-label small" for="ll-retire">{{ _('Deactivate the older rows the workbook does not back') }} ({{ r.legacy_unmatched }})</label></div></div>

@@ -101,7 +101,8 @@ def start(token, job, do_apply, db_config=None):
             out = LLI.run(conn, xlsx, do_apply=do_apply, user_id=job.get('user_id'), trigger='upload',
                           allow_shrink=bool(opts.get('allow_shrink')), allow_unknown=bool(opts.get('allow_unknown')),
                           lifted_mode=opts.get('lifted') or 'history', retire_legacy=bool(opts.get('retire_legacy')),
-                          file_name=job.get('file_name'))
+                          file_name=job.get('file_name'), add_new_only=bool(opts.get('add_new_only')),
+                          include_un=bool(opts.get('include_un')))
             job.update({'state': 'done', 'result': out, 'finished': datetime.now().isoformat(timespec='seconds')})
             if do_apply and out.get('result') == 'APPLIED':
                 try:
@@ -168,9 +169,12 @@ def list_local_import_upload():
     token = uuid.uuid4().hex
     f.save(os.path.join(LL_DIR, f'{token}.xlsx'))
     job = {'user_id': current_user.id, 'file_name': os.path.basename(f.filename)[:200],
-           'options': {'allow_unknown': bool(request.form.get('allow_unknown'))}}
+           'options': {'allow_unknown': bool(request.form.get('allow_unknown')),
+                       'add_new_only': bool(request.form.get('add_new_only')),
+                       'include_un': bool(request.form.get('add_new_only')) and bool(request.form.get('include_un'))}}
     start(token, job, do_apply=False)
-    _audit('Local lists workbook uploaded for preview', None, f'job {token}')
+    _audit('Local lists workbook uploaded for preview', None,
+           f"job {token}; add new only: {job['options']['add_new_only']}; include UN: {job['options']['include_un']}")
     return redirect(url_for('screening.list_local_import', job=token))
 
 
@@ -191,7 +195,7 @@ def list_local_import_apply(token):
         flash(gettext('Write why the shrink of a list is accepted (at least 10 characters).'), 'error')
         return redirect(url_for('screening.list_local_import', job=token))
     lifted = request.form.get('lifted') if request.form.get('lifted') in ('history', 'inactive') else 'history'
-    retire = bool(request.form.get('retire_legacy'))
+    retire = bool(request.form.get('retire_legacy')) and not (job.get('options') or {}).get('add_new_only')
     job['options'] = dict(job.get('options') or {}, allow_shrink=allow_shrink, lifted=lifted, retire_legacy=retire)
     job['user_id'] = current_user.id
     start(token, job, do_apply=True)
