@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+{# Co-branded sign-in page of a client site (client_sites/service.py): "ComplyNex for <client>", powered by ComplyNex.
+   It is ComplyNex's own page with the client's logo beside ours — never a copy of the client's website or login.
+   Posts to the portal sign-in (ws=1), which lands restricted users on /workspace. #}
+{% set lang = 'ar' if get_locale() == 'ar' else 'en' %}
+{% set cname = client_site.name(lang) if client_site else company_name %}
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{ _('ComplyNex for') }} {{ cname }}</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+  <link href="{{ url_for('static', filename='vendor/fonts/quicksand/quicksand.css') }}" rel="stylesheet">
+  {% if lang == 'ar' %}
+  <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.rtl.min.css') }}" rel="stylesheet">
+  {% else %}
+  <link href="{{ url_for('static', filename='vendor/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
+  {% endif %}
+  <link href="{{ url_for('static', filename='vendor/bootstrap-icons/1.11.1/bootstrap-icons.css') }}" rel="stylesheet">
+  <style>
+    body { min-height: 100vh; margin: 0; font-family: 'Quicksand', 'Segoe UI', system-ui, sans-serif;
+           background: linear-gradient(160deg, #123E5F 0%, #071E36 100%); display: flex; flex-direction: column; }
+    .cx-site-top { display: flex; justify-content: flex-end; padding: 14px 20px; }
+    .cx-site-top a { color: #CFE9F0; text-decoration: none; font-size: 14px; }
+    .cx-site-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .cx-site-card { background: #FFFFFF; border-radius: 18px; box-shadow: 0 12px 36px rgba(0,0,0,.3);
+                    width: 100%; max-width: 440px; padding: 28px 28px 22px; }
+    .cx-site-logos { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 18px; }
+    .cx-site-logos img { max-height: 56px; max-width: 150px; object-fit: contain; }
+    .cx-site-logos .cx-sep { width: 1px; height: 44px; background: #D5DEE6; }
+    .cx-site-title { font-size: 21px; font-weight: 700; color: #123E5F; text-align: center; margin-bottom: 4px; }
+    .cx-site-welcome { color: #5B6B7A; font-size: 14px; text-align: center; margin-bottom: 20px; white-space: pre-line; }
+    .cx-site-btn { background: linear-gradient(135deg, #123E5F 0%, #00A6B4 100%); border: 0; }
+    .cx-site-foot { text-align: center; color: #8FA3B5; font-size: 12px; margin-top: 18px; }
+    .cx-site-foot strong { color: #123E5F; }
+    .cx-site-bottom { text-align: center; color: #9FB7C8; font-size: 12px; padding: 12px; }
+  </style>
+</head>
+<body>
+  <header class="cx-site-top">
+    {% if lang == 'ar' %}<a href="{{ url_for(request.endpoint or 'auth.login', lang='en') }}" lang="en">English</a>
+    {% else %}<a href="{{ url_for(request.endpoint or 'auth.login', lang='ar') }}" lang="ar">العربية</a>{% endif %}
+  </header>
+  <main class="cx-site-main">
+    <div class="cx-site-card">
+      <div class="cx-site-logos">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ComplyNex">
+        {% if client_site and client_site.logo_path %}
+        <span class="cx-sep" aria-hidden="true"></span>
+        <img src="{{ url_for('auth.site_logo', site_id=client_site.id) }}" alt="{{ cname }}">
+        {% endif %}
+      </div>
+      <h1 class="cx-site-title">{{ _('ComplyNex for') }} {{ cname }}</h1>
+      {% set welcome = client_site.welcome(lang) if client_site else '' %}
+      <p class="cx-site-welcome">{{ welcome or _('Sign in with the e-mail address and password your administrator gave you.') }}</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}
+      <div class="alert alert-{{ category }} py-2 small" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
+      <form method="post" action="{{ url_for('auth.portal_login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="ws" value="1">
+        <label class="form-label small fw-bold" for="email">{{ _('E-mail') }}</label>
+        <input class="form-control mb-3" type="email" id="email" name="email" autocomplete="username" required value="{{ request.form.get('email', '') }}">
+        <label class="form-label small fw-bold" for="password">{{ _('Password') }}</label>
+        <input class="form-control mb-4" type="password" id="password" name="password" autocomplete="current-password" required>
+        <button class="btn btn-primary cx-site-btn w-100" type="submit"><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>{{ _('Sign in') }}</button>
+      </form>
+      {% if client_site and client_site.contact_email %}
+      <div class="small text-muted text-center mt-3">{{ _('Help:') }} <a href="mailto:{{ client_site.contact_email }}">{{ client_site.contact_email }}</a></div>
+      {% endif %}
+      <div class="cx-site-foot">{{ _('powered by') }} <strong>ComplyNex</strong></div>
+    </div>
+  </main>
+  <footer class="cx-site-bottom">© {{ current_year }} ComplyNex · <a class="text-reset" href="{{ url_for('legal.privacy') }}">{{ _('Privacy') }}</a></footer>
+</body>
+</html>

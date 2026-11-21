@@ -254,6 +254,10 @@ def create_app(config_name=None):
         user = User.get_by_id(uid)
         if not user or not user.is_active or (getattr(user, 'auth_version', 0) or 0) != ver:
             return None
+        # client sites: a site's users on its own host only, the main hosts' users on the main hosts only
+        from client_sites.service import user_allowed_here
+        if not user_allowed_here(user):
+            return None
         return user
     
     # Babel Configuration
@@ -835,6 +839,10 @@ Message:
             "media-src 'self' blob:;"
         )
         return response
+
+    # Client sites: host resolution (first before_request, unknown hosts -> 404), per-host session cookie.
+    from client_sites import init_app as _sites_init
+    _sites_init(app)
 
     # Per-user access control (modules x features registry, request gate, menus, restricted workspace).
     # Last, so the registry resolves the complete URL map and the gate runs after the session checks.

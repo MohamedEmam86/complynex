@@ -33,8 +33,35 @@ auth_bp = Blueprint('auth', __name__)
 
 
 def _portal_login_template():
-    """The restricted workspace's sign-in page posts here with ws=1: answer with that page, not the portal's."""
-    return 'access/login.html' if request.values.get('ws') else 'auth/login_portal.html'
+    """The restricted workspace's sign-in page posts here with ws=1: answer with that page, not the portal's.
+    On a client site's host: the site's co-branded sign-in page."""
+    from client_sites.service import login_template
+    return login_template('access/login.html' if request.values.get('ws') else 'auth/login_portal.html')
+
+
+def _cms_login_template():
+    from client_sites.service import login_template
+    return login_template('auth/login.html')
+
+
+def _host_user(email):
+    """The account for this e-mail if it may sign in on this host (client sites: a site's users on its own host
+    only, the main hosts' users on the main hosts only; the superadmin anywhere). Otherwise None, so the answer
+    is the usual "invalid e-mail or password" and never tells whether the account exists."""
+    from client_sites.service import login_user_for_host
+    return login_user_for_host(User.get_by_email(email))
+
+
+def _landing(user, default):
+    from client_sites.service import landing_endpoint
+    return landing_endpoint(user, default)
+
+
+@auth_bp.route('/site-logo/<int:site_id>')
+def site_logo(site_id):
+    """A client site's logo (its sign-in page): on the site's own host, or for the superadmin."""
+    from client_sites.service import logo_response
+    return logo_response(site_id)
 
 
 @auth_bp.route('/portal/login', methods=['GET', 'POST'])
@@ -51,7 +78,7 @@ def portal_login():
         password = request.form.get('password', '')
         remember = request.form.get('remember', False) == 'on'
         
-        user = User.get_by_email(email)
+        user = _host_user(email)
 
         if user and guard.is_locked(user.id):
             AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'Portal Login: account locked', request.remote_addr)
@@ -69,25 +96,25 @@ def portal_login():
                 # Password correct but MFA required — store pending user id and redirect to verify
                 session['mfa_pending_user_id'] = user.id
                 session['mfa_remember'] = remember
-                session['mfa_next'] = 'portal.dashboard'
+                session['mfa_next'] = _landing(user, 'portal.dashboard')
                 return redirect(url_for('auth.mfa_verify'))
             else:
                 # MFA not yet set up: enforce it for privileged roles before granting access
                 if user.mfa_required() and not user.mfa_enabled:
                     session['mfa_setup_user_id'] = user.id
                     session['mfa_remember'] = remember
-                    session['mfa_next'] = 'portal.dashboard'
+                    session['mfa_next'] = _landing(user, 'portal.dashboard')
                     return redirect(url_for('auth.mfa_setup'))
                 guard.reset_failures(user.id)
                 login_user(user, remember=remember)
                 session.permanent = True
                 User.update_last_login(user.id)
                 AuditLog.log(user.id, 'Login', 'Auth', None, 'Employee Portal Login', request.remote_addr)
-                return redirect(url_for('portal.dashboard'))
+                return redirect(url_for(_landing(user, 'portal.dashboard')))
         else:
             # For failed login attempt, we don't have a reliable user_id if email is wrong
             # but we can try to find it for the log if it exists
-            failed_user = User.get_by_email(email)
+            failed_user = _host_user(email)
             AuditLog.log(failed_user.id if failed_user else None, 'Failed Login', 'Auth', None, f'Invalid password for {email}' if failed_user else f'Invalid email: {email}', request.remote_addr)
             if failed_user and guard.register_failure(failed_user.id):
                 AuditLog.log(failed_user.id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed attempts', request.remote_addr)
@@ -112,12 +139,12 @@ def login():
         password = request.form.get('password', '')
         remember = request.form.get('remember', False) == 'on'
         
-        user = User.get_by_email(email)
+        user = _host_user(email)
 
         if user and guard.is_locked(user.id):
             AuditLog.log(user.id, 'Failed Login', 'Auth', None, 'CMS Login: account locked', request.remote_addr)
             flash(_('Invalid email or password. Repeated failed attempts lock the account for a while.'), 'danger')
-            return render_template('auth/login.html')
+            return render_template(_cms_login_template())
 
         if user and user.check_password(password):
             # Session fixation prevention - regenerate session on login
@@ -151,13 +178,13 @@ def login():
                 AuditLog.log(user.id, 'Login', 'Auth', None, 'CMS Login Successful', request.remote_addr)
                 return redirect(url_for('dashboard'))
         else:
-            failed_user = User.get_by_email(email)
+            failed_user = _host_user(email)
             AuditLog.log(failed_user.id if failed_user else None, 'Failed Login', 'Auth', None, f'CMS Login: Invalid password for {email}' if failed_user else f'CMS Login: Invalid email: {email}', request.remote_addr)
             if failed_user and guard.register_failure(failed_user.id):
                 AuditLog.log(failed_user.id, 'Account Locked', 'Auth', None, f'Locked for {guard.LOCK_MINUTES} min after {guard.LOCK_AFTER} failed attempts', request.remote_addr)
             flash(_('Invalid email or password. Repeated failed attempts lock the account for a while.'), 'danger')
     
-    return render_template('auth/login.html')
+    return render_template(_cms_login_template())
 
 
 @auth_bp.route('/logout')

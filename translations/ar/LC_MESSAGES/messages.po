@@ -46457,3 +46457,190 @@ msgstr "لا يوجد مؤشر مخاطر في البيانات المتاحة."
 
 msgid "Open BIO"
 msgstr "فتح السيرة الذاتية"
+
+# client sites (client_sites/, admin/client_sites.py)
+msgid "A client gets its own address (sub-domain) on this same platform, with a co-branded sign-in page. Users bound to a site sign in on that address only."
+msgstr "يحصل العميل على عنوان خاص به (نطاق فرعي) على نفس المنصة، مع صفحة دخول بهوية مشتركة. المستخدمون المرتبطون بموقع يسجّلون الدخول من عنوانه فقط."
+
+msgid "Access mode"
+msgstr "نوع الوصول"
+
+msgid "Access modes"
+msgstr "أنواع الوصول"
+
+msgid "Access rights"
+msgstr "صلاحيات الوصول"
+
+msgid "Active (the address answers)"
+msgstr "مفعّل (العنوان يعمل)"
+
+msgid "Add a user to this site"
+msgstr "إضافة مستخدم إلى هذا الموقع"
+
+msgid "Added users sign in on this address only (their other sessions end). If their access mode is not allowed here it becomes the site's default mode:"
+msgstr "المستخدمون المضافون يسجّلون الدخول من هذا العنوان فقط (وتنتهي جلساتهم الأخرى). إذا لم يكن نوع وصولهم مسموحاً هنا يصبح النوع الافتراضي للموقع:"
+
+msgid "Address (host name)"
+msgstr "العنوان (اسم النطاق)"
+
+msgid "All client sites"
+msgstr "كل مواقع العملاء"
+
+msgid "All users of the site together, per calendar month (Cairo time). 0 = unlimited."
+msgstr "لكل مستخدمي الموقع معاً، لكل شهر ميلادي (بتوقيت القاهرة). 0 = بلا حد."
+
+msgid "Allowed access modes"
+msgstr "أنواع الوصول المسموح بها"
+
+msgid "Any other address that is not an active client site gets \"not found\"."
+msgstr "أي عنوان آخر ليس موقع عميل مفعّلاً يظهر له \"غير موجود\"."
+
+msgid "CMS"
+msgstr "نظام إدارة الالتزام"
+
+msgid "Choose a user"
+msgstr "اختر مستخدماً"
+
+msgid "Client logo (PNG, JPG or SVG)"
+msgstr "شعار العميل (PNG أو JPG أو SVG)"
+
+msgid "Client name (Arabic)"
+msgstr "اسم العميل (بالعربية)"
+
+msgid "Client name (English)"
+msgstr "اسم العميل (بالإنجليزية)"
+
+msgid "Client site"
+msgstr "موقع العميل"
+
+msgid "Client site usage"
+msgstr "استخدام موقع العميل"
+
+msgid "Client site users"
+msgstr "مستخدمو موقع العميل"
+
+msgid "Client sites"
+msgstr "مواقع العملاء"
+
+msgid "ComplyNex for"
+msgstr "ComplyNex لـ"
+
+msgid "Contact e-mail shown on the sign-in page"
+msgstr "بريد التواصل الظاهر في صفحة الدخول"
+
+msgid "Counted against the cap"
+msgstr "المحتسب من الحد"
+
+msgid "Counted from the daily screening usage of the users currently on the site; the month follows Cairo time. When the cap is reached, new vessel and dual-use screenings of the site's users are refused with a clear message."
+msgstr "يُحتسب من الاستخدام اليومي للفحص لمستخدمي الموقع الحاليين، والشهر بتوقيت القاهرة. عند بلوغ الحد تُرفض عمليات فحص السفن والسلع مزدوجة الاستخدام الجديدة لمستخدمي الموقع برسالة واضحة."
+
+msgid "Create new users on the Users page first, then add them here. The platform superadmin is never bound to a site."
+msgstr "أنشئ المستخدمين الجدد من صفحة المستخدمين أولاً ثم أضفهم هنا. المسؤول الأعلى للمنصة لا يُربط بأي موقع."
+
+msgid "Daily limit"
+msgstr "الحد اليومي"
+
+msgid "Default (by role)"
+msgstr "افتراضي (حسب الدور)"
+
+msgid "Default access mode for users added to the site"
+msgstr "نوع الوصول الافتراضي للمستخدمين المضافين إلى الموقع"
+
+msgid "Default daily screening limit per user"
+msgstr "الحد اليومي الافتراضي للفحص لكل مستخدم"
+
+msgid "Dual-use"
+msgstr "مزدوجة الاستخدام"
+
+msgid "Each new address also needs a DNS record and a TLS certificate on the server (done by the platform owner)."
+msgstr "كل عنوان جديد يحتاج أيضاً إلى سجل DNS وشهادة TLS على الخادم (يتولاها مالك المنصة)."
+
+msgid "Empty = the platform default; 0 = unlimited. A user's own limit (Screening limits page) replaces it."
+msgstr "فارغ = الحد الافتراضي للمنصة، 0 = بلا حد. الحد الخاص بالمستخدم (صفحة حدود الفحص) يحل محله."
+
+msgid "Help:"
+msgstr "للمساعدة:"
+
+msgid "Left this month"
+msgstr "المتبقي هذا الشهر"
+
+msgid "Lower-case host only, without https:// or a path."
+msgstr "اسم النطاق بأحرف صغيرة فقط، بدون https:// أو مسار."
+
+msgid "Main addresses of the platform (they behave as before):"
+msgstr "العناوين الرئيسية للمنصة (تعمل كما هي):"
+
+msgid "Maximum size (KB):"
+msgstr "الحجم الأقصى (كيلوبايت):"
+
+msgid "Monthly cap"
+msgstr "الحد الشهري"
+
+msgid "Monthly cap for the organisation (vessel + dual-use screenings)"
+msgstr "الحد الشهري للجهة (فحص السفن والسلع مزدوجة الاستخدام)"
+
+msgid "Names and companies (not capped)"
+msgstr "الأسماء والشركات (غير محتسبة في الحد)"
+
+msgid "New client site"
+msgstr "موقع عميل جديد"
+
+msgid "No client sites yet."
+msgstr "لا توجد مواقع عملاء بعد."
+
+msgid "No users on this site yet."
+msgstr "لا يوجد مستخدمون في هذا الموقع بعد."
+
+msgid "Remove from site"
+msgstr "إزالة من الموقع"
+
+msgid "Remove the logo"
+msgstr "حذف الشعار"
+
+msgid "Remove this user from the site?"
+msgstr "إزالة هذا المستخدم من الموقع؟"
+
+msgid "SVG files are cleaned (no scripts or external references). The logo is stored on the server, never in the code."
+msgstr "تُنظَّف ملفات SVG (بلا نصوص برمجية أو مراجع خارجية). يُحفظ الشعار على الخادم وليس في الكود."
+
+msgid "Settings & branding"
+msgstr "الإعدادات والهوية"
+
+msgid "Sign in with the e-mail address and password your administrator gave you."
+msgstr "سجّل الدخول بالبريد الإلكتروني وكلمة المرور التي أعطاك إياها مسؤول النظام."
+
+msgid "The sign-in page shows \"ComplyNex for\" the client name, the client logo beside the ComplyNex logo and \"powered by ComplyNex\". It never copies the client's own website or sign-in page."
+msgstr "تعرض صفحة الدخول \"ComplyNex لـ\" اسم العميل، وشعار العميل بجانب شعار ComplyNex، وعبارة \"مدعوم من ComplyNex\". ولا تنسخ أبداً موقع العميل أو صفحة دخوله."
+
+msgid "Usage"
+msgstr "الاستخدام"
+
+msgid "Usage this month"
+msgstr "الاستخدام هذا الشهر"
+
+msgid "Users whose access mode is not allowed cannot sign in on this address."
+msgstr "المستخدمون الذين نوع وصولهم غير مسموح لا يمكنهم الدخول من هذا العنوان."
+
+msgid "Vessel + dual-use screenings this month"
+msgstr "فحوص السفن والسلع مزدوجة الاستخدام هذا الشهر"
+
+msgid "Vessel + dual-use this month"
+msgstr "السفن ومزدوجة الاستخدام هذا الشهر"
+
+msgid "Vessels"
+msgstr "السفن"
+
+msgid "Welcome text (Arabic)"
+msgstr "نص الترحيب (بالعربية)"
+
+msgid "Welcome text (English)"
+msgstr "نص الترحيب (بالإنجليزية)"
+
+msgid "platform default"
+msgstr "افتراضي المنصة"
+
+msgid "powered by"
+msgstr "مدعوم من"
+
+msgid "site default"
+msgstr "افتراضي الموقع"

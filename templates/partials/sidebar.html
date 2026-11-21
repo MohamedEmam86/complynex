@@ -1425,6 +1425,13 @@
               </a>
             </li>
             {% endif %}
+            {% if current_user.role == 'superadmin' %}
+            <li class="cnx-nav__subitem">
+              <a class="cnx-nav__link cnx-nav__link--l3" href="{{ url_for('admin.client_sites') }}">
+                <span class="cnx-nav__label">{{ _('Client sites') }}</span>
+              </a>
+            </li>
+            {% endif %}
             {% if current_user.is_admin() %}
             {% if current_user.can_view('config') %}
             <li class="cnx-nav__subitem">

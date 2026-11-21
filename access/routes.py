@@ -235,4 +235,5 @@ def workspace_login():
     from flask_login import current_user as cu
     if getattr(cu, 'is_authenticated', False):
         return redirect(url_for(S.home_endpoint(S.effective(cu))))
-    return render_template('access/login.html')
+    from client_sites.service import login_template
+    return render_template(login_template('access/login.html'))

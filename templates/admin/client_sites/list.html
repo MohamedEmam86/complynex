@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Client sites') }} - {{ company_name }}{% endblock %}
+{% block content %}
+{% set lang = 'ar' if get_locale() == 'ar' else 'en' %}
+<div class="container-fluid py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-globe2 me-2"></i>{{ _('Client sites') }}</h1>
+      <div class="text-muted small">{{ _('A client gets its own address (sub-domain) on this same platform, with a co-branded sign-in page. Users bound to a site sign in on that address only.') }}</div>
+    </div>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('admin.client_site_new') }}"><i class="bi bi-plus-lg me-1"></i>{{ _('New client site') }}</a>
+  </div>
+  <div class="card shadow-sm mb-3">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th>{{ _('Client') }}</th><th>{{ _('Address') }}</th><th>{{ _('Access modes') }}</th><th class="text-end">{{ _('Users') }}</th>
+          <th class="text-end">{{ _('Vessel + dual-use this month') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+        <tbody>
+        {% for s in sites %}
+          <tr>
+            <td>{% if s.logo_path %}<img src="{{ url_for('auth.site_logo', site_id=s.id) }}" alt="" style="max-height:24px;max-width:70px" class="me-2">{% endif %}{{ s.name(lang) }}</td>
+            <td><code>{{ s.host }}</code></td>
+            <td>{% for m in s.modes %}<span class="badge text-bg-light border me-1">{{ {'cms': _('CMS'), 'portal': _('Employee portal'), 'restricted': _('Restricted workspace')}[m] }}</span>{% endfor %}</td>
+            <td class="text-end"><a href="{{ url_for('admin.client_site_users', site_id=s.id) }}">{{ s.users_n }}</a></td>
+            <td class="text-end"><a href="{{ url_for('admin.client_site_usage', site_id=s.id) }}">{{ used.get(s.id, 0) }}</a> / {{ s.monthly_org_cap if s.monthly_org_cap else _('unlimited') }}</td>
+            <td>{% if s.active %}<span class="badge text-bg-success">{{ _('Active') }}</span>{% else %}<span class="badge text-bg-secondary">{{ _('Inactive') }}</span>{% endif %}</td>
+            <td class="text-end text-nowrap">
+              <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.client_site_edit', site_id=s.id) }}">{{ _('Edit') }}</a>
+              <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.client_site_users', site_id=s.id) }}">{{ _('Users') }}</a>
+              <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.client_site_usage', site_id=s.id) }}">{{ _('Usage') }}</a>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-muted text-center py-4">{{ _('No client sites yet.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="small text-muted">{{ _('Main addresses of the platform (they behave as before):') }} {% for h in main_hosts %}<code>{{ h }}</code>{{ ' · ' if not loop.last }}{% endfor %}.
+    {{ _('Any other address that is not an active client site gets "not found".') }} {{ _('Each new address also needs a DNS record and a TLS certificate on the server (done by the platform owner).') }}</div>
+</div>
+{% endblock %}

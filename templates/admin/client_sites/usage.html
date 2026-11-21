@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Client site usage') }} - {{ company_name }}{% endblock %}
+{% block content %}
+{% set lang = 'ar' if get_locale() == 'ar' else 'en' %}
+{% set tab = 'usage' %}
+<div class="container-fluid py-3">
+  <h1 class="h3 mb-3"><i class="bi bi-globe2 me-2"></i>{{ site.name(lang) }} <small class="text-muted fs-6"><code>{{ site.host }}</code></small></h1>
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link{{ ' active' if tab == 'edit' }}" href="{{ url_for('admin.client_site_edit', site_id=site.id) }}">{{ _('Settings & branding') }}</a></li>
+    <li class="nav-item"><a class="nav-link{{ ' active' if tab == 'users' }}" href="{{ url_for('admin.client_site_users', site_id=site.id) }}">{{ _('Users') }}</a></li>
+    <li class="nav-item"><a class="nav-link{{ ' active' if tab == 'usage' }}" href="{{ url_for('admin.client_site_usage', site_id=site.id) }}">{{ _('Usage this month') }}</a></li>
+    <li class="nav-item ms-auto"><a class="nav-link" href="{{ url_for('admin.client_sites') }}"><i class="bi bi-arrow-left-short"></i>{{ _('All client sites') }}</a></li>
+  </ul>
+
+  <div class="row g-3 mb-3">
+    <div class="col-sm-4"><div class="card shadow-sm"><div class="card-body">
+      <div class="small text-muted">{{ _('Vessel + dual-use screenings this month') }} ({{ month }})</div>
+      <div class="fs-3 fw-bold">{{ total }}</div></div></div></div>
+    <div class="col-sm-4"><div class="card shadow-sm"><div class="card-body">
+      <div class="small text-muted">{{ _('Monthly cap') }}</div>
+      <div class="fs-3 fw-bold">{{ cap if cap else _('unlimited') }}</div></div></div></div>
+    <div class="col-sm-4"><div class="card shadow-sm"><div class="card-body">
+      <div class="small text-muted">{{ _('Left this month') }}</div>
+      <div class="fs-3 fw-bold {{ 'text-danger' if left == 0 }}">{{ left if left is not none else '—' }}</div></div></div></div>
+  </div>
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th>{{ _('User') }}</th><th class="text-end">{{ _('Vessels') }}</th><th class="text-end">{{ _('Dual-use') }}</th>
+          <th class="text-end">{{ _('Counted against the cap') }}</th><th class="text-end">{{ _('Names and companies (not capped)') }}</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.name }}<div class="small text-muted">{{ r.email }}</div></td>
+            <td class="text-end">{{ r.vessel }}</td>
+            <td class="text-end">{{ r.dualuse }}</td>
+            <td class="text-end fw-bold">{{ r.capped }}</td>
+            <td class="text-end text-muted">{{ r.name_n }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="text-muted text-center py-4">{{ _('No users on this site yet.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="small text-muted mt-2">{{ _('Counted from the daily screening usage of the users currently on the site; the month follows Cairo time. When the cap is reached, new vessel and dual-use screenings of the site\'s users are refused with a clear message.') }}</div>
+</div>
+{% endblock %}

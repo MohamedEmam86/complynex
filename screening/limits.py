@@ -40,6 +40,7 @@ UNLIMITED_ROLES = ('superadmin',)
 
 class DailyLimitReached(Exception):
     """Raised before a screening runs when it would exceed the user's daily limit."""
+    code = 'daily_limit_reached'
 
     def __init__(self, limit, used, wanted=1):
         self.limit, self.used, self.wanted = int(limit), int(used), int(wanted)
@@ -56,6 +57,44 @@ class DailyLimitReached(Exception):
         if str(lang).startswith('ar'):
             return f'لقد وصلت إلى الحد اليومي لعمليات الفحص ({self.limit}). تواصل مع مسؤول النظام لإعادة ضبطه.'
         return f'You reached your daily screening limit ({self.limit}). Contact your administrator to reset it.'
+
+
+class MonthlyCapReached(DailyLimitReached):
+    """Raised before a vessel / dual-use screening runs when it would exceed the monthly cap of the user's
+    organisation (client site: client_sites.monthly_org_cap, every user of the site together)."""
+    code = 'monthly_cap_reached'
+
+    def message(self, lang='en'):
+        ar = str(lang).startswith('ar')
+        if self.wanted > 1 and self.remaining > 0:
+            if ar:
+                return (f'هذه العملية تتضمن {self.wanted} عملية فحص، والمتبقي لجهتك هذا الشهر {self.remaining} فقط '
+                        f'من الحد الشهري لفحص السفن والسلع مزدوجة الاستخدام ({self.limit}). تواصل مع مسؤول النظام.')
+            return (f'This job has {self.wanted} screenings but only {self.remaining} of your organisation\'s monthly '
+                    f'limit of vessel and dual-use screenings ({self.limit}) are left. Contact your administrator.')
+        if ar:
+            return (f'وصلت جهتك إلى الحد الشهري لعمليات فحص السفن والسلع مزدوجة الاستخدام ({self.limit}). '
+                    f'تواصل مع مسؤول النظام.')
+        return (f'Your organisation reached its monthly limit of vessel and dual-use screenings ({self.limit}). '
+                f'Contact your administrator.')
+
+
+def _site_default(user, db):
+    """A client site's default daily limit for its users (client_sites/service.py), or None."""
+    try:
+        from client_sites.service import default_limit_for_user
+        return default_limit_for_user(user, db)
+    except Exception:
+        return None
+
+
+def _site_cap(user, db):
+    """(site id, monthly cap) of the user's client site, or None."""
+    try:
+        from client_sites.service import cap_for_user
+        return cap_for_user(user, db)
+    except Exception:
+        return None
 
 
 def today():
@@ -94,6 +133,8 @@ def limit_for(user, db=None):
         except Exception:
             _db(db).rollback()
             own = None
+    if own is None:
+        own = _site_default(user, db)      # a client site's default for its users, else the platform default
     n = default_limit(db) if own is None else int(own)
     return n if n and n > 0 else None
 
@@ -133,6 +174,7 @@ def consume(n=1, kind='name', user=None, db=None):
     kind = kind if kind in KINDS else 'name'
     db = _db(db)
     lim = limit_for(user, db)
+    cap = _site_cap(user, db) if kind in ('vessel', 'dualuse') else None
     day = today()
     try:
         # serialise this user's counting so two parallel requests cannot both pass the limit
@@ -142,6 +184,14 @@ def consume(n=1, kind='name', user=None, db=None):
             if u + n > lim:
                 db.rollback()
                 raise DailyLimitReached(lim, u, n)
+        if cap is not None:
+            # the organisation's monthly cap (vessel + dual-use, all users of the client site together)
+            from client_sites.service import month_used
+            db.execute('SELECT pg_advisory_xact_lock(%s, %s)', (73121, int(cap[0])))
+            mu = month_used(cap[0], day, db)
+            if mu + n > cap[1]:
+                db.rollback()
+                raise MonthlyCapReached(cap[1], mu, n)
         db.execute("""INSERT INTO screening_daily_usage (user_id, day, kind, n, updated_at) VALUES (%s, %s, %s, %s, now())
                       ON CONFLICT (user_id, day, kind) DO UPDATE SET n = screening_daily_usage.n + EXCLUDED.n,
                                                                      updated_at = now()""",
@@ -197,13 +247,21 @@ def usage_today(db=None):
                                         FROM screening_daily_usage WHERE day = %s GROUP BY user_id) x ON x.user_id = u.id
                           WHERE COALESCE(u.is_active, 1) = 1
                           ORDER BY COALESCE(x.n, 0) DESC, u.first_name, u.last_name""", (day,)).fetchall()
+    site_dflt = {}
+    try:      # users of a client site follow the site's default daily limit
+        site_dflt = {x['id']: x['d'] for x in db.execute(
+            """SELECT u.id, s.default_daily_screening_limit AS d FROM users u JOIN client_sites s ON s.id = u.site_id
+                WHERE s.default_daily_screening_limit IS NOT NULL""").fetchall()}
+    except Exception:
+        db.rollback()
     out = []
     for r in rows:
         r = dict(r)
         if r['role'] in UNLIMITED_ROLES:
             r['limit'] = None
         else:
-            n = dflt if r['own_limit'] is None else int(r['own_limit'])
+            own = r['own_limit'] if r['own_limit'] is not None else site_dflt.get(r['id'])
+            n = dflt if own is None else int(own)
             r['limit'] = n if n > 0 else None
         r['left'] = None if r['limit'] is None else max(0, r['limit'] - int(r['used']))
         out.append(r)

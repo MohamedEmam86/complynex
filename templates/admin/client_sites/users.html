@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Client site users') }} - {{ company_name }}{% endblock %}
+{% block content %}
+{% set lang = 'ar' if get_locale() == 'ar' else 'en' %}
+{% set tab = 'users' %}
+{% set labels = {'cms': _('CMS'), 'portal': _('Employee portal'), 'restricted': _('Restricted workspace')} %}
+<div class="container-fluid py-3">
+  <h1 class="h3 mb-3"><i class="bi bi-globe2 me-2"></i>{{ site.name(lang) }} <small class="text-muted fs-6"><code>{{ site.host }}</code></small></h1>
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link{{ ' active' if tab == 'edit' }}" href="{{ url_for('admin.client_site_edit', site_id=site.id) }}">{{ _('Settings & branding') }}</a></li>
+    <li class="nav-item"><a class="nav-link{{ ' active' if tab == 'users' }}" href="{{ url_for('admin.client_site_users', site_id=site.id) }}">{{ _('Users') }}</a></li>
+    <li class="nav-item"><a class="nav-link{{ ' active' if tab == 'usage' }}" href="{{ url_for('admin.client_site_usage', site_id=site.id) }}">{{ _('Usage this month') }}</a></li>
+    <li class="nav-item ms-auto"><a class="nav-link" href="{{ url_for('admin.client_sites') }}"><i class="bi bi-arrow-left-short"></i>{{ _('All client sites') }}</a></li>
+  </ul>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <form method="post" action="{{ url_for('admin.client_site_user_add', site_id=site.id) }}" class="row g-2 align-items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-md-6">
+          <label class="form-label small fw-bold" for="user_id">{{ _('Add a user to this site') }}</label>
+          <select class="form-select form-select-sm" id="user_id" name="user_id" required>
+            <option value="">{{ _('Choose a user') }}</option>
+            {% for u in candidates %}<option value="{{ u.id }}">{{ u.name or u.email }} — {{ u.email }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-auto"><button class="btn btn-primary btn-sm" type="submit">{{ _('Add') }}</button></div>
+        <div class="col-12 small text-muted">{{ _('Added users sign in on this address only (their other sessions end). If their access mode is not allowed here it becomes the site\'s default mode:') }} {{ labels[site.default_access_mode] }}.
+          {{ _('Create new users on the Users page first, then add them here. The platform superadmin is never bound to a site.') }}
+          <a href="{{ url_for('admin.list_users') }}">{{ _('Users') }}</a> · <a href="{{ url_for('admin.screening_limits') }}">{{ _('Screening limits') }}</a></div>
+      </form>
+    </div>
+  </div>
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th>{{ _('User') }}</th><th>{{ _('Access mode') }}</th><th>{{ _('Daily limit') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
+        <tbody>
+        {% for u in members %}
+          <tr>
+            <td>{{ u.name or u.email }}<div class="small text-muted">{{ u.email }} · {{ u.role|label }}</div></td>
+            <td>{{ labels.get(u.access_mode, _('Default (by role)')) }}</td>
+            <td>{% if u.screening_daily_limit is not none %}{{ u.screening_daily_limit if u.screening_daily_limit else _('unlimited') }}{% elif site.default_daily_screening_limit is not none %}{{ site.default_daily_screening_limit if site.default_daily_screening_limit else _('unlimited') }} <span class="small text-muted">({{ _('site default') }})</span>{% else %}<span class="small text-muted">{{ _('platform default') }}</span>{% endif %}</td>
+            <td>{% if u.is_active %}<span class="badge text-bg-success">{{ _('Active') }}</span>{% else %}<span class="badge text-bg-secondary">{{ _('Inactive') }}</span>{% endif %}</td>
+            <td class="text-end text-nowrap">
+              <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('access.admin_user', user_id=u.id) }}">{{ _('Access rights') }}</a>
+              <form method="post" action="{{ url_for('admin.client_site_user_remove', site_id=site.id, user_id=u.id) }}" class="d-inline" data-confirm="{{ _('Remove this user from the site?') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-outline-danger btn-sm" type="submit">{{ _('Remove from site') }}</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="text-muted text-center py-4">{{ _('No users on this site yet.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

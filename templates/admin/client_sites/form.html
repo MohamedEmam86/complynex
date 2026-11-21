@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Client site') }} - {{ company_name }}{% endblock %}
+{% block content %}
+{% set lang = 'ar' if get_locale() == 'ar' else 'en' %}
+{% set tab = 'edit' %}
+<div class="container-fluid py-3">
+  <h1 class="h3 mb-3"><i class="bi bi-globe2 me-2"></i>{% if site %}{{ site.name(lang) }} <small class="text-muted fs-6"><code>{{ site.host }}</code></small>{% else %}{{ _('New client site') }}{% endif %}</h1>
+  {% if site %}
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link{{ ' active' if tab == 'edit' }}" href="{{ url_for('admin.client_site_edit', site_id=site.id) }}">{{ _('Settings & branding') }}</a></li>
+    <li class="nav-item"><a class="nav-link{{ ' active' if tab == 'users' }}" href="{{ url_for('admin.client_site_users', site_id=site.id) }}">{{ _('Users') }}</a></li>
+    <li class="nav-item"><a class="nav-link{{ ' active' if tab == 'usage' }}" href="{{ url_for('admin.client_site_usage', site_id=site.id) }}">{{ _('Usage this month') }}</a></li>
+    <li class="nav-item ms-auto"><a class="nav-link" href="{{ url_for('admin.client_sites') }}"><i class="bi bi-arrow-left-short"></i>{{ _('All client sites') }}</a></li>
+  </ul>
+  {% else %}
+  <a class="small d-inline-block mb-3" href="{{ url_for('admin.client_sites') }}"><i class="bi bi-arrow-left-short"></i>{{ _('All client sites') }}</a>
+  {% endif %}
+  {% for e in errors %}<div class="alert alert-danger py-2 small">{{ e }}</div>{% endfor %}
+  <form method="post" enctype="multipart/form-data" action="{{ url_for('admin.client_site_edit', site_id=site.id) if site else url_for('admin.client_site_new') }}" class="card shadow-sm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="card-body row g-3">
+      <div class="col-md-6">
+        <label class="form-label small fw-bold" for="host">{{ _('Address (host name)') }}</label>
+        <input class="form-control" id="host" name="host" required maxlength="253" placeholder="client.complynex.online" value="{{ f.host or '' }}" dir="ltr">
+        <div class="form-text">{{ _('Lower-case host only, without https:// or a path.') }}</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-bold" for="contact_email">{{ _('Contact e-mail shown on the sign-in page') }}</label>
+        <input class="form-control" type="email" id="contact_email" name="contact_email" maxlength="254" value="{{ f.contact_email or '' }}" dir="ltr">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-bold" for="name_en">{{ _('Client name (English)') }}</label>
+        <input class="form-control" id="name_en" name="name_en" required maxlength="200" value="{{ f.name_en or '' }}" dir="ltr">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-bold" for="name_ar">{{ _('Client name (Arabic)') }}</label>
+        <input class="form-control" id="name_ar" name="name_ar" maxlength="200" value="{{ f.name_ar or '' }}" dir="rtl">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-bold" for="welcome_en">{{ _('Welcome text (English)') }}</label>
+        <textarea class="form-control" id="welcome_en" name="welcome_en" rows="3" maxlength="2000" dir="ltr">{{ f.welcome_en or '' }}</textarea>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-bold" for="welcome_ar">{{ _('Welcome text (Arabic)') }}</label>
+        <textarea class="form-control" id="welcome_ar" name="welcome_ar" rows="3" maxlength="2000" dir="rtl">{{ f.welcome_ar or '' }}</textarea>
+      </div>
+      <div class="col-md-6">
+        <div class="form-label small fw-bold">{{ _('Allowed access modes') }}</div>
+        {% set labels = {'cms': _('CMS'), 'portal': _('Employee portal'), 'restricted': _('Restricted workspace')} %}
+        {% for m in modes %}
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="checkbox" id="mode_{{ m }}" name="allowed_access_modes" value="{{ m }}" {{ 'checked' if m in (f.allowed_access_modes or []) }}>
+          <label class="form-check-label" for="mode_{{ m }}">{{ labels[m] }}</label>
+        </div>
+        {% endfor %}
+        <div class="form-text">{{ _('Users whose access mode is not allowed cannot sign in on this address.') }}</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-bold" for="default_access_mode">{{ _('Default access mode for users added to the site') }}</label>
+        <select class="form-select" id="default_access_mode" name="default_access_mode">
+          {% for m in modes %}<option value="{{ m }}" {{ 'selected' if f.default_access_mode == m }}>{{ labels[m] }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-bold" for="default_daily_screening_limit">{{ _('Default daily screening limit per user') }}</label>
+        <input class="form-control" type="number" min="0" step="1" id="default_daily_screening_limit" name="default_daily_screening_limit" value="{{ f.default_daily_screening_limit if f.default_daily_screening_limit is not none else '' }}">
+        <div class="form-text">{{ _('Empty = the platform default; 0 = unlimited. A user\'s own limit (Screening limits page) replaces it.') }}</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-bold" for="monthly_org_cap">{{ _('Monthly cap for the organisation (vessel + dual-use screenings)') }}</label>
+        <input class="form-control" type="number" min="0" step="1" id="monthly_org_cap" name="monthly_org_cap" value="{{ f.monthly_org_cap or 0 }}">
+        <div class="form-text">{{ _('All users of the site together, per calendar month (Cairo time). 0 = unlimited.') }}</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-bold" for="logo">{{ _('Client logo (PNG, JPG or SVG)') }}</label>
+        <input class="form-control" type="file" id="logo" name="logo" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml">
+        <div class="form-text">{{ _('Maximum size (KB):') }} {{ max_kb }}. {{ _('SVG files are cleaned (no scripts or external references). The logo is stored on the server, never in the code.') }}</div>
+        {% if site and site.logo_path %}
+        <div class="d-flex align-items-center gap-3 mt-2">
+          <img src="{{ url_for('auth.site_logo', site_id=site.id) }}" alt="" style="max-height:48px;max-width:160px">
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="remove_logo" name="remove_logo" value="1">
+            <label class="form-check-label small" for="remove_logo">{{ _('Remove the logo') }}</label></div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="col-md-6 d-flex align-items-end">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="active" name="active" value="1" {{ 'checked' if f.active }}>
+          <label class="form-check-label" for="active">{{ _('Active (the address answers)') }}</label>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2">
+      <button class="btn btn-primary" type="submit">{{ _('Save') }}</button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('admin.client_sites') }}">{{ _('Cancel') }}</a>
+    </div>
+  </form>
+  <div class="small text-muted mt-3">{{ _('The sign-in page shows "ComplyNex for" the client name, the client logo beside the ComplyNex logo and "powered by ComplyNex". It never copies the client\'s own website or sign-in page.') }}</div>
+</div>
+{% endblock %}

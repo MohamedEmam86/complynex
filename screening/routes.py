@@ -77,7 +77,7 @@ def _daily_limit_reached(e):
     wants_json = (request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
                   or request.accept_mimetypes.best == 'application/json' or '/api/' in request.path)
     if wants_json:
-        return jsonify({'success': False, 'error': 'daily_limit_reached', 'message': msg,
+        return jsonify({'success': False, 'error': getattr(e, 'code', 'daily_limit_reached'), 'message': msg,
                         'message_en': e.message('en'), 'message_ar': e.message('ar'),
                         'limit': e.limit, 'used': e.used, 'remaining': e.remaining}), 429
     flash(msg, 'danger')
