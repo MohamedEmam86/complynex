@@ -4,7 +4,8 @@
 # Usage:  sudo /var/www/complynex/deploy.sh            (deploys origin/main)
 #         sudo /var/www/complynex/deploy.sh <branch>   (deploys another branch)
 # Steps: schema backup -> fast-forward to origin/<branch> -> new SQL migrations ->
-#        guards -> restart -> health check -> automatic code rollback if unhealthy.
+#        guards -> restart -> health check -> automatic code rollback if unhealthy ->
+#        secondary instances (/etc/complynex/instances.list, see scripts/instance/).
 # =============================================================================
 set -euo pipefail
 APP=/var/www/complynex
@@ -19,6 +20,32 @@ restart() {
   systemctl restart complynex
   for i in $(seq 1 40); do sleep 3; [ "$(health)" = 200 ] && return 0; done
   return 1
+}
+# A secondary instance (scripts/instance/create_instance.sh): same code in its own folder (git worktree) and
+# database. Updated only after the main deploy succeeded; a failure here never rolls back the main instance.
+update_instance() {
+  local n="$1" port="$2" dir="/var/www/complynex-$1" db="complynex_$1" rc=0 code m
+  echo "-- instance $n ($dir, port $port)"
+  [ -f "$dir/.cx_instance" ] || { echo "INSTANCE $n: $dir/.cx_instance missing"; return 1; }
+  git -C "$dir" -c safe.directory='*' checkout -q --detach "$TARGET" || { echo "INSTANCE $n: code update failed"; return 1; }
+  git -C "$dir" -c safe.directory='*' ls-files -z | (cd "$dir" && xargs -0 chown complynex:complynex) || true
+  # root runs the backup script: install it from the commit, not from a file the app user can write
+  { $G show "$TARGET:scripts/instance/backup_instance.sh" > /usr/local/sbin/complynex-instance-backup.new && \
+    chmod 755 /usr/local/sbin/complynex-instance-backup.new && \
+    mv /usr/local/sbin/complynex-instance-backup.new /usr/local/sbin/complynex-instance-backup; } || rc=1
+  for m in $MIGR; do
+    echo "   migration $m"
+    sudo -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -q < "$APP/$m" || { echo "INSTANCE $n: MIGRATION FAILED: $m"; rc=1; }
+  done
+  systemctl restart "complynex-$n" || { echo "INSTANCE $n: restart failed"; return 1; }
+  code=000
+  for i in $(seq 1 30); do
+    sleep 2; code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/health" || true)
+    [ "$code" = 200 ] && break
+  done
+  echo "   instance $n health: $code"
+  [ "$code" = 200 ] || { echo "INSTANCE $n: UNHEALTHY — journalctl -u complynex-$n -n 80"; return 1; }
+  return $rc
 }
 
 echo "== ComplyNex deploy $TS  branch=$BR"
@@ -91,7 +118,23 @@ if restart; then
   fi
   # The eKYC worker is a separate process: restart it so it runs the same code.
   systemctl restart complynex-ekyc-worker 2>/dev/null && echo "ekyc worker restarted" || true
-  # (the separate demo instance was removed in Nov 2026; sample data lives in the main instance)
+  # Secondary instances: each listed one gets the new code, the new migrations and a restart.
+  INSTANCES=/etc/complynex/instances.list
+  if [ -s "$INSTANCES" ]; then
+    INST_FAILED=""
+    while read -r iname iport _rest; do
+      case "$iname" in ''|\#*) continue;; esac
+      update_instance "$iname" "$iport" || INST_FAILED="$INST_FAILED $iname"
+    done < "$INSTANCES"
+    if [ -n "$INST_FAILED" ]; then
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      echo "WARNING: SECONDARY INSTANCE UPDATE FAILED:$INST_FAILED"
+      echo "         The main instance is deployed and healthy (not rolled back). Fix the instance(s) above."
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    else
+      echo "secondary instances updated"
+    fi
+  fi
 else
   echo "UNHEALTHY after deploy — rolling code back to $PREV"
   $G reset --hard --quiet "$PREV"

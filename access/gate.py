@@ -36,6 +36,8 @@ from flask import current_app, g, jsonify, redirect, render_template, request, u
 from flask_login import current_user
 from markupsafe import Markup
 
+from utils import instance_profile as _profile
+
 from . import service as S
 
 logger = logging.getLogger(__name__)
@@ -102,9 +104,13 @@ def _deny(access):
 
 
 def check_request():
+    ep = request.endpoint
+    if ep and not _profile.endpoint_enabled(ep):
+        # outside this instance's profile: the page does not exist here (for everybody, superadmin too)
+        from flask import abort
+        abort(404)
     if not enabled():
         return None
-    ep = request.endpoint
     if not ep or ep == 'static':
         return None
     if not _signed_in():
@@ -151,15 +157,17 @@ def link_ok(href, access=None):
 
 
 def prune_nav(html):
-    """Remove the sidebar links this user may not open and the groups left empty."""
-    if not enabled():
-        return html
-    access = current_access()
-    if access is None or access.unrestricted:
-        return html
+    """Remove the sidebar links this user may not open (and those outside the instance profile, for
+    everybody) and the groups left empty."""
     text = str(html)
     hrefs = set(re.findall(r'href="([^"]+)"', text))
-    denied = {h for h in hrefs if not link_ok(h.replace('&amp;', '&'), access)}
+    off = set() if _profile.is_full() else {h for h in hrefs if _off_link(h.replace('&amp;', '&'))}
+    access = current_access() if enabled() else None
+    if (not enabled() or access is None or access.unrestricted) and not off:
+        return html
+    denied = set(off)
+    if enabled() and access is not None and not access.unrestricted:
+        denied |= {h for h in hrefs if not link_ok(h.replace('&amp;', '&'), access)}
     if not denied:
         return html
     from lxml import html as LH
@@ -173,7 +181,7 @@ def prune_nav(html):
         if li is not None and li.getparent() is not None:
             li.getparent().remove(li)
         else:
-            a.set('href', url_for(S.home_endpoint(access)))
+            a.set('href', url_for(S.home_endpoint(access)) if access is not None else url_for('dashboard'))
     changed = True
     while changed:
         changed = False
@@ -193,6 +201,14 @@ def prune_nav(html):
                 cnt.text = str(sum(1 for c in sub if c.tag == 'li'))
     out = ''.join(LH.tostring(c, encoding='unicode') for c in root)
     return Markup((root.text or '') + out)
+
+
+def _off_link(href):
+    """A link to a page outside this instance's profile (an /_off/ link or a page the profile refuses)."""
+    if _profile.is_off_link(href):
+        return True
+    ep = endpoint_of(href)
+    return bool(ep) and not _profile.endpoint_enabled(ep)
 
 
 # ------------------------------------------------------------------ template globals

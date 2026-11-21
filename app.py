@@ -29,6 +29,11 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# Instance profile (CX_INSTANCE_PROFILE, default 'full'): a governance-only instance never imports the
+# screening engine, ML models, search clients or eKYC — see utils/instance_profile.py
+from utils import instance_profile as _profile
+_profile.install_import_guard()
+
 from system_fingerprint import verify_on_startup, get_short_fingerprint, fingerprint_context
 
 from flask_babel import gettext
@@ -342,184 +347,97 @@ def create_app(config_name=None):
         notifications = Notification.get_all_for_user(current_user.id)
         return render_template('notifications/list.html', notifications=notifications)
 
-    # Register blueprints
-    from auth.routes import auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    
-    from admin.routes import admin_bp
-    app.register_blueprint(admin_bp)
-    
-    from ghe.routes import ghe_bp
-    app.register_blueprint(ghe_bp)
-    
-    # Public GHE routes (no authentication required)
-    from ghe.public_routes import public_ghe_bp
-    app.register_blueprint(public_ghe_bp)
+    # Register blueprints (in this order). An instance profile (utils/instance_profile.py) registers only the
+    # blueprints of its modules: the others are never imported.
+    import importlib as _importlib
 
-    # COI Module
-    from coi.routes import coi_bp
-    app.register_blueprint(coi_bp)
-    
-    from coi.public_routes import public_coi_bp
-    app.register_blueprint(public_coi_bp)
-    
-    # COBEC Module
-    from cobec.routes import cobec_bp
-    app.register_blueprint(cobec_bp)
-    
-    # Declaration Tracker Module
-    from tracker.routes import tracker_bp
-    app.register_blueprint(tracker_bp)
-    
-    # Policy Management Module
-    from policies.routes import policies_bp
-    app.register_blueprint(policies_bp)
-    
-    # Regulatory Reporting Module
-    from reporting.routes import reporting_bp
-    app.register_blueprint(reporting_bp)
-    
-    # Training Management Module
-    from training.routes import training_bp
-    from aml.routes import aml_bp
-    from data_protection.routes import dp_bp
-    from cyber.routes import cyber_bp
-    from governance import governance_bp
-    from risk_management import risk_bp
-    from internal_audit import ia_bp
-    from carbon import carbon_bp
-    from esg import esg_bp
-    from attachments import attachments_bp
-    app.register_blueprint(training_bp)
-    app.register_blueprint(aml_bp)
-    app.register_blueprint(dp_bp)
-    app.register_blueprint(cyber_bp)
-    app.register_blueprint(governance_bp)
-    app.register_blueprint(risk_bp)
-    app.register_blueprint(ia_bp)
-    app.register_blueprint(carbon_bp)
-    app.register_blueprint(esg_bp)
-    app.register_blueprint(attachments_bp)
+    def _register(name, module, attr, kwargs=None, also=()):
+        if not _profile.blueprint_enabled(name):
+            return None
+        mod = _importlib.import_module(module)
+        for extra in also:                      # modules that add their routes to the blueprint
+            _importlib.import_module(extra)
+        bp = getattr(mod, attr)
+        app.register_blueprint(bp, **(kwargs or {}))
+        return bp
 
-    # Screening Module
-    from screening.routes import screening_bp
-    app.register_blueprint(screening_bp, url_prefix='/screening')
-
-    # Vessel screening + ComplyNex Vessels Database (V1-V3)
-    from screening.vessel_routes import vessels_bp
-    app.register_blueprint(vessels_bp)
-
-    # PEP Management API (search/detail/manual-sync routes only — the actual
-    # background sync scheduler runs as its own systemd service,
-    # complynex-pep-scheduler.service, not inside gunicorn workers)
-    from screening.pep_management.api import pep_api
-    app.register_blueprint(pep_api)
-
-    # Whistleblowing Module
-    from whistleblowing.routes import whistleblowing_bp
-    app.register_blueprint(whistleblowing_bp, url_prefix='/whistleblowing')
-
-    from declarations import declarations_bp
-    app.register_blueprint(declarations_bp)
-
-    # Consumer Protection Module
-    from consumer_protection.routes import consumer_bp
-    app.register_blueprint(consumer_bp)
-
-    # Employee Portal Module (Public Access)
-    from portal.routes import portal_bp
-    app.register_blueprint(portal_bp)
-    
-    # User Management Module (Admin)
-    from users import users_bp
-    app.register_blueprint(users_bp)
-    
-    # Internal Blacklist Module
-    from blacklist import blacklist_bp
-    app.register_blueprint(blacklist_bp)
-    
-    # Merchant KYC Module
-    from merchant_kyc.routes import merchant_kyc_bp
-    app.register_blueprint(merchant_kyc_bp)
-
-    # Compliance Event Bus (admin UI over compliance_events / event_routing_rules —
-    # the actual dispatch runs in complynex-event-dispatcher.service, not gunicorn)
-    from events import events_bp
-    import events.routes  # noqa: F401 — registers routes on events_bp
-    app.register_blueprint(events_bp)
-
-    # Party Registry (Entity 360) + unified Case oversight — see parties/ and cases/
-    from parties import parties_bp
-    import parties.routes  # noqa: F401 — registers routes on parties_bp
-    app.register_blueprint(parties_bp)
-
-    from cases import cases_bp
-    import cases.routes  # noqa: F401 — registers routes on cases_bp
-    app.register_blueprint(cases_bp)
-
-    # FRA regulatory control framework (parameters, control library, engine,
-    # evidence, findings & corrective actions) — see regcontrols/
-    from regcontrols import regcontrols_bp
-    import regcontrols.routes  # noqa: F401 — registers routes on regcontrols_bp
-    app.register_blueprint(regcontrols_bp)
-
-    # AML/CFT & KYC assurance (key roles, annual report, monitoring programme,
-    # screening QA, unusual-transactions register, KYC files, risk model) — see amlkyc/
-    from amlkyc import amlkyc_bp
-    import amlkyc.routes  # noqa: F401 — registers routes on amlkyc_bp
-    app.register_blueprint(amlkyc_bp)
-
-    # Prudential, licensing, governance & financial-reporting registers — see prudential/
-    from prudential import prudential_bp
-    import prudential.routes  # noqa: F401 — registers routes on prudential_bp
-    app.register_blueprint(prudential_bp)
-
-    # Compliance Copilot (AI intake, playbooks, next-best-action) — local
-    # inference only, rules fallback by default — see ai/ and docs/ai/
-    from ai import ai_bp
-    import ai.routes  # noqa: F401 — registers routes on ai_bp
-    app.register_blueprint(ai_bp)
-
-    # Optional content packs (packs/<code>/): their pages exist only while the
-    # pack is enabled (Compliance Controls > Content packs). Core never
-    # imports a specific pack.
-    from regcontrols.packs import register_blueprints as _register_pack_blueprints
-    _register_pack_blueprints(app)
-
-
-    # Phishing Awareness Module
-    from phishing import phishing_bp
-    app.register_blueprint(phishing_bp)
-
-        # eKYC Module
-    from ekyc.routes import ekyc_bp
-    app.register_blueprint(ekyc_bp)
-
-    # Integrys Academy — public learner portal (academy.integrysconsult.com) + staff console
-    from academy import academy_bp, academy_admin_bp
-    app.register_blueprint(academy_bp)
-    app.register_blueprint(academy_admin_bp)
-
-    # Rating guides (what each score means) and the ESG / carbon guideline
-    from guides import guides_bp
-    app.register_blueprint(guides_bp)
-    # The demo instance was removed (owner decision, Nov 2026): no demo access links.
-    from legal import legal_bp
-    app.register_blueprint(legal_bp)
-    # P6-7: server status page for admins (data from scripts/ops_monitor.py)
-    from ops import ops_status_bp
-    app.register_blueprint(ops_status_bp)
+    _PACKS = None                               # optional content packs are registered at this point
+    _BLUEPRINTS = (
+        # (blueprint name, module, attribute, register_blueprint kwargs, route modules)
+        ('auth', 'auth.routes', 'auth_bp', {'url_prefix': '/auth'}, ('auth.set_password',)),
+        ('admin', 'admin.routes', 'admin_bp', None, ()),
+        ('ghe', 'ghe.routes', 'ghe_bp', None, ()),
+        ('public_ghe', 'ghe.public_routes', 'public_ghe_bp', None, ()),       # public GHE pages (no sign-in)
+        ('coi', 'coi.routes', 'coi_bp', None, ()),
+        ('public_coi', 'coi.public_routes', 'public_coi_bp', None, ()),
+        ('cobec', 'cobec.routes', 'cobec_bp', None, ()),
+        ('tracker', 'tracker.routes', 'tracker_bp', None, ()),                 # declaration tracker
+        ('policies', 'policies.routes', 'policies_bp', None, ()),
+        ('reporting', 'reporting.routes', 'reporting_bp', None, ()),           # regulatory reporting
+        ('training', 'training.routes', 'training_bp', None, ()),
+        ('aml', 'aml.routes', 'aml_bp', None, ()),
+        ('dp', 'data_protection.routes', 'dp_bp', None, ()),
+        ('cyber', 'cyber.routes', 'cyber_bp', None, ()),
+        ('governance', 'governance', 'governance_bp', None, ()),
+        ('risk_management', 'risk_management', 'risk_bp', None, ()),
+        ('internal_audit', 'internal_audit', 'ia_bp', None, ()),
+        ('carbon', 'carbon', 'carbon_bp', None, ()),
+        ('esg', 'esg', 'esg_bp', None, ()),
+        ('attachments', 'attachments', 'attachments_bp', None, ()),
+        ('screening', 'screening.routes', 'screening_bp', {'url_prefix': '/screening'}, ()),
+        ('vessels', 'screening.vessel_routes', 'vessels_bp', None, ()),       # vessel screening + vessels DB
+        # PEP management API (search/detail/manual sync; the background sync is complynex-pep-scheduler.service)
+        ('pep_api', 'screening.pep_management.api', 'pep_api', None, ()),
+        ('whistleblowing', 'whistleblowing.routes', 'whistleblowing_bp', {'url_prefix': '/whistleblowing'}, ()),
+        ('declarations', 'declarations', 'declarations_bp', None, ()),
+        ('consumer_protection', 'consumer_protection.routes', 'consumer_bp', None, ()),
+        ('portal', 'portal.routes', 'portal_bp', None, ()),                    # employee portal
+        ('users', 'users', 'users_bp', None, ()),                              # user management
+        ('blacklist', 'blacklist', 'blacklist_bp', None, ()),                  # internal blacklist
+        ('merchant_kyc', 'merchant_kyc.routes', 'merchant_kyc_bp', None, ()),
+        # compliance event bus admin UI (the dispatch runs in complynex-event-dispatcher.service)
+        ('events', 'events', 'events_bp', None, ('events.routes',)),
+        ('parties', 'parties', 'parties_bp', None, ('parties.routes',)),       # party registry (entity 360)
+        ('cases', 'cases', 'cases_bp', None, ('cases.routes',)),               # unified case oversight
+        ('regcontrols', 'regcontrols', 'regcontrols_bp', None, ('regcontrols.routes',)),  # control framework
+        ('amlkyc', 'amlkyc', 'amlkyc_bp', None, ('amlkyc.routes',)),           # AML/CFT & KYC assurance
+        ('prudential', 'prudential', 'prudential_bp', None, ('prudential.routes',)),
+        ('ai', 'ai', 'ai_bp', None, ('ai.routes',)),                           # compliance copilot (local)
+        _PACKS,
+        ('phishing', 'phishing', 'phishing_bp', None, ()),
+        ('ekyc', 'ekyc.routes', 'ekyc_bp', None, ()),
+        # Integrys Academy — public learner portal + staff console
+        ('academy', 'academy', 'academy_bp', None, ()),
+        ('academy_admin', 'academy', 'academy_admin_bp', None, ()),
+        ('guides', 'guides', 'guides_bp', None, ()),                           # rating guides, ESG guideline
+        ('legal', 'legal', 'legal_bp', None, ()),
+        ('ops_status', 'ops', 'ops_status_bp', None, ()),                      # server status page (admins)
+    )
+    for _entry in _BLUEPRINTS:
+        if _entry is _PACKS:
+            # Optional content packs (packs/<code>/): their pages exist only while the pack is enabled
+            # (Compliance Controls > Content packs). Core never imports a specific pack.
+            if _profile.packs_enabled():
+                from regcontrols.packs import register_blueprints as _register_pack_blueprints
+                _register_pack_blueprints(app)
+            continue
+        _register(*_entry)
 
     # Versioned REST API
-    try:
-        from api import api_v1_bp
-        app.register_blueprint(api_v1_bp)
-        csrf.exempt(api_v1_bp)
-        from api.admin_ui import api_admin_bp   # API clients page (session + CSRF)
-        app.register_blueprint(api_admin_bp)
-    except Exception as _api_err:
-        import logging as _log
-        _log.getLogger(__name__).warning('API v1 blueprint not loaded: %s', _api_err)
+    if _profile.blueprint_enabled('api_v1'):
+        try:
+            from api import api_v1_bp
+            app.register_blueprint(api_v1_bp)
+            csrf.exempt(api_v1_bp)
+            from api.admin_ui import api_admin_bp   # API clients page (session + CSRF)
+            app.register_blueprint(api_admin_bp)
+        except Exception as _api_err:
+            import logging as _log
+            _log.getLogger(__name__).warning('API v1 blueprint not loaded: %s', _api_err)
+
+    # Pages outside the instance profile: url_for() gives a 404 link that menus drop (not for 'full').
+    _profile.install_url_fallback(app)
+    _profile.install_template_fallbacks(app)
 
     # Context processor for templates
     @app.context_processor
@@ -843,6 +761,9 @@ Message:
     # Client sites: host resolution (first before_request, unknown hosts -> 404), per-host session cookie.
     from client_sites import init_app as _sites_init
     _sites_init(app)
+
+    # Per-instance upload quota (CX_UPLOAD_QUOTA_MB; off when unset)
+    _profile.install_upload_quota(app)
 
     # Per-user access control (modules x features registry, request gate, menus, restricted workspace).
     # Last, so the registry resolves the complete URL map and the gate runs after the session checks.

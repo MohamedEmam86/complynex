@@ -242,11 +242,23 @@ def register_module(module):
 
 
 def all_features():
-    return [f for m in modules() for f in m.features]
+    """Features this instance offers (its instance profile, utils/instance_profile.py; all for 'full')."""
+    from utils import instance_profile as P
+    return [f for m in modules() for f in m.features if P.feature_enabled(f)]
 
 
 def modules():
+    """Modules this instance offers (its instance profile; all for 'full'), in menu order."""
+    from utils import instance_profile as P
+    return [m for m in _all_modules() if P.module_enabled(m.key)]
+
+
+def _all_modules():
     return sorted(MODULES.values(), key=lambda m: (AREAS.get(m.area, ('', '', 999))[2], m.order))
+
+
+def _all_features():
+    return [f for m in _all_modules() for f in m.features]
 
 
 def module_of(feature_key):
@@ -284,7 +296,9 @@ def build(app):
     FEATURES.clear()
     ENDPOINT_FEATURE.clear()
     ENDPOINT_SPEC.clear()
-    for m in modules():
+    # every module, also those outside the instance profile: their endpoints keep their feature, so the
+    # request gate can refuse them (utils/instance_profile.endpoint_enabled)
+    for m in _all_modules():
         for f in m.features:
             f.module = m
             f.endpoints = []
@@ -295,7 +309,7 @@ def build(app):
     for rule in app.url_map.iter_rules():
         methods.setdefault(rule.endpoint, set()).update(rule.methods - {'HEAD', 'OPTIONS'})
     bp_module = {}
-    for m in modules():
+    for m in _all_modules():
         for bp in m.blueprints:
             bp_module.setdefault(bp, m)
     for ep in sorted(methods):
@@ -308,7 +322,7 @@ def build(app):
         if not any(fnmatch.fnmatchcase(ep, p) for p in PUBLIC):
             # exact names first (a page named by one feature wins over another module's wildcard), then patterns
             for exact in (True, False):
-                for f in all_features():
+                for f in _all_features():
                     if f.when and kind not in ((f.when,) if isinstance(f.when, str) else f.when):
                         continue
                     if any((p == ep) if exact else ('*' in p and fnmatch.fnmatchcase(ep, p)) for p in f.patterns):

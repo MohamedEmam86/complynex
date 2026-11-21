@@ -102,10 +102,18 @@ need dependencies installed — if they cannot run in your environment, say so i
 with `{% from 'partials/rating_guide.html' import guide_panel with context %}{{ guide_panel('risk.likelihood') }}`;
 all guides: `/guides/ratings`; ESG/carbon guideline: `/guides/esg-carbon`.
 
-## Demo instance (demo.complynex.online)
-- Same code in `/var/www/complynex-demo` (git worktree, detached; `.demo_instance` marker), own database
-  `complynex_demo` (role complynex_demo), Redis db 1, read-only ES alias `aml_watchlist_public` (internal lists
-  filtered out). `utils/demo.py` disables list downloads, ES/semantic writes and delta re-screening there.
-- `deploy.sh` updates it after the main deploy. Reset the fictional company (Nile Microfinance S.A.E.):
-  `sudo /var/www/complynex-demo/scripts/demo_data/reset.sh` (reference tables are copied from the main
-  instance; everything else is reseeded by `scripts/demo_data/m_<area>.py`).
+## Secondary instances and instance profiles (scripts/instance/)
+- The same code can run as a SECONDARY instance on the server: own folder `/var/www/complynex-<name>` (git worktree,
+  detached; `.cx_instance` marker), own database + role `complynex_<name>` (schema = schema-only dump of the main
+  database: the migrations alone cannot build it from empty), own Redis db, `complynex-<name>.service` on
+  127.0.0.1:<port> and a daily `complynex-<name>-backup.timer`. Create / remove: `scripts/instance/create_instance.sh`,
+  `remove_instance.sh`; first superadmin (one-time set-password link): `scripts/instance/create_superadmin.py`.
+  `deploy.sh` updates every instance in `/etc/complynex/instances.list` after the main deploy (code, new migrations,
+  restart, health); an instance failure is reported loudly and never rolls back the main instance.
+- `CX_INSTANCE_PROFILE` (default `full` = everything) chooses what an instance offers; profiles are DATA in
+  `utils/instance_profile.py` (access-catalogue module / feature keys). `governance` registers only the governance,
+  policies, COI, declarations, portal, admin and general pages and never imports screening, ML, Elasticsearch, eKYC
+  or packs (an import guard refuses them; optional callers must keep catching ImportError). Pages outside the
+  profile are 404 and `url_for()` of them gives an `/_off/` link that the menus drop. `CX_UPLOAD_QUOTA_MB` caps an
+  instance's upload folder. Nothing in code, docs or commits names a client of an instance.
+- (The earlier demo instance was removed in Nov 2026; `utils/demo.py` switches remain for its marker only.)

@@ -30,6 +30,9 @@ def _pack_modules(app):
     permission over the pack's guarded blueprints. Generic: no pack is named here."""
     import importlib
     from . import registry as R
+    from utils import instance_profile as _profile
+    if not _profile.packs_enabled():
+        return
     try:
         from regcontrols import packs as P
         P.discover()
