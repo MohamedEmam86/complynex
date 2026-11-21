@@ -438,6 +438,8 @@ def create_app(config_name=None):
     # Pages outside the instance profile: url_for() gives a 404 link that menus drop (not for 'full').
     _profile.install_url_fallback(app)
     _profile.install_template_fallbacks(app)
+    _profile.install_url_for_guard(app)
+    _profile.install_link_scrub(app)
 
     # Context processor for templates
     @app.context_processor

@@ -28,7 +28,9 @@ SECURITY_VIEW_ROLES = ('admin', 'compliance_officer', 'compliance_manager')
 
 
 def _can_view():
-    return getattr(current_user, 'is_authenticated', False) and current_user.role in SECURITY_VIEW_ROLES
+    # the platform superadmin is unrestricted by design (access/service.py UNRESTRICTED_ROLES)
+    return getattr(current_user, 'is_authenticated', False) and \
+        current_user.role in SECURITY_VIEW_ROLES + ('superadmin',)
 
 
 def _ip():

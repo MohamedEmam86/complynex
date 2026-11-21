@@ -210,6 +210,92 @@ def install_template_fallbacks(app):
         app.jinja_env.globals.setdefault(key, fn)
 
 
+def install_url_for_guard(app):
+    """url_for() of a REGISTERED page the profile refuses (e.g. a feature turned off in an enabled module) gives
+    an /_off/ link too, so no rendered link leads to a 404. Not installed for 'full'."""
+    if is_full():
+        return
+    original = app.url_for
+
+    def url_for(endpoint, *args, **kwargs):
+        full_ep = endpoint
+        if endpoint and endpoint.startswith('.'):
+            try:
+                from flask import request
+                full_ep = (request.blueprint or '') + endpoint if request.blueprint else endpoint[1:]
+            except RuntimeError:
+                full_ep = None
+        if full_ep and not endpoint_enabled(full_ep):
+            return OFF_PREFIX + full_ep
+        return original(endpoint, *args, **kwargs)
+    app.url_for = url_for                           # flask.url_for() in views
+    app.jinja_env.globals['url_for'] = url_for      # templates (the environment keeps its own reference)
+
+
+# ------------------------------------------------------------------ page clean-up (links to pages not offered)
+# Templates mark what may disappear:
+#   data-cx-widget              a block (card, tile, row, button) removed when it holds a link to an /_off/ page
+#   data-cx-endpoint="bp.view"  a block that belongs to that page's module, removed when the profile refuses it
+# Any other /_off/ link: a menu entry (li in a nav / dropdown) is removed, a plain link keeps its text only,
+# a form posting to it is removed.
+_OFF_ATTRS = ('href', 'action', 'formaction', 'data-href', 'data-url')
+
+
+def scrub_html(text):
+    """The page without links to pages this instance does not offer (see the marks above)."""
+    if OFF_PREFIX not in text and 'data-cx-endpoint' not in text:
+        return text
+    from lxml import html as LH
+    doctype = text.lstrip()[:15].lower().startswith('<!doctype')
+    root = LH.document_fromstring(text)
+
+    def attached(el):
+        return any(a is root for a in el.iterancestors()) or el is root
+
+    for el in root.xpath('//*[@data-cx-endpoint]'):
+        if attached(el) and not endpoint_enabled(el.get('data-cx-endpoint')):
+            el.drop_tree()
+    cond = ' or '.join(f'starts-with(@{a}, "{OFF_PREFIX}")' for a in _OFF_ATTRS)
+    for el in root.xpath(f'//*[{cond}]'):
+        if not attached(el):
+            continue
+        widget = next((a for a in [el, *el.iterancestors()] if a.get('data-cx-widget') is not None), None)
+        if widget is not None:
+            widget.drop_tree()
+            continue
+        if el.tag == 'a':
+            li = next((a for a in el.iterancestors() if a.tag == 'li'), None)
+            menu = li is not None and li.getparent() is not None and any(
+                c in (li.getparent().get('class') or '') for c in ('nav', 'dropdown-menu', 'list-group', 'breadcrumb'))
+            if menu:
+                li.drop_tree()
+            else:
+                el.drop_tag()           # keep the words, drop the dead link
+        elif el.tag == 'form' or el.get('formaction', '').startswith(OFF_PREFIX):
+            el.drop_tree()
+        else:
+            for a in _OFF_ATTRS:
+                if (el.get(a) or '').startswith(OFF_PREFIX):
+                    del el.attrib[a]
+    out = LH.tostring(root, encoding='unicode', method='html')
+    return ('<!DOCTYPE html>\n' + out) if doctype else out
+
+
+def install_link_scrub(app):
+    """Apply scrub_html to every HTML page (not for 'full')."""
+    if is_full():
+        return
+
+    @app.after_request
+    def _cx_scrub_off_links(response):
+        if response.direct_passthrough or response.is_streamed or response.mimetype != 'text/html':
+            return response
+        data = response.get_data(as_text=True)
+        if OFF_PREFIX in data or 'data-cx-endpoint' in data:
+            response.set_data(scrub_html(data))
+        return response
+
+
 # ------------------------------------------------------------------ import guard
 class _Blocker:
     def __init__(self, roots):

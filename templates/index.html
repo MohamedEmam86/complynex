@@ -121,7 +121,7 @@
         <h6><span><i class="bi bi-check2-square me-1"></i> {{ _('My Tasks Today') }}</span>
           <span class="pill">{{ _('%(n)s open', n=my_pending_items|length) }}</span></h6>
         {% for item in my_pending_items[:8] %}
-        <div class="task-row">
+        <div class="task-row" data-cx-widget>
           <span class="mod-tag">{{ item.module }}</span>
           <div class="txt">
             {% if item.link %}<a href="{{ item.link }}" class="text-decoration-none text-dark">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}
@@ -152,7 +152,7 @@
         </div>
       </div>
       {% if current_user.can_edit('risk_management') %}
-      <div class="bento-card">
+      <div class="bento-card" data-cx-endpoint="risk_management.suggestions">
         <h6><span><i class="bi bi-lightbulb me-1"></i> {{ _('Suggested Risks') }}</span>
           {% if risk_suggestion_count %}<span class="pill">{{ _('%(n)s new', n=risk_suggestion_count) }}</span>{% endif %}</h6>
         {% if risk_suggestion_count %}
@@ -167,7 +167,7 @@
 
     <!-- KRIs -->
     {% if current_user.can_view('risk_management') %}
-    <div class="col-lg-4">
+    <div class="col-lg-4" data-cx-endpoint="risk_management.kris_dashboard">
       <div class="bento-card">
         <h6><span><i class="bi bi-graph-up me-1"></i> {{ _('Key Risk Indicators') }}</span></h6>
         {% for entry in kri_snapshot[:5] %}
@@ -188,7 +188,7 @@
   <div class="row g-3 mb-3">
     <!-- Risk Heat Map -->
     {% if current_user.can_view('risk_management') %}
-    <div class="col-lg-5">
+    <div class="col-lg-5" data-cx-endpoint="risk_management.dashboard">
       <div class="bento-card">
         <h6><span><i class="bi bi-grid-3x3 me-1"></i> {{ _('Enterprise Risk Heat Map') }}</span>
           <span class="pill">{{ _('%(n)s active', n=risk_total_active) }}</span></h6>
@@ -212,7 +212,7 @@
 
     <!-- Internal Audit -->
     {% if current_user.can_view('internal_audit') %}
-    <div class="col-lg-3">
+    <div class="col-lg-3" data-cx-endpoint="internal_audit.dashboard">
       <div class="bento-card">
         <h6><span><i class="bi bi-clipboard2-check me-1"></i> {{ _('Internal Audit') }}</span></h6>
         <div class="audit-stat-row">
@@ -231,79 +231,79 @@
         <h6><i class="bi bi-grid me-1"></i> {{ _('All Modules') }}</h6>
         <div class="row g-2">
           {% if not current_user.role == 'employee' %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('ghe.pending_approval') if current_user.is_manager() or current_user.is_compliance_officer() else '#' }}" class="modtile {{ 'mt-warn' if pending_ghe_count else 'mt-ok' }}">
               <div class="n">{{ pending_ghe_count }}</div><div class="name">{{ _('GHE Pending') }}</div>
             </a>
           </div>
           {% endif %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('coi.pending_review') if current_user.is_manager() or current_user.is_compliance_officer() else url_for('coi.my_declarations') }}" class="modtile {{ 'mt-warn' if (coi_pending_reviews if current_user.is_manager() or current_user.is_compliance_officer() else pending_coi_count) else 'mt-ok' }}">
               <div class="n">{{ coi_pending_reviews if current_user.is_manager() or current_user.is_compliance_officer() else pending_coi_count }}</div><div class="name">{{ _('COI Pending') }}</div>
             </a>
           </div>
           {% if current_user.can_view('cobec') and not current_user.role == 'employee' %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('cobec.pending_review') }}" class="modtile {{ 'mt-warn' if cobec_pending_count else 'mt-ok' }}">
               <div class="n">{{ cobec_pending_count }}</div><div class="name">{{ _('COBEC Pending') }}</div>
             </a>
           </div>
           {% endif %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('policies.my_reviews') if current_user.can_edit('policies') else url_for('policies.pending_acknowledgment') }}" class="modtile {{ 'mt-warn' if (policy_reviews_count if current_user.can_edit('policies') else pending_policies_count) else 'mt-ok' }}">
               <div class="n">{{ policy_reviews_count if current_user.can_edit('policies') else pending_policies_count }}</div>
               <div class="name">{{ _('Policy Reviews') if current_user.can_edit('policies') else _('Pending Policies') }}</div>
             </a>
           </div>
           {% if current_user.can_view('reports') %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('reporting.dashboard') }}" class="modtile mt-neutral">
               <div class="n">{{ upcoming_reports_count }}</div><div class="name">{{ _('Reg. Reports Due') }}</div>
             </a>
           </div>
           {% endif %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('training.list_courses') }}" class="modtile {{ 'mt-warn' if training_due_count else 'mt-ok' }}">
               <div class="n">{{ training_due_count }}</div><div class="name">{{ _('My Training') }}</div>
             </a>
           </div>
           {% if current_user.can_view('policies') %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('policies.gap_analysis') }}" class="modtile mt-neutral">
               <div class="n">{{ gap_score }}%</div><div class="name">{{ _('Compliance Gap') }}</div>
             </a>
           </div>
           {% endif %}
           {% if current_user.can_view('consumer_protection') %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('consumer_protection.dashboard') }}" class="modtile {{ 'mt-warn' if cp_open_count else 'mt-ok' }}">
               <div class="n">{{ cp_open_count }}</div><div class="name">{{ _('Open Complaints') }}</div>
             </a>
           </div>
           {% endif %}
           {% if current_user.can_view('whistleblowing') and not current_user.role == 'employee' %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('whistleblowing.dashboard') }}" class="modtile {{ 'mt-warn' if wb_open_count else 'mt-ok' }}">
               <div class="n">{{ wb_open_count }}</div><div class="name">{{ _('Whistleblowing') }}</div>
             </a>
           </div>
           {% endif %}
           {% if current_user.can_view('esg') %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('esg.dashboard') }}" class="modtile mt-neutral">
               <div class="n">{{ esg_overall_score if esg_overall_score is not none else '—' }}</div><div class="name">{{ _('ESG Score /5') }}</div>
             </a>
           </div>
           {% endif %}
           {% if current_user.can_view('carbon') %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('carbon.dashboard') }}" class="modtile mt-neutral">
               <div class="n">{{ carbon_total_tco2e if carbon_total_tco2e is not none else '—' }}</div><div class="name">{{ _('tCO2e This Period') }}</div>
             </a>
           </div>
           {% endif %}
           {% if current_user.can_view('aml') %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('aml.alert_list') }}" class="modtile {{ 'mt-bad' if tm_high_alerts else ('mt-warn' if tm_open_alerts else 'mt-ok') }}">
               <div class="n">{{ tm_open_alerts }}</div><div class="name">{{ _('AML/TM Alerts') }}</div>
               {% if tm_high_alerts %}<div class="flag">{{ _('%(n)s HIGH', n=tm_high_alerts) }}</div>{% endif %}
@@ -311,28 +311,28 @@
           </div>
           {% endif %}
           {% if current_user.can_view('screening') %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('screening.history') }}" class="modtile {{ 'mt-warn' if screening_queue_count else 'mt-ok' }}">
               <div class="n">{{ screening_queue_count }}</div><div class="name">{{ _('Screening Queue') }}</div>
             </a>
           </div>
           {% endif %}
           {% if current_user.can_view('merchant_kyc') %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('merchant_kyc.merchant_list') }}" class="modtile {{ 'mt-warn' if merchant_pending_count else 'mt-ok' }}">
               <div class="n">{{ merchant_pending_count }}</div><div class="name">{{ _('Merchant KYC') }}</div>
             </a>
           </div>
           {% endif %}
           {% if current_user.can_view('cyber') %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('cyber.dashboard') }}" class="modtile {{ 'mt-bad' if cyber_open_count else 'mt-ok' }}">
               <div class="n">{{ cyber_open_count }}</div><div class="name">{{ _('Cyber Incidents') }}</div>
             </a>
           </div>
           {% endif %}
           {% if current_user.can_view('pdpl') %}
-          <div class="col-6">
+          <div class="col-6" data-cx-widget>
             <a href="{{ url_for('dp.breach_list') }}" class="modtile {{ 'mt-bad' if breach_open_count else 'mt-ok' }}">
               <div class="n">{{ breach_open_count }}</div><div class="name">{{ _('Data Breaches') }}</div>
             </a>
@@ -340,7 +340,7 @@
           {% endif %}
         </div>
         {% if current_user.is_compliance_officer() or current_user.is_admin() %}
-        <a href="{{ url_for('compliance_operations') }}" class="d-block text-center mt-3" style="font-size:12px;">{{ _('View Compliance Operations Detail →') }}</a>
+        <a href="{{ url_for('compliance_operations') }}" data-cx-widget class="d-block text-center mt-3" style="font-size:12px;">{{ _('View Compliance Operations Detail →') }}</a>
         {% endif %}
       </div>
     </div>
@@ -362,14 +362,14 @@
         <div class="portal-link-card">
           <div style="flex:1; min-width:0;">
             <label>{{ _('Main Portal') }}</label>
-            <input type="text" class="form-control form-control-sm" value="https://complynex.online/portal" readonly id="portalLink">
+            <input type="text" class="form-control form-control-sm" value="{{ url_for('portal.dashboard', _external=True) }}" readonly id="portalLink">
           </div>
           <button class="copy-btn" data-copy-target="portalLink"><i class="bi bi-clipboard"></i></button>
         </div>
-        <div class="portal-link-card mb-0">
+        <div class="portal-link-card mb-0" data-cx-endpoint="portal.incident_ghe">
           <div style="flex:1; min-width:0;">
             <label>{{ _('Incident Reporting (GHE)') }}</label>
-            <input type="text" class="form-control form-control-sm" value="https://complynex.online/portal/incident/ghe" readonly id="gheLink">
+            <input type="text" class="form-control form-control-sm" value="{{ url_for('portal.incident_ghe', _external=True) }}" readonly id="gheLink">
           </div>
           <button class="copy-btn" data-copy-target="gheLink"><i class="bi bi-clipboard"></i></button>
         </div>
@@ -378,16 +378,16 @@
     <div class="col-lg-4">
       <div class="info-panel">
         <div class="info-panel-title"><i class="bi bi-lightning me-1"></i> {{ _('Quick Actions') }}</div>
-        <a href="{{ url_for('policies.list_policies') }}" class="quick-action-btn qa-policies"><i class="bi bi-file-text"></i> {{ _('View Policies') }}</a>
-        <a href="{{ url_for('training.list_courses') }}" class="quick-action-btn qa-training"><i class="bi bi-book"></i> {{ _('My Training') }}</a>
-        <a href="{{ url_for('whistleblowing.public_report') }}" target="_blank" class="quick-action-btn qa-wb"><i class="bi bi-megaphone"></i> {{ _('Public Whistleblowing') }}</a>
-        <a href="{{ url_for('consumer_protection.public_form') }}" target="_blank" class="quick-action-btn qa-cp"><i class="bi bi-shield-check"></i> {{ _('Consumer Protection') }}</a>
+        <a href="{{ url_for('policies.list_policies') }}" data-cx-widget class="quick-action-btn qa-policies"><i class="bi bi-file-text"></i> {{ _('View Policies') }}</a>
+        <a href="{{ url_for('training.list_courses') }}" data-cx-widget class="quick-action-btn qa-training"><i class="bi bi-book"></i> {{ _('My Training') }}</a>
+        <a href="{{ url_for('whistleblowing.public_report') }}" target="_blank" data-cx-widget class="quick-action-btn qa-wb"><i class="bi bi-megaphone"></i> {{ _('Public Whistleblowing') }}</a>
+        <a href="{{ url_for('consumer_protection.public_form') }}" target="_blank" data-cx-widget class="quick-action-btn qa-cp"><i class="bi bi-shield-check"></i> {{ _('Consumer Protection') }}</a>
       </div>
     </div>
   </div>
 
   {% if training_due_count > 0 %}
-  <div class="row">
+  <div class="row" data-cx-endpoint="training.list_courses">
     <div class="col-12">
       <div class="alert alert-warning d-flex align-items-center" role="alert">
         <i class="bi bi-mortarboard me-3 fs-4"></i>

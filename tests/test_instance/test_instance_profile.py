@@ -45,6 +45,16 @@ out = {'profile': P.name(), 'blueprints': sorted(a.blueprints),
        'features': sorted(f.key for f in R.all_features())}
 with a.test_request_context('/'):
     out['url_screening'] = url_for('screening.manual_screen')
+    out['url_ops'] = url_for('compliance_operations')            # registered, but outside the profile
+    out['url_dashboard'] = url_for('dashboard')
+    page = ('<!DOCTYPE html><html><body><ul class="nav"><li><a href="/_off/x.y">menu</a></li></ul>'
+            '<div class="row"><div class="col-6" data-cx-widget><a href="/_off/aml.alert_list">AML</a></div>'
+            '<div class="col-6" data-cx-widget><a href="/policies/">Policies</a></div></div>'
+            '<div data-cx-endpoint="risk_management.dashboard">risk widget</div>'
+            '<div data-cx-endpoint="policies.list_policies">policy widget</div>'
+            '<p>See <a href="/_off/screening.history">the history</a> here.</p>'
+            '<form action="/_off/aml.x" method="post"><button>go</button></form><p>عربي</p></body></html>')
+    out['scrubbed'] = P.scrub_html(page)
     out['url_governance'] = url_for('governance.index') if 'governance.index' in a.view_functions else None
     out['ep_enabled'] = {e: P.endpoint_enabled(e) for e in
                          ('screening.manual_screen', 'compliance_operations', 'admin.screening_limits',
@@ -114,6 +124,31 @@ def test_governance_disabled_pages_are_404_and_links_are_pruned(governance):
     assert en['admin.screening_limits'] is False
     assert en['dashboard'] and en['auth.login'] and en['auth.set_password']
     assert '/_off/' not in governance['pruned'] and '/dashboard' in governance['pruned']
+    assert governance['url_ops'] == '/_off/compliance_operations' and governance['url_dashboard'] == '/dashboard'
+
+
+def test_governance_scrub_removes_widgets_and_dead_links(governance):
+    s = governance['scrubbed']
+    assert '/_off/' not in s and s.startswith('<!DOCTYPE html>')
+    assert 'AML' not in s and 'menu' not in s and 'risk widget' not in s and '<form' not in s
+    assert 'Policies' in s and 'policy widget' in s and 'the history' in s and 'عربي' in s
+
+
+def test_scrub_leaves_pages_without_marks_untouched():
+    from utils import instance_profile as P
+    page = '<!DOCTYPE html><html><body><a href="/dashboard">x</a></body></html>'
+    assert P.scrub_html(page) is page
+
+
+def test_superadmin_and_compliance_roles_view_security_pages(monkeypatch):
+    from types import SimpleNamespace
+    import admin.security_p6 as SEC
+    for role, ok in (('superadmin', True), ('admin', True), ('compliance_officer', True), ('compliance_manager', True),
+                     ('employee', False), ('manager', False)):
+        monkeypatch.setattr(SEC, 'current_user', SimpleNamespace(is_authenticated=True, role=role))
+        assert SEC._can_view() is ok, role
+    monkeypatch.setattr(SEC, 'current_user', SimpleNamespace(is_authenticated=False, role='superadmin'))
+    assert SEC._can_view() is False
 
 
 def test_full_profile_is_the_default_and_unchanged(monkeypatch):
