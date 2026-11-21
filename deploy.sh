@@ -3,6 +3,7 @@
 # ComplyNex deploy — bring a reviewed branch from GitHub onto the live server.
 # Usage:  sudo /var/www/complynex/deploy.sh            (deploys origin/main)
 #         sudo /var/www/complynex/deploy.sh <branch>   (deploys another branch)
+#         sudo /var/www/complynex/deploy.sh --instances-only  (secondary instances to the deployed commit)
 # Steps: schema backup -> fast-forward to origin/<branch> -> new SQL migrations ->
 #        guards -> restart -> health check -> automatic code rollback if unhealthy ->
 #        secondary instances (/etc/complynex/instances.list, see scripts/instance/).
@@ -14,28 +15,47 @@ TS=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$APP/deploy_logs" /var/backups/complynex
 LOG="$APP/deploy_logs/deploy_$TS.log"
 exec > >(tee -a "$LOG") 2>&1
-G="git -C $APP -c safe.directory=$APP"
+G="git -C $APP -c safe.directory=$APP -c core.hooksPath=/dev/null"
 health() { curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/health; }
 restart() {
   systemctl restart complynex
   for i in $(seq 1 40); do sleep 3; [ "$(health)" = 200 ] && return 0; done
   return 1
 }
-# A secondary instance (scripts/instance/create_instance.sh): same code in its own folder (git worktree) and
-# database. Updated only after the main deploy succeeded; a failure here never rolls back the main instance.
+# A secondary instance (scripts/instance/create_instance.sh): same code in its own folder (git worktree, code
+# owned by root), own system user and database. Updated only after the main deploy succeeded; a failure here
+# never rolls back the main instance. Git runs as root there: always with an explicit git dir / work tree,
+# no hooks, and only after the folder's gitdir pointer was checked.
 update_instance() {
-  local n="$1" port="$2" dir="/var/www/complynex-$1" db="complynex_$1" rc=0 code m
+  local n="$1" port="$2" dir="/var/www/complynex-$1" db="complynex_$1" rc=0 code m old migr
+  local wt="$APP/.git/worktrees/complynex-$1"
   echo "-- instance $n ($dir, port $port)"
+  [[ "$n" =~ ^[a-z][a-z0-9]{1,19}$ ]] || { echo "INSTANCE $n: invalid name in the list"; return 1; }
   [ -f "$dir/.cx_instance" ] || { echo "INSTANCE $n: $dir/.cx_instance missing"; return 1; }
-  git -C "$dir" -c safe.directory='*' checkout -q --detach "$TARGET" || { echo "INSTANCE $n: code update failed"; return 1; }
-  git -C "$dir" -c safe.directory='*' ls-files -z | (cd "$dir" && xargs -0 chown complynex:complynex) || true
-  # root runs the backup script: install it from the commit, not from a file the app user can write
+  [ -d "$wt" ] || { echo "INSTANCE $n: worktree metadata $wt missing"; return 1; }
+  if [ -L "$dir/.git" ] || [ "$(cat "$dir/.git" 2>/dev/null)" != "gitdir: $wt" ]; then
+    echo "INSTANCE $n: REFUSED — $dir/.git is not the expected gitdir pointer (tampered?)"; return 1
+  fi
+  chown -h root:root "$dir/.git"; chmod 644 "$dir/.git"
+  local ig="git --git-dir=$wt --work-tree=$dir -c safe.directory=* -c core.hooksPath=/dev/null -c core.fsmonitor=false"
+  if [ -n "$($ig status --porcelain --untracked-files=no 2>&1)" ]; then
+    echo "!!!!! INSTANCE $n: REFUSED — tracked files were changed in $dir:"; $ig status --short --untracked-files=no | head -10
+    return 1
+  fi
+  old=$($ig rev-parse HEAD) || { echo "INSTANCE $n: cannot read its commit"; return 1; }
+  # its own migrations: everything added between ITS commit and the target (it may have missed deploys)
+  migr=$($G diff --name-only --diff-filter=A "$old" "$TARGET" -- 'database/migrations/*.sql' | sort || true)
+  if [ "$old" = "$TARGET" ] && [ -z "$migr" ] && [ "${FORCE_RESTART:-0}" != 1 ]; then
+    echo "   instance $n up to date ($TARGET)"; return 0
+  fi
+  $ig checkout -q --detach "$TARGET" || { echo "INSTANCE $n: code update failed"; return 1; }
+  # root runs the backup script: install it from the main repository's commit, not from a file in a folder
   { $G show "$TARGET:scripts/instance/backup_instance.sh" > /usr/local/sbin/complynex-instance-backup.new && \
     chmod 755 /usr/local/sbin/complynex-instance-backup.new && \
     mv /usr/local/sbin/complynex-instance-backup.new /usr/local/sbin/complynex-instance-backup; } || rc=1
-  for m in $MIGR; do
+  for m in $migr; do
     echo "   migration $m"
-    sudo -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -q < "$APP/$m" || { echo "INSTANCE $n: MIGRATION FAILED: $m"; rc=1; }
+    $G show "$TARGET:$m" | sudo -u postgres psql -d "$db" -v ON_ERROR_STOP=1 -q || { echo "INSTANCE $n: MIGRATION FAILED: $m"; rc=1; }
   done
   systemctl restart "complynex-$n" || { echo "INSTANCE $n: restart failed"; return 1; }
   code=000
@@ -47,6 +67,34 @@ update_instance() {
   [ "$code" = 200 ] || { echo "INSTANCE $n: UNHEALTHY — journalctl -u complynex-$n -n 80"; return 1; }
   return $rc
 }
+# Every instance of the root-owned list. Failures are reported loudly; the return code says whether any failed.
+run_instances() {
+  local list=/etc/complynex/instances.list failed="" iname iport _rest
+  [ -s "$list" ] || return 0
+  if [ "$(stat -c '%u' "$list")" != 0 ] || [ -n "$(find "$list" -perm /022)" ]; then
+    echo "WARNING: $list is not root-owned / is writable by others — secondary instances NOT updated"; return 1
+  fi
+  while read -r iname iport _rest; do
+    case "$iname" in ''|\#*) continue;; esac
+    update_instance "$iname" "$iport" || failed="$failed $iname"
+  done < "$list"
+  if [ -n "$failed" ]; then
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    echo "WARNING: SECONDARY INSTANCE UPDATE FAILED:$failed"
+    echo "         The main instance is not affected (not rolled back). Fix the instance(s) above, then:"
+    echo "         sudo $APP/deploy.sh --instances-only"
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    return 1
+  fi
+  echo "secondary instances up to date"
+}
+
+if [ "$BR" = "--instances-only" ]; then
+  # bring every secondary instance to the commit the main instance runs now (no main deploy)
+  echo "== ComplyNex secondary instances $TS"
+  TARGET=$($G rev-parse HEAD)
+  run_instances && exit 0 || exit 1
+fi
 
 echo "== ComplyNex deploy $TS  branch=$BR"
 if ! $G diff --quiet || ! $G diff --cached --quiet; then
@@ -56,7 +104,7 @@ fi
 PREV=$($G rev-parse HEAD)
 $G fetch --quiet origin
 TARGET=$($G rev-parse "origin/$BR")
-if [ "$PREV" = "$TARGET" ]; then echo "Already up to date ($PREV)."; exit 0; fi
+if [ "$PREV" = "$TARGET" ]; then echo "Already up to date ($PREV)."; run_instances || true; exit 0; fi
 echo "-- changes:"; $G log --oneline "$PREV..$TARGET" | head -30
 MIGR=$($G diff --name-only --diff-filter=A "$PREV" "$TARGET" -- 'database/migrations/*.sql' | sort || true)
 
@@ -64,7 +112,7 @@ echo "-- schema backup"
 sudo -u postgres pg_dump -d complynex_db --schema-only > "/var/backups/complynex/schema_predeploy_$TS.sql"
 
 $G merge --ff-only --quiet "$TARGET" || { echo "STOP: branch cannot fast-forward from the server version."; exit 1; }
-$G ls-files -z | (cd "$APP" && xargs -0 chown complynex:complynex) || true
+$G ls-files -z | (cd "$APP" && xargs -0 chown -h complynex:complynex) || true   # -h: never follow a symlink
 
 # ---- quality gate (Phase 0): engine tests + Gold Set must not get worse -------------
 # Runs on the new code before migrations, so a failure only needs a code rollback.
@@ -118,23 +166,8 @@ if restart; then
   fi
   # The eKYC worker is a separate process: restart it so it runs the same code.
   systemctl restart complynex-ekyc-worker 2>/dev/null && echo "ekyc worker restarted" || true
-  # Secondary instances: each listed one gets the new code, the new migrations and a restart.
-  INSTANCES=/etc/complynex/instances.list
-  if [ -s "$INSTANCES" ]; then
-    INST_FAILED=""
-    while read -r iname iport _rest; do
-      case "$iname" in ''|\#*) continue;; esac
-      update_instance "$iname" "$iport" || INST_FAILED="$INST_FAILED $iname"
-    done < "$INSTANCES"
-    if [ -n "$INST_FAILED" ]; then
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-      echo "WARNING: SECONDARY INSTANCE UPDATE FAILED:$INST_FAILED"
-      echo "         The main instance is deployed and healthy (not rolled back). Fix the instance(s) above."
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    else
-      echo "secondary instances updated"
-    fi
-  fi
+  # Secondary instances: each listed one gets the new code, its missing migrations and a restart.
+  run_instances || true
 else
   echo "UNHEALTHY after deploy — rolling code back to $PREV"
   $G reset --hard --quiet "$PREV"

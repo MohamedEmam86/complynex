@@ -69,9 +69,17 @@ PROFILES = {
 }
 
 
+class UnknownProfile(RuntimeError):
+    pass
+
+
 def name():
+    """The instance's profile. An unknown value is a configuration error: the instance refuses to start
+    instead of silently running the full platform."""
     p = (os.environ.get(ENV) or DEFAULT).strip().lower()
-    return p if p in PROFILES else DEFAULT
+    if p not in PROFILES:
+        raise UnknownProfile(f"{ENV}={p!r} is not a known instance profile (known: {', '.join(sorted(PROFILES))})")
+    return p
 
 
 def spec():
@@ -246,8 +254,11 @@ def scrub_html(text):
     if OFF_PREFIX not in text and 'data-cx-endpoint' not in text:
         return text
     from lxml import html as LH
-    doctype = text.lstrip()[:15].lower().startswith('<!doctype')
-    root = LH.document_fromstring(text)
+    head = text.lstrip()[:200].lower()
+    document = head.startswith('<!doctype') or head.startswith('<html')
+    doctype = head.startswith('<!doctype')
+    # a whole page is rewritten; a fragment (partial, widget) is edited in place, never wrapped
+    root = LH.document_fromstring(text) if document else LH.fragment_fromstring(text, create_parent='div')
 
     def attached(el):
         return any(a is root for a in el.iterancestors()) or el is root
@@ -277,6 +288,8 @@ def scrub_html(text):
             for a in _OFF_ATTRS:
                 if (el.get(a) or '').startswith(OFF_PREFIX):
                     del el.attrib[a]
+    if not document:
+        return (root.text or '') + ''.join(LH.tostring(c, encoding='unicode', method='html') for c in root)
     out = LH.tostring(root, encoding='unicode', method='html')
     return ('<!DOCTYPE html>\n' + out) if doctype else out
 
@@ -365,39 +378,71 @@ def quota_message(lang, quota):
             'Remove files you no longer need or ask the platform administrator for more space.')
 
 
+# Request bodies that are not file uploads (forms, JSON, text) are never counted.
+NON_UPLOAD_TYPES = ('application/x-www-form-urlencoded', 'application/json', 'text/plain')
+FRESH_FROM = 0.9                # within 10% of the quota the folder is counted again for every upload
+
+
+def is_upload(req):
+    """A request that may store a file: POST/PUT/PATCH with a body that is not a form, JSON or text
+    (multipart, octet-stream, image/..., application/pdf, an unknown type, or a chunked body)."""
+    if req.method not in ('POST', 'PUT', 'PATCH'):
+        return False
+    mt = (req.mimetype or '').lower()
+    chunked = 'chunked' in (req.headers.get('Transfer-Encoding') or '').lower()
+    if not mt and not chunked and not req.content_length:
+        return False
+    return mt not in NON_UPLOAD_TYPES
+
+
+def length_message(lang):
+    if str(lang).startswith('ar'):
+        return 'تم رفض رفع الملف: الطلب لا يحدد حجمه (Content-Length)، وهو مطلوب لأن لهذه النسخة حداً للتخزين.'
+    return 'Upload refused: the request does not state its size (Content-Length), which this instance requires.'
+
+
 def install_upload_quota(app):
-    """Refuse multipart uploads once the instance's upload folder (plus the incoming body) exceeds
-    CX_UPLOAD_QUOTA_MB. Read at request time, so a changed quota needs only a restart."""
+    """Refuse uploads once the instance's upload folder plus the incoming body would exceed
+    CX_UPLOAD_QUOTA_MB (any upload type, see is_upload); uploads without Content-Length are refused while a
+    quota is set. The folder size is cached for a minute, and counted afresh near the quota. Read at request
+    time, so a changed quota needs only a restart."""
     from flask import flash, jsonify, redirect, request
 
-    @app.before_request
-    def _cx_upload_quota():
-        if request.method not in ('POST', 'PUT', 'PATCH'):
-            return None
-        if not (request.content_type or '').startswith('multipart/form-data'):
-            return None
-        quota = quota_bytes()
-        if not quota:
-            return None
-        incoming = request.content_length or 0
-        if used_bytes(upload_dir(app)) + incoming <= quota:
-            return None
+    def _lang():
         try:
             from flask_babel import get_locale
-            lang = str(get_locale() or 'ar')
+            return str(get_locale() or 'ar')
         except Exception:
-            lang = 'ar'
-        msg = quota_message(lang, quota)
-        app.logger.warning('upload refused: quota %s bytes reached (%s)', quota, request.path)
+            return 'ar'
+
+    def _refuse(status, msg, msg_en, msg_ar, error):
+        app.logger.warning('upload refused (%s): %s', error, request.path)
         if request.path.startswith('/api/') or request.is_json or \
                 request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
                 request.accept_mimetypes.best == 'application/json':
-            resp = jsonify({'error': 'quota_exceeded', 'message': msg,
-                            'message_en': quota_message('en', quota), 'message_ar': quota_message('ar', quota)})
-            resp.status_code = 413
+            resp = jsonify({'error': error, 'message': msg, 'message_en': msg_en, 'message_ar': msg_ar})
+            resp.status_code = status
             return resp
         flash(msg, 'danger')
         ref = request.referrer or ''
         resp = redirect(ref if ref.startswith(request.host_url) else '/')   # back to the form, same site only
-        resp.headers['X-CX-Quota'] = 'exceeded'
+        resp.headers['X-CX-Quota'] = 'exceeded' if status == 413 else 'length-required'
         return resp
+
+    @app.before_request
+    def _cx_upload_quota():
+        quota = quota_bytes()
+        if not quota or not is_upload(request):
+            return None
+        if request.content_length is None:
+            return _refuse(411, length_message(_lang()), length_message('en'), length_message('ar'),
+                           'length_required')
+        incoming = request.content_length
+        folder = upload_dir(app)
+        used = used_bytes(folder)
+        if used + incoming > quota * FRESH_FROM:
+            used = used_bytes(folder, fresh=True)      # near the limit: never trust the cached size
+        if used + incoming <= quota:
+            return None
+        return _refuse(413, quota_message(_lang(), quota), quota_message('en', quota), quota_message('ar', quota),
+                       'quota_exceeded')

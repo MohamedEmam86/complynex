@@ -18,7 +18,7 @@
 """
 First superadmin of an instance, with a password nobody sees.
 
-    sudo -u complynex /var/www/complynex/venv/bin/python /var/www/complynex-<name>/scripts/instance/create_superadmin.py \
+    sudo -u cx-<name> /var/www/complynex/venv/bin/python /var/www/complynex-<name>/scripts/instance/create_superadmin.py \
         --email owner@example.org [--first-name First --last-name Last] [--base-url https://host] [--hours 24]
 
 Run from the instance's folder (the script uses the folder it lives in, or --root): that instance's .env is

@@ -134,6 +134,18 @@ def test_governance_scrub_removes_widgets_and_dead_links(governance):
     assert 'Policies' in s and 'policy widget' in s and 'the history' in s and 'عربي' in s
 
 
+def test_scrub_edits_fragments_in_place_without_wrapping(monkeypatch):
+    from utils import instance_profile as P
+    monkeypatch.setenv('CX_INSTANCE_PROFILE', 'governance')
+    monkeypatch.setattr(P, 'endpoint_enabled', lambda ep: ep.startswith('policies.'))
+    frag = 'Lead <b>x</b><div data-cx-widget><a href="/_off/aml.a">AML</a></div><a href="/_off/b.c">kept</a> tail'
+    out = P.scrub_html(frag)
+    assert out == 'Lead <b>x</b>kept tail', out
+    page = '<!DOCTYPE html><html><body><div data-cx-endpoint="risk_management.dashboard">r</div><p>ok</p></body></html>'
+    out = P.scrub_html(page)
+    assert out.startswith('<!DOCTYPE html>') and '<p>ok</p>' in out and '>r<' not in out
+
+
 def test_scrub_leaves_pages_without_marks_untouched():
     from utils import instance_profile as P
     page = '<!DOCTYPE html><html><body><a href="/dashboard">x</a></body></html>'
@@ -159,8 +171,18 @@ def test_full_profile_is_the_default_and_unchanged(monkeypatch):
     assert P.module_enabled('screening') and P.feature_enabled('general.operations')
     assert P.endpoint_enabled('screening.manual_screen')
     assert P.install_import_guard() is False
-    monkeypatch.setenv('CX_INSTANCE_PROFILE', 'nonsense')
+    monkeypatch.setenv('CX_INSTANCE_PROFILE', '')
     assert P.name() == 'full'
+
+
+def test_unknown_profile_refuses_instead_of_running_full(monkeypatch, tmp_path):
+    from utils import instance_profile as P
+    monkeypatch.setenv('CX_INSTANCE_PROFILE', 'govrenance')
+    with pytest.raises(P.UnknownProfile, match='govrenance'):
+        P.name()
+    r = subprocess.run([sys.executable, '-c', 'import app'], cwd=str(tmp_path), env=_env(tmp_path, 'govrenance'),
+                       capture_output=True, text=True, timeout=180)
+    assert r.returncode != 0 and 'not a known instance profile' in r.stderr
 
 
 def test_import_guard_refuses_blocked_packages(monkeypatch):
@@ -234,6 +256,38 @@ def test_quota_refuses_uploads_when_full_with_bilingual_message(monkeypatch, tmp
     assert r.headers['Location'].endswith('/form')
     r = _post(c, headers={'Referer': 'https://elsewhere.example/x'})
     assert r.headers['Location'] in ('/', 'http://localhost/')     # never back to another site
+
+
+def test_quota_counts_non_multipart_uploads_but_not_forms(monkeypatch, tmp_path):
+    (tmp_path / 'big.bin').write_bytes(b'x' * 3000)
+    c = _quota_app(monkeypatch, tmp_path, 0.002).test_client()
+    r = c.post('/up', data=b'%PDF' + b'0' * 100, content_type='application/pdf', headers={'Accept': 'application/json'})
+    assert r.status_code == 413
+    r = c.post('/up', data=b'\x00' * 100, content_type='application/octet-stream', headers={'Accept': 'application/json'})
+    assert r.status_code == 413
+    assert c.post('/up', json={'a': 1}).status_code == 200
+    assert c.post('/up', data={'a': 'b'}).status_code == 200
+    assert c.post('/up').status_code == 200                          # no body at all
+
+
+def test_quota_refuses_uploads_without_content_length(monkeypatch, tmp_path):
+    import io
+    c = _quota_app(monkeypatch, tmp_path, 1).test_client()
+    r = c.post('/up', input_stream=io.BytesIO(b'x' * 10), content_type='application/octet-stream',
+               headers={'Transfer-Encoding': 'chunked', 'Accept': 'application/json'})
+    assert r.status_code == 411 and r.get_json()['error'] == 'length_required'
+    assert 'Content-Length' in r.get_json()['message_ar']
+
+
+def test_quota_counts_afresh_near_the_limit(monkeypatch, tmp_path):
+    from utils import instance_profile as P
+    c = _quota_app(monkeypatch, tmp_path, 0.01).test_client()       # ~10 KB
+    (tmp_path / 'a.bin').write_bytes(b'x' * 9500)
+    assert _post(c, size=10).status_code == 200                       # 9.5 KB of ~10 KB: within 10%
+    (tmp_path / 'b.bin').write_bytes(b'x' * 1500)                     # another worker stored a file meanwhile
+    r = _post(c, size=10, headers={'Accept': 'application/json'})
+    assert r.status_code == 413                                       # recounted, not the cached 9.5 KB
+    assert P._usage['bytes'] >= 11000
 
 
 def test_quota_off_when_unset(monkeypatch, tmp_path):
