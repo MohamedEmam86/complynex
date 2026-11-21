@@ -18,7 +18,7 @@ def test_privacy_page_public_and_bilingual():
     assert r.status_code == 200
     body = r.get_data(as_text=True)
     assert 'Privacy Policy' in body and 'سياسة الخصوصية' in body
-    assert 'Limited Use' in body
+    assert 'Google user data' not in body and 'Limited Use' not in body
 
 
 def test_terms_page_public_and_bilingual():
